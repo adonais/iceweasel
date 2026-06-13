@@ -476,9 +476,15 @@ export class RTCPeerConnection {
         );
       }
 
-      // TODO (bug 1339203): rtcpMuxPolicy must match
       // TODO (bug 1529398): iceCandidatePoolSize must match if sLD has ever
       // been called.
+    }
+
+    if (rtcConfig.rtcpMuxPolicy == "negotiate") {
+      this.logWarning(
+        `{rtcpMuxPolicy: "negotiate"} is deprecated and will be removed ` +
+          `in a future release. Please use {rtcpMuxPolicy: "require"} instead.`
+      );
     }
 
     // This gets executed in the typical case when iceServers

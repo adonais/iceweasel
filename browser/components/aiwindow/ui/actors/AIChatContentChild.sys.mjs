@@ -31,16 +31,19 @@ export class AIChatContentChild extends JSWindowActorChild {
     "AIChatContent:SeenUrls": {
       event: "aiChatContentActor:seen-urls",
     },
+    "AIChatContent:SetGenerating": {
+      event: "aiChatContentActor:set-generating",
+    },
   };
 
   static #VALID_EVENTS_FROM_CONTENT = new Set([
-    "AIChatContent:DispatchSearch",
     "AIChatContent:DispatchFollowUp",
     "AIChatContent:Ready",
     "AIChatContent:DispatchAction",
     "AIChatContent:OpenLink",
     "AIChatContent:DispatchNewChat",
     "AIChatContent:AccountSignIn",
+    "AIChatContent:ToolUIUpdate",
   ]);
 
   /**
@@ -55,10 +58,6 @@ export class AIChatContentChild extends JSWindowActorChild {
     }
 
     switch (event.type) {
-      case "AIChatContent:DispatchSearch":
-        this.#handleSearchDispatch(event);
-        break;
-
       case "AIChatContent:DispatchAction":
         this.#handleActionDispatch(event);
         break;
@@ -90,15 +89,15 @@ export class AIChatContentChild extends JSWindowActorChild {
         this.sendAsyncMessage("AIChatContent:AccountSignIn", event.detail);
         break;
 
+      case "AIChatContent:ToolUIUpdate":
+        this.sendAsyncMessage("AIChatContent:ToolUIUpdate", event.detail);
+        break;
+
       default:
         console.warn(
           `AIChatContentChild received unknown event: ${event.type}`
         );
     }
-  }
-
-  #handleSearchDispatch(event) {
-    this.sendAsyncMessage("aiChatContentActor:search", event.detail);
   }
 
   #handleActionDispatch(event) {

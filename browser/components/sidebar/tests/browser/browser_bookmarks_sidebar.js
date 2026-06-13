@@ -649,3 +649,134 @@ add_task(async function test_bookmarks_drag_into_folder() {
   await PlacesUtils.bookmarks.remove({ guid: folder.guid });
   SidebarController.hide();
 });
+
+add_task(async function test_bookmarks_drag_url_to_panel() {
+  const folder = await addFolder("URL Drop Target Folder");
+  await addBookmark({
+    title: "Existing Bookmark",
+    parentGuid: folder.guid,
+  });
+
+  const { component, contentWindow } = await showBookmarksSidebar();
+  const tabList = component.bookmarkList;
+
+  const toolbarDetails = await openToolbarFolder(tabList);
+  const nestedList = toolbarDetails.querySelector("sidebar-bookmark-list");
+  await BrowserTestUtils.waitForMutationCondition(
+    nestedList.shadowRoot,
+    { childList: true, subtree: true },
+    () =>
+      [...nestedList.folderEls].some(
+        d =>
+          d.querySelector("summary")?.textContent.trim() ===
+          "URL Drop Target Folder"
+      )
+  );
+
+  const folderSummary = [...nestedList.folderEls]
+    .find(
+      d =>
+        d.querySelector("summary")?.textContent.trim() ===
+        "URL Drop Target Folder"
+    )
+    ?.querySelector("summary");
+  ok(folderSummary, "Drop target folder summary found.");
+
+  const rectSummary = folderSummary.getBoundingClientRect();
+  const promiseAdded = PlacesTestUtils.waitForNotification("bookmark-added");
+  // Use the browser tab as a neutral external drag source so the sidebar's
+  // own dragstart handler does not add TYPE_X_MOZ_PLACE data that would take
+  // priority over the explicit text/x-moz-url data.
+  EventUtils.synthesizeDrop(
+    gBrowser.selectedTab,
+    folderSummary,
+    [
+      [
+        {
+          type: "text/x-moz-url",
+          data: "https://example.com/dropped\nDropped URL",
+        },
+      ],
+    ],
+    "copy",
+    window,
+    contentWindow,
+    {
+      clientX: rectSummary.left + rectSummary.width / 2,
+      clientY: rectSummary.top + rectSummary.height * 0.5,
+      _domDispatchOnly: true,
+    }
+  );
+
+  await promiseAdded;
+
+  const fetchInfo = await PlacesUtils.bookmarks.fetch({
+    url: "https://example.com/dropped",
+  });
+  ok(fetchInfo, "Dropped URL was bookmarked.");
+  Assert.equal(
+    fetchInfo.parentGuid,
+    folder.guid,
+    "Dropped URL bookmark is in the target folder."
+  );
+
+  await PlacesUtils.bookmarks.remove({ guid: folder.guid });
+  SidebarController.hide();
+});
+
+add_task(async function test_bookmarks_drag_tab_to_panel() {
+  const bm = await addBookmark({ title: "Tab Drop Target" });
+  const tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "https://example.com/tab-page"
+  );
+
+  const { component, contentWindow } = await showBookmarksSidebar();
+  const tabList = component.bookmarkList;
+
+  const toolbarDetails = await openToolbarFolder(tabList);
+  const nestedList = toolbarDetails.querySelector("sidebar-bookmark-list");
+  await BrowserTestUtils.waitForMutationCondition(
+    nestedList.shadowRoot,
+    { childList: true, subtree: true },
+    () => [...nestedList.rowEls].some(r => r.title === "Tab Drop Target")
+  );
+
+  const targetRow = [...nestedList.rowEls].find(
+    r => r.title === "Tab Drop Target"
+  );
+  ok(targetRow, "Drop target bookmark row found.");
+
+  const rectRow = targetRow.getBoundingClientRect();
+  const promiseAdded = PlacesTestUtils.waitForNotification("bookmark-added");
+  EventUtils.synthesizeDrop(
+    tab,
+    targetRow,
+    null,
+    "copy",
+    window,
+    contentWindow,
+    {
+      clientX: rectRow.left + rectRow.width / 2,
+      clientY: rectRow.top + rectRow.height * 0.75,
+      _domDispatchOnly: true,
+    }
+  );
+
+  await promiseAdded;
+
+  const fetchInfo = await PlacesUtils.bookmarks.fetch({
+    url: "https://example.com/tab-page",
+  });
+  ok(fetchInfo, "Tab page was bookmarked after drag.");
+  Assert.equal(
+    fetchInfo.parentGuid,
+    PlacesUtils.bookmarks.toolbarGuid,
+    "Tab bookmark is in the toolbar folder."
+  );
+
+  await PlacesUtils.bookmarks.remove(fetchInfo.guid);
+  BrowserTestUtils.removeTab(tab);
+  await PlacesUtils.bookmarks.remove(bm.guid);
+  SidebarController.hide();
+});

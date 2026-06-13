@@ -42,7 +42,7 @@ INSTALLER_SUFFIXES = (
     ".zip",  # Windows
 )
 
-# https://searchfox.org/mozilla-central/source/testing/config/tooltool-manifests
+# https://searchfox.org/firefox-main/source/testing/config/tooltool-manifests
 TOOLTOOL_PLATFORM_DIR = {
     "linux": "linux32",
     "linux64": "linux64",

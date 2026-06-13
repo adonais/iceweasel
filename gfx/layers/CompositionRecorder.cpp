@@ -12,7 +12,6 @@
 #include "prtime.h"
 
 #include <ctime>
-#include <iomanip>
 #include "stdio.h"
 #ifdef XP_WIN
 #  include "direct.h"

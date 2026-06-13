@@ -7,13 +7,11 @@
 
 #include "ContentSignatureVerifier.h"
 #include "OSReauthenticator.h"
-#include "PKCS11ModuleDB.h"
 #include "SecretDecoderRing.h"
 #include "mozilla/ModuleUtils.h"
 #include "mozilla/SyncRunnable.h"
 #include "nsCertTree.h"
 #include "nsNSSCertificateDB.h"
-#include "nsPK11TokenDB.h"
 #include "nsRandomGenerator.h"
 #include "nsXULAppAPI.h"
 
@@ -88,7 +86,6 @@ static nsresult Constructor(REFNSIID aIID, void** aResult) {
 // on main thread in advance in net_EnsurePSMInit(). Update that function when
 // new component with ThreadRestriction::MainThreadOnly is added.
 IMPL(SecretDecoderRing, nullptr)
-IMPL(nsPK11TokenDB, nullptr)
 IMPL(nsNSSCertificateDB, nullptr)
 IMPL(nsCertTree, nullptr)
 IMPL(ContentSignatureVerifier, nullptr)

@@ -52,7 +52,7 @@ class XULLabelTextLeafAccessible final : public TextLeafAccessible {
     mStateFlags |= eSharedNode;
   }
 
-  virtual ~XULLabelTextLeafAccessible() {}
+  virtual ~XULLabelTextLeafAccessible() = default;
 
   // LocalAccessible
   virtual a11y::role NativeRole() const override;

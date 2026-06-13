@@ -42,7 +42,7 @@ class RTCDataChannel final : public DOMEventTargetHelper {
   void EventListenerRemoved(nsAtom* aType) override;
 
   JSObject* WrapObject(JSContext*, JS::Handle<JSObject*> aGivenProto) override;
-  nsIGlobalObject* GetParentObject() const { return GetOwnerGlobal(); }
+  nsIGlobalObject* GetParentObject() const { return GetRelevantGlobal(); }
 
   // WebIDL
   void GetLabel(nsACString& aLabel) const;

@@ -14,8 +14,8 @@ const { sinon } = ChromeUtils.importESModule(
 ChromeUtils.defineESModuleGetters(lazy, {
   SpecialMessageActions:
     "resource://messaging-system/lib/SpecialMessageActions.sys.mjs",
-  IPPEnrollAndEntitleManager:
-    "moz-src:///toolkit/components/ipprotection/fxa/IPPEnrollAndEntitleManager.sys.mjs",
+  IPPFxaActivateAuthProvider:
+    "moz-src:///toolkit/components/ipprotection/fxa/IPPFxaActivateAuthProvider.sys.mjs",
   IPProtection:
     "moz-src:///browser/components/ipprotection/IPProtection.sys.mjs",
   IPProtectionWidget:
@@ -585,7 +585,7 @@ add_task(async function test_get_started_button() {
       return true;
     });
   sandbox
-    .stub(lazy.IPPEnrollAndEntitleManager, "maybeEnrollAndEntitle")
+    .stub(lazy.IPPFxaActivateAuthProvider, "enroll")
     .callsFake(async function () {
       return true;
     });
@@ -606,7 +606,7 @@ add_task(async function test_get_started_button() {
       );
 
       const waitForPanelShown = BrowserTestUtils.waitForEvent(
-        browser.ownerGlobal.document,
+        browser.documentGlobal.document,
         "popupshown",
         false,
         event => {
@@ -627,8 +627,8 @@ add_task(async function test_get_started_button() {
       );
 
       Assert.ok(
-        lazy.IPPEnrollAndEntitleManager.maybeEnrollAndEntitle.calledOnce,
-        "maybeEnrollAndEntitle should be called once when Get started button is clicked"
+        lazy.IPPFxaActivateAuthProvider.enroll.calledOnce,
+        "enroll should be called once when Get started button is clicked"
       );
     }
   );
@@ -648,7 +648,7 @@ add_task(
       .stub(lazy.SpecialMessageActions, "fxaSignInFlow")
       .resolves(true);
     let enrollStub = sandbox
-      .stub(lazy.IPPEnrollAndEntitleManager, "maybeEnrollAndEntitle")
+      .stub(lazy.IPPFxaActivateAuthProvider, "enroll")
       .resolves(true);
 
     await setupVpnPrefs({
@@ -668,7 +668,7 @@ add_task(
           "Get started button is shown when entitlementCache is empty"
         );
 
-        let window = browser.ownerGlobal;
+        let window = browser.documentGlobal;
         let popupSpy = sandbox.spy();
         window.document.addEventListener("popupshown", popupSpy, true);
 
@@ -687,7 +687,7 @@ add_task(
         );
         Assert.ok(
           enrollStub.calledOnce,
-          "maybeEnrollAndEntitle should still complete when widget is not visible"
+          "enroll should still complete when widget is not visible"
         );
 
         let panel = lazy.IPProtection.getPanel(window);
@@ -721,9 +721,7 @@ add_task(async function test_VPN_get_started_entrypoint() {
   let fxaStub = sandbox
     .stub(lazy.SpecialMessageActions, "fxaSignInFlow")
     .resolves(true);
-  sandbox
-    .stub(lazy.IPPEnrollAndEntitleManager, "maybeEnrollAndEntitle")
-    .resolves(true);
+  sandbox.stub(lazy.IPPFxaActivateAuthProvider, "enroll").resolves(true);
 
   await setupVpnPrefs({
     feature: true,
@@ -737,7 +735,7 @@ add_task(async function test_VPN_get_started_entrypoint() {
       let getStartedButton = settingGroup?.querySelector("#getStartedButton");
 
       const waitForPanelShown = BrowserTestUtils.waitForEvent(
-        browser.ownerGlobal.document,
+        browser.documentGlobal.document,
         "popupshown",
         false,
         event => event.target.getAttribute("viewId") === "PanelUI-ipprotection"

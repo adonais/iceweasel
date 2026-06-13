@@ -30,6 +30,7 @@ class CookieStoreNotifier final : public nsIObserver {
 
  private:
   CookieStoreNotifier(CookieStore* aCookieStore, const nsACString& aBaseDomain,
+                      const nsACString& aHost,
                       const OriginAttributes& aOriginAttributes);
   ~CookieStoreNotifier();
 
@@ -39,6 +40,7 @@ class CookieStoreNotifier final : public nsIObserver {
   CookieStore* mCookieStore;
 
   nsCString mBaseDomain;
+  nsCString mHost;
   OriginAttributes mOriginAttributes;
 
   nsTArray<RefPtr<Event>> mDelayedDOMEvents;

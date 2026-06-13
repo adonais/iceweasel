@@ -215,7 +215,7 @@ void MediaHardwareKeysEventSourceMacMediaCenter::SetMediaMetadata(
       break;
     }
 
-    RefPtr<gfxDrawable> drawable = new gfxSurfaceDrawable(
+    auto drawable = MakeRefPtr<gfxSurfaceDrawable>(
         imageData.mDataSurface, imageData.mDataSurface->GetSize());
     nsCOMPtr<imgIContainer> imageContainer =
         image::ImageOps::CreateFromDrawable(drawable);

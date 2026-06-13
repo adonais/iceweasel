@@ -144,13 +144,7 @@ class TextPropertyEditor {
    * Boolean indicating if the name or value is being currently edited.
    */
   get editing() {
-    return (
-      !!(
-        this.nameSpan.inplaceEditor ||
-        this.valueSpan.inplaceEditor ||
-        this.ruleView.tooltips.isEditing
-      ) || this.popup.isOpen
-    );
+    return !!(this.nameSpan.inplaceEditor || this.valueSpan.inplaceEditor);
   }
 
   /**
@@ -462,12 +456,6 @@ class TextPropertyEditor {
    * @return {Array<string>}
    */
   #getAnchorNames = async () => {
-    // @backward-compat { version 150 } This trait was added in 150, once we have it in
-    // release, we can remove this if block.
-    if (!this.ruleView.pageStyle.traits.hasGetAnchorNames) {
-      return [];
-    }
-
     const names = await this.ruleView.pageStyle.getAnchorNames(
       this.ruleView.inspector.selection.nodeFront
     );
@@ -651,6 +639,7 @@ class TextPropertyEditor {
       },
       inStartingStyleRule: this.rule.isInStartingStyle(),
       isValid: this.isValid(),
+      cssExplainersEnabled: this.ruleView.cssExplainersEnabled,
     };
 
     if (this.rule.darkColorScheme !== undefined) {
@@ -1649,6 +1638,14 @@ class TextPropertyEditor {
   }
 
   /**
+   * Boolean indicating if the user is potentially previewing another value
+   * in a swatch tooltip, or in the inplace value editor
+   */
+  get isPreviewing() {
+    return this.ruleView.tooltips.isEditing || this.valueSpan.inplaceEditor;
+  }
+
+  /**
    * Live preview this property, without committing changes.
    *
    * @param {string} value
@@ -1659,7 +1656,7 @@ class TextPropertyEditor {
   #previewValue = (value, reverting = false) => {
     // Since function call is debounced, we need to make sure we are still
     // editing, and any selector modifications have been completed
-    if (!reverting && (!this.editing || this.ruleEditor.isEditing)) {
+    if (!reverting && (!this.isPreviewing || this.ruleEditor.isEditing)) {
       return;
     }
 

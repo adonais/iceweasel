@@ -89,6 +89,11 @@ class Http2Session final : public ASpdySession,
 
   [[nodiscard]] bool AddStream(nsAHttpTransaction*, int32_t,
                                nsIInterfaceRequestor*) override;
+
+  // Same semantics as Http3Session::SwapTransaction. Used by the HE /
+  // 0-RTT adopt path to re-key an existing stream from the
+  // HappyEyeballsTransaction shim to the real nsHttpTransaction.
+  void SwapTransaction(nsAHttpTransaction* aOld, nsAHttpTransaction* aNew);
   bool CanReuse() override { return !mShouldGoAway && !mClosed; }
   bool RoomForMoreStreams() override;
   enum SpdyVersion SpdyVersion() override;
@@ -318,7 +323,7 @@ class Http2Session final : public ASpdySession,
                                            uint32_t*, bool*) final;
   [[nodiscard]] nsresult WriteSegmentsAgain(nsAHttpSegmentWriter*, uint32_t,
                                             uint32_t*, bool*) final;
-  [[nodiscard]] bool Do0RTT() final { return true; }
+  [[nodiscard]] bool Do0RTT(bool aCanSendEarlyData) final { return true; }
   [[nodiscard]] nsresult Finish0RTT(bool aRestart, bool aAlpnChanged) final;
 
   // For use by an HTTP2Stream

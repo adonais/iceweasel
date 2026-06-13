@@ -139,7 +139,7 @@ for a full list of options.
 
 # Nimbus Integration
 A subset of the BTP prefs can be controlled via Nimbus. See definition here:
-[FeatureManifest.yaml](https://searchfox.org/mozilla-central/source/toolkit/components/nimbus/FeatureManifest.yaml#:~:text=bounceTrackingProtection).
+[FeatureManifest.yaml](https://searchfox.org/firefox-main/source/toolkit/components/nimbus/FeatureManifest.yaml#:~:text=bounceTrackingProtection).
 
 ## Logging
 

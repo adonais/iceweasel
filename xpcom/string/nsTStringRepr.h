@@ -144,6 +144,8 @@ class nsTStringRepr {
   typedef StringClassFlags ClassFlags;
   typedef nsTStringLengthStorage<T> LengthStorage;
 
+  nsTStringRepr() = delete;  // Never instantiate directly
+
   // Reading iterators.
   // You must not assume the returned value is null-terminated.
   // If you need a null terminated string, use nsTString::get().
@@ -467,8 +469,6 @@ class nsTStringRepr {
   float ToFloatAllowTrailingChars(nsresult* aErrorCode) const;
 
  protected:
-  nsTStringRepr() = delete;  // Never instantiate directly
-
   constexpr nsTStringRepr(char_type* aData, size_type aLength,
                           DataFlags aDataFlags, ClassFlags aClassFlags)
       : mData(aData),

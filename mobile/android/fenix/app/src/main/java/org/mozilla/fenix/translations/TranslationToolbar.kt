@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -24,6 +23,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
+import mozilla.components.compose.base.button.IconButton
 import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.PreviewThemeProvider
@@ -76,17 +76,23 @@ fun TranslationToolbar(
                 style = FirefoxTheme.typography.body2,
             )
 
-            IconButton(onClick = onExpand) {
+            IconButton(
+                onClick = onExpand,
+                contentDescription = stringResource(R.string.translation_toolbar_expand_action),
+            ) {
                 Icon(
                     painter = painterResource(iconsR.drawable.mozac_ic_chevron_up_24),
-                    contentDescription = stringResource(R.string.translation_toolbar_expand_action),
+                    contentDescription = null,
                 )
             }
 
-            IconButton(onClick = onClose) {
+            IconButton(
+                onClick = onClose,
+                contentDescription = stringResource(R.string.translation_toolbar_close_action),
+            ) {
                 Icon(
                     painter = painterResource(iconsR.drawable.mozac_ic_cross_20),
-                    contentDescription = stringResource(R.string.translation_toolbar_close_action),
+                    contentDescription = null,
                 )
             }
         }

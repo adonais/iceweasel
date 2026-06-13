@@ -5,6 +5,7 @@
 #ifndef nsProgressFrame_h_
 #define nsProgressFrame_h_
 
+#include "mozilla/ReflowInput.h"
 #include "nsCOMPtr.h"
 #include "nsContainerFrame.h"
 #include "nsIAnonymousContentCreator.h"

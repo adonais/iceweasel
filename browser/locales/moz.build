@@ -21,10 +21,10 @@ with Files("**"):
     BUG_COMPONENT = ("Firefox Build System", "General")
 
 with Files("all-locales"):
-    BUG_COMPONENT = ("Core", "Localization")
+    BUG_COMPONENT = ("Core", "Internationalization: Localization")
 
 with Files("en-US/**"):
-    BUG_COMPONENT = ("Core", "Localization")
+    BUG_COMPONENT = ("Core", "Internationalization: Localization")
 
 with Files("shipped-locales"):
-    BUG_COMPONENT = ("Core", "Localization")
+    BUG_COMPONENT = ("Core", "Internationalization: Localization")

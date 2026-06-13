@@ -3,7 +3,10 @@ async function dohExceptionsSubdialogOpened(dialogOverlay) {
     "chrome://browser/content/preferences/dialogs/dohExceptions.xhtml"
   );
   const contentDocument = gBrowser.contentDocument;
-  contentDocument.getElementById("dohExceptionsButton").click();
+  const dohExceptionsButton = SRD_PREF_VALUE
+    ? contentDocument.querySelector("moz-box-button#dohExceptionsButton")
+    : contentDocument.querySelector("button#dohExceptionsButton");
+  dohExceptionsButton.click();
   const win = await promiseSubDialogLoaded;
   dialogOverlay = content.gSubDialog._topDialog._overlay;
   ok(!BrowserTestUtils.isHidden(dialogOverlay), "The dialog is visible.");
@@ -53,7 +56,7 @@ function addNewException(domain, dialog) {
 add_task(async function () {
   Services.prefs.lockPref("network.trr.excluded-domains");
 
-  await openPreferencesViaOpenPreferencesAPI("panePrivacy", {
+  await openPreferencesViaOpenPreferencesAPI(DOH_PREF_PANE, {
     leaveOpen: true,
   });
   let dialogOverlay = content.gSubDialog._preloadDialog._overlay;
@@ -86,7 +89,7 @@ add_task(async function () {
 });
 
 add_task(async function () {
-  await openPreferencesViaOpenPreferencesAPI("panePrivacy", {
+  await openPreferencesViaOpenPreferencesAPI(DOH_PREF_PANE, {
     leaveOpen: true,
   });
   let dialogOverlay = content.gSubDialog._preloadDialog._overlay;

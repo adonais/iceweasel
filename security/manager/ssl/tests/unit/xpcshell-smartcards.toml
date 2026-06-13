@@ -40,5 +40,3 @@ prefs = [
 ["test_pkcs11_slot.js"]
 
 ["test_pkcs11_token.js"]
-
-["test_pkcs11_tokenDB.js"]

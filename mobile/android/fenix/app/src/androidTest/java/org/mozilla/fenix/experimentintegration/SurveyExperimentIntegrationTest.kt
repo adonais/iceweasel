@@ -5,7 +5,6 @@
 package org.mozilla.fenix.experimentintegration
 
 import android.content.pm.ActivityInfo
-import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -15,6 +14,7 @@ import org.mozilla.fenix.helpers.HomeActivityTestRule
 import org.mozilla.fenix.helpers.TestHelper
 import org.mozilla.fenix.ui.robots.homeScreen
 import org.mozilla.fenix.ui.robots.surveyScreen
+import androidx.compose.ui.test.junit4.v2.AndroidComposeTestRule as AndroidComposeTestRuleV2
 
 /**
  *  Tests for verifying functionality of the message survey surface
@@ -25,7 +25,7 @@ class SurveyExperimentIntegrationTest {
 
     @get:Rule
     val composeTestRule =
-        AndroidComposeTestRule(
+        AndroidComposeTestRuleV2(
             HomeActivityTestRule(
                 isPWAsPromptEnabled = false,
                 isDeleteSitePermissionsEnabled = true,

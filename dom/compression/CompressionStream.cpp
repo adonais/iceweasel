@@ -14,7 +14,7 @@
 #include "mozilla/dom/WritableStream.h"
 
 // See the zlib manual in https://www.zlib.net/manual.html or in
-// https://searchfox.org/mozilla-central/source/modules/zlib/src/zlib.h
+// https://searchfox.org/firefox-main/source/modules/zlib/src/zlib.h
 
 namespace mozilla::dom {
 using namespace compression;

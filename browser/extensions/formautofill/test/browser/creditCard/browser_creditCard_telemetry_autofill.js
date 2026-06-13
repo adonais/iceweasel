@@ -40,7 +40,6 @@ add_task(async function test_submit_creditCard_autofill() {
       buildccFormv2Extra({ cc_exp: "unavailable" }, "autofilled")
     ),
   ];
-  await assertTelemetry(undefined, expectedFormEvents);
 
   assertFormInteractionEventsInGlean(expectedFormEvents);
   assertDetectedCcNumberFieldsCountInGlean([
@@ -83,14 +82,13 @@ add_task(async function test_clear_creditCard_autofill() {
       buildccFormv2Extra({ cc_exp: "unavailable" }, "filled")
     ),
   ];
-  await assertTelemetry(undefined, expectedFormEvents);
 
   assertFormInteractionEventsInGlean(expectedFormEvents);
   assertDetectedCcNumberFieldsCountInGlean([
     { label: "cc_number_fields_1", count: 1 },
   ]);
 
-  await clearTelemetry();
+  await clearGleanTelemetry();
 
   let browser = tab.linkedBrowser;
 
@@ -109,10 +107,8 @@ add_task(async function test_clear_creditCard_autofill() {
   expectedFormEvents = [
     ccFormArgsv2("popup_shown", { field_name: "cc-number" }),
   ];
-  await assertTelemetry(undefined, expectedFormEvents);
   assertFormInteractionEventsInGlean(expectedFormEvents);
 
-  Services.telemetry.clearEvents();
   await clearGleanTelemetry();
 
   let popupHidden = BrowserTestUtils.waitForPopupEvent(
@@ -142,8 +138,6 @@ add_task(async function test_clear_creditCard_autofill() {
     // we automatically triggers the popup.
     ccFormArgsv2("popup_shown", { field_name: "cc-number" }),
   ];
-
-  await assertTelemetry(undefined, expectedFormEvents);
 
   assertFormInteractionEventsInGlean(expectedFormEvents);
 

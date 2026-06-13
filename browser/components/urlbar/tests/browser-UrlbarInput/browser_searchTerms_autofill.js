@@ -16,11 +16,14 @@ add_setup(async function () {
   });
   let cleanup = await installPersistTestEngines();
 
-  // Add a bookmark so that it can be autofilled.
-  await PlacesTestUtils.addBookmarkWithDetails({
-    uri: "https://somedomain.example/abc",
-    title: "somedomain",
-  });
+  // Add visits so that it can be autofilled.
+  await PlacesTestUtils.addVisits([
+    {
+      uri: "https://somedomain.example/abc",
+      transition: PlacesUtils.history.TRANSITION_TYPED,
+    },
+  ]);
+  await PlacesFrecencyRecalculator.recalculateAnyOutdatedFrecencies();
 
   registerCleanupFunction(async function () {
     await PlacesUtils.bookmarks.eraseEverything();

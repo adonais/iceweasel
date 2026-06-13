@@ -8,9 +8,13 @@
 newtab-page-title = Novo separador
 newtab-settings-button =
     .title = Personalizar a sua página de novo separador
+#  (developer note): @nova-cleanup(remove-string): Remove newtab-customize-panel-icon-button once Nova lands, will be using newtab-customize-panel-label instead
 newtab-customize-panel-icon-button =
     .title = Personalizar esta página
+#  (developer note): @nova-cleanup(remove-string): Remove newtab-customize-panel-icon-button-label once Nova lands, will be using newtab-customize-panel-label instead
 newtab-customize-panel-icon-button-label = Personalizar
+newtab-customize-panel-label =
+    .label = Personalizar
 newtab-personalize-settings-icon-label =
     .title = Personalizar o novo separador
     .aria-label = Definições
@@ -382,6 +386,7 @@ newtab-wallpaper-title = Fundos
 newtab-wallpaper-reset = Repor predefinições
 #  (developer note): @nova-cleanup(remove-string): Remove old "Upload an image" string once Nova lands. The new "Add an image"  string will take over
 newtab-wallpaper-upload-image = Carregar uma imagem
+newtab-wallpaper-add-an-image = Adicionar uma imagem
 newtab-wallpaper-custom-color = Escolha uma cor
 newtab-wallpaper-toggle-title =
     .label = Fundos
@@ -409,6 +414,7 @@ newtab-wallpaper-light-fox-anniversary = Uma raposa num campo verdejante com uma
 
 #  (developer note): @nova-cleanup(remove-string): Remove old "Solid colors" string once Nova lands. The simplified "Colors" string will take over
 newtab-wallpaper-category-title-colors = Cores sólidas
+newtab-wallpaper-colors = Cores
 newtab-wallpaper-blue = Azul
 newtab-wallpaper-light-blue = Azul claro
 newtab-wallpaper-light-purple = Roxo claro
@@ -499,6 +505,9 @@ newtab-weather-menu-change-location = Alterar localização
 newtab-weather-change-location-search-input-placeholder =
     .placeholder = Pesquisar localização
     .aria-label = Pesquisar localização
+# "Current" refers to the user's physical/geographic location detected via geolocation.
+newtab-weather-change-location-search-use-current =
+    .label = Utilizar a localização atual
 newtab-weather-menu-weather-display = Apresentação da meteorologia
 newtab-weather-todays-forecast = Previsão de hoje
 newtab-weather-see-full-forecast = Ver a previsão completa
@@ -524,6 +533,10 @@ newtab-weather-opt-in-not-now =
     .label = Agora não
 newtab-weather-opt-in-yes =
     .label = Sim
+newtab-weather-opt-in-headline = Obtenha a previsão meteorológica da sua região
+newtab-weather-opt-in-use-location =
+    .label = Utilizar localização
+newtab-weather-opt-in-choose-location = Escolher localização
 # We'll be showing static (fake) weather data if the user has not opted in to using their location
 newtab-weather-static-city = Nova Iorque
 # "Highest" here refers to the highest temperature of the day
@@ -583,8 +596,16 @@ newtab-topic-selection-button-pick-interests = Escolha os seus interesses
 ## e.g. Following the travel section of stories.
 
 newtab-section-follow-button = Seguir
+# Variables:
+#   $topic (string) - Topic that the user can follow
+newtab-section-follow-button-label =
+    .aria-label = Seguir { $topic }
 newtab-section-following-button = A seguir
 newtab-section-unfollow-button = Deixar de seguir
+# Variables:
+#   $topic (string) - Topic that the user is following and can unfollow
+newtab-section-unfollow-button-label =
+    .aria-label = A seguir: Deixar de seguir { $topic }
 # A modal may appear next to the Follow button, directing users to try out the feature
 newtab-section-follow-highlight-title = Ajuste a sua feed
 newtab-section-follow-highlight-subtitle = Siga os seus interesses para ver mais do que gosta.
@@ -596,6 +617,22 @@ newtab-section-follow-highlight-subtitle = Siga os seus interesses para ver mais
 newtab-section-block-button = Bloquear
 newtab-section-blocked-button = Bloqueado
 newtab-section-unblock-button = Desbloquear
+# Variables:
+#   $topic (string) - Name of topic that user is following
+newtab-section-follow-topic =
+    .aria-label = Seguir { $topic }
+# Variables:
+#   $topic (string) - Name of topic that user is unfollowing
+newtab-section-unfollow-topic =
+    .aria-label = Deixar de seguir { $topic }
+# Variables:
+#   $topic (string) - Name of topic that user is blocking
+newtab-section-block-topic =
+    .aria-label = Bloquear { $topic }
+# Variables:
+#   $topic (string) - Name of topic that user is unblocking
+newtab-section-unblock-topic =
+    .aria-label = Desbloquear { $topic }
 
 ## Confirmation modal for blocking a section
 
@@ -626,6 +663,12 @@ newtab-custom-wallpaper-cta = Experimentar
 newtab-new-user-custom-wallpaper-title = Escolha um fundo para tornar o { -brand-product-name } seu
 newtab-new-user-custom-wallpaper-subtitle = Dê um toque pessoal a cada novo separador com fundos e cores à sua escolha.
 newtab-new-user-custom-wallpaper-cta = Experimentar agora
+
+## Strings for Nova wallpaper feature highlight
+
+newtab-wallpaper-feature-highlight-title = Chegaram agora novos fundos de ecrã
+newtab-wallpaper-feature-highlight-subtitle = Escolha o seu preferido e torne cada novo separador mais acolhedor.
+newtab-wallpaper-feature-highlight-cta = Escolher fundo
 
 ## Strings for download mobile highlight
 
@@ -697,10 +740,16 @@ newtab-widget-lists-label-beta =
 newtab-widget-lists-completed-list = Concluídas ({ $number })
 newtab-widget-task-list-menu-copy = Copiar
 newtab-widget-lists-menu-edit = Editar nome da lista
+newtab-widget-lists-menu-edit2 =
+    .aria-label = Editar nome da lista
 newtab-widget-lists-menu-create = Criar uma nova lista
 newtab-widget-lists-menu-delete = Eliminar esta lista
 newtab-widget-lists-menu-copy = Copiar lista para a área de transferência
 newtab-widget-lists-menu-learn-more = Saber mais
+newtab-widget-lists-button-add-item = Adicionar um item
+newtab-widget-lists-input-add-an-item2 =
+    .placeholder = Adicionar um item
+    .aria-label = Adicionar um item
 newtab-widget-lists-input-add-an-item =
     .placeholder = Adicionar um item
 newtab-widget-lists-input-error = Por favor, inclua texto para adicionar um item.
@@ -714,8 +763,19 @@ newtab-widget-lists-dropdown-create =
     .label = + Criar uma nova lista
 newtab-widget-lists-name-label-default =
     .label = Lista de tarefas
+newtab-widget-lists-name-label-checklist =
+    .label = Lista de verificação
 newtab-widget-lists-name-placeholder-default =
     .placeholder = Lista de tarefas
+newtab-widget-lists-name-placeholder-checklist2 =
+    .placeholder = Lista de verificação
+    .aria-label = Editar nome da lista
+# The placeholder value of the name field for a newly created list
+newtab-widget-lists-name-placeholder-new2 =
+    .placeholder = Nova lista
+    .aria-label = Editar nome da lista
+newtab-widget-lists-name-placeholder-checklist =
+    .placeholder = Lista de verificação
 # The placeholder value of the name field for a newly created list
 newtab-widget-lists-name-placeholder-new =
     .placeholder = Nova lista
@@ -735,10 +795,16 @@ newtab-widget-section-maximize =
 newtab-widget-section-minimize =
     .title = Minimizar widgets
     .aria-label = Colapsar todos os widgets para tamanho compacto
+newtab-widget-section-menu-button =
+    .title = Menu de widgets
+    .aria-label = Abrir menu de widgets
+newtab-widget-section-menu-manage = Gerir widgets
+newtab-widget-section-menu-hide-all = Ocultar widgets
+newtab-widget-section-menu-learn-more = Saber mais
 newtab-widget-section-feedback = Dê-nos a sua opinião
+newtab-widget-lists-name-default = Lista de verificação
 
-## Strings for timer productivity widget
-## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown
+## Strings introduced by the Nova redesign of the Timer widget
 
 newtab-widget-timer-notification-title = Temporizador
 newtab-widget-timer-notification-focus = O tempo de concentração terminou. Excelente trabalho. Quer fazer uma pausa?

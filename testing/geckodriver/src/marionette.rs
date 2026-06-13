@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use crate::browser::{Browser, LocalBrowser, RemoteBrowser};
+use crate::browser::{Browser, BrowserStatus, LocalBrowser, RemoteBrowser};
 use crate::build;
 use crate::capabilities::{FirefoxCapabilities, FirefoxOptions, ProfileType};
 use crate::command::{
@@ -17,11 +17,15 @@ use marionette_rs::marionette::AppStatus;
 use marionette_rs::message::{Command, Message, MessageId, Request};
 use marionette_rs::webdriver::{
     AddonInstallParameters as MarionetteAddonInstallParameters,
+    AuthenticatorIdParameters as MarionetteAuthenticatorIdParameters,
     AuthenticatorParameters as MarionetteAuthenticatorParameters,
     AuthenticatorTransport as MarionetteAuthenticatorTransport,
-    Command as MarionetteWebDriverCommand, CredentialParameters as MarionetteCredentialParameters,
+    Command as MarionetteWebDriverCommand,
+    CredentialIdParameters as MarionetteCredentialIdParameters,
+    CredentialParameters as MarionetteCredentialParameters,
     GeckoContext as MarionetteGeckoContext,
     GlobalPrivacyControlParameters as MarionetteGlobalPrivacyControlParameters,
+    Credentials as MarionetteCredentials,
     Keys as MarionetteKeys, Locator as MarionetteLocator, NewWindow as MarionetteNewWindow,
     PrintMargins as MarionettePrintMargins, PrintOrientation as MarionettePrintOrientation,
     PrintPage as MarionettePrintPage, PrintPageRange as MarionettePrintPageRange,
@@ -30,7 +34,8 @@ use marionette_rs::webdriver::{
     SetPermissionParameters as MarionetteSetPermissionParameters,
     SetPermissionState as MarionetteSetPermissionState,
     UserVerificationParameters as MarionetteUserVerificationParameters,
-    WebAuthnProtocol as MarionetteWebAuthnProtocol, WindowRect as MarionetteWindowRect,
+    AuthenticatorProtocol as MarionetteAuthenticatorProtocol,
+    WindowRect as MarionetteWindowRect,
 };
 use mozdevice::AndroidStorageInput;
 use serde::de::{self, Deserialize, Deserializer};
@@ -69,12 +74,12 @@ use webdriver::command::{
     LocatorParameters, NewSessionParameters, NewWindowParameters, PrintMargins, PrintOrientation,
     PrintPage, PrintPageRange, PrintParameters, SendKeysParameters, SetPermissionDescriptor,
     SetPermissionParameters, SetPermissionState, SwitchToFrameParameters, SwitchToWindowParameters,
-    TimeoutsParameters, UserVerificationParameters, WebAuthnProtocol, WindowRectParameters,
+    TimeoutsParameters, AuthenticatorProtocol, WindowRectParameters,
 };
 use webdriver::command::{WebDriverCommand, WebDriverMessage};
 use webdriver::common::{
-    Cookie, CredentialParameters, Date, ELEMENT_KEY, FRAME_KEY, FrameId, LocatorStrategy,
-    SHADOW_KEY, ShadowRoot, WINDOW_KEY, WebElement,
+    Cookie, Credentials, Date, ELEMENT_KEY, FRAME_KEY,
+    FrameId, LocatorStrategy, SHADOW_KEY, ShadowRoot, WebElement, WINDOW_KEY,
 };
 use webdriver::error::{ErrorStatus, WebDriverError, WebDriverResult};
 use webdriver::response::{
@@ -471,13 +476,13 @@ impl MarionetteSession {
             | TakeElementScreenshot(_)
             | GPCGetGlobalPrivacyControl
             | GPCSetGlobalPrivacyControl(_)
+            | WebAuthnAddCredential(_, _)
             | WebAuthnAddVirtualAuthenticator(_)
-            | WebAuthnRemoveVirtualAuthenticator
-            | WebAuthnAddCredential(_)
-            | WebAuthnGetCredentials
-            | WebAuthnRemoveCredential
-            | WebAuthnRemoveAllCredentials
-            | WebAuthnSetUserVerified(_) => {
+            | WebAuthnGetCredentials(_)
+            | WebAuthnRemoveAllCredentials(_)
+            | WebAuthnRemoveCredential(_, _)
+            | WebAuthnRemoveVirtualAuthenticator(_)
+            | WebAuthnSetUserVerified(_, _) => {
                 WebDriverResponse::Generic(resp.into_value_response(true)?)
             }
             GetTimeouts => {
@@ -1003,26 +1008,51 @@ fn to_marionette_message(
         GPCSetGlobalPrivacyControl(ref x) => Ok(Command::WebDriver(
             MarionetteWebDriverCommand::GPCSetGlobalPrivacyControl(x.to_marionette()?),
         )),
+        WebAuthnAddCredential(ref authenticator_id, ref x) => Ok(Command::WebDriver(
+            MarionetteWebDriverCommand::WebAuthnAddCredential(MarionetteCredentialParameters {
+                authenticator_id: authenticator_id.clone(),
+                credentials: x.to_marionette()?,
+            }),
+        )),
         WebAuthnAddVirtualAuthenticator(ref x) => Ok(Command::WebDriver(
             MarionetteWebDriverCommand::WebAuthnAddVirtualAuthenticator(x.to_marionette()?),
         )),
-        WebAuthnRemoveVirtualAuthenticator => Ok(Command::WebDriver(
-            MarionetteWebDriverCommand::WebAuthnRemoveVirtualAuthenticator,
+        WebAuthnGetCredentials(ref authenticator_id) => Ok(Command::WebDriver(
+            MarionetteWebDriverCommand::WebAuthnGetCredentials(
+                MarionetteAuthenticatorIdParameters {
+                    authenticator_id: authenticator_id.clone(),
+                },
+            ),
         )),
-        WebAuthnAddCredential(ref x) => Ok(Command::WebDriver(
-            MarionetteWebDriverCommand::WebAuthnAddCredential(x.to_marionette()?),
+        WebAuthnRemoveAllCredentials(ref authenticator_id) => Ok(Command::WebDriver(
+            MarionetteWebDriverCommand::WebAuthnRemoveAllCredentials(
+                MarionetteAuthenticatorIdParameters {
+                    authenticator_id: authenticator_id.clone(),
+                },
+            ),
         )),
-        WebAuthnGetCredentials => Ok(Command::WebDriver(
-            MarionetteWebDriverCommand::WebAuthnGetCredentials,
+        WebAuthnRemoveCredential(ref authenticator_id, ref credential_id) => Ok(
+            Command::WebDriver(MarionetteWebDriverCommand::WebAuthnRemoveCredential(
+                MarionetteCredentialIdParameters {
+                    authenticator_id: authenticator_id.clone(),
+                    credential_id: credential_id.clone(),
+                },
+            )),
+        ),
+        WebAuthnRemoveVirtualAuthenticator(ref authenticator_id) => Ok(Command::WebDriver(
+            MarionetteWebDriverCommand::WebAuthnRemoveVirtualAuthenticator(
+                MarionetteAuthenticatorIdParameters {
+                    authenticator_id: authenticator_id.clone(),
+                },
+            ),
         )),
-        WebAuthnRemoveCredential => Ok(Command::WebDriver(
-            MarionetteWebDriverCommand::WebAuthnRemoveCredential,
-        )),
-        WebAuthnRemoveAllCredentials => Ok(Command::WebDriver(
-            MarionetteWebDriverCommand::WebAuthnRemoveAllCredentials,
-        )),
-        WebAuthnSetUserVerified(ref x) => Ok(Command::WebDriver(
-            MarionetteWebDriverCommand::WebAuthnSetUserVerified(x.to_marionette()?),
+        WebAuthnSetUserVerified(ref authenticator_id, ref x) => Ok(Command::WebDriver(
+            MarionetteWebDriverCommand::WebAuthnSetUserVerified(
+                MarionetteUserVerificationParameters {
+                    authenticator_id: authenticator_id.clone(),
+                    is_user_verified: x.is_user_verified,
+                },
+            ),
         )),
         Refresh => Ok(Command::WebDriver(MarionetteWebDriverCommand::Refresh)),
         ReleaseActions => Ok(Command::WebDriver(
@@ -1233,12 +1263,14 @@ impl MarionetteConnection {
 
         loop {
             // immediately abort connection attempts if process disappears
-            if let Browser::Local(browser) = browser
-                && let Some(status) = browser.check_status()
-            {
+            if let Some((pid, BrowserStatus::Exited(code))) = browser.check_status() {
+                let code_info = match code {
+                    Some(c) => format!("status {}", c),
+                    None => "unknown status".to_string(),
+                };
                 return Err(WebDriverError::new(
                     ErrorStatus::UnknownError,
-                    format!("Process unexpectedly closed with status {}", status),
+                    format!("Process (pid={}) unexpectedly closed with {}", pid, code_info),
                 ));
             }
 
@@ -1515,6 +1547,16 @@ impl ToMarionette<MarionetteAuthenticatorParameters> for AuthenticatorParameters
     }
 }
 
+impl ToMarionette<MarionetteAuthenticatorProtocol> for AuthenticatorProtocol {
+    fn to_marionette(&self) -> WebDriverResult<MarionetteAuthenticatorProtocol> {
+        Ok(match self {
+            AuthenticatorProtocol::Ctap1U2f => MarionetteAuthenticatorProtocol::Ctap1U2f,
+            AuthenticatorProtocol::Ctap2 => MarionetteAuthenticatorProtocol::Ctap2,
+            AuthenticatorProtocol::Ctap2_1 => MarionetteAuthenticatorProtocol::Ctap2_1,
+        })
+    }
+}
+
 impl ToMarionette<MarionetteAuthenticatorTransport> for AuthenticatorTransport {
     fn to_marionette(&self) -> WebDriverResult<MarionetteAuthenticatorTransport> {
         Ok(match self {
@@ -1528,33 +1570,16 @@ impl ToMarionette<MarionetteAuthenticatorTransport> for AuthenticatorTransport {
     }
 }
 
-impl ToMarionette<MarionetteCredentialParameters> for CredentialParameters {
-    fn to_marionette(&self) -> WebDriverResult<MarionetteCredentialParameters> {
-        Ok(MarionetteCredentialParameters {
+impl ToMarionette<MarionetteCredentials> for Credentials {
+    fn to_marionette(&self) -> WebDriverResult<MarionetteCredentials> {
+        Ok(MarionetteCredentials {
             credential_id: self.credential_id.clone(),
             is_resident_credential: self.is_resident_credential,
             rp_id: self.rp_id.clone(),
             private_key: self.private_key.clone(),
             user_handle: self.user_handle.clone(),
             sign_count: self.sign_count,
-        })
-    }
-}
-
-impl ToMarionette<MarionetteUserVerificationParameters> for UserVerificationParameters {
-    fn to_marionette(&self) -> WebDriverResult<MarionetteUserVerificationParameters> {
-        Ok(MarionetteUserVerificationParameters {
-            is_user_verified: self.is_user_verified,
-        })
-    }
-}
-
-impl ToMarionette<MarionetteWebAuthnProtocol> for WebAuthnProtocol {
-    fn to_marionette(&self) -> WebDriverResult<MarionetteWebAuthnProtocol> {
-        Ok(match self {
-            WebAuthnProtocol::Ctap1U2f => MarionetteWebAuthnProtocol::Ctap1U2f,
-            WebAuthnProtocol::Ctap2 => MarionetteWebAuthnProtocol::Ctap2,
-            WebAuthnProtocol::Ctap2_1 => MarionetteWebAuthnProtocol::Ctap2_1,
+            large_blob: self.large_blob.clone(),
         })
     }
 }

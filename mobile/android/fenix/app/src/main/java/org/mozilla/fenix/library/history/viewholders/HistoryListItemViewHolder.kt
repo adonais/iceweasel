@@ -4,10 +4,12 @@
 
 package org.mozilla.fenix.library.history.viewholders
 
+import android.content.res.ColorStateList
 import android.view.View
 import androidx.annotation.LayoutRes
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
+import mozilla.components.support.ktx.android.content.getColorFromAttr
 import org.mozilla.fenix.R
 import org.mozilla.fenix.databinding.HistoryListItemBinding
 import org.mozilla.fenix.ext.components
@@ -19,6 +21,7 @@ import org.mozilla.fenix.library.history.HistoryFragmentState
 import org.mozilla.fenix.library.history.HistoryFragmentStore
 import org.mozilla.fenix.library.history.HistoryItemTimeGroup
 import org.mozilla.fenix.selection.SelectionHolder
+import com.google.android.material.R as materialR
 import mozilla.components.ui.icons.R as iconsR
 
 class HistoryListItemViewHolder(
@@ -107,9 +110,15 @@ class HistoryListItemViewHolder(
         if (item is History.Regular &&
             (this.item as? History.Regular)?.url != item.url
         ) {
+            binding.historyLayout.iconView.imageTintList = null
             binding.historyLayout.loadFavicon(item.url)
         } else if (item is History.Group) {
-            binding.historyLayout.iconView.setImageResource(iconsR.drawable.mozac_ic_tab_tray_24)
+            binding.historyLayout.iconView.apply {
+                setImageResource(iconsR.drawable.mozac_ic_tab_tray_24)
+                imageTintList = ColorStateList.valueOf(
+                    context.getColorFromAttr(materialR.attr.colorOnSurface),
+                )
+            }
         }
 
         if (mode is HistoryFragmentState.Mode.Editing) {

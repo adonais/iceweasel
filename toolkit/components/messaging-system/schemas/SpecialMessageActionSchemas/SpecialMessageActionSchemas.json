@@ -393,6 +393,37 @@
           "properties": {
             "type": {
               "type": "string",
+              "enum": ["PIN_TASKBAR_TAB"]
+            },
+            "data": {
+              "type": "object",
+              "properties": {
+                "url": {
+                  "type": "string",
+                  "description": "The HTTP/HTTPS URL of the web app to pin"
+                },
+                "name": {
+                  "type": "string",
+                  "description": "Display name for the web app"
+                },
+                "iconUrl": {
+                  "type": "string",
+                  "description": "URL of the icon to use (256x256 PNG recommended)"
+                }
+              },
+              "required": ["url", "name", "iconUrl"],
+              "additionalProperties": false
+            }
+          },
+          "required": ["type", "data"],
+          "additionalProperties": false,
+          "description": "Pin a web app (Taskbar Tab) to the taskbar by manifest data, without requiring the site to be open"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
               "enum": ["PIN_FIREFOX_TO_TASKBAR"]
             },
             "data": {

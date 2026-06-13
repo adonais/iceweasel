@@ -27,6 +27,10 @@ class SrcRepository(Repository):
     def head_ref(self):
         pass
 
+    @property
+    def head_rev(self):
+        pass
+
     def is_cinnabar_repo(self) -> bool:
         return False
 

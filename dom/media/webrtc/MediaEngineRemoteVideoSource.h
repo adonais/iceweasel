@@ -26,7 +26,7 @@ enum class VideoResizeModeEnum : uint8_t;
 // Fitness distance is defined in
 // https://w3c.github.io/mediacapture-main/getusermedia.html#dfn-selectsettings
 
-// In contrast, feasibility distance — used in the implementatioon of
+// In contrast, feasibility distance — used in the implementation of
 // crop_and_scale — effectively rounds width and height up to the nearest
 // native width and height before calculating distance (sorta).
 //

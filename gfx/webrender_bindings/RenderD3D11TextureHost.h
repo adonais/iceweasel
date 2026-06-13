@@ -30,7 +30,8 @@ class RenderDXGITextureHost final : public RenderTextureHostSWGL {
       const Maybe<layers::GpuProcessTextureId>& aGpuProcessTextureId,
       const uint32_t aArrayIndex, const gfx::SurfaceFormat aFormat,
       const gfx::ColorSpace2 aColorSpace, const gfx::ColorRange aColorRange,
-      const gfx::TransferFunction aTransferFunction, const gfx::IntSize aSize,
+      const gfx::TransferFunction aTransferFunction,
+      const Maybe<gfx::HDRMetadata>& aHDRMetadata, const gfx::IntSize aSize,
       const bool aHasKeyedMutex,
       const Maybe<layers::CompositeProcessFencesHolderId>& aFencesHolderId);
 
@@ -76,6 +77,7 @@ class RenderDXGITextureHost final : public RenderTextureHostSWGL {
   gfx::TransferFunction GetTransferFunction() const override {
     return mTransferFunction;
   }
+  const Maybe<gfx::HDRMetadata>& GetHDRMetadata() const { return mHDRMetadata; }
 
   bool EnsureD3D11Texture2D(ID3D11Device* aDevice);
   bool LockInternal();
@@ -135,6 +137,7 @@ class RenderDXGITextureHost final : public RenderTextureHostSWGL {
   const gfx::ColorSpace2 mColorSpace;
   const gfx::ColorRange mColorRange;
   const gfx::TransferFunction mTransferFunction;
+  const Maybe<gfx::HDRMetadata> mHDRMetadata;
   const gfx::IntSize mSize;
   const bool mHasKeyedMutex;
   const Maybe<layers::CompositeProcessFencesHolderId> mFencesHolderId;

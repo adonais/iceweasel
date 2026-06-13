@@ -32,6 +32,7 @@ if CONFIG["OS_TARGET"] == "WINNT":
     # dependencies on user32.dll.
     DELAYLOAD_DLLS += [
         "advapi32.dll",
+        "crypt32.dll",
         "dbghelp.dll",
         "oleaut32.dll",
         "ole32.dll",

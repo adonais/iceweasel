@@ -5,8 +5,6 @@
 #ifndef mozilla_dom_indexeddb_scripterrorhelper_h_
 #define mozilla_dom_indexeddb_scripterrorhelper_h_
 
-#include <inttypes.h>
-
 #include "nsStringFwd.h"
 
 namespace mozilla {

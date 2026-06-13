@@ -42,6 +42,16 @@ struct PropertyValuePair {
   bool operator==(const PropertyValuePair&) const;
 };
 
+// The preprocess info for an array of Keyframe.
+struct KeyframesOffsetHasAny {
+  // True if there are any Keyframes in nsTArray<mKeyframe> that use timeline
+  // range offsets.
+  bool mRangeOffset = false;
+  // True if there are any Keyframes in nsTArray<mKeyframe> that use percentage
+  // offset or their offsets are not set.
+  bool mNonRangeOffset = false;
+};
+
 /**
  * A single keyframe.
  *
@@ -66,14 +76,57 @@ struct Keyframe {
   Keyframe& operator=(const Keyframe& aOther) = default;
   Keyframe& operator=(Keyframe&& aOther) = default;
 
-  Maybe<double> mOffset;
-  static constexpr double kComputedOffsetNotSet = -1.0;
-  double mComputedOffset = kComputedOffsetNotSet;
+  static bool ComputedOffsetsAreDifferent(const double aFirst,
+                                          const double aSecond) {
+    // `aFirst != aSecond` is always true if one of them is NaN, so we have to
+    // filter out the case if both are NaN,
+    return aFirst != aSecond && !(std::isnan(aFirst) && std::isnan(aSecond));
+  }
+
+  bool IsRangedKeyframe() const {
+    return mOffset && mOffset->IsTimelineRangeOffset();
+  }
+
+  struct OffsetType {
+    // If mRangeName is StyleTimelineRangeName::None, this is a percentage
+    // offset. Otherwise, this is a TimelineRangeOffset (i.e. the offset with
+    // <timeline-range-name> component).
+    StyleTimelineRangeName mRangeName = StyleTimelineRangeName::None;
+    double mPercentage = 0.0;
+
+    static OffsetType PercentageOffset(const double aPercentage) {
+      return {StyleTimelineRangeName::None, aPercentage};
+    }
+
+    bool IsPercentageOffset() const {
+      MOZ_ASSERT(mRangeName != StyleTimelineRangeName::Normal);
+      return mRangeName == StyleTimelineRangeName::None;
+    }
+    bool IsTimelineRangeOffset() const {
+      MOZ_ASSERT(mRangeName != StyleTimelineRangeName::Normal);
+      return mRangeName != StyleTimelineRangeName::None;
+    }
+
+    bool operator==(const OffsetType& aOther) const {
+      return mRangeName == aOther.mRangeName &&
+             mPercentage == aOther.mPercentage;
+    }
+  };
+  // |mOffset| could be a null, a percentage, or a |range name, percentage|
+  // pair.
+  Maybe<OffsetType> mOffset;
+  // The computed offset could be any real number (as percentage), so we use NaN
+  // to represent the unresolved computed offset.
+  double mComputedOffset = std::numeric_limits<double>::quiet_NaN();
   Maybe<StyleComputedTimingFunction> mTimingFunction;  // Nothing() here means
                                                        // "linear"
   dom::CompositeOperationOrAuto mComposite =
       dom::CompositeOperationOrAuto::Auto;
   CopyableTArray<PropertyValuePair> mPropertyValues;
+
+  // FIXME: Bug 2037642. Drop this once we don't generate the missing keyframes
+  // when creating the animations.
+  bool mIsGenerated = false;
 };
 
 }  // namespace mozilla

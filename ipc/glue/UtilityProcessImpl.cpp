@@ -4,13 +4,13 @@
 #include "UtilityProcessImpl.h"
 
 #include "mozilla/GeckoArgs.h"
-#include "mozilla/ProcInfo.h"
 
 #if defined(XP_WIN)
 #  include "nsExceptionHandler.h"
 #endif
 
 #if defined(XP_WIN) && defined(MOZ_SANDBOX)
+#  include "mozilla/CpuInfo.h"
 #  include "mozilla/sandboxTarget.h"
 #  include "WMF.h"
 #  include "WMFDecoderModule.h"
@@ -143,7 +143,7 @@ bool UtilityProcessImpl::Init(int aArgc, char* aArgv[]) {
 #endif
 
   return mUtility->Init(TakeInitialEndpoint(), nsCString(*parentBuildID),
-                        *sandboxingKind);
+                        SandboxingKind(*sandboxingKind));
 }
 
 void UtilityProcessImpl::CleanUp() { NS_ShutdownXPCOM(nullptr); }

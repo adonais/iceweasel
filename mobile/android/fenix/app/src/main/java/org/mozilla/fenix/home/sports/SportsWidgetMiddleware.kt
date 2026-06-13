@@ -183,11 +183,19 @@ class SportsWidgetMiddleware(
             // even after R32 has begun. The bracket-finishing matches are kept on top of
             // the active round so the schedule (and eventual result) of the tournament's
             // last matches stays visible even before they become the active round —
-            // mirroring the followed-team path.
+            // mirroring the followed-team path. The next round is also surfaced ahead of
+            // time as its bracket fills in: a fixture appears as soon as one side is decided
+            // (rendered as the known team vs "TBD"), and only fixtures with both sides still
+            // undetermined are withheld — so users get an early look at what's coming without
+            // a wall of "TBD vs TBD" cards.
             val activeRound = result.activeRound() ?: return emptyList()
+            val nextRound = result.nextRound(activeRound)
             MatchCardBuilder.buildForNoTeam(
-                (result.previous + result.current + result.next)
-                    .filter { it.stage == activeRound || it.stage in BRACKET_FINISHING_STAGES },
+                (result.previous + result.current + result.next).filter { match ->
+                    match.stage == activeRound ||
+                        match.stage in BRACKET_FINISHING_STAGES ||
+                        (match.stage == nextRound && !match.isFullyTbd())
+                },
             )
         } else {
             MatchCardBuilder.buildForTeam(filterByTeam(result, effectiveCodes))
@@ -209,6 +217,20 @@ class SportsWidgetMiddleware(
             ?: all.filter { it.matchStatus.isPast() }.maxByOrNull { it.stage.ordinal }?.stage
             ?: all.minByOrNull { it.date }?.stage
     }
+
+    // The round immediately after [activeRound] present in the response, or null if there is
+    // none. Used to surface the upcoming round's fixtures as its bracket fills in; whether any
+    // fixture is actually shown is decided by the caller's TBD filter.
+    private fun TeamMatchesResult.nextRound(activeRound: TournamentRound): TournamentRound? =
+        (previous + current + next).asSequence()
+            .map { it.stage }
+            .filter { it.ordinal > activeRound.ordinal }
+            .minByOrNull { it.ordinal }
+
+    // A match with neither side decided yet — both teams still come from undetermined earlier
+    // results. A fixture with one side known (the other a placeholder) is not fully TBD and is
+    // worth showing.
+    private fun SportsMatch.isFullyTbd(): Boolean = homeTeam == null && awayTeam == null
 
     // True when every followed team appears in the response with `eliminated = true`. If a
     // followed code isn't found in the response at all, we treat it as not-eliminated

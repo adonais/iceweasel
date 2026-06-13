@@ -30,7 +30,7 @@ NS_IMPL_RELEASE_INHERITED(Request, FetchBody<Request>)
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(Request)
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(Request, FetchBody<Request>)
-  NS_IMPL_CYCLE_COLLECTION_UNLINK(mOwner)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mGlobal)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mHeaders)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mSignal)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mFetchStreamReader)
@@ -38,7 +38,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(Request, FetchBody<Request>)
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(Request, FetchBody<Request>)
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mOwner)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mGlobal)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mHeaders)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mSignal)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mFetchStreamReader)
@@ -48,9 +48,9 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(Request)
   NS_WRAPPERCACHE_INTERFACE_MAP_ENTRY
 NS_INTERFACE_MAP_END_INHERITING(FetchBody<Request>)
 
-Request::Request(nsIGlobalObject* aOwner, SafeRefPtr<InternalRequest> aRequest,
+Request::Request(nsIGlobalObject* aGlobal, SafeRefPtr<InternalRequest> aRequest,
                  AbortSignal* aSignal)
-    : FetchBody<Request>(aOwner), mRequest(std::move(aRequest)) {
+    : FetchBody<Request>(aGlobal), mRequest(std::move(aRequest)) {
   MOZ_ASSERT(mRequest->Headers()->Guard() == HeadersGuardEnum::Immutable ||
              mRequest->Headers()->Guard() == HeadersGuardEnum::Request ||
              mRequest->Headers()->Guard() == HeadersGuardEnum::Request_no_cors);
@@ -58,7 +58,7 @@ Request::Request(nsIGlobalObject* aOwner, SafeRefPtr<InternalRequest> aRequest,
     // If we don't have a signal as argument, we will create it when required by
     // content, otherwise the Request's signal must follow what has been passed.
     AutoTArray<OwningNonNull<AbortSignal>, 1> array{OwningNonNull(*aSignal)};
-    mSignal = AbortSignal::Any(aOwner, array, [](nsIGlobalObject* aGlobal) {
+    mSignal = AbortSignal::Any(aGlobal, array, [](nsIGlobalObject* aGlobal) {
       return AbortSignal::Create(aGlobal, SignalAborted::No,
                                  JS::UndefinedHandleValue);
     });
@@ -493,12 +493,12 @@ SafeRefPtr<Request> Request::Clone(ErrorResult& aRv) {
     return nullptr;
   }
 
-  return MakeSafeRefPtr<Request>(mOwner, std::move(ir), GetOrCreateSignal());
+  return MakeSafeRefPtr<Request>(mGlobal, std::move(ir), GetOrCreateSignal());
 }
 
 Headers* Request::Headers_() {
   if (!mHeaders) {
-    mHeaders = new Headers(mOwner, mRequest->Headers());
+    mHeaders = new Headers(mGlobal, mRequest->Headers());
   }
 
   return mHeaders;
@@ -506,7 +506,7 @@ Headers* Request::Headers_() {
 
 AbortSignal* Request::GetOrCreateSignal() {
   if (!mSignal) {
-    mSignal = AbortSignal::Create(mOwner, SignalAborted::No,
+    mSignal = AbortSignal::Create(mGlobal, SignalAborted::No,
                                   JS::UndefinedHandleValue);
   }
 

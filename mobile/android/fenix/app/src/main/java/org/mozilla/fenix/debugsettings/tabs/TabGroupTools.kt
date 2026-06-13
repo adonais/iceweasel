@@ -40,7 +40,6 @@ import androidx.core.text.isDigitsOnly
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import mozilla.components.browser.state.action.TabListAction
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.createTab
@@ -57,6 +56,7 @@ import org.mozilla.fenix.tabstray.data.TabGroupTheme
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
+
 @VisibleForTesting
 private const val MAX_TAB_GROUPS_GENERATED = 100
 
@@ -161,12 +161,10 @@ private suspend fun autoPopulateTabGroupsUseCase(
             lastModified = System.currentTimeMillis(),
         )
 
-        withContext(Dispatchers.IO) {
-            tabGroupRepository.createTabGroupWithTabs(
-                tabGroup = newGroup,
-                tabIds = groupTabs.map { it.id },
-            )
-        }
+        tabGroupRepository.createTabGroupWithTabs(
+            tabGroup = newGroup,
+            tabIds = groupTabs.map { it.id },
+        )
 
         val ungroupedCountToGenerate = when (index) {
             0 -> 4
@@ -203,16 +201,12 @@ private suspend fun createTabGroupsUseCase(
 
             browserStore.dispatch(TabListAction.AddMultipleTabsAction(tabs = realTabs))
 
-            withContext(Dispatchers.IO) {
-                tabGroupRepository.createTabGroupWithTabs(
-                    tabGroup = newGroup,
-                    tabIds = realTabs.map { it.id },
-                )
-            }
+            tabGroupRepository.createTabGroupWithTabs(
+                tabGroup = newGroup,
+                tabIds = realTabs.map { it.id },
+            )
         } else {
-            withContext(Dispatchers.IO) {
-                tabGroupRepository.addNewTabGroup(tabGroup = newGroup)
-            }
+            tabGroupRepository.addNewTabGroup(tabGroup = newGroup)
         }
     }
 }

@@ -358,7 +358,7 @@ inline StyleAngle StyleAngle::Zero() { return {0.0f}; }
 inline float StyleAngle::ToDegrees() const { return _0; }
 
 inline double StyleAngle::ToRadians() const {
-  return double(ToDegrees()) * M_PI / 180.0;
+  return double(ToDegrees()) * kRadPerDegree;
 }
 
 inline bool StyleUrlExtraData::IsShared() const { return !!(_0 & 1); }
@@ -568,45 +568,49 @@ nscoord StyleCSSPixelLength::ToAppUnits() const {
   return detail::DefaultLengthToAppUnits(_0);
 }
 
-bool LengthPercentage::IsLength() const { return Tag() == TAG_LENGTH; }
+static_assert(sizeof(LengthPercentage) == sizeof(uint64_t), "");
 
-StyleLengthPercentageUnion::StyleLengthPercentageUnion() {
-  length = {TAG_LENGTH, {0.0f}};
-  MOZ_ASSERT(IsLength());
+bool LengthPercentage::IsLengthOrPercentage() const {
+  return (_0._0.tag.tag & StyleNUMERIC_UNION_TAG_INLINE) != 0;
 }
 
-static_assert(sizeof(LengthPercentage) == sizeof(uint64_t), "");
+bool LengthPercentage::IsLength() const {
+  return IsLengthOrPercentage() &&
+         _0._0.inl.numeric_tag == StyleLengthPercentageTag::Length;
+}
+
+bool LengthPercentage::IsPercentage() const {
+  return IsLengthOrPercentage() &&
+         _0._0.inl.numeric_tag == StyleLengthPercentageTag::Percentage;
+}
+
+bool LengthPercentage::IsCalc() const { return !IsLengthOrPercentage(); }
 
 Length& LengthPercentage::AsLength() {
   MOZ_ASSERT(IsLength());
-  return length.length;
+  return *reinterpret_cast<Length*>(&_0._0.inl.value);
 }
 
 const Length& LengthPercentage::AsLength() const {
   return const_cast<LengthPercentage*>(this)->AsLength();
 }
 
-bool LengthPercentage::IsPercentage() const { return Tag() == TAG_PERCENTAGE; }
-
 StylePercentage& LengthPercentage::AsPercentage() {
   MOZ_ASSERT(IsPercentage());
-  return percentage.percentage;
+  return *reinterpret_cast<StylePercentage*>(&_0._0.inl.value);
 }
 
 const StylePercentage& LengthPercentage::AsPercentage() const {
   return const_cast<LengthPercentage*>(this)->AsPercentage();
 }
 
-bool LengthPercentage::IsCalc() const { return Tag() == TAG_CALC; }
-
 StyleCalcLengthPercentage& LengthPercentage::AsCalc() {
   MOZ_ASSERT(IsCalc());
-  // NOTE: in 32-bits, the pointer is not swapped, and goes along with the tag.
 #ifdef SERVO_32_BITS
-  return *reinterpret_cast<StyleCalcLengthPercentage*>(calc.ptr);
+  return *reinterpret_cast<StyleCalcLengthPercentage*>(_0._0.boxed.ptr);
 #else
   return *reinterpret_cast<StyleCalcLengthPercentage*>(
-      NativeEndian::swapFromLittleEndian(calc.ptr));
+      NativeEndian::swapFromLittleEndian(_0._0.boxed.ptr));
 #endif
 }
 
@@ -614,29 +618,28 @@ const StyleCalcLengthPercentage& LengthPercentage::AsCalc() const {
   return const_cast<LengthPercentage*>(this)->AsCalc();
 }
 
-StyleLengthPercentageUnion::StyleLengthPercentageUnion(const Self& aOther) {
-  if (aOther.IsLength()) {
-    length = {TAG_LENGTH, aOther.AsLength()};
-  } else if (aOther.IsPercentage()) {
-    percentage = {TAG_PERCENTAGE, aOther.AsPercentage()};
+StyleLengthPercentage::StyleLengthPercentage() {
+  _0._0.inl = {StyleNUMERIC_UNION_TAG_INLINE, StyleLengthPercentageTag::Length,
+               0.0f};
+  MOZ_ASSERT(IsLength());
+}
+
+StyleLengthPercentage::StyleLengthPercentage(const Self& aOther) {
+  if (aOther.IsLengthOrPercentage()) {
+    _0._0.inl = aOther._0._0.inl;
   } else {
     MOZ_ASSERT(aOther.IsCalc());
     auto* ptr = new StyleCalcLengthPercentage(aOther.AsCalc());
-    // NOTE: in 32-bits, the pointer is not swapped, and goes along with the
-    // tag.
-    calc = {
 #ifdef SERVO_32_BITS
-        TAG_CALC,
-        ptr,
+    _0._0.boxed = {0, ptr};
 #else
-        NativeEndian::swapToLittleEndian(reinterpret_cast<uintptr_t>(ptr)),
+    _0._0.boxed = {
+        NativeEndian::swapToLittleEndian(reinterpret_cast<uintptr_t>(ptr))};
 #endif
-    };
   }
-  MOZ_ASSERT(Tag() == aOther.Tag());
 }
 
-StyleLengthPercentageUnion::~StyleLengthPercentageUnion() {
+LengthPercentage::~StyleLengthPercentage() {
   if (IsCalc()) {
     delete &AsCalc();
   }
@@ -651,16 +654,13 @@ LengthPercentage& LengthPercentage::operator=(const LengthPercentage& aOther) {
 }
 
 bool LengthPercentage::operator==(const LengthPercentage& aOther) const {
-  if (Tag() != aOther.Tag()) {
-    return false;
-  }
   if (IsLength()) {
-    return AsLength() == aOther.AsLength();
+    return aOther.IsLength() && AsLength() == aOther.AsLength();
   }
   if (IsPercentage()) {
-    return AsPercentage() == aOther.AsPercentage();
+    return aOther.IsPercentage() && AsPercentage() == aOther.AsPercentage();
   }
-  return AsCalc() == aOther.AsCalc();
+  return aOther.IsCalc() && AsCalc() == aOther.AsCalc();
 }
 
 bool LengthPercentage::operator!=(const LengthPercentage& aOther) const {
@@ -672,7 +672,7 @@ LengthPercentage LengthPercentage::Zero() { return {}; }
 LengthPercentage LengthPercentage::FromPixels(CSSCoord aCoord) {
   LengthPercentage l;
   MOZ_ASSERT(l.IsLength());
-  l.length.length = {aCoord};
+  l._0._0.inl.value = aCoord;
   return l;
 }
 
@@ -682,7 +682,8 @@ LengthPercentage LengthPercentage::FromAppUnits(nscoord aCoord) {
 
 LengthPercentage LengthPercentage::FromPercentage(float aPercentage) {
   LengthPercentage l;
-  l.percentage = {TAG_PERCENTAGE, {aPercentage}};
+  l._0._0.inl = {StyleNUMERIC_UNION_TAG_INLINE,
+                 StyleLengthPercentageTag::Percentage, aPercentage};
   return l;
 }
 

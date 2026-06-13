@@ -95,7 +95,7 @@ add_task(async function test_jump_to_bottom_scroll_and_click() {
           convId: "test-conv",
           ordinal: i,
           ...(i % 2 !== 0
-            ? { messageId: `msg-${i}`, appliedMemories: [], searchTokens: [] }
+            ? { messageId: `msg-${i}`, appliedMemories: [] }
             : {}),
         };
       }

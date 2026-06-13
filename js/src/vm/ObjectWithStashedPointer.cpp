@@ -15,23 +15,15 @@ static void ObjectWithUntypedStashedPointerFinalize(JS::GCContext*,
                                                     JSObject* obj) {
   AutoAssertNoGC nogc;
 
-  void* freeFunc = GetMaybePtrFromReservedSlot<void>(obj, FREE_FUNC_SLOT);
-  void* data = GetMaybePtrFromReservedSlot<void>(obj, DATA_SLOT);
+  void* freeFunc =
+      GetMaybePtrFromNativeObjectReservedSlot<void>(obj, FREE_FUNC_SLOT);
+  void* data = GetMaybePtrFromNativeObjectReservedSlot<void>(obj, DATA_SLOT);
 
   reinterpret_cast<UntypedFreeFunction>(freeFunc)(data);
 }
 
 static const JSClassOps classOps = {
-    nullptr,  // addProperty
-    nullptr,  // delProperty
-    nullptr,  // enumerate
-    nullptr,  // newEnumerate
-    nullptr,  // resolve
-    nullptr,  // mayResolve
-    ObjectWithUntypedStashedPointerFinalize,
-    nullptr,  // call
-    nullptr,  // construct
-    nullptr,  // trace
+    .finalize = ObjectWithUntypedStashedPointerFinalize,
 };
 
 static const JSClass DataOnlyClass = {
@@ -52,7 +44,7 @@ JSObject* NewObjectWithUntypedStashedPointer(JSContext* cx, void* ptr,
     if (!retval) {
       return nullptr;
     }
-    JS::SetReservedSlot(retval, DATA_SLOT, JS::PrivateValue(ptr));
+    JS::SetNativeObjectReservedSlot(retval, DATA_SLOT, JS::PrivateValue(ptr));
     return retval;
   }
 
@@ -60,9 +52,10 @@ JSObject* NewObjectWithUntypedStashedPointer(JSContext* cx, void* ptr,
   if (!retval) {
     return nullptr;
   }
-  JS::SetReservedSlot(retval, DATA_SLOT, JS::PrivateValue(ptr));
-  JS::SetReservedSlot(retval, FREE_FUNC_SLOT,
-                      JS::PrivateValue(reinterpret_cast<void*>(freeFunc)));
+  JS::SetNativeObjectReservedSlot(retval, DATA_SLOT, JS::PrivateValue(ptr));
+  JS::SetNativeObjectReservedSlot(
+      retval, FREE_FUNC_SLOT,
+      JS::PrivateValue(reinterpret_cast<void*>(freeFunc)));
   return retval;
 }
 

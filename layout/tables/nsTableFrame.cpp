@@ -19,6 +19,7 @@
 #include "mozilla/PresShell.h"
 #include "mozilla/PresShellInlines.h"
 #include "mozilla/Range.h"
+#include "mozilla/ReflowInput.h"
 #include "mozilla/RestyleManager.h"
 #include "mozilla/ServoStyleSet.h"
 #include "mozilla/WritingModes.h"
@@ -253,15 +254,10 @@ void nsTableFrame::PositionedTablePartMaybeChanged(nsContainerFrame* aFrame,
   MOZ_ASSERT(tableFrame, "Should have a table frame here");
   tableFrame = static_cast<nsTableFrame*>(tableFrame->FirstContinuation());
 
-  // Retrieve the positioned parts array for this table.
+  // Retrieve the positioned parts array for this table (lazily creating it
+  // if it doesn't exist yet).
   TablePartsArray* positionedParts =
-      tableFrame->GetProperty(PositionedTablePartsProperty());
-
-  // Lazily create the array if it doesn't exist yet.
-  if (!positionedParts) {
-    positionedParts = new TablePartsArray;
-    tableFrame->SetProperty(PositionedTablePartsProperty(), positionedParts);
-  }
+      tableFrame->GetOrCreateDeletableProperty(PositionedTablePartsProperty());
 
   if (isPositioned) {
     // Add this frame to the list.
@@ -2146,17 +2142,6 @@ TableBCData* nsTableFrame::GetTableBCData() const {
   return GetProperty(TableBCDataProperty());
 }
 
-TableBCData* nsTableFrame::GetOrCreateTableBCData() {
-  TableBCData* value = GetProperty(TableBCDataProperty());
-  if (!value) {
-    value = new TableBCData();
-    SetProperty(TableBCDataProperty(), value);
-  }
-
-  MOZ_ASSERT(value, "TableBCData must exist!");
-  return value;
-}
-
 static void DivideBCBorderSize(nscoord aPixelSize, nscoord& aSmallHalf,
                                nscoord& aLargeHalf) {
   aSmallHalf = aPixelSize / 2;
@@ -3128,14 +3113,6 @@ nscoord nsTableFrame::GetRowSpacing(int32_t aStartRowIndex,
   return GetRowSpacing() * (aEndRowIndex - aStartRowIndex);
 }
 
-nscoord nsTableFrame::SynthesizeFallbackBaseline(
-    mozilla::WritingMode aWM, BaselineSharingGroup aBaselineGroup) const {
-  if (aBaselineGroup == BaselineSharingGroup::Last) {
-    return 0;
-  }
-  return BSize(aWM);
-}
-
 /* virtual */
 Maybe<nscoord> nsTableFrame::GetNaturalBaselineBOffset(
     WritingMode aWM, BaselineSharingGroup aBaselineGroup,
@@ -3450,7 +3427,7 @@ void nsTableFrame::AddBCDamageArea(const TableArea& aValue) {
   SetNeedToCalcBCBorders(true);
   SetNeedToCalcHasBCBorders(true);
   // Get the property
-  TableBCData* value = GetOrCreateTableBCData();
+  TableBCData* value = GetOrCreateDeletableProperty(TableBCDataProperty());
 
 #ifdef DEBUG
   VerifyNonNegativeDamageRect(value->mDamageArea);
@@ -3486,7 +3463,7 @@ void nsTableFrame::SetFullBCDamageArea() {
   SetNeedToCalcBCBorders(true);
   SetNeedToCalcHasBCBorders(true);
 
-  TableBCData* value = GetOrCreateTableBCData();
+  TableBCData* value = GetOrCreateDeletableProperty(TableBCDataProperty());
   value->mDamageArea = TableArea(0, 0, GetColCount(), GetRowCount());
 }
 
@@ -4162,7 +4139,7 @@ bool nsTableFrame::BCRecalcNeeded(ComputedStyle* aOldComputedStyle,
     // However the bc painting code tries to maximize the drawn border segments
     // so it stores in the cellmap where a new border segment starts and this
     // introduces a unwanted cellmap data dependence on color
-    nsCOMPtr<nsIRunnable> evt = new nsDelayedCalcBCBorders(this);
+    nsCOMPtr<nsIRunnable> evt = MakeAndAddRef<nsDelayedCalcBCBorders>(this);
     nsresult rv = GetContent()->OwnerDoc()->Dispatch(evt.forget());
     return NS_SUCCEEDED(rv);
   }

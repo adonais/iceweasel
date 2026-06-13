@@ -24,11 +24,12 @@ class CacheEntryTable : public TCacheEntryTable {
   enum EType { MEMORY_ONLY, ALL_ENTRIES };
 
   explicit CacheEntryTable(EType aType) : mType(aType) {}
+  CacheEntryTable() = delete;
+
   EType Type() const { return mType; }
 
  private:
   EType const mType;
-  CacheEntryTable() = delete;
 };
 
 class CacheStorage : public nsICacheStorage {

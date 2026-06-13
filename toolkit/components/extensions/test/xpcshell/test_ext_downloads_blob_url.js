@@ -32,12 +32,9 @@ add_setup(() => {
 });
 
 add_setup(async function setup_MockFilePicker() {
-  // MockFilePicker requires a window, so create a temporary one:
-  const browser = Services.appShell.createWindowlessBrowser(true);
-  MockFilePicker.init(browser.browsingContext);
+  MockFilePicker.init();
   registerCleanupFunction(() => {
     MockFilePicker.cleanup();
-    browser.close();
   });
 
   downloadDir = await IOUtils.createUniqueDirectory(PathUtils.tempDir, "dldir");

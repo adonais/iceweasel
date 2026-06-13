@@ -9,20 +9,42 @@
  * The default implementations are safe no-ops that keep the service in an
  * unauthenticated/inactive state.
  */
-export class IPPAuthProvider {
+export class IPPAuthProvider extends EventTarget {
   /** Returns whether the user is authenticated and ready to use the proxy. */
   get isReady() {
     return false;
   }
 
-  /**
-   * Retrieves an auth token for use with the Guardian service.
-   *
-   * @param {AbortSignal} [_abortSignal]
-   * @returns {Promise<{token: string} & Disposable> | null}
-   */
-  getToken(_abortSignal) {
+  /** Returns whether the user has a VPN subscription. */
+  get hasUpgraded() {
+    return false;
+  }
+
+  /** Returns true while enrollment or entitlement checks are in progress. */
+  get isEnrolling() {
+    return false;
+  }
+
+  /** Returns the maximum bytes allowed for the current entitlement, or null if unknown. */
+  get maxBytes() {
     return null;
+  }
+
+  /**
+   * Checks whether the user has upgraded their subscription since the last
+   * known state and updates accordingly.
+   *
+   * @returns {Promise<void>}
+   */
+  async checkForUpgrade() {}
+
+  /**
+   * Enrolls and entitles the user.
+   *
+   * @returns {Promise<{isEnrolledAndEntitled: boolean, error?: string}>}
+   */
+  async enroll() {
+    throw new Error("enroll() must be implemented by subclasses");
   }
 
   /**
@@ -34,6 +56,26 @@ export class IPPAuthProvider {
    */
   async aboutToStart() {
     return { error: "no_auth_provider" };
+  }
+
+  /**
+   * Fetches a new VPN node pass from the auth provider.
+   *
+   * @param {AbortSignal} [_abortSignal]
+   * @returns {Promise<{pass?: import("./GuardianTypes.sys.mjs").ProxyPass, usage?: import("./GuardianTypes.sys.mjs").ProxyUsage|null, status?: number, error?: string}>}
+   */
+  async fetchProxyPass(_abortSignal) {
+    return { error: "no_auth_provider" };
+  }
+
+  /**
+   * Fetches the current VPN node usage without requesting a new pass.
+   *
+   * @param {AbortSignal} [_abortSignal]
+   * @returns {Promise<import("./GuardianTypes.sys.mjs").ProxyUsage | null>}
+   */
+  async fetchProxyUsage(_abortSignal) {
+    return null;
   }
 
   /**

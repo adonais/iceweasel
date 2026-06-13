@@ -29,7 +29,6 @@ import org.mozilla.fenix.home.recenttabs.RecentTab
 import org.mozilla.fenix.home.recentvisits.RecentlyVisitedItem
 import org.mozilla.fenix.home.topsites.TopSiteColors
 import org.mozilla.fenix.home.ui.getAttr
-import org.mozilla.fenix.search.SearchDialogFragment
 import org.mozilla.fenix.termsofuse.store.PrivacyNoticeBannerState
 import org.mozilla.fenix.utils.Settings
 
@@ -87,6 +86,7 @@ internal sealed class HomepageState {
      * @property showPocketStoriesCarousel Whether to show the pocket stories section.
      * @property showCollections Whether to show the collections section.
      * @property showPrivacyReport Whether to show the privacy report section.
+     * @property showLongfoxEntryPoint Whether to show the longfox entry point section.
      * @property trackersBlockedCount The number of trackers blocked for the privacy report.
      * @property sportsWidgetState State of the sports widget on the homepage.
      * @property headerState State related to the header of the homepage.
@@ -120,6 +120,7 @@ internal sealed class HomepageState {
         val showPocketStoriesCarousel: Boolean,
         val showCollections: Boolean,
         val showPrivacyReport: Boolean,
+        val showLongfoxEntryPoint: Boolean,
         val trackersBlockedCount: Int,
         val sportsWidgetState: SportsWidgetState,
         override val headerState: HeaderState,
@@ -180,7 +181,6 @@ internal sealed class HomepageState {
                 buildNormalState(
                     appState = appState,
                     privacyNoticeBannerState = privacyNoticeBannerState,
-                    browsingModeManager = browsingModeManager,
                     settings = settings,
                 )
             }
@@ -209,14 +209,12 @@ internal sealed class HomepageState {
          *
          * @param appState State to build the [HomepageState.Normal] from.
          * @param privacyNoticeBannerState State of the privacy notice banner.
-         * @param browsingModeManager Manager holding current state of whether the browser is in private mode or not.
          * @param settings [Settings] corresponding to how the homepage should be displayed.
          */
         @Composable
         private fun buildNormalState(
             appState: AppState,
             privacyNoticeBannerState: PrivacyNoticeBannerState,
-            browsingModeManager: BrowsingModeManager,
             settings: Settings,
         ) = with(appState) {
             Normal(
@@ -235,7 +233,6 @@ internal sealed class HomepageState {
                 collectionsState = CollectionsState.build(
                     appState = appState,
                     browserState = components.core.store.state,
-                    browsingModeManager = browsingModeManager,
                 ),
                 pocketState = PocketState.build(appState = appState),
                 showTopSites = settings.showTopSitesFeature && topSites.isNotEmpty(),
@@ -247,8 +244,8 @@ internal sealed class HomepageState {
                 showPocketStoriesCarousel = settings.showPocketRecommendationsFeature &&
                     recommendationState.pocketStories.isNotEmpty() && !settings.privateModeAndStoriesEntryPointEnabled,
                 showCollections = settings.collections,
-                showPrivacyReport = settings.showPrivacyReportSectionToggle &&
-                    settings.showPrivacyReportFeature,
+                showPrivacyReport = settings.showPrivacyReportFeature,
+                showLongfoxEntryPoint = settings.longfoxEnabled,
                 trackersBlockedCount = trackersBlockedCount,
                 sportsWidgetState = sportsWidgetState,
                 headerState = buildHeaderState(
@@ -355,12 +352,11 @@ internal sealed class HeaderState {
 }
 
 /**
- * Returns whether the search bar should be shown. Only show if the search dialog
- * [SearchDialogFragment] is not visible, and the user does not have their toolbar set to be on the
- * bottom, and the screen is not in landscape mode. This is in addition to logic in the view layer
- * which hides the middle search bar when the users scrolls down. This is separate from the middle
- * search bar being enabled in settings since the toolbar address bar needs to react to the middle
- * search bar's visibility.
+ * Returns whether the search bar should be shown. Only show if search is not active, and the user
+ * does not have their toolbar set to be on the bottom, and the screen is not in landscape mode.
+ * This is in addition to logic in the view layer which hides the middle search bar when the users
+ * scrolls down. This is separate from the middle search bar being enabled in settings since the
+ * toolbar address bar needs to react to the middle search bar's visibility.
  */
 private fun shouldShowSearchBar(appState: AppState) =
     !appState.searchState.isSearchActive

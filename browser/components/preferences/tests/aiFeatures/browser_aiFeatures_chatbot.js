@@ -25,7 +25,7 @@ describe("settings ai features", () => {
     });
     await openPreferencesViaOpenPreferencesAPI("general", { leaveOpen: true });
     doc = gBrowser.selectedBrowser.contentDocument;
-    win = doc.ownerGlobal;
+    win = doc.documentGlobal;
   });
 
   afterEach(() => {
@@ -73,11 +73,11 @@ describe("settings ai features", () => {
     const settingChanged = waitForSettingChange(providerControl.setting);
     providerControl.focus();
     const pickerOpened = BrowserTestUtils.waitForSelectPopupShown(
-      win.docShell.chromeEventHandler.ownerGlobal
+      win.docShell.chromeEventHandler.documentGlobal
     );
     EventUtils.sendKey("space");
     const selectPopup = await pickerOpened;
-    if (nativeSelectEnabled()) {
+    if (selectPopup.isNativeMenu) {
       selectPopup.activateItem(selectPopup.childNodes[3]);
     } else {
       EventUtils.sendKey("down");
@@ -102,7 +102,7 @@ describe("settings ai features", () => {
       "Chatbot page is enabled"
     );
 
-    await gBrowser.ownerGlobal.SidebarController.hide();
+    await gBrowser.documentGlobal.SidebarController.hide();
   });
 
   it("can change the chatbot provider from blocked", async () => {
@@ -141,11 +141,11 @@ describe("settings ai features", () => {
     let settingChanged = waitForSettingChange(providerControl.setting);
     providerControl.focus();
     let pickerOpened = BrowserTestUtils.waitForSelectPopupShown(
-      win.docShell.chromeEventHandler.ownerGlobal
+      win.docShell.chromeEventHandler.documentGlobal
     );
     EventUtils.sendKey("space");
     let selectPopup = await pickerOpened;
-    if (nativeSelectEnabled()) {
+    if (selectPopup.isNativeMenu) {
       selectPopup.activateItem(selectPopup.childNodes[1]);
     } else {
       EventUtils.sendKey("down");
@@ -187,11 +187,11 @@ describe("settings ai features", () => {
     settingChanged = waitForSettingChange(providerControl.setting);
     providerControl.focus();
     pickerOpened = BrowserTestUtils.waitForSelectPopupShown(
-      win.docShell.chromeEventHandler.ownerGlobal
+      win.docShell.chromeEventHandler.documentGlobal
     );
     EventUtils.sendKey("space");
     selectPopup = await pickerOpened;
-    if (nativeSelectEnabled()) {
+    if (selectPopup.isNativeMenu) {
       selectPopup.activateItem(selectPopup.childNodes[3]);
     } else {
       EventUtils.sendKey("down");
@@ -218,7 +218,7 @@ describe("settings ai features", () => {
     // Calling openPreferencesViaOpenPreferencesAPI again opened a blank tab
     BrowserTestUtils.removeTab(gBrowser.selectedTab);
 
-    await gBrowser.ownerGlobal.SidebarController.hide();
+    await gBrowser.documentGlobal.SidebarController.hide();
     await SpecialPowers.popPrefEnv();
   });
 
@@ -286,7 +286,7 @@ describe("settings ai features", () => {
       "Select is back to available"
     );
 
-    await gBrowser.ownerGlobal.SidebarController.hide();
+    await gBrowser.documentGlobal.SidebarController.hide();
     await SpecialPowers.popPrefEnv();
   });
 });

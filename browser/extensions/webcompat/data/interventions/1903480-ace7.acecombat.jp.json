@@ -10,7 +10,7 @@
     {
       "platforms": ["desktop"],
       "content_scripts": {
-        "js": ["bug1903480-ace7.acecombat.jp-slow-down-scrolling.js"]
+        "js": ["slow_down_wheel_events.js"]
       }
     }
   ]

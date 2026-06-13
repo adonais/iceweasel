@@ -87,7 +87,6 @@
         android:key="@string/pref_key_customization_category_toolbar_shortcut"
         android:layout="@layout/preference_cat_style"
         android:title="@string/preferences_toolbar_shortcut"
-        android:visible="false"
         app:iconSpaceReserved="false" />
 
     <androidx.preference.PreferenceCategory

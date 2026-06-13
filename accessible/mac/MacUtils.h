@@ -61,6 +61,19 @@ NSDictionary* StringAttributesFromAccAttributes(AccAttributes* aAttributes,
  * in the presence of multiple monitors.
  */
 NSScreen* GetNSScreenForAcc(mozAccessible* aAcc);
+
+/**
+ * Returns an NSRect containing screen coordinates for the given accessible.
+ * The accessible's size is also scaled by the display's scale factor.
+ * When `aShouldUseCocoaCoords` is true, the coordinates returned are relative
+ * to the bottom left of the main display.
+ * When false, the coordinates are relative to the upper left of the main
+ * display.
+ * `aRect` is assumed to relate to the given `aAcc` and should be given in gecko
+ * screen coordinates.
+ */
+NSRect GetCocoaScreenRectForAcc(mozAccessible* aAcc, LayoutDeviceIntRect& aRect,
+                                bool aShouldUseCocoaCoords);
 }  // namespace utils
 }  // namespace a11y
 }  // namespace mozilla

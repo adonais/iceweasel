@@ -118,6 +118,7 @@ EXPORTS.mozilla = [
     "Types.h",
     "UniquePtr.h",
     "UniquePtrExtensions.h",
+    "UsingEnum.h",
     "Utf8.h",
     "Variant.h",
     "Vector.h",

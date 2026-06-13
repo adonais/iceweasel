@@ -6,12 +6,13 @@
       "matches": ["*://configuraraparelhos.claro.com.br/*"]
     }
   },
+  "css": {
+    "unhide_phone_description": ".qelp-step.usecase-step .step-card .text-content-wrapper { flex-grow: unset; }"
+  },
   "interventions": [
     {
       "platforms": ["desktop"],
-      "content_scripts": {
-        "css": ["1999770-configuraraparelhos.claro.com.br-fix-missing-text.css"]
-      }
+      "css": ["unhide_phone_description"]
     }
   ]
 }

@@ -116,6 +116,22 @@ notes = "Patched version of upstream"
 audit-as-crates-io = true
 notes = "Patched version of upstream"
 
+[policy.jxl]
+audit-as-crates-io = true
+notes = "Vendored from libjxl/jxl-rs git, a few commits past the 0.4.3 tag."
+
+[policy.jxl_macros]
+audit-as-crates-io = true
+notes = "Vendored from libjxl/jxl-rs git, a few commits past the 0.4.3 tag."
+
+[policy.jxl_simd]
+audit-as-crates-io = true
+notes = "Vendored from libjxl/jxl-rs git, a few commits past the 0.4.3 tag."
+
+[policy.jxl_transforms]
+audit-as-crates-io = true
+notes = "Vendored from libjxl/jxl-rs git, a few commits past the 0.4.3 tag."
+
 [policy.l10nregistry]
 dependency-criteria = { fluent-testing = "safe-to-run", tokio = "safe-to-run" }
 notes = "This crate has two testing-only dependencies which are specified as regular-but-optional rather than a dev-dependencies, because they need to be available to both benchmarks and integration tests."
@@ -146,34 +162,6 @@ notes = "This is a pinned version of the upstream code, presumably to get a fix 
 [policy."mio:1.1.1@git:5e8b202db39facecc343170f50a07916640a607c"]
 audit-as-crates-io = false
 notes = "Fork of mio 1.1.1 with windows-sys downgraded to 0.52."
-
-[policy.mls-rs]
-audit-as-crates-io = true
-notes = "This is a pinned version of the upstream code, pending update of the crate."
-
-[policy.mls-rs-codec]
-audit-as-crates-io = true
-notes = "This is a pinned version of the upstream code, pending update of the crate."
-
-[policy.mls-rs-codec-derive]
-audit-as-crates-io = true
-notes = "This is a pinned version of the upstream code, pending update of the crate."
-
-[policy.mls-rs-core]
-audit-as-crates-io = true
-notes = "This is a pinned version of the upstream code, pending update of the crate."
-
-[policy.mls-rs-crypto-hpke]
-audit-as-crates-io = true
-notes = "This is a pinned version of the upstream code, pending update of the crate."
-
-[policy.mls-rs-crypto-traits]
-audit-as-crates-io = true
-notes = "This is a pinned version of the upstream code, pending update of the crate."
-
-[policy.mls-rs-identity-x509]
-audit-as-crates-io = true
-notes = "This is a pinned version of the upstream code, pending update of the crate."
 
 [policy.mls-rs-provider-sqlite]
 audit-as-crates-io = true
@@ -221,13 +209,17 @@ audit-as-crates-io = true
 audit-as-crates-io = true
 notes = "Part of the wgpu repository, pinned as the rest of wgpu crates."
 
-[policy.nss-gk-api]
-audit-as-crates-io = true
-notes = "This is a pinned version of the upstream code, pending update of the crate."
+[policy.nimbus-sdk]
+audit-as-crates-io = false
+notes = "This lives in application-services but was pushed to crates.io a very long time ago."
 
 [policy.objc]
 audit-as-crates-io = true
 notes = "This is the upstream code plus a backported fix."
+
+[policy.ohttp]
+audit-as-crates-io = true
+notes = "We are currently on an unreleased revision"
 
 [policy.osclientcerts]
 audit-as-crates-io = false
@@ -342,6 +334,10 @@ notes = "This is an in-tree first-party crate that is published to crates.io by 
 
 [policy.wr_malloc_size_of]
 audit-as-crates-io = false
+
+[policy.zlib-rs]
+audit-as-crates-io = true
+notes = "This is the upstream code plus a workaround for Raptor Lake CPUs, see bug 1950764."
 
 [[exemptions.alsa]]
 version = "0.4.3"

@@ -24,6 +24,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   PlacesUIUtils: "moz-src:///browser/components/places/PlacesUIUtils.sys.mjs",
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
+  SidebarTreeView:
+    "moz-src:///browser/components/sidebar/SidebarTreeView.sys.mjs",
 });
 
 const bookmarkFolderLocalization = new Localization(
@@ -78,7 +80,17 @@ export class SidebarBookmarks extends SidebarPage {
   #initContextMenuItems() {
     const q = id => this._contextMenu.querySelector(id);
     const openAllBookmarks = q("#sidebar-bookmarks-context-open-all-bookmarks");
+    const sepOpenAll = q("#sidebar-bookmarks-context-sep-open-all");
     const sortByName = q("#sidebar-bookmarks-context-sort-by-name");
+    const sepSort = q("#sidebar-bookmarks-context-sep-sort");
+    const openInTab = q("#sidebar-bookmarks-context-open-in-tab");
+    const openInWindow = q("#sidebar-bookmarks-context-open-in-window");
+    const sepOpenOptions = q("#sidebar-bookmarks-context-sep-open-options");
+    const sepEditCopy = q("#sidebar-bookmarks-context-sep-edit-copy");
+    const copyLink = q("#sidebar-bookmarks-context-copy-link");
+    const sepCutCopy = q("#sidebar-bookmarks-context-sep-cut-copy");
+    const cut = q("#sidebar-bookmarks-context-cut");
+    const copy = q("#sidebar-bookmarks-context-copy");
     const openInContainerTab = q(
       "#sidebar-bookmarks-context-open-in-container-tab"
     );
@@ -88,26 +100,27 @@ export class SidebarBookmarks extends SidebarPage {
     const editBookmark = q("#sidebar-bookmarks-context-edit-bookmark");
     const deleteBookmark = q("#sidebar-bookmarks-context-delete-bookmark");
     this.#contextMenuItems = {
-      folderItems: [
-        openAllBookmarks,
-        q("#sidebar-bookmarks-context-sep-open-all"),
-        q("#sidebar-bookmarks-context-sep-sort"),
-        sortByName,
-      ],
+      folderItems: [openAllBookmarks, sepOpenAll, sepSort, sortByName],
       bookmarkItems: [
-        q("#sidebar-bookmarks-context-open-in-tab"),
-        q("#sidebar-bookmarks-context-open-in-window"),
-        q("#sidebar-bookmarks-context-sep-open-options"),
-        q("#sidebar-bookmarks-context-sep-edit-copy"),
-        q("#sidebar-bookmarks-context-copy-link"),
+        openInTab,
+        openInWindow,
+        sepOpenOptions,
+        sepEditCopy,
+        copyLink,
       ],
-      alwaysShownItems: [
-        q("#sidebar-bookmarks-context-sep-cut-copy"),
-        q("#sidebar-bookmarks-context-cut"),
-        q("#sidebar-bookmarks-context-copy"),
-      ],
+      alwaysShownItems: [sepCutCopy, cut, copy],
       openAllBookmarks,
+      sepOpenAll,
       sortByName,
+      sepSort,
+      openInTab,
+      openInWindow,
+      sepOpenOptions,
+      sepEditCopy,
+      copyLink,
+      sepCutCopy,
+      cut,
+      copy,
       openInContainerTab,
       openInPrivateWindow,
       editBookmark,
@@ -122,6 +135,7 @@ export class SidebarBookmarks extends SidebarPage {
     this.searchQuery = "";
     this.searchResults = [];
     this.onSearchQuery = this.onSearchQuery.bind(this);
+    this.treeView = new lazy.SidebarTreeView(this);
   }
 
   connectedCallback() {
@@ -150,8 +164,64 @@ export class SidebarBookmarks extends SidebarPage {
     this.requestUpdate();
   }
 
+  getRowsInOrder() {
+    return this.#getRowsForList(this.bookmarkList);
+  }
+
+  #getRowsForList(list) {
+    let rows = [];
+    for (const item of list.tabItems) {
+      const isFolder = Array.isArray(item.children);
+      if (!isFolder) {
+        rows.push({ list, item });
+      } else if (
+        item.children.length &&
+        this.#expandedFolderGuids.has(item.guid)
+      ) {
+        const sublist = list.findSublistForGuid(item.guid);
+        if (sublist) {
+          rows = rows.concat(this.#getRowsForList(sublist));
+        }
+      }
+    }
+    return rows;
+  }
+
   onPrimaryAction(e) {
-    navigateToLink(e, e.originalTarget.url, { forceNewTab: false });
+    const { originalEvent } = e.detail;
+    const row = e.originalTarget;
+    const list = row.getRootNode().host;
+
+    if (originalEvent.shiftKey) {
+      list.dispatchEvent(
+        new CustomEvent("shift-select", {
+          bubbles: true,
+          composed: true,
+          detail: { row },
+        })
+      );
+      return;
+    }
+
+    const anchorEvent = new CustomEvent("set-anchor", {
+      bubbles: true,
+      composed: true,
+      detail: { guid: row.guid },
+    });
+
+    if (
+      (originalEvent.type === "click" &&
+        originalEvent.getModifierState("Accel")) ||
+      (originalEvent.type === "keydown" && originalEvent.code === "Space")
+    ) {
+      list.toggleRowSelection(row.guid);
+      list.dispatchEvent(anchorEvent);
+      return;
+    }
+
+    this.treeView.resetSelection();
+    list.dispatchEvent(anchorEvent);
+    navigateToLink(e, row.url, { forceNewTab: false });
     Glean.sidebar.link.bookmarks.add(1);
   }
 
@@ -191,6 +261,19 @@ export class SidebarBookmarks extends SidebarPage {
     if (!this.#contextMenuItems) {
       this.#initContextMenuItems();
     }
+
+    const selectedItems = this.treeView.getSelectedTabItems();
+    const isMultiSelect =
+      isBookmark &&
+      selectedItems.length > 1 &&
+      selectedItems.some(item => item.guid === this.triggerNode.guid);
+    this.selectedItems = isMultiSelect ? selectedItems : null;
+
+    if (isMultiSelect) {
+      this.#configureMultiSelectContextMenu(selectedItems);
+      return;
+    }
+
     const {
       folderItems,
       bookmarkItems,
@@ -221,6 +304,7 @@ export class SidebarBookmarks extends SidebarPage {
     openInPrivateWindow.hidden =
       !isBookmark || !lazy.PrivateBrowsingUtils.enabled;
     editBookmark.hidden = isSeparator;
+    editBookmark.disabled = isRootFolder;
     paste.hidden = !this.#hasClipboardData();
 
     openAllBookmarks.disabled = isEmpty;
@@ -249,7 +333,63 @@ export class SidebarBookmarks extends SidebarPage {
         ? "places-edit-folder2"
         : "sidebar-bookmarks-context-menu-edit-bookmark"
     );
-    editBookmark.disabled = isRootFolder;
+  }
+
+  #configureMultiSelectContextMenu(selectedItems) {
+    const {
+      openAllBookmarks,
+      sepOpenAll,
+      sortByName,
+      sepSort,
+      openInTab,
+      openInWindow,
+      sepOpenOptions,
+      sepEditCopy,
+      copyLink,
+      sepCutCopy,
+      cut,
+      copy,
+      openInContainerTab,
+      openInPrivateWindow,
+      editBookmark,
+      deleteBookmark,
+      paste,
+    } = this.#contextMenuItems;
+
+    openAllBookmarks.hidden = false;
+    openAllBookmarks.disabled = false;
+    sepOpenAll.hidden = false;
+
+    openInTab.hidden = true;
+    openInContainerTab.hidden = true;
+    openInWindow.hidden = true;
+    openInPrivateWindow.hidden = true;
+    sepOpenOptions.hidden = true;
+
+    editBookmark.hidden = false;
+    editBookmark.disabled = true;
+    editBookmark.setAttribute(
+      "data-l10n-id",
+      "sidebar-bookmarks-context-menu-edit-bookmark"
+    );
+
+    deleteBookmark.hidden = false;
+    deleteBookmark.setAttribute("data-l10n-id", "places-delete-bookmark");
+    deleteBookmark.setAttribute(
+      "data-l10n-args",
+      JSON.stringify({ count: selectedItems.length })
+    );
+
+    sepSort.hidden = true;
+    sortByName.hidden = true;
+
+    sepCutCopy.hidden = false;
+    cut.hidden = false;
+    copy.hidden = false;
+    paste.hidden = !this.#hasClipboardData();
+
+    sepEditCopy.hidden = true;
+    copyLink.hidden = true;
   }
 
   #findSeparatorElement(e) {
@@ -309,7 +449,7 @@ export class SidebarBookmarks extends SidebarPage {
     let label;
     switch (e.target.id) {
       case "sidebar-bookmarks-context-open-all-bookmarks":
-        this.#openAllBookmarks();
+        this.#openBookmarks(this.selectedItems ?? [this.triggerNode]);
         break;
       case "sidebar-bookmarks-context-sort-by-name":
         this.#sortByName();
@@ -335,7 +475,7 @@ export class SidebarBookmarks extends SidebarPage {
         this.#editBookmarkOrFolder(this.triggerNode);
         break;
       case "sidebar-bookmarks-context-delete-bookmark":
-        this.#deleteBookmark(this.triggerNode);
+        this.#deleteBookmarks(this.selectedItems ?? [this.triggerNode]);
         break;
       case "sidebar-bookmarks-context-copy-link":
         lazy.BrowserUtils.copyLink(
@@ -355,11 +495,11 @@ export class SidebarBookmarks extends SidebarPage {
         label = "add_separator";
         break;
       case "sidebar-bookmarks-context-cut":
-        this.#cutItem();
+        this.#cutBookmarks(this.selectedItems ?? [this.triggerNode]);
         label = "cut_bookmark";
         break;
       case "sidebar-bookmarks-context-copy":
-        this.#copyItem();
+        this.#copyBookmarks(this.selectedItems ?? [this.triggerNode]);
         break;
       case "sidebar-bookmarks-context-paste":
         this.#paste();
@@ -372,7 +512,7 @@ export class SidebarBookmarks extends SidebarPage {
 
   onSecondaryAction(e) {
     this.triggerNode = e.detail.item;
-    this.#deleteBookmark(this.triggerNode);
+    this.#deleteBookmarks([this.triggerNode]);
   }
 
   async #editBookmarkOrFolder(bookmark) {
@@ -397,8 +537,10 @@ export class SidebarBookmarks extends SidebarPage {
     ].add(1);
   }
 
-  async #deleteBookmark(bookmark) {
-    await lazy.PlacesTransactions.Remove({ guids: [bookmark.guid] }).transact();
+  async #deleteBookmarks(bookmarks) {
+    await lazy.PlacesTransactions.Remove({
+      guids: bookmarks.map(b => b.guid),
+    }).transact();
   }
 
   async #addItem(type) {
@@ -427,11 +569,16 @@ export class SidebarBookmarks extends SidebarPage {
     }).transact();
   }
 
-  async #openAllBookmarks() {
-    const tree = await lazy.PlacesUtils.promiseBookmarksTree(
-      this.triggerNode.guid
-    );
-    const urls = this.#collectBookmarkUrls(tree);
+  async #openBookmarks(bookmarks) {
+    const urls = [];
+    for (const item of bookmarks) {
+      if (item.isFolder) {
+        const tree = await lazy.PlacesUtils.promiseBookmarksTree(item.guid);
+        urls.push(...this.#collectBookmarkUrls(tree));
+      } else if (item.url) {
+        urls.push(item.url);
+      }
+    }
     if (!lazy.OpenInTabsUtils.confirmOpenInTabs(urls.length, this.topWindow)) {
       return;
     }
@@ -457,39 +604,42 @@ export class SidebarBookmarks extends SidebarPage {
     await lazy.PlacesTransactions.SortByName(this.triggerNode.guid).transact();
   }
 
-  async #cutItem() {
-    this.#copyItemToClipboard("cut");
+  async #cutBookmarks(bookmarks) {
+    this.#copyBookmarksToClipboard(bookmarks, "cut");
     await lazy.PlacesTransactions.Remove({
-      guids: [this.triggerNode.guid],
+      guids: bookmarks.map(b => b.guid),
     }).transact();
   }
 
-  #copyItem() {
-    this.#copyItemToClipboard("copy");
+  #copyBookmarks(bookmarks) {
+    this.#copyBookmarksToClipboard(bookmarks, "copy");
   }
 
-  #copyItemToClipboard(action) {
-    let data;
-    if (this.triggerNode.isSeparator) {
-      data = JSON.stringify({
-        type: lazy.PlacesUtils.TYPE_X_MOZ_PLACE_SEPARATOR,
-      });
-    } else if (this.triggerNode.isFolder) {
-      data = JSON.stringify({
-        type: lazy.PlacesUtils.TYPE_X_MOZ_PLACE_CONTAINER,
-        itemGuid: this.triggerNode.guid,
-        instanceId: lazy.PlacesUtils.instanceId,
-        title: this.triggerNode.title,
-      });
-    } else {
-      data = JSON.stringify({
-        type: lazy.PlacesUtils.TYPE_X_MOZ_PLACE,
-        itemGuid: this.triggerNode.guid,
-        instanceId: lazy.PlacesUtils.instanceId,
-        title: this.triggerNode.title,
-        uri: this.triggerNode.url,
-      });
-    }
+  #copyBookmarksToClipboard(bookmarks, action) {
+    const data = bookmarks
+      .map(item => {
+        if (item.isSeparator) {
+          return JSON.stringify({
+            type: lazy.PlacesUtils.TYPE_X_MOZ_PLACE_SEPARATOR,
+          });
+        }
+        if (item.isFolder) {
+          return JSON.stringify({
+            type: lazy.PlacesUtils.TYPE_X_MOZ_PLACE_CONTAINER,
+            itemGuid: item.guid,
+            instanceId: lazy.PlacesUtils.instanceId,
+            title: item.title,
+          });
+        }
+        return JSON.stringify({
+          type: lazy.PlacesUtils.TYPE_X_MOZ_PLACE,
+          itemGuid: item.guid,
+          instanceId: lazy.PlacesUtils.instanceId,
+          title: item.title,
+          uri: item.url,
+        });
+      })
+      .join(lazy.PlacesUtils.endl);
     this.#setClipboard(data, action);
   }
 

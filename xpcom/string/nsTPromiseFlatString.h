@@ -82,20 +82,13 @@ class MOZ_STACK_CLASS nsTPromiseFlatString : public nsTString<T> {
   typedef typename base_string_type::DataFlags DataFlags;
   typedef typename base_string_type::ClassFlags ClassFlags;
 
+  void operator=(const self_type&) = delete;
+  nsTPromiseFlatString(const self_type&) = delete;
+  nsTPromiseFlatString() = delete;
+  nsTPromiseFlatString(const string_type& aStr) = delete;
+
  private:
   void Init(const substring_type&);
-
-  // NOT TO BE IMPLEMENTED
-  void operator=(const self_type&) = delete;
-
-  // NOT TO BE IMPLEMENTED
-  nsTPromiseFlatString(const self_type&) = delete;
-
-  // NOT TO BE IMPLEMENTED
-  nsTPromiseFlatString() = delete;
-
-  // NOT TO BE IMPLEMENTED
-  nsTPromiseFlatString(const string_type& aStr) = delete;
 
  public:
   explicit nsTPromiseFlatString(const substring_type& aStr) : string_type() {

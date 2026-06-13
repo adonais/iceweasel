@@ -1,30 +1,23 @@
 From: Michael Froman <mfroman@mozilla.com>
-Date: Fri, 30 Jan 2026 18:55:00 +0000
-Subject: Bug 2005262 - better logging in
- ModuleRtpRtcpImpl2::RegisterRtpHeaderExtension. r=ng
+Date: Mon, 6 Apr 2026 18:41:00 -0500
+Subject: Bug 2029247 - (fix-4520c7897c) fix new usage of GetRealTimeClock in
+ bitrate_adjuster.h
 
-Differential Revision: https://phabricator.services.mozilla.com/D281051
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/b44955c4c033ebaf31b40701f12f7cb0dc035ba8
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/a88b1959591bc4ddbf6deb88ff76dcc24fd8ae5d
 ---
- modules/rtp_rtcp/source/rtp_rtcp_impl2.cc | 6 +++++-
- 1 file changed, 5 insertions(+), 1 deletion(-)
+ common_video/include/bitrate_adjuster.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/modules/rtp_rtcp/source/rtp_rtcp_impl2.cc b/modules/rtp_rtcp/source/rtp_rtcp_impl2.cc
-index c12f80e3d5..baeddc0da7 100644
---- a/modules/rtp_rtcp/source/rtp_rtcp_impl2.cc
-+++ b/modules/rtp_rtcp/source/rtp_rtcp_impl2.cc
-@@ -586,9 +586,13 @@ void ModuleRtpRtcpImpl2::SetExtmapAllowMixed(bool extmap_allow_mixed) {
- 
- void ModuleRtpRtcpImpl2::RegisterRtpHeaderExtension(absl::string_view uri,
-                                                     int id) {
-+  RTC_LOG(LS_INFO) << "RegisterRtpHeaderExtension uri:'" << uri << "' id: " << id;
-   bool registered =
-       rtp_sender_->packet_generator.RegisterRtpHeaderExtension(uri, id);
--  RTC_CHECK(registered);
-+  if (!registered) {
-+    RTC_LOG(LS_WARNING) << "RegisterRtpHeaderExtension failed to register uri:'" << uri << "' id: " << id;
-+  }
-+  RTC_DCHECK(registered);
- }
- 
- void ModuleRtpRtcpImpl2::DeregisterSendRtpHeaderExtension(
+diff --git a/common_video/include/bitrate_adjuster.h b/common_video/include/bitrate_adjuster.h
+index 6cd92b7deb..d414fb7e25 100644
+--- a/common_video/include/bitrate_adjuster.h
++++ b/common_video/include/bitrate_adjuster.h
+@@ -40,7 +40,7 @@ class RTC_EXPORT BitrateAdjuster {
+   ABSL_DEPRECATE_AND_INLINE()
+   BitrateAdjuster(float min_adjusted_bitrate_pct,
+                   float max_adjusted_bitrate_pct)
+-      : BitrateAdjuster(Clock::GetRealTimeClock(),
++      : BitrateAdjuster(Clock::GetRealTimeClockRaw(),
+                         min_adjusted_bitrate_pct,
+                         max_adjusted_bitrate_pct) {}
+   virtual ~BitrateAdjuster() = default;

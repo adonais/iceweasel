@@ -25,6 +25,7 @@ import org.mozilla.fenix.ui.efficiency.logging.LoggingBridge
 import org.mozilla.fenix.ui.efficiency.logging.TestLogging
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationRegistry
 import org.mozilla.fenix.ui.efficiency.navigation.planning.PageCatalog
+import androidx.compose.ui.test.junit4.v2.AndroidComposeTestRule as AndroidComposeTestRuleV2
 
 /**
  * BaseTest
@@ -49,6 +50,8 @@ abstract class BaseTest(
     private val skipOnboarding: Boolean = true,
     private val isMenuRedesignCFREnabled: Boolean = false,
     private val isPageLoadTranslationsPromptEnabled: Boolean = false,
+    private val isPocketEnabled: Boolean = true,
+    private val isRecentlyVisitedFeatureEnabled: Boolean = true,
 ) {
 
     @get:Rule(order = 0)
@@ -70,12 +73,14 @@ abstract class BaseTest(
     val retryWithCompose: TestRule = TestRule { base, description ->
         object : Statement() {
             override fun evaluate() {
-                repeat(1) { attempt ->
-                    _composeRule = AndroidComposeTestRule(
+                repeat(1 + MAX_RETRIES) { attempt ->
+                    _composeRule = AndroidComposeTestRuleV2(
                         HomeActivityIntentTestRule(
                             skipOnboarding = skipOnboarding,
                             isMenuRedesignCFREnabled = isMenuRedesignCFREnabled,
                             isPageLoadTranslationsPromptEnabled = isPageLoadTranslationsPromptEnabled,
+                            isPocketEnabled = isPocketEnabled,
+                            isRecentlyVisitedFeatureEnabled = isRecentlyVisitedFeatureEnabled,
                         ),
                     ) { it.activity }
                     try {
@@ -87,7 +92,7 @@ abstract class BaseTest(
                         cleanup(removeTabs = true)
                         throw t
                     } catch (t: Throwable) {
-                        if (!t.isRetryable() || attempt == 2) throw t
+                        if (!t.isRetryable() || attempt >= MAX_RETRIES) throw t
                         Log.i("BaseTest", "RetryTestRule: ${t::class.simpleName} caught, retrying.")
                         cleanup()
                     }
@@ -157,6 +162,13 @@ abstract class BaseTest(
         } catch (_: Throwable) {
             // Logging must never fail a test.
         }
+    }
+
+    private companion object {
+        /**
+         * Number of retry attempts to do, if the test fails.
+         */
+        const val MAX_RETRIES = 1
     }
 }
 

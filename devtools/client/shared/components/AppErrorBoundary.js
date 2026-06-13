@@ -100,19 +100,40 @@ class AppErrorBoundary extends Component {
                     .split("\n")
                     .map((part, idx) => p({ key: `strace${idx}` }, part))
                 : null;
+
+              // DevToolsProcessParent may receive stacktraces from the content process
+              // and put them onto the exception's contentProcessStack attribute
+              // which protocol.js Actor and Front layer will preserve so that we ultimately
+              // can read it from here.
+              // This is for server codebases using DevToolsProcess JS Actor to communicate
+              // with the content processes from the parent process. Typically most methods
+              // of the Watcher Actor.
+              const contentProcessStack = info[obj].contentProcessStack;
+              const contentProcessTraceParts = contentProcessStack
+                ? contentProcessStack
+                    .split("\n")
+                    .map((part, idx) =>
+                      p({ key: `contentProcessStrace${idx}` }, part)
+                    )
+                : null;
+
               return div(
                 { className: "stack-trace-section" },
                 h3(
                   {},
                   obj == "clientPacket" ? "Client packet" : "Server packet"
                 ),
-                // Display the packet as JSON, while removing the artifical `stack` attribute from it
+                // Display the packet as JSON, while removing the artificial `stack` attribute from it
                 p(
                   {},
                   JSON.stringify({ ...info[obj], stack: undefined }, null, 2)
                 ),
                 stack ? h3({}, "Server stack") : null,
-                traceParts
+                traceParts,
+                contentProcessStack
+                  ? h3({}, "Server content process stack")
+                  : null,
+                contentProcessTraceParts
               );
             }
           }
@@ -227,10 +248,12 @@ class AppErrorBoundary extends Component {
     const extras = Telemetry.sanitizeEventExtras(
       {
         error_name: error.name,
+        is_destroying: toolbox.isDestroying(),
         packet_error: serverPacket.error,
         packet_target: serverPacket.from,
         packet_type: clientPacket.type,
         server_stack: serverPacket.stack || "",
+        server_content_process_stack: serverPacket.contentProcessStack || "",
         stack: error.stack || "",
       },
       "devtoolsMain.toolboxServerError",
@@ -261,9 +284,12 @@ class AppErrorBoundary extends Component {
     }
 
     if (serverPacket) {
-      // Display the packet as JSON, while removing the artifical `stack` attribute from it
-      msg += `## Server Packet:\n\`\`\`\n${JSON.stringify({ ...serverPacket, stack: undefined }, null, 2)}\n\`\`\`\n\n`;
+      // Display the packet as JSON, while removing the artificial `stack`/`contentProcessStack` attributes from it
+      msg += `## Server Packet:\n\`\`\`\n${JSON.stringify({ ...serverPacket, stack: undefined, contentProcessStack: undefined }, null, 2)}\n\`\`\`\n\n`;
       msg += `## Server Stack:\n\`\`\`\n${serverPacket.stack}\n\`\`\`\n\n`;
+      if (serverPacket.contentProcessStack) {
+        msg += `## Server Content Process Stack:\n\`\`\`\n${serverPacket.contentProcessStack}\n\`\`\`\n\n`;
+      }
     }
 
     msg += `## Stacktrace: \n\`\`\`\n${this.state.errorStack}\n\`\`\``;

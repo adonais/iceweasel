@@ -410,9 +410,9 @@ int CamerasChild::StartCapture(CaptureEngine aCapEngine, const int capture_id,
                                FrameRelay* cb) {
   LOG(("%s", __PRETTY_FUNCTION__));
   AddCallback(capture_id, cb);
-  VideoCaptureCapability capCap(
-      webrtcCaps.width, webrtcCaps.height, webrtcCaps.maxFPS,
-      static_cast<int>(webrtcCaps.videoType), webrtcCaps.interlaced);
+  VideoCaptureCapability capCap(webrtcCaps.width, webrtcCaps.height,
+                                webrtcCaps.maxFPS, webrtcCaps.videoType,
+                                webrtcCaps.interlaced);
   nsCOMPtr<nsIRunnable> runnable =
       mozilla::NewRunnableMethod<CaptureEngine, int, VideoCaptureCapability,
                                  NormalizedConstraints,

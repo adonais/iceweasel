@@ -72,13 +72,6 @@ class NavigationTest(
                     page = { collections },
                     state = runState.ifBlank { "Navigation Reachability" },
                 ),
-                // pageName=CustomTabsPage, property=customTabs, paths=1
-                Case(
-                    label = "CustomTabsPage",
-                    testRailId = "TBD",
-                    page = { customTabs },
-                    state = runState.ifBlank { "Navigation Reachability" },
-                ),
             )
 
             return cases.map { it as Any }

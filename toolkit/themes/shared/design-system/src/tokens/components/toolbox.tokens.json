@@ -1,0 +1,36 @@
+{
+  "background": {
+    "color": {
+      "@base": {
+        "value": {
+          "light": "rgb(234, 234, 237)",
+          "dark": "{color.gray.90}",
+          "nativeTheme": "-moz-headerbar"
+        }
+      },
+      "inactive": {
+        "value": {
+          "default": "{toolbox.background.color.@base}",
+          "nativeTheme": "-moz-headerbarinactive"
+        }
+      }
+    }
+  },
+  "text": {
+    "color": {
+      "@base": {
+        "value": {
+          "light": "{color.gray.100}",
+          "dark": "{color.gray.05}",
+          "nativeTheme": "-moz-headerbartext"
+        }
+      },
+      "inactive": {
+        "value": {
+          "default": "{toolbox.text.color.@base}",
+          "nativeTheme": "-moz-headerbarinactivetext"
+        }
+      }
+    }
+  }
+}

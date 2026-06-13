@@ -12,6 +12,8 @@
 
 namespace mozilla {
 
+struct URLExtraData;
+
 /*
  * The pseudo style request is used to get the pseudo style of an element. This
  * include a pseudo style type and an identifier which is used for functional
@@ -60,7 +62,8 @@ struct PseudoStyleRequest {
   // Returns an empty Request for a syntactically invalid pseudo-element, and
   // NotPseudo for the empty / null string.
   static mozilla::Maybe<PseudoStyleRequest> Parse(
-      const nsAString& aPseudoElement, bool aIgnoreEnabledState = false);
+      const nsAString& aPseudoElement, URLExtraData* aURLExtraData,
+      bool aIgnoreEnabledState = false);
 };
 
 class PseudoStyleRequestHashKey : public PLDHashEntryHdr {

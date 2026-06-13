@@ -433,7 +433,7 @@ void HTMLTextAreaElement::FireChangeEventIfNeeded() {
   }
 
   // Dispatch the change event.
-  mFocusedValue = value;
+  mFocusedValue = std::move(value);
   nsContentUtils::DispatchTrustedEvent(OwnerDoc(), this, u"change"_ns,
                                        CanBubble::eYes, Cancelable::eNo);
 }
@@ -971,7 +971,7 @@ nsresult HTMLTextAreaElement::GetValidationMessage(
       rv = nsContentUtils::FormatMaybeLocalizedString(
           message, PropertiesFile::DOM_PROPERTIES, "FormValidationTextTooLong",
           OwnerDoc(), strMaxLength, strTextLength);
-      aValidationMessage = message;
+      aValidationMessage = std::move(message);
     } break;
     case VALIDITY_STATE_TOO_SHORT: {
       nsAutoString message;
@@ -986,14 +986,14 @@ nsresult HTMLTextAreaElement::GetValidationMessage(
       rv = nsContentUtils::FormatMaybeLocalizedString(
           message, PropertiesFile::DOM_PROPERTIES, "FormValidationTextTooShort",
           OwnerDoc(), strMinLength, strTextLength);
-      aValidationMessage = message;
+      aValidationMessage = std::move(message);
     } break;
     case VALIDITY_STATE_VALUE_MISSING: {
       nsAutoString message;
       rv = nsContentUtils::GetMaybeLocalizedString(
           PropertiesFile::DOM_PROPERTIES, "FormValidationValueMissing",
           OwnerDoc(), message);
-      aValidationMessage = message;
+      aValidationMessage = std::move(message);
     } break;
     default:
       rv =

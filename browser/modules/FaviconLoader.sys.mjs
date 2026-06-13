@@ -184,7 +184,7 @@ class FaviconLoad {
     // Sometimes node is a document and sometimes it is an element. This is
     // the easiest single way to get to the load group in both those cases.
     this.channel.loadGroup =
-      iconInfo.node.ownerGlobal.document.documentLoadGroup;
+      iconInfo.node.documentGlobal.document.documentLoadGroup;
     this.channel.notificationCallbacks = this;
 
     if (this.channel instanceof Ci.nsIHttpChannelInternal) {

@@ -100,7 +100,7 @@ newtab:
       Recorded when newtab UI is opened via `about:newtab` or `about:home` or
       `about:welcome` and has been made visible (see `visibility_event_rcvd_ts`
       in
-      [detect-user-session-start.js](https://searchfox.org/mozilla-central/source/browser/components/newtab/content-src/lib/detect-user-session-start.js)).
+      [detect-user-session-start.js](https://searchfox.org/firefox-main/source/browser/components/newtab/content-src/lib/detect-user-session-start.js)).
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1766887
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1786670
@@ -1309,6 +1309,24 @@ newtab:
         description: >
           Optional value for the action.
         type: string
+    send_in_pings:
+      - newtab
+
+  widgets_enabled_list:
+    type: string_list
+    description: >
+      The list of widget telemetry names currently enabled by the user.
+      Recorded at startup and whenever a widget is enabled or disabled.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2015530
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2015530
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - mcrawford@mozilla.com
+    expires: never
+    lifetime: application
     send_in_pings:
       - newtab
 

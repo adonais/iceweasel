@@ -6,6 +6,7 @@ package org.mozilla.fenix
 
 import android.content.Intent
 import android.os.Bundle
+import androidx.fragment.app.FragmentManager
 import io.mockk.Runs
 import io.mockk.every
 import io.mockk.just
@@ -16,7 +17,6 @@ import mozilla.components.support.test.robolectric.testContext
 import mozilla.components.support.utils.toSafeIntent
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -24,10 +24,12 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.GleanMetrics.Metrics
+import org.mozilla.fenix.GleanMetrics.NativeShareSheet
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.browser.browsingmode.BrowsingModeManager
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction
+import org.mozilla.fenix.components.share.QR_CODE_URI_KEY
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.getIntentSource
 import org.mozilla.fenix.ext.settings
@@ -35,6 +37,8 @@ import org.mozilla.fenix.helpers.FenixGleanTestRule
 import org.mozilla.fenix.helpers.perf.TestStrictModeManager
 import org.mozilla.fenix.utils.Settings
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
+import kotlin.test.assertNotNull
 
 @RunWith(RobolectricTestRunner::class)
 class HomeActivityTest {
@@ -210,5 +214,43 @@ class HomeActivityTest {
             isTheCorrectBuildVersion = true,
         )
         assertNoPromptWasShown()
+    }
+
+    @Config(sdk = [34])
+    @Test
+    fun `GIVEN native Android share sheet is supported WHEN handleNewIntent is called with QR code URI THEN qr_code_tapped telemetry is recorded`() {
+        val fragmentManager = mockk<FragmentManager>(relaxed = true) {
+            every { findFragmentByTag(any()) } returns null
+        }
+        every { activity.supportFragmentManager } returns fragmentManager
+
+        val intent = Intent().apply {
+            putExtra(QR_CODE_URI_KEY, "content://cache/qr_code.png")
+        }
+
+        assertNull(NativeShareSheet.qrCodeTapped.testGetValue())
+
+        activity.handleNewIntent(intent)
+
+        assertNotNull(NativeShareSheet.qrCodeTapped.testGetValue())
+    }
+
+    @Config(sdk = [33])
+    @Test
+    fun `GIVEN native Android share sheet is not supported WHEN handleNewIntent is called with QR code URI THEN qr_code_tapped telemetry is not recorded`() {
+        val fragmentManager = mockk<FragmentManager>(relaxed = true) {
+            every { findFragmentByTag(any()) } returns null
+        }
+        every { activity.supportFragmentManager } returns fragmentManager
+
+        val intent = Intent().apply {
+            putExtra(QR_CODE_URI_KEY, "content://cache/qr_code.png")
+        }
+
+        assertNull(NativeShareSheet.qrCodeTapped.testGetValue())
+
+        activity.handleNewIntent(intent)
+
+        assertNull(NativeShareSheet.qrCodeTapped.testGetValue())
     }
 }

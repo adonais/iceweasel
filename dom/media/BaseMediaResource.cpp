@@ -10,6 +10,7 @@
 #include "MediaContainerType.h"
 #include "mozilla/InputStreamLengthHelper.h"
 #include "mozilla/dom/BlobImpl.h"
+#include "mozilla/dom/BlobURLChannel.h"
 #include "mozilla/dom/BlobURLProtocolHandler.h"
 #include "mozilla/dom/HTMLMediaElement.h"
 #include "nsDebug.h"
@@ -19,6 +20,7 @@
 #include "nsIFileChannel.h"
 #include "nsIInputStream.h"
 #include "nsNetUtil.h"
+#include "nsQueryObject.h"
 
 namespace mozilla {
 
@@ -53,15 +55,22 @@ already_AddRefed<BaseMediaResource> BaseMediaResource::Create(
 
   int64_t streamLength = -1;
 
-  RefPtr<mozilla::dom::BlobImpl> blobImpl;
-  if (dom::IsBlobURI(uri) &&
-      NS_SUCCEEDED(NS_GetBlobForBlobURI(uri, getter_AddRefs(blobImpl))) &&
-      blobImpl) {
-    IgnoredErrorResult rv;
+  RefPtr<dom::BlobURLChannel> blobChan = do_QueryObject(aChannel);
+  if (blobChan) {
+    // All callers to BaseMediaResource::Create are performed from within an
+    // OnStartRequest callback for aChannel, meaning that the backing BlobImpl
+    // should be available in our process already.
+    RefPtr<dom::BlobImpl> blobImpl;
+    rv = blobChan->GetBackingBlob(getter_AddRefs(blobImpl));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return nullptr;
+    }
+
+    IgnoredErrorResult error;
 
     nsCOMPtr<nsIInputStream> stream;
-    blobImpl->CreateInputStream(getter_AddRefs(stream), rv);
-    if (NS_WARN_IF(rv.Failed())) {
+    blobImpl->CreateInputStream(getter_AddRefs(stream), error);
+    if (NS_WARN_IF(error.Failed())) {
       return nullptr;
     }
 
@@ -79,8 +88,8 @@ already_AddRefed<BaseMediaResource> BaseMediaResource::Create(
 
     // Also if the stream doesn't know its own size synchronously, we can still
     // read the length from the blob.
-    uint64_t size = blobImpl->GetSize(rv);
-    if (NS_WARN_IF(rv.Failed())) {
+    uint64_t size = blobImpl->GetSize(error);
+    if (NS_WARN_IF(error.Failed())) {
       return nullptr;
     }
 

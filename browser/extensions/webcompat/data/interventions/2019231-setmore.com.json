@@ -10,7 +10,7 @@
     {
       "platforms": ["all"],
       "content_scripts": {
-        "js": ["bug2019231-setmore.com-Date.toLocaleString-fix.js"]
+        "js": ["support_nonstandard_timezones.js"]
       }
     }
   ]

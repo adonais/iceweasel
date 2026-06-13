@@ -87,7 +87,7 @@ def support_vcs_checkout(config, job, taskdesc, repo_configs):
             # arm64 instances on azure don't support local ssds
             hgstore = f"{checkoutdir}/hg-store"
         else:
-            hgstore = "y:/hg-shared"
+            hgstore = r"%HG_CACHE%\..\hg-shared"
     elif is_docker:
         checkoutdir = "{workdir}/checkouts".format(**job["run"])
         geckodir = f"{checkoutdir}/gecko"

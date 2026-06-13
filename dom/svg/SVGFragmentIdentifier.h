@@ -19,10 +19,10 @@ class SVGSVGElement;
  * http://www.w3.org/TR/SVG/linking.html#SVGFragmentIdentifiers
  */
 class SVGFragmentIdentifier {
-  // To prevent the class being instantiated
+ public:
+  // Prevent the class being instantiated.
   SVGFragmentIdentifier() = delete;
 
- public:
   /**
    * Process the SVG fragment identifier, if there is one.
    * @return true if we found a valid svgView()-style fragment identifier,

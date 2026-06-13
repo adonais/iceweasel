@@ -71,6 +71,12 @@ class SandboxOpenedFiles {
  public:
   SandboxOpenedFiles() = default;
 
+  // We could allow destroying instances of this class that aren't
+  // used with seccomp-bpf (e.g., for unit testing) by having the
+  // destructor check a flag set by the syscall policy and crash,
+  // but let's not write that code until we actually need it.
+  ~SandboxOpenedFiles() = delete;
+
   template <typename... Args>
   void Add(Args&&... aArgs) {
     mFiles.emplace_back(std::forward<Args>(aArgs)...);
@@ -80,12 +86,6 @@ class SandboxOpenedFiles {
 
  private:
   std::vector<SandboxOpenedFile> mFiles;
-
-  // We could allow destroying instances of this class that aren't
-  // used with seccomp-bpf (e.g., for unit testing) by having the
-  // destructor check a flag set by the syscall policy and crash,
-  // but let's not write that code until we actually need it.
-  ~SandboxOpenedFiles() = delete;
 };
 
 }  // namespace mozilla

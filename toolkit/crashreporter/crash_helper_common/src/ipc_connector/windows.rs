@@ -9,7 +9,7 @@ use crate::{
         windows::{create_manual_reset_event, get_last_error, OverlappedOperation},
         PlatformError,
     },
-    IO_TIMEOUT,
+    ProcessHandle, IO_TIMEOUT,
 };
 
 use bytes::{BufMut, BytesMut};
@@ -45,7 +45,7 @@ pub const CONNECTOR_ANCILLARY_DATA_LEN: usize = 1;
 
 const INVALID_ANCILLARY_DATA: HANDLE = 0;
 const HANDLE_SIZE: usize = size_of::<HANDLE>();
-const MAX_HANDLES_PER_MESSAGE: usize = size_of::<HANDLE>();
+const MAX_HANDLES_PER_MESSAGE: usize = 2;
 
 // We encode handles at the beginning of every transmitted message. This
 // function extracts the handle (if present) and returns it together with
@@ -125,8 +125,8 @@ impl IPCConnector {
         IPCConnector::from_raw_handle(connector.handle)
     }
 
-    pub fn set_process(&mut self, process: OwnedHandle) {
-        self.process = Some(process);
+    pub fn set_process(&mut self, process: ProcessHandle) {
+        self.process = Some(process.0);
     }
 
     pub(crate) fn as_raw(&self) -> HANDLE {

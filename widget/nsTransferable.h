@@ -29,6 +29,9 @@ struct DataStruct {
   DataStruct(DataStruct&& aRHS);
   ~DataStruct();
 
+  DataStruct(const DataStruct&) = delete;
+  DataStruct& operator=(const DataStruct&) = delete;
+
   const nsCString& GetFlavor() const { return mFlavor; }
   void SetData(nsISupports* aData, bool aIsPrivateData);
   void GetData(nsISupports** aData);
@@ -49,10 +52,6 @@ struct DataStruct {
   nsCOMPtr<nsISupports> mData;  // OWNER - some varient of primitive wrapper
   PRFileDesc* mCacheFD;
   const nsCString mFlavor;
-
- private:
-  DataStruct(const DataStruct&) = delete;
-  DataStruct& operator=(const DataStruct&) = delete;
 };
 
 /**

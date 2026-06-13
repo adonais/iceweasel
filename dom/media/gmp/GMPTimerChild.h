@@ -16,11 +16,11 @@ namespace mozilla::gmp {
 
 class GMPChild;
 
-class GMPTimerChild : public PGMPTimerChild {
+class GMPTimerChild final : public PGMPTimerChild {
   friend class PGMPTimerChild;
 
  public:
-  NS_INLINE_DECL_REFCOUNTING(GMPTimerChild)
+  NS_INLINE_DECL_REFCOUNTING(GMPTimerChild, final)
 
   explicit GMPTimerChild(GMPChild* aPlugin);
 

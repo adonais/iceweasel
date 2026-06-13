@@ -19,7 +19,7 @@ export var NarrateTestUtils = {
   FORWARD: ".narrate-skip-next",
 
   isVisible(element) {
-    let win = element.ownerGlobal;
+    let win = element.documentGlobal;
     let style = win.getComputedStyle(element);
     if (style.display == "none") {
       return false;

@@ -2,6 +2,20 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+// preferences.js typedefs are duplicated here because @import requires an ES
+// module source. preferences.js is a plain script currently.
+/**
+ * @typedef {object} PaneShownEventDetail
+ * @property {string} category
+ * @property {string} subcategory
+ */
+
+/**
+ * @typedef {Omit<CustomEvent, 'detail'> & {
+ *   detail: PaneShownEventDetail
+ * }} PaneShownEvent
+ */
+
 import { Preferences } from "chrome://global/content/preferences/Preferences.mjs";
 import { SettingGroupManager } from "chrome://browser/content/preferences/config/SettingGroupManager.mjs";
 
@@ -244,10 +258,36 @@ export var SyncHelpers = new (class SyncHelpers {
       showConfirm,
     });
   }
+
+  // Check if the user is coming from a call to action
+  // and show them the correct additional panel
+  maybeShowSyncAction() {
+    if (
+      location.hash == "#sync" &&
+      window.UIState.get().status == window.UIState.STATUS_SIGNED_IN
+    ) {
+      if (location.href.includes("action=pair")) {
+        window.gSubDialog.open(
+          "chrome://browser/content/preferences/fxaPairDevice.xhtml",
+
+          { features: "resizable=no" }
+        );
+      } else if (location.href.includes("action=choose-what-to-sync")) {
+        this._chooseWhatToSync(false, "callToAction");
+      }
+    }
+  }
 })();
 
 // Expose SyncHelpers on the window object for tests and other code.
 window.SyncHelpers = SyncHelpers;
+
+// Listen for when sync pane is loaded to check for actions
+window.addEventListener("paneshown", (/** @type {PaneShownEvent} */ e) => {
+  if (e.detail.category == "paneSync") {
+    SyncHelpers.maybeShowSyncAction();
+  }
+});
 
 Preferences.addSetting({
   id: "uiStateUpdate",
@@ -764,6 +804,8 @@ Preferences.addSetting({
   },
 });
 
+let accountsEnabled = Services.prefs.getBoolPref("identity.fxaccounts.enabled");
+
 SettingGroupManager.registerGroups({
   defaultBrowserSync: window.createDefaultBrowserConfig({
     includeIsDefaultPane: false,
@@ -775,6 +817,7 @@ SettingGroupManager.registerGroups({
     l10nId: "account-group-label2",
     headingLevel: 2,
     iconSrc: "chrome://browser/skin/preferences/mozilla-logo.svg",
+    hidden: !accountsEnabled,
     items: [
       {
         id: "noFxaAccountGroup",
@@ -872,6 +915,7 @@ SettingGroupManager.registerGroups({
     l10nId: "sync-group-label",
     headingLevel: 2,
     iconSrc: "chrome://browser/skin/sync.svg",
+    hidden: !accountsEnabled,
     items: [
       {
         id: "syncNoFxaSignIn",
@@ -1031,6 +1075,7 @@ SettingGroupManager.registerGroups({
     items: [
       {
         id: "profilesSettings",
+        loadPane: "profiles",
         control: "moz-box-button",
         l10nId: "preferences-profiles-settings-button",
       },
@@ -1041,6 +1086,7 @@ SettingGroupManager.registerGroups({
     headingLevel: 2,
     supportPage: "firefox-backup",
     iconSrc: "chrome://global/skin/icons/reload.svg",
+    subcategory: "backup",
     items: [
       {
         id: "backupSettings",
@@ -1049,3 +1095,21 @@ SettingGroupManager.registerGroups({
     ],
   },
 });
+
+document.addEventListener(
+  "paneshown",
+  (/** @type {PaneShownEvent} */ event) => {
+    if (event.detail.category !== "paneSync") {
+      return;
+    }
+    if (Services.policies && !Services.policies.isAllowed("profileImport")) {
+      return;
+    }
+    let { subcategory } = event.detail;
+    if (subcategory == "migrate") {
+      window.gMainPane.showMigrationWizardDialog();
+    } else if (subcategory == "migrate-autoclose") {
+      window.gMainPane.showMigrationWizardDialog({ closeTabWhenDone: true });
+    }
+  }
+);

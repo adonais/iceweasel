@@ -93,8 +93,9 @@ class UniqueStacks {
              uint64_t aInnerWindowID, const Maybe<unsigned>& aLine,
              const Maybe<unsigned>& aColumn,
              const Maybe<ProfilingCategoryPair>& aCategoryPair)
-        : mData(NormalFrameData{aLocation, aRelevantForJS, aInnerWindowID,
-                                aLine, aColumn, aCategoryPair}) {}
+        : mData(NormalFrameData{std::move(aLocation), aRelevantForJS,
+                                aInnerWindowID, aLine, aColumn,
+                                aCategoryPair}) {}
 
     FrameKey(const FrameKey& aToCopy) = default;
 

@@ -260,6 +260,7 @@ NS_IMETHODIMP ExtensionEventListener::CallListener(
 
   // Convert args into a non-const sequence.
   dom::Sequence<JS::Value> args;
+  dom::SequenceRooter<JS::Value> argsRooter(aCx, &args);
   if (!args.AppendElements(aArgs, fallible)) {
     return NS_ERROR_OUT_OF_MEMORY;
   }

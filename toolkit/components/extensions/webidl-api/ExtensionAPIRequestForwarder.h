@@ -186,7 +186,7 @@ class RequestWorkerRunnable : public dom::WorkerMainThreadRunnable {
   Maybe<UniquePtr<dom::StructuredCloneHolder>> mArgsHolder;
   Maybe<UniquePtr<dom::SerializedStackHolder>> mStackHolder;
   Maybe<dom::ClientInfo> mClientInfo;
-  uint64_t mSWDescriptorId;
+  uint64_t mSWDescriptorId = 0;
 
   // Only set for addListener/removeListener API requests.
   RefPtr<ExtensionEventListener> mEventListener;
@@ -206,7 +206,7 @@ class RequestInitWorkerRunnable : public dom::WorkerMainThreadRunnable {
 };
 
 class NotifyWorkerLoadedRunnable : public Runnable {
-  uint64_t mSWDescriptorId;
+  uint64_t mSWDescriptorId = 0;
   nsCOMPtr<nsIURI> mSWBaseURI;
 
  public:
@@ -228,7 +228,7 @@ class NotifyWorkerLoadedRunnable : public Runnable {
 };
 
 class NotifyWorkerDestroyedRunnable : public Runnable {
-  uint64_t mSWDescriptorId;
+  uint64_t mSWDescriptorId = 0;
   nsCOMPtr<nsIURI> mSWBaseURI;
 
  public:

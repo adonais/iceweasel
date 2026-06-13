@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -26,6 +25,7 @@ import androidx.core.net.toUri
 import androidx.fragment.app.Fragment
 import androidx.fragment.compose.content
 import androidx.navigation.fragment.findNavController
+import mozilla.components.compose.base.button.IconButton
 import mozilla.components.lib.state.helpers.StoreProvider.Companion.fragmentStore
 import mozilla.telemetry.glean.Glean
 import org.mozilla.fenix.R
@@ -91,12 +91,15 @@ class GleanDebugToolsFragment : Fragment(), SystemInsetsPaddedFragment {
                         },
                         navigationIcon = {
                             val directions = GleanDebugToolsFragmentDirections.actionGlobalBrowser()
-                            IconButton(onClick = { findNavController().navigate(directions) }) {
+                            IconButton(
+                                onClick = { findNavController().navigate(directions) },
+                                contentDescription = stringResource(
+                                    R.string.bookmark_navigate_back_button_content_description,
+                                ),
+                            ) {
                                 Icon(
                                     painter = painterResource(iconsR.drawable.mozac_ic_back_24),
-                                    contentDescription = stringResource(
-                                        R.string.bookmark_navigate_back_button_content_description,
-                                    ),
+                                    contentDescription = null,
                                 )
                             }
                         },

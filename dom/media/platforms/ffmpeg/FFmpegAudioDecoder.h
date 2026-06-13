@@ -51,7 +51,7 @@ class FFmpegAudioDecoder<LIBAV_VER>
                                 int32_t aSubmitted);
   const AudioInfo mAudioInfo;
   // True if the audio will be downmixed and rendered in mono.
-  bool mDefaultPlaybackDeviceMono;
+  bool mDefaultPlaybackDeviceMono = false;
 };
 
 }  // namespace mozilla

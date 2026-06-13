@@ -7,7 +7,6 @@
 #include <stdint.h>  // for uint8_t, uint32_t, etc
 
 #include "BufferTexture.h"
-#include "IPDLActor.h"
 #include "ImageContainer.h"  // for PlanarYCbCrData, etc
 #include "MainThreadUtils.h"
 #include "gfx2DGlue.h"
@@ -119,7 +118,7 @@ void DeallocateTextureClient(TextureDeallocParams& params);
  * TextureClient's data until the compositor side confirmed that it is safe to
  * deallocte or recycle the it.
  */
-class TextureChild final : PTextureChild {
+class TextureChild final : public PTextureChild {
   ~TextureChild() {
     // We should have deallocated mTextureData in ActorDestroy
     MOZ_ASSERT(!mTextureData);
@@ -127,7 +126,7 @@ class TextureChild final : PTextureChild {
   }
 
  public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(TextureChild)
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(TextureChild, final)
 
   TextureChild()
       : mCompositableForwarder(nullptr),
@@ -135,7 +134,6 @@ class TextureChild final : PTextureChild {
         mTextureClient(nullptr),
         mTextureData(nullptr),
         mDestroyed(false),
-        mIPCOpen(false),
         mOwnsTextureData(false),
         mOwnerCalledDestroy(false),
         mUsesImageBridge(false) {}
@@ -145,8 +143,6 @@ class TextureChild final : PTextureChild {
   LayersIPCChannel* GetAllocator() { return mTextureForwarder; }
 
   void ActorDestroy(ActorDestroyReason why) override;
-
-  bool IPCOpen() const { return mIPCOpen; }
 
   void Lock() const {
     if (mUsesImageBridge) {
@@ -161,21 +157,6 @@ class TextureChild final : PTextureChild {
   }
 
  private:
-  // AddIPDLReference and ReleaseIPDLReference are only to be called by
-  // CreateIPDLActor and DestroyIPDLActor, respectively. We intentionally make
-  // them private to prevent misuse. The purpose of these methods is to be aware
-  // of when the IPC system around this actor goes down: mIPCOpen is then set to
-  // false.
-  void AddIPDLReference() {
-    MOZ_ASSERT(mIPCOpen == false);
-    mIPCOpen = true;
-    AddRef();
-  }
-  void ReleaseIPDLReference() {
-    MOZ_ASSERT(mIPCOpen == false);
-    Release();
-  }
-
   /// The normal way to destroy the actor.
   ///
   /// This will asynchronously send a Destroy message to the parent actor, whom
@@ -254,7 +235,6 @@ class TextureChild final : PTextureChild {
   TextureClient* mTextureClient;
   TextureData* mTextureData;
   Atomic<bool> mDestroyed;
-  bool mIPCOpen;
   bool mOwnsTextureData;
   bool mOwnerCalledDestroy;
   bool mUsesImageBridge;
@@ -407,8 +387,6 @@ static void DestroyTextureData(TextureData* aTextureData,
 
 void TextureChild::ActorDestroy(ActorDestroyReason why) {
   AUTO_PROFILER_LABEL("TextureChild::ActorDestroy", GRAPHICS);
-  MOZ_ASSERT(mIPCOpen);
-  mIPCOpen = false;
 
   if (mTextureData) {
     DestroyTextureData(mTextureData, GetAllocator(), mOwnsTextureData);
@@ -424,7 +402,7 @@ void TextureChild::Destroy(const TextureDeallocParams& aParams) {
 
   mOwnerCalledDestroy = true;
 
-  if (!IPCOpen()) {
+  if (!CanSend()) {
     DestroyTextureData(aParams.data, aParams.allocator,
                        aParams.clientDeallocation);
     return;
@@ -1037,16 +1015,8 @@ bool TextureClient::ToSurfaceDescriptor(SurfaceDescriptor& aOutDescriptor) {
 }
 
 // static
-PTextureChild* TextureClient::CreateIPDLActor() {
-  TextureChild* c = new TextureChild();
-  c->AddIPDLReference();
-  return c;
-}
-
-// static
-bool TextureClient::DestroyIPDLActor(PTextureChild* actor) {
-  static_cast<TextureChild*>(actor)->ReleaseIPDLReference();
-  return true;
+already_AddRefed<PTextureChild> TextureClient::CreateIPDLActor() {
+  return MakeAndAddRef<TextureChild>();
 }
 
 // static
@@ -1076,7 +1046,7 @@ already_AddRefed<TextureClient> TextureClient::AsTextureClient(
 }
 
 bool TextureClient::IsSharedWithCompositor() const {
-  return mActor && mActor->IPCOpen();
+  return mActor && mActor->CanSend();
 }
 
 void TextureClient::AddFlags(TextureFlags aFlags) {
@@ -1111,7 +1081,7 @@ void TextureClient::SetAddedToCompositableClient() {
     }
     MOZ_ASSERT(!mIsLocked);
     LockActor();
-    if (IsValid() && mActor && !mActor->mDestroyed && mActor->IPCOpen()) {
+    if (IsValid() && mActor && !mActor->mDestroyed && mActor->CanSend()) {
       mActor->SendRecycleTexture(mFlags);
     }
     UnlockActor();
@@ -1164,7 +1134,7 @@ bool TextureClient::InitIPDLActor(CompositableForwarder* aForwarder) {
   RefPtr<TextureForwarder> textureFwd = aForwarder->GetTextureForwarder();
   MOZ_ASSERT(aForwarder && textureFwd->GetThread() == mAllocator->GetThread());
 
-  if (mActor && !mActor->IPCOpen()) {
+  if (mActor && !mActor->CanSend()) {
     return false;
   }
 
@@ -1217,7 +1187,7 @@ bool TextureClient::InitIPDLActor(CompositableForwarder* aForwarder) {
     }
   }
 
-  PTextureChild* actor = textureFwd->CreateTexture(
+  RefPtr actor = textureFwd->CreateTexture(
       desc, std::move(readLockDescriptor),
       aForwarder->GetCompositorBackendType(), GetFlags(),
       dom::ContentParentId(), mSerial, mExternalImageId);
@@ -1231,7 +1201,7 @@ bool TextureClient::InitIPDLActor(CompositableForwarder* aForwarder) {
     return false;
   }
 
-  mActor = static_cast<TextureChild*>(actor);
+  mActor = actor.forget().downcast<TextureChild>();
   mActor->mCompositableForwarder = aForwarder;
   mActor->mTextureForwarder = textureFwd;
   mActor->mTextureClient = this;
@@ -1242,7 +1212,7 @@ bool TextureClient::InitIPDLActor(CompositableForwarder* aForwarder) {
     LockActor();
   }
 
-  return mActor->IPCOpen();
+  return mActor->CanSend();
 }
 
 bool TextureClient::InitIPDLActor(KnowsCompositor* aKnowsCompositor,
@@ -1287,7 +1257,7 @@ bool TextureClient::InitIPDLActor(KnowsCompositor* aKnowsCompositor,
     }
   }
 
-  PTextureChild* actor = textureFwd->CreateTexture(
+  RefPtr actor = textureFwd->CreateTexture(
       desc, std::move(readLockDescriptor),
       aKnowsCompositor->GetCompositorBackendType(), GetFlags(), aContentId,
       mSerial, mExternalImageId);
@@ -1300,7 +1270,7 @@ bool TextureClient::InitIPDLActor(KnowsCompositor* aKnowsCompositor,
     return false;
   }
 
-  mActor = static_cast<TextureChild*>(actor);
+  mActor = actor.forget().downcast<TextureChild>();
   mActor->mTextureForwarder = textureFwd;
   mActor->mTextureClient = this;
 
@@ -1310,7 +1280,7 @@ bool TextureClient::InitIPDLActor(KnowsCompositor* aKnowsCompositor,
     LockActor();
   }
 
-  return mActor->IPCOpen();
+  return mActor->CanSend();
 }
 
 PTextureChild* TextureClient::GetIPDLActor() { return mActor; }
@@ -1453,7 +1423,8 @@ already_AddRefed<TextureClient> TextureClient::CreateForYCbCr(
     const gfx::IntSize& aCbCrSize, uint32_t aCbCrStride, StereoMode aStereoMode,
     gfx::ColorDepth aColorDepth, gfx::YUVColorSpace aYUVColorSpace,
     gfx::ColorRange aColorRange, gfx::TransferFunction aTransferFunction,
-    gfx::ChromaSubsampling aSubsampling, TextureFlags aTextureFlags) {
+    gfx::ChromaSubsampling aSubsampling, TextureFlags aTextureFlags,
+    const Maybe<gfx::HDRMetadata>& aHDRMetadata) {
   if (!aAllocator || !aAllocator->GetLayersIPCActor()->IPCOpen()) {
     return nullptr;
   }
@@ -1465,7 +1436,7 @@ already_AddRefed<TextureClient> TextureClient::CreateForYCbCr(
   TextureData* data = BufferTextureData::CreateForYCbCr(
       aAllocator, aDisplay, aYSize, aYStride, aCbCrSize, aCbCrStride,
       aStereoMode, aColorDepth, aYUVColorSpace, aColorRange, aTransferFunction,
-      aSubsampling, aTextureFlags);
+      aSubsampling, aTextureFlags, aHDRMetadata);
   if (!data) {
     return nullptr;
   }

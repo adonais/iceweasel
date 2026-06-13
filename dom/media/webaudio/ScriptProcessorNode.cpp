@@ -235,7 +235,7 @@ class SharedBuffers final {
   // True if we should be dropping buffers.
   bool mDroppingBuffers;
   // True iff the AudioNode has at least one input or output connected.
-  bool mNodeIsConnected;
+  bool mNodeIsConnected = false;
 };
 
 class ScriptProcessorNodeEngine final : public AudioNodeEngine {

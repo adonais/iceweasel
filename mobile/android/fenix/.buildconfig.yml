@@ -22,6 +22,8 @@ projects:
     - components:concept-ai-controls
     - components:concept-awesomebar
     - components:concept-base
+    - components:concept-bookmarks-file
+    - components:concept-bookmarks-parser
     - components:concept-engine
     - components:concept-fetch
     - components:concept-integrity
@@ -29,6 +31,7 @@ projects:
     - components:concept-menu
     - components:concept-push
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:concept-sync
     - components:concept-tabstray
     - components:concept-toolbar
@@ -43,7 +46,9 @@ projects:
     - components:feature-downloads
     - components:feature-findinpage
     - components:feature-fxsuggest
+    - components:feature-importer
     - components:feature-intent
+    - components:feature-ipprotection
     - components:feature-logins
     - components:feature-media
     - components:feature-privatemode
@@ -70,6 +75,8 @@ projects:
     - components:feature-webnotifications
     - components:lib-accelerometer-sensormanager
     - components:lib-ai-controls
+    - components:lib-bookmark-parser-jsoup
+    - components:lib-bookmarks-file
     - components:lib-crash
     - components:lib-crash-sentry
     - components:lib-dataprotect

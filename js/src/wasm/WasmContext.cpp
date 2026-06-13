@@ -54,7 +54,6 @@ Context::~Context() {
 #ifdef ENABLE_WASM_JSPI
   MOZ_ASSERT(currentStack_ == nullptr);
   MOZ_ASSERT(baseHandlers_ == nullptr);
-  MOZ_ASSERT(stacks_.empty());
 #endif  // ENABLE_WASM_JSPI
 }
 
@@ -95,10 +94,9 @@ ContStack* Context::findStackForAddress(JSContext* cx, uintptr_t stackAddress) {
     return nullptr;
   }
 
-  for (ContStack* stack : stacks_) {
-    if (stack->hasStackAddress(stackAddress)) {
-      return stack;
-    }
+  ContStack* stack = contStacks_.findForAddress(stackAddress);
+  if (stack && stack->hasStackAddress(stackAddress)) {
+    return stack;
   }
 
   // We have an address that's not on the main stack, but also not in a

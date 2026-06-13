@@ -39,6 +39,9 @@ import org.mozilla.focus.ui.theme.focusTypography
 import androidx.cardview.R as cardViewR
 import mozilla.components.browser.toolbar.R as toolbarR
 
+/**
+ * Integration for the URL input toolbar, managing editing and autocomplete.
+ */
 class InputToolbarIntegration(
     private val toolbar: BrowserToolbar,
     private val fragment: UrlInputFragment,

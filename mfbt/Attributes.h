@@ -848,6 +848,16 @@
  *   indicate that is has been looked at, but it did not need any
  *   MOZ_GUARDED_BY()/REQUIRES()/etc (and thus static analysis knows it can
  * ignore this Mutex/Monitor/etc)
+ * MOZ_ENUM_SERIALIZER_ALLOW_SENTINEL_UPPER_BOUND: Applies to ParamTraits
+ *   specializations that inherit from ContiguousEnumSerializerInclusive.
+ *   Suppresses the EnumSerializer checker warning about including a sentinel
+ *   enumerator (e.g. one named *_END, *Count, *Invalid) as a valid serialized
+ *   value. Use only when the sentinel is genuinely a valid value to send.
+ * MOZ_ENUM_SERIALIZER_ALLOW_MIN_MISMATCH: Applies to ParamTraits
+ *   specializations that inherit from ContiguousEnumSerializer[Inclusive].
+ *   Suppresses the EnumSerializer checker warning about the min template
+ *   argument not matching the first (lowest-valued) enumerator. Use when
+ *   deliberately excluding lower enumerators from being serialized.
  */
 
 // gcc emits a nuisance warning -Wignored-attributes because attributes do not
@@ -927,6 +937,11 @@
 #    define MOZ_INIT_OUTSIDE_CTOR
 #    define MOZ_IS_CLASS_INIT
 #    define MOZ_NON_PARAM __attribute__((annotate("moz_non_param")))
+#    define MOZ_ENUM_SERIALIZER_ALLOW_SENTINEL_UPPER_BOUND \
+      __attribute__((                                      \
+          annotate("moz_enum_serializer_allow_sentinel_upper_bound")))
+#    define MOZ_ENUM_SERIALIZER_ALLOW_MIN_MISMATCH \
+      __attribute__((annotate("moz_enum_serializer_allow_min_mismatch")))
 #    define MOZ_REQUIRED_BASE_METHOD \
       __attribute__((annotate("moz_required_base_method")))
 #    define MOZ_MUST_RETURN_FROM_CALLER_IF_THIS_IS_ARG \
@@ -1008,6 +1023,8 @@
 #    define MOZ_INIT_OUTSIDE_CTOR                           /* nothing */
 #    define MOZ_IS_CLASS_INIT                               /* nothing */
 #    define MOZ_NON_PARAM                                   /* nothing */
+#    define MOZ_ENUM_SERIALIZER_ALLOW_SENTINEL_UPPER_BOUND  /* nothing */
+#    define MOZ_ENUM_SERIALIZER_ALLOW_MIN_MISMATCH          /* nothing */
 #    define MOZ_NON_AUTOABLE                                /* nothing */
 #    define MOZ_REQUIRED_BASE_METHOD                        /* nothing */
 #    define MOZ_MUST_RETURN_FROM_CALLER_IF_THIS_IS_ARG      /* nothing */

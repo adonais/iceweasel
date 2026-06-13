@@ -1,0 +1,32 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+#include "nsISupports.idl"
+
+interface nsIContentClassifierService;
+
+/**
+ * RemoteSettings client for the content classifier. Fetches filter
+ * lists from RemoteSettings and pushes them to the C++ service.
+ */
+[scriptable, uuid(C7DDDBF2-8BC4-41A1-AC90-5144BEC5ABDF)]
+interface nsIContentClassifierRemoteSettingsClient : nsISupports {
+    /**
+     * Initialize the client. Registers the sync listener, fetches all
+     * current records from RemoteSettings, and downloads their
+     * attachments. Resolves once the initial import has finished (or
+     * failed); the engines will have been rebuilt from whatever
+     * succeeded.
+     */
+    Promise init(in nsIContentClassifierService aService);
+
+    /**
+     * Shut down the client and unregister sync listeners.
+     */
+    void shutdown();
+};
+
+%{C++
+#define NS_CONTENTCLASSIFIERREMOTESETTINGSCLIENT_CONTRACTID "@mozilla.org/content-classifier-rs-client;1"
+%}

@@ -157,6 +157,24 @@ data class GameState(
         return copy(direction = newDirection)
     }
 
+    /**
+     * Handles swipe input by changing direction.
+     * The fox cannot reverse, so opposite directions are ignored.
+     * @param swipeDirection The direction of the swipe gesture
+     */
+    fun onSwipe(swipeDirection: Direction): GameState {
+        val canChange = when (swipeDirection) {
+            UP -> direction != DOWN
+            DOWN -> direction != UP
+            LEFT -> direction != RIGHT
+            RIGHT -> direction != LEFT
+        }
+        return if (canChange) copy(direction = swipeDirection) else this
+    }
+
+    /**
+     * Food can spawn anywhere except right next to the walls, because that's quite annoying
+     */
     private fun randomGridPoint(): GridPoint = GridPoint(
         Random.nextInt(from = 1, until = numCells - 1),
         Random.nextInt(from = 1, until = numCells - 1),

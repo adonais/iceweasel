@@ -86,7 +86,7 @@ class nsListControlFrame final : public mozilla::ScrollContainerFrame {
   uint32_t GetNumberOfOptions();
 
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void OnContentReset();
-  void AddOption(int32_t aIndex);
+  void OptionsAdded();
   void RemoveOption(int32_t aIndex);
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   void DoneAddingChildren();
@@ -98,7 +98,7 @@ class nsListControlFrame final : public mozilla::ScrollContainerFrame {
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   void OnOptionSelected(int32_t aIndex, bool aSelected);
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  void OnSetSelectedIndex(int32_t aOldIndex, int32_t aNewIndex);
+  void OnSetSelectedIndex(int32_t aNewIndex);
 
   /**
    * Mouse event listeners.

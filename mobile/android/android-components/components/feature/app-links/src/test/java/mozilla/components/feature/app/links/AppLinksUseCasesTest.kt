@@ -19,7 +19,6 @@ import mozilla.components.support.test.whenever
 import mozilla.components.support.utils.Browsers
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -31,6 +30,7 @@ import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
 import org.robolectric.Shadows.shadowOf
 import java.io.File
+import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class AppLinksUseCasesTest {
@@ -297,7 +297,7 @@ class AppLinksUseCasesTest {
         assertNotNull(redirect.appIntent)
         assertNotNull(redirect.marketplaceIntent)
 
-        assertEquals("zxing://scan/", redirect.appIntent!!.dataString)
+        assertEquals("zxing://scan/", redirect.appIntent.dataString)
     }
 
     @Test
@@ -652,7 +652,7 @@ class AppLinksUseCasesTest {
         val result = subject.safeParseUri(uri, 0)
 
         assertNotNull(result)
-        assertEquals(result?.`package`, "org.mozilla.test")
+        assertEquals(result.`package`, "org.mozilla.test")
     }
 
     @Test

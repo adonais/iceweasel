@@ -110,7 +110,7 @@ let prepareTestCreditCards = async function (path) {
   await profileStorage._saveImmediately();
 };
 
-let reCCNumber = /^(\*+)(.{4})$/;
+let reCCNumber = /^(\•+)(.{4})$/;
 
 let do_check_credit_card_matches = (creditCardWithMeta, creditCard) => {
   for (let key in creditCard) {

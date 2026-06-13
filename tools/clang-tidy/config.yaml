@@ -20,6 +20,12 @@ platforms:
 # to work properly.
 # This is also used by 'mach lint -l clang-format'
 package_version: "20.1.8"
+
+# Header file that are platform dependant and generate false positive, we don't
+# want to analyze them.
+header_skiplist:
+  - js/src/jit/MacroAssembler.h
+
 clang_checkers:
   - name: -*
     publish: !!bool no

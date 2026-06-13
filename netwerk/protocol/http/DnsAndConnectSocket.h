@@ -50,7 +50,7 @@ class DnsAndConnectSocket final : public ConnectionAttempt,
                       uint32_t caps, bool speculative, bool urgentStart);
 
   nsresult Init(ConnectionEntry* ent) override;
-  void Abandon(bool aReenqueueTransaction = false) override;
+  void Abandon() override;
   double Duration(TimeStamp epoch) override;
   void OnTimeout() override;
 

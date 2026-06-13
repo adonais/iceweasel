@@ -86,7 +86,7 @@ export const TaskbarTabsPageAction = {
       return;
     }
 
-    let window = aEvent.target.ownerGlobal;
+    let window = aEvent.target.documentGlobal;
     let currentTab = window.gBrowser.selectedTab;
 
     if (this._processingTabs.has(currentTab)) {

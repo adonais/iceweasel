@@ -605,6 +605,8 @@ skip-if = [
 
 ["browser_ext_tabs_move_discarded.js"]
 
+["browser_ext_tabs_move_splitview.js"]
+
 ["browser_ext_tabs_move_window.js"]
 skip-if = [
   "os == 'win' && os_version == '11.26200' && asan", # Bug 2019745

@@ -5,6 +5,7 @@
 import { html } from "chrome://global/content/vendor/lit.all.mjs";
 import {
   SettingElement,
+  bumpHeadingLevelForSrd,
   spread,
 } from "chrome://browser/content/preferences/widgets/setting-element.mjs";
 import { SettingControl } from "chrome://browser/content/preferences/widgets/setting-control.mjs";
@@ -28,6 +29,7 @@ import { SettingControl } from "chrome://browser/content/preferences/widgets/set
  * @property {boolean} [hiddenFromSearch]
  * Whether this group should be hidden from search.
  * @property {boolean} [hidden] Whether this group should be visible.
+ * @property {string} [subcategory] Value for the `data-subcategory` attribute, used as a scroll target.
  */
 /** @typedef {SettingElementConfig & SettingGroupConfigExtensions} SettingGroupConfig */
 
@@ -121,6 +123,9 @@ export class SettingGroup extends SettingElement {
     }
     if (this.config?.hidden !== undefined) {
       this.toggleAttribute(HiddenAttr.Self, this.config.hidden);
+    }
+    if (this.config?.subcategory) {
+      this.setAttribute("data-subcategory", this.config.subcategory);
     }
   }
 
@@ -258,9 +263,13 @@ export class SettingGroup extends SettingElement {
     if (!this.config) {
       return "";
     }
+    let headingLevel = this.config.headingLevel;
+    if (this.srdEnabled) {
+      headingLevel = bumpHeadingLevelForSrd(headingLevel ?? 2, true);
+    }
     return this.containerTemplate(
       html`<moz-fieldset
-        .headingLevel=${this.srdEnabled ? 2 : this.config.headingLevel}
+        .headingLevel=${headingLevel}
         @change=${this.onChange}
         @toggle=${this.onChange}
         @click=${this.onClick}

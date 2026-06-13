@@ -36,7 +36,7 @@ class OpenTabsInSplitView extends MozLitElement {
   constructor() {
     super();
     this.currentWindow =
-      this.ownerGlobal.top.browsingContext.embedderWindowGlobal.browsingContext.window;
+      this.documentGlobal.top.browsingContext.embedderWindowGlobal.browsingContext.window;
     if (lazy.PrivateBrowsingUtils.isWindowPrivate(this.currentWindow)) {
       this.openTabsTarget = lazy.getTabsTargetForWindow(this.currentWindow);
     } else {

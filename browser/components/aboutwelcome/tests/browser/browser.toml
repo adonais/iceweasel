@@ -7,6 +7,8 @@ prefs = [
   "intl.multilingual.aboutWelcome.languageMismatchEnabled=false",
 ]
 
+["browser_aboutwelcome_animation_play_pause.js"]
+
 ["browser_aboutwelcome_attribution.js"]
 run-if = [
   "os == 'mac'", #  import is only available on Windows and macOS

@@ -18,8 +18,7 @@ class VideoBridgeParent final : public PVideoBridgeParent,
                                 public HostIPCAllocator,
                                 public mozilla::ipc::IShmemAllocator {
  public:
-  NS_IMETHODIMP_(MozExternalRefCountType) AddRef(void) override;
-  NS_IMETHODIMP_(MozExternalRefCountType) Release(void) override;
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(VideoBridgeParent, final);
 
   static RefPtr<VideoBridgeParent> GetSingleton(
       const Maybe<VideoBridgeSource>& aSource);
@@ -33,16 +32,14 @@ class VideoBridgeParent final : public PVideoBridgeParent,
       const dom::ContentParentId& aContentId, uint64_t aSerial);
   already_AddRefed<TextureHost> LookupTexture(
       const dom::ContentParentId& aContentId, uint64_t aSerial);
+  void RemoveTexture(uint64_t aSerial);
 
   // PVideoBridgeParent
   void ActorDestroy(ActorDestroyReason aWhy) override;
-  PTextureParent* AllocPTextureParent(const SurfaceDescriptor& aSharedData,
-                                      ReadLockDescriptor& aReadLock,
-                                      const LayersBackend& aLayersBackend,
-                                      const TextureFlags& aFlags,
-                                      const dom::ContentParentId& aContentId,
-                                      const uint64_t& aSerial);
-  bool DeallocPTextureParent(PTextureParent* actor);
+  already_AddRefed<PTextureParent> AllocPTextureParent(
+      const SurfaceDescriptor& aSharedData, ReadLockDescriptor& aReadLock,
+      const LayersBackend& aLayersBackend, const TextureFlags& aFlags,
+      const dom::ContentParentId& aContentId, const uint64_t& aSerial);
 
   // HostIPCAllocator
   base::ProcessId GetChildProcessId() override { return OtherPid(); }
@@ -70,6 +67,8 @@ class VideoBridgeParent final : public PVideoBridgeParent,
   static void ShutdownInternal();
 
   void DoUnregisterExternalImages();
+
+  void UnregisterSingleton();
 
   struct TextureHolder {
     RefPtr<TextureHost> mTextureHost;

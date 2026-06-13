@@ -971,7 +971,7 @@ class SitePermissionsFeature(
                     origin,
                     permissionRequest,
                     titleId = R.string.mozac_feature_sitepermissions_local_network_access_title,
-                    iconId = iconsR.drawable.mozac_ic_router_24,
+                    iconId = iconsR.drawable.mozac_ic_local_network_24,
                     showDoNotAskAgainCheckBox = true,
                     doNotAskAgainCheckBoxLabel = R.string.mozac_feature_sitepermissions_do_not_ask_again_on_this_site4,
                     shouldSelectRememberChoice = false,

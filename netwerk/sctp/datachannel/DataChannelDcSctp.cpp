@@ -146,7 +146,7 @@ void DataChannelConnectionDcSctp::OnSctpPacketReceived(
   if (!mDcSctp) {
     return;
   }
-  webrtc::ArrayView<const uint8_t> data(aPacket.data(), aPacket.len());
+  std::span<const uint8_t> data(aPacket.data(), aPacket.len());
   mDcSctp->ReceivePacket(data);
 }
 
@@ -161,8 +161,7 @@ bool DataChannelConnectionDcSctp::ResetStreams(nsTArray<uint16_t>& aStreams) {
     DC_DEBUG(("%s: %p Resetting %u", __func__, this, id));
     converted.push_back(StreamID(id));
   }
-  auto result =
-      mDcSctp->ResetStreams(webrtc::ArrayView<const StreamID>(converted));
+  auto result = mDcSctp->ResetStreams(std::span<const StreamID>(converted));
   aStreams.Clear();
   return result == ResetStreamsStatus::kPerformed;
 }
@@ -181,7 +180,7 @@ void DataChannelConnectionDcSctp::OnStreamOpen(uint16_t aStream) {
 }
 
 SendPacketStatus DataChannelConnectionDcSctp::SendPacketWithStatus(
-    webrtc::ArrayView<const uint8_t> aData) {
+    std::span<const uint8_t> aData) {
   MOZ_ASSERT(mSTS->IsOnCurrentThread());
   DC_DEBUG(("%s: %p", __func__, this));
   std::unique_ptr<MediaPacket> packet(new MediaPacket);
@@ -335,8 +334,7 @@ void DataChannelConnectionDcSctp::OnConnectionRestarted() {
 }
 
 void DataChannelConnectionDcSctp::OnStreamsResetFailed(
-    webrtc::ArrayView<const StreamID> aOutgoingStreams,
-    absl::string_view aReason) {
+    std::span<const StreamID> aOutgoingStreams, absl::string_view aReason) {
   MOZ_ASSERT(mSTS->IsOnCurrentThread());
   DC_ERROR(("%s: %p", __func__, this));
   // It probably does not make much sense to retry this here. If dcsctp doesn't
@@ -350,7 +348,7 @@ void DataChannelConnectionDcSctp::OnStreamsResetFailed(
 }
 
 void DataChannelConnectionDcSctp::OnStreamsResetPerformed(
-    webrtc::ArrayView<const StreamID> aOutgoingStreams) {
+    std::span<const StreamID> aOutgoingStreams) {
   MOZ_ASSERT(mSTS->IsOnCurrentThread());
   DC_DEBUG(("%s: %p", __func__, this));
   std::vector<uint16_t> streamsReset;
@@ -361,7 +359,7 @@ void DataChannelConnectionDcSctp::OnStreamsResetPerformed(
 }
 
 void DataChannelConnectionDcSctp::OnIncomingStreamsReset(
-    webrtc::ArrayView<const StreamID> aIncomingStreams) {
+    std::span<const StreamID> aIncomingStreams) {
   MOZ_ASSERT(mSTS->IsOnCurrentThread());
   DC_DEBUG(("%s: %p", __func__, this));
   std::vector<uint16_t> streamsReset;

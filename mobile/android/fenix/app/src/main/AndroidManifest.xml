@@ -663,6 +663,12 @@
             android:taskAffinity=""
             />
 
+        <activity android:name=".components.lens.LensCameraActivity"
+            android:theme="@style/Theme.LensCamera"
+            android:exported="false"
+            android:taskAffinity=""
+            />
+
         <activity
             android:name=".settings.account.AuthCustomTabActivity"
             android:autoRemoveFromRecents="false"
@@ -858,6 +864,16 @@
             <intent-filter>
                 <action android:name="org.mozilla.fenix.ACTION_PRINT" />
             </intent-filter>
+        </receiver>
+
+        <receiver
+          android:name="org.mozilla.fenix.messaging.QAMessageNotificationWorkerReceiver"
+          android:exported="true"
+          android:enabled="true"
+          android:permission="android.permission.DUMP">
+          <intent-filter>
+            <action android:name="org.mozilla.fenix.TRIGGER_MESSAGE_WORKER" />
+          </intent-filter>
         </receiver>
     </application>
 

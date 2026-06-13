@@ -35,7 +35,7 @@ RE_ANNOTATION = re.compile(r"(.*)\((.*)\)")
 # NOTE: CONDITIONS_JS_TO_MP should cover the known conditions as found by
 # https://searchfox.org/mozilla-central/search?q=skip-if.*+include&path=&case=false&regexp=true
 # AND must be kept in sync with the parsers
-# https://searchfox.org/mozilla-central/source/layout/tools/reftest/manifest.sys.mjs#47
+# https://searchfox.org/firefox-main/source/layout/tools/reftest/manifest.sys.mjs#47
 CONDITIONS_JS_TO_MP = {  # Manifestparser expression grammar
     "Android": "(os == 'android')",
     "geckoview": "(os == 'android')",

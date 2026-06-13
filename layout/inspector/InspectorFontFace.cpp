@@ -223,7 +223,7 @@ void InspectorFontFace::GetVariationAxes(
     aRV.Throw(NS_ERROR_OUT_OF_MEMORY);
     return;
   }
-  for (auto a : axes) {
+  for (const auto& a : axes) {
     InspectorVariationAxis& axis = *aResult.AppendElement();
     AppendTagAsASCII(axis.mTag, a.mTag);
     axis.mName.Append(NS_ConvertUTF8toUTF16(a.mName));

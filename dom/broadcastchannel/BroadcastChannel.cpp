@@ -378,7 +378,7 @@ already_AddRefed<BroadcastChannel> BroadcastChannel::Constructor(
 void BroadcastChannel::PostMessage(JSContext* aCx,
                                    JS::Handle<JS::Value> aMessage,
                                    ErrorResult& aRv) {
-  nsCOMPtr<nsIGlobalObject> global = GetOwnerGlobal();
+  nsCOMPtr<nsIGlobalObject> global = GetRelevantGlobal();
   if (!global || !global->IsEligibleForMessaging()) {
     return;
   }
@@ -470,7 +470,7 @@ void BroadcastChannel::MessageReceived(SharedMessageBody* aData) {
     return;
   }
 
-  nsCOMPtr<nsIGlobalObject> global = GetOwnerGlobal();
+  nsCOMPtr<nsIGlobalObject> global = GetRelevantGlobal();
   if (!global || !global->IsEligibleForMessaging()) {
     return;
   }

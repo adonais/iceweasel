@@ -555,6 +555,28 @@ class TabsUseCases(
                 ),
             )
         }
+
+        /**
+         * Moves a [sourceTabId] next to [targetTabId] before/after based on [placeAfter]
+         *
+         * @param sourceTabId The ID of the tab to move
+         * @param targetTabId The ID of the tab that the moved tab will be placed next to.  This
+         * may be null, and will result in a no-op in that case.
+         * @param placeAfter True if the tab should be placed after the target, false otherwise.
+         */
+        fun invoke(
+            sourceTabId: String,
+            targetTabId: String?,
+            placeAfter: Boolean,
+        ) {
+            if (targetTabId != null && sourceTabId != targetTabId) {
+                this.invoke(
+                    listOf(sourceTabId),
+                    targetTabId,
+                    placeAfter,
+                )
+            }
+        }
     }
 
     /**
@@ -576,7 +598,8 @@ class TabsUseCases(
             tabId: String,
             alternativeUrl: String? = null,
         ): String {
-            val tab = store.state.findTab(tabId) ?: throw IllegalStateException("Tab does not exist.")
+            val tab =
+                store.state.findTab(tabId) ?: throw IllegalStateException("Tab does not exist.")
 
             require(tab.content.private) { "The tab we are trying to move is not private." }
 
@@ -762,7 +785,14 @@ class TabsUseCases(
     val removeNormalTabs: RemoveNormalTabsUseCase by lazy { RemoveNormalTabsUseCase(store) }
     val removePrivateTabs: RemovePrivateTabsUseCase by lazy { RemovePrivateTabsUseCase(store) }
     val undo by lazy { UndoTabRemovalUseCase(store) }
-    val restore: RestoreUseCase by lazy { RestoreUseCase(store, selectTab, mainDispatcher, ioDispatcher) }
+    val restore: RestoreUseCase by lazy {
+        RestoreUseCase(
+            store,
+            selectTab,
+            mainDispatcher,
+            ioDispatcher,
+        )
+    }
     val selectOrAddTab: SelectOrAddUseCase by lazy { SelectOrAddUseCase(store) }
     val duplicateTab: DuplicateTabUseCase by lazy { DuplicateTabUseCase(store) }
     val moveTabs: MoveTabsUseCase by lazy { MoveTabsUseCase(store) }

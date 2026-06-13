@@ -372,6 +372,26 @@ class AppLinksFeatureTest {
     }
 
     @Test
+    fun `WHEN url or fallback url scheme is supported THEN dismiss redirect will load it`() {
+        val tab = createTab(webUrl, private = true)
+
+        feature.dismissRedirect(tab, intentUrl, null)
+        verify(mockLoadUrlUseCase, never()).invoke(anyString(), anyString(), any(), any(), any())
+
+        feature.dismissRedirect(tab, intentUrl, intentUrl)
+        verify(mockLoadUrlUseCase, never()).invoke(anyString(), anyString(), any(), any(), any())
+
+        feature.dismissRedirect(tab, webUrl, null)
+        verify(mockLoadUrlUseCase, times(1)).invoke(anyString(), anyString(), any(), any(), any())
+
+        feature.dismissRedirect(tab, aboutUrl, null)
+        verify(mockLoadUrlUseCase, times(2)).invoke(anyString(), anyString(), any(), any(), any())
+
+        feature.dismissRedirect(tab, intentUrl, aboutUrl)
+        verify(mockLoadUrlUseCase, times(3)).invoke(anyString(), anyString(), any(), any(), any())
+    }
+
+    @Test
     fun `WHEN url scheme is a wallet scheme THEN wallet prompt is shown even if shouldPrompt is false`() {
         feature = spy(
             AppLinksFeature(

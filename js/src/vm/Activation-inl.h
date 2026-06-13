@@ -70,7 +70,7 @@ inline LiveSavedFrameCache* Activation::getLiveSavedFrameCache(JSContext* cx) {
 }
 
 /* static */ inline mozilla::Maybe<LiveSavedFrameCache::FramePtr>
-LiveSavedFrameCache::FramePtr::create(const FrameIter& iter) {
+LiveSavedFrameCache::FramePtr::create(JSContext* cx, const FrameIter& iter) {
   if (iter.done()) {
     return mozilla::Nothing();
   }
@@ -89,7 +89,14 @@ LiveSavedFrameCache::FramePtr::create(const FrameIter& iter) {
     return mozilla::Some(FramePtr(afp.asInterpreterFrame()));
   }
   if (afp.isWasmDebugFrame()) {
-    return mozilla::Some(FramePtr(afp.asWasmDebugFrame()));
+    wasm::DebugFrame* wasmFrame = afp.asWasmDebugFrame();
+#ifdef ENABLE_WASM_JSPI
+    if (cx->wasm().findStackForAddress(
+            cx, reinterpret_cast<uintptr_t>(wasmFrame))) {
+      return mozilla::Nothing();
+    }
+#endif
+    return mozilla::Some(FramePtr(wasmFrame));
   }
   if (afp.isRematerializedFrame()) {
     return mozilla::Some(FramePtr(afp.asRematerializedFrame()));

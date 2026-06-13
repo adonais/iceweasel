@@ -93,6 +93,7 @@ using namespace js;
 using namespace js::jit;
 using namespace js::wasm;
 
+using mozilla::MakeStringSpan;
 using mozilla::Maybe;
 using mozilla::Nothing;
 using mozilla::Some;
@@ -408,6 +409,37 @@ static bool DescribeScriptedCaller(JSContext* cx, ScriptedCaller* caller,
   return true;
 }
 
+static bool CreateCompileError(JSContext* cx, const ScriptedCaller& caller,
+                               HandleObject stack, const char* error,
+                               MutableHandleObject errorObj) {
+  RootedString fileName(cx);
+  if (const char* fn = caller.filename.get()) {
+    fileName = JS_NewStringCopyUTF8N(cx, JS::UTF8Chars(fn, strlen(fn)));
+  } else {
+    fileName = JS_GetEmptyString(cx);
+  }
+  if (!fileName) {
+    return false;
+  }
+
+  UniqueChars str(JS_smprintf("wasm validation error: %s", error));
+  if (!str) {
+    return false;
+  }
+
+  RootedString message(cx,
+                       NewStringCopyN<CanGC>(cx, str.get(), strlen(str.get())));
+  if (!message) {
+    return false;
+  }
+
+  auto cause = JS::NothingHandleValue;
+  errorObj.set(ErrorObject::create(cx, JSEXN_WASMCOMPILEERROR, stack, fileName,
+                                   0, caller.line, JS::ColumnNumberOneOrigin(),
+                                   nullptr, message, cause));
+  return !!errorObj;
+}
+
 static SharedCompileArgs InitCompileArgs(JSContext* cx,
                                          const FeatureOptions& options,
                                          const char* introducer) {
@@ -535,6 +567,175 @@ bool wasm::DeserializeModule(JSContext* cx, const Bytes& serialized,
   moduleObj.set(module->createObject(cx));
   return !!moduleObj;
 }
+
+static bool ReportCompileWarnings(JSContext* cx,
+                                  const UniqueCharsVector& warnings) {
+  // Avoid spamming the console.
+  size_t numWarnings = std::min<size_t>(warnings.length(), 3);
+
+  for (size_t i = 0; i < numWarnings; i++) {
+    if (!WarnNumberASCII(cx, JSMSG_WASM_COMPILE_WARNING, warnings[i].get())) {
+      return false;
+    }
+  }
+
+  if (warnings.length() > numWarnings) {
+    if (!WarnNumberASCII(cx, JSMSG_WASM_COMPILE_WARNING,
+                         "other warnings suppressed")) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
+// https://webassembly.github.io/esm-integration/js-api/index.html#esm-integration
+bool js::wasm::CompileForESM(JSContext* cx,
+                             const JS::ReadOnlyCompileOptions& options,
+                             const BytecodeSource& bytecodeSource,
+                             MutableHandleObject moduleObj) {
+  // Step 1. Let stableBytes be a copy of the bytes held by the buffer bytes.
+  // (Performed by caller)
+
+  FeatureOptions featureOptions;
+  // Step 4 (reordered). Let builtinSetNames be « "js-string" ».
+  featureOptions.jsStringBuiltins = true;
+  // Step 5 (reordered). Let importedStringModule be "wasm:js/string-constants".
+  featureOptions.jsStringConstants = true;
+  UniqueChars ns = DuplicateString(cx, "wasm:js/string-constants");
+  if (!ns) {
+    return false;
+  }
+  featureOptions.jsStringConstantsNamespace =
+      cx->new_<ShareableChars>(std::move(ns));
+  if (!featureOptions.jsStringConstantsNamespace) {
+    return false;
+  }
+
+  // Step 2. Compile the WebAssembly module stableBytes and store the result
+  //         as module.
+  ScriptedCaller scriptedCaller;
+  if (options.filename()) {
+    scriptedCaller.filename = DuplicateString(cx, options.filename().c_str());
+    if (!scriptedCaller.filename) {
+      return false;
+    }
+    scriptedCaller.filenameIsURL = true;
+  }
+  SharedCompileArgs compileArgs = CompileArgs::buildAndReport(
+      cx, std::move(scriptedCaller), featureOptions, /* reportOOM */ true);
+  if (!compileArgs) {
+    return false;
+  }
+
+  UniqueChars error;
+  UniqueCharsVector warnings;
+  SharedModule module =
+      CompileBuffer(*compileArgs, BytecodeBufferOrSource(bytecodeSource),
+                    &error, &warnings, nullptr);
+
+  if (!ReportCompileWarnings(cx, warnings)) {
+    return false;
+  }
+
+  // Step 3. If module is error, throw a CompileError exception.
+  if (!module) {
+    if (!error) {
+      JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
+                               JSMSG_OUT_OF_MEMORY);
+      return false;
+    }
+    RootedObject errorObj(cx);
+    RootedObject nullStack(cx, nullptr);
+    if (!CreateCompileError(cx, compileArgs->scriptedCaller, nullStack,
+                            error.get(), &errorObj)) {
+      return false;
+    }
+    RootedValue errorVal(cx, ObjectValue(*errorObj));
+    cx->setPendingException(errorVal, js::ShouldCaptureStack::Maybe);
+    return false;
+  }
+
+  // Step 6. Construct a WebAssembly module object from module, bytes,
+  //         builtinSetNames and importedStringModule, and let module
+  //         be the result.
+  RootedObject proto(
+      cx, GlobalObject::getOrCreatePrototype(cx, JSProto_WasmModule));
+  if (!proto) {
+    return false;
+  }
+
+  RootedObject wasmModuleObject(cx,
+                                WasmModuleObject::create(cx, *module, proto));
+  if (!wasmModuleObject) {
+    return false;
+  }
+
+  // Step 7. Let requestedModules be a set.
+  // TODO: Populate requestedModules for evaluation phase imports (Bug 2030454).
+
+  const ModuleMetadata& moduleMeta = module->moduleMeta();
+  const CodeMetadata& codeMeta = module->codeMeta();
+
+  // Step 8. For each (moduleName, name, type) in
+  // module_imports(module.[[Module]]),
+  for (const Import& import : moduleMeta.imports) {
+    Span<const char> moduleName = import.module.utf8Bytes();
+    Span<const char> name = import.field.utf8Bytes();
+
+    // Step 8.1. If moduleName starts with the prefix "wasm-js:",
+    if (CharsStartsWith(moduleName, MakeStringSpan("wasm-js:"))) {
+      // Step 8.1.1. Throw a LinkError exception.
+      JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
+                               JSMSG_WASM_ESM_RESERVED_MODULE_NAME,
+                               moduleName.data());
+      return false;
+    }
+
+    // Step 8.2. If name starts with the prefix "wasm:" or "wasm-js:",
+    if (CharsStartsWith(name, MakeStringSpan("wasm:")) ||
+        CharsStartsWith(name, MakeStringSpan("wasm-js:"))) {
+      // Step 8.2.1. Throw a LinkError exception.
+      JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
+                               JSMSG_WASM_ESM_RESERVED_FIELD_NAME, name.data());
+      return false;
+    }
+
+    // Step 8.3. Note: The following step only applies when integrating with the
+    // JS String Builtins proposal.
+
+    // Step 8.4. If Find a builtin with (moduleName, name, type) and builtins
+    // module.[[BuiltinSets]] is not null, then continue.
+    if (ImportMatchesBuiltinModule(moduleName,
+                                   codeMeta.features().builtinModules)) {
+      continue;
+    }
+
+    // Step 8.4.1. Append moduleName to requestedModules.
+    // TODO: Populate requestedModules for evaluation phase imports (Bug
+    // 2030454).
+  }
+
+  // Step 9. For each (name, type) in module_exports(module.[[Module]])
+  for (const Export& exp : moduleMeta.exports) {
+    Span<const char> name = exp.fieldName().utf8Bytes();
+
+    // Step 9.1. If name starts with the prefix "wasm:" or "wasm-js:",
+    if (CharsStartsWith(name, MakeStringSpan("wasm:")) ||
+        CharsStartsWith(name, MakeStringSpan("wasm-js:"))) {
+      // Step 9.1.1. Throw a LinkError exception.
+      JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
+                               JSMSG_WASM_ESM_RESERVED_EXPORT_NAME,
+                               name.data());
+      return false;
+    }
+  }
+
+  moduleObj.set(wasmModuleObject);
+  return true;
+}
+#endif
 
 // ============================================================================
 // Common functions
@@ -844,6 +1045,21 @@ static JSObject* CreateWasmConstructor(JSContext* cx, JSProtoKey key) {
     return nullptr;
   }
 
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
+  if (JS::Prefs::experimental_source_phase_imports()) {
+    if constexpr (std::is_same_v<Class, WasmModuleObject>) {
+      RootedObject proto(cx, GlobalObject::getOrCreateConstructor(
+                                 cx, JSProto_AbstractModuleSource));
+      if (!proto) {
+        return nullptr;
+      }
+      return NewFunctionWithProto(
+          cx, Class::construct, 1, FunctionFlags::NATIVE_CTOR, nullptr,
+          className, proto, gc::AllocKind::FUNCTION, TenuredObject);
+    }
+  }
+#endif
+
   return NewNativeConstructor(cx, Class::construct, 1, className);
 }
 
@@ -1079,16 +1295,7 @@ static JSObject* TagTypeToObject(JSContext* cx,
 // WebAssembly.Module class and methods
 
 const JSClassOps WasmModuleObject::classOps_ = {
-    nullptr,                     // addProperty
-    nullptr,                     // delProperty
-    nullptr,                     // enumerate
-    nullptr,                     // newEnumerate
-    nullptr,                     // resolve
-    nullptr,                     // mayResolve
-    WasmModuleObject::finalize,  // finalize
-    nullptr,                     // call
-    nullptr,                     // construct
-    nullptr,                     // trace
+    .finalize = WasmModuleObject::finalize,
 };
 
 const JSClass WasmModuleObject::class_ = {
@@ -1104,9 +1311,31 @@ const JSClass& WasmModuleObject::protoClass_ = PlainObject::class_;
 
 static constexpr char WasmModuleName[] = "Module";
 
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
+// https://webassembly.github.io/esm-integration/js-api/index.html#modules
+static JSObject* CreateWasmModulePrototype(JSContext* cx, JSProtoKey key) {
+  if (JS::Prefs::experimental_source_phase_imports()) {
+    RootedObject abstractModuleSourceProto(
+        cx,
+        GlobalObject::getOrCreatePrototype(cx, JSProto_AbstractModuleSource));
+    if (!abstractModuleSourceProto) {
+      return nullptr;
+    }
+    return GlobalObject::createBlankPrototypeInheriting(
+        cx, &WasmModuleObject::protoClass_, abstractModuleSourceProto);
+  }
+  return GlobalObject::createBlankPrototype(cx, cx->global(),
+                                            &WasmModuleObject::protoClass_);
+}
+#endif
+
 const ClassSpec WasmModuleObject::classSpec_ = {
     CreateWasmConstructor<WasmModuleObject, WasmModuleName>,
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
+    CreateWasmModulePrototype,
+#else
     GenericCreatePrototype<WasmModuleObject>,
+#endif
     WasmModuleObject::static_methods,
     nullptr,
     WasmModuleObject::methods,
@@ -1675,27 +1904,6 @@ static bool GetBytecodeBufferOrSource(JSContext* cx, Handle<JSObject*> obj,
   return true;
 }
 
-static bool ReportCompileWarnings(JSContext* cx,
-                                  const UniqueCharsVector& warnings) {
-  // Avoid spamming the console.
-  size_t numWarnings = std::min<size_t>(warnings.length(), 3);
-
-  for (size_t i = 0; i < numWarnings; i++) {
-    if (!WarnNumberASCII(cx, JSMSG_WASM_COMPILE_WARNING, warnings[i].get())) {
-      return false;
-    }
-  }
-
-  if (warnings.length() > numWarnings) {
-    if (!WarnNumberASCII(cx, JSMSG_WASM_COMPILE_WARNING,
-                         "other warnings suppressed")) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
 /* static */
 bool WasmModuleObject::construct(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs callArgs = CallArgsFromVp(argc, vp);
@@ -1799,16 +2007,8 @@ const Module& WasmModuleObject::module() const {
 // WebAssembly.Instance class and methods
 
 const JSClassOps WasmInstanceObject::classOps_ = {
-    nullptr,                       // addProperty
-    nullptr,                       // delProperty
-    nullptr,                       // enumerate
-    nullptr,                       // newEnumerate
-    nullptr,                       // resolve
-    nullptr,                       // mayResolve
-    WasmInstanceObject::finalize,  // finalize
-    nullptr,                       // call
-    nullptr,                       // construct
-    WasmInstanceObject::trace,     // trace
+    .finalize = WasmInstanceObject::finalize,
+    .trace = WasmInstanceObject::trace,
 };
 
 const JSClass WasmInstanceObject::class_ = {
@@ -2168,16 +2368,7 @@ WasmFunctionScope* WasmInstanceObject::getFunctionScope(
 // WebAssembly.Memory class and methods
 
 const JSClassOps WasmMemoryObject::classOps_ = {
-    nullptr,                     // addProperty
-    nullptr,                     // delProperty
-    nullptr,                     // enumerate
-    nullptr,                     // newEnumerate
-    nullptr,                     // resolve
-    nullptr,                     // mayResolve
-    WasmMemoryObject::finalize,  // finalize
-    nullptr,                     // call
-    nullptr,                     // construct
-    nullptr,                     // trace
+    .finalize = WasmMemoryObject::finalize,
 };
 
 const JSClass WasmMemoryObject::class_ = {
@@ -2847,16 +3038,8 @@ bool js::wasm::IsSharedWasmMemoryObject(JSObject* obj) {
 // WebAssembly.Table class and methods
 
 const JSClassOps WasmTableObject::classOps_ = {
-    nullptr,                    // addProperty
-    nullptr,                    // delProperty
-    nullptr,                    // enumerate
-    nullptr,                    // newEnumerate
-    nullptr,                    // resolve
-    nullptr,                    // mayResolve
-    WasmTableObject::finalize,  // finalize
-    nullptr,                    // call
-    nullptr,                    // construct
-    WasmTableObject::trace,     // trace
+    .finalize = WasmTableObject::finalize,
+    .trace = WasmTableObject::trace,
 };
 
 const JSClass WasmTableObject::class_ = {
@@ -3188,7 +3371,8 @@ bool WasmTableObject::growImpl(JSContext* cx, const CallArgs& args) {
 
   RootedValue fillValue(
       cx, args.length() < 2 ? RefTypeDefaultValue(table.elemType()) : args[1]);
-  if (!CheckRefType(cx, table.elemType(), fillValue)) {
+  Rooted<wasm::AnyRef> fillRef(cx);
+  if (!CheckRefType(cx, table.elemType(), fillValue, &fillRef)) {
     return false;
   }
 
@@ -3202,13 +3386,12 @@ bool WasmTableObject::growImpl(JSContext* cx, const CallArgs& args) {
 
   // Skip filling the grown range of the table if the fill value is null, as
   // that is the default value.
-  if (!fillValue.isNull() &&
-      !tableObj->fillRange(cx, oldLength, delta, fillValue)) {
-    return false;
+  if (!fillRef.isNull()) {
+    table.fillUninitialized(oldLength, delta, fillRef, cx);
   }
 #ifdef DEBUG
   // Assert that null is the default value of the grown range.
-  if (fillValue.isNull()) {
+  if (fillRef.isNull()) {
     table.assertRangeNull(oldLength, delta);
   }
   if (!table.elemType().isNullable()) {
@@ -3278,16 +3461,8 @@ bool WasmTableObject::fillRange(JSContext* cx, uint32_t index, uint32_t length,
 // WebAssembly.global class and methods
 
 const JSClassOps WasmGlobalObject::classOps_ = {
-    nullptr,                     // addProperty
-    nullptr,                     // delProperty
-    nullptr,                     // enumerate
-    nullptr,                     // newEnumerate
-    nullptr,                     // resolve
-    nullptr,                     // mayResolve
-    WasmGlobalObject::finalize,  // finalize
-    nullptr,                     // call
-    nullptr,                     // construct
-    WasmGlobalObject::trace,     // trace
+    .finalize = WasmGlobalObject::finalize,
+    .trace = WasmGlobalObject::trace,
 };
 
 const JSClass WasmGlobalObject::class_ = {
@@ -3570,16 +3745,7 @@ bool WasmGlobalObject::type(JSContext* cx, unsigned argc, Value* vp) {
 // WebAssembly.Tag class and methods
 
 const JSClassOps WasmTagObject::classOps_ = {
-    nullptr,                  // addProperty
-    nullptr,                  // delProperty
-    nullptr,                  // enumerate
-    nullptr,                  // newEnumerate
-    nullptr,                  // resolve
-    nullptr,                  // mayResolve
-    WasmTagObject::finalize,  // finalize
-    nullptr,                  // call
-    nullptr,                  // construct
-    nullptr,                  // trace
+    .finalize = WasmTagObject::finalize,
 };
 
 const JSClass WasmTagObject::class_ = {
@@ -3745,16 +3911,8 @@ const wasm::ValTypeVector& WasmTagObject::valueTypes() const {
 // WebAssembly.Exception class and methods
 
 const JSClassOps WasmExceptionObject::classOps_ = {
-    nullptr,                        // addProperty
-    nullptr,                        // delProperty
-    nullptr,                        // enumerate
-    nullptr,                        // newEnumerate
-    nullptr,                        // resolve
-    nullptr,                        // mayResolve
-    WasmExceptionObject::finalize,  // finalize
-    nullptr,                        // call
-    nullptr,                        // construct
-    WasmExceptionObject::trace,     // trace
+    .finalize = WasmExceptionObject::finalize,
+    .trace = WasmExceptionObject::trace,
 };
 
 const JSClass WasmExceptionObject::class_ = {
@@ -3807,7 +3965,7 @@ void WasmExceptionObject::trace(JSTracer* trc, JSObject* obj) {
     if (paramType.isRefRepr()) {
       GCPtr<wasm::AnyRef>* paramPtr =
           reinterpret_cast<GCPtr<AnyRef>*>(typedMem + offsets[i]);
-      TraceNullableEdge(trc, paramPtr, "wasm exception param");
+      TraceEdge(trc, paramPtr, "wasm exception param");
     }
   }
 }
@@ -3863,6 +4021,14 @@ bool WasmExceptionObject::construct(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
   Rooted<WasmTagObject*> exnTag(cx, &args[0].toObject().as<WasmTagObject>());
+
+  // Per spec, WebAssembly.Exception can't be constructed with
+  // WebAssembly.JSTag.
+  if (exnTag->tagType() == sWrappedJSValueTagType) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_WASM_BAD_JSTAG_WRAP);
+    return false;
+  }
 
   if (!args.get(1).isObject()) {
     JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
@@ -4235,9 +4401,8 @@ static JSFunction* WasmFunctionCreate(JSContext* cx, HandleObject func,
   // one in wasm tables. We synthesize such a module below, instantiate it, and
   // then return the exported function as the result.
   FeatureOptions options;
-  ScriptedCaller scriptedCaller;
   SharedCompileArgs compileArgs =
-      CompileArgs::buildAndReport(cx, std::move(scriptedCaller), options);
+      CompileArgs::buildAndReport(cx, ScriptedCaller::selfHosted(cx), options);
   if (!compileArgs) {
     return nullptr;
   }
@@ -4462,41 +4627,9 @@ static bool Reject(JSContext* cx, const CompileArgs& args,
   }
 
   RootedObject stack(cx, promise->allocationSite());
-  RootedString fileName(cx);
-  if (const char* filename = args.scriptedCaller.filename.get()) {
-    fileName =
-        JS_NewStringCopyUTF8N(cx, JS::UTF8Chars(filename, strlen(filename)));
-  } else {
-    fileName = JS_GetEmptyString(cx);
-  }
-  if (!fileName) {
-    return false;
-  }
-
-  uint32_t line = args.scriptedCaller.line;
-
-  // Ideally we'd report a JSMSG_WASM_COMPILE_ERROR here, but there's no easy
-  // way to create an ErrorObject for an arbitrary error code with multiple
-  // replacements.
-  UniqueChars str(JS_smprintf("wasm validation error: %s", error.get()));
-  if (!str) {
-    return false;
-  }
-
-  size_t len = strlen(str.get());
-  RootedString message(cx, NewStringCopyN<CanGC>(cx, str.get(), len));
-  if (!message) {
-    return false;
-  }
-
-  // There's no error |cause| available here.
-  auto cause = JS::NothingHandleValue;
-
-  RootedObject errorObj(
-      cx, ErrorObject::create(cx, JSEXN_WASMCOMPILEERROR, stack, fileName, 0,
-                              line, JS::ColumnNumberOneOrigin(), nullptr,
-                              message, cause));
-  if (!errorObj) {
+  RootedObject errorObj(cx);
+  if (!CreateCompileError(cx, args.scriptedCaller, stack, error.get(),
+                          &errorObj)) {
     return false;
   }
 
@@ -5118,7 +5251,22 @@ class CompileStreamTask : public PromiseHelperTask, public JS::StreamConsumer {
         setClosedAndDestroyBeforeHelperThreadStarted();
         return;
       }
-      case Code:
+      case Code: {
+        // Stream ended mid code section: declared code section size was
+        // larger than the bytes actually delivered. The helper thread is
+        // blocked in StreamingDecoder::waitForBytes()
+        // Report the error and unlock the thread.
+        // The order of the following operations is critical:
+        // - First set cancelled to true
+        // - Then wake up the helper thread waiting for bytes. This thread will
+        //   see the cancelled flag and returns. If we inverted this we could
+        //   wake up the thread and it would go back to sleep.
+        streamFailed_ = true;
+        exclusiveCodeBytesEnd_.lock().notify_one();
+        exclusiveStreamEnd_.lock().notify_one();
+        setClosedAndDestroyAfterHelperThreadStarted();
+        return;
+      }
       case Tail:
         // Unlock exclusiveStreamEnd_ before locking streamState_.
         {
@@ -5290,16 +5438,7 @@ class ResolveResponseClosure : public NativeObject {
 };
 
 const JSClassOps ResolveResponseClosure::classOps_ = {
-    nullptr,                           // addProperty
-    nullptr,                           // delProperty
-    nullptr,                           // enumerate
-    nullptr,                           // newEnumerate
-    nullptr,                           // resolve
-    nullptr,                           // mayResolve
-    ResolveResponseClosure::finalize,  // finalize
-    nullptr,                           // call
-    nullptr,                           // construct
-    nullptr,                           // trace
+    .finalize = ResolveResponseClosure::finalize,
 };
 
 const JSClass ResolveResponseClosure::class_ = {
@@ -5518,8 +5657,10 @@ static bool WebAssembly_instantiateStreaming(JSContext* cx, unsigned argc,
 }
 
 #ifdef ENABLE_WASM_JSPI
+static constexpr char WasmSuspendingName[] = "Suspending";
+
 const ClassSpec WasmSuspendingObject::classSpec_ = {
-    GenericCreateConstructor<construct, 1, gc::AllocKind::FUNCTION>,
+    CreateWasmConstructor<WasmSuspendingObject, WasmSuspendingName>,
     GenericCreatePrototype<WasmSuspendingObject>,
     nullptr,
     nullptr,

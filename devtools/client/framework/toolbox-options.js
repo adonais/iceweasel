@@ -555,6 +555,23 @@ class OptionsPanel extends EventEmitter {
       // Hide the checkbox and label
       this.disableJSNode.parentNode.style.display = "none";
     }
+
+    // @backward-compat { version 152 } Once 152 hits release, we can remove this boolean
+    // and always consider it true (i.e. remove everything related to the "show comments" option in the toolbox).
+    const showCommentsOption = this.panelDoc.querySelector(
+      'label:has(> [data-pref="devtools.markup.showComments"])'
+    );
+    try {
+      if (
+        !this.commands.targetCommand.rootFront.traits
+          .supportsCommentNodesDisplayControl
+      ) {
+        showCommentsOption.style.display = "none";
+      }
+    } catch (e) {
+      // If inspector is not available, hide the option
+      showCommentsOption.style.display = "none";
+    }
   }
 
   updateCurrentTheme() {

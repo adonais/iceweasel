@@ -346,9 +346,11 @@ export class AutoScrollChild extends JSWindowActorChild {
       behavior: "instant",
     });
 
-    (
-      this._scrollable.documentGlobal || this._scrollable.ownerGlobal
-    ).requestAnimationFrame(this.autoscrollLoop);
+    let win =
+      this._scrollable instanceof Ci.nsIDOMWindow
+        ? this._scrollable
+        : this._scrollable.documentGlobal;
+    win.requestAnimationFrame(this.autoscrollLoop);
   }
 
   canStartAutoScrollWith(event) {

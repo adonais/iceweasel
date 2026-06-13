@@ -666,9 +666,11 @@ class TextInputHandlerBase : public TextEventDispatcherListener {
           return keyNameIndex == KEY_NAME_INDEX_ArrowRight &&
                  modifiers == (MODIFIER_ALT | MODIFIER_SHIFT);
         case Command::EndLine:
+        case Command::MoveRight3:
           return keyNameIndex == KEY_NAME_INDEX_ArrowRight &&
                  modifiers == MODIFIER_META;
         case Command::SelectEndLine:
+        case Command::SelectRight3:
           return keyNameIndex == KEY_NAME_INDEX_ArrowRight &&
                  modifiers == (MODIFIER_META | MODIFIER_SHIFT);
         case Command::CharPrevious:
@@ -684,9 +686,11 @@ class TextInputHandlerBase : public TextEventDispatcherListener {
           return keyNameIndex == KEY_NAME_INDEX_ArrowLeft &&
                  modifiers == (MODIFIER_ALT | MODIFIER_SHIFT);
         case Command::BeginLine:
+        case Command::MoveLeft3:
           return keyNameIndex == KEY_NAME_INDEX_ArrowLeft &&
                  modifiers == MODIFIER_META;
         case Command::SelectBeginLine:
+        case Command::SelectLeft3:
           return keyNameIndex == KEY_NAME_INDEX_ArrowLeft &&
                  modifiers == (MODIFIER_META | MODIFIER_SHIFT);
         case Command::LinePrevious:

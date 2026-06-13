@@ -14,6 +14,12 @@ import kotlinx.coroutines.flow.StateFlow
  * and clearing it upon interaction.
  */
 interface SummarizationFeatureDiscoveryConfiguration {
+
+    /**
+     * Determines if the feature is available
+     */
+    val isFeatureAvailable: Boolean
+
     /**
      * Determines if the feature can be shown
      */

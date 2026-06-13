@@ -42,7 +42,7 @@ global.getTargetTabIdForToolbox = toolbox => {
     );
   }
 
-  let parentWindow = descriptorFront.localTab.linkedBrowser.ownerGlobal;
+  let parentWindow = descriptorFront.localTab.linkedBrowser.documentGlobal;
   let tab = parentWindow.gBrowser.getTabForBrowser(
     descriptorFront.localTab.linkedBrowser
   );
@@ -202,7 +202,7 @@ class DevToolsPageDefinition {
   buildForToolbox(toolbox) {
     if (
       !this.extension.canAccessWindow(
-        toolbox.commands.descriptorFront.localTab.ownerGlobal
+        toolbox.commands.descriptorFront.localTab.documentGlobal
       )
     ) {
       // We should never create a devtools page for a toolbox related to a private browsing window
@@ -273,7 +273,7 @@ class DevToolsPageDefinition {
         // Skip private browsing windows if the extension is not allowed to
         // access them.
         !this.extension.canAccessWindow(
-          toolbox.commands.descriptorFront.localTab.ownerGlobal
+          toolbox.commands.descriptorFront.localTab.documentGlobal
         )
       ) {
         continue;
@@ -418,7 +418,7 @@ this.devtools = class extends ExtensionAPI {
     if (
       !toolbox.commands.descriptorFront.isLocalTab ||
       !this.extension.canAccessWindow(
-        toolbox.commands.descriptorFront.localTab.ownerGlobal
+        toolbox.commands.descriptorFront.localTab.documentGlobal
       )
     ) {
       // Skip any non-local (as remote tabs are not yet supported, see Bug 1304378 for additional details

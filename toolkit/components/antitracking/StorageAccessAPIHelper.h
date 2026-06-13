@@ -50,7 +50,8 @@ class StorageAccessAPIHelper final {
   //   example.net import tracker.com/script.js which does opens a popup and the
   //   user interacts with it. tracker.com is allowed when loaded by
   //   example.net.
-  typedef MozPromise<int, bool, true> StorageAccessPermissionGrantPromise;
+  typedef MozPromise<StorageAccessPromptChoices, bool, true>
+      StorageAccessPermissionGrantPromise;
   typedef std::function<RefPtr<StorageAccessPermissionGrantPromise>()>
       PerformPermissionGrant;
   [[nodiscard]] static RefPtr<StorageAccessPermissionGrantPromise>
@@ -76,13 +77,14 @@ class StorageAccessAPIHelper final {
   typedef MozPromise<nsresult, bool, true> ParentAccessGrantPromise;
   static RefPtr<ParentAccessGrantPromise> SaveAccessForOriginOnParentProcess(
       nsIPrincipal* aParentPrincipal, nsIPrincipal* aTrackingPrincipal,
-      int aAllowMode, bool aFrameOnly,
+      StorageAccessPromptChoices aAllowMode, bool aFrameOnly,
       uint64_t aExpirationTime =
           StaticPrefs::privacy_restrict3rdpartystorage_expiration());
 
   static RefPtr<ParentAccessGrantPromise> SaveAccessForOriginOnParentProcess(
       uint64_t aTopLevelWindowId, dom::BrowsingContext* aParentContext,
-      nsIPrincipal* aTrackingPrincipal, int aAllowMode, bool aFrameOnly,
+      nsIPrincipal* aTrackingPrincipal, StorageAccessPromptChoices aAllowMode,
+      bool aFrameOnly,
       uint64_t aExpirationTime =
           StaticPrefs::privacy_restrict3rdpartystorage_expiration());
 

@@ -13,6 +13,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.fragment.app.Fragment
 import androidx.fragment.compose.content
+import androidx.navigation.fragment.navArgs
 import kotlinx.coroutines.launch
 import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.GleanMetrics.GenaiAiControls
@@ -27,6 +28,7 @@ import org.mozilla.fenix.theme.FirefoxTheme
  * A fragment displaying the AI Controls settings screen.
  */
 class AIControlsFragment : Fragment(), SystemInsetsPaddedFragment {
+    private val args by navArgs<AIControlsFragmentArgs>()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -34,7 +36,7 @@ class AIControlsFragment : Fragment(), SystemInsetsPaddedFragment {
         savedInstanceState: Bundle?,
     ): View = content {
         val registry = requireComponents.aiFeatureRegistry
-        val features = remember { registry.getFeatures() }
+        val features = remember { registry.getFeatures().sortedForDisplay() }
         val featureBlock = requireComponents.aiControlsFeatureBlock
         val scope = rememberCoroutineScope()
 
@@ -53,6 +55,7 @@ class AIControlsFragment : Fragment(), SystemInsetsPaddedFragment {
                 registeredFeatures = features,
                 showDialog = showDialog.value,
                 isBlocked = isBlocked.value,
+                itemToScrollTo = args.preferenceToScrollTo,
                 onDialogDismiss = {
                     GenaiAiControls.globalPrefConfirmationClick.record(
                         GenaiAiControls.GlobalPrefConfirmationClickExtra(element = "cancel"),

@@ -4,7 +4,9 @@
 "use strict";
 
 let knownSettingPanes = {
-  pictureInPictureToggleEnabled: "paneGeneral",
+  pictureInPictureToggleEnabled: SRD_PREF_VALUE
+    ? "paneTabsBrowsing"
+    : "paneGeneral",
 };
 
 async function withSettingVisible(settingId, testFn) {
@@ -12,9 +14,24 @@ async function withSettingVisible(settingId, testFn) {
   let prefs = await openPreferencesViaOpenPreferencesAPI(pane, {
     leaveOpen: true,
   });
-  Assert.equal(prefs.selectedPane, pane, "General pane was selected");
+  Assert.equal(prefs.selectedPane, pane, `${pane} pane was selected`);
   let win = gBrowser.contentWindow;
-  let el = win.document.getElementById(settingId);
+  let el;
+  if (SRD_PREF_VALUE) {
+    let settingControl = await BrowserTestUtils.waitForCondition(
+      () =>
+        win.document.querySelector(
+          `setting-pane[data-category="${pane}"] #setting-control-${settingId}`
+        ),
+      `Wait for ${settingId} in ${pane}`
+    );
+    if (settingControl?.updateComplete) {
+      await settingControl.updateComplete;
+    }
+    el = settingControl?.controlEl;
+  } else {
+    el = win.document.getElementById(settingId);
+  }
   if (el) {
     el.scrollIntoView();
   }

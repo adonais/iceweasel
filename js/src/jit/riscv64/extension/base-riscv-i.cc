@@ -280,16 +280,10 @@ bool AssemblerRISCVI::IsLw(Instr instr) {
 }
 
 int AssemblerRISCVI::LoadOffset(Instr instr) {
-#if JS_CODEGEN_RISCV64
   MOZ_ASSERT(IsLd(instr));
-#elif V8_TARGET_ARCH_RISCV32
-  MOZ_ASSERT(IsLw(instr));
-#endif
   int32_t imm12 = static_cast<int32_t>(instr & kImm12Mask) >> 20;
   return imm12;
 }
-
-#ifdef JS_CODEGEN_RISCV64
 
 bool AssemblerRISCVI::IsAddiw(Instr instr) {
   return (instr & (kBaseOpcodeMask | kFunct3Mask)) == RO_ADDIW;
@@ -346,8 +340,6 @@ void AssemblerRISCVI::srlw(Register rd, Register rs1, Register rs2) {
 void AssemblerRISCVI::sraw(Register rd, Register rs1, Register rs2) {
   GenInstrALUW_rr(0b0100000, 0b101, rd, rs1, rs2);
 }
-
-#endif
 
 int AssemblerRISCVI::BranchOffset(Instr instr) {
   // | imm[12] | imm[10:5] | rs2 | rs1 | funct3 | imm[4:1|11] | opcode |

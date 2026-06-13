@@ -36,7 +36,7 @@ class HTMLLinkAccessible : public HyperTextAccessible {
   bool IsLinked() const;
 
  protected:
-  virtual ~HTMLLinkAccessible() {}
+  virtual ~HTMLLinkAccessible() = default;
 
   virtual bool AttributeChangesState(nsAtom* aAttribute) override;
 

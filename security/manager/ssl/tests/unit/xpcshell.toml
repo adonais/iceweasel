@@ -200,6 +200,7 @@ run-if = [
   "os == 'mac'",
   "os == 'win'",
 ]
+skip-if = ["os == 'mac' && arch == 'aarch64'"]  # Asserts non-zero enterprise roots; fails on macOS aarch64 workers (see Bug 2037084 discussion)
 
 ["test_ev_certs.js"]
 tags = "blocklist psm"

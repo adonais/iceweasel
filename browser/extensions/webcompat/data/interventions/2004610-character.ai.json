@@ -6,12 +6,13 @@
       "matches": ["*://character.ai/*"]
     }
   },
+  "css": {
+    "fix_broken_italics": ".font-display em { font-variation-settings: \"ital\" 10; }"
+  },
   "interventions": [
     {
       "platforms": ["all"],
-      "content_scripts": {
-        "css": ["bug2004610-character.ai-fix-broken-italics.css"]
-      }
+      "css": ["fix_broken_italics"]
     }
   ]
 }

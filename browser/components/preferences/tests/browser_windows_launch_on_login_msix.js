@@ -11,6 +11,8 @@ ChromeUtils.defineESModuleGetters(this, {
   WindowsLaunchOnLogin: "resource://gre/modules/WindowsLaunchOnLogin.sys.mjs",
 });
 
+const STARTUP_PANE = SRD_PREF_VALUE ? "paneHome" : "paneGeneral";
+
 add_task(async function test_check_uncheck_checkbox() {
   await ExperimentAPI.ready();
   let doCleanup = await NimbusTestUtils.enrollWithFeatureConfig({
@@ -18,30 +20,48 @@ add_task(async function test_check_uncheck_checkbox() {
     value: { enabled: true },
   });
   // Open preferences to general pane
-  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {
+  await openPreferencesViaOpenPreferencesAPI(STARTUP_PANE, {
     leaveOpen: true,
   });
   let doc = gBrowser.contentDocument;
+  await TestUtils.waitForCondition(
+    () => doc.getElementById("windowsLaunchOnLogin"),
+    "windowsLaunchOnLogin checkbox rendered"
+  );
 
   let launchOnLoginCheckbox = doc.getElementById("windowsLaunchOnLogin");
-  launchOnLoginCheckbox.click();
-  ok(launchOnLoginCheckbox.checked, "Autostart checkbox checked");
 
-  // Checking whether everything was enabled as expected isn't
-  // really a problem in-product but we can encounter a race condition
-  // here as both enabling and checking are asynchronous.
+  // Launch-on-login is enabled by default for new installs,
+  // so on a fresh profile the checkbox starts checked and the
+  // startup task is already enabled.
+  ok(
+    launchOnLoginCheckbox.checked,
+    "Autostart checkbox starts checked (default-enabled for new installs)"
+  );
+  ok(
+    await WindowsLaunchOnLogin.getLaunchOnLoginEnabled(),
+    "Launch on login is enabled at startup"
+  );
+
+  // Click once: should disable launch-on-login.
+  synthesizeClick(launchOnLoginCheckbox);
+  ok(
+    !launchOnLoginCheckbox.checked,
+    "Autostart checkbox unchecked after first click"
+  );
   await TestUtils.waitForCondition(async () => {
-    let enabled = await WindowsLaunchOnLogin.getLaunchOnLoginEnabledMSIX();
-    return enabled;
-  }, "Wait for async get enabled operation to return true");
+    return !(await WindowsLaunchOnLogin.getLaunchOnLoginEnabled());
+  }, "Launch on login is disabled after unchecking");
 
-  launchOnLoginCheckbox.click();
-  ok(!launchOnLoginCheckbox.checked, "Autostart checkbox unchecked");
-
+  // Click again: should re-enable launch-on-login.
+  synthesizeClick(launchOnLoginCheckbox);
+  ok(
+    launchOnLoginCheckbox.checked,
+    "Autostart checkbox re-checked after second click"
+  );
   await TestUtils.waitForCondition(async () => {
-    let enabled = await WindowsLaunchOnLogin.getLaunchOnLoginEnabledMSIX();
-    return !enabled;
-  }, "Wait for async get enabled operation to return false");
+    return await WindowsLaunchOnLogin.getLaunchOnLoginEnabled();
+  }, "Launch on login is re-enabled after rechecking");
 
   gBrowser.removeCurrentTab();
   await doCleanup();
@@ -59,10 +79,14 @@ add_task(async function enable_external_startuptask() {
   ok(enabled, "Task is enabled");
 
   // Open preferences to general pane
-  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {
+  await openPreferencesViaOpenPreferencesAPI(STARTUP_PANE, {
     leaveOpen: true,
   });
   let doc = gBrowser.contentDocument;
+  await TestUtils.waitForCondition(
+    () => doc.getElementById("windowsLaunchOnLogin"),
+    "windowsLaunchOnLogin checkbox rendered"
+  );
 
   let launchOnLoginCheckbox = doc.getElementById("windowsLaunchOnLogin");
   ok(launchOnLoginCheckbox.checked, "Autostart checkbox automatically checked");
@@ -81,10 +105,14 @@ add_task(async function disable_external_startuptask() {
   await WindowsLaunchOnLogin._disableLaunchOnLoginMSIX();
 
   // Open preferences to general pane
-  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {
+  await openPreferencesViaOpenPreferencesAPI(STARTUP_PANE, {
     leaveOpen: true,
   });
   let doc = gBrowser.contentDocument;
+  await TestUtils.waitForCondition(
+    () => doc.getElementById("windowsLaunchOnLogin"),
+    "windowsLaunchOnLogin checkbox rendered"
+  );
 
   let launchOnLoginCheckbox = doc.getElementById("windowsLaunchOnLogin");
   ok(

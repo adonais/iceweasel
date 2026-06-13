@@ -66,8 +66,8 @@ const PREF_URLBAR_DEFAULTS = /** @type {PreferenceDefinition[]} */ ([
   // textbox.  If false, autofill will be disabled.
   ["autoFill", true],
 
-  // Whether enabling adaptive history autofill. This pref is a fallback for the
-  // Nimbus variable `autoFillAdaptiveHistoryEnabled`.
+  // Whether enabling adaptive history autofill. The Nimbus variable
+  // `autoFillAdaptiveHistoryEnabled` writes to this pref via `setPref`.
   ["autoFill.adaptiveHistory.enabled", false],
 
   // Duration in ms to block after backspace penalty. Default: 2 days.
@@ -82,8 +82,8 @@ const PREF_URLBAR_DEFAULTS = /** @type {PreferenceDefinition[]} */ ([
   ["autoFill.dismissalBlockDurationMs", 604800000],
 
   // Minimum char length of the user's search string to enable adaptive history
-  // autofill. This pref is a fallback for the Nimbus variable
-  // `autoFillAdaptiveHistoryMinCharsThreshold`.
+  // autofill. The Nimbus variable `autoFillAdaptiveHistoryMinCharsThreshold`
+  // writes to this pref via `setPref`.
   ["autoFill.adaptiveHistory.minCharsThreshold", 0],
 
   // Threshold for use count of input history that we handle as adaptive history
@@ -99,6 +99,9 @@ const PREF_URLBAR_DEFAULTS = /** @type {PreferenceDefinition[]} */ ([
   // This feature gate exists just as an emergency rollback in case of
   // unexpected issues in Release. We normally want this behavior.
   ["closeOtherPanelsOnOpen", true],
+
+  // Feature gate pref for context menu on the urlbar.
+  ["contextMenu.featureGate", false],
 
   // Whether to show a link for using the search functionality provided by the
   // active view if the the view utilizes OpenSearch.
@@ -637,6 +640,12 @@ const PREF_URLBAR_DEFAULTS = /** @type {PreferenceDefinition[]} */ ([
   // Enable the updated design combining the privacy and shield icon
   // and panels in the Urlbar.
   ["trustPanel.featureGate", false],
+
+  // Enable the banner warning the user of breached websites in the trust panel:
+  ["trustPanel.breachAlerts", false],
+
+  // Feature gate to show/hide the breach alerts setting in Preferences:
+  ["trustPanel.breachAlerts.featureGate", false],
 
   // Whether unit conversion is enabled.
   ["unitConversion.enabled", false],

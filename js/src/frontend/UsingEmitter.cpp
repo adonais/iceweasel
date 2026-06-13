@@ -1043,46 +1043,27 @@ bool ForOfDisposalEmitter::prepareForForOfLoopIteration() {
   return true;
 }
 
-bool ForOfDisposalEmitter::emitEnd() {
+bool ForOfDisposalEmitter::prepareForForOfIteratorClose() {
   MOZ_ASSERT(state_ == State::Iteration);
   EmitterScope* es = bce_->innermostEmitterScopeNoCheck();
   MOZ_ASSERT(es->hasDisposables());
 
-  // [stack] EXC STACK
+  // [stack] EXC THROWING
 
   if (!bce_->emit1(JSOp::Swap)) {
-    // [stack] STACK EXC
-    return false;
-  }
-
-  if (!bce_->emit1(JSOp::True)) {
-    // [stack] STACK EXC THROWING
-    return false;
-  }
-
-  if (!bce_->emit1(JSOp::Swap)) {
-    // [stack] STACK THROWING EXC
+    // [stack] THROWING EXC
     return false;
   }
 
   if (!emitDisposeResourcesForEnvironment(*es)) {
-    // [stack] STACK EXC THROWING
+    // [stack] EXC THROWING
     return false;
   }
 
-  if (!bce_->emit1(JSOp::Pop)) {
-    // [stack] STACK EXC
-    return false;
-  }
-
-  if (!bce_->emit1(JSOp::Swap)) {
-    // [stack] EXC STACK
-    return false;
-  }
-
-#ifdef DEBUG
-  state_ = State::End;
-#endif
+  // The ForOfIteratorClose logic can be emitted multiple times (due different
+  // configurations of for-of loops like yields inside a for-of loop for
+  // example), and thus prepareForForOfIteratorClose stays in the Iteration
+  // state.
   return true;
 }
 

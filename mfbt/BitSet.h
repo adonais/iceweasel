@@ -5,6 +5,7 @@
 #ifndef mozilla_BitSet_h
 #define mozilla_BitSet_h
 
+#include "fmt/format.h"
 #include "mozilla/Array.h"
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/Span.h"
@@ -262,5 +263,82 @@ class BitSet {
 };
 
 }  // namespace mozilla
+
+template <size_t N, typename StorageType>
+struct fmt::formatter<mozilla::BitSet<N, StorageType>> {
+  fmt::formatter<size_t> mElemFormatter;
+
+  constexpr auto parse(fmt::format_parse_context& aCtx) {
+    return mElemFormatter.parse(aCtx);
+  }
+
+  // Format a bitset as a curly-bracket enclosed description of which bits are
+  // set, eg "{2,8,13-17}". Note that contiguous ranges are detected and
+  // collapsed.
+  template <typename FmtContext>
+  constexpr auto format(const mozilla::BitSet<N, StorageType>& aBitset,
+                        FmtContext& aCtx) const {
+    size_t p = 0;
+    auto out = aCtx.out();
+    *out++ = '{';
+
+    size_t currentRangeStart = SIZE_MAX;
+    size_t currentRangeEnd = 0;
+    bool first = true;
+    while (true) {
+      // Combine the cases where the last bit was set and we've advanced p to N,
+      // as well as where we're past the last set bit and FindNext returned
+      // SIZE_MAX. (It is illegal to pass >= N to FindNext.)
+      if (p < N) {
+        p = aBitset.FindNext(p);
+      } else {
+        p = SIZE_MAX;
+      }
+
+      if (currentRangeStart == SIZE_MAX) {
+        // This is the first set bit in the bitset.
+        if (p == SIZE_MAX) {
+          break;  // No bits set.
+        }
+        currentRangeStart = currentRangeEnd = p;
+      } else if (p > currentRangeEnd + 1) {
+        // Current range is complete, output it. p is either one past the
+        // current range end, or SIZE_MAX if there are no more bits.
+
+        // Emit a comma unless this is the first range.
+        if (!first) {
+          *out++ = ',';
+        }
+        first = false;
+
+        // Output the completed range as a comma-separated sequence of bit
+        // indexes, with 3 or more contiguous bits compressed to "x-y".
+        aCtx.advance_to(out);
+        out = mElemFormatter.format(currentRangeStart, aCtx);
+        size_t rangeSize = currentRangeEnd - currentRangeStart + 1;
+        if (rangeSize > 1) {
+          *out++ = (rangeSize == 2) ? ',' : '-';
+          aCtx.advance_to(out);
+          out = mElemFormatter.format(currentRangeEnd, aCtx);
+        }
+
+        if (p == SIZE_MAX) {
+          break;  // Done.
+        }
+
+        currentRangeStart = currentRangeEnd = p;
+      } else {
+        // Continuation of current range.
+        currentRangeEnd++;
+        MOZ_ASSERT(currentRangeEnd == p);
+      }
+
+      p++;
+    }
+
+    *out++ = '}';
+    return out;
+  }
+};
 
 #endif  // mozilla_BitSet_h

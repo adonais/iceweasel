@@ -87,7 +87,7 @@ class ApplicationAccessible : public AccessibleWrap {
   }
 
  protected:
-  virtual ~ApplicationAccessible() {}
+  virtual ~ApplicationAccessible() = default;
 
   // LocalAccessible
   virtual LocalAccessible* GetSiblingAtOffset(

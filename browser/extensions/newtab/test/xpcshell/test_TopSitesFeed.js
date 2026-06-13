@@ -3794,3 +3794,39 @@ add_task(async function test_ContileIntegration() {
 
   Services.prefs.clearUserPref(TOP_SITES_BLOCKED_SPONSORS_PREF);
 });
+
+add_task(async function test_filterBlockedSponsors_invalid_pref() {
+  info(
+    "TopSitesFeed._filterBlockedSponsors should treat an invalid pref value " +
+      "as an empty blocklist and return all tiles"
+  );
+  let sandbox = sinon.createSandbox();
+  let feed = getTopSitesFeedForTest(sandbox);
+  Services.prefs.setStringPref(TOP_SITES_BLOCKED_SPONSORS_PREF, "");
+
+  let tiles = [{ url: "https://foo.com" }, { url: "https://bar.com" }];
+  let result = feed._contile._filterBlockedSponsors(tiles);
+  Assert.deepEqual(result, tiles);
+
+  Services.prefs.clearUserPref(TOP_SITES_BLOCKED_SPONSORS_PREF);
+  sandbox.restore();
+});
+
+add_task(async function test_readDefaults_invalid_blocked_sponsors_pref() {
+  info(
+    "TopSitesFeed._readDefaults should not throw when the blocked sponsors " +
+      "pref contains invalid JSON"
+  );
+  let sandbox = sinon.createSandbox();
+  let feed = getTopSitesFeedForTest(sandbox);
+  Services.prefs.setBoolPref("browser.topsites.useRemoteSetting", true);
+  Services.prefs.setStringPref(TOP_SITES_BLOCKED_SPONSORS_PREF, "");
+  sandbox.stub(feed, "_getRemoteConfig").resolves([]);
+
+  await feed._readDefaults();
+  Assert.ok(true, "No exception thrown with invalid blocked sponsors pref");
+
+  Services.prefs.clearUserPref("browser.topsites.useRemoteSetting");
+  Services.prefs.clearUserPref(TOP_SITES_BLOCKED_SPONSORS_PREF);
+  sandbox.restore();
+});

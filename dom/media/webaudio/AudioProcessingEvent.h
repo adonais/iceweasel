@@ -61,7 +61,7 @@ class AudioProcessingEvent final : public Event {
   RefPtr<AudioBuffer> mInputBuffer;
   RefPtr<AudioBuffer> mOutputBuffer;
   RefPtr<ScriptProcessorNode> mNode;
-  uint32_t mNumberOfInputChannels;
+  uint32_t mNumberOfInputChannels = 0;
 };
 
 }  // namespace mozilla::dom

@@ -111,19 +111,26 @@ interface AwesomeBar {
     )
 
     /**
-     * This interface decouples the [StocksOnlineSuggestionProvider] from the
-     * underlying data source (e.g. mocked data, network API, local cache, etc.).
+     * Combined data source for stocks, sports, and flights online suggestions.
+     *
+     * All three providers share one instance so that concurrent requests for the same query
+     * are coalesced into a single network call.
      */
-    interface StocksSuggestionDataSource {
+    interface CombinedSuggestionsDataSource {
         /**
-         * Fetch stock suggestions for the given [query].
-         *
-         * @param query The current user input from the address/search bar.
-         *
-         * @return A list of [StockItem] representing stock suggestions relevant to the query.
-         * Implementations may return an empty list if no matches are found.
+         * Fetch stock suggestions for [query].
          */
-        suspend fun fetch(query: String): List<StockItem>
+        suspend fun fetchStocks(query: String): List<StockItem>
+
+        /**
+         * Fetch sports suggestions for [query].
+         */
+        suspend fun fetchSports(query: String): List<SportItem>
+
+        /**
+         * Fetch flight suggestions for [query].
+         */
+        suspend fun fetchFlights(query: String): List<FlightItem>
     }
 
     /**
@@ -150,22 +157,6 @@ interface AwesomeBar {
         val exchange: String,
         val imageUrl: String?,
     )
-
-    /**
-     * This interface decouples the [SportsOnlineSuggestionProvider] from the
-     * underlying data source (e.g. mocked data, network API, local cache, etc.).
-     */
-    interface SportsSuggestionDataSource {
-        /**
-         * Fetch sports suggestions for the given [query].
-         *
-         * @param query The current user input from the address/search bar.
-         *
-         * @return A list of [StockItem] representing sport suggestions relevant to the query.
-         * Implementations may return an empty list if no matches are found.
-         */
-        suspend fun fetch(query: String): List<SportItem>
-    }
 
     /**
      * Domain model representing a single sport suggestion result.
@@ -203,24 +194,8 @@ interface AwesomeBar {
             val name: String,
             val colors: List<String>,
             val score: Int?,
-            val iconUrl: String?,
+            val icon: String?,
         )
-    }
-
-    /**
-     * This interface decouples the [FlightsOnlineSuggestionProvider] from the
-     * underlying data source (e.g. mocked data, network API, local cache, etc.).
-     */
-    interface FlightsSuggestionDataSource {
-        /**
-         * Fetch flights suggestions for the given [query].
-         *
-         * @param query The current user input from the address/search bar.
-         *
-         * @return A list of [FlightItem] representing flight suggestions relevant to the query.
-         * Implementations may return an empty list if no matches are found.
-         */
-        suspend fun fetch(query: String): List<FlightItem>
     }
 
     /**

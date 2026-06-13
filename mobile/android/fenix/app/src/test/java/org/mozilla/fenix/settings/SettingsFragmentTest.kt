@@ -21,7 +21,6 @@ import mozilla.components.service.fxrelay.eligibility.RelayState
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -34,6 +33,7 @@ import org.mozilla.fenix.utils.Settings
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import java.io.IOException
+import kotlin.test.assertNotNull
 
 @RunWith(RobolectricTestRunner::class)
 class SettingsFragmentTest {
@@ -80,7 +80,7 @@ class SettingsFragmentTest {
             true,
         )
         assertNotNull(preferenceAmoCollectionOverride)
-        assertFalse(preferenceAmoCollectionOverride!!.isVisible)
+        assertFalse(preferenceAmoCollectionOverride.isVisible)
 
         val settings: Settings = mockk(relaxed = true)
         every { settings.showSecretDebugMenuThisSession } returns true
@@ -109,7 +109,7 @@ class SettingsFragmentTest {
 
         settingsFragment.setupInstallAddonFromFilePreference(mockk(relaxed = true))
         assertNotNull(preference)
-        assertFalse(preference!!.isVisible)
+        assertFalse(preference.isVisible)
 
         val settings: Settings = mockk(relaxed = true)
 
@@ -139,7 +139,7 @@ class SettingsFragmentTest {
             true,
         )
         assertNotNull(preferenceAmoCollectionOverride)
-        assertFalse(preferenceAmoCollectionOverride!!.isVisible)
+        assertFalse(preferenceAmoCollectionOverride.isVisible)
 
         val settings: Settings = mockk(relaxed = true)
         every { settings.showSecretDebugMenuThisSession } returns false
@@ -181,7 +181,7 @@ class SettingsFragmentTest {
             false,
         )
         assertNotNull(preferenceAmoCollectionOverride)
-        assertFalse(preferenceAmoCollectionOverride!!.isVisible)
+        assertFalse(preferenceAmoCollectionOverride.isVisible)
 
         every { settings.showSecretDebugMenuThisSession } returns true
         every { settings.amoCollectionOverrideConfigured() } returns true

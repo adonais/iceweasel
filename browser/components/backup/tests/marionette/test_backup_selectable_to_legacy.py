@@ -174,6 +174,7 @@ class BackupSelectableToLegacyTest(BackupTestBase):
         self.logger.info("Post-recovery complete")
 
         self.init_selectable_profile_service()
+        self.assert_profile_source("backup")
 
         recovered_store_id = self.get_store_id()
         self.assertEqual(
@@ -271,6 +272,7 @@ class BackupSelectableToLegacyTest(BackupTestBase):
         self._new_profile_path = recovery_result["path"]
         self._new_profile_id = recovery_result["id"]
         self._cleanups.append({"path": self._new_profile_path})
+        self.assert_profile_source("backup", profile_path=self._new_profile_path)
         self.logger.info(
             f"Recovery complete. New profile path: {self._new_profile_path}"
         )
@@ -379,6 +381,7 @@ class BackupSelectableToLegacyTest(BackupTestBase):
 
         self.wait_for_post_recovery()
         self.logger.info("Post-recovery complete")
+        self.assert_profile_source("backup")
 
         profiles_enabled = self.run_code(
             """return Services.prefs.getBoolPref("browser.profiles.enabled", null);"""

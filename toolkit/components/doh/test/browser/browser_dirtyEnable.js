@@ -32,14 +32,14 @@ add_task(async function testDirtyEnable() {
     2,
     "TRR mode preserved."
   );
-  ensureNoTRRSelectionTelemetry();
+  await ensureNoTRRSelectionTelemetry();
   await ensureNoTRRModeChange(undefined);
-  ensureNoHeuristicsTelemetry();
+  await ensureNoHeuristicsTelemetry();
 
   // Simulate a network change.
   simulateNetworkChange();
   await ensureNoTRRModeChange(undefined);
-  ensureNoHeuristicsTelemetry();
+  await ensureNoHeuristicsTelemetry();
   is(
     Services.prefs.getIntPref(prefs.NETWORK_TRR_MODE_PREF),
     2,
@@ -49,8 +49,8 @@ add_task(async function testDirtyEnable() {
   // Restart the controller for good measure.
   await restartDoHController();
   await ensureNoTRRModeChange(undefined);
-  ensureNoTRRSelectionTelemetry();
-  ensureNoHeuristicsTelemetry();
+  await ensureNoTRRSelectionTelemetry();
+  await ensureNoHeuristicsTelemetry();
   is(
     Services.prefs.getIntPref(prefs.NETWORK_TRR_MODE_PREF),
     2,
@@ -65,5 +65,5 @@ add_task(async function testDirtyEnable() {
     2,
     "TRR mode preserved."
   );
-  ensureNoHeuristicsTelemetry();
+  await ensureNoHeuristicsTelemetry();
 });

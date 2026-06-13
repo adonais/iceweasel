@@ -438,7 +438,7 @@ add_task(async function test_addUsernameBeforeAutoSaveEdit() {
   };
   sinon.stub(LoginHelper, "getBrowserForPrompt").callsFake(() => {
     return {
-      ownerGlobal: {
+      documentGlobal: {
         PopupNotifications: fakePopupNotifications,
       },
     };
@@ -634,7 +634,7 @@ add_task(async function test_editUsernameOfFilledSavedLogin() {
   };
   sinon.stub(LoginHelper, "getBrowserForPrompt").callsFake(() => {
     return {
-      ownerGlobal: {
+      documentGlobal: {
         PopupNotifications: fakePopupNotifications,
       },
     };

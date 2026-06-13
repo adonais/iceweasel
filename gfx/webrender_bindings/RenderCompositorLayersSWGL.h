@@ -123,7 +123,7 @@ class RenderCompositorLayersSWGL : public RenderCompositor {
    public:
     explicit Surface(wr::DeviceIntSize aTileSize, bool aIsOpaque)
         : mTileSize(aTileSize), mIsOpaque(aIsOpaque) {}
-    virtual ~Surface() {}
+    virtual ~Surface() = default;
 
     gfx::IntSize TileSize() {
       return gfx::IntSize(mTileSize.width, mTileSize.height);

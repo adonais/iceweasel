@@ -22,9 +22,9 @@ add_task(async function () {
     await BrowserTestUtils.openNewForegroundTab(gBrowser);
     await loadBadCertPage("https://expired.example.com", feltPrivacyEnabled);
 
-    let { gIdentityHandler } = gBrowser.ownerGlobal;
+    let { gIdentityHandler } = gBrowser.documentGlobal;
     let promisePanelOpen = BrowserTestUtils.waitForEvent(
-      gBrowser.ownerGlobal,
+      gBrowser.documentGlobal,
       "popupshown",
       true,
       event => event.target == gIdentityHandler._identityPopup
@@ -43,17 +43,17 @@ add_task(async function () {
       document.getElementById("identity-icon"),
       "Should see identity icon"
     );
-    let identityIconImage = gBrowser.ownerGlobal
+    let identityIconImage = gBrowser.documentGlobal
       .getComputedStyle(document.getElementById("identity-icon"))
       .getPropertyValue("list-style-image");
-    let securityViewBG = gBrowser.ownerGlobal
+    let securityViewBG = gBrowser.documentGlobal
       .getComputedStyle(
         document
           .getElementById("identity-popup-securityView")
           .getElementsByClassName("identity-popup-security-connection")[0]
       )
       .getPropertyValue("list-style-image");
-    let securityContentBG = gBrowser.ownerGlobal
+    let securityContentBG = gBrowser.documentGlobal
       .getComputedStyle(
         document
           .getElementById("identity-popup-mainView")

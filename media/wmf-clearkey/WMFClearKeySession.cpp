@@ -6,7 +6,7 @@
 
 #include <codecvt>
 #include <cmath>
-#include <Mferror.h>
+#include <mferror.h>
 #include <winerror.h>
 
 #include "WMFClearKeyCDM.h"

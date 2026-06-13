@@ -289,7 +289,8 @@ class SVGUtils final {
    * the viewport established by aFrame.
    */
   static gfxRect GetClipRectForFrame(const nsIFrame* aFrame, float aX, float aY,
-                                     float aWidth, float aHeight);
+                                     float aWidth, float aHeight,
+                                     SVGBBoxFlags aFlags = {});
 
   /* Using group opacity instead of fill or stroke opacity on a
    * geometry object seems to be a common authoring mistake.  If we're

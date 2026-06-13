@@ -92,7 +92,7 @@ class DelayBuffer final {
   // this chunk, and the next read may begin before this chunk.
   int mCurrentChunk;
   // The chunk owning the pointers in mUpmixChannels
-  int mLastReadChunk;
+  int mLastReadChunk = -1;
 #ifdef DEBUG
   bool mHaveWrittenBlock;
 #endif

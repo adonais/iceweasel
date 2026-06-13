@@ -21,6 +21,9 @@ class xpcAccessibleTable : public xpcAccessibleHyperText,
   explicit xpcAccessibleTable(Accessible* aIntl)
       : xpcAccessibleHyperText(aIntl) {}
 
+  xpcAccessibleTable(const xpcAccessibleTable&) = delete;
+  xpcAccessibleTable& operator=(const xpcAccessibleTable&) = delete;
+
   NS_DECL_ISUPPORTS_INHERITED
 
   // nsIAccessibleTable
@@ -57,13 +60,10 @@ class xpcAccessibleTable : public xpcAccessibleHyperText,
   NS_IMETHOD IsProbablyForLayout(bool* aIsForLayout) final;
 
  protected:
-  virtual ~xpcAccessibleTable() {}
+  virtual ~xpcAccessibleTable() = default;
 
  private:
   TableAccessible* Intl() { return mIntl->AsTable(); }
-
-  xpcAccessibleTable(const xpcAccessibleTable&) = delete;
-  xpcAccessibleTable& operator=(const xpcAccessibleTable&) = delete;
 };
 
 }  // namespace a11y

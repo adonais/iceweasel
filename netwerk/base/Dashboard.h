@@ -5,6 +5,7 @@
 #ifndef nsDashboard_h_
 #define nsDashboard_h_
 
+#include "mozilla/Atomics.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/net/DashboardTypes.h"
 #include "nsIDashboard.h"
@@ -56,15 +57,16 @@ class Dashboard final : public nsIDashboard, public nsIDashboardEventNotifier {
 
   struct WebSocketData {
     WebSocketData() : lock("Dashboard.webSocketData") {}
-    uint32_t IndexOf(const nsCString& hostname, uint32_t mSerial) {
+    uint32_t IndexOf(const nsCString& hostname, uint32_t mSerial)
+        MOZ_REQUIRES(lock) {
       LogData temp(hostname, mSerial, false);
       return data.IndexOf(temp);
     }
-    nsTArray<LogData> data;
-    mozilla::Mutex lock MOZ_UNANNOTATED;
+    nsTArray<LogData> data MOZ_GUARDED_BY(lock);
+    mozilla::Mutex lock;
   };
 
-  bool mEnableLogging;
+  Atomic<bool, Relaxed> mEnableLogging;
   WebSocketData mWs;
 
  private:

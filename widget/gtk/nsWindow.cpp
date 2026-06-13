@@ -17,7 +17,6 @@
 #endif
 #include <dlfcn.h>
 #include <gdk/gdkkeysyms.h>
-#include <wchar.h>
 
 #include "VsyncSource.h"
 #include "gfx2DGlue.h"
@@ -332,8 +331,11 @@ class CurrentX11TimeGetter {
 }  // namespace mozilla
 
 // The window from which the focus manager asks us to dispatch key events.
-// TODO: Move to nsWindow class?
 static nsWindow* gFocusWindow = nullptr;
+// If we're requested to focus window during session restore, delay
+// the request until the session is restored.
+static RefPtr<nsWindow> gFocusRequestWindow;
+static nsIWidget::Raise gFocusRequestWindowRaise = nsIWidget::Raise::No;
 static bool gBlockActivateEvent = false;
 static bool gGlobalsInitialized = false;
 static bool gUseAspectRatio = true;
@@ -422,7 +424,8 @@ nsWindow::nsWindow()
       mGotNonBlankPaint(false),
       mNeedsToRetryCapturingMouse(false),
       mX11HiddenPopupPositioned(false),
-      mPopupTemporaryHidden(false) {
+      mPopupTemporaryHidden(false),
+      mWaitingToSessionRestore(false) {
   SetSafeWindowSize(mSizeConstraints.mMaxSize);
 
   if (!gGlobalsInitialized) {
@@ -655,7 +658,7 @@ float nsWindow::GetDPI() {
 
 double nsWindow::GetDefaultScaleInternal() { return FractionalScaleFactor(); }
 
-DesktopToLayoutDeviceScale nsWindow::GetDesktopToDeviceScale() {
+DesktopToLayoutDeviceScale nsWindow::GetDesktopToDeviceScale() const {
   return DesktopToLayoutDeviceScale(FractionalScaleFactor());
 }
 
@@ -829,8 +832,8 @@ bool nsWindow::ConstrainSizeWithScale(int* aWidth, int* aHeight,
   return false;
 }
 
-// aConstrains are set is in device pixel sizes as it describes
-// max texture / window size in pixels.
+// Constraints are in desktop pixels. GDK coords are also desktop pixels on
+// GTK so no scale conversion is needed when forwarding them to GTK.
 void nsWindow::SetSizeConstraints(const SizeConstraints& aConstraints) {
   mSizeConstraints = aConstraints;
   SetSafeWindowSize(mSizeConstraints.mMinSize);
@@ -838,7 +841,7 @@ void nsWindow::SetSizeConstraints(const SizeConstraints& aConstraints) {
 
   // Store constraints as inner sizes rather than outer sizes.
   if (SizeMode() == nsSizeMode_Normal) {
-    auto margin = ToLayoutDevicePixels(mClientMargin);
+    const auto& margin = mClientMargin;
     if (mSizeConstraints.mMinSize.height) {
       mSizeConstraints.mMinSize.height -= margin.TopBottom();
     }
@@ -893,22 +896,20 @@ void nsWindow::ApplySizeConstraints() {
 
   uint32_t hints = 0;
   auto constraints = mSizeConstraints;
-  if (constraints.mMinSize != LayoutDeviceIntSize()) {
-    gtk_widget_set_size_request(
-        GTK_WIDGET(mContainer),
-        DevicePixelsToGdkCoordRound(constraints.mMinSize.width),
-        DevicePixelsToGdkCoordRound(constraints.mMinSize.height));
+  if (constraints.mMinSize != DesktopIntSize()) {
+    gtk_widget_set_size_request(GTK_WIDGET(mContainer),
+                                constraints.mMinSize.width,
+                                constraints.mMinSize.height);
     if (ToplevelUsesCSD()) {
-      auto margin = ToLayoutDevicePixels(mClientMargin);
+      const auto& margin = mClientMargin;
       constraints.mMinSize.height += margin.TopBottom();
       constraints.mMinSize.width += margin.LeftRight();
     }
     hints |= GDK_HINT_MIN_SIZE;
   }
-  if (mSizeConstraints.mMaxSize !=
-      LayoutDeviceIntSize(NS_MAXSIZE, NS_MAXSIZE)) {
+  if (mSizeConstraints.mMaxSize != DesktopIntSize(NS_MAXSIZE, NS_MAXSIZE)) {
     if (ToplevelUsesCSD()) {
-      auto margin = ToLayoutDevicePixels(mClientMargin);
+      const auto& margin = mClientMargin;
       constraints.mMaxSize.height += margin.TopBottom();
       constraints.mMaxSize.width += margin.LeftRight();
     }
@@ -918,10 +919,10 @@ void nsWindow::ApplySizeConstraints() {
   // Constraints for the shell are outer sizes, but with SSD we need to use
   // inner sizes.
   GdkGeometry geometry{
-      .min_width = DevicePixelsToGdkCoordRound(constraints.mMinSize.width),
-      .min_height = DevicePixelsToGdkCoordRound(constraints.mMinSize.height),
-      .max_width = DevicePixelsToGdkCoordRound(constraints.mMaxSize.width),
-      .max_height = DevicePixelsToGdkCoordRound(constraints.mMaxSize.height),
+      .min_width = constraints.mMinSize.width,
+      .min_height = constraints.mMinSize.height,
+      .max_width = constraints.mMaxSize.width,
+      .max_height = constraints.mMaxSize.height,
   };
 
   if (mAspectRatio != 0.0f && !mAspectResizer) {
@@ -1282,6 +1283,13 @@ guint32 nsWindow::GetLastUserInputTime() {
 // nsWindow::SetFocus(Raise::No) - Give focus to this window.
 void nsWindow::SetFocus(Raise aRaise, mozilla::dom::CallerType aCallerType) {
   LOG("nsWindow::SetFocus Raise %d\n", aRaise == Raise::Yes);
+
+  if (mWaitingToSessionRestore) {
+    gFocusRequestWindow = this;
+    gFocusRequestWindowRaise = aRaise;
+    LOG("  waiting to session restore, quit.");
+    return;
+  }
 
   // Raise the window if someone passed in true and the prefs are
   // set properly.
@@ -4197,6 +4205,15 @@ void nsWindow::SetGdkWindow(GdkWindow* aGdkWindow) {
   }
 }
 
+void nsWindow::ConfigureToplevelWindow() {
+  // Label mShell toplevel window so property_notify_event_cb callback
+  // can find its way home.
+  g_object_set_data(G_OBJECT(GetToplevelGdkWindow()), "nsWindow", this);
+  g_object_set_data(G_OBJECT(mShell), "nsWindow", this);
+
+  ConfigureToplevelWindowNative();
+}
+
 nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
                           const widget::InitData& aInitData) {
   MOZ_DIAGNOSTIC_ASSERT(aInitData.mWindowType != WindowType::Invisible);
@@ -4456,6 +4473,7 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
   }
 
   CreateNative();
+  ConfigureToplevelWindow();
 
   // make sure this is the focus widget in the container
   gtk_widget_show(container);
@@ -4484,11 +4502,6 @@ nsresult nsWindow::Create(nsIWidget* aParent, const LayoutDeviceIntRect& aRect,
     mUpdateCursor = true;
     SetCursor(Cursor{eCursor_standard});
   }
-
-  // Also label mShell toplevel window,
-  // property_notify_event_cb callback also needs to find its way home
-  g_object_set_data(G_OBJECT(GetToplevelGdkWindow()), "nsWindow", this);
-  g_object_set_data(G_OBJECT(mShell), "nsWindow", this);
 
   // attach listeners for events
   g_signal_connect(mShell, "configure_event",
@@ -6889,7 +6902,6 @@ void nsWindow::SetCustomTitlebar(bool aState) {
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-
     gtk_widget_reparent(GTK_WIDGET(mContainer), tmpWindow);
     gtk_widget_unrealize(GTK_WIDGET(mShell));
 
@@ -6914,17 +6926,14 @@ void nsWindow::SetCustomTitlebar(bool aState) {
 
     gtk_widget_realize(GTK_WIDGET(mShell));
     gtk_widget_reparent(GTK_WIDGET(mContainer), GTK_WIDGET(mShell));
-
 #pragma GCC diagnostic pop
-
-    // Label mShell toplevel window so property_notify_event_cb callback
-    // can find its way home.
-    g_object_set_data(G_OBJECT(GetToplevelGdkWindow()), "nsWindow", this);
 
     if (AreBoundsSane()) {
       gtk_window_resize(GTK_WINDOW(mShell), mClientArea.width,
                         mClientArea.height);
     }
+
+    ConfigureToplevelWindow();
 
     if (visible) {
       mNeedsShow = true;
@@ -7830,4 +7839,20 @@ uint32_t nsWindow::GetMaxTouchPoints() const {
   }
 #endif
   return 0;
+}
+
+void nsWindow::SessionRestoreFinished() {
+  LOGW("nsWindow::SessionRestoreFinished() set focus to [%p]",
+       gFocusRequestWindow.get());
+  if (!gFocusRequestWindow) {
+    return;
+  }
+  if (gFocusRequestWindow->mWaitingToSessionRestore) {
+    NS_WARNING(
+        "Session restore finished before nsWindow::MoveToWorkspace() calls!");
+    gFocusRequestWindow->mWaitingToSessionRestore = false;
+  }
+  gFocusRequestWindow->SetFocus(gFocusRequestWindowRaise,
+                                mozilla::dom::CallerType::System);
+  gFocusRequestWindow = nullptr;
 }

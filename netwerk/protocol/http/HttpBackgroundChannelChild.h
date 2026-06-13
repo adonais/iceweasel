@@ -136,7 +136,7 @@ class HttpBackgroundChannelChild final : public PHttpBackgroundChannelChild {
   // We need to know the first ODA will be from socket process or parent
   // process. This information is from OnStartRequest message from parent
   // process.
-  ODASource mFirstODASource;
+  ODASource mFirstODASource = ODA_PENDING;
 
   // Indicate whether HttpChannelChild::ProcessOnStopRequest is called.
   bool mOnStopRequestCalled = false;

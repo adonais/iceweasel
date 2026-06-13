@@ -753,17 +753,6 @@ bool ContentCacheInParent::HandleQueryContentEvent(
     WidgetQueryContentEvent& aEvent, nsIWidget* aWidget) const {
   MOZ_ASSERT(aWidget);
 
-  // ContentCache doesn't store offset of its start with XP linebreaks.
-  // So, we don't support to query contents relative to composition start
-  // offset with XP linebreaks.
-  if (NS_WARN_IF(!aEvent.mUseNativeLineBreak)) {
-    MOZ_LOG(sContentCacheLog, LogLevel::Error,
-            ("0x%p HandleQueryContentEvent(), FAILED due to query with XP "
-             "linebreaks",
-             this));
-    return false;
-  }
-
   if (NS_WARN_IF(!aEvent.mInput.IsValidOffset())) {
     MOZ_LOG(
         sContentCacheLog, LogLevel::Error,
@@ -1389,14 +1378,13 @@ void ContentCacheInParent::OnSelectionEvent(
   MOZ_LOG(sContentCacheLog, LogLevel::Info,
           ("0x%p OnSelectionEvent(aEvent={ "
            "mMessage=%s, mOffset=%u, mLength=%u, mReversed=%s, "
-           "mExpandToClusterBoundary=%s, mUseNativeLineBreak=%s }), "
+           "mExpandToClusterBoundary=%s }), "
            "PendingEventsNeedingAck()=%u, WidgetHasComposition()=%s, "
            "mHandlingCompositions.Length()=%zu, HasPendingCommit()=%s, "
            "mIsChildIgnoringCompositionEvents=%s",
            this, ToChar(aSelectionEvent.mMessage), aSelectionEvent.mOffset,
            aSelectionEvent.mLength, TrueOrFalse(aSelectionEvent.mReversed),
            TrueOrFalse(aSelectionEvent.mExpandToClusterBoundary),
-           TrueOrFalse(aSelectionEvent.mUseNativeLineBreak),
            PendingEventsNeedingAck(), TrueOrFalse(WidgetHasComposition()),
            mHandlingCompositions.Length(), TrueOrFalse(HasPendingCommit()),
            TrueOrFalse(mIsChildIgnoringCompositionEvents)));

@@ -4,7 +4,6 @@
 
 package org.mozilla.fenix.ui
 
-import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import androidx.test.espresso.Espresso.closeSoftKeyboard
 import org.junit.Rule
 import org.junit.Test
@@ -22,6 +21,7 @@ import org.mozilla.fenix.ui.robots.autofillScreen
 import org.mozilla.fenix.ui.robots.clickPageObject
 import org.mozilla.fenix.ui.robots.homeScreen
 import org.mozilla.fenix.ui.robots.navigationToolbar
+import androidx.compose.ui.test.junit4.v2.AndroidComposeTestRule as AndroidComposeTestRuleV2
 
 class AddressAutofillTest {
     object FirstAddressAutofillDetails {
@@ -31,9 +31,9 @@ class AddressAutofillTest {
         var name = "Mozilla Fenix Firefox"
         var streetAddress = "Harrison Street"
         var city = "San Francisco"
-        var state = "AK"
+        var state = "Alaska"
         var zipCode = "94105"
-        var country = "US"
+        var country = "United States"
         var phoneNumber = "555-5555"
         var emailAddress = "foo@bar.com"
     }
@@ -43,9 +43,9 @@ class AddressAutofillTest {
         var name = "Android Test Name"
         var streetAddress = "Fort Street"
         var city = "Alberta"
-        var state = "AZ"
+        var state = "Alberta"
         var zipCode = "95141"
-        var country = "CA"
+        var country = "Canada"
         var phoneNumber = "777-7777"
         var emailAddress = "fuu@bar.org"
     }
@@ -55,14 +55,14 @@ class AddressAutofillTest {
 
     private val mockWebServer get() = fenixTestRule.mockWebServer
 
-    @get:Rule
+    @get:Rule(order = 1)
     val composeTestRule =
-        AndroidComposeTestRule(
+        AndroidComposeTestRuleV2(
             HomeActivityIntentTestRule.withDefaultSettingsOverrides(),
         ) { it.activity }
 
-    @get:Rule
-    val memoryLeaksRule = DetectMemoryLeaksRule()
+    @get:Rule(order = 2)
+    val memoryLeaksRule = DetectMemoryLeaksRule(composeTestRule = { composeTestRule })
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3205329
     @SmokeTest
@@ -141,7 +141,6 @@ class AddressAutofillTest {
         }.openThreeDotMenu {
         }.clickSettingsButton {
         }.openAutofillSubMenu(composeTestRule) {
-            waitForAppWindowToBeUpdated()
             clickAddAddressButton()
             verifyAddAddressView()
         }.goBackToAutofillSettings(composeTestRule) {
@@ -200,8 +199,7 @@ class AddressAutofillTest {
 
         navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(addressFormPage.url) {
-            clickPageObject(composeTestRule, itemWithResId("streetAddress"))
-            verifySelectAddressButtonExists(true)
+            clickAddressFormFieldAndVerifyAutofillSuggestionExists()
             closeSoftKeyboard()
             waitForAppWindowToBeUpdated()
         }.openThreeDotMenu {
@@ -365,12 +363,11 @@ class AddressAutofillTest {
         }.openAutofillSubMenu(composeTestRule) {
             verifyAddressAutofillSection(true, false)
             clickAddAddressButton()
-            clickCountryDropdown()
-            clickCountryOption("US")
+            waitForAddressFormReady()
+            clickCountryOption("United States")
             verifyCountryOption("United States")
             verifyStateOption("Alabama")
-            clickCountryDropdown()
-            clickCountryOption("CA")
+            clickCountryOption("Canada")
             verifyStateOption("Alberta")
         }
     }

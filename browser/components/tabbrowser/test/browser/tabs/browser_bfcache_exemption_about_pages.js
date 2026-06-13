@@ -16,7 +16,7 @@ async function navigateTo(browser, urls, expectedPersist) {
   // When we track pageshow event, save the evt.persisted on a doc element,
   // so it can be checked from the test directly.
   let pageShowCheck = evt => {
-    evt.target.ownerGlobal.document.documentElement.setAttribute(
+    evt.target.documentGlobal.document.documentElement.setAttribute(
       "persisted",
       evt.persisted
     );

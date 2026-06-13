@@ -6,85 +6,43 @@
 
 #include <cstdint>
 
-#include "mozilla/net/SFVService.h"
-#include "nsCOMPtr.h"
+#include "mozilla/net/SFV.h"
 #include "nsString.h"
 
 namespace mozilla::waict {
 
 LazyLogModule gWaictLog("WAICT");
 
-Result<nsCString, nsresult> ParseManifest(nsISFVDictionary* aDict) {
-  nsCOMPtr<nsISFVItemOrInnerList> manifest;
-  MOZ_TRY(aDict->Get("manifest"_ns, getter_AddRefs(manifest)));
-
-  nsCOMPtr<nsISFVItem> manifestItem = do_QueryInterface(manifest);
-  if (!manifestItem) {
-    return Err(NS_ERROR_FAILURE);
-  }
-
-  nsCOMPtr<nsISFVBareItem> value;
-  MOZ_TRY(manifestItem->GetValue(getter_AddRefs(value)));
-
-  nsCOMPtr<nsISFVString> stringVal = do_QueryInterface(value);
-  if (!stringVal) {
-    return Err(NS_ERROR_FAILURE);
-  }
-
+Result<nsCString, nsresult> ParseManifest(const net::SFV::DictResult& aDict) {
   nsAutoCString manifestURL;
-  MOZ_TRY(stringVal->GetValue(manifestURL));
-  if (!manifestURL.IsEmpty()) {
-    return manifestURL;
+  nsresult rv = aDict.GetItem<net::SFV::SFVString>("manifest"_ns, manifestURL);
+  if (NS_FAILED(rv)) {
+    return Err(rv);
   }
-
-  return Err(NS_ERROR_FAILURE);
+  if (manifestURL.IsEmpty()) {
+    return Err(NS_ERROR_FAILURE);
+  }
+  return nsCString(manifestURL);
 }
 
-Result<uint64_t, nsresult> ParseMaxAge(nsISFVDictionary* aDict) {
-  nsCOMPtr<nsISFVItemOrInnerList> maxAge;
-  MOZ_TRY(aDict->Get("max-age"_ns, getter_AddRefs(maxAge)));
-
-  nsCOMPtr<nsISFVItem> maxAgeItem = do_QueryInterface(maxAge);
-  if (!maxAgeItem) {
-    return Err(NS_ERROR_FAILURE);
-  }
-
-  nsCOMPtr<nsISFVBareItem> maxAgeValue;
-  MOZ_TRY(maxAgeItem->GetValue(getter_AddRefs(maxAgeValue)));
-
-  nsCOMPtr<nsISFVInteger> intVal = do_QueryInterface(maxAgeValue);
-  if (!intVal) {
-    return Err(NS_ERROR_FAILURE);
-  }
-
+Result<uint64_t, nsresult> ParseMaxAge(const net::SFV::DictResult& aDict) {
   int64_t maxAgeSeconds;
-  MOZ_TRY(intVal->GetValue(&maxAgeSeconds));
-  if (maxAgeSeconds >= 0) {
-    return maxAgeSeconds;
+  nsresult rv = aDict.GetItem<net::SFV::Integer>("max-age"_ns, maxAgeSeconds);
+  if (NS_FAILED(rv)) {
+    return Err(rv);
   }
-
-  return Err(NS_ERROR_FAILURE);
+  if (maxAgeSeconds < 0) {
+    return Err(NS_ERROR_FAILURE);
+  }
+  return static_cast<uint64_t>(maxAgeSeconds);
 }
 
-Result<WaictMode, nsresult> ParseMode(nsISFVDictionary* aDict) {
-  nsCOMPtr<nsISFVItemOrInnerList> mode;
-  MOZ_TRY(aDict->Get("mode"_ns, getter_AddRefs(mode)));
-
-  nsCOMPtr<nsISFVItem> modeItem = do_QueryInterface(mode);
-  if (!modeItem) {
-    return Err(NS_ERROR_FAILURE);
-  }
-
-  nsCOMPtr<nsISFVBareItem> modeValue;
-  MOZ_TRY(modeItem->GetValue(getter_AddRefs(modeValue)));
-
-  nsCOMPtr<nsISFVToken> tokenVal = do_QueryInterface(modeValue);
-  if (!tokenVal) {
-    return Err(NS_ERROR_FAILURE);
-  }
-
+Result<WaictMode, nsresult> ParseMode(const net::SFV::DictResult& aDict) {
   nsAutoCString token;
-  MOZ_TRY(tokenVal->GetValue(token));
+  nsresult rv = aDict.GetItem<net::SFV::Token>("mode"_ns, token);
+  if (NS_FAILED(rv)) {
+    return Err(rv);
+  }
 
   if (token.EqualsLiteral("enforce")) {
     return WaictMode::Enforce;

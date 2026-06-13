@@ -122,6 +122,8 @@ static inline constexpr auto kDefaultTouchBehavior =
 
 class MockContentController : public GeckoContentController {
  public:
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MockContentController, final);
+
   MOCK_METHOD1(NotifyLayerTransforms, void(nsTArray<MatrixMessage>&&));
   MOCK_METHOD1(RequestContentRepaint, void(const RepaintRequest&));
   MOCK_METHOD6(HandleTap, void(TapType, const LayoutDevicePoint&, Modifiers,
@@ -157,6 +159,9 @@ class MockContentController : public GeckoContentController {
                void(const ScrollableLayerGuid&, float, float, bool));
   MOCK_METHOD4(UpdateOverscrollOffset,
                void(const ScrollableLayerGuid&, float, float, bool));
+
+ protected:
+  virtual ~MockContentController() = default;
 };
 
 class MockContentControllerDelayed : public MockContentController {

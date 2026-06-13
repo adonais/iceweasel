@@ -39,8 +39,45 @@
   margin-block-end: 0;
 }
 
+.message-assistant > :first-child {
+  margin-block-start: 0;
+}
+.message-assistant > :last-child {
+  margin-block-end: 0;
+}
+
+ai-chat-table {
+  --smartwindow-table-title-color: light-dark(var(--color-violet-90), var(--color-violet-10));
+  --smartwindow-table-border: var(--border-width) solid
+    light-dark(color-mix(in srgb, var(--color-violet-90) 20%, transparent), color-mix(in srgb, var(--color-violet-10) 20%, transparent));
+
+  display: block;
+  font-size: var(--font-size-small);
+  max-width: 100%;
+  width: fit-content;
+
+  & th,
+  & td {
+    padding: var(--space-small) var(--space-medium);
+    text-align: start;
+  }
+
+  & thead tr {
+    border-block-end: var(--smartwindow-table-border);
+  }
+
+  & th {
+    color: var(--smartwindow-table-title-color);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  & tbody tr:not(:last-child) {
+    border-block-end: var(--smartwindow-table-border);
+  }
+}
+
 /* stylelint-disable-next-line media-query-no-invalid */
-@media -moz-pref("browser.smartwindow.nova.enabled") {
+@media -moz-pref("browser.nova.enabled") {
   .message-assistant {
     a {
       --smartwindow-assistant-link-color-active: light-dark(var(--color-violet-80), var(--color-violet-50));

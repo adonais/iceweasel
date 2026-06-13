@@ -826,6 +826,9 @@ Statistics::~Statistics() {
   if (gcTimerFile && gcTimerFile != stdout && gcTimerFile != stderr) {
     fclose(gcTimerFile);
   }
+  if (gcProfileFile && gcProfileFile != stdout && gcProfileFile != stderr) {
+    fclose(gcProfileFile);
+  }
 }
 
 /* static */

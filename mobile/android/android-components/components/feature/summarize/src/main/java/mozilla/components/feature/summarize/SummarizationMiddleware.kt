@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.launch
 import mozilla.components.concept.llm.CloudLlmProvider
+import mozilla.components.concept.llm.ErrorCode
 import mozilla.components.concept.llm.Llm
 import mozilla.components.feature.summarize.content.ContentProvider
 import mozilla.components.feature.summarize.ext.fetchLlm
@@ -19,6 +20,8 @@ import mozilla.components.feature.summarize.ext.prompt
 import mozilla.components.feature.summarize.settings.SummarizationSettings
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.Store
+
+const val TAG = "SummarizationMiddleware"
 
 /** The initial middleware for the summarization feature */
 class SummarizationMiddleware(
@@ -57,7 +60,7 @@ class SummarizationMiddleware(
                 observePrompt(store, action.llm)
             }
             is SummarizationFailed -> scope.launch {
-                errorReporter.report(action.throwable)
+                errorReporter.report(TAG, action.exception)
             }
         }
 
@@ -76,7 +79,7 @@ class SummarizationMiddleware(
             )
             .onCompletion { if (it == null) store.dispatch(SummarizationCompleted) }
             .collect { store.dispatch(ReceivedParsedDocument(it)) }
-    }.onFailure { store.dispatch(SummarizationFailed(it)) }
+    }.onFailure { store.dispatch(SummarizationFailed(it.asLlmException())) }
 
     private suspend fun observeCloudLlmProvider(
         store: SummarizationStore,
@@ -87,4 +90,12 @@ class SummarizationMiddleware(
         state is SummarizationState.Inert &&
             state.initializedWithShake &&
             !settings.getHasConsentedToShake().first()
+
+    private fun Throwable.asLlmException(): Llm.Exception =
+        (this as? Llm.Exception) ?: Llm.Exception(
+            message = "Unknown error in SummarizationMiddleware: ${this::class.java}",
+            errorCode = middlewareErrorCode,
+        )
+
+    private val middlewareErrorCode = ErrorCode(4001)
 }

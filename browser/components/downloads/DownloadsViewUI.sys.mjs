@@ -446,14 +446,14 @@ DownloadsViewUI.DownloadElementShell.prototype = {
     this.element.setAttribute("active", true);
     this.element.setAttribute("orient", "horizontal");
     this.element.addEventListener("click", ev => {
-      ev.target.ownerGlobal.DownloadsView.onDownloadClick(ev);
+      ev.target.documentGlobal.DownloadsView.onDownloadClick(ev);
     });
     this.element.appendChild(
       document.importNode(downloadListItemFragment, true)
     );
     let downloadButton = this.element.querySelector(".downloadButton");
     downloadButton.addEventListener("command", function (event) {
-      event.target.ownerGlobal.DownloadsView.onDownloadButton(event);
+      event.target.documentGlobal.DownloadsView.onDownloadButton(event);
     });
     for (let [propertyName, selector] of [
       ["_downloadTypeIcon", ".downloadTypeIcon"],
@@ -996,10 +996,15 @@ DownloadsViewUI.DownloadElementShell.prototype = {
 
   showDeletedOrMissing() {
     this.element.removeAttribute("exists");
-    let label =
-      lazy.DownloadsCommon.strings[
-        this.download.deleted ? "fileDeleted" : "fileMovedOrMissing"
-      ];
+    let stringKey;
+    if (this.download.deleted && this.download.error?.becauseBlocked) {
+      stringKey = "fileBlockedAndDeleted";
+    } else if (this.download.deleted) {
+      stringKey = "fileDeleted";
+    } else {
+      stringKey = "fileMovedOrMissing";
+    }
+    let label = lazy.DownloadsCommon.strings[stringKey];
     this.showStatusWithDetails(label, label);
     this.hideButton();
   },
@@ -1161,7 +1166,7 @@ DownloadsViewUI.DownloadElementShell.prototype = {
   },
 
   downloadsCmd_openReferrer() {
-    this.element.ownerGlobal.openURL(
+    this.element.documentGlobal.openURL(
       this.download.source.referrerInfo.originalReferrer
     );
   },
@@ -1186,7 +1191,7 @@ DownloadsViewUI.DownloadElementShell.prototype = {
       return;
     }
 
-    let window = this.browserWindow || this.element.ownerGlobal;
+    let window = this.browserWindow || this.element.documentGlobal;
     let document = window.document;
 
     // Do not suggest a file name if we don't know the original target.

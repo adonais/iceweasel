@@ -21,6 +21,9 @@ class LocalAccessible;
  */
 class xpcAccessible : public nsIAccessible {
  public:
+  xpcAccessible(const xpcAccessible&) = delete;
+  xpcAccessible& operator=(const xpcAccessible&) = delete;
+
   // nsIAccessible
   NS_IMETHOD GetParent(nsIAccessible** aParent) final;
   NS_IMETHOD GetNextSibling(nsIAccessible** aNextSibling) final;
@@ -93,15 +96,12 @@ class xpcAccessible : public nsIAccessible {
   NS_IMETHOD GetComputedARIARole(nsAString& aRole) final;
 
  protected:
-  xpcAccessible() {}
-  virtual ~xpcAccessible() {}
+  xpcAccessible() = default;
+  virtual ~xpcAccessible() = default;
 
  private:
   LocalAccessible* Intl();
   Accessible* IntlGeneric();
-
-  xpcAccessible(const xpcAccessible&) = delete;
-  xpcAccessible& operator=(const xpcAccessible&) = delete;
 };
 
 }  // namespace a11y

@@ -653,7 +653,7 @@ NS_IMETHODIMP nsTreeSelection::SetCurrentIndex(int32_t aIndex) {
   constexpr auto DOMMenuItemActive = u"DOMMenuItemActive"_ns;
   constexpr auto DOMMenuItemInactive = u"DOMMenuItemInactive"_ns;
 
-  RefPtr<AsyncEventDispatcher> asyncDispatcher = new AsyncEventDispatcher(
+  auto asyncDispatcher = MakeRefPtr<AsyncEventDispatcher>(
       mTree, (aIndex != -1 ? DOMMenuItemActive : DOMMenuItemInactive),
       CanBubble::eYes, ChromeOnlyDispatch::eNo);
   return asyncDispatcher->PostDOMEvent();

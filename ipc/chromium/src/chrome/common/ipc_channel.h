@@ -6,7 +6,6 @@
 #define CHROME_COMMON_IPC_CHANNEL_H_
 
 #include <cstdint>
-#include <queue>
 #include <variant>
 #include "base/basictypes.h"
 #include "base/process.h"

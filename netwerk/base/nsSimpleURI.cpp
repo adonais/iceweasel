@@ -15,6 +15,7 @@
 #include "nsIObjectOutputStream.h"
 #include "nsEscape.h"
 #include "nsError.h"
+#include "nsQueryObject.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/TextUtils.h"
 #include "mozilla/ipc/URIUtils.h"
@@ -28,21 +29,6 @@ using namespace mozilla::ipc;
 namespace mozilla {
 namespace net {
 
-static NS_DEFINE_CID(kThisSimpleURIImplementationCID,
-                     NS_THIS_SIMPLEURI_IMPLEMENTATION_CID);
-
-/* static */
-already_AddRefed<nsSimpleURI> nsSimpleURI::From(nsIURI* aURI) {
-  RefPtr<nsSimpleURI> uri;
-  nsresult rv = aURI->QueryInterface(kThisSimpleURIImplementationCID,
-                                     getter_AddRefs(uri));
-  if (NS_FAILED(rv)) {
-    return nullptr;
-  }
-
-  return uri.forget();
-}
-
 NS_IMPL_CLASSINFO(nsSimpleURI, nullptr, nsIClassInfo::THREADSAFE,
                   NS_SIMPLEURI_CID)
 // Empty CI getter. We only need nsIClassInfo for Serialization
@@ -54,12 +40,11 @@ NS_IMPL_CI_INTERFACE_GETTER0(nsSimpleURI)
 NS_IMPL_ADDREF(nsSimpleURI)
 NS_IMPL_RELEASE(nsSimpleURI)
 NS_INTERFACE_TABLE_HEAD(nsSimpleURI)
-  NS_INTERFACE_TABLE(nsSimpleURI, nsIURI, nsISerializable)
+  NS_INTERFACE_TABLE(nsSimpleURI, nsIURI, nsISerializable,
+                     nsIIPCSerializableURI, nsIURIWithSizeOf)
   NS_INTERFACE_TABLE_TO_MAP_SEGUE
   NS_IMPL_QUERY_CLASSINFO(nsSimpleURI)
-  if (aIID.Equals(kThisSimpleURIImplementationCID)) {
-    foundInterface = static_cast<nsIURI*>(this);
-  } else
+  NS_INTERFACE_MAP_ENTRY_CONCRETE(nsSimpleURI)
 NS_INTERFACE_MAP_END
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -524,10 +509,8 @@ nsresult nsSimpleURI::EqualsInternal(
   NS_ENSURE_ARG_POINTER(other);
   MOZ_ASSERT(result, "null pointer");
 
-  RefPtr<nsSimpleURI> otherUri;
-  nsresult rv = other->QueryInterface(kThisSimpleURIImplementationCID,
-                                      getter_AddRefs(otherUri));
-  if (NS_FAILED(rv)) {
+  RefPtr<nsSimpleURI> otherUri = do_QueryObject(other);
+  if (!otherUri) {
     *result = false;
     return NS_OK;
   }

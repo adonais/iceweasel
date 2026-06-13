@@ -942,9 +942,9 @@ void nsSHistory::NotifyOnHistoryReplaceEntry() {
 }
 
 NS_IMETHODIMP
-nsSHistory::NotifyOnEntryTitleUpdated(nsISHEntry* aEntry) {
+nsSHistory::NotifyOnEntryUpdated(nsISHEntry* aEntry) {
   NotifyListeners(mListeners, [entry = nsCOMPtr{aEntry}](auto l) {
-    l->OnEntryTitleUpdated(entry);
+    l->OnEntryUpdated(entry);
   });
   return NS_OK;
 }
@@ -1604,8 +1604,8 @@ static bool MaybeCheckUnloadingIsCanceled(
   windowGlobalParent->PermitUnloadTraversable(
       targetEntry->Info(), action,
       [action, loadResults = CopyableTArray(std::move(aLoadResults)),
-       windowGlobalParent,
-       aResolver](nsIDocumentViewer::PermitUnloadResult aResult) mutable {
+       windowGlobalParent, aResolver = std::move(aResolver)](
+          nsIDocumentViewer::PermitUnloadResult aResult) mutable {
         if (aResult != nsIDocumentViewer::PermitUnloadResult::eContinue) {
           aResolver(loadResults, aResult);
           return;

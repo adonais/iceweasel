@@ -12,6 +12,7 @@
 #include "mozilla/ErrorNames.h"
 #include "mozilla/Logging.h"
 #include "mozilla/MozPromise.h"
+#include "mozilla/SourcePathLiteral.h"
 #include "mozilla/TextUtils.h"
 #include "mozilla/dom/quota/ResultExtensions.h"
 #include "mozilla/dom/quota/ScopedLogExtraInfo.h"
@@ -267,7 +268,7 @@ nsDependentCSubstring GetTreeBase(const nsLiteralCString& aPath,
 
 nsDependentCSubstring GetSourceTreeBase() {
   static constexpr auto thisSourceFileRelativePath =
-      "/dom/quota/QuotaCommon.cpp"_ns;
+      "/dom/quota/QuotaCommon.cpp"_sp;
 
   return GetTreeBase(nsLiteralCString(__FILE__), thisSourceFileRelativePath);
 }
@@ -275,15 +276,15 @@ nsDependentCSubstring GetSourceTreeBase() {
 nsDependentCSubstring GetObjdirDistIncludeTreeBase(
     const nsLiteralCString& aQuotaCommonHPath) {
   static constexpr auto quotaCommonHSourceFileRelativePath =
-      "/mozilla/dom/quota/QuotaCommon.h"_ns;
+      "/mozilla/dom/quota/QuotaCommon.h"_sp;
 
   return GetTreeBase(aQuotaCommonHPath, quotaCommonHSourceFileRelativePath);
 }
 
 static constexpr auto kSourceFileRelativePathMap =
     std::array<std::pair<nsLiteralCString, nsLiteralCString>, 1>{
-        {{"mozilla/dom/LocalStorageCommon.h"_ns,
-          "dom/localstorage/LocalStorageCommon.h"_ns}}};
+        {{"mozilla/dom/LocalStorageCommon.h"_sp,
+          "dom/localstorage/LocalStorageCommon.h"_sp}}};
 
 static nsDependentCSubstring StripRelativeComponents(
     const nsACString& aSourceFilePath) {
@@ -316,7 +317,7 @@ static nsDependentCSubstring MapDistIncludePathToSource(
     return Substring(foundIt->second, 0);
   }
 
-  static constexpr auto mozillaRelativeBase = "mozilla/"_ns;
+  static constexpr auto mozillaRelativeBase = "mozilla/"_sp;
   // If we don't have a mapping for it, just remove the mozilla/ prefix
   // (if there's any).
   if (StringBeginsWith(aDistIncludePath, mozillaRelativeBase)) [[likely]] {
@@ -334,15 +335,17 @@ static nsDependentCSubstring MapDistIncludePathToSource(
 nsDependentCSubstring MakeSourceFileRelativePath(
     const nsACString& aSourceFilePath) {
   static constexpr auto error = "ERROR"_ns;
+  static constexpr auto kDistInclude = "dist/include/"_sp;
+  static constexpr auto kCheckoutsGecko = "checkouts/gecko/"_sp;
 
   if (StringBeginsWith(aSourceFilePath, "."_ns)) {
     nsDependentCSubstring stripped = StripRelativeComponents(aSourceFilePath);
-    if (StringBeginsWith(stripped, "dist/include/"_ns)) {
+    if (StringBeginsWith(stripped, kDistInclude)) {
       return MapDistIncludePathToSource(
-          Substring(stripped, "dist/include/"_ns.Length()));
+          Substring(stripped, kDistInclude.Length()));
     }
-    if (StringBeginsWith(stripped, "checkouts/gecko/"_ns)) {
-      return Substring(stripped, "checkouts/gecko/"_ns.Length());
+    if (StringBeginsWith(stripped, kCheckoutsGecko)) {
+      return Substring(stripped, kCheckoutsGecko.Length());
     }
     return stripped;
   }
@@ -364,7 +367,7 @@ nsDependentCSubstring MakeSourceFileRelativePath(
   }
 
   nsCString::const_iterator begin, end;
-  if (RFindInReadable("/"_ns, aSourceFilePath.BeginReading(begin),
+  if (RFindInReadable("/"_sp, aSourceFilePath.BeginReading(begin),
                       aSourceFilePath.EndReading(end))) {
     // Use the basename as a fallback, to avoid exposing any user parts of the
     // path.

@@ -7,6 +7,8 @@
 #ifndef GFX_FONT_CONSTANTS_H
 #define GFX_FONT_CONSTANTS_H
 
+#include <cstdint>
+
 /*
  * This file is separate from gfxFont.h so that layout can include it
  * without bringing in gfxFont.h and everything it includes.

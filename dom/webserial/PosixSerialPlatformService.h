@@ -1,5 +1,3 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim:set ts=2 sw=2 sts=2 et cindent: */
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -51,11 +49,9 @@ class PosixSerialPlatformService final : public SerialPlatformService {
   nsresult ConfigurePort(int aFd, const IPCSerialOptions& aOptions);
 
   nsresult StartMonitoring();
-  void StopMonitoring();
 
 #ifdef XP_LINUX
   nsresult InitializeUdev();
-  void ShutdownUdev();
   static gboolean OnUdevMonitor(GIOChannel* source, GIOCondition condition,
                                 gpointer data);
   void ReadUdevChange();

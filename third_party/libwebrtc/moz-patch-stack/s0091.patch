@@ -11,10 +11,10 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/b050c455caa1d24a0
  3 files changed, 8 insertions(+), 6 deletions(-)
 
 diff --git a/BUILD.gn b/BUILD.gn
-index 9c5338bd15..b8c223b8f8 100644
+index c02ee0c771..9c258bf486 100644
 --- a/BUILD.gn
 +++ b/BUILD.gn
-@@ -613,7 +613,7 @@ if (!build_with_chromium) {
+@@ -617,7 +617,7 @@ if (!build_with_chromium) {
      if (rtc_include_internal_audio_device) {
        deps += [ "api/audio:create_audio_device_module" ]
      }
@@ -24,7 +24,7 @@ index 9c5338bd15..b8c223b8f8 100644
          deps += [ "sdk/android" ]
        }
 diff --git a/modules/video_coding/generic_decoder.cc b/modules/video_coding/generic_decoder.cc
-index 2320dfdffc..7849ef7f70 100644
+index dac95bfaa7..8e1a2efcdd 100644
 --- a/modules/video_coding/generic_decoder.cc
 +++ b/modules/video_coding/generic_decoder.cc
 @@ -119,9 +119,9 @@ void VCMDecodedFrameCallback::Decoded(VideoFrame& decodedImage,
@@ -52,10 +52,10 @@ index 2320dfdffc..7849ef7f70 100644
    frame_info.rtp_timestamp = frame.RtpTimestamp();
    frame_info.decode_start = now;
 diff --git a/rtc_base/BUILD.gn b/rtc_base/BUILD.gn
-index d2e66a199a..5ab6db2af3 100644
+index 66be5cf312..38d679e043 100644
 --- a/rtc_base/BUILD.gn
 +++ b/rtc_base/BUILD.gn
-@@ -242,6 +242,7 @@ rtc_library("event_tracer") {
+@@ -236,6 +236,7 @@ rtc_library("event_tracer") {
      "//third_party/abseil-cpp/absl/base:nullability",
      "//third_party/abseil-cpp/absl/strings:string_view",
    ]
@@ -63,7 +63,7 @@ index d2e66a199a..5ab6db2af3 100644
    all_dependent_configs = [ "//third_party/perfetto/gn:public_config" ]
    if (rtc_use_perfetto) {
      if (build_with_chromium) {
-@@ -256,6 +257,7 @@ rtc_library("event_tracer") {
+@@ -250,6 +251,7 @@ rtc_library("event_tracer") {
    } else {
      deps += [ "//third_party/perfetto/include/perfetto/tracing" ]
    }

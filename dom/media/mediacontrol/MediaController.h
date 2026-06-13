@@ -93,6 +93,7 @@ class MediaController final : public DOMEventTargetHelper,
   void GetMetadata(MediaMetadataInit& aMetadata, ErrorResult& aRv);
   IMPL_EVENT_HANDLER(activated);
   IMPL_EVENT_HANDLER(deactivated);
+  IMPL_EVENT_HANDLER(audiblechange);
   IMPL_EVENT_HANDLER(metadatachange);
   IMPL_EVENT_HANDLER(supportedkeyschange);
   IMPL_EVENT_HANDLER(playbackstatechange);
@@ -121,8 +122,9 @@ class MediaController final : public DOMEventTargetHelper,
   // IMediaInfoUpdater's methods
   void NotifyMediaPlaybackChanged(uint64_t aBrowsingContextId,
                                   MediaPlaybackState aState) override;
-  void NotifyMediaAudibleChanged(uint64_t aBrowsingContextId,
-                                 MediaAudibleState aState) override;
+  void NotifyMediaAudibleChanged(
+      uint64_t aBrowsingContextId, MediaAudibleState aState,
+      ControlType aType = ControlType::eControllable) override;
   void SetIsInPictureInPictureMode(uint64_t aBrowsingContextId,
                                    bool aIsInPictureInPictureMode) override;
   void NotifyMediaFullScreenState(uint64_t aBrowsingContextId,
@@ -193,6 +195,11 @@ class MediaController final : public DOMEventTargetHelper,
   bool mShutdown = false;
   bool mIsInPictureInPictureMode = false;
   bool mIsInFullScreenMode = false;
+
+  // Maps browsing context ID to the count of audible uncontrollable sources
+  // (e.g. Web Audio, Web Speech) in that context. Used by IsAudible() so that
+  // audible uncontrollable sources count toward the tab's audibility.
+  nsTHashMap<nsUint64HashKey, uint32_t> mUncontrollableAudibleMap;
 
   // We would monitor the change of media session actions and convert them to
   // the media keys, then determine the supported media keys.

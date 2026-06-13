@@ -5,55 +5,6 @@ const PERMISSIONS_URL =
 var exceptionsDialog;
 
 add_task(async function openLoginExceptionsSubDialog() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.settings-redesign.enabled", false]],
-  });
-  // ensure rememberSignons is off for this test;
-  ok(
-    !Services.prefs.getBoolPref("signon.rememberSignons"),
-    "Check initial value of signon.rememberSignons pref"
-  );
-
-  await openPreferencesViaOpenPreferencesAPI("privacy", { leaveOpen: true });
-
-  let dialogOpened = promiseLoadSubDialog(PERMISSIONS_URL);
-
-  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], function () {
-    let doc = content.document;
-    let savePasswordCheckBox = doc.getElementById("savePasswords");
-    Assert.ok(
-      !savePasswordCheckBox.checked,
-      "Save Password CheckBox should be unchecked by default"
-    );
-    savePasswordCheckBox.click();
-
-    let loginExceptionsButton = doc.getElementById("passwordExceptions");
-    loginExceptionsButton.click();
-  });
-
-  exceptionsDialog = await dialogOpened;
-
-  await addALoginException();
-  await deleteALoginException();
-
-  exceptionsDialog.close();
-
-  // Undo the save password change.
-  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], function () {
-    let doc = content.document;
-    let savePasswordCheckBox = doc.getElementById("savePasswords");
-    if (savePasswordCheckBox.checked) {
-      savePasswordCheckBox.click();
-    }
-  });
-
-  gBrowser.removeCurrentTab();
-});
-
-add_task(async function openLoginExceptionsSubDialogNew() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.settings-redesign.enabled", true]],
-  });
   // ensure rememberSignons is off for this test;
   ok(
     !Services.prefs.getBoolPref("signon.rememberSignons"),

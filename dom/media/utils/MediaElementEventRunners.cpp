@@ -36,7 +36,7 @@ nsresult nsMediaEventRunner::FireEvent(const nsAString& aName) {
   nsresult rv = NS_OK;
   if (mElement) {
     ReportProfilerMarker();
-    rv = RefPtr { mElement } -> FireEvent(aName);
+    rv = RefPtr{mElement}->FireEvent(aName);
   }
   return rv;
 }

@@ -572,6 +572,7 @@ class BaseRustProgram(Linkable):
         "cargo_file",
         "features",
         "location",
+        "output_category",
         "SUFFIX_VAR",
         "KIND",
         "TARGET_SUBST_VAR",
@@ -581,6 +582,7 @@ class BaseRustProgram(Linkable):
         Linkable.__init__(self, context)
         self.name = name
         self.cargo_file = cargo_file
+        self.output_category = context.get(self.OUTPUT_CATEGORY_VAR)
         # Skip setting properties below which depend on cargo
         # when we don't have a compile environment. The required
         # config keys won't be available, but the instance variables
@@ -599,6 +601,7 @@ class RustProgram(BaseRustProgram):
     KIND = "target"
     TARGET_SUBST_VAR = "RUST_TARGET"
     FEATURES_VAR = "RUST_PROGRAM_FEATURES"
+    OUTPUT_CATEGORY_VAR = "RUST_PROGRAM_OUTPUT_CATEGORY"
 
 
 class HostRustProgram(BaseRustProgram):
@@ -606,6 +609,7 @@ class HostRustProgram(BaseRustProgram):
     KIND = "host"
     TARGET_SUBST_VAR = "RUST_HOST_TARGET"
     FEATURES_VAR = "HOST_RUST_PROGRAM_FEATURES"
+    OUTPUT_CATEGORY_VAR = "HOST_RUST_PROGRAM_OUTPUT_CATEGORY"
 
 
 class RustTests(ContextDerived):
@@ -1375,7 +1379,9 @@ class GeneratedFile(ContextDerived):
                 for f in self.outputs
                 if f.endswith((".java", ".kt"))
                 or mozpath.match(f, "**/AndroidManifest*.xml")
-                or mozpath.match(f, "**/webcompat_addon_run.js")
+                # Special-case for the webcompat addon, for files it automatically
+                # generates with GenerateWebCompatAddonFiles in /mobile/android/moz.build.
+                or mozpath.match(f, "**/webcompat_addon_generated_files/**")
             ]
         else:
             self.required_before_export = False

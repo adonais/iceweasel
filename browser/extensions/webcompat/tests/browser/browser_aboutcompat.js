@@ -83,9 +83,8 @@ add_task(async function test_about_compat_loads_properly() {
         interventionWithContentScripts
       );
     const interventionRCSId =
-      bgWin.interventions.buildContentScriptRegistrations(
-        interventionWithContentScripts.label,
-        interventionWithContentScripts.interventions[0],
+      bgWin.interventions.buildContentScriptsRegistrationsForIntervention(
+        interventionWithContentScripts,
         matches,
         excludeMatches
       )[0].id;

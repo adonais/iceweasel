@@ -6,10 +6,9 @@
 
 #include "nsGenericHTMLElement.h"
 
-class nsContentList;
-
 namespace mozilla::dom {
 
+class ContentList;
 class HTMLTableSectionElement;
 
 class HTMLTableRowElement final : public nsGenericHTMLElement {
@@ -27,7 +26,7 @@ class HTMLTableRowElement final : public nsGenericHTMLElement {
 
   int32_t RowIndex() const;
   int32_t SectionRowIndex() const;
-  nsIHTMLCollection* Cells();
+  HTMLCollection* Cells();
   already_AddRefed<nsGenericHTMLElement> InsertCell(int32_t aIndex,
                                                     ErrorResult& aError);
   void DeleteCell(int32_t aValue, ErrorResult& aError);
@@ -57,15 +56,14 @@ class HTMLTableRowElement final : public nsGenericHTMLElement {
     SetHTMLAttr(nsGkAtoms::bgcolor, aBgColor, aError);
   }
 
-  virtual bool ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
-                              const nsAString& aValue,
-                              nsIPrincipal* aMaybeScriptedPrincipal,
-                              nsAttrValue& aResult) override;
-  virtual nsMapRuleToAttributesFunc GetAttributeMappingFunction()
-      const override;
+  bool ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
+                      const nsAString& aValue,
+                      nsIPrincipal* aMaybeScriptedPrincipal,
+                      nsAttrValue& aResult) override;
+  nsMapRuleToAttributesFunc GetAttributeMappingFunction() const override;
   NS_IMETHOD_(bool) IsAttributeMapped(const nsAtom* aAttribute) const override;
 
-  virtual nsresult Clone(dom::NodeInfo*, nsINode** aResult) const override;
+  nsresult Clone(dom::NodeInfo*, nsINode** aResult) const override;
 
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(HTMLTableRowElement,
                                            nsGenericHTMLElement)
@@ -73,12 +71,12 @@ class HTMLTableRowElement final : public nsGenericHTMLElement {
  protected:
   virtual ~HTMLTableRowElement();
 
-  virtual JSObject* WrapNode(JSContext* aCx,
-                             JS::Handle<JSObject*> aGivenProto) override;
+  JSObject* WrapNode(JSContext* aCx,
+                     JS::Handle<JSObject*> aGivenProto) override;
 
   HTMLTableSectionElement* GetSection() const;
   HTMLTableElement* GetTable() const;
-  RefPtr<nsContentList> mCells;
+  RefPtr<ContentList> mCells;
 
  private:
   static void MapAttributesIntoRule(MappedDeclarationsBuilder&);

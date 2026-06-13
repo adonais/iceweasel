@@ -3774,6 +3774,13 @@
   defer_init: true
 #endif
 
+- name: TimeClipCall
+  result_type: WordSized
+  operands:
+    time: WordSized
+  num_temps: 1
+  mir_op: TimeClip
+
 #if defined(JS_CODEGEN_X86) || defined(JS_CODEGEN_X64)
 - name: DivConstantI
   result_type: WordSized
@@ -4528,7 +4535,7 @@
   arguments:
     isSigned: bool
 #ifdef JS_CODEGEN_X64
-  num_temps: 2
+  num_temps: 1
 #endif
   mir_op: WasmMulI64WideHI64
 #endif

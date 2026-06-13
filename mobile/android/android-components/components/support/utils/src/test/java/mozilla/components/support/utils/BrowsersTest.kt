@@ -15,13 +15,13 @@ import mozilla.components.support.test.robolectric.testContext
 import mozilla.components.support.utils.Browsers.Companion.SAMPLE_BROWSER_HTTP_URL
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
+import kotlin.test.assertNotNull
 
 @Suppress("DEPRECATION") // Deprecation will be handled in https://github.com/mozilla-mobile/android-components/issues/11832
 @RunWith(AndroidJUnit4::class)
@@ -49,10 +49,10 @@ class BrowsersTest {
         val browsers = Browsers.all(testContext)
 
         assertNotNull(browsers.defaultBrowser)
-        assertEquals(Browsers.KnownBrowser.FIREFOX.packageName, browsers.defaultBrowser!!.packageName)
+        assertEquals(Browsers.KnownBrowser.FIREFOX.packageName, browsers.defaultBrowser.packageName)
 
         assertNotNull(browsers.mozillaBrandedBrowser)
-        assertEquals(Browsers.KnownBrowser.FIREFOX.packageName, browsers.mozillaBrandedBrowser!!.packageName)
+        assertEquals(Browsers.KnownBrowser.FIREFOX.packageName, browsers.mozillaBrandedBrowser.packageName)
 
         assertTrue(browsers.hasFirefoxBrandedBrowserInstalled)
 
@@ -81,10 +81,10 @@ class BrowsersTest {
         val browsers = Browsers.all(testContext)
 
         assertNotNull(browsers.defaultBrowser)
-        assertEquals(Browsers.KnownBrowser.REFERENCE_BROWSER.packageName, browsers.defaultBrowser!!.packageName)
+        assertEquals(Browsers.KnownBrowser.REFERENCE_BROWSER.packageName, browsers.defaultBrowser.packageName)
 
         assertNotNull(browsers.mozillaBrandedBrowser)
-        assertEquals(Browsers.KnownBrowser.FIREFOX.packageName, browsers.mozillaBrandedBrowser!!.packageName)
+        assertEquals(Browsers.KnownBrowser.FIREFOX.packageName, browsers.mozillaBrandedBrowser.packageName)
 
         assertTrue(browsers.hasFirefoxBrandedBrowserInstalled)
 
@@ -293,10 +293,10 @@ class BrowsersTest {
         val browsers = Browsers.forUrl(testContext, SAMPLE_BROWSER_HTTP_URL)
 
         assertNotNull(browsers.defaultBrowser)
-        assertEquals(Browsers.KnownBrowser.FIREFOX.packageName, browsers.defaultBrowser!!.packageName)
+        assertEquals(Browsers.KnownBrowser.FIREFOX.packageName, browsers.defaultBrowser.packageName)
 
         assertNotNull(browsers.mozillaBrandedBrowser)
-        assertEquals(Browsers.KnownBrowser.FIREFOX.packageName, browsers.mozillaBrandedBrowser!!.packageName)
+        assertEquals(Browsers.KnownBrowser.FIREFOX.packageName, browsers.mozillaBrandedBrowser.packageName)
 
         assertTrue(browsers.hasFirefoxBrandedBrowserInstalled)
 

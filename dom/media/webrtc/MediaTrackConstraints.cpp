@@ -262,7 +262,7 @@ void NormalizedConstraintSet::StringRange::Intersect(
   set_intersection(mExact.begin(), mExact.end(), aOther.mExact.begin(),
                    aOther.mExact.end(),
                    std::inserter(intersection, intersection.begin()));
-  mExact = intersection;
+  mExact = std::move(intersection);
 }
 
 bool NormalizedConstraintSet::StringRange::Merge(const StringRange& aOther) {
@@ -274,7 +274,7 @@ bool NormalizedConstraintSet::StringRange::Merge(const StringRange& aOther) {
   ValueType unioned;
   set_union(mIdeal.begin(), mIdeal.end(), aOther.mIdeal.begin(),
             aOther.mIdeal.end(), std::inserter(unioned, unioned.begin()));
-  mIdeal = unioned;
+  mIdeal = std::move(unioned);
   return true;
 }
 

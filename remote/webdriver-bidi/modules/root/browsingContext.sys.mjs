@@ -1575,11 +1575,13 @@ class BrowsingContextModule extends RootBiDiModule {
     return this.#awaitNavigation(
       webProgress,
       () => {
+        const { sessionHistory } = context;
         const flags = Ci.nsIWebNavigation.LOAD_FLAGS_NONE;
+
         // Bug 2026546: As workaround use sessionHistory if available to avoid
         // issues with frames.
-        if (context.sessionHistory) {
-          context.sessionHistory.reload(flags);
+        if (sessionHistory?.count && sessionHistory?.index >= 0) {
+          sessionHistory.reload(flags);
         } else {
           context.reload(flags);
         }

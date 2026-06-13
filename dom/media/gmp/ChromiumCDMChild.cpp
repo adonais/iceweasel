@@ -503,36 +503,35 @@ mozilla::ipc::IPCResult ChromiumCDMChild::RecvSetServerCertificate(
 }
 
 mozilla::ipc::IPCResult ChromiumCDMChild::RecvCreateSessionAndGenerateRequest(
-    const uint32_t& aPromiseId, const uint32_t& aSessionType,
-    const uint32_t& aInitDataType, nsTArray<uint8_t>&& aInitData) {
+    const uint32_t& aPromiseId, const cdm::SessionType& aSessionType,
+    const cdm::InitDataType& aInitDataType, nsTArray<uint8_t>&& aInitData) {
   MOZ_ASSERT(IsOnMessageLoopThread());
   GMP_LOG_DEBUG(
       "ChromiumCDMChild::RecvCreateSessionAndGenerateRequest("
       "pid=%" PRIu32 ", sessionType=%" PRIu32 ", initDataType=%" PRIu32
       ") initDataLen=%zu",
-      aPromiseId, aSessionType, aInitDataType, aInitData.Length());
-  MOZ_ASSERT(aSessionType <= cdm::SessionType::kPersistentLicense);
-  MOZ_ASSERT(aInitDataType <= cdm::InitDataType::kWebM);
+      aPromiseId, static_cast<uint32_t>(aSessionType),
+      static_cast<uint32_t>(aInitDataType), aInitData.Length());
   if (mCDM) {
-    mCDM->CreateSessionAndGenerateRequest(
-        aPromiseId, static_cast<cdm::SessionType>(aSessionType),
-        static_cast<cdm::InitDataType>(aInitDataType), aInitData.Elements(),
-        aInitData.Length());
+    mCDM->CreateSessionAndGenerateRequest(aPromiseId, aSessionType,
+                                          aInitDataType, aInitData.Elements(),
+                                          aInitData.Length());
   }
   return IPC_OK();
 }
 
 mozilla::ipc::IPCResult ChromiumCDMChild::RecvLoadSession(
-    const uint32_t& aPromiseId, const uint32_t& aSessionType,
+    const uint32_t& aPromiseId, const cdm::SessionType& aSessionType,
     const nsACString& aSessionId) {
   MOZ_ASSERT(IsOnMessageLoopThread());
   GMP_LOG_DEBUG(
       "ChromiumCDMChild::RecvLoadSession(pid=%u, type=%u, sessionId=%s)",
-      aPromiseId, aSessionType, PromiseFlatCString(aSessionId).get());
+      aPromiseId, static_cast<uint32_t>(aSessionType),
+      PromiseFlatCString(aSessionId).get());
   if (mCDM) {
     mLoadSessionPromiseIds.AppendElement(aPromiseId);
-    mCDM->LoadSession(aPromiseId, static_cast<cdm::SessionType>(aSessionType),
-                      aSessionId.BeginReading(), aSessionId.Length());
+    mCDM->LoadSession(aPromiseId, aSessionType, aSessionId.BeginReading(),
+                      aSessionId.Length());
   }
   return IPC_OK();
 }
@@ -747,9 +746,9 @@ mozilla::ipc::IPCResult ChromiumCDMChild::RecvInitializeVideoDecoder(
     return IPC_OK();
   }
   cdm::VideoDecoderConfig_2 config = {};
-  config.codec = static_cast<cdm::VideoCodec>(aConfig.mCodec());
-  config.profile = static_cast<cdm::VideoCodecProfile>(aConfig.mProfile());
-  config.format = static_cast<cdm::VideoFormat>(aConfig.mFormat());
+  config.codec = aConfig.mCodec();
+  config.profile = aConfig.mProfile();
+  config.format = aConfig.mFormat();
   config.coded_size =
       mCodedSize = {aConfig.mImageWidth(), aConfig.mImageHeight()};
   nsTArray<uint8_t> extraData(aConfig.mExtraData().Clone());

@@ -54,6 +54,12 @@ interface nsITrackingDBService : nsISupports
    */
   Promise getEarliestRecordedDate();
 
+  // These constants are also used in GeckoView.
+  // Ensure any change gets reflected in ContentBlockingController.java also.
+  // https://searchfox.org/firefox-main/rev/6087999d87e808ec39f260293afd6cc27b6c5944/mobile/android/geckoview/src/main/java/org/mozilla/geckoview/ContentBlockingController.java
+  // See https://bugzilla.mozilla.org/show_bug.cgi?id=2031989 for more information
+  // Syncing these may be automated after https://bugzilla.mozilla.org/show_bug.cgi?id=1580919 lands.
+
   const unsigned long OTHER_COOKIES_BLOCKED_ID = 0;
   const unsigned long TRACKERS_ID = 1;
   const unsigned long TRACKING_COOKIES_ID = 2;

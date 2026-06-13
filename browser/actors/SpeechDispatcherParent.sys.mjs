@@ -50,10 +50,11 @@ export class SpeechDispatcherParent extends JSWindowActorParent {
         break;
 
       default:
-        break;
+        console.error("Unknown SpeechDispatcher error message.");
+        return;
     }
 
-    let MozXULElement = browser.ownerGlobal.MozXULElement;
+    let MozXULElement = browser.documentGlobal.MozXULElement;
     MozXULElement.insertFTLIfNeeded("browser/speechDispatcher.ftl");
 
     // Now actually create the notification

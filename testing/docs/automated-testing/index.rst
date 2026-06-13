@@ -285,8 +285,7 @@ that need it as possible. Here are some options:
 
 -  If the test runs in chrome scope (e.g mochitest chrome or
    browser-chrome), you can use
-   `Services.prefs
-   <https://searchfox.org/mozilla-central/source/modules/libpref/nsIPrefBranch.idl>`__
+   :searchfox:`Services.prefs <modules/libpref/nsIPrefBranch.idl>`
    to set the prefs in your test's setup function. Be sure to reset the
    pref back to its original value during teardown!
 
@@ -319,14 +318,12 @@ Setting prefs that apply to the entire suite
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Most test suites define prefs in user.js files that live under
-`testing/profiles
-<https://searchfox.org/mozilla-central/source/testing/profiles>`__.
+:searchfox:`testing/profiles`.
 Each directory is a profile that contains a ``user.js`` file with a
 number of prefs defined in it. Test suites will then merge one or more
 of these basic profiles into their own profile at runtime. To see which
 profiles apply to which test suites, you can inspect
-`testing/profiles/profiles.json
-<https://searchfox.org/mozilla-central/source/testing/profiles/profiles.json>`__.
+:searchfox:`testing/profiles/profiles.json`.
 Profiles at the beginning of the list get overridden by profiles at the
 end of the list.
 
@@ -345,8 +342,7 @@ was created:
 .. container:: blockIndicator note
 
    **Note:** JS engine tests do not use testing/profiles yet, instead
-   `set prefs
-   here <https://searchfox.org/mozilla-central/source/js/src/tests/user.js>`__.
+   :searchfox:`set prefs here <js/src/tests/user.js>`.
 
 Adding New Context to Skip Conditions
 -------------------------------------

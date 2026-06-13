@@ -131,6 +131,81 @@ bool wasm::CreateStackMapForFunctionEntryTrap(
   return true;
 }
 
+#ifdef JS_JITSPEW
+void StackMap::show(uint32_t codeOffset) const {
+  uint32_t nWords = numMappedWords();
+  uint32_t nTotal = nWords + 64;
+  char* str = (char*)js_malloc(nTotal);
+  if (!str) {
+    return;
+  }
+  memset(str, 0, nTotal);
+  sprintf(str, "%u words: LO{ ", nWords);
+  uint32_t offs = strlen(str);
+  for (uint32_t i = 0; i < nWords; i++) {
+    char c = '.';
+    switch (get(i)) {
+      case StackMap::Kind::POD:
+        break;
+      case StackMap::Kind::AnyRef:
+        c = 'R';
+        break;
+      case StackMap::Kind::StructDataPointer:
+        c = 'S';
+        break;
+      case StackMap::Kind::ArrayDataPointer:
+        c = 'A';
+        break;
+      case StackMap::Kind::Limit:
+      default:
+        MOZ_CRASH();
+    }
+    MOZ_RELEASE_ASSERT(offs < nTotal);
+    str[offs++] = c;
+  }
+  sprintf(&str[offs], " }HI");
+  MOZ_RELEASE_ASSERT(str[nTotal - 1] == 0);
+  JitSpew(jit::JitSpew_Codegen, "%06x  # <-- @ w::StackMap: %s", codeOffset,
+          str);
+  js_free(str);
+}
+
+const char* wasm::NameOfTrap(Trap t) {
+  switch (t) {
+    case Trap::Unreachable:
+      return "Unreachable";
+    case Trap::IntegerOverflow:
+      return "IntegerOverflow";
+    case Trap::InvalidConversionToInteger:
+      return "InvalidConversionToInteger";
+    case Trap::IntegerDivideByZero:
+      return "IntegerDivideByZero";
+    case Trap::OutOfBounds:
+      return "OutOfBounds";
+    case Trap::UnalignedAccess:
+      return "UnalignedAccess";
+    case Trap::IndirectCallToNull:
+      return "IndirectCallToNull";
+    case Trap::IndirectCallBadSig:
+      return "IndirectCallBadSig";
+    case Trap::NullPointerDereference:
+      return "NullPointerDereference";
+    case Trap::BadCast:
+      return "BadCast";
+    case Trap::StackOverflow:
+      return "StackOverflow";
+    case Trap::CheckInterrupt:
+      return "CheckInterrupt";
+    case Trap::ThrowReported:
+      return "ThrowReported";
+    case Trap::Limit:
+      return "Limit";
+    default:
+      MOZ_CRASH();
+  }
+}
+#endif
+
 bool wasm::GenerateStackmapEntriesForTrapExit(
     const ArgTypeVector& args, const RegisterOffsets& trapExitLayout,
     const size_t trapExitLayoutNumWords, ExitStubMapVector* extras) {
@@ -205,9 +280,9 @@ void wasm::EmitWasmPreBarrierCallImmediate(MacroAssembler& masm,
   }
 
 #if defined(DEBUG) && defined(JS_CODEGEN_ARM64)
-  // The prebarrier assumes that x28 == sp.
+  // The prebarrier assumes that x20 == sp.
   Label ok;
-  masm.Cmp(sp, vixl::Operand(x28));
+  masm.Cmp(sp, vixl::Operand(x20));
   masm.B(&ok, Assembler::Equal);
   masm.breakpoint();
   masm.bind(&ok);
@@ -237,9 +312,9 @@ void wasm::EmitWasmPreBarrierCallIndex(MacroAssembler& masm, Register instance,
   masm.computeEffectiveAddress(addr, PreBarrierReg);
 
 #if defined(DEBUG) && defined(JS_CODEGEN_ARM64)
-  // The prebarrier assumes that x28 == sp.
+  // The prebarrier assumes that x20 == sp.
   Label ok;
-  masm.Cmp(sp, vixl::Operand(x28));
+  masm.Cmp(sp, vixl::Operand(x20));
   masm.B(&ok, Assembler::Equal);
   masm.breakpoint();
   masm.bind(&ok);

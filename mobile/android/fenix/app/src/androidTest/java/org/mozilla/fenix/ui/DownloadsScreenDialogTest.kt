@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mozilla.fenix.ui
 
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -21,6 +21,7 @@ import org.mozilla.fenix.downloads.listscreen.store.DownloadUIState
 import org.mozilla.fenix.downloads.listscreen.store.DownloadUIStore
 import org.mozilla.fenix.downloads.listscreen.store.FileItem
 import org.mozilla.fenix.downloads.listscreen.store.TimeCategory
+import kotlin.test.assertIs
 
 @RunWith(AndroidJUnit4::class)
 class DownloadsScreenDialogTest {
@@ -111,7 +112,7 @@ class DownloadsScreenDialogTest {
 
         composeTestRule.onNodeWithTag(DownloadsScreenTestTag.DELETE_DIALOG_CANCEL_BUTTON).performClick()
 
-        assertTrue(dispatchedAction is DownloadUIAction.DismissDeleteDialog)
+        assertIs<DownloadUIAction.DismissDeleteDialog>(dispatchedAction)
     }
 
     private fun createMiddleware(

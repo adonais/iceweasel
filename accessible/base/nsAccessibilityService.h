@@ -134,6 +134,9 @@ class nsAccessibilityService final : public mozilla::a11y::DocManager,
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_NSIOBSERVER
 
+  nsAccessibilityService(const nsAccessibilityService&) = delete;
+  nsAccessibilityService& operator=(const nsAccessibilityService&) = delete;
+
   LocalAccessible* GetRootDocumentAccessible(mozilla::PresShell* aPresShell,
                                              bool aCanCreate);
 
@@ -407,8 +410,6 @@ class nsAccessibilityService final : public mozilla::a11y::DocManager,
   // nsAccessibilityService creation is controlled by friend
   // GetOrCreateAccService, keep constructors private.
   nsAccessibilityService();
-  nsAccessibilityService(const nsAccessibilityService&);
-  nsAccessibilityService& operator=(const nsAccessibilityService&);
 
  private:
   /**

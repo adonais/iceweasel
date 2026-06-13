@@ -333,7 +333,7 @@ add_task(async function spotlightRecordsTelemetryOnAccept() {
   const mock = mockShell({ isDefault: true });
 
   const win = await BrowserTestUtils.openNewBrowserWindow();
-  // _showSetToDefaultSpotlight calls browser.ownerGlobal.getShellService(),
+  // _showSetToDefaultSpotlight calls browser.documentGlobal.getShellService(),
   // which is the new window, so stub it there too.
   sandbox.stub(win, "getShellService").returns(mock);
 

@@ -11,7 +11,6 @@ treeherder:
         'js-bench-v8': 'JavaScript shell benchmarks with Google V8'
         'node': 'Node tests'
         'py3': 'Python 3 unit tests'
-        'A': 'Android Gradle tests'
         'Bpgo': 'Profile-guided optimization builds'
         'Btime': 'Browsertime performance tests on Firefox'
         'Btime-cache': 'Browsertime performance tests on Firefox with populated bytecode cache.'
@@ -179,6 +178,7 @@ treeherder:
         'py': 'Python checks'
         'java': 'Java checks'
         'rust': 'Rust checks'
+        'tests': 'Test verification'
         'android': 'Android checks'
         'Static-Analysis': 'Full tree static-analysis'
         'SS': 'Shadow scheduler'
@@ -243,7 +243,9 @@ treeherder:
         'concept-integrity': 'concept-integrity'
         'concept-awesomebar': 'concept-awesomebar'
         'concept-base': 'concept-base'
+        'concept-bookmarks-file': 'concept-bookmarks-file'
         'compose-base': 'compose-base'
+        'concept-bookmarks-parser': 'concept-bookmarks-parser'
         'compose-cfr': 'compose-cfr'
         'concept-engine': 'concept-engine'
         'concept-fetch': 'concept-fetch'
@@ -268,6 +270,7 @@ treeherder:
         'feature-example': 'feature-example'
         'feature-findinpage': 'feature-findinpage'
         'feature-fxsuggest': 'feature-fxsuggest'
+        'feature-importer': 'feature-importer'
         'feature-intent': 'feature-intent'
         'feature-ipprotection': 'feature-ipprotection'
         'feature-logins': 'feature-logins'
@@ -297,6 +300,8 @@ treeherder:
         'lib-ai-controls': 'lib-ai-controls'
         'lib-crash': 'lib-crash'
         'lib-auth': 'lib-auth'
+        'lib-bookmarks-file': 'lib-bookmarks-file'
+        'lib-bookmark-parser-jsoup': 'lib-bookmark-parser-jsoup'
         'lib-crash-sentry': 'lib-crash-sentry'
         'lib-crash-sentry-legacy': 'lib-crash-sentry-legacy'
         'lib-dataprotect': 'lib-dataprotect'
@@ -786,6 +791,11 @@ workers:
             os: macosx
             worker-type: 'gecko-{alias}'
         t-osx-1500-m4:
+            provisioner: releng-hardware
+            implementation: generic-worker
+            os: macosx
+            worker-type: 'gecko-{alias}'
+        t-osx-1500-m-vms:
             provisioner: releng-hardware
             implementation: generic-worker
             os: macosx

@@ -81,7 +81,7 @@ async function loadAccessRestrictedURL(browser, url, username, password) {
     { buttonNumClick: 0, loginInput: username, passwordInput: password }
   );
 
-  await SimpleTest.promiseFocus(browser.ownerGlobal);
+  await SimpleTest.promiseFocus(browser.documentGlobal);
   await browserLoaded;
 }
 
@@ -628,7 +628,7 @@ add_task(async function test_normal_autofilled_7() {
     async function (browser) {
       // Add the observer before loading the form page
       let formFilled = listenForTestNotification("FormProcessed");
-      await SimpleTest.promiseFocus(browser.ownerGlobal);
+      await SimpleTest.promiseFocus(browser.documentGlobal);
       BrowserTestUtils.startLoadingURIString(browser, form1Url);
       await formFilled;
 

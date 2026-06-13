@@ -14,7 +14,7 @@ This will run all DAMP tests, you can filter by test name with:
 ```
 This command will run all tests which contain "console" in their name.
 
-Note that in continuous integration, DAMP tests are split into smaller tests suites: `damp-inspector`, `damp-other` and `damp-webconsole`. Actually `--suite damp` is only used locally because it contains all possible tests and makes it easier to use. But if needed you can substitute `damp` with any of the other test suites if you want to only run tests associated with a given test suite. You can find the mapping between tests and test suites in [damp-tests.js](https://searchfox.org/mozilla-central/source/testing/talos/talos/tests/devtools/addon/content/damp-tests.js).
+Note that in continuous integration, DAMP tests are split into smaller tests suites: `damp-inspector`, `damp-other` and `damp-webconsole`. Actually `--suite damp` is only used locally because it contains all possible tests and makes it easier to use. But if needed you can substitute `damp` with any of the other test suites if you want to only run tests associated with a given test suite. You can find the mapping between tests and test suites in [damp-tests.js](https://searchfox.org/firefox-main/source/testing/talos/talos/tests/devtools/addon/content/damp-tests.js).
 ### Command line options
 
 #### Running tests only once
@@ -145,11 +145,11 @@ It will only display regressions and improvements with a medium or high confiden
 
 DAMP is based on top of a more generic test suite called [Talos](https://wiki.mozilla.org/Buildbot/Talos).
 Talos is a Mozilla test suite to follow all Firefox components performance.
-It is written in Python and here are [the sources](https://searchfox.org/mozilla-central/source/testing/talos/) in mozilla-central.
+It is written in Python and here are [the sources](https://searchfox.org/firefox-main/source/testing/talos/) in mozilla-central.
 Compared to the other test suites, it isn't run on the cloud, but on dedicated hardware.
 This is to ensure performance numbers are stable over time and between two runs.
 Talos runs various types of tests. More specifically, DAMP is a [Page loader test](https://wiki.mozilla.org/Buildbot/Talos/Tests#Page_Load_Tests).
-The [source code](http://searchfox.org/mozilla-central/source/testing/talos/talos/tests/devtools/) for DAMP is also in mozilla-central.
+The [source code](http://searchfox.org/firefox-main/source/testing/talos/talos/tests/devtools/) for DAMP is also in mozilla-central.
 See [Writing new performance test](./writing-perf-tests.md) for more information about the implementation of DAMP tests.
 
 ## How to see the performance trends?

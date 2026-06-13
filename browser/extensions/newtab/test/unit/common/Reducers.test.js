@@ -756,6 +756,19 @@ describe("Reducers", () => {
 
       assert.deepEqual(state, INITIAL_STATE.DiscoveryStream);
     });
+    it("should preserve sectionPersonalization with DISCOVERY_STREAM_LAYOUT_RESET", () => {
+      const personalization = {
+        sports: { isBlocked: true, isFollowed: false, title: "Sports" },
+      };
+      let state = DiscoveryStream(undefined, {
+        type: at.SECTION_PERSONALIZATION_UPDATE,
+        data: personalization,
+      });
+      state = DiscoveryStream(state, {
+        type: at.DISCOVERY_STREAM_LAYOUT_RESET,
+      });
+      assert.deepEqual(state.sectionPersonalization, personalization);
+    });
     it("should set config data with DISCOVERY_STREAM_CONFIG_CHANGE", () => {
       const state = DiscoveryStream(undefined, {
         type: at.DISCOVERY_STREAM_CONFIG_CHANGE,

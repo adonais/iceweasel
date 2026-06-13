@@ -4,7 +4,7 @@
 
 use crate::crypto;
 use crate::utils;
-use crate::{datastore_filename, LockstoreError, LockstoreKeystore, SecurityLevel, StoredValue};
+use crate::{datastore_filename, Keystore, LockstoreError, StoredValue};
 
 use kvstore::{Database, DatabaseError, GetOptions, Key, Store, StorePath};
 use std::path::PathBuf;
@@ -13,60 +13,54 @@ use std::sync::Arc;
 #[derive(Clone)]
 pub struct LockstoreDatastore {
     store: Arc<Store>,
-    keystore: Arc<LockstoreKeystore>,
+    keystore: Arc<Keystore>,
     collection_name: String,
-    security_level: SecurityLevel,
+    kek_ref: String,
 }
 
 impl LockstoreDatastore {
     pub fn new(
         dir: PathBuf,
         collection_name: String,
-        keystore: Arc<LockstoreKeystore>,
-        security_level: SecurityLevel,
+        keystore: Arc<Keystore>,
+        kek_ref: &str,
     ) -> Result<Self, LockstoreError> {
-        keystore.get_dek_internal(&collection_name, security_level)?;
+        keystore.get_dek_internal(&collection_name, kek_ref)?;
         let data_path = dir.join(datastore_filename(&collection_name));
         Self::init(
             StorePath::OnDisk(data_path),
             collection_name,
             keystore,
-            security_level,
+            kek_ref,
         )
     }
 
-    /// Creates an in-memory datastore for the given collection.
-    ///
-    /// Note: each call allocates a fresh, empty in-memory database. Two
-    /// `new_in_memory` instances for the same collection — even with different
-    /// security levels sharing the same DEK — do not share data. Cross-security-
-    /// level access to the same data requires an on-disk datastore (`new`).
     pub fn new_in_memory(
         collection_name: String,
-        keystore: Arc<LockstoreKeystore>,
-        security_level: SecurityLevel,
+        keystore: Arc<Keystore>,
+        kek_ref: &str,
     ) -> Result<Self, LockstoreError> {
-        keystore.get_dek_internal(&collection_name, security_level)?;
+        keystore.get_dek_internal(&collection_name, kek_ref)?;
         Self::init(
             StorePath::for_in_memory(),
             collection_name,
             keystore,
-            security_level,
+            kek_ref,
         )
     }
 
     fn init(
         store_path: StorePath,
         collection_name: String,
-        keystore: Arc<LockstoreKeystore>,
-        security_level: SecurityLevel,
+        keystore: Arc<Keystore>,
+        kek_ref: &str,
     ) -> Result<Self, LockstoreError> {
         let store = Arc::new(Store::new(store_path));
         Ok(Self {
             store,
             keystore,
             collection_name,
-            security_level,
+            kek_ref: kek_ref.to_string(),
         })
     }
 
@@ -85,7 +79,7 @@ impl LockstoreDatastore {
 
         let (dek, cipher_suite, _) = self
             .keystore
-            .get_dek_internal(&self.collection_name, self.security_level)?;
+            .get_dek_internal(&self.collection_name, &self.kek_ref)?;
 
         let data_to_store = crypto::encrypt_with_key(&plaintext, &dek, cipher_suite)?;
 
@@ -112,7 +106,7 @@ impl LockstoreDatastore {
 
         let (dek, _cipher_suite, _) = self
             .keystore
-            .get_dek_internal(&self.collection_name, self.security_level)?;
+            .get_dek_internal(&self.collection_name, &self.kek_ref)?;
 
         let plaintext = crypto::decrypt_with_key(&stored_bytes, &dek)?;
 

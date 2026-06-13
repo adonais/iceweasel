@@ -260,6 +260,7 @@ bool js::jit::CanInlineNativeCrossRealm(InlinableNative native) {
     case InlinableNative::DataViewSetBigUint64:
     case InlinableNative::DataViewByteLength:
     case InlinableNative::DataViewByteOffset:
+    case InlinableNative::Date:
     case InlinableNative::DateGetTime:
     case InlinableNative::DateGetFullYear:
     case InlinableNative::DateGetMonth:
@@ -268,6 +269,8 @@ bool js::jit::CanInlineNativeCrossRealm(InlinableNative native) {
     case InlinableNative::DateGetHours:
     case InlinableNative::DateGetMinutes:
     case InlinableNative::DateGetSeconds:
+    case InlinableNative::DateNow:
+    case InlinableNative::DateParse:
     case InlinableNative::FunctionBind:
     case InlinableNative::MapConstructor:
     case InlinableNative::MapGet:

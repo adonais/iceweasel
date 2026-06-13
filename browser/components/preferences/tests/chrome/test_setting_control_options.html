@@ -126,19 +126,12 @@
         });
 
         let settingChanged = waitForSettingChange(setting);
-        let topWindow = window.docShell.chromeEventHandler.ownerGlobal;
+        let topWindow = window.docShell.chromeEventHandler.documentGlobal;
         let pickerOpened = BrowserTestUtils.waitForSelectPopupShown(topWindow);
         control.controlEl.focus();
         synthesizeKey(" ");
         const selectPopup = await pickerOpened;
-        if (
-          navigator.platform.startsWith("Mac") &&
-          Services.prefs.getBoolPref(
-            "widget.macos.native-anchored-menus",
-            false
-          ) &&
-          Services.prefs.getBoolPref("widget.macos.allow-native-select", false)
-        ) {
+        if (selectPopup.isNativeMenu) {
           // Synthesized events are not available with native menus
           selectPopup.activateItem(selectPopup.childNodes[2]);
         } else {

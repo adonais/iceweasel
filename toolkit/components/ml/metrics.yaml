@@ -114,7 +114,7 @@ firefox.ai.runtime:
       - ml-suggest-ner
       - about-inference
       - webextension
-      - wllamapreview
+      - link-preview
       - default-engine
       - smart-tab-embedding-engine
       - smart-tab-topic-engine

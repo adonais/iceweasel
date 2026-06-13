@@ -40,6 +40,7 @@ UNIFIED_SOURCES += [
     "/third_party/libwebrtc/modules/desktop_capture/desktop_frame.cc",
     "/third_party/libwebrtc/modules/desktop_capture/desktop_geometry.cc",
     "/third_party/libwebrtc/modules/desktop_capture/desktop_region.cc",
+    "/third_party/libwebrtc/modules/desktop_capture/frame_texture.cc",
     "/third_party/libwebrtc/modules/desktop_capture/shared_desktop_frame.cc",
     "/third_party/libwebrtc/modules/desktop_capture/shared_memory.cc"
 ]

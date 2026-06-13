@@ -512,7 +512,7 @@ class OpenTabsInViewCard extends ViewPageContent {
       return;
     }
     const tab = event.originalTarget.tabElement;
-    const browserWindow = tab.ownerGlobal;
+    const browserWindow = tab.documentGlobal;
     browserWindow.focus();
     browserWindow.gBrowser.selectedTab = tab;
 
@@ -530,7 +530,7 @@ class OpenTabsInViewCard extends ViewPageContent {
 
   closeTab(event) {
     const tab = event.originalTarget.tabElement;
-    tab?.ownerGlobal.gBrowser.removeTab(
+    tab?.documentGlobal.gBrowser.removeTab(
       tab,
       lazy.TabMetrics.userTriggeredContext()
     );
@@ -749,19 +749,19 @@ class OpenTabsContextMenu extends MozLitElement {
 
   closeTab(e) {
     const tab = this.triggerNode.tabElement;
-    tab?.ownerGlobal.gBrowser.removeTab(tab);
+    tab?.documentGlobal.gBrowser.removeTab(tab);
     this.ownerViewPage.recordContextMenuTelemetry("close-tab", e);
   }
 
   pinTab(e) {
     const tab = this.triggerNode.tabElement;
-    tab?.ownerGlobal.gBrowser.pinTab(tab);
+    tab?.documentGlobal.gBrowser.pinTab(tab);
     this.ownerViewPage.recordContextMenuTelemetry("pin-tab", e);
   }
 
   unpinTab(e) {
     const tab = this.triggerNode.tabElement;
-    tab?.ownerGlobal.gBrowser.unpinTab(tab);
+    tab?.documentGlobal.gBrowser.unpinTab(tab);
     this.ownerViewPage.recordContextMenuTelemetry("unpin-tab", e);
   }
 
@@ -778,19 +778,19 @@ class OpenTabsContextMenu extends MozLitElement {
 
   moveTabsToStart(e) {
     const tab = this.triggerNode.tabElement;
-    tab?.ownerGlobal.gBrowser.moveTabsToStart(tab);
+    tab?.documentGlobal.gBrowser.moveTabsToStart(tab);
     this.ownerViewPage.recordContextMenuTelemetry("move-tab-start", e);
   }
 
   moveTabsToEnd(e) {
     const tab = this.triggerNode.tabElement;
-    tab?.ownerGlobal.gBrowser.moveTabsToEnd(tab);
+    tab?.documentGlobal.gBrowser.moveTabsToEnd(tab);
     this.ownerViewPage.recordContextMenuTelemetry("move-tab-end", e);
   }
 
   moveTabsToWindow(e) {
     const tab = this.triggerNode.tabElement;
-    tab?.ownerGlobal.gBrowser.replaceTabsWithWindow(tab);
+    tab?.documentGlobal.gBrowser.replaceTabsWithWindow(tab);
     this.ownerViewPage.recordContextMenuTelemetry("move-tab-window", e);
   }
 
@@ -799,7 +799,7 @@ class OpenTabsContextMenu extends MozLitElement {
     if (!tab) {
       return null;
     }
-    const browserWindow = tab.ownerGlobal;
+    const browserWindow = tab.documentGlobal;
     const tabs = browserWindow?.gBrowser.visibleTabs || [];
     const position = tabs.indexOf(tab);
 
@@ -879,8 +879,7 @@ class OpenTabsContextMenu extends MozLitElement {
         entrypoint: "send-tab-firefox-view-three-dots",
       });
 
-      const ownerGlobal = window.docShell?.chromeEventHandler?.ownerGlobal;
-      ownerGlobal?.switchToTabHavingURI(url, true, {});
+      this.ownerViewPage.getWindow().switchToTabHavingURI(url, true, {});
     })();
   }
 
@@ -889,8 +888,15 @@ class OpenTabsContextMenu extends MozLitElement {
       "identity.sendtab.deviceissues.url"
     );
 
-    const ownerGlobal = window.docShell?.chromeEventHandler?.ownerGlobal;
-    ownerGlobal?.switchToTabHavingURI(url, true, { replaceQueryString: true });
+    this.ownerViewPage.getWindow().switchToTabHavingURI(url, true, {
+      replaceQueryString: true,
+    });
+  }
+
+  onSendTabVerifyAccountClick() {
+    this.ownerViewPage
+      .getWindow()
+      .openTrustedLinkIn("about:preferences#sync", "tab");
   }
 
   sendTabDevicesTemplate() {
@@ -905,12 +911,42 @@ class OpenTabsContextMenu extends MozLitElement {
     </panel-list>`;
   }
 
+  sendTabAccountUnverifiedTemplate() {
+    return html`<panel-item
+      data-l10n-id="fxviewtabrow-send-to-mobile"
+      data-l10n-attrs="accesskey"
+      submenu="send-tab-menu4"
+    >
+      <panel-list slot="submenu" id="send-tab-menu4">
+        <panel-item
+          data-l10n-id="fxviewtabrow-send-to-mobile-not-verified"
+          disabled="true"
+        >
+        </panel-item>
+        <hr />
+        <panel-item
+          data-l10n-id="fxviewtabrow-send-to-mobile-verify-account"
+          @click=${this.onSendTabVerifyAccountClick}
+        >
+        </panel-item>
+      </panel-list>
+    </panel-item>`;
+  }
+
   sendTabSignedOutTemplate() {
     return html`<panel-item
       data-l10n-id="fxviewtabrow-send-to-mobile"
       data-l10n-attrs="accesskey"
-      @click=${this.onSendTabSignedOutItemClick}
-    ></panel-item>`;
+      submenu="send-tab-menu3"
+    >
+      <panel-list slot="submenu" id="send-tab-menu3">
+        <panel-item
+          data-l10n-id="fxviewtabrow-send-to-mobile-sign-in"
+          @click=${this.onSendTabSignedOutItemClick}
+        >
+        </panel-item>
+      </panel-list>
+    </panel-item>`;
   }
 
   sendTabSyncDisabledTemplate() {
@@ -921,7 +957,7 @@ class OpenTabsContextMenu extends MozLitElement {
     >
       <panel-list slot="submenu" id="send-tab-menu1">
         <panel-item
-          data-l10n-id="fxviewtabrow-send-to-mobile-enable-sync2"
+          data-l10n-id="fxviewtabrow-send-to-mobile-turn-on-sync"
           @click=${this.onSendTabSyncDisabledItemClick}
         >
         </panel-item>
@@ -937,7 +973,7 @@ class OpenTabsContextMenu extends MozLitElement {
     >
       <panel-list slot="submenu" id="send-tab-menu2">
         <panel-item
-          data-l10n-id="fxviewtabrow-send-to-mobile-connect-phone2"
+          data-l10n-id="fxviewtabrow-send-to-mobile-connect-device"
           @click=${this.onSendTabConnectPhoneItemClick}
         >
         </panel-item>
@@ -974,6 +1010,9 @@ class OpenTabsContextMenu extends MozLitElement {
     }
 
     switch (true) {
+      case gSync.isUnverified:
+        sendTabPanel = this.sendTabAccountUnverifiedTemplate();
+        break;
       case gSync.isSignedIn === false:
         sendTabPanel = this.sendTabSignedOutTemplate();
         break;

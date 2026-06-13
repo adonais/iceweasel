@@ -9,13 +9,12 @@ import android.view.inputmethod.InputConnection
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.platform.InterceptPlatformTextInput
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import kotlinx.coroutines.awaitCancellation
 import mozilla.components.compose.browser.toolbar.concept.BrowserToolbarTestTags.ADDRESSBAR_SEARCH_BOX
 import mozilla.components.concept.toolbar.AutocompleteResult
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -52,7 +51,6 @@ class OutputTransformationCrashTest {
         }
     }
 
-    @Ignore("Bug 2030728: fails on 1.10.x, passes on 1.11+. Re-enable with the 1.11 bump.")
     @Test
     fun `WHEN IME edits run on an empty autocomplete field THEN they do not crash`() {
         val ic = setUpInlineAutocompleteField(query = "")
@@ -64,7 +62,6 @@ class OutputTransformationCrashTest {
         }
     }
 
-    @Ignore("Bug 2030728: fails on 1.10.x, passes on 1.11+. Re-enable with the 1.11 bump.")
     @Test
     fun `WHEN random IME batch edits stress the autocomplete field THEN they do not crash`() {
         val ic = setUpInlineAutocompleteField()
@@ -72,15 +69,13 @@ class OutputTransformationCrashTest {
             val rng = Random(seed = 0xC0FFEEL)
             repeat(STRESS_ITERATIONS) {
                 ic.beginBatchEdit()
-                val branch = rng.nextInt(0, 6)
-                when (branch) {
+                when (rng.nextInt(0, 6)) {
                     0 -> ic.commitText(randomText(rng), rng.nextInt(-2, 3))
                     1 -> ic.setComposingText(randomText(rng), rng.nextInt(-2, 3))
                     2 -> ic.setComposingRegion(rng.nextInt(0, 32), rng.nextInt(0, 32))
                     3 -> ic.setSelection(rng.nextInt(0, 32), rng.nextInt(0, 32))
                     4 -> ic.deleteSurroundingText(rng.nextInt(0, 32), rng.nextInt(0, 32))
                     5 -> ic.deleteSurroundingTextInCodePoints(rng.nextInt(0, 32), rng.nextInt(0, 32))
-                    else -> error("unexpected stress branch: $branch")
                 }
                 ic.endBatchEdit()
             }
@@ -89,15 +84,11 @@ class OutputTransformationCrashTest {
 
     private fun setUpInlineAutocompleteField(
         query: String = INITIAL_QUERY,
-        // No current test overrides suggestionLength or onUrlEdit; added for
-        // the 1.11 positive-assertion follow-up (Bug 2030728).
-        suggestionLength: Int = SUGGESTION_SUFFIX_LENGTH,
-        onUrlEdit: (BrowserToolbarQuery) -> Unit = {},
     ): InputConnection {
         val captured = AtomicReference<InputConnection?>(null)
         val suggestion = AutocompleteResult(
             input = query,
-            text = query + "x".repeat(suggestionLength),
+            text = query + "x".repeat(SUGGESTION_SUFFIX_LENGTH),
             url = "",
             source = "test",
             totalItems = 1,
@@ -118,7 +109,6 @@ class OutputTransformationCrashTest {
                     suggestion = suggestion,
                     showQueryAsPreselected = false,
                     usePrivateModeQueries = false,
-                    onUrlEdit = onUrlEdit,
                 )
             }
         }

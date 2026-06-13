@@ -39,12 +39,6 @@ NimbusTestUtils.init(this);
 
 const kDefaultWait = 2000;
 
-// Synthesized events are not available with native menus
-const nativeSelectEnabled = () =>
-  AppConstants.platform == "macosx" &&
-  Services.prefs.getBoolPref("widget.macos.native-anchored-menus", false) &&
-  Services.prefs.getBoolPref("widget.macos.allow-native-select", false);
-
 const SRD_PREF_VALUE = Services.prefs.getBoolPref(
   "browser.settings-redesign.enabled"
 );
@@ -57,6 +51,29 @@ function is_element_visible(aElement, aMsg) {
 function is_element_hidden(aElement, aMsg) {
   isnot(aElement, null, "Element should not be null, when checking visibility");
   ok(BrowserTestUtils.isHidden(aElement), aMsg);
+}
+
+/**
+ * Opens a fresh preferences tab at the given pane and waits for it to
+ * fully initialize before returning. Pre-registers the "Initialized" listener
+ * before navigation starts to avoid the race where the event fires before
+ * the listener is attached.
+ *
+ * @param {string} [pane] Fragment to append (e.g. "appearance"). Omit or
+ *   pass "" to open the default pane.
+ * @returns {Promise<MozTabbrowserTab>} The opened tab.
+ */
+async function openPrefsTab(pane) {
+  let url = "about:preferences" + (pane ? "#" + pane : "");
+  let tab = BrowserTestUtils.addTab(gBrowser, url);
+  let initialized = BrowserTestUtils.waitForEvent(
+    tab.linkedBrowser,
+    "Initialized",
+    true
+  );
+  gBrowser.selectedTab = tab;
+  await initialized;
+  return tab;
 }
 
 function open_preferences(aCallback) {
@@ -155,7 +172,7 @@ async function openPreferencesViaOpenPreferencesAPI(aPane, aOptions) {
   }
 
   let win = gBrowser.contentWindow;
-  let selectedPane = win.history.state;
+  let selectedPane = win.gLastCategory?.category;
   if (!aOptions || !aOptions.leaveOpen) {
     gBrowser.removeCurrentTab();
   }
@@ -193,6 +210,10 @@ async function evaluateSearchResults(
       continue;
     }
     if (child.localName == "setting-group") {
+      // Skip migrated setting-groups to avoid interference with legacy tests
+      if (child.hasAttribute("data-srd-migrated")) {
+        continue;
+      }
       if (searchResults.includes(child.groupId)) {
         is_element_visible(
           child,
@@ -306,6 +327,11 @@ async function waitForAndAssertPrefState(pref, expectedValue, message) {
  * @param {string} value - The history mode to select.
  */
 async function selectHistoryMode(win, value) {
+  if (Services.prefs.getBoolPref("browser.settings-redesign.enabled", false)) {
+    await selectRedesignedHistoryMode(win, value);
+    return;
+  }
+
   let historyMode = win.document.getElementById("historyMode").inputEl;
 
   // Find the index of the option with the given value. Do this before the first
@@ -327,7 +353,7 @@ async function selectHistoryMode(win, value) {
   await EventUtils.synthesizeMouseAtCenter(
     historyMode,
     {},
-    historyMode.ownerGlobal
+    historyMode.documentGlobal
   );
 
   let popup = await popupShownPromise;
@@ -343,10 +369,14 @@ async function selectHistoryMode(win, value) {
 
   let popupHiddenPromise = BrowserTestUtils.waitForPopupEvent(popup, "hidden");
 
-  if (nativeSelectEnabled()) {
+  if (popup.isNativeMenu) {
     popup.activateItem(targetItem);
   } else {
-    EventUtils.synthesizeMouseAtCenter(targetItem, {}, targetItem.ownerGlobal);
+    EventUtils.synthesizeMouseAtCenter(
+      targetItem,
+      {},
+      targetItem.documentGlobal
+    );
   }
 
   await popupHiddenPromise;
@@ -397,7 +427,11 @@ async function updateCheckBoxElement(checkbox, value) {
   checkbox.scrollIntoView();
 
   // Toggle the state.
-  await EventUtils.synthesizeMouseAtCenter(checkbox, {}, checkbox.ownerGlobal);
+  await EventUtils.synthesizeMouseAtCenter(
+    checkbox,
+    {},
+    checkbox.documentGlobal
+  );
 }
 
 async function updateCheckBox(win, id, value) {
@@ -414,7 +448,11 @@ async function updateCheckBox(win, id, value) {
   checkbox.scrollIntoView();
 
   // Toggle the state.
-  await EventUtils.synthesizeMouseAtCenter(checkbox, {}, checkbox.ownerGlobal);
+  await EventUtils.synthesizeMouseAtCenter(
+    checkbox,
+    {},
+    checkbox.documentGlobal
+  );
 }
 
 /**
@@ -458,6 +496,26 @@ async function waitForPaneChange(
 }
 
 /**
+ * Navigate an already-open preferences window to the named pane via
+ * `location.hash`. No-op if the pane is already the current pane (e.g.
+ * legacy chrome already on paneGeneral).
+ *
+ * @param {string} paneName - Unprefixed pane name (e.g. "tabsBrowsing")
+ * @param {Window} [win] - Window to navigate (defaults to selected tab)
+ */
+async function maybeNavigateToPane(
+  paneName,
+  win = gBrowser.selectedBrowser.contentWindow
+) {
+  if (win.history.state?.category === paneName) {
+    return;
+  }
+  const paneShown = waitForPaneChange(paneName, win);
+  win.location.hash = `#${paneName}`;
+  await paneShown;
+}
+
+/**
  * Get a reference to the setting-control for a specific setting ID.
  *
  * @param {string} settingId The setting ID
@@ -471,10 +529,30 @@ function getSettingControl(
   return win.document.getElementById(`setting-control-${settingId}`);
 }
 
+/**
+ * Waits for a setting control to render and complete any async updates.
+ *
+ * @param {string} settingId - The setting identifier.
+ * @param {Window} [win] - Optional window, defaults to current browser window.
+ * @returns {Promise<Element>} The rendered setting control element.
+ */
+async function settingControlRenders(settingId, win) {
+  await BrowserTestUtils.waitForMutationCondition(
+    win.document.documentElement,
+    { childList: true, subtree: true },
+    () => !!getSettingControl(settingId, win)
+  );
+  let control = getSettingControl(settingId, win);
+  if (control?.updateComplete) {
+    await control.updateComplete;
+  }
+  return control;
+}
+
 function synthesizeClick(el) {
   let target = el.buttonEl ?? el.inputEl ?? el;
   target.scrollIntoView({ block: "center" });
-  EventUtils.synthesizeMouseAtCenter(target, {}, target.ownerGlobal);
+  EventUtils.synthesizeMouseAtCenter(target, {}, target.documentGlobal);
 }
 
 async function changeMozSelectValue(selectEl, value) {
@@ -510,4 +588,115 @@ async function waitForPrefChange(prefName, expectedValue) {
     () => Services.prefs.getBoolPref(prefName) === expectedValue,
     `Waiting for ${prefName} to be ${expectedValue}`
   );
+}
+
+/**
+ * Opens preferences and registers a `testTopLevel` pane with a `testSubPane`
+ * sub-pane. The default top-level pane has a single `moz-box-button` that
+ * navigates to (and is wired to load via `loadPane`) the sub-pane. Callers
+ * can override either group's `items` to add searchkeywords, swap the
+ * control, etc.
+ *
+ * @param {object} [options]
+ * @param {object[]} [options.parentItems]
+ *   `items` for the top-level setting-group. Each item.id is registered as a
+ *   basic Setting (with `testLoadSubPane` getting an onUserClick that
+ *   navigates to the sub-pane).
+ * @param {object[]} [options.subPaneItems]
+ *   `items` for the sub-pane setting-group. Each item.id is registered as a
+ *   basic Setting.
+ * @returns {Promise<{ doc: Document, win: Window }>}
+ */
+async function setupTestSubPane({
+  parentItems = [
+    {
+      id: "testLoadSubPane",
+      control: "moz-box-button",
+      loadPane: "testSubPane",
+      controlAttrs: { label: "Top level setting" },
+    },
+  ],
+  subPaneItems = [
+    {
+      id: "testSetting",
+      controlAttrs: { label: "Test setting" },
+    },
+  ],
+} = {}) {
+  await openPreferencesViaOpenPreferencesAPI("sync", { leaveOpen: true });
+  let doc = gBrowser.selectedBrowser.contentDocument;
+  let win = doc.documentGlobal;
+
+  win.Preferences.addSetting({
+    id: "testLoadSubPane",
+    onUserClick: () => win.gotoPref("paneTestSubPane"),
+  });
+  for (let item of [...parentItems, ...subPaneItems]) {
+    if (item.id !== "testLoadSubPane") {
+      win.Preferences.addSetting({ id: item.id, get: () => true });
+    }
+  }
+
+  win.SettingGroupManager.registerGroup("testTopLevelGroup", {
+    l10nId: "home-default-browser-title",
+    headingLevel: 2,
+    items: parentItems,
+  });
+  win.SettingPaneManager.registerPane("testTopLevel", {
+    l10nId: "home-section",
+    groupIds: ["testTopLevelGroup"],
+  });
+  let syncCategory = doc.getElementById("category-sync");
+  let testTopLevelCategory = syncCategory.cloneNode(true);
+  testTopLevelCategory.setAttribute("view", "paneTestTopLevel");
+  syncCategory.insertAdjacentElement("afterend", testTopLevelCategory);
+
+  win.SettingGroupManager.registerGroup("testSubGroup", {
+    headingLevel: 2,
+    items: subPaneItems,
+  });
+  win.SettingPaneManager.registerPane("testSubPane", {
+    parent: "testTopLevel",
+    l10nId: "containers-section-header",
+    groupIds: ["testSubGroup"],
+  });
+
+  let viewChanged = waitForPaneChange("paneTestTopLevel");
+  win.gotoPref("paneTestTopLevel");
+  await viewChanged;
+
+  return { doc, win };
+}
+
+function performDragAndDrop({ contentWindow, dragItem, targetItem, position }) {
+  dragItem.scrollIntoView({ behavior: "instant", block: "center" });
+  EventUtils.startDragSession(contentWindow, "move");
+  try {
+    let [result, dataTransfer] = EventUtils.synthesizeDragOver(
+      dragItem,
+      targetItem,
+      null,
+      "move",
+      contentWindow,
+      contentWindow
+    );
+
+    let rect = targetItem.getBoundingClientRect();
+    let threshold = rect.top + rect.height * 0.5;
+    let dragEvent = {
+      clientY: position === "before" ? threshold - 10 : threshold + 10,
+    };
+
+    EventUtils.synthesizeDropAfterDragOver(
+      result,
+      dataTransfer,
+      targetItem,
+      contentWindow,
+      dragEvent
+    );
+  } finally {
+    EventUtils._getDOMWindowUtils(contentWindow).dragSession?.endDragSession(
+      true
+    );
+  }
 }

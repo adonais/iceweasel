@@ -47,7 +47,7 @@ Despite this, it is necessary to create the document because otherwise, a11y foc
 ## 2. Initial tree creation
 1. When a DocAccessible is created, it [creates a refresh observer (NotificationController)](https://searchfox.org/mozilla-central/rev/36f79bed679ad7ec46f7cd05868a8f6dc823e1be/accessible/generic/DocAccessible.cpp#368) which performs various processing asynchronously.
 2. When the NotificationController is created, it [schedules processing for the next possible refresh tick](https://searchfox.org/mozilla-central/rev/36f79bed679ad7ec46f7cd05868a8f6dc823e1be/accessible/base/NotificationController.cpp#39).
-3. Once a refresh tick occurs, [while there is not an interruptible reflow in progress](https://searchfox.org/mozilla-central/rev/36f79bed679ad7ec46f7cd05868a8f6dc823e1be/accessible/base/NotificationController.cpp#615) and there is an initialized PresShell, the DocAccessible's [initial update is triggered (DocAccessible::DoInitialUpdate)](https://searchfox.org/mozilla-central/source/accessible/base/NotificationController.cpp#649).
+3. Once a refresh tick occurs, [while there is not an interruptible reflow in progress](https://searchfox.org/mozilla-central/rev/36f79bed679ad7ec46f7cd05868a8f6dc823e1be/accessible/base/NotificationController.cpp#615) and there is an initialized PresShell, the DocAccessible's [initial update is triggered (DocAccessible::DoInitialUpdate)](https://searchfox.org/firefox-main/source/accessible/base/NotificationController.cpp#649).
 4. For a top level document, the [DocAccessibleChild IPC actor is created](https://searchfox.org/mozilla-central/rev/36f79bed679ad7ec46f7cd05868a8f6dc823e1be/accessible/generic/DocAccessible.cpp#1752). See the section on IPC actor creation below.
 5. The [DOM tree is walked and the accessibility tree is built for the document down (DocAccessible::CacheChildrenInSubtree)](https://searchfox.org/mozilla-central/rev/36f79bed679ad7ec46f7cd05868a8f6dc823e1be/accessible/generic/DocAccessible.cpp#1789).
 
@@ -63,29 +63,29 @@ To deal with this:
 
 1. When a DocAccessible is created for a child document (DocManager::CreateDocOrRootAccessible), it is [scheduled for binding to its parent (DocAccessible::BindChildDocument)](https://searchfox.org/mozilla-central/rev/1758450798ae14492ba28b695f48143840ad6c5b/accessible/base/DocManager.cpp#505).
 2. NotificationController [does not handle any updates for child documents until they are bound to their parent](https://searchfox.org/mozilla-central/rev/1758450798ae14492ba28b695f48143840ad6c5b/accessible/base/NotificationController.cpp#638).
-3. After the initial tree creation for the parent document, NotificationController [binds the document scheduled in 1)](https://searchfox.org/mozilla-central/source/accessible/base/NotificationController.cpp#783).
+3. After the initial tree creation for the parent document, NotificationController [binds the document scheduled in 1)](https://searchfox.org/firefox-main/source/accessible/base/NotificationController.cpp#783).
 
 ## 4. IPC actor (DocAccessibleChild/Parent) creation
 
 ### Scenario 1: Top level document
 1. As the first part of the DocAccessible's initial update (DocAccessible::DoInitialUpdate), if the document is a top level document, it [creates a DocAccessibleChild](https://searchfox.org/mozilla-central/rev/1758450798ae14492ba28b695f48143840ad6c5b/accessible/generic/DocAccessible.cpp#1757).
-    - There is also a [code path to handle the case where the DocAccessibleChild has already been created](https://searchfox.org/mozilla-central/source/accessible/generic/DocAccessible.cpp#1755). However, it doesn't seem like this should happen and code coverage information suggests that it doesn't.
-2. It then [sends a message to the parent process to construct the DocAccessibleParent (BrowserChild::SendPDocAccessibleConstructor)](https://searchfox.org/mozilla-central/source/accessible/generic/DocAccessible.cpp#1771).
+    - There is also a [code path to handle the case where the DocAccessibleChild has already been created](https://searchfox.org/firefox-main/source/accessible/generic/DocAccessible.cpp#1755). However, it doesn't seem like this should happen and code coverage information suggests that it doesn't.
+2. It then [sends a message to the parent process to construct the DocAccessibleParent (BrowserChild::SendPDocAccessibleConstructor)](https://searchfox.org/firefox-main/source/accessible/generic/DocAccessible.cpp#1771).
 
 ### Scenario 2: Child document
-The [DocAccessibleChild for a child document is created](https://searchfox.org/mozilla-central/source/accessible/base/NotificationController.cpp#909) when the child document is bound to its parent by NotificationController.
-There is also a [code path to handle the case where the DocAccessibleChild has already been created](https://searchfox.org/mozilla-central/source/accessible/base/NotificationController.cpp#905).
+The [DocAccessibleChild for a child document is created](https://searchfox.org/firefox-main/source/accessible/base/NotificationController.cpp#909) when the child document is bound to its parent by NotificationController.
+There is also a [code path to handle the case where the DocAccessibleChild has already been created](https://searchfox.org/firefox-main/source/accessible/base/NotificationController.cpp#905).
 However, it doesn't seem like this should happen and code coverage information suggests that it doesn't.
 
 ## 5. Document load events
 
 ### Scenario 1: DocAccessible is already created, DOM loading completes
 1. [a11y::DocManager gets notified that the document has stopped loading (DocManager::OnStateChange)](https://searchfox.org/mozilla-central/rev/4e87b5392eafe1f1d49017e76f7317b06ec0b1d8/accessible/base/DocManager.cpp#238).
-2. It [notifies the DocAccessible (DocAccessible::NotifyOfLoad](https://searchfox.org/mozilla-central/source/accessible/base/DocManager.cpp#399), passing EVENT_DOCUMENT_LOAD_COMPLETE.
+2. It [notifies the DocAccessible (DocAccessible::NotifyOfLoad](https://searchfox.org/firefox-main/source/accessible/base/DocManager.cpp#399), passing EVENT_DOCUMENT_LOAD_COMPLETE.
 3. That [sets the eDOMLoaded LoadState](https://searchfox.org/mozilla-central/rev/4e87b5392eafe1f1d49017e76f7317b06ec0b1d8/accessible/generic/DocAccessible-inl.h#93) and mLoadEventType on the DocAccessible.
 4. Something schedules NotificationController processing. This could be the initial update, an insertion, etc.
-5. Because the DocAccessible has been marked as loaded, the initial tree has been built and all child documents are loded, [NotificationController calls DocAccessible::ProcessLoad](https://searchfox.org/mozilla-central/source/accessible/base/NotificationController.cpp#815).
-6. ProcessLoad [fires the EVENT_DOCUMENT_LOAD_COMPLETE event](https://searchfox.org/mozilla-central/source/accessible/generic/DocAccessible.cpp#1841) as set in 3).
+5. Because the DocAccessible has been marked as loaded, the initial tree has been built and all child documents are loded, [NotificationController calls DocAccessible::ProcessLoad](https://searchfox.org/firefox-main/source/accessible/base/NotificationController.cpp#815).
+6. ProcessLoad [fires the EVENT_DOCUMENT_LOAD_COMPLETE event](https://searchfox.org/firefox-main/source/accessible/generic/DocAccessible.cpp#1841) as set in 3).
 
 ### Scenario 2: DocAccessible is created some time after DOM loading completed
 This can happen if the accessibility service is started late.
@@ -95,8 +95,8 @@ It can also happen if a DocAccessible couldn't be created earlier because the Pr
 2. It [detects that DOM loading is already complete](https://searchfox.org/mozilla-central/rev/8db61933e64b13c4a0ae456bcaccbd86a519ccc5/accessible/generic/DocAccessible.cpp#379).
 3. In response, it [sets the eDOMLoaded state and mLoadEventType on the DocAccessible](https://searchfox.org/mozilla-central/rev/8db61933e64b13c4a0ae456bcaccbd86a519ccc5/accessible/generic/DocAccessible.cpp#381).
 4. Something schedules NotificationController processing. This could be the initial update, an insertion, etc.
-5. Because the DocAccessible has been marked as loaded, the initial tree has been built and all child documents are loded, [NotificationController calls DocAccessible::ProcessLoad](https://searchfox.org/mozilla-central/source/accessible/base/NotificationController.cpp#815).
-6. ProcessLoad [fires the EVENT_DOCUMENT_LOAD_COMPLETE event](https://searchfox.org/mozilla-central/source/accessible/generic/DocAccessible.cpp#1841) as set in 3).
+5. Because the DocAccessible has been marked as loaded, the initial tree has been built and all child documents are loded, [NotificationController calls DocAccessible::ProcessLoad](https://searchfox.org/firefox-main/source/accessible/base/NotificationController.cpp#815).
+6. ProcessLoad [fires the EVENT_DOCUMENT_LOAD_COMPLETE event](https://searchfox.org/firefox-main/source/accessible/generic/DocAccessible.cpp#1841) as set in 3).
 
 ### Suppression of document load events for parent process iframes
 Note that for documents loaded directly in the parent process, ProcessLoad won't fire a load event for a child document whose parent is still loading.

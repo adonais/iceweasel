@@ -5,10 +5,7 @@ const scriptPage = url =>
 
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.urlbar.trustPanel.featureGate", false],
-      ["test.wait300msAfterTabSwitch", true],
-    ],
+    set: [["test.wait300msAfterTabSwitch", true]],
   });
 });
 
@@ -102,7 +99,14 @@ add_task(async function test_execute_page_action_with_popup() {
     files: {
       "popup.html": scriptPage("popup.js"),
       "popup.js": function () {
-        browser.runtime.sendMessage("popup-opened");
+        // TODO(Bug 2039637) consider removing this workaround along with fixing the actual underlying issue).
+        window.addEventListener(
+          "load",
+          () => {
+            browser.runtime.sendMessage("popup-opened");
+          },
+          { once: true }
+        );
       },
     },
 

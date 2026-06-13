@@ -18,6 +18,7 @@ const MEMORIES_FROM_CONVERSATION_PREF =
   "browser.smartwindow.memories.generateFromConversation";
 const MEMORIES_FROM_HISTORY_PREF =
   "browser.smartwindow.memories.generateFromHistory";
+const IS_DEFAULT_WINDOW_PREF = "browser.smartwindow.isDefaultWindow";
 const { getAllModelsData } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/ui/modules/AIWindowConstants.sys.mjs"
 );
@@ -206,11 +207,13 @@ function createAIWindowConfig(modelData) {
             width: "650px",
           },
           title: {
+            fontWeight: 350,
             string_id: "aiwindow-firstrun-memories-title",
           },
           subtitle: {
+            fontWeight: 320,
             string_id: "aiwindow-firstrun-memories-subtitle",
-            width: "460px",
+            width: "556px",
           },
           primary_button: {
             label: {
@@ -225,7 +228,7 @@ function createAIWindowConfig(modelData) {
           },
           additional_button: {
             label: {
-              string_id: "aiwindow-firstrun-button",
+              string_id: "aiwindow-firstrun-next-button",
             },
             flow: "row",
             action: {
@@ -233,17 +236,7 @@ function createAIWindowConfig(modelData) {
               collectSelect: true,
               navigate: true,
               data: {
-                actions: [
-                  {
-                    type: "SET_PREF",
-                    data: {
-                      pref: {
-                        name: FIRST_RUN_COMPLETE_PREF,
-                        value: true,
-                      },
-                    },
-                  },
-                ],
+                actions: [],
               },
             },
           },
@@ -371,6 +364,94 @@ function createAIWindowConfig(modelData) {
           ],
         },
       },
+      {
+        id: "AI_WINDOW_SET_DEFAULT",
+        force_hide_steps_indicator: true,
+        content: {
+          position: "center",
+          background: "transparent",
+          screen_style: {
+            width: "650px",
+          },
+          title: {
+            fontWeight: 350,
+            string_id: "aiwindow-firstrun-default-title",
+          },
+          subtitle: {
+            fontWeight: 320,
+            string_id: "aiwindow-firstrun-default-subtitle",
+            width: "556px",
+          },
+          primary_button: {
+            label: {
+              string_id: "aiwindow-firstrun-back-button",
+            },
+            style: "secondary",
+            flow: "row",
+            action: {
+              goBack: true,
+              navigate: true,
+            },
+          },
+          additional_button: {
+            label: {
+              string_id: "aiwindow-firstrun-button",
+            },
+            flow: "row",
+            action: {
+              type: "MULTI_ACTION",
+              collectSelect: true,
+              navigate: true,
+              data: {
+                actions: [
+                  {
+                    type: "SET_PREF",
+                    data: {
+                      pref: {
+                        name: FIRST_RUN_COMPLETE_PREF,
+                        value: true,
+                      },
+                    },
+                  },
+                ],
+              },
+            },
+          },
+          tiles: {
+            type: "multiselect",
+            data: [
+              {
+                id: "set-default-window",
+                defaultValue: true,
+                label: {
+                  string_id: "aiwindow-firstrun-default-checkbox-label",
+                },
+                description: {
+                  string_id: "aiwindow-firstrun-default-checkbox-description",
+                },
+                action: {
+                  type: "SET_PREF",
+                  data: {
+                    pref: {
+                      name: IS_DEFAULT_WINDOW_PREF,
+                      value: true,
+                    },
+                  },
+                },
+                uncheckedAction: {
+                  type: "SET_PREF",
+                  data: {
+                    pref: {
+                      name: IS_DEFAULT_WINDOW_PREF,
+                      value: false,
+                    },
+                  },
+                },
+              },
+            ],
+          },
+        },
+      },
     ],
   };
 }
@@ -423,6 +504,19 @@ async function renderFirstRun() {
           message_id.includes("AI_WINDOW_MEMORIES")
         ) {
           Glean.smartWindow.onboardingMemoriesNavigate.record();
+        } else if (
+          source === "additional_button" &&
+          message_id.includes("AI_WINDOW_SET_DEFAULT")
+        ) {
+          Glean.smartWindow.onboardingSetdefaultNavigate.record();
+        } else if (
+          source === "primary_button" &&
+          (message_id.includes("AI_WINDOW_MEMORIES") ||
+            message_id.includes("AI_WINDOW_SET_DEFAULT"))
+        ) {
+          Glean.smartWindow.onboardingBackNavigate.record({
+            message_id,
+          });
         }
         break;
 
@@ -432,6 +526,13 @@ async function renderFirstRun() {
           Array.isArray(source)
         ) {
           Glean.smartWindow.onboardingMemoriesSettings.record({
+            source: source.length ? source.join(",") : "",
+          });
+        } else if (
+          message_id.includes("AI_WINDOW_SET_DEFAULT") &&
+          Array.isArray(source)
+        ) {
+          Glean.smartWindow.onboardingSetdefaultSettings.record({
             source: source.length ? source.join(",") : "",
           });
         }

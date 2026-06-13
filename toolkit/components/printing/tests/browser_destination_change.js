@@ -33,7 +33,7 @@ async function changeDestination(helper, index) {
   picker.focus();
   EventUtils.sendKey("space", helper.win);
   const selectPopup = await pickerOpened;
-  if (nativeSelectEnabled()) {
+  if (selectPopup.isNativeMenu) {
     selectPopup.activateItem(selectPopup.childNodes[index]);
   } else {
     let selectedIndex = picker.selectedIndex;

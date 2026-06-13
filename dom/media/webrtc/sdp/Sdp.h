@@ -58,8 +58,8 @@
                                                                 '__'
 */
 
-#ifndef SDP_H_
-#define SDP_H_
+#ifndef DOM_MEDIA_WEBRTC_SDP_SDP_H_
+#define DOM_MEDIA_WEBRTC_SDP_SDP_H_
 
 #include <ostream>
 #include <sstream>
@@ -95,12 +95,11 @@ class Sdp {
   virtual const SdpMediaSection& GetMediaSection(size_t level) const = 0;
   virtual SdpMediaSection& GetMediaSection(size_t level) = 0;
 
-  virtual SdpMediaSection& AddMediaSection(SdpMediaSection::MediaType media,
-                                           SdpDirectionAttribute::Direction dir,
-                                           uint16_t port,
-                                           SdpMediaSection::Protocol proto,
-                                           sdp::AddrType addrType,
-                                           const std::string& addr) = 0;
+  virtual SdpMediaSection& AddMediaSection(
+      const SdpMediaSection::MediaType media,
+      const SdpDirectionAttribute::Direction dir, const uint16_t port,
+      const SdpMediaSection::Protocol proto, const sdp::AddrType addrType,
+      const std::string& addr) = 0;
 
   virtual void Serialize(std::ostream&) const = 0;
 
@@ -120,8 +119,9 @@ inline std::string Sdp::ToString() const {
 
 class SdpOrigin {
  public:
-  SdpOrigin(const std::string& username, uint64_t sessId, uint64_t sessVer,
-            sdp::AddrType addrType, const std::string& addr)
+  SdpOrigin(const std::string& username, const uint64_t sessId,
+            const uint64_t sessVer, const sdp::AddrType addrType,
+            const std::string& addr)
       : mUsername(username),
         mSessionId(sessId),
         mSessionVersion(sessVer),

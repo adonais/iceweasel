@@ -1,3 +1,5 @@
+// -*- mode: C++ -*-
+
 // Not copyrightable: random test data.
 // synth_minidump_unittest_data.h: verbose test data for SynthMinidump tests.
 

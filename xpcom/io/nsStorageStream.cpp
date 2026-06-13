@@ -649,8 +649,8 @@ void nsStorageInputStream::Serialize(InputStreamParams& aParams,
   MOZ_ASSERT(NS_SUCCEEDED(rv));
 
   StringInputStreamParams params;
-  params.data() = combined;
-  aParams = params;
+  params.data() = std::move(combined);
+  aParams = std::move(params);
 }
 
 bool nsStorageInputStream::Deserialize(const InputStreamParams& aParams) {

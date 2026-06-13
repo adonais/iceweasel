@@ -92,6 +92,9 @@ class ExecutablePool {
 
   ~ExecutablePool();
 
+  ExecutablePool(const ExecutablePool&) = delete;
+  void operator=(const ExecutablePool&) = delete;
+
   void mark() {
     MOZ_ASSERT(!m_mark);
     m_mark = true;
@@ -103,9 +106,6 @@ class ExecutablePool {
   bool isMarked() const { return m_mark; }
 
  private:
-  ExecutablePool(const ExecutablePool&) = delete;
-  void operator=(const ExecutablePool&) = delete;
-
   void* alloc(size_t n, CodeKind kind);
 
   size_t available() const;
@@ -136,6 +136,9 @@ class ExecutableAllocator {
  public:
   ExecutableAllocator() = default;
   ~ExecutableAllocator();
+
+  ExecutableAllocator(const ExecutableAllocator&) = delete;
+  void operator=(const ExecutableAllocator&) = delete;
 
   void purge();
 
@@ -179,9 +182,6 @@ class ExecutableAllocator {
   static void poisonCode(JSRuntime* rt, JitPoisonRangeVector& ranges);
 
  private:
-  ExecutableAllocator(const ExecutableAllocator&) = delete;
-  void operator=(const ExecutableAllocator&) = delete;
-
   // These are strong references;  they keep pools alive.
   static const size_t maxSmallPools = 4;
   using SmallExecPoolVector =

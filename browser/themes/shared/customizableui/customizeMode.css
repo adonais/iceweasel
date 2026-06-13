@@ -28,8 +28,8 @@ toolbar[overflowable][customizing] > .customization-target {
 #customization-container {
   flex-direction: column;
   min-height: 0;
-  background-color: var(--toolbar-bgcolor);
-  color: var(--toolbar-color);
+  background-color: var(--toolbar-background-color);
+  color: var(--toolbar-text-color);
   color-scheme: var(--toolbar-color-scheme);
 
   &:not([hidden]) {
@@ -398,8 +398,8 @@ toolbarpaletteitem {
   align-items: end; /* align to the end on the cross-axis (affects arrow) */
 
   > .panel-arrowcontent {
-    color: var(--panel-color);
-    background: var(--panel-background);
+    color: var(--panel-text-color);
+    background: var(--panel-background-color);
     background-clip: padding-box;
     max-width: 29em;
 
@@ -430,7 +430,7 @@ toolbarpaletteitem {
   > .panel-arrow[side="top"] {
     list-style-image: url("chrome://global/skin/arrow/panelarrow-vertical.svg");
     -moz-context-properties: fill, stroke;
-    fill: var(--panel-background);
+    fill: var(--panel-background-color);
     stroke: var(--panel-border-color);
     /* JS code sets --panel-arrow-offset to the distance between the middle of the
      * overflow button and the end of the window. We subtract the padding of our

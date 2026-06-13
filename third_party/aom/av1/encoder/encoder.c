@@ -753,6 +753,7 @@ static void init_config(struct AV1_COMP *cpi, const AV1EncoderConfig *oxcf) {
   cpi->svc.number_temporal_layers = 1;
   cm->spatial_layer_id = 0;
   cm->temporal_layer_id = 0;
+  cpi->src_sad_blk_alloc_size = 0;
   // Init rtc_ref parameters.
   cpi->ppi->rtc_ref.set_ref_frame_config = 0;
   cpi->ppi->rtc_ref.non_reference_frame = 0;

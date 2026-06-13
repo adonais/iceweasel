@@ -22,6 +22,7 @@
 
 #include "absl/strings/string_view.h"
 #include "api/field_trials_view.h"
+#include "api/rtc_error.h"
 #include "api/sequence_checker.h"
 #include "api/task_queue/pending_task_safety_flag.h"
 #include "api/transport/ecn_marking.h"
@@ -92,9 +93,12 @@ class RtpTransport : public RtpTransportInternal {
 
   bool IsSrtpActive() const override { return false; }
 
-  void RegisterRtpHeaderExtensionMap(
+  RTCError VerifyRtpHeaderExtensionMap(
+      const RtpHeaderExtensions& extensions) const override;
+
+  RTCError RegisterRtpHeaderExtensionMap(
       absl::string_view mid,
-      const RtpHeaderExtensions& header_extensions) override;
+      const RtpHeaderExtensions& extensions) override;
 
   // Currently only used for testing. In production, unregistration isn't needed
   // because leaving the registered extensions in `RtpTransport` is harmless
@@ -107,6 +111,8 @@ class RtpTransport : public RtpTransportInternal {
                               RtpPacketSinkInterface* sink) override;
 
   bool UnregisterRtpDemuxerSink(RtpPacketSinkInterface* sink) override;
+
+  void SetActivePayloadTypeDemuxing(bool enabled) override;
 
  protected:
   // These methods will be used in the subclasses.

@@ -16,7 +16,7 @@ namespace a11y {
 class XULSelectControlAccessible : public AccessibleWrap {
  public:
   XULSelectControlAccessible(nsIContent* aContent, DocAccessible* aDoc);
-  virtual ~XULSelectControlAccessible() {}
+  virtual ~XULSelectControlAccessible() = default;
 
   // LocalAccessible
   virtual void Shutdown() override;

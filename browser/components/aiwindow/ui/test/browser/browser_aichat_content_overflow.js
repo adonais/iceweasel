@@ -60,6 +60,16 @@ add_task(async function test_scrolling_and_overflowing_attribute() {
         chatContentWrapper.hasAttribute("overflowing"),
         "chat-content-wrapper should have the overflowing attribute"
       );
+
+      // Bug 2037529: a scrollable region is inherently tab-focusable so it can
+      // be scrolled with the keyboard, which produced a 'blank' focus stop
+      // between the chat header and the first chat element. The explicit
+      // tabindex="-1" opts out of that behavior.
+      Assert.equal(
+        chatContentWrapper.getAttribute("tabindex"),
+        "-1",
+        "chat-content-wrapper must opt out of scrollable-region tab focus"
+      );
     });
 
     await BrowserTestUtils.closeWindow(win);

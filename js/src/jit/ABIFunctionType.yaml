@@ -95,6 +95,16 @@
   ret: Float64
   args: [General, General]
 
+# double f(int, int, int)
+- name: Double_IntIntInt
+  ret: Float64
+  args: [General, General, General]
+
+# double f(int, int64)
+- name: Double_IntInt64
+  ret: Float64
+  args: [General, Int64]
+
 # double f(double, int)
 - name: Double_DoubleInt
   ret: Float64
@@ -170,6 +180,10 @@
 
 - ret: General
   args: [General, Int32, Int32, Int32, General, Int32]
+
+- name: General_GeneralGeneralInt32
+  ret: General
+  args: [General, General, Int32]
 
 - name: General_GeneralGeneralInt32Int32
   ret: General

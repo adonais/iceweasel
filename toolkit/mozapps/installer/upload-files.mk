@@ -24,10 +24,6 @@ else
 DIR_SUFFIX = _x64
 endif
 
-ifeq ($(OS_ARCH),WINNT)
-INSTALLER_DIR   = windows
-endif
-
 ifeq (cocoa,$(MOZ_WIDGET_TOOLKIT))
 ifndef _APPNAME
 _APPNAME = $(MOZ_MACBUNDLE_NAME)
@@ -146,7 +142,6 @@ endif
 ifeq ($(MOZ_PKG_FORMAT),DMG)
   PKG_SUFFIX	= .dmg
 
-  _ABS_MOZSRCDIR = $(shell cd $(MOZILLA_DIR) && pwd)
   PKG_DMG_SOURCE = $(MOZ_PKG_DIR)
   MOZ_PKG_MAC_DSSTORE=$(topsrcdir)/$(MOZ_BRANDING_DIRECTORY)/dsstore
   MOZ_PKG_MAC_BACKGROUND=$(topsrcdir)/$(MOZ_BRANDING_DIRECTORY)/background.png

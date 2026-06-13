@@ -810,23 +810,24 @@ nsPlacesExpiration.prototype = {
     await this._dbInitializedPromise;
 
     try {
+      let queriesToRun = [];
+      for (let queryType in EXPIRATION_QUERIES) {
+        let query = EXPIRATION_QUERIES[queryType];
+        if (query.actions & aAction && !query.disabled) {
+          let params = await this._getQueryParams(queryType, aLimit, aAction);
+          queriesToRun.push({ query, params });
+        }
+      }
+
       let notifications = [];
       await lazy.PlacesUtils.withConnectionWrapper(
         "PlacesExpiration.sys.mjs: expire",
         async db => {
           await db.executeTransaction(async () => {
-            for (let queryType in EXPIRATION_QUERIES) {
-              let query = EXPIRATION_QUERIES[queryType];
-              if (query.actions & aAction && !query.disabled) {
-                let params = await this._getQueryParams(
-                  queryType,
-                  aLimit,
-                  aAction
-                );
-                await db.executeCached(query.sql, params, row => {
-                  this._handleQueryResultAndAddNotification(row, notifications);
-                });
-              }
+            for (let { query, params } of queriesToRun) {
+              await db.executeCached(query.sql, params, row => {
+                this._handleQueryResultAndAddNotification(row, notifications);
+              });
             }
           });
         }

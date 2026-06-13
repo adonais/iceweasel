@@ -5,6 +5,7 @@ browser/components/aboutwelcome/node_modules/
 browser/components/aiwindow/models/PreferencesNavMap.sys.mjs
 browser/components/asrouter/node_modules/
 browser/components/asrouter/content/asrouter-admin.bundle.js
+browser/components/asrouter/content/components/asrouter-newtab-multistage/asrouter-newtab-multistage.bundle.js
 browser/components/asrouter/logs/
 browser/components/asrouter/content-src/schemas/BackgroundTaskMessagingExperiment.schema.json
 browser/components/asrouter/content-src/schemas/MessagingExperiment.schema.json
@@ -39,8 +40,8 @@ mobile/android/**/.gradle
 mobile/android/**/build
 mobile/android/**/bin
 mobile/android/**/generated
-mobile/android/**\/local.properties
-mobile/android/**\/manifest.json
+mobile/android/**/local.properties
+mobile/android/**/manifest.json
 mobile/android/android-components/components/feature/search/src/main/assets/search/search_telemetry_v2.json
 mobile/android/android-components/components/browser/engine-system/src/main/res/
 mobile/android/android-components/components/browser/errorpages/src/main/res/

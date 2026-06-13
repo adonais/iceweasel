@@ -12,7 +12,7 @@
 
 class nsWebNavigationInfo final : public nsIWebNavigationInfo {
  public:
-  nsWebNavigationInfo() {}
+  nsWebNavigationInfo() = default;
 
   NS_DECL_ISUPPORTS
 
@@ -21,7 +21,7 @@ class nsWebNavigationInfo final : public nsIWebNavigationInfo {
   static uint32_t IsTypeSupported(const nsACString& aType);
 
  private:
-  ~nsWebNavigationInfo() {}
+  ~nsWebNavigationInfo() = default;
 
   // Check whether aType is supported, and returns an nsIWebNavigationInfo
   // constant.

@@ -245,7 +245,7 @@ struct Mapping<Type::Freezable> : MappingData<false> {
 
 template <Type T>
 struct Mapping<T, true> : public Mapping<T> {
-  Mapping() {}
+  Mapping() = default;
   MOZ_IMPLICIT Mapping(std::nullptr_t) : Mapping<T>(nullptr) {}
 
   explicit Mapping(shared_memory::Handle<T>&& aHandle,

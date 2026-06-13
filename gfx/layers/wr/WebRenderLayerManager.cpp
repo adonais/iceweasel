@@ -79,23 +79,21 @@ RefPtr<WebRenderLayerManager> WebRenderLayerManager::Create(
                         << " isParent: " << XRE_IsParentProcess();
   }
 
-  PWebRenderBridgeChild* bridge =
-      aCBChild->SendPWebRenderBridgeConstructor(aPipelineId, size, windowKind);
-  if (!bridge) {
+  auto bridge = MakeRefPtr<WebRenderBridgeChild>(aPipelineId);
+  if (!aCBChild->SendPWebRenderBridgeConstructor(bridge, aPipelineId, size,
+                                                 windowKind)) {
     // This should only fail if we attempt to access a layer we don't have
     // permission for, or more likely, the GPU process crashed again during
     // reinitialization. We can expect to be notified again to reinitialize
     // (which may or may not be using WebRender).
-    gfxCriticalNote << "Failed to create WebRenderBridgeChild.";
+    gfxCriticalNote << "Failed to send WebRenderBridgeChild.";
     aError.Assign(sHasInitialized
                       ? "FEATURE_FAILURE_WEBRENDER_INITIALIZE_IPDL_POST"_ns
                       : "FEATURE_FAILURE_WEBRENDER_INITIALIZE_IPDL_FIRST"_ns);
     return nullptr;
   }
 
-  RefPtr<WebRenderBridgeChild> wrChild =
-      static_cast<WebRenderBridgeChild*>(bridge);
-  return new WebRenderLayerManager(aWidget, wrChild.forget());
+  return new WebRenderLayerManager(aWidget, bridge.forget());
 }
 
 bool WebRenderLayerManager::Initialize(

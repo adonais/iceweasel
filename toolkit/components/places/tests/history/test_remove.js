@@ -7,7 +7,7 @@ add_task(async function test_remove_single() {
   await PlacesUtils.history.clear();
   await PlacesUtils.bookmarks.eraseEverything();
 
-  let WITNESS_URI = NetUtil.newURI(
+  let WITNESS_URI = Services.io.newURI(
     "http://mozilla.com/test_browserhistory/test_remove/" + Math.random()
   );
   await PlacesTestUtils.addVisits(WITNESS_URI);
@@ -18,7 +18,7 @@ add_task(async function test_remove_single() {
     info(JSON.stringify(options));
     info("Setting up visit");
 
-    let uri = NetUtil.newURI(
+    let uri = Services.io.newURI(
       "http://mozilla.com/test_browserhistory/test_remove/" + Math.random()
     );
     let title = "Visit " + Math.random();
@@ -284,7 +284,7 @@ add_task(async function test_error_cases() {
 });
 
 add_task(async function test_orphans() {
-  let uri = NetUtil.newURI("http://moz.org/");
+  let uri = Services.io.newURI("http://moz.org/");
   await PlacesTestUtils.addVisits({ uri });
   await PlacesTestUtils.setFaviconForPage(
     uri,

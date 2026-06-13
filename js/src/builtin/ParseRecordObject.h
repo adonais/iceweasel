@@ -27,7 +27,7 @@ class ParseRecordObject : public NativeObject {
   // The source text that was parsed for this record. According to the spec, we
   // don't track this for objects and arrays, so it will be a null pointer.
   JSONParseNode* getParseNode() const {
-    const Value& slot = getSlot(ParseNodeSlot);
+    const Value& slot = getReservedSlot(ParseNodeSlot);
     return slot.isUndefined() ? nullptr : slot.toString();
   }
 
@@ -39,9 +39,11 @@ class ParseRecordObject : public NativeObject {
 
   // The original value corresponding to this record, used to determine if the
   // reviver function has modified it.
-  const Value& getValue() const { return getSlot(ValueSlot); }
+  const Value& getValue() const { return getReservedSlot(ValueSlot); }
 
-  void setValue(JS::Handle<JS::Value> value) { setSlot(ValueSlot, value); }
+  void setValue(JS::Handle<JS::Value> value) {
+    setReservedSlot(ValueSlot, value);
+  }
 
   bool hasValue() const { return !getValue().isUndefined(); }
 

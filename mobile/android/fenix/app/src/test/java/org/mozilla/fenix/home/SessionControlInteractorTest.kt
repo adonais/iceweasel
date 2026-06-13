@@ -32,7 +32,6 @@ import org.mozilla.fenix.home.sports.SportsController
 import org.mozilla.fenix.home.termsofuse.PrivacyNoticeBannerController
 import org.mozilla.fenix.home.toolbar.ToolbarController
 import org.mozilla.fenix.home.topsites.controller.TopSiteController
-import org.mozilla.fenix.search.toolbar.SearchSelectorController
 
 class SessionControlInteractorTest {
 
@@ -42,7 +41,6 @@ class SessionControlInteractorTest {
     private val bookmarksController: BookmarksController = mockk(relaxed = true)
     private val pocketStoriesController: PocketStoriesController = mockk(relaxed = true)
     private val privateBrowsingController: PrivateBrowsingController = mockk(relaxed = true)
-    private val searchSelectorController: SearchSelectorController = mockk(relaxed = true)
     private val toolbarController: ToolbarController = mockk(relaxed = true)
     private val homeSearchController: HomeSearchController = mockk(relaxed = true)
     private val topSiteController: TopSiteController = mockk(relaxed = true)
@@ -65,7 +63,6 @@ class SessionControlInteractorTest {
             recentVisitsController,
             pocketStoriesController,
             privateBrowsingController,
-            searchSelectorController,
             toolbarController,
             homeSearchController,
             topSiteController,
@@ -154,12 +151,6 @@ class SessionControlInteractorTest {
     fun onHomeContentFocusedWhileSearchIsActive() {
         interactor.onHomeContentFocusedWhileSearchIsActive()
         verify { homeSearchController.handleHomeContentFocusedWhileSearchIsActive() }
-    }
-
-    @Test
-    fun onRemoveCollectionsPlaceholder() {
-        interactor.onRemoveCollectionsPlaceholder()
-        verify { controller.handleRemoveCollectionsPlaceholder() }
     }
 
     @Test
@@ -278,12 +269,6 @@ class SessionControlInteractorTest {
     }
 
     @Test
-    fun `WHEN logo is long clicked THEN logo controller click handler is called`() {
-        interactor.onLogoLongClicked()
-        verify { logoController.handleLogoLongClicked() }
-    }
-
-    @Test
     fun `GIVEN a set of country codes WHEN countries are selected THEN sports controller handles the selection`() {
         val countryCodes = setOf("US", "JP", "BR")
         interactor.onCountriesSelected(countryCodes)
@@ -319,5 +304,11 @@ class SessionControlInteractorTest {
     fun `WHEN the get custom wallpaper menu item is clicked THEN sports controller handles the navigation`() {
         interactor.onGetCustomWallpaperClicked()
         verify { sportsController.handleOnGetCustomWallpaperClicked() }
+    }
+
+    @Test
+    fun `WHEN the share menu item is clicked THEN sports controller handles the share`() {
+        interactor.onSportsWidgetShareClicked()
+        verify { sportsController.handleSportsWidgetShareClicked() }
     }
 }

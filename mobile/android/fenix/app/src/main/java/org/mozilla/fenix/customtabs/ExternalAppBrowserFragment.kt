@@ -31,8 +31,6 @@ import org.mozilla.fenix.browser.BaseBrowserFragment
 import org.mozilla.fenix.browser.ContextMenuSnackbarDelegate
 import org.mozilla.fenix.browser.CustomTabColorsBinding
 import org.mozilla.fenix.browser.CustomTabContextMenuCandidate
-import org.mozilla.fenix.components.toolbar.BrowserToolbarComposable
-import org.mozilla.fenix.components.toolbar.BrowserToolbarView
 import org.mozilla.fenix.customtabs.ext.updateCustomTabsColors
 import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.components
@@ -51,7 +49,6 @@ class ExternalAppBrowserFragment : BaseBrowserFragment(), SystemInsetsPaddedFrag
 
     override val isSandboxCustomTab: Boolean get() = args.isSandboxCustomTab
 
-    private val customTabsIntegration = ViewBoundFeatureWrapper<CustomTabsIntegration>()
     private val customTabColorsBinding = ViewBoundFeatureWrapper<CustomTabColorsBinding>()
     private val windowFeature = ViewBoundFeatureWrapper<CustomTabWindowFeature>()
 
@@ -67,47 +64,25 @@ class ExternalAppBrowserFragment : BaseBrowserFragment(), SystemInsetsPaddedFrag
             requireComponents.core.webAppManifestStorage.getManifestCache(url)
         }
 
-        val browserToolbarView = browserToolbarView
-        when (browserToolbarView) {
-            is BrowserToolbarView -> {
-                customTabsIntegration.set(
-                    feature = CustomTabsIntegration(
-                        store = requireComponents.core.store,
-                        useCases = requireComponents.useCases.customTabsUseCases,
-                        browserToolbar = browserToolbarView.toolbar,
-                        sessionId = customTabSessionId,
-                        activity = activity,
-                        interactor = browserToolbarInteractor,
-                        isPrivate = tab.content.private,
-                        isSandboxCustomTab = isSandboxCustomTab,
-                    ),
-                    owner = this,
-                    view = view,
-                )
-            }
+        val browserStore = requireComponents.core.store
+        if (browserStore.state.findCustomTab(customTabSessionId)?.content?.private == false) {
+            val settings = requireContext().settings()
+            browserScreenStore.updateCustomTabsColors(
+                context = requireContext(),
+                customTab = (tab as? CustomTabSessionState),
+                deviceUIMode = requireContext().resources.configuration.uiMode,
+                shouldFollowDeviceTheme = settings.shouldFollowDeviceTheme,
+                shouldUseLightTheme = settings.shouldUseLightTheme,
+            )
 
-            is BrowserToolbarComposable -> {
-                val browserStore = requireComponents.core.store
-                if (browserStore.state.findCustomTab(customTabSessionId)?.content?.private == false) {
-                    val settings = requireContext().settings()
-                    browserScreenStore.updateCustomTabsColors(
-                        context = requireContext(),
-                        customTab = (tab as? CustomTabSessionState),
-                        deviceUIMode = requireContext().resources.configuration.uiMode,
-                        shouldFollowDeviceTheme = settings.shouldFollowDeviceTheme,
-                        shouldUseLightTheme = settings.shouldUseLightTheme,
-                    )
-
-                    customTabColorsBinding.set(
-                        feature = CustomTabColorsBinding(
-                            browserScreenStore = browserScreenStore,
-                            window = requireActivity().window,
-                        ),
-                        owner = this,
-                        view = view,
-                    )
-                }
-            }
+            customTabColorsBinding.set(
+                feature = CustomTabColorsBinding(
+                    browserScreenStore = browserScreenStore,
+                    window = requireActivity().window,
+                ),
+                owner = this,
+                view = view,
+            )
         }
 
         windowFeature.set(
@@ -238,7 +213,7 @@ class ExternalAppBrowserFragment : BaseBrowserFragment(), SystemInsetsPaddedFrag
     }
 
     override fun onBackPressed(): Boolean {
-        return super.onBackPressed() || customTabsIntegration.onBackPressed()
+        return super.onBackPressed()
     }
 
     override fun getContextMenuCandidates(

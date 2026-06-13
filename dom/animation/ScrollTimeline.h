@@ -16,6 +16,11 @@ enum class StyleScroller : uint8_t;
 enum class StyleOverflow : uint8_t;
 }  // namespace mozilla
 
+namespace mozilla::dom {
+enum class ScrollAxis : uint8_t;
+struct ScrollTimelineOptions;
+}  // namespace mozilla::dom
+
 #define PROGRESS_TIMELINE_DURATION_MILLISEC 100000
 
 namespace mozilla {
@@ -71,25 +76,42 @@ class ScrollTimeline : public AnimationTimeline,
  protected:
   struct ScrollerInfo {
     enum class Type : uint8_t {
+      /// The scroller was provided as a DOM Element (see ScrollTimeline ctor)
+      Provided,
+      /// The scroller is the root scroller of the document
       Root,
+      /// The scroller is the animation target's nearest ancestor scroller
       Nearest,
+      /// The scroller is specified by name (scroll-timeline-name)
       Name,
+      /// The scroller is the element being animated itself
       Self,
     };
     Type mType = Type::Root;
 
    private:
-    // This may be the target being animated, or source (i.e. Providing the
-    // scroll progress). See construction functions `Named` and `Anonymous`
-    OwningAnimationTarget mTarget;
+    // This is the target (that is being animade) for:
+    //   - Type::Root
+    //   - Type::Nearest
+    //   - Type::Self
+    // It is the source (of the scroll progress) for:
+    //   - Type::Provided
+    //   - Type::Named
+    // (In which case the scroll source is resolved lazily in Source().)
+    OwningAnimationTarget mSourceOrTarget;
     ScrollerInfo(Type aType, Element* aElement,
                  const PseudoStyleRequest& aPseudoRequest)
-        : mType{aType}, mTarget{aElement, aPseudoRequest} {}
+        : mType{aType}, mSourceOrTarget{aElement, aPseudoRequest} {}
 
    public:
     ScrollerInfo() = default;
 
     bool IsAnonymous() const { return mType != Type::Name; }
+
+    static ScrollerInfo Anonymous(Type aType, Element* aElement,
+                                  const PseudoStyleRequest& aPseudoRequest) {
+      return {aType, aElement, aPseudoRequest};
+    }
 
     static ScrollerInfo Anonymous(StyleScroller aType,
                                   const NonOwningAnimationTarget& aTarget) {
@@ -120,7 +142,9 @@ class ScrollTimeline : public AnimationTimeline,
     }
 
     NonOwningAnimationTarget Source() const;
-    RefPtr<Element>& ElementForCycleCollection() { return mTarget.mElement; }
+    RefPtr<Element>& ElementForCycleCollection() {
+      return mSourceOrTarget.mElement;
+    }
   };
 
  public:
@@ -134,11 +158,8 @@ class ScrollTimeline : public AnimationTimeline,
     layers::ScrollDirection Axis() const;
     StyleOverflow SourceScrollStyle() const;
     bool APZIsActiveForSource() const;
-    Element* SourceElement() const {
-      auto* element = mSource.mElement;
-      MOZ_ASSERT(element);
-      return element;
-    }
+    // May return null if script created us.
+    Element* SourceElement() const { return mSource.mElement; }
     bool ScrollingDirectionIsAvailable() const;
     // If the source of a ScrollTimeline is an element whose principal box does
     // not exist or is not a scroll container, then its phase is the timeline
@@ -160,6 +181,8 @@ class ScrollTimeline : public AnimationTimeline,
     bool mIsRoot;
   };
 
+  ScrollTimeline() = delete;
+
   static already_AddRefed<ScrollTimeline> MakeAnonymous(
       Document* aDocument, const NonOwningAnimationTarget& aTarget,
       StyleScrollAxis aAxis, StyleScroller aScroller);
@@ -175,10 +198,15 @@ class ScrollTimeline : public AnimationTimeline,
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(ScrollTimeline, AnimationTimeline)
 
   JSObject* WrapObject(JSContext* aCx,
-                       JS::Handle<JSObject*> aGivenProto) override {
-    // FIXME: Bug 1676794: Implement ScrollTimeline interface.
-    return nullptr;
-  }
+                       JS::Handle<JSObject*> aGivenProto) override;
+
+  // ScrollTimeline methods.
+  static already_AddRefed<ScrollTimeline> Constructor(
+      const GlobalObject& aGlobal, const ScrollTimelineOptions& aOptions,
+      ErrorResult& aRv);
+  // MOZ_CAN_RUN_SCRIPT because GetScrollingElement may flush in quirks mode.
+  MOZ_CAN_RUN_SCRIPT Element* GetSource() const;
+  dom::ScrollAxis GetScrollAxis() const;
 
   State GetState() const {
     return State{mScrollerInfo.Source(), mAxis,
@@ -223,11 +251,10 @@ class ScrollTimeline : public AnimationTimeline,
 
   void WillRefresh();
 
-  Element* SourceElement() const {
-    auto* element = mScrollerInfo.Source().mElement;
-    MOZ_ASSERT(element);
-    return element;
-  }
+  bool UpdateIfStale();
+
+  // May return null if script created us.
+  Element* SourceElement() const { return mScrollerInfo.Source().mElement; }
 
   virtual NonOwningAnimationTarget TimelineTarget() const {
     MOZ_ASSERT(!mScrollerInfo.IsAnonymous());
@@ -246,7 +273,8 @@ class ScrollTimeline : public AnimationTimeline,
   void NotifyAnimationContentVisibilityChanged(Animation* aAnimation,
                                                bool aIsVisible) override;
 
-  virtual void UpdateCachedCurrentTime();
+  // Updates mCachedCurrentTime. Returns true if the cached value changed.
+  virtual bool UpdateCachedCurrentTime();
 
   virtual std::pair<double, double> IntervalForAttachmentRange(
       const AnimationRange& aStyleRange) const;
@@ -255,7 +283,6 @@ class ScrollTimeline : public AnimationTimeline,
 
  protected:
   virtual ~ScrollTimeline();
-  ScrollTimeline() = delete;
   ScrollTimeline(Document* aDocument, const ScrollerInfo& aScrollerInfo,
                  StyleScrollAxis aAxis);
 
@@ -295,6 +322,10 @@ class ScrollTimeline : public AnimationTimeline,
     // needs to take care of that.
     nscoord mPosition = 0;
     nscoord mMaxScrollOffset = 0;
+    bool operator==(const CurrentTimeData& aOther) const {
+      return mPosition == aOther.mPosition &&
+             mMaxScrollOffset == aOther.mMaxScrollOffset;
+    }
   };
 
  private:

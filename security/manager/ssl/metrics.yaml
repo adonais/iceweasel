@@ -368,7 +368,6 @@ networking:
       - dkeeler@mozilla.com
     expires: never
     unit: millisecond
-    telemetry_mirror: NETWORKING_NSS_INITIALIZATION
 
   loading_certs_task:
     type: quantity
@@ -386,7 +385,6 @@ networking:
       - dkeeler@mozilla.com
     expires: never
     unit: millisecond
-    telemetry_mirror: NETWORKING_LOADING_CERTS_TASK
 
 security:
   client_auth_cert_usage:
@@ -404,7 +402,6 @@ security:
     notification_emails:
       - dkeeler@mozilla.com
     expires: never
-    telemetry_mirror: SECURITY_CLIENT_AUTH_CERT_USAGE
 
   addon_signature_verification_status:
     type: custom_distribution
@@ -425,7 +422,6 @@ security:
     notification_emails:
       - seceng-telemetry@mozilla.com
     expires: never
-    telemetry_mirror: ADDON_SIGNATURE_VERIFICATION_STATUS
 
   content_signature_verification_status:
     type: custom_distribution
@@ -450,7 +446,6 @@ security:
     notification_emails:
       - seceng-telemetry@mozilla.com
     expires: never
-    telemetry_mirror: CONTENT_SIGNATURE_VERIFICATION_STATUS
 
   content_signature_verification_errors:
     type: dual_labeled_counter
@@ -502,7 +497,6 @@ security:
     notification_emails:
       - seceng-telemetry@mozilla.com
     expires: never
-    telemetry_mirror: NTLM_MODULE_USED_2
 
 cert:
   ev_status:
@@ -526,7 +520,6 @@ cert:
     notification_emails:
       - seceng-telemetry@mozilla.com
     expires: never
-    telemetry_mirror: CERT_EV_STATUS
 
   validation_success_by_ca_2:
     type: custom_distribution
@@ -573,7 +566,6 @@ cert:
     notification_emails:
       - seceng-telemetry@mozilla.com
     expires: never
-    telemetry_mirror: CERT_CHAIN_KEY_SIZE_STATUS
 
   validation_http_request_result:
     type: custom_distribution
@@ -593,7 +585,6 @@ cert:
     notification_emails:
       - seceng-telemetry@mozilla.com
     expires: never
-    telemetry_mirror: CERT_VALIDATION_HTTP_REQUEST_RESULT
 
 cert_pinning:
   failures_by_ca_2:
@@ -634,7 +625,6 @@ cert_pinning:
     notification_emails:
       - pinning@mozilla.org
     expires: never
-    telemetry_mirror: h#CERT_PINNING_RESULTS
 
   test_results:
     type: labeled_counter
@@ -653,7 +643,6 @@ cert_pinning:
     notification_emails:
       - pinning@mozilla.org
     expires: never
-    telemetry_mirror: h#CERT_PINNING_TEST_RESULTS
 
   moz_results_by_host:
     type: custom_distribution
@@ -676,7 +665,6 @@ cert_pinning:
       - dkeeler@mozilla.com
       - pinning@mozilla.org
     expires: never
-    telemetry_mirror: CERT_PINNING_MOZ_RESULTS_BY_HOST
 
   moz_test_results_by_host:
     type: custom_distribution
@@ -699,7 +687,6 @@ cert_pinning:
       - dkeeler@mozilla.com
       - pinning@mozilla.org
     expires: never
-    telemetry_mirror: CERT_PINNING_MOZ_TEST_RESULTS_BY_HOST
 
 ssl_handshake:
   version:
@@ -807,7 +794,6 @@ ssl_handshake:
     notification_emails:
       - seceng-telemetry@mozilla.com
     expires: never
-    telemetry_mirror: SSL_HANDSHAKE_RESULT_CONSERVATIVE
 
   result_ech:
     type: custom_distribution
@@ -829,7 +815,6 @@ ssl_handshake:
     notification_emails:
       - seceng-telemetry@mozilla.com
     expires: never
-    telemetry_mirror: SSL_HANDSHAKE_RESULT_ECH
 
   result_ech_grease:
     type: custom_distribution
@@ -922,7 +907,6 @@ ssl:
     notification_emails:
       - seceng-telemetry@mozilla.com
     expires: never
-    telemetry_mirror: SSL_TIME_UNTIL_READY_CONSERVATIVE
 
   time_until_ready_ech:
     type: timing_distribution
@@ -940,7 +924,6 @@ ssl:
     notification_emails:
       - seceng-telemetry@mozilla.com
     expires: never
-    telemetry_mirror: SSL_TIME_UNTIL_READY_ECH
 
   time_until_ready_ech_grease:
     type: timing_distribution
@@ -1091,7 +1074,6 @@ ssl:
     notification_emails:
       - seceng-telemetry@mozilla.com
     expires: never
-    telemetry_mirror: SSL_TLS13_INTOLERANCE_REASON_PRE
 
   tls13_intolerance_reason_post:
     type: custom_distribution
@@ -1112,7 +1094,6 @@ ssl:
     notification_emails:
       - seceng-telemetry@mozilla.com
     expires: never
-    telemetry_mirror: SSL_TLS13_INTOLERANCE_REASON_POST
 
   tls12_intolerance_reason_pre:
     type: custom_distribution
@@ -1133,7 +1114,6 @@ ssl:
     notification_emails:
       - seceng-telemetry@mozilla.com
     expires: never
-    telemetry_mirror: SSL_TLS12_INTOLERANCE_REASON_PRE
 
   tls12_intolerance_reason_post:
     type: custom_distribution
@@ -1154,7 +1134,6 @@ ssl:
     notification_emails:
       - seceng-telemetry@mozilla.com
     expires: never
-    telemetry_mirror: SSL_TLS12_INTOLERANCE_REASON_POST
 
   tls11_intolerance_reason_pre:
     type: custom_distribution
@@ -1175,7 +1154,6 @@ ssl:
     notification_emails:
       - seceng-telemetry@mozilla.com
     expires: never
-    telemetry_mirror: SSL_TLS11_INTOLERANCE_REASON_PRE
 
   tls11_intolerance_reason_post:
     type: custom_distribution
@@ -1196,7 +1174,6 @@ ssl:
     notification_emails:
       - seceng-telemetry@mozilla.com
     expires: never
-    telemetry_mirror: SSL_TLS11_INTOLERANCE_REASON_POST
 
   tls10_intolerance_reason_pre:
     type: custom_distribution
@@ -1217,7 +1194,6 @@ ssl:
     notification_emails:
       - seceng-telemetry@mozilla.com
     expires: never
-    telemetry_mirror: SSL_TLS10_INTOLERANCE_REASON_PRE
 
   tls10_intolerance_reason_post:
     type: custom_distribution
@@ -1238,7 +1214,6 @@ ssl:
     notification_emails:
       - seceng-telemetry@mozilla.com
     expires: never
-    telemetry_mirror: SSL_TLS10_INTOLERANCE_REASON_POST
 
   version_fallback_inappropriate:
     type: custom_distribution
@@ -1259,7 +1234,6 @@ ssl:
     notification_emails:
       - seceng-telemetry@mozilla.com
     expires: never
-    telemetry_mirror: SSL_VERSION_FALLBACK_INAPPROPRIATE
 
   kea_rsa_key_size_full:
     type: custom_distribution
@@ -1279,7 +1253,6 @@ ssl:
     notification_emails:
       - seceng-telemetry@mozilla.com
     expires: never
-    telemetry_mirror: SSL_KEA_RSA_KEY_SIZE_FULL
 
   kea_dhe_key_size_full:
     type: custom_distribution
@@ -1299,7 +1272,6 @@ ssl:
     notification_emails:
       - seceng-telemetry@mozilla.com
     expires: never
-    telemetry_mirror: SSL_KEA_DHE_KEY_SIZE_FULL
 
   kea_ecdhe_curve_full:
     type: custom_distribution
@@ -1399,7 +1371,6 @@ ssl:
     notification_emails:
       - seceng-telemetry@mozilla.com
     expires: never
-    telemetry_mirror: SSL_REASONS_FOR_NOT_FALSE_STARTING
 
   ocsp_stapling:
     type: custom_distribution
@@ -1420,7 +1391,6 @@ ssl:
     notification_emails:
       - seceng-telemetry@mozilla.com
     expires: never
-    telemetry_mirror: SSL_OCSP_STAPLING
 
   cert_error_overrides:
     type: custom_distribution
@@ -1441,7 +1411,6 @@ ssl:
     notification_emails:
       - seceng-telemetry@mozilla.com
     expires: never
-    telemetry_mirror: SSL_CERT_ERROR_OVERRIDES
 
   cert_verification_errors:
     type: custom_distribution
@@ -1466,7 +1435,6 @@ ssl:
       - rtestard@mozilla.com
       - seceng@mozilla.org
     expires: never
-    telemetry_mirror: SSL_CERT_VERIFICATION_ERRORS
 
   ct_policy_non_compliant_connections_by_ca_2:
     type: custom_distribution
@@ -1509,7 +1477,6 @@ ssl:
     notification_emails:
       - seceng-telemetry@mozilla.com
     expires: never
-    telemetry_mirror: SSL_PERMANENT_CERT_ERROR_OVERRIDES
 
   scts_origin:
     type: custom_distribution
@@ -1530,7 +1497,6 @@ ssl:
     notification_emails:
       - seceng-telemetry@mozilla.com
     expires: never
-    telemetry_mirror: SSL_SCTS_ORIGIN
 
   scts_per_connection:
     type: custom_distribution
@@ -1553,7 +1519,6 @@ ssl:
     notification_emails:
       - seceng-telemetry@mozilla.com
     expires: never
-    telemetry_mirror: SSL_SCTS_PER_CONNECTION
 
   scts_verification_status:
     type: custom_distribution

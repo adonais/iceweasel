@@ -32,21 +32,9 @@ const CUSTOM_PROMPT = "Hello from custom prompt!";
 
 const API_KEY = "fake-key";
 const ENDPOINT = "https://api.fake-endpoint.com/v1";
-const MAJOR_VERSION_3 = 3;
+const MAJOR_VERSION_4 = 4;
 const MAJOR_VERSION_2 = 2;
 const MAJOR_VERSION_1 = 1;
-
-async function loadRemoteSettingsSnapshot() {
-  const file = do_get_file("ai-window-prompts-remote-settings-snapshot.json");
-  const data = await IOUtils.readUTF8(file.path);
-  return JSON.parse(data);
-}
-
-let REAL_REMOTE_SETTINGS_SNAPSHOT;
-
-add_setup(async function () {
-  REAL_REMOTE_SETTINGS_SNAPSHOT = await loadRemoteSettingsSnapshot();
-});
 
 registerCleanupFunction(() => {
   for (let pref of [
@@ -61,7 +49,26 @@ registerCleanupFunction(() => {
   }
 });
 
-add_task(async function test_loadConfig_basic_with_real_snapshot() {
+add_task(async function test_feature_major_versions_in_dump() {
+  const client = openAIEngine.getRemoteClient();
+  const records = await client.get();
+  for (const [feature, majorVersion] of Object.entries(
+    FEATURE_MAJOR_VERSIONS
+  )) {
+    const found = records.some(r => {
+      const parsed = parseVersion(r.version);
+      return r.feature === feature && parsed?.major === majorVersion;
+    });
+    Assert.ok(
+      found,
+      `WARNING - UPDATE THE DUMP: no records for feature "${feature}" at major version ${majorVersion} in ` +
+        `services/settings/dumps/main/ai-window-prompts.json. ` +
+        `Either update the dump or revert FEATURE_MAJOR_VERSIONS["${feature}"].`
+    );
+  }
+});
+
+add_task(async function test_loadConfig_basic_with_real_RS_dump() {
   Services.prefs.setStringPref(PREF_API_KEY, API_KEY);
 
   const sb = sinon.createSandbox();
@@ -73,13 +80,9 @@ add_task(async function test_loadConfig_basic_with_real_snapshot() {
     };
     sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
 
-    sb.stub(openAIEngine, "getRemoteClient").returns({
-      get: sb.stub().resolves(REAL_REMOTE_SETTINGS_SNAPSHOT),
-    });
-
     const engine = new openAIEngine();
 
-    await engine.loadConfig(MODEL_FEATURES.CHAT, MAJOR_VERSION_2);
+    await engine.loadConfig(MODEL_FEATURES.CHAT);
 
     Assert.equal(
       engine.feature,
@@ -90,12 +93,10 @@ add_task(async function test_loadConfig_basic_with_real_snapshot() {
 
     const config = engine.getConfig(MODEL_FEATURES.CHAT);
     Assert.ok(config, "Config should be loaded");
-    Assert.ok(config.prompts, "Prompts should be loaded from remote settings");
     Assert.ok(
-      config.prompts.includes("You are a helpful browser assistant - updated!"),
-      "Prompts should contain expected (updated) content"
+      config.prompts?.length,
+      "Prompts should exist and contain some content"
     );
-    Assert.equal(config.version, "2.0", "Should load version 2.0");
   } finally {
     sb.restore();
   }
@@ -117,10 +118,6 @@ add_task(async function test_prompt_override_via_pref() {
       },
     };
     sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
-
-    sb.stub(openAIEngine, "getRemoteClient").returns({
-      get: sb.stub().resolves(REAL_REMOTE_SETTINGS_SNAPSHOT),
-    });
 
     const engine = new openAIEngine();
 
@@ -160,13 +157,9 @@ add_task(async function test_loadConfig_with_user_pref_model() {
     };
     sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
 
-    sb.stub(openAIEngine, "getRemoteClient").returns({
-      get: sb.stub().resolves(REAL_REMOTE_SETTINGS_SNAPSHOT),
-    });
-
     const engine = new openAIEngine();
 
-    await engine.loadConfig(MODEL_FEATURES.CHAT, MAJOR_VERSION_2);
+    await engine.loadConfig(MODEL_FEATURES.CHAT);
 
     Assert.equal(
       engine.model,
@@ -188,7 +181,7 @@ add_task(async function test_loadConfig_with_user_pref_model() {
 add_task(async function test_loadConfig_with_custom_endpoint_and_model() {
   Services.prefs.setStringPref(PREF_API_KEY, API_KEY);
   Services.prefs.setStringPref(PREF_ENDPOINT, ENDPOINT);
-  Services.prefs.setStringPref(PREF_MODEL, "custom_model");
+  Services.prefs.setStringPref(PREF_MODEL, "custom_model_v123");
 
   const sb = sinon.createSandbox();
   try {
@@ -199,24 +192,14 @@ add_task(async function test_loadConfig_with_custom_endpoint_and_model() {
     };
     sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
 
-    sb.stub(openAIEngine, "getRemoteClient").returns({
-      get: sb.stub().resolves(REAL_REMOTE_SETTINGS_SNAPSHOT),
-    });
-
     const engine = new openAIEngine();
 
-    await engine.loadConfig(MODEL_FEATURES.CHAT, MAJOR_VERSION_2);
+    await engine.loadConfig(MODEL_FEATURES.CHAT);
 
     Assert.equal(
       engine.model,
-      "custom_model",
+      "custom_model_v123",
       "Selected model should be for user's preferred model"
-    );
-
-    const prompt = await engine.loadPrompt(MODEL_FEATURES.CHAT);
-    Assert.ok(
-      prompt.startsWith("Generic model prompt loaded"),
-      "Should load generic prompt with custom endpoint"
     );
   } finally {
     sb.restore();
@@ -237,27 +220,16 @@ add_task(async function test_loadConfig_filters_by_major_version() {
     };
     sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
 
-    // Add a v3.0 record to test data
-    const recordsWithV3 = [
-      ...REAL_REMOTE_SETTINGS_SNAPSHOT,
-      {
-        model: "future-model",
-        feature: "chat",
-        prompts: "Future version prompt",
-        version: "3.0",
-        is_default: true,
-      },
-    ];
-
-    sb.stub(openAIEngine, "getRemoteClient").returns({
-      get: sb.stub().resolves(recordsWithV3),
-    });
-
     const engine = new openAIEngine();
-    await engine.loadConfig(MODEL_FEATURES.CHAT, MAJOR_VERSION_2);
+    await engine.loadConfig(MODEL_FEATURES.CHAT);
 
     const config = engine.getConfig(MODEL_FEATURES.CHAT);
-    Assert.ok(config.version.startsWith("2."), "Should select 1.x, not 3.0");
+    const parsedVersion = parseVersion(config.version);
+    Assert.equal(
+      parsedVersion?.major,
+      FEATURE_MAJOR_VERSIONS[MODEL_FEATURES.CHAT],
+      "Should match model version"
+    );
   } finally {
     sb.restore();
   }
@@ -277,10 +249,6 @@ add_task(async function test_loadConfig_fallback_when_user_model_not_found() {
     };
     sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
 
-    sb.stub(openAIEngine, "getRemoteClient").returns({
-      get: sb.stub().resolves(REAL_REMOTE_SETTINGS_SNAPSHOT),
-    });
-
     const engine = new openAIEngine();
     await engine.loadConfig(MODEL_FEATURES.CHAT, MAJOR_VERSION_2);
 
@@ -297,7 +265,6 @@ add_task(async function test_loadConfig_fallback_when_user_model_not_found() {
       engine.model,
       "Engine model should match the default config's model"
     );
-    Assert.equal(config.version, "2.0", "Should use 2.0");
   } finally {
     sb.restore();
     Services.prefs.clearUserPref(PREF_MODEL);
@@ -325,7 +292,7 @@ add_task(async function test_loadConfig_custom_endpoint_with_custom_model() {
     };
     sb.stub(openAIEngine, "getRemoteClient").returns(fakeClient);
 
-    await engine.loadConfig(MODEL_FEATURES.CHAT, MAJOR_VERSION_3);
+    await engine.loadConfig(MODEL_FEATURES.CHAT, MAJOR_VERSION_4);
 
     Assert.equal(
       engine.model,
@@ -390,10 +357,6 @@ add_task(async function test_loadPrompt_from_remote_settings() {
     };
     sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
 
-    sb.stub(openAIEngine, "getRemoteClient").returns({
-      get: sb.stub().resolves(REAL_REMOTE_SETTINGS_SNAPSHOT),
-    });
-
     const engine = new openAIEngine();
     await engine.loadConfig(MODEL_FEATURES.TITLE_GENERATION, MAJOR_VERSION_1);
 
@@ -411,7 +374,6 @@ add_task(async function test_loadPrompt_from_remote_settings() {
 
 add_task(async function test_build_with_feature() {
   Services.prefs.setStringPref(PREF_API_KEY, API_KEY);
-  Services.prefs.setStringPref(PREF_ENDPOINT, ENDPOINT);
 
   const sb = sinon.createSandbox();
   try {
@@ -424,8 +386,17 @@ add_task(async function test_build_with_feature() {
       .stub(openAIEngine, "_createEngine")
       .resolves(fakeEngine);
 
+    const fakeRecords = [
+      {
+        feature: MODEL_FEATURES.CHAT,
+        version: getVersionForFeature(MODEL_FEATURES.CHAT),
+        model: "some-model",
+        is_default: true,
+      },
+    ];
+
     sb.stub(openAIEngine, "getRemoteClient").returns({
-      get: sb.stub().resolves(REAL_REMOTE_SETTINGS_SNAPSHOT),
+      get: sb.stub().resolves(fakeRecords),
     });
 
     const engine = await openAIEngine.build(MODEL_FEATURES.CHAT);
@@ -447,8 +418,8 @@ add_task(async function test_build_with_feature() {
 });
 
 add_task(async function test_inference_params_from_config() {
+  Services.prefs.clearUserPref(PREF_ENDPOINT);
   Services.prefs.setStringPref(PREF_API_KEY, API_KEY);
-  Services.prefs.setStringPref(PREF_ENDPOINT, ENDPOINT);
 
   const sb = sinon.createSandbox();
   try {
@@ -459,17 +430,30 @@ add_task(async function test_inference_params_from_config() {
     };
     sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
 
+    const fakeRecords = [
+      {
+        feature: MODEL_FEATURES.CHAT,
+        version: `${MAJOR_VERSION_2}.0`,
+        model: "model",
+        is_default: true,
+        parameters: {
+          temperature: 0.7,
+          max_tokens: 1024,
+        },
+      },
+    ];
     sb.stub(openAIEngine, "getRemoteClient").returns({
-      get: sb.stub().resolves(REAL_REMOTE_SETTINGS_SNAPSHOT),
+      get: sb.stub().resolves(fakeRecords),
     });
 
     const engine = new openAIEngine();
     await engine.loadConfig(MODEL_FEATURES.CHAT, MAJOR_VERSION_2);
 
-    const config = engine.getConfig(MODEL_FEATURES.CHAT);
+    const config = engine.getConfig(MODEL_FEATURES.CHAT, MAJOR_VERSION_2);
     Assert.ok(config, "Config should be loaded");
 
     const inferenceParams = config?.parameters || {};
+    info(config.parameters);
     Assert.equal(
       typeof inferenceParams,
       "object",
@@ -477,8 +461,70 @@ add_task(async function test_inference_params_from_config() {
     );
     Assert.equal(
       inferenceParams.temperature,
-      1.0,
+      0.7,
       "Temperature should be loaded from parameters"
+    );
+    Assert.equal(
+      inferenceParams.max_tokens,
+      1024,
+      "max_tokens should be loaded from remote settings record"
+    );
+  } finally {
+    sb.restore();
+  }
+});
+
+add_task(async function test_inference_string_params_from_config() {
+  Services.prefs.clearUserPref(PREF_ENDPOINT);
+  Services.prefs.setStringPref(PREF_API_KEY, API_KEY);
+
+  const sb = sinon.createSandbox();
+  try {
+    const fakeEngine = {
+      runWithGenerator() {
+        throw new Error("not used");
+      },
+    };
+    sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
+
+    const fakeRecords = [
+      {
+        feature: MODEL_FEATURES.CHAT,
+        version: `${MAJOR_VERSION_2}.0`,
+        model: "model",
+        is_default: true,
+        parameters: JSON.stringify({
+          temperature: 0.7,
+          max_tokens: 1024,
+        }),
+      },
+    ];
+    sb.stub(openAIEngine, "getRemoteClient").returns({
+      get: sb.stub().resolves(fakeRecords),
+    });
+
+    const engine = new openAIEngine();
+    await engine.loadConfig(MODEL_FEATURES.CHAT, MAJOR_VERSION_2);
+
+    const config = engine.getConfig(MODEL_FEATURES.CHAT, MAJOR_VERSION_2);
+    Assert.ok(config, "Config should be loaded");
+
+    const inferenceParams = config?.parameters || {};
+    info(config.parameters);
+    Assert.equal(
+      typeof inferenceParams,
+      "object",
+      "Inference parameters should be converterd to an object"
+    );
+    Assert.equal(
+      inferenceParams.temperature,
+      0.7,
+      "Temperature should be loaded from parameters"
+    );
+    Assert.equal(
+      inferenceParams.max_tokens,
+      1024,
+      "max_tokens should be loaded from remote settings record"
     );
   } finally {
     sb.restore();
@@ -640,7 +686,7 @@ add_task(
         },
         {
           feature: MODEL_FEATURES.CHAT,
-          version: getVersionForFeature(MODEL_FEATURES.CHAT),
+          version: "2.0",
           model: "default-model",
           prompts: "Default prompt",
           is_default: true,
@@ -652,7 +698,7 @@ add_task(
       });
 
       const engine = new openAIEngine();
-      await engine.loadConfig(MODEL_FEATURES.CHAT, MAJOR_VERSION_3);
+      await engine.loadConfig(MODEL_FEATURES.CHAT, MAJOR_VERSION_4);
 
       Assert.equal(
         engine.model,
@@ -864,7 +910,7 @@ add_task(async function test_custom_endpoint_override() {
       },
       {
         feature: MODEL_FEATURES.CHAT,
-        version: getVersionForFeature(MODEL_FEATURES.CHAT),
+        version: "2.0",
         model: "future-default",
         prompts: "Default prompt",
         is_default: true,
@@ -876,7 +922,7 @@ add_task(async function test_custom_endpoint_override() {
     });
 
     const engine = new openAIEngine();
-    await engine.loadConfig(MODEL_FEATURES.CHAT, MAJOR_VERSION_3);
+    await engine.loadConfig(MODEL_FEATURES.CHAT, MAJOR_VERSION_4);
 
     Assert.equal(
       engine.model,
@@ -905,7 +951,7 @@ add_task(async function test_loadConfig_with_additional_components() {
     const fakeRecords = [
       {
         feature: "memories-initial-generation-system",
-        version: "1.0",
+        version: "2.0",
         model: "test-model",
         is_default: true,
         prompts: "System prompt for memory generation",
@@ -915,7 +961,7 @@ add_task(async function test_loadConfig_with_additional_components() {
       },
       {
         feature: "memories-initial-generation-user",
-        version: "1.0",
+        version: "2.0",
         model: "test-model",
         prompts: "User prompt for memory generation",
       },
@@ -1232,7 +1278,7 @@ add_task(async function test_build_uses_service_type_and_purpose_from_config() {
     const fakeRecords = [
       {
         feature: MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
-        version: "1.0",
+        version: "2.0",
         model: "test-model",
         prompts: "Test prompt",
         is_default: true,

@@ -37,7 +37,10 @@ internal class BookmarksTelemetryMiddleware : Middleware<BookmarksState, Bookmar
             is SelectFolderAction -> { handleSelectFolderActions(action) }
             SearchClicked -> { BookmarksManagement.searchIconTapped.record(NoExtras()) }
             BackClicked -> state.handleBackClick()
+            is ImportAction -> handleImportAction(action)
             EditBookmarkAction.DeleteClicked -> { recordEditDeleteMetrics() }
+            RootOverflowMenuClicked,
+            RootOverflowMenuDismissed,
             EditBookmarkAction.FolderClicked,
             is EditBookmarkAction.TitleChanged,
             is EditBookmarkAction.URLChanged,
@@ -268,6 +271,19 @@ internal class BookmarksTelemetryMiddleware : Middleware<BookmarksState, Bookmar
             MetricsUtils.recordBookmarkMetrics(
                 MetricsUtils.BookmarkAction.OPEN,
                 LIST_SCREEN_METRIC_SOURCE,
+            )
+        }
+    }
+
+    private fun handleImportAction(action: ImportAction) = when (action) {
+        is ImportAction.ImportFailed -> BookmarksManagement.importFailed.record(NoExtras())
+        is ImportAction.ImportFileClicked.FromMenu ->
+            BookmarksManagement.importFromFileMenuClick.record(NoExtras())
+        is ImportAction.ImportFileClicked.FromButton ->
+            BookmarksManagement.importFromFileButtonClick.record(NoExtras())
+        is ImportAction.ImportSucceeded -> {
+            BookmarksManagement.importSuccessful.record(
+                extra = BookmarksManagement.ImportSuccessfulExtra(bookmarksCount = action.count),
             )
         }
     }

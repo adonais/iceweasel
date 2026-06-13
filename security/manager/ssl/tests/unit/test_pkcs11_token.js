@@ -54,7 +54,7 @@ function checkBasicAttributes(token) {
  * The token should already have been init with a password and be logged into.
  * The password of the token will be reset after calling this function.
  *
- * @param {nsIPK11Token} token
+ * @param {nsIPKCS11Token} token
  *        The token to test.
  * @param {string} initialPW
  *        The password that the token should have been init with.
@@ -100,10 +100,9 @@ function checkPasswordFeaturesAndResetPassword(token, initialPW) {
 }
 
 function run_test() {
-  let tokenDB = Cc["@mozilla.org/security/pk11tokendb;1"].getService(
-    Ci.nsIPK11TokenDB
+  let token = Cc["@mozilla.org/security/internalkeytoken;1"].createInstance(
+    Ci.nsIPKCS11Token
   );
-  let token = tokenDB.getInternalKeyToken();
   notEqual(token, null, "The internal token should be present");
   ok(
     token.isInternalKeyToken,

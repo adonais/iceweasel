@@ -110,82 +110,103 @@ internal class HomeToolbarComposable(
         )
     }
 
+    @Composable
+    private fun DefaultToolbar() {
+        val isSearching = toolbarStore.observeAsComposableState { it.isEditMode() }.value
+        val queryWasPrefilled = toolbarStore.observeAsComposableState {
+            it.editState.queryWasPrefilled
+        }.value
+        val currentQuery = toolbarStore.observeAsComposableState { it.editState.query.current }.value
+        val currentWallpaperName = appStore.observeAsComposableState { it.wallpaperState.currentWallpaper.name }
+        val isEdgeToEdgeBackgroundEnabled =
+            settings.enableHomepageEdgeToEdgeBackgroundFeature &&
+                currentWallpaperName.value == Wallpaper.EDGE_TO_EDGE
+
+        BackInvokedHandler(isSearching) {
+            val sourceTabId = appStore.state.searchState.sourceTabId
+            if (sourceTabId != null) {
+                navController.navigate(R.id.browserFragment)
+            }
+            appStore.dispatch(SearchEnded)
+            browserStore.dispatch(AwesomeBarAction.EngagementFinished(abandoned = true))
+        }
+
+        FirefoxTheme {
+            MaterialTheme(
+                colorScheme = homepageToolbarColors(
+                    isPrivateMode = browsingModeManager.mode == BrowsingMode.Private,
+                    shouldUseEdgeToEdgeColors = isEdgeToEdgeBackgroundEnabled &&
+                        (!isSearching || (currentQuery.isEmpty() && !queryWasPrefilled)),
+                ),
+            ) {
+                ToolbarContent()
+            }
+        }
+    }
+
+    @Composable
+    private fun ToolbarContent() {
+        val shouldShowTabStrip: Boolean = remember { settings.isTabStripEnabled }
+        val isAddressBarVisible = remember { addressBarVisibility }
+
+        Column {
+            if (shouldShowTabStrip) {
+                tabStripContent()
+            }
+
+            if (settings.shouldUseBottomToolbar) {
+                searchSuggestionsContent(Modifier.weight(1f))
+            }
+
+            Box {
+                if (settings.enableHomepageSearchBar) {
+                    BrowserSimpleToolbar(toolbarStore, appStore)
+                }
+
+                this@Column.AnimatedVisibility(
+                    visible = isAddressBarVisible.value || appStore.state.searchState.isSearchActive,
+                    enter = fadeIn(
+                        animationSpec = tween(
+                            durationMillis = 250,
+                            easing = Easing { fraction -> fraction * fraction },
+                        ),
+                    ),
+                    exit = fadeOut(
+                        animationSpec = tween(
+                            durationMillis = 250,
+                            easing = Easing { fraction -> 1f - (1f - fraction) * (1f - fraction) },
+                        ),
+                    ),
+                ) {
+                    BrowserToolbar(store = toolbarStore)
+                }
+            }
+
+            if (settings.toolbarPosition == BOTTOM) {
+                navigationBarContent?.invoke()
+            }
+
+            if (!settings.shouldUseBottomToolbar) {
+                searchSuggestionsContent(Modifier.weight(1f))
+            }
+        }
+    }
+
     override val layout = ComposeView(context).apply {
         id = R.id.composable_toolbar
 
         setContent {
-            val isSearching = toolbarStore.observeAsComposableState { it.isEditMode() }.value
-            val queryWasPrefilled = toolbarStore.observeAsComposableState {
-                it.editState.queryWasPrefilled
-            }.value
-            val currentQuery = toolbarStore.observeAsComposableState { it.editState.query.current }.value
-            val shouldShowTabStrip: Boolean = remember { settings.isTabStripEnabled }
-            val isAddressBarVisible = remember { addressBarVisibility }
-
-            val currentWallpaperName = appStore.observeAsComposableState { it.wallpaperState.currentWallpaper.name }
-            val isEdgeToEdgeBackgroundEnabled =
-                settings.enableHomepageEdgeToEdgeBackgroundFeature &&
-                        currentWallpaperName.value == Wallpaper.EDGE_TO_EDGE
-
-            BackInvokedHandler(isSearching) {
-                val sourceTabId = appStore.state.searchState.sourceTabId
-                if (sourceTabId != null) {
-                    navController.navigate(R.id.browserFragment)
-                }
-                appStore.dispatch(SearchEnded)
-                browserStore.dispatch(AwesomeBarAction.EngagementFinished(abandoned = true))
-            }
-
-            FirefoxTheme {
-                MaterialTheme(
-                    colorScheme = homepageToolbarColors(
-                        isPrivateMode = browsingModeManager.mode == BrowsingMode.Private,
-                        shouldUseEdgeToEdgeColors = isEdgeToEdgeBackgroundEnabled &&
-                            (!isSearching || (currentQuery.isEmpty() && !queryWasPrefilled)),
-                    ),
-                ) {
-                    Column {
-                        if (shouldShowTabStrip) {
-                            tabStripContent()
-                        }
-
-                        if (settings.shouldUseBottomToolbar) {
-                            searchSuggestionsContent(Modifier.weight(1f))
-                        }
-                        Box {
-                            if (settings.enableHomepageSearchBar) {
-                                BrowserSimpleToolbar(toolbarStore, appStore)
-                            }
-                            this@Column.AnimatedVisibility(
-                                visible = isAddressBarVisible.value || appStore.state.searchState.isSearchActive,
-                                enter = fadeIn(
-                                    animationSpec = tween(
-                                        durationMillis = 250,
-                                        easing = Easing { fraction -> fraction * fraction },
-                                    ),
-                                ),
-                                exit = fadeOut(
-                                    animationSpec = tween(
-                                        durationMillis = 250,
-                                        easing = Easing { fraction -> 1f - (1f - fraction) * (1f - fraction) },
-                                    ),
-                                ),
-                            ) {
-                                BrowserToolbar(store = toolbarStore)
-                            }
-                        }
-                        if (settings.toolbarPosition == BOTTOM) {
-                            navigationBarContent?.invoke()
-                        }
-                        if (!settings.shouldUseBottomToolbar) {
-                            searchSuggestionsContent(Modifier.weight(1f))
-                        }
-                    }
-                }
-            }
+            DefaultToolbar()
         }
         translationZ = context.resources.getDimension(R.dimen.browser_fragment_above_toolbar_panels_elevation)
         homeBinding.homeLayout.addView(this)
+    }
+
+    /**
+     * Returns a [Composable] function that renders the default home toolbar content.
+     */
+    override fun asComposable(): @Composable () -> Unit = {
+        DefaultToolbar()
     }
 
     override fun build(browserState: BrowserState, middleSearchEnabled: Boolean) {

@@ -1,37 +1,30 @@
 From: Michael Froman <mfroman@mozilla.com>
-Date: Fri, 16 Jan 2026 16:48:00 -0600
-Subject: Bug 2010312 - (fix-dc65955c6d) fix base-toolchains build
+Date: Fri, 30 Jan 2026 18:55:00 +0000
+Subject: Bug 2005262 - better logging in
+ ModuleRtpRtcpImpl2::RegisterRtpHeaderExtension. r=ng
 
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/6c3f917f52d45566db7b5916b74f792928456dff
+Differential Revision: https://phabricator.services.mozilla.com/D281051
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/b44955c4c033ebaf31b40701f12f7cb0dc035ba8
 ---
- call/rtp_transport_controller_send.cc | 9 ++++-----
- 1 file changed, 4 insertions(+), 5 deletions(-)
+ modules/rtp_rtcp/source/rtp_rtcp_impl2.cc | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
 
-diff --git a/call/rtp_transport_controller_send.cc b/call/rtp_transport_controller_send.cc
-index cd5fe0e9fc..6b0fbe131f 100644
---- a/call/rtp_transport_controller_send.cc
-+++ b/call/rtp_transport_controller_send.cc
-@@ -739,19 +739,18 @@ void RtpTransportControllerSend::ComputeStatsFromCongestionControlFeedback(
+diff --git a/modules/rtp_rtcp/source/rtp_rtcp_impl2.cc b/modules/rtp_rtcp/source/rtp_rtcp_impl2.cc
+index c12f80e3d5..baeddc0da7 100644
+--- a/modules/rtp_rtcp/source/rtp_rtcp_impl2.cc
++++ b/modules/rtp_rtcp/source/rtp_rtcp_impl2.cc
+@@ -586,9 +586,13 @@ void ModuleRtpRtcpImpl2::SetExtmapAllowMixed(bool extmap_allow_mixed) {
  
-     if (packet_info.IsReceived()) {
-       switch (packet_info.ecn) {
--        using enum EcnMarking;
--        case kEct1:
-+        case EcnMarking::kEct1:
-           ++stats->num_packets_received_with_ect1;
-           break;
--        case kCe:
-+        case EcnMarking::kCe:
-           ++stats->num_packets_received_with_ce;
-           break;
--        case kNotEct:
-+        case EcnMarking::kNotEct:
-           if (packet_info.sent_with_ect1) {
-             ++stats->num_packets_with_bleached_ect1_marking;
-           }
-           break;
--        case kEct0:
-+        case EcnMarking::kEct0:
-           break;
-       }
-     }
+ void ModuleRtpRtcpImpl2::RegisterRtpHeaderExtension(absl::string_view uri,
+                                                     int id) {
++  RTC_LOG(LS_INFO) << "RegisterRtpHeaderExtension uri:'" << uri << "' id: " << id;
+   bool registered =
+       rtp_sender_->packet_generator.RegisterRtpHeaderExtension(uri, id);
+-  RTC_CHECK(registered);
++  if (!registered) {
++    RTC_LOG(LS_WARNING) << "RegisterRtpHeaderExtension failed to register uri:'" << uri << "' id: " << id;
++  }
++  RTC_DCHECK(registered);
+ }
+ 
+ void ModuleRtpRtcpImpl2::DeregisterSendRtpHeaderExtension(

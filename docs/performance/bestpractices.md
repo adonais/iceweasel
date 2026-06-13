@@ -419,11 +419,11 @@ a sync reflow.
 ### Writing tests to ensure you don’t add more unintentional reflow
 
 The interface
-[nsIReflowObserver](https://searchfox.org/mozilla-central/source/docshell/base/nsIReflowObserver.idl)
+[nsIReflowObserver](https://searchfox.org/firefox-main/source/docshell/base/nsIReflowObserver.idl)
 lets us detect both interruptible and uninterruptible reflows. A number
 of tests have been written that exercise various functions of the
 browser [opening tabs](http://searchfox.org/mozilla-central/rev/78cefe75fb43195e7f5aee1d8042b8d8fc79fc70/browser/base/content/test/general/browser_tabopen_reflows.js),
-[opening windows](http://searchfox.org/mozilla-central/source/browser/base/content/test/general/browser_windowopen_reflows.js)
+[opening windows](http://searchfox.org/firefox-main/source/browser/base/content/test/general/browser_windowopen_reflows.js)
 and ensure that we don’t add new uninterruptible reflows accidentally
 while those actions occur.
 
@@ -571,7 +571,7 @@ more](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Structure
 without having to do conversions for JSON compatibility.
 
 A Promise-based wrapper for IndexedDB,
-[IndexedDB.sys.mjs](http://searchfox.org/mozilla-central/source/toolkit/modules/IndexedDB.sys.mjs)
+[IndexedDB.sys.mjs](http://searchfox.org/firefox-main/source/toolkit/modules/IndexedDB.sys.mjs)
 is available for chrome code.
 
 ## Test on weak hardware

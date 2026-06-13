@@ -9,13 +9,14 @@ import { connect } from "react-redux";
 import { DiscoveryStreamBase } from "content-src/components/DiscoveryStreamBase/DiscoveryStreamBase";
 import { ErrorBoundary } from "content-src/components/ErrorBoundary/ErrorBoundary";
 import { CustomizeMenu } from "content-src/components/CustomizeMenu/CustomizeMenu";
+import { BaseContext } from "content-src/lib/BaseContext";
 import React, { useState, useEffect } from "react";
 import { Search } from "content-src/components/Search/Search";
 import { TopSites } from "content-src/components/TopSites/TopSites";
 import { Sections } from "content-src/components/Sections/Sections";
 import { Logo } from "content-src/components/Logo/Logo";
 import { Weather } from "content-src/components/Weather/Weather";
-import { Weather as WeatherWidget } from "content-src/components/Widgets/Weather/Weather";
+import { WidgetsSidebar } from "content-src/components/Widgets/WidgetsSidebar";
 import { DownloadModalToggle } from "content-src/components/DownloadModalToggle/DownloadModalToggle";
 import { Notifications } from "content-src/components/Notifications/Notifications";
 import { TopicSelection } from "content-src/components/DiscoveryStreamComponents/TopicSelection/TopicSelection";
@@ -29,6 +30,11 @@ import {
   shouldShowOMCHighlight,
   shouldShowASRouterNewTabMessage,
 } from "../../lib/asrouter-message-utils.mjs";
+import {
+  WIDGET_REGISTRY,
+  resolveWidgetHasSidebar,
+  resolveWidgetSize,
+} from "common/WidgetsRegistry.mjs";
 
 const VISIBLE = "visible";
 const VISIBILITY_CHANGE_EVENT = "visibilitychange";
@@ -122,6 +128,7 @@ export class BaseContent extends React.PureComponent {
     this.toggleSectionsMgmtPanel = this.toggleSectionsMgmtPanel.bind(this);
     this.toggleWidgetsManagementPanel =
       this.toggleWidgetsManagementPanel.bind(this);
+    this.openWidgetsPanel = this.openWidgetsPanel.bind(this);
     this.state = {
       fixedSearch: false,
       colorMode: "",
@@ -709,6 +716,16 @@ export class BaseContent extends React.PureComponent {
     }));
   }
 
+  openWidgetsPanel() {
+    this.openCustomizationMenu();
+    if (!this.state.showWidgetsManagementPanel) {
+      this.setState({
+        showWidgetsManagementPanel: true,
+        showSectionsMgmtPanel: false,
+      });
+    }
+  }
+
   shouldDisplayTopicSelectionModal() {
     const prefs = this.props.Prefs.values;
     const pocketEnabled =
@@ -808,11 +825,14 @@ export class BaseContent extends React.PureComponent {
     const nimbusWidgetsEnabled = prefs.widgetsConfig?.enabled;
     const nimbusListsEnabled = prefs.widgetsConfig?.listsEnabled;
     const nimbusTimerEnabled = prefs.widgetsConfig?.timerEnabled;
+    const nimbusClocksEnabled = prefs.widgetsConfig?.clocksEnabled;
     const nimbusWidgetsTrainhopEnabled = prefs.trainhopConfig?.widgets?.enabled;
     const nimbusListsTrainhopEnabled =
       prefs.trainhopConfig?.widgets?.listsEnabled;
     const nimbusTimerTrainhopEnabled =
       prefs.trainhopConfig?.widgets?.timerEnabled;
+    const nimbusClocksTrainhopEnabled =
+      prefs.trainhopConfig?.widgets?.clocksEnabled;
 
     const mayHaveWidgets =
       prefs["widgets.system.enabled"] ||
@@ -826,24 +846,32 @@ export class BaseContent extends React.PureComponent {
       prefs["widgets.system.focusTimer.enabled"] ||
       nimbusTimerEnabled ||
       nimbusTimerTrainhopEnabled;
+    const mayHaveClocksWidget =
+      prefs["widgets.system.clocks.enabled"] ||
+      nimbusClocksEnabled ||
+      nimbusClocksTrainhopEnabled;
 
     const mayHaveWeatherWidget =
       prefs["widgets.system.weather.enabled"] ||
       prefs.trainhopConfig?.widgets?.weatherEnabled;
-    const showWeatherWidgetInSidebar =
-      novaEnabled &&
-      mayHaveWeatherWidget &&
-      prefs["widgets.weather.enabled"] &&
-      weatherEnabled &&
-      prefs["widgets.weather.size"] === "small";
+
+    const nimbusSportsWidgetEnabled = prefs.widgetsConfig?.sportsWidgetEnabled;
+    const nimbusSportsWidgetTrainhopEnabled =
+      prefs.trainhopConfig?.widgets?.sportsWidgetEnabled;
+    const mayHaveSportsWidget =
+      prefs["widgets.system.sportsWidget.enabled"] ||
+      nimbusSportsWidgetEnabled ||
+      nimbusSportsWidgetTrainhopEnabled;
 
     // These prefs set the initial values on the Customize panel toggle switches
     const enabledWidgets = {
       listsEnabled: prefs["widgets.lists.enabled"],
       timerEnabled: prefs["widgets.focusTimer.enabled"],
+      clocksEnabled: prefs["widgets.clocks.enabled"],
       weatherEnabled: novaEnabled
         ? prefs["widgets.weather.enabled"]
         : prefs.showWeather,
+      sportsWidgetEnabled: prefs["widgets.sportsWidget.enabled"],
       widgetsMaximized: prefs["widgets.maximized"],
       widgetsMayBeMaximized: prefs["widgets.system.maximized"],
     };
@@ -920,6 +948,23 @@ export class BaseContent extends React.PureComponent {
         "DownloadMobilePromoHighlight"
       );
 
+    const multistageMessageFeed = shouldShowOMCHighlight(
+      this.props.Messages,
+      "ASRouterMultistageMessage"
+    ) ? (
+      <ErrorBoundary>
+        <MessageWrapper dispatch={this.props.dispatch}>
+          <ExternalComponentWrapper
+            type="ASROUTER_MULTISTAGE_MESSAGE"
+            messageData={this.props.Messages.messageData}
+            className="asrouter-multistage-message-wrapper"
+          />
+        </MessageWrapper>
+      </ErrorBoundary>
+    ) : null;
+
+    const baseContextValue = { openWidgetsPanel: this.openWidgetsPanel };
+
     // @nova-cleanup(remove-conditional): Remove this conditional and
     // always render the Nova layout below. The classic render() return
     // and all its supporting variables (featureClassName, outerClassName,
@@ -929,139 +974,310 @@ export class BaseContent extends React.PureComponent {
       // Logo renders in .content (above search/topsites) when no Pocket content
       // feed and no content-area widgets are present. When either is enabled,
       // the sidebar provides a better visual anchor.
+      const weatherWidget = WIDGET_REGISTRY.find(w => w.id === "weather");
+      const weatherGoesToSidebar =
+        resolveWidgetHasSidebar(weatherWidget, prefs) &&
+        resolveWidgetSize(weatherWidget, prefs) === "small";
       const hasContentWidgets =
         (mayHaveListsWidget && enabledWidgets.listsEnabled) ||
         (mayHaveTimerWidget && enabledWidgets.timerEnabled) ||
+        (mayHaveClocksWidget && enabledWidgets.clocksEnabled) ||
         (mayHaveWeatherWidget &&
           enabledWidgets.weatherEnabled &&
-          !showWeatherWidgetInSidebar);
+          !weatherGoesToSidebar) ||
+        (mayHaveSportsWidget && enabledWidgets.sportsWidgetEnabled);
       const logoShouldBeCentered = !pocketEnabled && !hasContentWidgets;
 
       return (
-        <div className="nova-outer-wrapper">
-          <div
-            className={`container nova-enabled${logoShouldBeCentered ? " logo-in-content" : ""}`}
-          >
-            <aside className="sidebar-inline-start">
-              {!logoShouldBeCentered && (
-                <ErrorBoundary>
-                  <Logo />
-                </ErrorBoundary>
-              )}
-              {/* Future: Page Nav  */}
-            </aside>
-            {/* Bug 2021460 - Placed before <main> in DOM order so small widgets
+        <BaseContext.Provider value={baseContextValue}>
+          <div className="nova-outer-wrapper">
+            <div
+              className={`container nova-enabled${logoShouldBeCentered ? " logo-in-content" : ""}`}
+            >
+              <aside className="sidebar-inline-start">
+                {!logoShouldBeCentered && (
+                  <ErrorBoundary>
+                    <Logo />
+                  </ErrorBoundary>
+                )}
+                {/* Future: Page Nav  */}
+              </aside>
+              {/* Bug 2021460 - Placed before <main> in DOM order so small widgets
             are tab-focused before the main content feed. */}
-            <aside className="sidebar-inline-end">
-              {/* Small Widgets - Weather */}
-              {showWeatherWidgetInSidebar && (
-                <ErrorBoundary>
-                  <WeatherWidget dispatch={props.dispatch} size="small" />
-                </ErrorBoundary>
-              )}
-            </aside>
-            <main className="content">
-              {logoShouldBeCentered && (
-                <ErrorBoundary>
-                  <Logo />
-                </ErrorBoundary>
-              )}
+              <aside className="sidebar-inline-end">
+                {novaEnabled && (
+                  <ErrorBoundary>
+                    <WidgetsSidebar dispatch={props.dispatch} />
+                  </ErrorBoundary>
+                )}
+              </aside>
+              <main className="content">
+                {logoShouldBeCentered && (
+                  <ErrorBoundary>
+                    <Logo />
+                  </ErrorBoundary>
+                )}
 
-              {/* Search */}
-              {prefs.showSearch && (
-                <ErrorBoundary>
-                  <Search showLogo={false} {...props.Search} />
-                </ErrorBoundary>
-              )}
+                {/* Search */}
+                {prefs.showSearch && (
+                  <ErrorBoundary>
+                    <Search showLogo={false} {...props.Search} />
+                  </ErrorBoundary>
+                )}
 
-              {/* ASRouterNewTabMessage (ASROUTER_NEWTAB_MESSAGE_POSITIONS.ABOVE_TOPSITES) */}
-              {shouldShowASRouterNewTabMessage(
-                this.props.Messages,
-                "ASRouterNewTabMessage",
-                ASROUTER_NEWTAB_MESSAGE_POSITIONS.ABOVE_TOPSITES
-              ) && (
-                <ErrorBoundary>
-                  <MessageWrapper dispatch={this.props.dispatch}>
-                    <ExternalComponentWrapper
-                      type="ASROUTER_NEWTAB_MESSAGE"
-                      messageData={this.props.Messages.messageData}
-                      className="asrouter-newtab-message-wrapper"
+                {/* ASRouterNewTabMessage (ASROUTER_NEWTAB_MESSAGE_POSITIONS.ABOVE_TOPSITES) */}
+                {shouldShowASRouterNewTabMessage(
+                  this.props.Messages,
+                  "ASRouterNewTabMessage",
+                  ASROUTER_NEWTAB_MESSAGE_POSITIONS.ABOVE_TOPSITES
+                ) && (
+                  <ErrorBoundary>
+                    <MessageWrapper dispatch={this.props.dispatch}>
+                      <ExternalComponentWrapper
+                        type="ASROUTER_NEWTAB_MESSAGE"
+                        messageData={this.props.Messages.messageData}
+                        className="asrouter-newtab-message-wrapper"
+                      />
+                    </MessageWrapper>
+                  </ErrorBoundary>
+                )}
+
+                {/* ActivationWindowMessage */}
+                {shouldShowOMCHighlight(
+                  this.props.Messages,
+                  "ActivationWindowMessage"
+                ) && (
+                  <ErrorBoundary>
+                    <MessageWrapper dispatch={this.props.dispatch}>
+                      <ActivationWindowMessage
+                        dispatch={this.props.dispatch}
+                        messageData={this.props.Messages.messageData}
+                      />
+                    </MessageWrapper>
+                  </ErrorBoundary>
+                )}
+
+                {/* TODO: Break out Topsites, Widgets from DiscoveryStreamBase */}
+                {/* Shortcuts / Topsites */}
+                {topSitesEnabled && (
+                  <ErrorBoundary>
+                    <TopSites />
+                  </ErrorBoundary>
+                )}
+
+                {/* ASRouterNewTabMessage (ASROUTER_NEWTAB_MESSAGE_POSITIONS.ABOVE_WIDGETS) */}
+                {shouldShowASRouterNewTabMessage(
+                  this.props.Messages,
+                  "ASRouterNewTabMessage",
+                  ASROUTER_NEWTAB_MESSAGE_POSITIONS.ABOVE_WIDGETS
+                ) && (
+                  <ErrorBoundary>
+                    <MessageWrapper dispatch={this.props.dispatch}>
+                      <ExternalComponentWrapper
+                        type="ASROUTER_NEWTAB_MESSAGE"
+                        messageData={this.props.Messages.messageData}
+                        className="asrouter-newtab-message-wrapper"
+                      />
+                    </MessageWrapper>
+                  </ErrorBoundary>
+                )}
+
+                {/* Widgets */}
+
+                {/* ASRouterNewTabMessage (ASROUTER_NEWTAB_MESSAGE_POSITIONS.ABOVE_CONTENT_FEED) */}
+                {shouldShowASRouterNewTabMessage(
+                  this.props.Messages,
+                  "ASRouterNewTabMessage",
+                  ASROUTER_NEWTAB_MESSAGE_POSITIONS.ABOVE_CONTENT_FEED
+                ) && (
+                  <ErrorBoundary>
+                    <MessageWrapper dispatch={this.props.dispatch}>
+                      <ExternalComponentWrapper
+                        type="ASROUTER_NEWTAB_MESSAGE"
+                        messageData={this.props.Messages.messageData}
+                        className="asrouter-newtab-message-wrapper"
+                      />
+                    </MessageWrapper>
+                  </ErrorBoundary>
+                )}
+
+                {/* Content Feed */}
+                {isDiscoveryStream && (
+                  <ErrorBoundary className="borderless-error">
+                    <DiscoveryStreamBase
+                      locale={props.App.locale}
+                      spocsLoading={this.isSpocsOnDemandExpired}
                     />
-                  </MessageWrapper>
-                </ErrorBoundary>
-              )}
-
-              {/* ActivationWindowMessage */}
+                  </ErrorBoundary>
+                )}
+                {!pocketEnabled && multistageMessageFeed}
+              </main>
+            </div>
+            <ConfirmDialog />
+            <menu className="personalizeButtonWrapper nova-enabled">
+              <CustomizeMenu
+                onClose={this.closeCustomizationMenu}
+                onOpen={this.openCustomizationMenu}
+                openPreferences={this.openPreferences}
+                setPref={this.setPref}
+                enabledSections={enabledSections}
+                enabledWidgets={enabledWidgets}
+                wallpapersEnabled={wallpapersEnabled}
+                wallpapersUserEnabled={wallpapersUserEnabled}
+                activeWallpaper={activeWallpaper}
+                pocketRegion={pocketRegion}
+                mayHaveTopicSections={mayHavePersonalizedTopicSections}
+                mayHaveInferredPersonalization={mayHaveInferredPersonalization}
+                mayHaveWeather={mayHaveWeather}
+                mayHaveWidgets={mayHaveWidgets}
+                mayHaveTimerWidget={mayHaveTimerWidget}
+                mayHaveListsWidget={mayHaveListsWidget}
+                mayHaveSportsWidget={mayHaveSportsWidget}
+                mayHaveClocksWidget={mayHaveClocksWidget}
+                mayHaveWeatherForecast={
+                  prefs["widgets.system.weatherForecast.enabled"]
+                }
+                weatherDisplay={prefs["weather.display"]}
+                showing={customizeMenuVisible}
+                toggleSectionsMgmtPanel={this.toggleSectionsMgmtPanel}
+                showSectionsMgmtPanel={this.state.showSectionsMgmtPanel}
+                showWidgetsManagementPanel={
+                  this.state.showWidgetsManagementPanel
+                }
+                toggleWidgetsManagementPanel={this.toggleWidgetsManagementPanel}
+                widgetsEnabled={prefs["widgets.enabled"]}
+                dispatch={this.props.dispatch}
+              />
               {shouldShowOMCHighlight(
                 this.props.Messages,
-                "ActivationWindowMessage"
+                "CustomWallpaperHighlight"
               ) && (
-                <ErrorBoundary>
+                <MessageWrapper dispatch={this.props.dispatch}>
+                  <WallpaperFeatureHighlight
+                    position="inset-block-start inset-inline-start"
+                    dispatch={this.props.dispatch}
+                  />
+                </MessageWrapper>
+              )}
+            </menu>
+            {this.props.Notifications?.showNotifications && (
+              <ErrorBoundary>
+                <Notifications dispatch={this.props.dispatch} />
+              </ErrorBoundary>
+            )}
+          </div>
+        </BaseContext.Provider>
+      );
+    }
+
+    // @nova-cleanup(remove-conditional): Delete this entire classic return block along with all variables only used here
+    return (
+      <BaseContext.Provider value={baseContextValue}>
+        <div className={featureClassName}>
+          <div className="weatherWrapper">
+            {!novaEnabled && weatherEnabled && (
+              <ErrorBoundary>
+                <Weather />
+              </ErrorBoundary>
+            )}
+          </div>
+          <div
+            className={`mobileDownloadPromoWrapper ${mobileDownloadPromoWrapperHeightModifier}`}
+          >
+            {mobileDownloadPromoEnabled && mobileDownloadPromoVariantABorC && (
+              <ErrorBoundary>
+                <DownloadModalToggle
+                  isActive={shouldShowDownloadHighlight}
+                  onClick={this.toggleDownloadHighlight}
+                />
+                {shouldShowDownloadHighlight && (
+                  <MessageWrapper
+                    hiddenOverride={shouldShowDownloadHighlight}
+                    onDismiss={this.handleDismissDownloadHighlight}
+                    dispatch={this.props.dispatch}
+                  >
+                    <DownloadMobilePromoHighlight
+                      position={`inset-inline-start inset-block-end`}
+                      dispatch={this.props.dispatch}
+                    />
+                  </MessageWrapper>
+                )}
+              </ErrorBoundary>
+            )}
+          </div>
+
+          <div className={outerClassName}>
+            <main className="newtab-main" style={this.state.fixedNavStyle}>
+              {prefs.showSearch && (
+                <div className="non-collapsible-section">
+                  <ErrorBoundary>
+                    <Search
+                      showLogo={
+                        noSectionsEnabled || prefs["logowordmark.alwaysVisible"]
+                      }
+                      {...props.Search}
+                    />
+                  </ErrorBoundary>
+                </div>
+              )}
+              {/* Bug 1914055: Show logo regardless if search is enabled */}
+              {!prefs.showSearch && !noSectionsEnabled && <Logo />}
+              <div className={`body-wrapper${initialized ? " on" : ""}`}>
+                {shouldShowOMCHighlight(
+                  this.props.Messages,
+                  "ActivationWindowMessage"
+                ) && (
                   <MessageWrapper dispatch={this.props.dispatch}>
                     <ActivationWindowMessage
                       dispatch={this.props.dispatch}
                       messageData={this.props.Messages.messageData}
                     />
                   </MessageWrapper>
-                </ErrorBoundary>
-              )}
+                )}
 
-              {/* TODO: Break out Topsites, Widgets from DiscoveryStreamBase */}
-              {/* Shortcuts / Topsites */}
-              {topSitesEnabled && (
-                <ErrorBoundary>
-                  <TopSites />
-                </ErrorBoundary>
-              )}
+                {shouldShowASRouterNewTabMessage(
+                  this.props.Messages,
+                  "ASRouterNewTabMessage",
+                  ASROUTER_NEWTAB_MESSAGE_POSITIONS.ABOVE_TOPSITES
+                ) && (
+                  <ErrorBoundary>
+                    <MessageWrapper dispatch={this.props.dispatch}>
+                      <ExternalComponentWrapper
+                        type="ASROUTER_NEWTAB_MESSAGE"
+                        messageData={this.props.Messages.messageData}
+                        className="asrouter-newtab-message-wrapper"
+                      />
+                    </MessageWrapper>
+                  </ErrorBoundary>
+                )}
 
-              {/* ASRouterNewTabMessage (ASROUTER_NEWTAB_MESSAGE_POSITIONS.ABOVE_WIDGETS) */}
-              {shouldShowASRouterNewTabMessage(
-                this.props.Messages,
-                "ASRouterNewTabMessage",
-                ASROUTER_NEWTAB_MESSAGE_POSITIONS.ABOVE_WIDGETS
-              ) && (
-                <ErrorBoundary>
-                  <MessageWrapper dispatch={this.props.dispatch}>
-                    <ExternalComponentWrapper
-                      type="ASROUTER_NEWTAB_MESSAGE"
-                      messageData={this.props.Messages.messageData}
-                      className="asrouter-newtab-message-wrapper"
+                {isDiscoveryStream ? (
+                  <ErrorBoundary className="borderless-error">
+                    <DiscoveryStreamBase
+                      locale={props.App.locale}
+                      spocsLoading={this.isSpocsOnDemandExpired}
                     />
-                  </MessageWrapper>
-                </ErrorBoundary>
-              )}
-
-              {/* Widgets */}
-
-              {/* ASRouterNewTabMessage (ASROUTER_NEWTAB_MESSAGE_POSITIONS.ABOVE_CONTENT_FEED) */}
-              {shouldShowASRouterNewTabMessage(
-                this.props.Messages,
-                "ASRouterNewTabMessage",
-                ASROUTER_NEWTAB_MESSAGE_POSITIONS.ABOVE_CONTENT_FEED
-              ) && (
-                <ErrorBoundary>
-                  <MessageWrapper dispatch={this.props.dispatch}>
-                    <ExternalComponentWrapper
-                      type="ASROUTER_NEWTAB_MESSAGE"
-                      messageData={this.props.Messages.messageData}
-                      className="asrouter-newtab-message-wrapper"
-                    />
-                  </MessageWrapper>
-                </ErrorBoundary>
-              )}
-
-              {/* Content Feed */}
-              {isDiscoveryStream && (
-                <ErrorBoundary className="borderless-error">
-                  <DiscoveryStreamBase
-                    locale={props.App.locale}
-                    spocsLoading={this.isSpocsOnDemandExpired}
-                  />
-                </ErrorBoundary>
-              )}
+                  </ErrorBoundary>
+                ) : (
+                  <Sections />
+                )}
+              </div>
+              <ConfirmDialog />
+              {wallpapersEnabled && this.renderWallpaperAttribution()}
             </main>
+            <aside>
+              {this.props.Notifications?.showNotifications && (
+                <ErrorBoundary>
+                  <Notifications dispatch={this.props.dispatch} />
+                </ErrorBoundary>
+              )}
+            </aside>
+            {/* Only show the modal on currently visible pages (not preloaded) */}
+            {mayShowTopicSelection && pocketEnabled && (
+              <TopicSelection supportUrl={supportUrl} />
+            )}
           </div>
-          <ConfirmDialog />
+          {/* Floating menu for customize menu toggle */}
           <menu className="personalizeButtonWrapper">
             <CustomizeMenu
               onClose={this.closeCustomizationMenu}
@@ -1080,6 +1296,8 @@ export class BaseContent extends React.PureComponent {
               mayHaveWidgets={mayHaveWidgets}
               mayHaveTimerWidget={mayHaveTimerWidget}
               mayHaveListsWidget={mayHaveListsWidget}
+              mayHaveSportsWidget={mayHaveSportsWidget}
+              mayHaveClocksWidget={mayHaveClocksWidget}
               mayHaveWeatherForecast={
                 prefs["widgets.system.weatherForecast.enabled"]
               }
@@ -1087,167 +1305,21 @@ export class BaseContent extends React.PureComponent {
               showing={customizeMenuVisible}
               toggleSectionsMgmtPanel={this.toggleSectionsMgmtPanel}
               showSectionsMgmtPanel={this.state.showSectionsMgmtPanel}
-              showWidgetsManagementPanel={this.state.showWidgetsManagementPanel}
-              toggleWidgetsManagementPanel={this.toggleWidgetsManagementPanel}
-              widgetsEnabled={prefs["widgets.enabled"]}
-              dispatch={this.props.dispatch}
             />
-          </menu>
-          {this.props.Notifications?.showNotifications && (
-            <ErrorBoundary>
-              <Notifications dispatch={this.props.dispatch} />
-            </ErrorBoundary>
-          )}
-        </div>
-      );
-    }
-
-    // @nova-cleanup(remove-conditional): Delete this entire classic return block along with all variables only used here
-    return (
-      <div className={featureClassName}>
-        <div className="weatherWrapper">
-          {!novaEnabled && weatherEnabled && (
-            <ErrorBoundary>
-              <Weather />
-            </ErrorBoundary>
-          )}
-        </div>
-        <div
-          className={`mobileDownloadPromoWrapper ${mobileDownloadPromoWrapperHeightModifier}`}
-        >
-          {mobileDownloadPromoEnabled && mobileDownloadPromoVariantABorC && (
-            <ErrorBoundary>
-              <DownloadModalToggle
-                isActive={shouldShowDownloadHighlight}
-                onClick={this.toggleDownloadHighlight}
-              />
-              {shouldShowDownloadHighlight && (
-                <MessageWrapper
-                  hiddenOverride={shouldShowDownloadHighlight}
-                  onDismiss={this.handleDismissDownloadHighlight}
+            {shouldShowOMCHighlight(
+              this.props.Messages,
+              "CustomWallpaperHighlight"
+            ) && (
+              <MessageWrapper dispatch={this.props.dispatch}>
+                <WallpaperFeatureHighlight
+                  position="inset-block-start inset-inline-start"
                   dispatch={this.props.dispatch}
-                >
-                  <DownloadMobilePromoHighlight
-                    position={`inset-inline-start inset-block-end`}
-                    dispatch={this.props.dispatch}
-                  />
-                </MessageWrapper>
-              )}
-            </ErrorBoundary>
-          )}
-        </div>
-
-        <div className={outerClassName}>
-          <main className="newtab-main" style={this.state.fixedNavStyle}>
-            {prefs.showSearch && (
-              <div className="non-collapsible-section">
-                <ErrorBoundary>
-                  <Search
-                    showLogo={
-                      noSectionsEnabled || prefs["logowordmark.alwaysVisible"]
-                    }
-                    {...props.Search}
-                  />
-                </ErrorBoundary>
-              </div>
+                />
+              </MessageWrapper>
             )}
-            {/* Bug 1914055: Show logo regardless if search is enabled */}
-            {!prefs.showSearch && !noSectionsEnabled && <Logo />}
-            <div className={`body-wrapper${initialized ? " on" : ""}`}>
-              {shouldShowOMCHighlight(
-                this.props.Messages,
-                "ActivationWindowMessage"
-              ) && (
-                <MessageWrapper dispatch={this.props.dispatch}>
-                  <ActivationWindowMessage
-                    dispatch={this.props.dispatch}
-                    messageData={this.props.Messages.messageData}
-                  />
-                </MessageWrapper>
-              )}
-
-              {shouldShowASRouterNewTabMessage(
-                this.props.Messages,
-                "ASRouterNewTabMessage",
-                ASROUTER_NEWTAB_MESSAGE_POSITIONS.ABOVE_TOPSITES
-              ) && (
-                <ErrorBoundary>
-                  <MessageWrapper dispatch={this.props.dispatch}>
-                    <ExternalComponentWrapper
-                      type="ASROUTER_NEWTAB_MESSAGE"
-                      messageData={this.props.Messages.messageData}
-                      className="asrouter-newtab-message-wrapper"
-                    />
-                  </MessageWrapper>
-                </ErrorBoundary>
-              )}
-
-              {isDiscoveryStream ? (
-                <ErrorBoundary className="borderless-error">
-                  <DiscoveryStreamBase
-                    locale={props.App.locale}
-                    spocsLoading={this.isSpocsOnDemandExpired}
-                  />
-                </ErrorBoundary>
-              ) : (
-                <Sections />
-              )}
-            </div>
-            <ConfirmDialog />
-            {wallpapersEnabled && this.renderWallpaperAttribution()}
-          </main>
-          <aside>
-            {this.props.Notifications?.showNotifications && (
-              <ErrorBoundary>
-                <Notifications dispatch={this.props.dispatch} />
-              </ErrorBoundary>
-            )}
-          </aside>
-          {/* Only show the modal on currently visible pages (not preloaded) */}
-          {mayShowTopicSelection && pocketEnabled && (
-            <TopicSelection supportUrl={supportUrl} />
-          )}
+          </menu>
         </div>
-        {/* Floating menu for customize menu toggle */}
-        <menu className="personalizeButtonWrapper">
-          <CustomizeMenu
-            onClose={this.closeCustomizationMenu}
-            onOpen={this.openCustomizationMenu}
-            openPreferences={this.openPreferences}
-            setPref={this.setPref}
-            enabledSections={enabledSections}
-            enabledWidgets={enabledWidgets}
-            wallpapersEnabled={wallpapersEnabled}
-            wallpapersUserEnabled={wallpapersUserEnabled}
-            activeWallpaper={activeWallpaper}
-            pocketRegion={pocketRegion}
-            mayHaveTopicSections={mayHavePersonalizedTopicSections}
-            mayHaveInferredPersonalization={mayHaveInferredPersonalization}
-            mayHaveWeather={mayHaveWeather}
-            mayHaveWidgets={mayHaveWidgets}
-            mayHaveTimerWidget={mayHaveTimerWidget}
-            mayHaveListsWidget={mayHaveListsWidget}
-            mayHaveWeatherForecast={
-              prefs["widgets.system.weatherForecast.enabled"]
-            }
-            weatherDisplay={prefs["weather.display"]}
-            showing={customizeMenuVisible}
-            toggleSectionsMgmtPanel={this.toggleSectionsMgmtPanel}
-            showSectionsMgmtPanel={this.state.showSectionsMgmtPanel}
-          />
-          {shouldShowOMCHighlight(
-            this.props.Messages,
-            "CustomWallpaperHighlight"
-          ) && (
-            <MessageWrapper dispatch={this.props.dispatch}>
-              <WallpaperFeatureHighlight
-                position="inset-block-start inset-inline-start"
-                dispatch={this.props.dispatch}
-              />
-            </MessageWrapper>
-          )}
-        </menu>
-      </div>
+      </BaseContext.Provider>
     );
   }
 }

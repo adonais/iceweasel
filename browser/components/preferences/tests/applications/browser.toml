@@ -1,37 +1,22 @@
 [DEFAULT]
+prefs = [
+  "browser.settings-redesign.enabled=false",
+]
 support-files = [
   "head.js",
   "../head.js",
 ]
 tags = "os_integration"
 
-["browser_application_xml_handle_internally.js"]
-
 ["browser_application_xml_handle_internally_xul.js"]
 
-["browser_applications_filter.js"]
-
-["browser_applications_selection.js"]
-
 ["browser_applications_selection_xul.js"]
-
-["browser_change_app_handler.js"]
-run-if = [
-  "os == 'win'", # Windows-specific handler application selection dialog
-]
 
 ["browser_change_app_handler_xul.js"]
 run-if = [
   "os == 'win'", # Windows-specific handler application selection dialog
 ]
 
-["browser_filetype_dialog.js"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt && a11y_checks", # Bug 2021536
-]
-
 ["browser_filetype_dialog_xul.js"]
-
-["browser_pdf_disabled.js"]
 
 ["browser_pdf_disabled_xul.js"]

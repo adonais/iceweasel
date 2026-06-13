@@ -1100,7 +1100,7 @@ class AccessibleWalkerActor extends Actor {
    */
   _findAndAttachAccessible(event) {
     const target = event.originalTarget || event.target;
-    const win = target.ownerGlobal;
+    const win = target.documentGlobal;
     // This event might be inside a sub-document, so don't use this.rootDoc.
     const docAcc = this.getRawAccessibleFor(win.document);
     // If the target is inside a pop-up widget, we need to query the pop-up

@@ -21,8 +21,7 @@ def CompiledModules(*modules):
         final_target = "/dist/bin"
 
     final = "/".join([final_target, "chrome/devtools/modules", RELATIVEDIR])
-    # For the same reason as https://searchfox.org/mozilla-central/source/mobile/android/base/moz.build#180-184
-    # we have to insert a first entry as recursivemake overrides the first entry and we end up with empty files
+    # We have to insert a first entry as recursivemake overrides the first entry and we end up with empty files
     # for the first file only.
     GeneratedFile(
         "node.stub",

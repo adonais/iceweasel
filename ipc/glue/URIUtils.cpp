@@ -13,6 +13,7 @@
 #include "nsComponentManagerUtils.h"
 #include "nsDebug.h"
 #include "nsID.h"
+#include "nsIIPCSerializableURI.h"
 #include "nsJARURI.h"
 #include "nsIIconURI.h"
 #include "nsJSProtocolHandler.h"
@@ -38,7 +39,11 @@ namespace ipc {
 void SerializeURI(nsIURI* aURI, URIParams& aParams) {
   MOZ_ASSERT(aURI);
 
-  aURI->Serialize(aParams);
+  nsCOMPtr<nsIIPCSerializableURI> serializable = do_QueryInterface(aURI);
+  if (!serializable) {
+    MOZ_CRASH("URI does not implement nsIIPCSerializableURI!");
+  }
+  serializable->Serialize(aParams);
   if (aParams.type() == URIParams::T__None) {
     MOZ_CRASH("Serialize failed!");
   }

@@ -14,15 +14,6 @@ namespace mozilla {
 void MappedDeclarationsBuilder::SetIdentAtomValue(NonCustomCSSPropertyId aId,
                                                   nsAtom* aValue) {
   Servo_DeclarationBlock_SetIdentStringValue(&EnsureDecls(), aId, aValue);
-  if (aId == eCSSProperty__x_lang) {
-    // This forces the lang prefs result to be cached so that we can access them
-    // off main thread during traversal.
-    //
-    // FIXME(emilio): Can we move mapped attribute declarations across
-    // documents? Isn't this wrong in that case? This is pretty out of place
-    // anyway.
-    mDocument.ForceCacheLang(aValue);
-  }
 }
 
 void MappedDeclarationsBuilder::SetBackgroundImage(const nsAttrValue& aValue) {

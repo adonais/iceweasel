@@ -9,6 +9,7 @@ package org.mozilla.fenix.longfox
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -69,7 +70,7 @@ fun LongFoxGameScreen() {
             celebrationShown = gameState.shouldCelebrateScore
         }
 
-        // Tap events need to be passed through to the game.
+        // Tap and swipe events need to be passed through to the game.
         // Position should be recalculated if the screen is resized / configuration changed.
         val canvasOffsetXPx = (maxWidth.value * density - canvasSizePx) / 2f
         val canvasOffsetYPx = (maxHeight.value * density - canvasSizePx) / 2f
@@ -77,6 +78,9 @@ fun LongFoxGameScreen() {
             gameState = gameState.onTap(
                 Offset(offset.x - canvasOffsetXPx, offset.y - canvasOffsetYPx),
             )
+        }
+        val onSwipe by rememberUpdatedState { direction: Direction ->
+            gameState = gameState.onSwipe(direction)
         }
         val context = LocalContext.current
         val coroutineScope = rememberCoroutineScope()
@@ -114,11 +118,33 @@ fun LongFoxGameScreen() {
             coroutineScope.launch { longFoxDataStore.saveIfHiscore(gameState.score) }
         }
 
+        val minSwipeDistance = 50f
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .pointerInput(Unit) {
                     detectTapGestures(onTap = { onTap(it) })
+                }
+                .pointerInput(Unit) {
+                    var totalDrag = Offset.Zero
+                    detectDragGestures(
+                        onDrag = { change, dragAmount ->
+                            change.consume()
+                            totalDrag += dragAmount
+                        },
+                        onDragEnd = {
+                            val (dx, dy) = totalDrag
+                            if (maxOf(kotlin.math.abs(dx), kotlin.math.abs(dy)) >= minSwipeDistance) {
+                                val direction = if (kotlin.math.abs(dx) > kotlin.math.abs(dy)) {
+                                    if (dx > 0) Direction.RIGHT else Direction.LEFT
+                                } else {
+                                    if (dy > 0) Direction.DOWN else Direction.UP
+                                }
+                                onSwipe(direction)
+                            }
+                            totalDrag = Offset.Zero
+                        },
+                    )
                 },
             contentAlignment = Alignment.Center,
         ) {

@@ -26,6 +26,7 @@ add_task(async () => {
   );
 
   checkStartupReason("firstrun-created-default");
+  await checkProfileSource(profile, "firstrun-created-default");
 
   let profileData = readProfilesIni();
   checkProfileService(profileData);
@@ -41,6 +42,9 @@ add_task(async () => {
     DEDICATED_NAME,
     "Should have created a new profile with the right name."
   );
+
+  profile = [...getProfileService().profiles].find(p => p.name == "default");
+  await checkProfileSource(profile, "legacy");
 
   Assert.ok(
     profileData.options.startWithLastProfile,

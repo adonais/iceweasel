@@ -502,9 +502,9 @@ nsWindowWatcher::OpenWindowWithRemoteTab(
   RefPtr<BrowsingContext> parentBC = aOpenWindowInfo->GetParent();
   if (parentBC) {
     RefPtr<Element> browserElement = parentBC->Top()->GetEmbedderElement();
-    if (browserElement && browserElement->GetOwnerGlobal() &&
-        browserElement->GetOwnerGlobal()->GetAsInnerWindow()) {
-      parentWindowOuter = browserElement->GetOwnerGlobal()
+    if (browserElement && browserElement->GetRelevantGlobal() &&
+        browserElement->GetRelevantGlobal()->GetAsInnerWindow()) {
+      parentWindowOuter = browserElement->GetRelevantGlobal()
                               ->GetAsInnerWindow()
                               ->GetOuterWindow();
     }
@@ -1318,9 +1318,15 @@ nsresult nsWindowWatcher::OpenWindowInternal(
           targetDocShell->GetBrowsingContext()->GetSessionStorageManager();
 
       if (parentStorageManager && newStorageManager) {
+        nsCOMPtr<nsIPrincipal> storagePrincipal;
+        if (parentDoc) {
+          storagePrincipal = parentDoc->EffectiveStoragePrincipal();
+        } else {
+          storagePrincipal = subjectPrincipal;
+        }
         RefPtr<Storage> storage;
         parentStorageManager->GetStorage(
-            parentInnerWin, subjectPrincipal, subjectPrincipal,
+            parentInnerWin, subjectPrincipal, storagePrincipal,
             targetBC->UsePrivateBrowsing(), getter_AddRefs(storage));
         if (storage) {
           newStorageManager->CloneStorage(storage);

@@ -181,7 +181,7 @@ class nsMIMEInfoImpl : public nsMIMEInfoBase {
       : nsMIMEInfoBase(aMIMEType) {}
   nsMIMEInfoImpl(const nsACString& aType, HandlerClass aClass)
       : nsMIMEInfoBase(aType, aClass) {}
-  virtual ~nsMIMEInfoImpl() {}
+  virtual ~nsMIMEInfoImpl() = default;
 
   // nsIMIMEInfo methods
   NS_IMETHOD GetHasDefaultHandler(bool* _retval) override;

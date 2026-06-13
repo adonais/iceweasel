@@ -199,9 +199,16 @@ class AndroidXPCShellRunner(MozbuildObject):
 def get_parser():
     build_obj = MozbuildObject.from_environment(cwd=here)
     if conditions.is_android(build_obj):
-        return parser_remote()
+        parser = parser_remote()
     else:
-        return parser_desktop()
+        parser = parser_desktop()
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        default=False,
+        help="Force reinstallation of test symlinks even if up to date.",
+    )
+    return parser
 
 
 @Command(
@@ -222,8 +229,9 @@ def run_xpcshell_test(command_context, test_objects=None, **params):
         m.tests.extend(test_objects)
         params["manifest"] = m
 
+    force = params.pop("force", False)
     driver = command_context._spawn(BuildDriver)
-    driver.install_tests()
+    driver.install_tests(force=force)
 
     # We should probably have a utility function to ensure the tree is
     # ready to run tests. Until then, we just create the state dir (in

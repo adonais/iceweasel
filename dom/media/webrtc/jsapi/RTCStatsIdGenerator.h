@@ -26,7 +26,7 @@ class RTCStatsIdGenerator {
                   dom::RTCStatsCollection* aIntoReport);
 
  private:
-  virtual ~RTCStatsIdGenerator() {};
+  virtual ~RTCStatsIdGenerator() = default;
   nsString Id(const nsString& aKey);
   nsString Generate();
 

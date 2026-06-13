@@ -14,14 +14,16 @@
   "resource://gre/res/locale/layout/xmlparser.properties"
 
 class nsParserMsgUtils {
-  nsParserMsgUtils();   // Currently this is not meant to be created, use the
-                        // static methods
-  ~nsParserMsgUtils();  // If perf required, change this to cache values etc.
  public:
   static nsresult GetLocalizedStringByName(const char* aPropFileName,
                                            const char* aKey, nsString& aVal);
   static nsresult GetLocalizedStringByID(const char* aPropFileName,
                                          uint32_t aID, nsString& aVal);
+
+  nsParserMsgUtils() = delete;  // Currently this is not meant to be created,
+                                // use the static methods
+  ~nsParserMsgUtils() =
+      delete;  // If perf required, change this to cache values etc.
 };
 
 #endif

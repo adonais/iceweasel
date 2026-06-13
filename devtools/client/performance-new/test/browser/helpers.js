@@ -167,7 +167,7 @@ async function makeSureProfilerPopupIsEnabled() {
       "> Waiting until the profiler button is added to the browser."
     );
 
-    await SimpleTest.promiseFocus(gBrowser.ownerGlobal);
+    await SimpleTest.promiseFocus(gBrowser.documentGlobal);
 
     registerCleanupFunction(() => {
       info(

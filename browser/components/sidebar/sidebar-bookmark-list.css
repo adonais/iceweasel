@@ -82,6 +82,11 @@ details summary,
     }
   }
 
+  &:focus-visible {
+    outline: var(--focus-outline);
+    outline-offset: var(--focus-outline-inset);
+  }
+
   &::before {
     content: "";
     display: inline-block;
@@ -107,11 +112,11 @@ details {
 }
 
 sidebar-bookmark-row {
-  border-radius: var(--border-radius-medium);
+  border-radius: var(--border-radius-circle);
   height: var(--size-item-large);
   align-items: center;
 
-  &:hover {
+  &:hover:not([selected]) {
     background-color: var(--button-background-color-ghost-hover);
     color: var(--button-text-color-ghost-hover);
 
@@ -119,5 +124,15 @@ sidebar-bookmark-row {
       background-color: var(--button-background-color-ghost-active);
       color: var(--button-text-color-ghost-active);
     }
+  }
+
+  &:focus-visible {
+    outline: var(--focus-outline);
+    outline-offset: var(--focus-outline-inset);
+  }
+
+  /* stylelint-disable-next-line media-query-no-invalid */
+  @media not -moz-pref("browser.nova.enabled") {
+    border-radius: var(--border-radius-medium);
   }
 }

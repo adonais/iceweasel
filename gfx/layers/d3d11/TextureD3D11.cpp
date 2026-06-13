@@ -383,10 +383,10 @@ void D3D11TextureData::SyncWithObject(RefPtr<SyncObjectClient> aSyncObject) {
 
 bool D3D11TextureData::SerializeSpecific(
     SurfaceDescriptorD3D10* const aOutDesc) {
-  *aOutDesc = SurfaceDescriptorD3D10(mSharedHandle, mGpuProcessTextureId,
-                                     mArrayIndex, mFormat, mSize, mColorSpace,
-                                     mColorRange, mTransferFunction,
-                                     mHasKeyedMutex, mFencesHolderId);
+  *aOutDesc = SurfaceDescriptorD3D10(
+      mSharedHandle, mGpuProcessTextureId, mArrayIndex, mFormat, mSize,
+      mColorSpace, mColorRange, mTransferFunction, mHDRMetadata, mHasKeyedMutex,
+      mFencesHolderId);
   return true;
 }
 
@@ -411,6 +411,7 @@ already_AddRefed<TextureClient> D3D11TextureData::CreateTextureClient(
     ID3D11Texture2D* aTexture, uint32_t aIndex, gfx::IntSize aSize,
     gfx::SurfaceFormat aFormat, gfx::ColorSpace2 aColorSpace,
     gfx::ColorRange aColorRange, gfx::TransferFunction aTransferFunction,
+    const Maybe<gfx::HDRMetadata>& aHDRMetadata,
     KnowsCompositor* aKnowsCompositor, ZeroCopyUsageInfo* aUsageInfo,
     const RefPtr<FenceD3D11> aWriteFence) {
   MOZ_ASSERT(aTexture);
@@ -431,6 +432,7 @@ already_AddRefed<TextureClient> D3D11TextureData::CreateTextureClient(
   data->mColorSpace = aColorSpace;
   data->SetColorRange(aColorRange);
   data->SetTransferFunction(aTransferFunction);
+  data->SetHDRMetadata(aHDRMetadata);
 
   RefPtr<TextureClient> textureClient = MakeAndAddRef<TextureClient>(
       data, TextureFlags::NO_FLAGS,
@@ -969,7 +971,8 @@ DXGITextureHostD3D11::DXGITextureHostD3D11(
       mFencesHolderId(aDescriptor.fencesHolderId()),
       mColorSpace(aDescriptor.colorSpace()),
       mColorRange(aDescriptor.colorRange()),
-      mTransferFunction(aDescriptor.transferFunction()) {
+      mTransferFunction(aDescriptor.transferFunction()),
+      mHDRMetadata(aDescriptor.hdrMetadata()) {
   if (!mFencesHolderId) {
     return;
   }
@@ -1103,7 +1106,8 @@ void DXGITextureHostD3D11::CreateRenderTexture(
 
   RefPtr<wr::RenderDXGITextureHost> texture = new wr::RenderDXGITextureHost(
       mHandle, mGpuProcessTextureId, mArrayIndex, mFormat, mColorSpace,
-      mColorRange, mTransferFunction, mSize, mHasKeyedMutex, mFencesHolderId);
+      mColorRange, mTransferFunction, mHDRMetadata, mSize, mHasKeyedMutex,
+      mFencesHolderId);
   if (mFlags & TextureFlags::SOFTWARE_DECODED_VIDEO) {
     texture->SetIsSoftwareDecodedVideo();
   }

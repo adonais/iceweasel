@@ -88,6 +88,34 @@ def memberXrayExpandoReservedSlot(member, descriptor):
     return reservedSlot(getSlotIndex(member, descriptor), True)
 
 
+def getReservedSlotFunc(descriptor, mayBeXray=False):
+    # Try to use js::GetProxyReservedSlot or JS::GetNativeObjectReservedSlot
+    # instead of the generic JS::GetReservedSlot to avoid a branch and reduce
+    # binary size.
+    #
+    # If mayBeXray is True, the object may be either the descriptor's reflector
+    # or an Xray expando (always a native object).
+    if descriptor.concrete and descriptor.proxy:
+        if mayBeXray:
+            return "JS::GetReservedSlot"
+        return "js::GetProxyReservedSlot"
+    return "JS::GetNativeObjectReservedSlot"
+
+
+def setReservedSlotFunc(descriptor, mayBeXray=False):
+    # Try to use js::SetProxyReservedSlot or JS::SetNativeObjectReservedSlot
+    # instead of the generic JS::SetReservedSlot to avoid a branch and reduce
+    # binary size.
+    #
+    # If mayBeXray is True, the object may be either the descriptor's reflector
+    # or an Xray expando (always a native object).
+    if descriptor.concrete and descriptor.proxy:
+        if mayBeXray:
+            return "JS::SetReservedSlot"
+        return "js::SetProxyReservedSlot"
+    return "JS::SetNativeObjectReservedSlot"
+
+
 def mayUseXrayExpandoSlots(descriptor, attr):
     assert not attr.getExtendedAttribute("NewObject")
     # For attributes whose type is a Gecko interface we always use
@@ -630,7 +658,6 @@ def DOMClass(descriptor):
           { ${protoChain} },
           std::is_base_of_v<nsISupports, ${nativeType}>,
           ${hooks},
-          FindAssociatedGlobalForNative<${nativeType}>::Get,
           ${getProto},
           GetCCParticipant<${nativeType}>::Get(),
           ${serializer},
@@ -2097,7 +2124,37 @@ class CGDefineHTMLAttributeSlots(CGThing):
 
 
 def finalizeHook(descriptor, gcx, obj):
-    finalize = "JS::SetReservedSlot(%s, DOM_OBJECT_SLOT, JS::UndefinedValue());\n" % obj
+    def cleanUpObservableArrayProxy(descriptor, obj, getReservedSlotFunc):
+        ret = ""
+        parent = descriptor.interface.parent
+        if parent:
+            ret += cleanUpObservableArrayProxy(descriptor.getDescriptor(parent.identifier.name), obj, getReservedSlotFunc)
+        for m in descriptor.interface.members:
+            if m.isAttr() and m.type.isObservableArray():
+                ret += fill(
+                    """
+                    {
+                      JS::Value val = ${getReservedSlotFunc}(${obj}, ${slot});
+                      if (!val.isUndefined()) {
+                        JSObject* proxyObj = &val.toObject();
+                        js::SetProxyReservedSlot(proxyObj, OBSERVABLE_ARRAY_DOM_INTERFACE_SLOT, JS::UndefinedValue());
+                      }
+                    }
+                    """,
+                    getReservedSlotFunc=getReservedSlotFunc,
+                    obj=obj,
+                    slot=memberReservedSlot(m, descriptor),
+                )
+        return ret
+
+    finalize = fill(
+        """
+        ${setReservedSlot}(${obj}, DOM_OBJECT_SLOT, JS::UndefinedValue());
+        """,
+        setReservedSlot=setReservedSlotFunc(descriptor),
+        obj=obj,
+    )
+    finalize += cleanUpObservableArrayProxy(descriptor, obj, getReservedSlotFunc(descriptor))
     if descriptor.interface.getExtendedAttribute("LegacyOverrideBuiltIns"):
         finalize += fill(
             """
@@ -2121,20 +2178,6 @@ def finalizeHook(descriptor, gcx, obj):
             """,
             obj=obj,
         )
-    for m in descriptor.interface.members:
-        if m.isAttr() and m.type.isObservableArray():
-            finalize += fill(
-                """
-                {
-                  JS::Value val = JS::GetReservedSlot(obj, ${slot});
-                  if (!val.isUndefined()) {
-                    JSObject* proxyObj = &val.toObject();
-                    js::SetProxyReservedSlot(proxyObj, OBSERVABLE_ARRAY_DOM_INTERFACE_SLOT, JS::UndefinedValue());
-                  }
-                }
-                """,
-                slot=memberReservedSlot(m, descriptor),
-            )
     iface = getReflectedHTMLAttributesIface(descriptor)
     if iface:
         finalize += "%s::ReflectedHTMLAttributeSlots::Finalize(%s);\n" % (
@@ -3895,8 +3938,8 @@ class CGCreateInterfaceObjectsMethod(CGAbstractMethod):
                 dedent(
                     """
                 if (*protoCache) {
-                  JS::SetReservedSlot(*protoCache, DOM_INTERFACE_PROTO_SLOTS_BASE,
-                                      JS::ObjectValue(*unforgeableHolder));
+                  JS::SetNativeObjectReservedSlot(*protoCache, DOM_INTERFACE_PROTO_SLOTS_BASE,
+                                                  JS::ObjectValue(*unforgeableHolder));
                 }
                 """
                 )
@@ -4528,7 +4571,7 @@ def CopyUnforgeablePropertiesToInstance(descriptor, failureCode):
             fill(
                 """
         JS::Rooted<JSObject*> unforgeableHolder(aCx,
-          &JS::GetReservedSlot(canonicalProto, DOM_INTERFACE_PROTO_SLOTS_BASE).toObject());
+          &JS::GetNativeObjectReservedSlot(canonicalProto, DOM_INTERFACE_PROTO_SLOTS_BASE).toObject());
         if (!JS_InitializePropertiesFromCompatibleNativeObject(aCx, ${obj}, unforgeableHolder)) {
           $*{failureCode}
         }
@@ -4996,10 +5039,13 @@ class CGClearCachedValueMethod(CGAbstractMethod):
 
     def definition_body(self):
         slotIndex = memberReservedSlot(self.member, self.descriptor)
+        getReservedSlot = getReservedSlotFunc(self.descriptor)
+        setReservedSlot = setReservedSlotFunc(self.descriptor)
         clearCachedValue = fill(
             """
-            JS::SetReservedSlot(obj, ${slotIndex}, JS::UndefinedValue());
+            ${setReservedSlot}(obj, ${slotIndex}, JS::UndefinedValue());
             """,
+            setReservedSlot=setReservedSlot,
             slotIndex=slotIndex,
         )
         if self.member.getExtendedAttribute("StoreInSlot"):
@@ -5007,9 +5053,12 @@ class CGClearCachedValueMethod(CGAbstractMethod):
             # regetting fails, so we can restore it.
             declObj = "JS::Rooted<JSObject*> obj(aCx);\n"
             noopRetval = " true"
-            saveMember = (
-                "JS::Rooted<JS::Value> oldValue(aCx, JS::GetReservedSlot(obj, %s));\n"
-                % slotIndex
+            saveMember = fill(
+                """
+                JS::Rooted<JS::Value> oldValue(aCx, ${getReservedSlot}(obj, ${slotIndex}));
+                """,
+                getReservedSlot=getReservedSlot,
+                slotIndex=slotIndex,
             )
             regetMember = fill(
                 """
@@ -5017,12 +5066,13 @@ class CGClearCachedValueMethod(CGAbstractMethod):
                 JSJitGetterCallArgs args(&temp);
                 JSAutoRealm ar(aCx, obj);
                 if (!get_${name}(aCx, obj, aObject, args)) {
-                  JS::SetReservedSlot(obj, ${slotIndex}, oldValue);
+                  ${setReservedSlot}(obj, ${slotIndex}, oldValue);
                   return false;
                 }
                 return true;
                 """,
                 name=self.member.identifier.name,
+                setReservedSlot=setReservedSlot,
                 slotIndex=slotIndex,
             )
         else:
@@ -8932,7 +8982,7 @@ class CGCallGenerator(CGThing):
                 CGGeneric(
                     fill(
                         """
-                if (MOZ_UNLIKELY(rv.MaybeSetPendingException(cx, ${context}))) {
+                if (rv.MaybeSetPendingException(cx, ${context})) [[unlikely]] {
                   return false;
                 }
                 """,
@@ -9763,10 +9813,15 @@ class CGPerSignatureCall(CGThing):
                     ),
                 )
             else:
-                storeInSlot = dedent(
+                setReservedSlot = setReservedSlotFunc(
+                    self.descriptor,
+                    mayBeXray=mayUseXrayExpandoSlots(self.descriptor, self.idlNode),
+                )
+                storeInSlot = fill(
                     """
-                    JS::SetReservedSlot(slotStorage, slotIndex, storedVal);
-                    """
+                    ${setReservedSlot}(slotStorage, slotIndex, storedVal);
+                    """,
+                    setReservedSlot=setReservedSlot,
                 )
 
             slotStorageSteps = fill(
@@ -11388,12 +11443,16 @@ class CGSpecializedGetterCommon(CGAbstractStaticMethod):
                         """,
                         slotIndex=memberReservedSlot(self.attr, self.descriptor),
                     )
+                getReservedSlot = getReservedSlotFunc(
+                    self.descriptor,
+                    mayBeXray=mayUseXrayExpandoSlots(self.descriptor, self.attr),
+                )
                 prefix += fill(
                     """
                     MOZ_ASSERT(slotIndex < JSCLASS_RESERVED_SLOTS(JS::GetClass(slotStorage)));
                     {
                       // Scope for cachedVal
-                      JS::Value cachedVal = JS::GetReservedSlot(slotStorage, slotIndex);
+                      JS::Value cachedVal = ${getReservedSlot}(slotStorage, slotIndex);
                       if (!cachedVal.isUndefined()) {
                         args.rval().set(cachedVal);
                         // The cached value is in the compartment of slotStorage,
@@ -11403,6 +11462,7 @@ class CGSpecializedGetterCommon(CGAbstractStaticMethod):
                     }
 
                     """,
+                    getReservedSlot=getReservedSlot,
                     maybeWrap=getMaybeWrapValueFuncForType(self.attr.type),
                 )
 
@@ -14411,7 +14471,7 @@ class CGClass(CGThing):
         else:
             specialization = ""
 
-        myself = "%s %s%s" % (type, self.name, specialization)
+        myself = "%s MOZ_EMPTY_BASES %s%s" % (type, self.name, specialization)
         if self.decorators != "":
             myself += " " + self.decorators
         result += myself
@@ -17279,7 +17339,6 @@ class CGDescriptor(CGThing):
                 elif m.getExtendedAttribute("Replaceable"):
                     cgThings.append(CGSpecializedReplaceableSetter(descriptor, m))
                 elif m.getExtendedAttribute("LegacyLenientSetter"):
-                    # XXX In this case, we need to add an include for mozilla/dom/Document.h to the generated cpp file.
                     cgThings.append(CGSpecializedLenientSetter(descriptor, m))
                 if (
                     not m.isStatic()
@@ -19384,14 +19443,15 @@ class CGBindingRoot(CGThing):
         # JS_GetOwnPropertyDescriptorById
         bindingHeaders["js/PropertyDescriptor.h"] = True
 
-        def descriptorDeprecated(desc):
+        def descriptorDeprecatedOrLenientSetter(desc):
             iface = desc.interface
-            return any(
-                m.getExtendedAttribute("Deprecated") for m in iface.members + [iface]
-            )
+            return any((
+                m.getExtendedAttribute("Deprecated")
+                or m.getExtendedAttribute("LegacyLenientSetter")
+            ) for m in iface.members + [iface])
 
         bindingHeaders["mozilla/dom/Document.h"] = any(
-            descriptorDeprecated(d) for d in descriptors
+            descriptorDeprecatedOrLenientSetter(d) for d in descriptors
         )
 
         bindingHeaders["mozilla/dom/DOMJSProxyHandler.h"] = any(
@@ -23384,7 +23444,7 @@ class CGObservableArrayProxyHandler_callback(ClassMethod):
 
             $*{preCallback}
             const JS::Value& val = js::GetProxyReservedSlot(aProxy, OBSERVABLE_ARRAY_DOM_INTERFACE_SLOT);
-            if (MOZ_LIKELY(!val.isUndefined())) {
+            if (!val.isUndefined()) [[likely]] {
               auto* interface = static_cast<${ifaceType}*>(val.toPrivate());
               MOZ_ASSERT(interface);
 

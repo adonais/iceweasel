@@ -54,7 +54,7 @@ class nsBaseFilePicker : public nsIFilePicker {
   NS_IMETHOD GetDomFilesInWebKitDirectory(
       nsISimpleEnumerator** aValue) override;
 
-  nsIGlobalObject* GetOwnerGlobal() const;
+  nsIGlobalObject* GetRelevantGlobal() const;
 
  protected:
   virtual ~nsBaseFilePicker();

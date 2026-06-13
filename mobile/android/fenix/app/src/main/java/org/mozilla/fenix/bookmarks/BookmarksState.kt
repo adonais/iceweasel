@@ -63,6 +63,8 @@ internal sealed class BookmarksListSortOrder {
  *
  * @property bookmarkItems Bookmark items to be displayed in the current list screen.
  * @property selectedItems The bookmark items that are currently selected by the user for bulk actions.
+ * @property rootMenuShown Whether the root bookmarks overflow menu is shown.
+ * @property showBookmarksImport Whether the import bookmarks UI should be shown.
  * @property sortMenuShown Whether the bookmark sorting menu is shown.
  * @property sortOrder Describes how to sort the bookmark list.
  * @property recursiveSelectedCount the total number of children of the [selectedItems] found in bookmark storage.
@@ -82,6 +84,8 @@ internal sealed class BookmarksListSortOrder {
 internal data class BookmarksState(
     val bookmarkItems: List<BookmarkItem>,
     val selectedItems: List<BookmarkItem>,
+    val rootMenuShown: Boolean,
+    val showBookmarksImport: Boolean,
     val sortMenuShown: Boolean,
     val sortOrder: BookmarksListSortOrder,
     val recursiveSelectedCount: Int?,
@@ -106,6 +110,8 @@ internal data class BookmarksState(
         val default: BookmarksState = BookmarksState(
             bookmarkItems = listOf(),
             selectedItems = listOf(),
+            rootMenuShown = false,
+            showBookmarksImport = true,
             sortMenuShown = false,
             sortOrder = BookmarksListSortOrder.default,
             recursiveSelectedCount = null,
@@ -168,6 +174,7 @@ internal sealed class BookmarksSnackbarState {
     data object CantEditDesktopFolders : BookmarksSnackbarState()
     data class BookmarkMoved(val from: String, val to: String) : BookmarksSnackbarState()
     data object SelectFolderFailed : BookmarksSnackbarState()
+    data object ImportFailed : BookmarksSnackbarState()
 }
 
 internal data class BookmarksEditBookmarkState(

@@ -3,19 +3,24 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 pub use lockstore_rs::LockstoreDatastore;
-use lockstore_rs::{LockstoreError, LockstoreKeystore, SecurityLevel, KEYSTORE_FILENAME};
-use nserror::{nsresult, NS_ERROR_FAILURE, NS_ERROR_INVALID_ARG, NS_ERROR_NOT_AVAILABLE, NS_OK};
+use lockstore_rs::{Keystore, LockstoreError, KEYSTORE_FILENAME};
+use nserror::{
+    nsresult, NS_ERROR_ABORT, NS_ERROR_FAILURE, NS_ERROR_INVALID_ARG, NS_ERROR_NOT_AVAILABLE,
+    NS_ERROR_NOT_INITIALIZED, NS_OK,
+};
 use nsstring::{nsACString, nsCString};
 use std::path::PathBuf;
 use std::sync::Arc;
+use std::time::Duration;
 use thin_vec::ThinVec;
+use zeroize::Zeroize;
 
 // ============================================================================
 // Handle Types
 // ============================================================================
 
-pub struct LockstoreKeystoreHandle {
-    keystore: Arc<LockstoreKeystore>,
+pub struct KeystoreHandle {
+    keystore: Arc<Keystore>,
     profile_path: PathBuf,
 }
 
@@ -29,25 +34,12 @@ fn error_to_nsresult(err: LockstoreError) -> nsresult {
         LockstoreError::NotFound(_) => NS_ERROR_NOT_AVAILABLE,
         LockstoreError::Serialization(_) => NS_ERROR_INVALID_ARG,
         LockstoreError::NotExtractable(_) => NS_ERROR_NOT_AVAILABLE,
+        LockstoreError::AuthenticationCancelled => NS_ERROR_ABORT,
+        LockstoreError::InvalidKekRef(_) => NS_ERROR_INVALID_ARG,
+        LockstoreError::Locked => NS_ERROR_NOT_AVAILABLE,
+        LockstoreError::WrongPassword => NS_ERROR_ABORT,
+        LockstoreError::NotInitialized => NS_ERROR_NOT_INITIALIZED,
         _ => NS_ERROR_FAILURE,
-    }
-}
-
-// ============================================================================
-// Security Level FFI Type
-// ============================================================================
-
-#[repr(u32)]
-#[derive(Debug, Clone, Copy)]
-pub enum LockstoreSecurityLevel {
-    LocalKey = 0,
-}
-
-impl From<LockstoreSecurityLevel> for SecurityLevel {
-    fn from(level: LockstoreSecurityLevel) -> Self {
-        match level {
-            LockstoreSecurityLevel::LocalKey => SecurityLevel::LocalKey,
-        }
     }
 }
 
@@ -55,10 +47,14 @@ impl From<LockstoreSecurityLevel> for SecurityLevel {
 // Keystore FFI Functions
 // ============================================================================
 
+/// # Safety
+/// `ret_handle` must be a writable location. On `NS_OK` the handle is
+/// owned by the caller and must be released via
+/// `lockstore_keystore_close`.
 #[no_mangle]
 pub unsafe extern "C" fn lockstore_keystore_open(
     profile_path: &nsACString,
-    ret_handle: &mut *mut LockstoreKeystoreHandle,
+    ret_handle: &mut *mut KeystoreHandle,
 ) -> nsresult {
     if profile_path.is_empty() {
         log::error!("Profile path cannot be empty");
@@ -69,12 +65,16 @@ pub unsafe extern "C" fn lockstore_keystore_open(
     let profile = PathBuf::from(profile_path_str.as_ref());
     let keystore_path = profile.join(KEYSTORE_FILENAME);
 
-    let keystore = match LockstoreKeystore::new(keystore_path) {
-        Ok(k) => Arc::new(k),
+    // `Keystore::get` memoises per-path so the C++ service and
+    // any Rust consumer (e.g. mls_gk) opening this same profile reach
+    // the same `Arc<Keystore>` — i.e. one keystore handle, one
+    // PrimaryPassword cache, one PKCS#11 auth-cache per process.
+    let keystore = match Keystore::get(keystore_path) {
+        Ok(k) => k,
         Err(e) => return error_to_nsresult(e),
     };
 
-    let handle = Box::new(LockstoreKeystoreHandle {
+    let handle = Box::new(KeystoreHandle {
         keystore,
         profile_path: profile,
     });
@@ -85,33 +85,84 @@ pub unsafe extern "C" fn lockstore_keystore_open(
 
 #[no_mangle]
 pub extern "C" fn lockstore_keystore_create_dek(
-    handle: &LockstoreKeystoreHandle,
+    handle: &KeystoreHandle,
     collection: &nsACString,
-    security_level: LockstoreSecurityLevel,
+    kek_ref: &nsACString,
     extractable: bool,
 ) -> nsresult {
-    if collection.is_empty() {
-        log::error!("Collection cannot be empty");
+    if collection.is_empty() || kek_ref.is_empty() {
+        log::error!("Collection and kek_ref cannot be empty");
         return NS_ERROR_INVALID_ARG;
     }
 
     let coll_str = collection.to_utf8();
+    let kek_ref_str = kek_ref.to_utf8();
 
     match handle
         .keystore
-        .create_dek(&coll_str, security_level.into(), extractable)
+        .create_dek(&coll_str, &kek_ref_str, extractable)
     {
         Ok(_) => NS_OK,
         Err(e) => error_to_nsresult(e),
     }
 }
 
+/// Install caller-supplied `dek_bytes` as the DEK for `collection`,
+/// wrapped under `kek_ref`. Migration primitive used to bring data
+/// already encrypted under a known external DEK under keystore
+/// management without re-encrypting ciphertexts at rest.
+///
+/// # Safety
+/// `dek_ptr` must point to at least `dek_len` initialised bytes that
+/// remain valid for the duration of the call. `dek_len` must equal the
+/// wire length of the default cipher suite (32 bytes for AES-256-GCM);
+/// other lengths are rejected with `NS_ERROR_INVALID_ARG`. Ownership
+/// remains with the caller; Lockstore copies what it needs before
+/// returning.
 #[no_mangle]
-pub extern "C" fn lockstore_keystore_get_dek(
-    handle: &LockstoreKeystoreHandle,
+pub unsafe extern "C" fn lockstore_keystore_import_dek(
+    handle: &KeystoreHandle,
     collection: &nsACString,
-    security_level: LockstoreSecurityLevel,
-    ret_dek: &mut ThinVec<u8>,
+    kek_ref: &nsACString,
+    dek_ptr: *const u8,
+    dek_len: usize,
+    extractable: bool,
+) -> nsresult {
+    if collection.is_empty() || kek_ref.is_empty() {
+        log::error!("Collection and kek_ref cannot be empty");
+        return NS_ERROR_INVALID_ARG;
+    }
+    // Length-first check: short-circuits before any pointer
+    // dereference, so the caller does not need to nullptr-guard for
+    // empty buffers — passing `nsTArray::Elements()` unconditionally is
+    // safe.
+    if dek_len == 0 {
+        return NS_ERROR_INVALID_ARG;
+    }
+    if dek_ptr.is_null() {
+        return NS_ERROR_INVALID_ARG;
+    }
+
+    let coll_str = collection.to_utf8();
+    let kek_ref_str = kek_ref.to_utf8();
+    // SAFETY: non-zero len + non-null ptr validated above; caller's
+    // contract requires `dek_len` valid bytes at `dek_ptr`.
+    let dek = unsafe { std::slice::from_raw_parts(dek_ptr, dek_len) };
+
+    match handle
+        .keystore
+        .import_dek(&coll_str, &kek_ref_str, dek, extractable)
+    {
+        Ok(()) => NS_OK,
+        Err(e) => error_to_nsresult(e),
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn lockstore_keystore_is_dek_extractable(
+    handle: &KeystoreHandle,
+    collection: &nsACString,
+    out_extractable: &mut bool,
 ) -> nsresult {
     if collection.is_empty() {
         log::error!("Collection cannot be empty");
@@ -119,8 +170,31 @@ pub extern "C" fn lockstore_keystore_get_dek(
     }
 
     let coll_str = collection.to_utf8();
+    match handle.keystore.is_dek_extractable(&coll_str) {
+        Ok(b) => {
+            *out_extractable = b;
+            NS_OK
+        }
+        Err(e) => error_to_nsresult(e),
+    }
+}
 
-    match handle.keystore.get_dek(&coll_str, security_level.into()) {
+#[no_mangle]
+pub extern "C" fn lockstore_keystore_get_dek(
+    handle: &KeystoreHandle,
+    collection: &nsACString,
+    kek_ref: &nsACString,
+    ret_dek: &mut ThinVec<u8>,
+) -> nsresult {
+    if collection.is_empty() || kek_ref.is_empty() {
+        log::error!("Collection and kek_ref cannot be empty");
+        return NS_ERROR_INVALID_ARG;
+    }
+
+    let coll_str = collection.to_utf8();
+    let kek_ref_str = kek_ref.to_utf8();
+
+    match handle.keystore.get_dek(&coll_str, &kek_ref_str) {
         Ok((dek_bytes, _cipher_suite)) => {
             *ret_dek = dek_bytes.into();
             NS_OK
@@ -129,9 +203,13 @@ pub extern "C" fn lockstore_keystore_get_dek(
     }
 }
 
+/// Delete the DEK for `collection`. The keystore does not track the
+/// associated datastore; callers are responsible for disposing of any
+/// ciphertext under this collection by other means before (or after)
+/// this call.
 #[no_mangle]
 pub extern "C" fn lockstore_keystore_delete_dek(
-    handle: &LockstoreKeystoreHandle,
+    handle: &KeystoreHandle,
     collection: &nsACString,
 ) -> nsresult {
     if collection.is_empty() {
@@ -149,7 +227,7 @@ pub extern "C" fn lockstore_keystore_delete_dek(
 
 #[no_mangle]
 pub extern "C" fn lockstore_keystore_list_collections(
-    handle: &LockstoreKeystoreHandle,
+    handle: &KeystoreHandle,
     ret_collections: &mut ThinVec<nsCString>,
 ) -> nsresult {
     match handle.keystore.list_collections() {
@@ -164,52 +242,318 @@ pub extern "C" fn lockstore_keystore_list_collections(
     }
 }
 
+/// List the `kek_ref`s currently wrapping the DEK for `collection`.
+/// Unknown / empty `collection` surfaces as `NS_ERROR_NOT_AVAILABLE`
+/// via `error_to_nsresult` (the keystore layer rejects with `NotFound`).
+/// Order of the returned list is unspecified.
 #[no_mangle]
-pub extern "C" fn lockstore_keystore_add_security_level(
-    handle: &LockstoreKeystoreHandle,
+pub extern "C" fn lockstore_keystore_list_collection_keks(
+    handle: &KeystoreHandle,
     collection: &nsACString,
-    from_level: LockstoreSecurityLevel,
-    to_level: LockstoreSecurityLevel,
+    ret_kek_refs: &mut ThinVec<nsCString>,
 ) -> nsresult {
-    if collection.is_empty() {
-        log::error!("Collection cannot be empty");
+    let coll_str = collection.to_utf8();
+    match handle.keystore.list_collection_keks(&coll_str) {
+        Ok(refs) => {
+            *ret_kek_refs = refs.into_iter().map(|s| nsCString::from(&s[..])).collect();
+            NS_OK
+        }
+        Err(e) => error_to_nsresult(e),
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn lockstore_keystore_add_kek(
+    handle: &KeystoreHandle,
+    collection: &nsACString,
+    from_kek_ref: &nsACString,
+    to_kek_ref: &nsACString,
+) -> nsresult {
+    if collection.is_empty() || from_kek_ref.is_empty() || to_kek_ref.is_empty() {
+        log::error!("Collection, from_kek_ref and to_kek_ref cannot be empty");
         return NS_ERROR_INVALID_ARG;
     }
     let coll_str = collection.to_utf8();
-    match handle
-        .keystore
-        .add_security_level(&coll_str, from_level.into(), to_level.into())
-    {
+    let from_str = from_kek_ref.to_utf8();
+    let to_str = to_kek_ref.to_utf8();
+    match handle.keystore.add_kek(&coll_str, &from_str, &to_str) {
         Ok(()) => NS_OK,
         Err(e) => error_to_nsresult(e),
     }
 }
 
 #[no_mangle]
-pub extern "C" fn lockstore_keystore_remove_security_level(
-    handle: &LockstoreKeystoreHandle,
+pub extern "C" fn lockstore_keystore_remove_kek(
+    handle: &KeystoreHandle,
     collection: &nsACString,
-    level: LockstoreSecurityLevel,
+    kek_ref: &nsACString,
 ) -> nsresult {
-    if collection.is_empty() {
-        log::error!("Collection cannot be empty");
+    if collection.is_empty() || kek_ref.is_empty() {
+        log::error!("Collection and kek_ref cannot be empty");
         return NS_ERROR_INVALID_ARG;
     }
     let coll_str = collection.to_utf8();
-    match handle
-        .keystore
-        .remove_security_level(&coll_str, level.into())
-    {
+    let kek_ref_str = kek_ref.to_utf8();
+    match handle.keystore.remove_kek(&coll_str, &kek_ref_str) {
+        Ok(()) => NS_OK,
+        Err(e) => error_to_nsresult(e),
+    }
+}
+
+/// Atomically rewrap the DEK for `collection` from `old_kek_ref` to
+/// `new_kek_ref`. The DEK bytes are unchanged; ciphertexts at rest stay
+/// valid. Equivalent in effect to `add_kek` + `remove_kek` but atomic
+/// at the kvstore-row level.
+#[no_mangle]
+pub extern "C" fn lockstore_keystore_switch_kek(
+    handle: &KeystoreHandle,
+    collection: &nsACString,
+    old_kek_ref: &nsACString,
+    new_kek_ref: &nsACString,
+) -> nsresult {
+    if collection.is_empty() || old_kek_ref.is_empty() || new_kek_ref.is_empty() {
+        log::error!("Collection, old_kek_ref and new_kek_ref cannot be empty");
+        return NS_ERROR_INVALID_ARG;
+    }
+    let coll_str = collection.to_utf8();
+    let old_str = old_kek_ref.to_utf8();
+    let new_str = new_kek_ref.to_utf8();
+    match handle.keystore.switch_kek(&coll_str, &old_str, &new_str) {
+        Ok(()) => NS_OK,
+        Err(e) => error_to_nsresult(e),
+    }
+}
+
+/// # Safety
+/// `plaintext_ptr` must point to at least `plaintext_len` initialised
+/// bytes that remain valid for the duration of the call when
+/// `plaintext_len > 0`. When `plaintext_len == 0` the pointer is not
+/// dereferenced and may be null (or whatever sentinel
+/// `nsTArray::Elements()` returns for empty arrays). Ownership remains
+/// with the caller; Lockstore copies what it needs before returning.
+#[no_mangle]
+pub unsafe extern "C" fn lockstore_keystore_encrypt(
+    handle: &KeystoreHandle,
+    collection: &nsACString,
+    kek_ref: &nsACString,
+    plaintext_ptr: *const u8,
+    plaintext_len: usize,
+    ret_ciphertext: &mut ThinVec<u8>,
+) -> nsresult {
+    if collection.is_empty() || kek_ref.is_empty() {
+        return NS_ERROR_INVALID_ARG;
+    }
+    // Length-first check: short-circuits before any pointer
+    // dereference, so the caller does not need to nullptr-guard for
+    // empty buffers — passing `nsTArray::Elements()` unconditionally is
+    // safe.
+    if plaintext_len == 0 {
+        return NS_ERROR_INVALID_ARG;
+    }
+    if plaintext_ptr.is_null() {
+        return NS_ERROR_INVALID_ARG;
+    }
+    let coll_str = collection.to_utf8();
+    let kek_ref_str = kek_ref.to_utf8();
+    // SAFETY: non-zero len + non-null ptr validated above; caller's
+    // contract requires this to point at `plaintext_len` valid bytes.
+    let plaintext = unsafe { std::slice::from_raw_parts(plaintext_ptr, plaintext_len) };
+    match handle.keystore.encrypt(&coll_str, &kek_ref_str, plaintext) {
+        Ok(bytes) => {
+            *ret_ciphertext = bytes.into();
+            NS_OK
+        }
+        Err(e) => error_to_nsresult(e),
+    }
+}
+
+/// # Safety
+/// `ciphertext_ptr` must point to at least `ciphertext_len`
+/// initialised bytes that remain valid for the duration of the call
+/// when `ciphertext_len > 0`. When `ciphertext_len == 0` the pointer
+/// is not dereferenced. Ownership remains with the caller.
+#[no_mangle]
+pub unsafe extern "C" fn lockstore_keystore_decrypt(
+    handle: &KeystoreHandle,
+    collection: &nsACString,
+    kek_ref: &nsACString,
+    ciphertext_ptr: *const u8,
+    ciphertext_len: usize,
+    ret_plaintext: &mut ThinVec<u8>,
+) -> nsresult {
+    if collection.is_empty() || kek_ref.is_empty() {
+        return NS_ERROR_INVALID_ARG;
+    }
+    if ciphertext_len == 0 {
+        return NS_ERROR_INVALID_ARG;
+    }
+    if ciphertext_ptr.is_null() {
+        return NS_ERROR_INVALID_ARG;
+    }
+    let coll_str = collection.to_utf8();
+    let kek_ref_str = kek_ref.to_utf8();
+    // SAFETY: non-zero len + non-null ptr validated above; caller's
+    // contract requires this to point at `ciphertext_len` valid bytes.
+    let ciphertext = unsafe { std::slice::from_raw_parts(ciphertext_ptr, ciphertext_len) };
+    match handle.keystore.decrypt(&coll_str, &kek_ref_str, ciphertext) {
+        Ok(bytes) => {
+            *ret_plaintext = bytes.into();
+            NS_OK
+        }
+        Err(e) => error_to_nsresult(e),
+    }
+}
+
+/// # Safety
+/// `handle` must be a non-null pointer previously returned by
+/// `lockstore_keystore_open` that has not yet been passed to this
+/// function. Consumes the handle and zeroises every cached KEK before
+/// returning.
+#[no_mangle]
+pub unsafe extern "C" fn lockstore_keystore_close(handle: *mut KeystoreHandle) -> nsresult {
+    // C++ can't trigger Rust's `Drop` directly, so this fn is the
+    // C-callable entry point that consumes the boxed handle. The
+    // explicit `lock()` call here is defensive: it zeroises every
+    // cached KEK (PrP + PKCS#11 auth cache) even if another
+    // `Arc<Keystore>` is still alive somewhere. Without that call
+    // we'd only zeroise when the *last* `Arc` drops, which the FFI
+    // consumer can't always guarantee.
+    //
+    // SAFETY: caller's contract guarantees `handle` is a live, owned
+    // `Box::into_raw` pointer that has not yet been passed to this fn.
+    if let Some(boxed) = unsafe { handle.as_mut() } {
+        boxed.keystore.lock();
+    }
+    // SAFETY: same as above; consumes the handle.
+    let _ = unsafe { Box::from_raw(handle) };
+    NS_OK
+}
+
+// ============================================================================
+// Primary Password FFI Functions (init / change)
+// ============================================================================
+//
+// These remain PrP-specific: PKCS#11 tokens have no equivalent
+// "initialise" concept in Lockstore (the PIN is set elsewhere), so
+// these are not part of the unified lock/unlock API.
+
+/// Set or change the primary password. `old` is empty for initial
+/// setup. Lockstore copies the caller's bytes into its own buffers,
+/// uses them, and zeroises those internal buffers before returning;
+/// the caller's `nsACString` views are never mutated. Callers should
+/// still observe their own hygiene for the strings they passed in.
+#[no_mangle]
+pub extern "C" fn lockstore_keystore_set_prp(
+    handle: &KeystoreHandle,
+    old: &nsACString,
+    new: &nsACString,
+) -> nsresult {
+    if new.is_empty() {
+        return NS_ERROR_INVALID_ARG;
+    }
+    // Defensive copies that we own and can zeroise; the caller's
+    // `&nsACString` references remain const-correct.
+    let mut new_buf: Vec<u8> = new[..].to_vec();
+    let mut old_buf: Option<Vec<u8>> = if old.is_empty() {
+        None
+    } else {
+        Some(old[..].to_vec())
+    };
+
+    let result = handle.keystore.set_prp(old_buf.as_deref(), &new_buf);
+
+    new_buf.zeroize();
+    if let Some(ref mut o) = old_buf {
+        o.zeroize();
+    }
+
+    match result {
         Ok(()) => NS_OK,
         Err(e) => error_to_nsresult(e),
     }
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn lockstore_keystore_close(
-    handle: *mut LockstoreKeystoreHandle,
+pub extern "C" fn lockstore_keystore_has_prp(
+    handle: &KeystoreHandle,
+    out_has: &mut bool,
 ) -> nsresult {
-    let _ = Box::from_raw(handle);
+    *out_has = handle.keystore.has_prp();
+    NS_OK
+}
+
+// ============================================================================
+// Unified KEK lock/unlock FFI
+// ============================================================================
+//
+// Dispatches internally on the kek_ref's KekType. For PrimaryPassword
+// `secret` is the password used to derive the KEK; for Pkcs11Token
+// `secret` is typically unused (NSS prompts for the PIN). For LocalKey
+// these are no-ops.
+
+/// Unlock the KEK referenced by `kek_ref` using `secret` (a password
+/// for PrimaryPassword, a PIN for PKCS#11, or empty / ignored for
+/// LocalKey). Lockstore copies the secret bytes into its own buffer,
+/// uses them, and zeroises that buffer before returning; the caller's
+/// `nsACString` view is never mutated.
+#[no_mangle]
+pub extern "C" fn lockstore_keystore_unlock_kek(
+    handle: &KeystoreHandle,
+    kek_ref: &nsACString,
+    secret: &nsACString,
+    timeout_ms: u32,
+) -> nsresult {
+    if kek_ref.is_empty() {
+        return NS_ERROR_INVALID_ARG;
+    }
+    let mut secret_buf: Vec<u8> = secret[..].to_vec();
+    let kek_ref_str = kek_ref.to_utf8();
+    let result = handle.keystore.unlock_kek(
+        &kek_ref_str,
+        &secret_buf,
+        Duration::from_millis(timeout_ms as u64),
+    );
+    secret_buf.zeroize();
+
+    match result {
+        Ok(()) => NS_OK,
+        Err(e) => error_to_nsresult(e),
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn lockstore_keystore_lock_kek(
+    handle: &KeystoreHandle,
+    kek_ref: &nsACString,
+) -> nsresult {
+    if kek_ref.is_empty() {
+        return NS_ERROR_INVALID_ARG;
+    }
+    let kek_ref_str = kek_ref.to_utf8();
+    handle.keystore.lock_kek(&kek_ref_str);
+    NS_OK
+}
+
+#[no_mangle]
+pub extern "C" fn lockstore_keystore_is_kek_unlocked(
+    handle: &KeystoreHandle,
+    kek_ref: &nsACString,
+    out_unlocked: &mut bool,
+) -> nsresult {
+    if kek_ref.is_empty() {
+        return NS_ERROR_INVALID_ARG;
+    }
+    let kek_ref_str = kek_ref.to_utf8();
+    *out_unlocked = handle.keystore.is_kek_unlocked(&kek_ref_str);
+    NS_OK
+}
+
+/// Lock every KEK that holds cached authentication (PrimaryPassword KEK
+/// and every per-kek_ref PKCS#11 entry). Intended for shutdown / logout
+/// paths that should invalidate all unlocked state in a single call.
+#[no_mangle]
+pub extern "C" fn lockstore_keystore_lock(handle: &KeystoreHandle) -> nsresult {
+    handle.keystore.lock();
     NS_OK
 }
 
@@ -217,25 +561,30 @@ pub unsafe extern "C" fn lockstore_keystore_close(
 // Datastore FFI Functions
 // ============================================================================
 
+/// # Safety
+/// `ret_handle` must be a writable location. On `NS_OK` the handle is
+/// owned by the caller and must be released via
+/// `lockstore_datastore_close`.
 #[no_mangle]
 pub unsafe extern "C" fn lockstore_datastore_open(
-    keystore_handle: &LockstoreKeystoreHandle,
+    keystore_handle: &KeystoreHandle,
     collection: &nsACString,
-    security_level: LockstoreSecurityLevel,
+    kek_ref: &nsACString,
     ret_handle: &mut *mut LockstoreDatastore,
 ) -> nsresult {
-    if collection.is_empty() {
-        log::error!("Collection cannot be empty");
+    if collection.is_empty() || kek_ref.is_empty() {
+        log::error!("Collection and kek_ref cannot be empty");
         return NS_ERROR_INVALID_ARG;
     }
 
     let coll_str = collection.to_utf8();
+    let kek_ref_str = kek_ref.to_utf8();
 
     let datastore = match LockstoreDatastore::new(
         keystore_handle.profile_path.clone(),
         coll_str.to_string(),
         keystore_handle.keystore.clone(),
-        security_level.into(),
+        &kek_ref_str,
     ) {
         Ok(d) => d,
         Err(e) => return error_to_nsresult(e),
@@ -245,6 +594,10 @@ pub unsafe extern "C" fn lockstore_datastore_open(
     NS_OK
 }
 
+/// # Safety
+/// `data_ptr` must point to at least `data_len` initialised bytes that
+/// remain valid for the duration of the call. `data_len` must be
+/// non-zero. Ownership remains with the caller.
 #[no_mangle]
 pub unsafe extern "C" fn lockstore_datastore_put(
     handle: &LockstoreDatastore,
@@ -262,7 +615,9 @@ pub unsafe extern "C" fn lockstore_datastore_put(
         return NS_ERROR_INVALID_ARG;
     }
 
-    let data_slice = std::slice::from_raw_parts(data_ptr, data_len);
+    // SAFETY: caller's contract; pointer is non-null and points at
+    // `data_len` valid bytes.
+    let data_slice = unsafe { std::slice::from_raw_parts(data_ptr, data_len) };
     let entry_str = entry_name.to_utf8();
 
     match handle.put(&entry_str, data_slice) {
@@ -328,8 +683,14 @@ pub extern "C" fn lockstore_datastore_keys(
     }
 }
 
+/// # Safety
+/// `handle` must be a non-null pointer previously returned by
+/// `lockstore_datastore_open` that has not yet been passed to this
+/// function. Consumes the handle.
 #[no_mangle]
 pub unsafe extern "C" fn lockstore_datastore_close(handle: *mut LockstoreDatastore) -> nsresult {
-    Box::from_raw(handle).close();
+    // SAFETY: caller's contract guarantees `handle` is a live, owned
+    // `Box::into_raw` pointer.
+    unsafe { Box::from_raw(handle).close() };
     NS_OK
 }

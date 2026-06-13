@@ -58,9 +58,29 @@ class FakeTabGroupRepository(
         tabGroupFlow.emit(updatedList)
     }
 
-    override suspend fun closeTabGroup(tabGroupId: String) {}
+    override suspend fun closeTabGroup(tabGroupId: String) {
+        tabGroupFlow.emit(
+            tabGroupFlow.value.map { group ->
+                if (group.id == tabGroupId) {
+                    group.copy(closed = true)
+                } else {
+                    group
+                }
+            },
+        )
+    }
 
-    override suspend fun openTabGroup(tabGroupId: String) {}
+    override suspend fun openTabGroup(tabGroupId: String) {
+        tabGroupFlow.emit(
+            tabGroupFlow.value.map { group ->
+                if (group.id == tabGroupId) {
+                    group.copy(closed = false)
+                } else {
+                    group
+                }
+            },
+        )
+    }
 
     override suspend fun closeAllTabGroups() {
         closeAllTabGroups.invoke()

@@ -43,6 +43,11 @@ struct MediaPlaybackEvent {
     VideoOnlySeekBegin,
     VideoOnlySeekCompleted,
     PlaybackRateFallback,
+#ifdef MOZ_WMF_CDM
+    // [TEST-ONLY] The media engine renders video internally and delivers frames
+    // via OnVideoStreamTick() callbacks; used when a WMFClearKey CDM is active.
+    FrameServerMode,
+#endif
   } mType;
 
   using DataType = Variant<Nothing, int64_t>;

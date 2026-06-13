@@ -177,6 +177,10 @@ class nsHttpChannel final : public HttpBaseChannel,
   NS_IMETHOD GetConnectEnd(mozilla::TimeStamp* aConnectEnd) override;
   NS_IMETHOD GetRequestStart(mozilla::TimeStamp* aRequestStart) override;
   NS_IMETHOD GetResponseStart(mozilla::TimeStamp* aResponseStart) override;
+  NS_IMETHOD GetFirstInterimResponseStart(
+      mozilla::TimeStamp* aFirstInterimResponseStart) override;
+  NS_IMETHOD GetFinalResponseHeadersStart(
+      mozilla::TimeStamp* aFinalResponseHeadersStart) override;
   NS_IMETHOD GetResponseEnd(mozilla::TimeStamp* aResponseEnd) override;
 
   NS_IMETHOD GetTransactionPending(
@@ -276,15 +280,7 @@ class nsHttpChannel final : public HttpBaseChannel,
   already_AddRefed<WebTransportSessionEventListener>
   GetWebTransportSessionEventListener();
 
- private:  // used for alternate service validation
-  RefPtr<TransactionObserver> mTransactionObserver;
-
  public:
-  void SetTransactionObserver(TransactionObserver* arg) {
-    mTransactionObserver = arg;
-  }
-  TransactionObserver* GetTransactionObserver() { return mTransactionObserver; }
-
   CacheDisposition mCacheDisposition{kCacheUnresolved};
 
  protected:
@@ -311,8 +307,13 @@ class nsHttpChannel final : public HttpBaseChannel,
 
   // Based on the proxy configuration determine the strategy for resolving the
   // end server host name.
-  ProxyDNSStrategy GetProxyDNSStrategy();
+  nsIHttpChannelInternal::ProxyDNSStrategy ComputeProxyDNSStrategy();
 
+ public:
+  NS_IMETHOD GetProxyDNSStrategy(
+      nsIHttpChannelInternal::ProxyDNSStrategy* aStrategy) override;
+
+ private:
   // Add Sec-Fetch-Storage-Access headers based on cookie partitioning
   void AddStorageAccessHeadersToRequest();
   bool DispatchRelease();
@@ -323,6 +324,14 @@ class nsHttpChannel final : public HttpBaseChannel,
   // unpartitioned cookies. Therefore needs to have still valid
   // storage-permission granted. Public to be accible from AntiTrackingUtils.
   bool StorageAccessReloadedChannel();
+
+  // Tells the channel to suspend after examining the response
+  void PrimeSuspendAfterExamineResponse();
+  // Cancel the suspension request, or resume if the suspension started
+  void CancelSuspendOrResumeAfterExamineResponse();
+  // Suspend if we called PrimeSuspendAfterExamineResponse
+  // and not CancelSuspendOrResumeAfterExamineResponse
+  void MaybeSuspendAfterExamineResponse();
 
  private:
   // We might synchronously or asynchronously call BeginConnect,
@@ -551,6 +560,8 @@ class nsHttpChannel final : public HttpBaseChannel,
   // Determines and sets content type in the cache entry. It's called when
   // writing a new entry. The content type is used in cache internally only.
   void SetCachedContentType();
+
+  bool IsAuthRedirectedChannel() { return !!LoadAuthRedirectedChannel(); }
 
  private:
   // --- MAIN THREAD ONLY OBJECTS ---
@@ -835,6 +846,12 @@ class nsHttpChannel final : public HttpBaseChannel,
   // cache. When the timer fires we'll notify the cache entry to make
   // all other listeners continue.
   nsCOMPtr<nsITimer> mSuspendTimer;
+  // Tri-state to track whether anti-tracking classification happened
+  // and has completed or not.
+  // Nothing: No anti-tracking classification
+  // Some(true): classification ongoing
+  // Some(false): classification done
+  Maybe<Atomic<bool>> mSuspendAfterExamineResponse;
   bool mWritingToCache = false;
   bool mWaitingForProxy = false;
   bool mStaleRevalidation = false;

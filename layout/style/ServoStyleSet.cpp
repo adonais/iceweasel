@@ -335,8 +335,6 @@ void ServoStyleSet::PreTraverseSync() {
 
   mDocument->ResolveScheduledPresAttrs();
 
-  mDocument->CacheAllKnownLangPrefs();
-
   if (gfxUserFontSet* userFontSet = mDocument->GetUserFontSet()) {
     nsPresContext* presContext = GetPresContext();
     MOZ_ASSERT(presContext,
@@ -611,9 +609,10 @@ already_AddRefed<ComputedStyle> ServoStyleSet::ResolveXULTreePseudoStyle(
 }
 
 already_AddRefed<ComputedStyle> ServoStyleSet::ResolvePositionTry(
-    dom::Element& aElement, const ComputedStyle& aStyle,
+    StyleCascadeLevel aScope, dom::Element& aElement,
+    const ComputedStyle& aStyle,
     const StylePositionTryFallbacksItem& aFallback) {
-  return Servo_ComputedValues_GetForPositionTry(mRawData.get(), &aStyle,
+  return Servo_ComputedValues_GetForPositionTry(mRawData.get(), &aStyle, aScope,
                                                 &aElement, &aFallback)
       .Consume();
 }
@@ -1099,8 +1098,8 @@ void ServoStyleSet::RuleChanged(StyleSheet& aSheet, css::Rule* aRule,
     MarkOriginsDirty(ToOriginFlags(aSheet.GetOrigin()));
   } else {
     if (mStyleRuleMap && aChange.mOldBlock != aChange.mNewBlock) {
-      mStyleRuleMap->RuleDeclarationsChanged(*aRule, aChange.mOldBlock->Raw(),
-                                             aChange.mNewBlock->Raw());
+      mStyleRuleMap->RuleDeclarationsChanged(*aRule, aChange.mOldBlock,
+                                             aChange.mNewBlock);
     }
     RuleChangedInternal(aSheet, *aRule, aChange);
   }

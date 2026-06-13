@@ -25,7 +25,6 @@ struct nsStyleChangeData {
 
 class nsStyleChangeList : private AutoTArray<nsStyleChangeData, 10> {
   typedef AutoTArray<nsStyleChangeData, 10> base_type;
-  nsStyleChangeList(const nsStyleChangeList&) = delete;
 
  public:
   using base_type::begin;
@@ -34,6 +33,8 @@ class nsStyleChangeList : private AutoTArray<nsStyleChangeData, 10> {
   using base_type::IsEmpty;
   using base_type::Length;
   using base_type::operator[];
+
+  nsStyleChangeList(const nsStyleChangeList&) = delete;
 
   MOZ_COUNTED_DEFAULT_CTOR(nsStyleChangeList)
   MOZ_COUNTED_DTOR(nsStyleChangeList)

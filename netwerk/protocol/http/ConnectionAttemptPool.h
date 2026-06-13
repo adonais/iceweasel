@@ -28,10 +28,12 @@ class ConnectionAttemptPool final {
       PendingTransactionInfo* pendingTransInfo);
   size_t Length() const { return mAttempts.Length(); }
   void RemoveConnectionAttempt(ConnectionAttempt* attempt, bool abandon);
-  void CloseAllConnectionAttempts(bool aReenqueueTransaction = false);
+  void CloseAllConnectionAttempts();
   // calculate the number of half open sockets that have not had at least 1
   // connection complete
   uint32_t UnconnectedConnectionAttempts() const;
+
+  void OnConnectionAttemptConnected();
 
   bool FindConnToClaim(PendingTransactionInfo* pendingTransInfo);
 
@@ -50,6 +52,7 @@ class ConnectionAttemptPool final {
 
   WeakPtr<ConnectionEntry> mEntry;
   nsTArray<RefPtr<ConnectionAttempt>> mAttempts;
+  uint32_t mUnconnectedCount{0};
 };
 
 }  // namespace net

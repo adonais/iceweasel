@@ -4,6 +4,7 @@
 
 package org.mozilla.fenix.tabstray
 
+import androidx.compose.runtime.staticCompositionLocalOf
 import org.mozilla.fenix.Config
 import org.mozilla.fenix.nimbus.FxNimbus
 
@@ -18,11 +19,6 @@ interface TabManagementFeatureHelper {
     val openingAnimationEnabled: Boolean
 
     /**
-     * Whether the Tab Search feature is enabled.
-     */
-    val tabSearchEnabled: Boolean
-
-    /**
      * Whether the Tab Groups feature is enabled.
      */
     val tabGroupsEnabled: Boolean
@@ -31,6 +27,11 @@ interface TabManagementFeatureHelper {
      * Whether drag and drop is enabled for the Tab Groups feature.
      */
     val tabGroupsDragAndDropEnabled: Boolean
+
+    /**
+     * Determines whether the "Share" button is displayed for tab groups in the tabs tray.
+     */
+    val shareTabGroupEnabled: Boolean
 }
 
 /**
@@ -41,17 +42,16 @@ data object DefaultTabManagementFeatureHelper : TabManagementFeatureHelper {
     override val openingAnimationEnabled: Boolean
         get() = Config.channel.isDebug || FxNimbus.features.tabManagementEnhancements.value().openingAnimationEnabled
 
-    override val tabSearchEnabled: Boolean
-        get() = when {
-            Config.channel.isNightlyOrDebug -> true
-            Config.channel.isBeta -> FxNimbus.features.tabSearch.value().enabled
-            Config.channel.isRelease -> FxNimbus.features.tabSearch.value().enabled
-            else -> false
-        }
-
     override val tabGroupsEnabled: Boolean
-        get() = FxNimbus.features.tabGroups.value().enabled
+        get() = Config.channel.isDebug || FxNimbus.features.tabGroups.value().enabled
 
     override val tabGroupsDragAndDropEnabled: Boolean
-        get() = FxNimbus.features.tabGroupsDragAndDrop.value().enabled
+        get() = Config.channel.isDebug || FxNimbus.features.tabGroupsDragAndDrop.value().enabled
+
+    override val shareTabGroupEnabled: Boolean
+        get() = false
+}
+
+val LocalTabManagementFeatureHelper = staticCompositionLocalOf<TabManagementFeatureHelper> {
+    DefaultTabManagementFeatureHelper
 }

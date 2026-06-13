@@ -29,7 +29,6 @@ EXPORTS += [
     "nsHTMLDocument.h",
     "nsIConstraintValidation.h",
     "nsIFormControl.h",
-    "nsIHTMLCollection.h",
 ]
 
 EXPORTS.mozilla += [
@@ -41,6 +40,7 @@ EXPORTS.mozilla += [
 EXPORTS.mozilla.dom += [
     "ConstraintValidation.h",
     "CustomStateSet.h",
+    "EditContext.h",
     "ElementInternals.h",
     "FetchPriority.h",
     "HTMLAllCollection.h",
@@ -90,6 +90,7 @@ EXPORTS.mozilla.dom += [
     "HTMLPreElement.h",
     "HTMLProgressElement.h",
     "HTMLScriptElement.h",
+    "HTMLSelectedContentElement.h",
     "HTMLSelectElement.h",
     "HTMLSharedElement.h",
     "HTMLSharedListElement.h",
@@ -118,6 +119,7 @@ EXPORTS.mozilla.dom += [
 UNIFIED_SOURCES += [
     "ConstraintValidation.cpp",
     "CustomStateSet.cpp",
+    "EditContext.cpp",
     "ElementInternals.cpp",
     "FetchPriority.cpp",
     "HTMLAllCollection.cpp",
@@ -168,6 +170,7 @@ UNIFIED_SOURCES += [
     "HTMLPreElement.cpp",
     "HTMLProgressElement.cpp",
     "HTMLScriptElement.cpp",
+    "HTMLSelectedContentElement.cpp",
     "HTMLSelectElement.cpp",
     "HTMLSharedElement.cpp",
     "HTMLSharedListElement.cpp",

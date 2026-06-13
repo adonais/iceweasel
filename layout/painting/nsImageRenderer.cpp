@@ -92,11 +92,7 @@ static already_AddRefed<imgIContainer> GetSymbolicIconImage(nsAtom* aName,
   }
   const auto fg = aFrame->StyleText()->mColor.ToColor();
   auto key = std::make_tuple(aName, aScale, fg);
-  auto* cache = aFrame->GetProperty(SymbolicImageCacheProp());
-  if (!cache) {
-    cache = new SymbolicImageCache();
-    aFrame->SetProperty(SymbolicImageCacheProp(), cache);
-  }
+  auto* cache = aFrame->GetOrCreateDeletableProperty(SymbolicImageCacheProp());
   auto lookup = cache->Lookup(key);
   if (lookup) {
     return do_AddRef(lookup.Data().mImage);
@@ -109,7 +105,7 @@ static already_AddRefed<imgIContainer> GetSymbolicIconImage(nsAtom* aName,
   if (NS_WARN_IF(!surface)) {
     return nullptr;
   }
-  RefPtr drawable = new gfxSurfaceDrawable(surface, surface->GetSize());
+  auto drawable = MakeRefPtr<gfxSurfaceDrawable>(surface, surface->GetSize());
   nsCOMPtr<imgIContainer> container = ImageOps::CreateFromDrawable(drawable);
   MOZ_ASSERT(container);
   lookup.Set(SymbolicImageEntry{std::move(key), std::move(container)});
@@ -251,6 +247,8 @@ bool nsImageRenderer::PrepareImage() {
     // on.
     mPrepareResult = ImgDrawResult::BAD_IMAGE;
     return false;
+  } else if (mImage->IsImage()) {
+    mPrepareResult = ImgDrawResult::SUCCESS;
   } else {
     MOZ_ASSERT(mImage->IsNone(), "Unknown image type?");
   }
@@ -331,6 +329,7 @@ CSSSizeOrRatio nsImageRenderer::ComputeIntrinsicSize() {
     // Per <http://dev.w3.org/csswg/css3-images/#gradients>, gradients have no
     // intrinsic dimensions.
     case StyleImage::Tag::Gradient:
+    case StyleImage::Tag::Image:
     case StyleImage::Tag::None:
       break;
   }
@@ -565,6 +564,15 @@ ImgDrawResult nsImageRenderer::Draw(nsPresContext* aPresContext,
           ConvertImageRendererToDrawFlags(mFlags), mExtendMode, aOpacity);
       break;
     }
+    case StyleImage::Tag::Image: {
+      const auto fill = LayoutDeviceRect::FromAppUnits(
+          aFill, aPresContext->AppUnitsPerDevPixel());
+      ctx->GetDrawTarget()->FillRect(
+          fill.ToUnknownRect(),
+          ColorPattern(ToDeviceColor(mImage->AsImage()->CalcColor(mForFrame))),
+          DrawOptions(/* aAlpha = */ aOpacity));
+      break;
+    }
     case StyleImage::Tag::Gradient: {
       nsCSSGradientRenderer renderer = nsCSSGradientRenderer::Create(
           aPresContext, mForFrame->Style(), *mGradientData, mSize);
@@ -672,11 +680,10 @@ ImgDrawResult nsImageRenderer::BuildWebRenderDisplayItems(
       SVGImageContext svgContext(Some(destCSSSize));
       Maybe<ImageIntRegion> region;
 
-      const int32_t appUnitsPerDevPixel =
-          mForFrame->PresContext()->AppUnitsPerDevPixel();
-      LayoutDeviceRect destRect =
+      const int32_t appUnitsPerDevPixel = aPresContext->AppUnitsPerDevPixel();
+      const auto destRect =
           LayoutDeviceRect::FromAppUnits(aDest, appUnitsPerDevPixel);
-      LayoutDeviceRect clipRect =
+      const auto clipRect =
           LayoutDeviceRect::FromAppUnits(aFill, appUnitsPerDevPixel);
       auto stretchSize = wr::ToLayoutSize(destRect.Size());
 
@@ -745,6 +752,16 @@ ImgDrawResult nsImageRenderer::BuildWebRenderDisplayItems(
       }
       break;
     }
+    case StyleImage::Tag::Image: {
+      const int32_t appUnitsPerDevPixel = aPresContext->AppUnitsPerDevPixel();
+      auto fillRect = wr::ToLayoutRect(
+          LayoutDeviceRect::FromAppUnits(aFill, appUnitsPerDevPixel));
+      aBuilder.PushRect(
+          fillRect, fillRect, !aItem->BackfaceIsHidden(),
+          /* aFoceAntiAliasing = */ false, /* aIsCheckerboard = */ false,
+          wr::ToColorF(ToDeviceColor(mImage->AsImage()->CalcColor(mForFrame))));
+      break;
+    }
     default:
       break;
   }
@@ -788,10 +805,9 @@ already_AddRefed<gfxDrawable> nsImageRenderer::DrawableForElement(
   }
   NS_ASSERTION(mImageElementSurface.GetSourceSurface(),
                "Surface should be ready.");
-  RefPtr<gfxDrawable> drawable =
-      new gfxSurfaceDrawable(mImageElementSurface.GetSourceSurface().get(),
-                             mImageElementSurface.mSize);
-  return drawable.forget();
+  return MakeAndAddRef<gfxSurfaceDrawable>(
+      mImageElementSurface.GetSourceSurface().get(),
+      mImageElementSurface.mSize);
 }
 
 ImgDrawResult nsImageRenderer::DrawLayer(

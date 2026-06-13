@@ -10,9 +10,24 @@
   --multiline-editor-focus-outline: var(--focus-outline);
   --multiline-editor-selection-color: var(--color-accent-primary);
   --multiline-editor-mention-placeholder-border-color: var(--color-violet-0);
+  --multiline-editor-mention-placeholder-background-color: transparent;
+  --multiline-editor-mention-placeholder-border-radius: var(--border-radius-medium);
 
   display: inline-flex;
   width: 100%;
+}
+
+/* stylelint-disable-next-line media-query-no-invalid */
+@media -moz-pref("browser.nova.enabled") {
+  /* TODO: Bug 2033070 -  Nova tokens were implemented as the default value for the custom properties, and the fallbacks (and lint exceptions) will need to be removed after launch */
+  :host {
+    --multiline-editor-mention-placeholder-background-color: light-dark(var(--color-violet-desaturated-10), var(--color-violet-desaturated-60));
+    --multiline-editor-mention-placeholder-border-color: light-dark(var(--color-violet-desaturated-10), var(--color-violet-desaturated-60));
+    /* TODO: Bug 2030460 - Replace with token when available */
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    --multiline-editor-mention-placeholder-border-radius: 12px;
+    --text-color-deemphasized: light-dark(color-mix(to srgb, var(--color-violet-desaturated-90) 70%, transparent), var(--color-violet-desaturated-0));
+  }
 }
 
 .multiline-editor {
@@ -63,8 +78,12 @@
 }
 
 :host([data-mention-placeholder]) .ProseMirror .ProseMirror-suggestion {
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  background-color: var(--multiline-editor-mention-placeholder-background-color);
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   border: var(--border-width) solid var(--multiline-editor-mention-placeholder-border-color);
-  border-radius: var(--border-radius-medium);
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  border-radius: var(--multiline-editor-mention-placeholder-border-radius);
   color: var(--text-color-deemphasized);
   padding: var(--space-xsmall);
 }

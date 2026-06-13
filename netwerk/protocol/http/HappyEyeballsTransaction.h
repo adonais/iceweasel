@@ -1,4 +1,3 @@
-/* vim:set ts=4 sw=2 sts=2 et cin: */
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -6,75 +5,181 @@
 #ifndef HappyEyeballsTransaction_h_
 #define HappyEyeballsTransaction_h_
 
-#include "nsAHttpConnection.h"
+#include <functional>
+
+#include "mozilla/Maybe.h"
+#include "SpeculativeTransaction.h"
+#include "ZeroRttHandle.h"
 
 namespace mozilla {
 namespace net {
 
+class HappyEyeballsConnectionAttempt;
 class nsHttpTransaction;
 
-// Proxy transaction that wraps a real nsHttpTransaction for use during
-// Happy Eyeballs connection racing. When the connection fails and Close()
-// is called, the proxy re-queues the real transaction instead of closing it.
-class HappyEyeballsTransaction final : public nsAHttpTransaction {
+// One HappyEyeballsTransaction (HT) exists per ConnectionEstablisher
+// during a Happy Eyeballs race.
+//
+// Lifecycle — two phases:
+//
+//   1. RACING (pre-adopt): HT behaves like SpeculativeTransaction —
+//      drives the TLS handshake on its connection without consuming
+//      real request data. The only interaction with the real txn is
+//      via the shared ZeroRttHandle, which reads the real txn's
+//      request stream for 0-RTT early data. HT does NOT hold a
+//      reference to the real nsHttpTransaction and MUST NOT mutate
+//      real txn state in this phase.
+//
+//   2. ADOPTED (post-winner): after HE picks a winner, the owning
+//      HappyEyeballsConnectionAttempt hands the real nsHttpTransaction
+//      to the winning HT via Adopt(). Adopt points the real txn at the
+//      same live connection HT was racing on AND calls the carrier's
+//      SwapTransaction to re-point its transaction slot from HT to
+//      real_txn — Http3Session / Http2Session swap the stream-hash key
+//      and Http{2,3}Stream::mTransaction, nsHttpConnection swaps its
+//      own mTransaction. After that swap the connection drives the
+//      real txn directly; HT becomes dormant and is dropped when
+//      HappyEyeballsConnectionAttempt releases.
+//
+// Responsibilities retained in both phases:
+//   * Collects TCP/TLS timings locally (inherited from NullHttpTransaction
+//     via OnTransportStatus). HET grabs the winner's Timings() and
+//     bootstraps the real transaction before adoption.
+//   * Forwards OnTransportStatus to HET via the caller-supplied status
+//     forwarder so HET can dedup and propagate a single copy to the real
+//     transaction.
+//   * Shares a single ZeroRttHandle (owned by HET) with its racers.
+class HappyEyeballsTransaction final : public SpeculativeTransaction {
  public:
-  NS_DECL_THREADSAFE_ISUPPORTS
-  NS_DECL_NSAHTTPTRANSACTION
+  using StatusForwarder = std::function<void(nsITransport*, nsresult, int64_t)>;
 
-  explicit HappyEyeballsTransaction(nsHttpTransaction* aTrans);
+  HappyEyeballsTransaction(nsHttpConnectionInfo* aConnInfo,
+                           nsIInterfaceRequestor* aCallbacks, uint32_t aCaps,
+                           StatusForwarder&& aStatusForwarder,
+                           ZeroRttHandle* aZeroRttHandle);
 
-  nsHttpTransaction* QueryHttpTransaction() override {
-    return mTransaction.get();
+  void SetConnectedCallback(std::function<void(nsresult)>&& aCallback) {
+    mCloseCallback = std::move(aCallback);
   }
 
-  void OnActivated() override;
-  bool Do0RTT() override;
-  nsresult Finish0RTT(bool aRestart, bool aAlpnChanged) override;
-  uint64_t BrowserId() override;
-  nsIRequestContext* RequestContext() override;
-  void DisableSpdy() override;
-  void DisableHttp2ForProxy() override;
-  void DisableHttp3(bool aAllowRetryHTTPSRR) override;
-  void MakeNonSticky() override;
-  void MakeRestartable() override;
-  void ReuseConnectionOnRestartOK(bool reuseOk) override;
-  void SetIsHttp2Websocket(bool h2ws) override;
-  bool IsHttp2Websocket() override;
-  void SetTRRInfo(nsIRequest::TRRMode aMode,
-                  TRRSkippedReason aSkipReason) override;
-  void DoNotRemoveAltSvc() override;
-  void DoNotResetIPFamilyPreference() override;
-  void OnProxyConnectComplete(int32_t aResponseCode) override;
-  nsresult OnHTTPSRRAvailable(nsIDNSHTTPSSVCRecord* aHTTPSSVCRecord,
-                              nsISVCBRecord* aHighestPriorityRecord,
-                              const nsACString& aCname) override;
-  bool IsForWebTransport() override;
-  bool IsResettingForTunnelConn() override;
-  void SetResettingForTunnelConn(bool aValue) override;
+  // Transition this HT from RACING to ADOPTED. Called from
+  // ZeroRttHandle::Finish0RTT on the winning HT. Hands the real txn to
+  // the live connection and calls the carrier's SwapTransaction
+  // (Http3Session / Http2Session / nsHttpConnection) to re-key the
+  // carrier from HT to real_txn so the connection bypasses HT
+  // entirely post-adopt.
+  void Adopt(nsHttpTransaction* aRealTxn);
+
+  // Lifecycle state.
+  //   Racing  : default after construction. HT is racing in the HE
+  //             pool; can transition to Adopted (winner) or Closed
+  //             (loser / failure / abandoned).
+  //   Adopted : Adopt() ran; mRealTxn is set; SwapTransaction has
+  //             re-keyed the carrier from HT to the real txn.
+  //   Closed  : Close() ran. Terminal.
+  //
+  // Legal transitions:
+  //   Racing  -> Adopted | Closed
+  //   Adopted -> Closed
+  //   Closed  -> Closed (idempotent re-Close is a no-op)
+  enum class State : uint8_t {
+    Racing,
+    Adopted,
+    Closed,
+  };
+  State GetState() const { return mState; }
+
+  // mRealTxn is sticky: set in Adopt(), never cleared. So IsAdopted()
+  // is true after Adopt regardless of subsequent Close transitions.
+  bool IsAdopted() const { return !!mRealTxn; }
+
+  // nsAHttpTransaction virtuals we override. Only the methods that
+  // have HT-specific behavior (RACING-phase 0-RTT driving, disqualify
+  // logic on Close, status dedupe, RequestHead-through-handle) are
+  // overridden; everything else inherits NullHttpTransaction defaults.
+  // Post-Adopt the carrier (session or nsHttpConnection) no longer
+  // calls these on HT — its SwapTransaction re-pointed it at the real
+  // txn.
+  void OnTransportStatus(nsITransport* aTransport, nsresult aStatus,
+                         int64_t aProgress) override;
+  nsresult ReadSegments(nsAHttpSegmentReader* aReader, uint32_t aCount,
+                        uint32_t* aCountRead) override;
+  // Asserts unreachable in debug. By design HET is never the transaction
+  // the connection routes response bytes to.
+  nsresult WriteSegments(nsAHttpSegmentWriter* aWriter, uint32_t aCount,
+                         uint32_t* aCountWritten) override;
+  void Close(nsresult aReason) override;
+  nsHttpTransaction* QueryHttpTransaction() override;
+
+  // Forward to the real nsHttpTransaction this race is being run for so
+  // the deferred LNA check in nsHttpConnection::HandshakeDoneInternal
+  // sees the same answer it would on the non-HE path. Pre-Adopt the
+  // real txn is reachable through the shared ZeroRttHandle; post-Adopt
+  // mRealTxn is set and used directly.
   bool AllowedToConnectToIpAddressSpace(
       nsILoadInfo::IPAddressSpace aTargetIpAddressSpace) override;
 
-  void SetConnectedCallback(std::function<void(nsresult)>&& aCallback);
+  // Pre-adopt, Http3Stream / Http2Stream reads pseudo-header values
+  // off RequestHead() when encoding the 0-RTT HEADERS frame; we have
+  // to return the real txn's head so :method/:authority/:path/:scheme
+  // are correct. Post-swap the session queries the real txn directly.
+  nsHttpRequestHead* RequestHead() override;
 
-  // Detach the wrapped transaction so Close() becomes a no-op.
-  void Detach();
-  bool IsDetached() const { return !mTransaction; }
+  // Not implementable from this context — callers must reach the real
+  // txn through nsHttpChannel's own HTTPS-RR path, not via the shim.
+  nsresult FetchHTTPSRR() override;
+  nsresult OnHTTPSRRAvailable(nsIDNSHTTPSSVCRecord* aHTTPSSVCRecord,
+                              nsISVCBRecord* aHighestPriorityRecord,
+                              const nsACString& aCname) override;
 
-  void Cancel(nsresult aReason) override {
-    mCancelled = true;
-    mCancelReason = aReason;
+  // 0-RTT interface — delegates to the shared ZeroRttHandle (always,
+  // regardless of adoption state).
+  bool Do0RTT(bool aCanSendEarlyData) override {
+    return mZeroRttHandle->Do0RTT(this, aCanSendEarlyData);
+  }
+  nsresult Finish0RTT(bool aRestart, bool aAlpnChanged) override {
+    return mZeroRttHandle->Finish0RTT(this, aRestart, aAlpnChanged);
   }
 
+  // Position in the real transaction's request stream this attempt
+  // has sent as 0-RTT early data. Nothing() means this attempt is not
+  // in the 0-RTT flow. Read and written by the shared ZeroRttHandle.
+  Maybe<uint64_t>& Request0RttStreamOffset() {
+    return m0RttRequestStreamOffset;
+  }
+  const Maybe<uint64_t>& Request0RttStreamOffset() const {
+    return m0RttRequestStreamOffset;
+  }
+  bool Entered0RTT() const { return m0RttRequestStreamOffset.isSome(); }
+
  private:
-  ~HappyEyeballsTransaction();
+  ~HappyEyeballsTransaction() override;
 
-  void MaybeInvokeConnectedCallback(nsresult aStatus);
+  // Single dispatcher for state transitions. Switches on the target
+  // state, asserts the move is legal from the current state, commits
+  // mState, and runs the actions tied to entering that state. Public
+  // Adopt() / Close() pre-validate their inputs and then call here;
+  // every state mutation goes through this function.
+  //
+  // aRealTxn is consumed by the Adopted entry; aReason by Closed.
+  // Other parameters are ignored per-case.
+  void Transition(State aNext, nsHttpTransaction* aRealTxn = nullptr,
+                  nsresult aReason = NS_OK);
 
-  RefPtr<nsHttpTransaction> mTransaction;
-  std::function<void(nsresult)> mConnectedCallback;
-  bool mConnectedCallbackInvoked = false;
-  bool mCancelled = false;
-  nsresult mCancelReason = NS_OK;
+  StatusForwarder mStatusForwarder;
+  RefPtr<ZeroRttHandle> mZeroRttHandle;
+
+  // Non-null only after Adopt(). Backs QueryHttpTransaction() so
+  // callers that still hold an HT pointer can reach the real txn.
+  // Sticky: never cleared once set, so IsAdopted() is correct
+  // post-Close too.
+  RefPtr<nsHttpTransaction> mRealTxn;
+
+  // Set by ZeroRttHandle when this attempt joins the 0-RTT flow and
+  // advances as bytes are sent.
+  Maybe<uint64_t> m0RttRequestStreamOffset;
+
+  State mState = State::Racing;
 };
 
 }  // namespace net

@@ -93,10 +93,16 @@ add_task(async function test_pref_toggle() {
       url: "about:preferences#privacy",
     },
     async _browser => {
-      const relayIntegrationCheckbox = content.document.querySelector(
-        "checkbox#relayIntegration"
-      );
+      const relayIntegrationCheckbox = Services.prefs.getBoolPref(
+        "browser.settings-redesign.enabled",
+        false
+      )
+        ? content.document.querySelector("moz-checkbox#relayIntegration")
+        : content.document.querySelector("checkbox#relayIntegration");
       relayIntegrationCheckbox.click();
+      if (relayIntegrationCheckbox.updateComplete) {
+        await relayIntegrationCheckbox.updateComplete;
+      }
       relayIntegrationCheckbox.click();
       await assertEvents([
         { object: "pref_change", method: "disabled" },

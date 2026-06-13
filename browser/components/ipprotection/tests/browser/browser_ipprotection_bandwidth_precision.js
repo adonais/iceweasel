@@ -16,8 +16,7 @@ const mockLocation = {
 async function setupBandwidthPrecisionTest(maxBytes, remaining) {
   let usage = makeUsage(maxBytes, remaining);
   setupService({
-    isSignedIn: true,
-    isEnrolledAndEntitled: true,
+    isReady: true,
     canEnroll: true,
     proxyPass: {
       status: 200,
@@ -27,7 +26,7 @@ async function setupBandwidthPrecisionTest(maxBytes, remaining) {
     },
     usageInfo: usage,
   });
-  await IPPEnrollAndEntitleManager.refetchEntitlement();
+  await IPPFxaAuthProvider.checkForUpgrade();
   await IPPProxyManager.refreshUsage();
   await SpecialPowers.pushPrefEnv({
     set: [["browser.ipProtection.bandwidth.enabled", true]],

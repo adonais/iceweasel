@@ -68,17 +68,12 @@ class HostWebGLContext final : public SupportsWeakPtr {
   }
 
  public:
-  struct OwnerData final {
-    ClientWebGLContext* inProcess = nullptr;
-    dom::WebGLParent* outOfProcess = nullptr;
-  };
-
   static std::unique_ptr<HostWebGLContext> Create(
-      const OwnerData&, const webgl::InitContextDesc&,
+      dom::WebGLParent*, const webgl::InitContextDesc&,
       webgl::InitContextResult* out);
 
  private:
-  explicit HostWebGLContext(const OwnerData&);
+  explicit HostWebGLContext(dom::WebGLParent*);
 
  public:
   virtual ~HostWebGLContext();
@@ -86,7 +81,7 @@ class HostWebGLContext final : public SupportsWeakPtr {
   WebGLContext* GetWebGLContext() const { return mContext; }
 
  public:
-  const OwnerData mOwnerData;
+  dom::WebGLParent* const mOwner;
 
  private:
   RefPtr<WebGLContext> mContext;

@@ -49,5 +49,7 @@ You can find the review identifier by inspecting the commit log with:
 - Do not run `./mach build faster` when only front-end test files (JS, HTML, etc.) were modified — they don't need compilation.
 - Ask if you should run a test. If you do, you probably want to run the test with `--headless`
 - Never submit patches to Phabricator without explicit user approval.
+- In commit messages, group reviewers use a `#` prefix: `r?#group-name` (e.g. `r?#linter-reviewers`), while individual reviewers do not: `r?username`
+- Never put `DONTBUILD` (or `CLOSED TREE`) in the `-m` message of `mach try fuzzy` / `mach try compare` when you want builds to actually run. The Gecko decision task scans the message and on `DONTBUILD` strips every task from the graph: the decision task itself succeeds (Treeherder shows green) but no builds are scheduled.
 - When doing Android and Desktop front-end-only changes, use the special `./mach build faster` to skip all C++/Rust compilation.
 - Conversely, for C++/Rust only changes you can use the special `./mach build binaries` to skip all front-end-related tasks.

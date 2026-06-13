@@ -49,10 +49,9 @@ class TimelineManager {
     Scroll,
     View,
   };
-  void UpdateTimelines(dom::Element* aElement,
-                       const PseudoStyleRequest& aPseudoRequest,
-                       const ComputedStyle* aComputedStyle,
-                       ProgressTimelineType aType);
+  nsTArray<RefPtr<const nsAtom>> UpdateTimelines(
+      dom::Element* aElement, const PseudoStyleRequest& aPseudoRequest,
+      const ComputedStyle* aComputedStyle, ProgressTimelineType aType);
 
   void UpdateTimelineScopes(const dom::Element* aElement,
                             const ComputedStyle* aComputedStyle);
@@ -92,11 +91,11 @@ class TimelineManager {
   using TimelineScopes = nsTArray<TimelineScopeEntry>;
 
   template <typename StyleType, typename TimelineType>
-  void DoUpdateTimelines(nsPresContext* aPresContext, dom::Element* aElement,
-                         const PseudoStyleRequest& aPseudoRequest,
-                         const nsStyleAutoArray<StyleType>& aStyleTimelines,
-                         size_t aTimelineCount,
-                         TimelineNameMap<TimelineType>& aTimelineNameMap);
+  nsTArray<RefPtr<const nsAtom>> DoUpdateTimelines(
+      nsPresContext* aPresContext, dom::Element* aElement,
+      const PseudoStyleRequest& aPseudoRequest,
+      const nsStyleAutoArray<StyleType>& aStyleTimelines, size_t aTimelineCount,
+      TimelineNameMap<TimelineType>& aTimelineNameMap);
 
   template <typename T>
   void AddTimelineCollection(TimelineCollection<T>* aCollection);
@@ -117,7 +116,7 @@ class TimelineManager {
 
   // Destroy all timelines relating to the given (pseudo) element.
   template <typename TimelineType>
-  static void TryDestroyTimeline(
+  nsTArray<RefPtr<const nsAtom>> TryDestroyTimeline(
       dom::Element* aElement, const PseudoStyleRequest& aPseudoRequest,
       TimelineNameMap<TimelineType>& aTimelineNameMap);
 

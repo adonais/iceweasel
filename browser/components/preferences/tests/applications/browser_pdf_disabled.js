@@ -8,15 +8,14 @@ add_task(async function pdfIsAlwaysPresent() {
   // Try again with the pdf viewer enabled and disabled.
   for (let test of ["enabled", "disabled"]) {
     await SpecialPowers.pushPrefEnv({
-      set: [
-        ["pdfjs.disabled", test == "disabled"],
-        ["browser.settings-redesign.enabled", true],
-      ],
+      set: [["pdfjs.disabled", test == "disabled"]],
     });
 
     let appHandlerInitialized = TestUtils.topicObserved("app-handler-loaded");
 
-    await openPreferencesViaOpenPreferencesAPI("general", { leaveOpen: true });
+    await openPreferencesViaOpenPreferencesAPI("downloads", {
+      leaveOpen: true,
+    });
 
     await appHandlerInitialized;
 

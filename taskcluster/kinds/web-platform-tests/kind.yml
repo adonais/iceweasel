@@ -620,7 +620,8 @@ tasks:
             by-test-platform:
                 .*windows.*: win11-64-25h2
                 default: default
-        chunks:
+        chunks: dynamic
+        default-chunks:
             by-test-platform:
                 .*-ccov.*: 6
                 .*-tsan.*: 8
@@ -683,7 +684,7 @@ tasks:
                         - macosx64-minidump-stackwalk
                         - macosx64-fix-stacks
                     macosx.*-aarch64.*:
-                        - macosx64-aarch64-geckodriver
+                        - macosx64-geckodriver
                         - macosx64-aarch64-minidump-stackwalk
                         - macosx64-aarch64-fix-stacks
                     win.*-32.*:
@@ -860,7 +861,7 @@ tasks:
                         - macosx64-minidump-stackwalk
                         - macosx64-fix-stacks
                     macosx.*-aarch64.*:
-                        - macosx64-aarch64-geckodriver
+                        - macosx64-geckodriver
                         - macosx64-aarch64-minidump-stackwalk
                         - macosx64-aarch64-fix-stacks
                     win.*-32.*:

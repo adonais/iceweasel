@@ -7,7 +7,7 @@
  * for similar heuristics for xpcshell.
  *
  * Many of the storage-related helpers in this file come from:
- * https://searchfox.org/mozilla-central/source/dom/localstorage/test/unit/head.js
+ * https://searchfox.org/firefox-main/source/dom/localstorage/test/unit/head.js
  */
 
 // To use this file, explicitly import it via:

@@ -119,14 +119,14 @@ Header to Include
 ^^^^^^^^^^^^^^^^^
 
 If the compilation unit only defines and records untyped, text, and/or its own markers, include
-`the main profiler markers header <https://searchfox.org/mozilla-central/source/tools/profiler/public/ProfilerMarkers.h>`_:
+:searchfox:`the main profiler markers header <tools/profiler/public/ProfilerMarkers.h>`:
 
 .. code-block:: cpp
 
     #include "mozilla/ProfilerMarkers.h"
 
 If it also records one of the other common markers defined in
-`ProfilerMarkerTypes.h <https://searchfox.org/mozilla-central/source/tools/profiler/public/ProfilerMarkerTypes.h>`_,
+:searchfox:`ProfilerMarkerTypes.h <tools/profiler/public/ProfilerMarkerTypes.h>`,
 include that one instead:
 
 .. code-block:: cpp
@@ -134,7 +134,7 @@ include that one instead:
     #include "mozilla/ProfilerMarkerTypes.h"
 
 And if it uses any other profiler functions (e.g., labels), use
-`the main Gecko Profiler header <https://searchfox.org/mozilla-central/source/tools/profiler/public/GeckoProfiler.h>`_
+:searchfox:`the main Gecko Profiler header <tools/profiler/public/GeckoProfiler.h>`
 instead:
 
 .. code-block:: cpp
@@ -171,8 +171,8 @@ Name, category, options.
 1. Marker name
     The first argument is the name of this marker. This will be displayed in most places
     the marker is shown. It can be a literal C string, or any dynamic string object.
-2. `Category pair name <https://searchfox.org/mozilla-central/source/__GENERATED__/mozglue/baseprofiler/public/ProfilingCategoryList.h>`_
-    Choose a category + subcategory from the `the list of categories <https://searchfox.org/mozilla-central/source/mozglue/baseprofiler/build/profiling_categories.yaml>`_.
+2. :searchfox:`Category pair name <__GENERATED__/mozglue/baseprofiler/public/ProfilingCategoryList.h>`
+    Choose a category + subcategory from the :searchfox:`the list of categories <mozglue/baseprofiler/build/profiling_categories.yaml>`.
     This is the second parameter of each ``SUBCATEGORY`` line, for instance ``LAYOUT_Reflow``.
     (Internally, this is really a `MarkerCategory <https://searchfox.org/mozilla-central/define?q=T_mozilla%3A%3AMarkerCategory>`_
     object, in case you need to construct it elsewhere.)
@@ -287,8 +287,8 @@ events.
 
 If there’s not an obvious pointer that matches the lifetime of the flow, there are alternatives:
 
-- `Flow::ProcessScoped(uint64_t aFlowId) <https://searchfox.org/mozilla-central/rev/86878e73a24fe32ea09dbae5b55362efaf7485c8/mozglue/baseprofiler/public/Flow.h#43>`__ -- the id should be unique in the process
-- `Flow::Global(uint64_t aFlowId) <https://searchfox.org/mozilla-central/rev/86878e73a24fe32ea09dbae5b55362efaf7485c8/mozglue/baseprofiler/public/Flow.h#58>`__ -- the id should be unique across all processes
+- :searchfox:`Flow::ProcessScoped(uint64_t aFlowId) <mozilla-central/rev/86878e73a24fe32ea09dbae5b55362efaf7485c8:mozglue/baseprofiler/public/Flow.h#43>` -- the id should be unique in the process
+- :searchfox:`Flow::Global(uint64_t aFlowId) <mozilla-central/rev/86878e73a24fe32ea09dbae5b55362efaf7485c8:mozglue/baseprofiler/public/Flow.h#58>` -- the id should be unique across all processes
 
 ``Runnable``, IPC, and ``Task`` have already been annotated with flow markers.
 This allow linking flows together, even across process boundaries.
@@ -411,10 +411,10 @@ The first step is to determine the location of the marker type definition:
 
   * If there is no dependency on XUL, it can be defined in the Base Profiler, which can
     be used in most locations in the codebase:
-    `mozglue/baseprofiler/public/BaseProfilerMarkerTypes.h <https://searchfox.org/mozilla-central/source/mozglue/baseprofiler/public/BaseProfilerMarkerTypes.h>`__
+    :searchfox:`mozglue/baseprofiler/public/BaseProfilerMarkerTypes.h`
 
   * However, if there is a XUL dependency, then it needs to be defined in the Gecko Profiler:
-    `tools/profiler/public/ProfilerMarkerTypes.h <https://searchfox.org/mozilla-central/source/tools/profiler/public/ProfilerMarkerTypes.h>`__
+    :searchfox:`tools/profiler/public/ProfilerMarkerTypes.h`
 
 .. _how-to-define-new-marker-types:
 

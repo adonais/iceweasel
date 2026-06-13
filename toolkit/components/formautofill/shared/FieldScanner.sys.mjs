@@ -101,6 +101,8 @@ export class FieldDetail {
       fathomConfidence = null,
       isVisible = true,
       isLookup = false,
+      // extraInfo is used for ML and heuristic comparison measurements.
+      extraInfo = null,
     } = {}
   ) {
     const fieldDetail = new FieldDetail(element);
@@ -137,13 +139,15 @@ export class FieldDetail {
       fieldDetail.reason = "regex-heuristic";
     }
 
+    fieldDetail.extraInfo = extraInfo;
+
     try {
       fieldDetail.browsingContextId =
         element.localName == "iframe"
           ? element.browsingContext.id
-          : BrowsingContext.getFromWindow(element.ownerGlobal).id;
+          : BrowsingContext.getFromWindow(element.documentGlobal).id;
     } catch {
-      /* unit test doesn't have ownerGlobal */
+      /* unit test doesn't have documentGlobal */
     }
 
     fieldDetail.isVisible = isVisible;

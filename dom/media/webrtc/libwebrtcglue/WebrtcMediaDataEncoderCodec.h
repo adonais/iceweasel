@@ -5,6 +5,7 @@
 #ifndef WebrtcMediaDataEncoderCodec_h_
 #define WebrtcMediaDataEncoderCodec_h_
 
+#include "MediaCodecsSupport.h"
 #include "MediaConduitInterface.h"
 #include "MediaInfo.h"
 #include "MediaResult.h"
@@ -24,7 +25,8 @@ class WebrtcMediaDataEncoder : public RefCountedWebrtcVideoEncoder {
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(WebrtcMediaDataEncoder, final);
 
-  static bool CanCreate(const webrtc::VideoCodecType aCodecType);
+  static media::EncodeSupportSet SupportsCodec(
+      const webrtc::VideoCodecType aCodecType);
 
   explicit WebrtcMediaDataEncoder(const webrtc::SdpVideoFormat& aFormat);
 

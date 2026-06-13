@@ -85,6 +85,22 @@ export const AboutNewTab = {
     // on startup.
     lazy.AboutNewTabResourceMapping.init();
 
+    // ActivityStream.init() also sets this default,
+    // but it is gated behind TOU acceptance, which is too late for
+    // about:welcome's first-screen impression.
+    // Setting it here lets AboutWelcomeTelemetry and ASRouter
+    // telemetry submit pings before TOU is accepted while Glean gates the
+    // upload on datareporting.healthreport.uploadEnabled.
+    const AStelemetryPref = "browser.newtabpage.activity-stream.telemetry";
+    if (
+      Services.prefs.getPrefType(AStelemetryPref) ===
+      Services.prefs.PREF_INVALID
+    ) {
+      Services.prefs
+        .getDefaultBranch("")
+        .setBoolPref(AStelemetryPref, AppConstants.MOZILLA_OFFICIAL);
+    }
+
     // More initialization happens here
     this.toggleActivityStream(true);
     this.initialized = true;

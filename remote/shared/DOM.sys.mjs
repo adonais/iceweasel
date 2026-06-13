@@ -16,6 +16,7 @@ const FIRST_ORDERED_NODE_TYPE = 9;
 const DOCUMENT_FRAGMENT_NODE = 11;
 const ELEMENT_NODE = 1;
 
+const MATHML_NS = "http://www.w3.org/1998/Math/MathML";
 const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
 
 /** XUL elements that support checked property. */
@@ -875,6 +876,15 @@ dom.isInView = function (el) {
     // workaround check the visibility based on the first contained cell.
     if (el.localName === "tr" && el.cells && el.cells.length) {
       return tree.includes(el.cells[0]);
+    }
+    // Same for MathML <mtr>, but we can't use HTMLTableRowElement.cells.
+    if (
+      el.namespaceURI === MATHML_NS &&
+      el.localName === "mtr" &&
+      el.children &&
+      el.children.length
+    ) {
+      return tree.includes(el.children[0]);
     }
 
     return tree.includes(el);

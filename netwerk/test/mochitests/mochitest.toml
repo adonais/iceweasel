@@ -2,6 +2,7 @@
 support-files = [
   "method.sjs",
   "partial_content.sjs",
+  "prefetch_cache.sjs",
   "rel_preconnect.sjs",
   "set_cookie_xhr.sjs",
   "reset_cookie_xhr.sjs",
@@ -192,6 +193,8 @@ skip-if = [
 
 ["test_pdf.html"]
 support-files = ["file_pdfjs_test.pdf", "file_pdfjs_test.pdf^headers^"]
+
+["test_prefetch_cache_no_headers.html"]
 
 # test_1331680* fail with xorigin if 3pc are rejected by default (Bug 1873998).
 

@@ -206,6 +206,7 @@ class ICStub {
 
   uint32_t enteredCount() const { return enteredCount_; }
   inline void incrementEnteredCount() { enteredCount_++; }
+  void setEnteredCount(uint32_t count) { enteredCount_ = count; }
   void resetEnteredCount() { enteredCount_ = 0; }
 
   static constexpr size_t offsetOfStubCode() {

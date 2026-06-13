@@ -116,7 +116,7 @@ class PrintHelper {
   }
 
   async startPrint(condition = {}) {
-    this.sourceBrowser.ownerGlobal.document
+    this.sourceBrowser.documentGlobal.document
       .getElementById("cmd_print")
       .doCommand();
     return this.waitForDialog(condition);
@@ -149,7 +149,7 @@ class PrintHelper {
       );
     }).then(([doc]) => {
       doc.addEventListener("DOMContentLoaded", () => {
-        initFn(doc.ownerGlobal);
+        initFn(doc.documentGlobal);
       });
     });
   }
@@ -317,7 +317,7 @@ class PrintHelper {
   }
 
   get _tabDialogBox() {
-    return this.sourceBrowser.ownerGlobal.gBrowser.getTabDialogBox(
+    return this.sourceBrowser.documentGlobal.gBrowser.getTabDialogBox(
       this.sourceBrowser
     );
   }
@@ -523,7 +523,7 @@ class PrintHelper {
   mockFilePickerCancel() {
     if (!pickerMocked) {
       pickerMocked = true;
-      MockFilePicker.init(window.browsingContext);
+      MockFilePicker.init();
       registerCleanupFunction(() => MockFilePicker.cleanup());
     }
     MockFilePicker.returnValue = MockFilePicker.returnCancel;
@@ -532,7 +532,7 @@ class PrintHelper {
   mockFilePicker(filename) {
     if (!pickerMocked) {
       pickerMocked = true;
-      MockFilePicker.init(window.browsingContext);
+      MockFilePicker.init();
       registerCleanupFunction(() => MockFilePicker.cleanup());
     }
     MockFilePicker.returnValue = MockFilePicker.returnOK;
@@ -547,12 +547,6 @@ class PrintHelper {
     return file;
   }
 }
-
-// Synthesized events are not available with native menus
-const nativeSelectEnabled = () =>
-  AppConstants.platform == "macosx" &&
-  Services.prefs.getBoolPref("widget.macos.native-anchored-menus", false) &&
-  Services.prefs.getBoolPref("widget.macos.allow-native-select", false);
 
 function waitForPreviewVisible() {
   return BrowserTestUtils.waitForCondition(function () {

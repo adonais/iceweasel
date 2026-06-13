@@ -324,7 +324,7 @@ class GMPDiskStorage : public GMPStorage {
       f->Exists(&exists);
       if (!exists) {
         // Filename not in use, we can write into this file.
-        aOutFilename = hashStr;
+        aOutFilename = std::move(hashStr);
         return NS_OK;
       } else {
         // Hash collision; just increment the hash name and try that again.

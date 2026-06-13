@@ -39,10 +39,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import mozilla.components.compose.base.LinkText
+import mozilla.components.compose.base.LinkTextState
 import mozilla.components.compose.base.button.FilledButton
 import org.mozilla.fenix.R
-import org.mozilla.fenix.compose.LinkText
-import org.mozilla.fenix.compose.LinkTextState
 import org.mozilla.fenix.compose.ScrollIndicator
 import org.mozilla.fenix.onboarding.view.Action
 import org.mozilla.fenix.onboarding.view.OnboardingPageState
@@ -51,6 +51,7 @@ import org.mozilla.fenix.onboarding.view.OnboardingTermsOfServiceEventHandler
 import org.mozilla.fenix.theme.FirefoxTheme
 
 private val TOU_IMAGE_HEIGHT = 176.dp
+private val TOU_IMAGE_HEIGHT_SMALL_DEVICE = 130.dp
 
 private val kitImageResources = listOf(
     R.drawable.nova_onboarding_tou,
@@ -81,7 +82,9 @@ fun TermsOfServiceOnboardingPageRedesign(
         ) {
             val scrollState = rememberScrollState()
 
-            if (!pageState.isSmallDevice) {
+            if (pageState.isSmallDevice) {
+                Spacer(modifier = Modifier.height(16.dp))
+            } else {
                 Spacer(modifier = Modifier.weight(TITLE_TOP_SPACER_WEIGHT))
             }
 
@@ -145,7 +148,7 @@ private fun Header(pageState: OnboardingPageState) {
         painter = painterResource(id = currentImageRes),
         contentDescription = null, // Decorative image only.
         modifier = Modifier
-            .height(TOU_IMAGE_HEIGHT)
+            .height(pageState.imageHeight())
             .clickable(
                 role = Role.Button,
                 interactionSource = remember { MutableInteractionSource() },
@@ -167,6 +170,12 @@ private fun Header(pageState: OnboardingPageState) {
     Spacer(Modifier.height(20.dp))
 
     pageState.termsOfService?.subheaderOneText?.let { SubHeader(it) }
+}
+
+private fun OnboardingPageState.imageHeight() = if (isSmallDevice) {
+    TOU_IMAGE_HEIGHT_SMALL_DEVICE
+} else {
+    TOU_IMAGE_HEIGHT
 }
 
 /**
@@ -249,8 +258,6 @@ private fun BodyLinkText(
 }
 
 private fun String.updateFirstPlaceholder(text: String) = replace($$"%1$s", text)
-
-// *** Code below used for previews only *** //
 
 @PreviewLightDark
 @Composable

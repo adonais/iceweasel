@@ -34,45 +34,9 @@ add_setup(async function () {
     await ASRouter.resetMessageState();
   });
 
-  /**
-   * @backward-compat { version 150 }
-   *
-   * Our test message was added to PanelTestProvider in version 150. This test,
-   * however, runs in the newtab train-hop CI jobs, which means that we have
-   * to shim the test message until the PanelTestProvider change reaches 150.
-   */
-  if (Services.vc.compare(AppConstants.MOZ_APP_VERSION, "150.0a1") < 0) {
-    gTestNewTabMessage = {
-      id: "TEST_ASROUTER_NEWTAB_MESSAGE",
-      template: "newtab_message",
-      content: {
-        messageType: "ASRouterNewTabMessage",
-        imageSrc:
-          // eslint-disable-next-line mozilla/no-newtab-refs-outside-newtab
-          "chrome://newtab/content/data/content/assets/kit-in-circle.svg",
-        heading: "Test Heading",
-        body: "This is a test message body.",
-        primaryButton: {
-          label: "Primary Action",
-          action: {
-            type: "OPEN_URL",
-            data: { args: "https://www.mozilla.org/" },
-          },
-        },
-      },
-      frequency: {
-        lifetime: 3,
-      },
-      trigger: {
-        id: "newtabMessageCheck",
-      },
-      groups: [],
-    };
-  } else {
-    gTestNewTabMessage = await PanelTestProvider.getMessages().then(msgs =>
-      msgs.find(msg => msg.id === TEST_MESSAGE_ID)
-    );
-  }
+  gTestNewTabMessage = await PanelTestProvider.getMessages().then(msgs =>
+    msgs.find(msg => msg.id === TEST_MESSAGE_ID)
+  );
   Assert.ok(gTestNewTabMessage, "Found a test fxa_cta message to use.");
 });
 

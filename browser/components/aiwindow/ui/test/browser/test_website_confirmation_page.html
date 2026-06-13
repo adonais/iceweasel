@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>AI Window website confirmation test</title>
+    <script type="module" src="test_website_confirmation.mjs">
+    </script>
+    <link rel="localization" href="preview/aiWindow.ftl">
+  </head>
+  <body>
+    <ai-website-confirmation id="test-confirmation-empty">
+    </ai-website-confirmation>
+
+    <ai-website-confirmation id="test-confirmation-mixed">
+    </ai-website-confirmation>
+
+    <ai-website-confirmation id="test-confirmation-all-checked">
+    </ai-website-confirmation>
+
+    <script type="module">
+      // Setup test data after components are defined
+      customElements.whenDefined("ai-website-confirmation").then(() => {
+        const mixedConfirmation = document.getElementById("test-confirmation-mixed");
+        mixedConfirmation.tabs = [
+          {
+            tabId: "tab-1",
+            label: "Mozilla Developer Network",
+            iconSrc: "chrome://branding/content/icon16.png",
+            href: "https://developer.mozilla.org",
+            checked: true,
+          },
+          {
+            tabId: "tab-2",
+            label: "Stack Overflow",
+            iconSrc: "chrome://global/skin/icons/defaultFavicon.svg",
+            href: "https://stackoverflow.com",
+            checked: false,
+          },
+          {
+            tabId: "tab-3",
+            label: "GitHub",
+            iconSrc: "chrome://branding/content/about-logo.svg",
+            href: "https://github.com",
+            checked: true,
+          },
+          {
+            tabId: "tab-4",
+            label: "Example Site",
+            iconSrc: "chrome://global/skin/icons/defaultFavicon.svg",
+            href: "https://example.com",
+            checked: false,
+          },
+        ];
+
+        const allCheckedConfirmation = document.getElementById("test-confirmation-all-checked");
+        allCheckedConfirmation.tabs = [
+          {
+            tabId: "checked-1",
+            label: "Site One",
+            iconSrc: "chrome://branding/content/icon16.png",
+            href: "https://site1.example",
+            checked: true,
+          },
+          {
+            tabId: "checked-2",
+            label: "Site Two",
+            iconSrc: "chrome://branding/content/icon16.png",
+            href: "https://site2.example",
+            checked: true,
+          },
+        ];
+      });
+    </script>
+  </body>
+</html>

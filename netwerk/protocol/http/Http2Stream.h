@@ -27,6 +27,12 @@ class Http2Stream : public Http2StreamBase {
   nsIRequestContext* RequestContext() override {
     return mTransaction ? mTransaction->RequestContext() : nullptr;
   }
+  // Replace the stream's backing transaction. Used by the HE / 0-RTT
+  // flow when a HappyEyeballsTransaction shim is adopted by the real
+  // nsHttpTransaction. The caller is responsible for keeping the hash
+  // key consistent (see Http2Session::SwapTransaction); otherwise the
+  // invariant in the field's comment below holds.
+  void SetTransaction(nsAHttpTransaction* aTrans) { mTransaction = aTrans; }
 
  protected:
   ~Http2Stream();
@@ -39,7 +45,9 @@ class Http2Stream : public Http2StreamBase {
   // The underlying HTTP transaction. This pointer is used as the key
   // in the Http2Session mStreamTransactionHash so it is important to
   // keep a reference to it as long as this stream is a member of that hash.
-  // (i.e. don't change it or release it after it is set in the ctor).
+  // (i.e. don't change it or release it after it is set in the ctor,
+  // except atomically with updating the hash — see
+  // Http2Session::SwapTransaction.)
   RefPtr<nsAHttpTransaction> mTransaction;
 };
 

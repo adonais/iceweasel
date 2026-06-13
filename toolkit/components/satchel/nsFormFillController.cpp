@@ -691,7 +691,7 @@ nsFormFillController::OnSearchCompletion(nsIAutoCompleteResult* aResult) {
   nsAutoString searchString;
   aResult->GetSearchString(searchString);
 
-  mLastSearchString = searchString;
+  mLastSearchString = std::move(searchString);
 
   if (mLastListener) {
     nsCOMPtr<nsIAutoCompleteObserver> lastListener = mLastListener;
@@ -729,7 +729,7 @@ nsFormFillController::HandleEvent(Event* aEvent) {
 
   mInvalidatePreviousResult = false;
 
-  nsIGlobalObject* global = target->GetOwnerGlobal();
+  nsIGlobalObject* global = target->GetRelevantGlobal();
   NS_ENSURE_STATE(global);
   nsPIDOMWindowInner* inner = global->GetAsInnerWindow();
   NS_ENSURE_STATE(inner);

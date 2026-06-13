@@ -205,7 +205,7 @@ pub unsafe extern "C" fn urlpattern_component_matches(
 // note: can't return Result<Option<...>> since cbindgen doesn't handle well
 // so we need to return a type that can be used in C++ and rust
 #[no_mangle]
-pub extern "C" fn urlpattern_process_match_input_from_string(
+pub unsafe extern "C" fn urlpattern_process_match_input_from_string(
     url_str: *const nsACString,
     base_url: *const nsACString,
     res: *mut UrlPatternMatchInputAndInputs,
@@ -265,7 +265,7 @@ pub extern "C" fn urlpattern_process_match_input_from_string(
 }
 
 #[no_mangle]
-pub extern "C" fn urlpattern_process_match_input_from_init(
+pub unsafe extern "C" fn urlpattern_process_match_input_from_init(
     init: &UrlPatternInit,
     base_url: *const nsACString,
     res: *mut UrlPatternMatchInputAndInputs,

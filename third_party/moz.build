@@ -82,6 +82,9 @@ with Files("pipewire/**"):
 with Files("drm/**"):
     BUG_COMPONENT = ("Core", "WebRTC")
 
+with Files("khronos/vulkan-headers/**"):
+    BUG_COMPONENT = ("Core", "Audio/Video: Playback")
+
 with Files("libepoxy/**"):
     BUG_COMPONENT = ("Core", "WebRTC")
 

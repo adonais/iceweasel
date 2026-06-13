@@ -6,12 +6,15 @@
       "matches": ["*://*.copyleaks.com/*"]
     }
   },
+  "css": {
+    "hide_browser_notice": "#outdated { display: none !important; }"
+  },
   "interventions": [
     {
       "platforms": ["android"],
-      "content_scripts": {
+      "css": {
         "all_frames": true,
-        "css": ["bug1830796-copyleaks.com-hide-unsupported.css"]
+        "which": ["hide_browser_notice"]
       }
     }
   ]

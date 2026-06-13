@@ -161,10 +161,7 @@ def fenix_format(_paths, config, fix=None, **lintargs):
         fix,
         os.path.join("mobile", "android", "fenix"),
         project_name="fenix",
-        lint_tasks=[
-            ":fenix:lint",
-            ":fenix:lintDebug",
-        ],
+        lint_tasks=[":fenix:lintDebug"],
         **lintargs,
     )
 
@@ -196,13 +193,14 @@ def report_gradlew(config, fix, subdir, project_name, lint_tasks=[], **lintargs)
     topobjdir = lintargs["topobjdir"]
 
     if fix:
-        tasks = [f":{project_name}:ktlintFormat", f":{project_name}:detekt"]
+        ktlint_task = f":{project_name}:ktlintFormat"
     else:
-        tasks = [f":{project_name}:ktlint", f":{project_name}:detekt"]
+        ktlint_task = f":{project_name}:ktlint"
+    tasks = [ktlint_task, f":{project_name}:detekt"] + list(lint_tasks)
 
     extra_args = lintargs.get("extra_args") or []
 
-    gradle(
+    ret = gradle(
         lintargs["log"],
         topsrcdir=topsrcdir,
         topobjdir=topobjdir,
@@ -289,7 +287,9 @@ def report_gradlew(config, fix, subdir, project_name, lint_tasks=[], **lintargs)
         print(f"Could not read ktlint report: `{ktlint_file}`")
         pass
 
-    return results + read_lint_report(config, subdir, tasks=lint_tasks, **lintargs)
+    return results + parse_lint_report(
+        config, subdir, tasks=lint_tasks, ret=ret, **lintargs
+    )
 
 
 def is_excluded_file(topsrcdir, excludes, file):
@@ -418,17 +418,8 @@ def lint(_paths, config, **lintargs):
     return results
 
 
-def read_lint_report(config, subdir, tasks=[], **lintargs):
+def parse_lint_report(config, subdir, tasks=[], ret=0, **lintargs):
     topsrcdir = lintargs["root"]
-    topobjdir = lintargs["topobjdir"]
-
-    ret = gradle(
-        lintargs["log"],
-        topsrcdir=topsrcdir,
-        topobjdir=topobjdir,
-        tasks=tasks,
-        extra_args=lintargs.get("extra_args") or [],
-    )
 
     reports = os.path.join(topsrcdir, subdir, "build", "reports")
 

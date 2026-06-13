@@ -781,6 +781,7 @@ class PerfParser(CompareParser):
                     "suites": category_info["suites"],
                     "base-category": base_category,
                     "base-category-name": category,
+                    "try-config-defaults": category_info.get("try-config-defaults", {}),
                     "description": category_info["description"],
                 }
                 for app in Apps:
@@ -824,6 +825,9 @@ class PerfParser(CompareParser):
                         "app": app,
                         "suites": category_info["suites"],
                         "base-category": base_category,
+                        "try-config-defaults": category_info.get(
+                            "try-config-defaults", {}
+                        ),
                         "description": category_info["description"],
                     }
 
@@ -1391,6 +1395,31 @@ class PerfParser(CompareParser):
         finally:
             comparator_obj.teardown()
 
+    def _apply_category_defaults(selected_categories, categories, try_config_params):
+        """Apply per-category try-config-defaults if the user hasn't set them explicitly.
+
+        If multiple categories with conflicting defaults are selected, warn and skip.
+        """
+        if (
+            try_config_params is None
+            or try_config_params.get("try_task_config", {}).get("rebuild") is None
+        ):
+            default_rebuilds = {
+                categories.get(cat, {}).get("try-config-defaults", {}).get("rebuild", 1)
+                for cat in selected_categories
+            }
+            if len(default_rebuilds) > 1:
+                print(
+                    "\nMultiple categories with different rebuild defaults were selected. "
+                    "Defaulting to 1 rebuild. Use --rebuild to set an explicit count.\n"
+                )
+            elif default_rebuilds != {1}:
+                rebuild = default_rebuilds.pop()
+                if try_config_params is None:
+                    try_config_params = {}
+                try_config_params.setdefault("try_task_config", {})["rebuild"] = rebuild
+        return try_config_params
+
     def run(
         update=False,
         show_all=False,
@@ -1476,6 +1505,11 @@ class PerfParser(CompareParser):
         if len(selected_tasks) == 0:
             print("No tasks selected")
             return
+
+        if selected_categories:
+            try_config_params = PerfParser._apply_category_defaults(
+                selected_categories, categories, try_config_params
+            )
 
         total_task_count = len(selected_tasks) * rebuild
         if total_task_count > MAX_PERF_TASKS:

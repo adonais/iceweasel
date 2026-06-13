@@ -27,12 +27,20 @@ class nsIGlobalObject;
 namespace mozilla {
 class ErrorResult;
 class MediaContainerType;
+class MediaExtendedMIMEType;
 class TaskQueue;
 class TrackInfo;
 
 namespace layers {
 class KnowsCompositor;
 }
+namespace mediacaps {
+// Pref-driven behaviour flags resolved once per MediaCapabilities request.
+struct BehaviorConfig {
+  bool mLegacy = false;
+  bool mWebRTCEnabled = true;
+};
+}  // namespace mediacaps
 namespace dom {
 class MediaCapabilities;
 }  // namespace dom
@@ -76,20 +84,25 @@ class MediaCapabilities final : public nsISupports, public nsWrapperCache {
   nsIGlobalObject* GetParentObject() const { return mParent; }
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
+  bool CheckTypeForMediaSource(const MediaExtendedMIMEType& aType) const;
+  bool CheckTypeForFile(const MediaExtendedMIMEType& aType) const;
+  bool CheckTypeForEncoder(const MediaExtendedMIMEType& aType) const;
 
  private:
   virtual ~MediaCapabilities() = default;
-  Maybe<MediaContainerType> CheckVideoConfiguration(
-      const VideoConfiguration& aConfig) const;
-  Maybe<MediaContainerType> CheckAudioConfiguration(
-      const AudioConfiguration& aConfig) const;
-  bool CheckTypeForMediaSource(const nsAString& aType);
-  bool CheckTypeForFile(const nsAString& aType);
-  bool CheckTypeForEncoder(const nsAString& aType);
   already_AddRefed<layers::KnowsCompositor> GetCompositor();
   void CreateMediaCapabilitiesDecodingInfo(
       const MediaDecodingConfiguration& aConfiguration, ErrorResult& aRv,
-      Promise* aPromise);
+      Promise* aPromise, const mediacaps::BehaviorConfig& aBehavior);
+
+  void CreateWebRTCDecodingInfo(
+      const MediaDecodingConfiguration& aConfiguration, Promise* aPromise,
+      Maybe<MediaContainerType> aVideoContainer,
+      Maybe<MediaContainerType> aAudioContainer);
+  void CreateNonWebRTCDecodingInfo(
+      const MediaDecodingConfiguration& aConfiguration, Promise* aPromise,
+      Maybe<MediaContainerType> aVideoContainer,
+      Maybe<MediaContainerType> aAudioContainer);
 
   RefPtr<MediaKeySystemAccessManager::MediaKeySystemAccessPromise>
   CheckEncryptedDecodingSupport(

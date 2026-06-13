@@ -122,6 +122,7 @@ class IMMHandler final {
   static void OnSelectionChange(nsWindow* aWindow,
                                 const IMENotification& aIMENotification,
                                 bool aIsIMMActive);
+  static void OnDestroyWindow(nsWindow* aWindow);
 
   static IMENotificationRequests GetIMENotificationRequests();
 
@@ -368,9 +369,15 @@ class IMMHandler final {
     mPassedIMEChar.AppendElement(msg);
   }
 
+  void ClearComposingData() {
+    mComposingWindow = nullptr;
+    mDispatcher = nullptr;
+    mIsComposing = false;
+  }
+
   TextEventDispatcher* GetTextEventDispatcherFor(nsWindow* aWindow);
 
-  nsWindow* mComposingWindow;
+  RefPtr<nsWindow> mComposingWindow;
   RefPtr<TextEventDispatcher> mDispatcher;
   nsString mCompositionString;
   nsTArray<uint32_t> mClauseArray;

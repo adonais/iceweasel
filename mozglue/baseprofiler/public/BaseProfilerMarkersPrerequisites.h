@@ -1193,22 +1193,22 @@ struct BaseMarkerType {
   static MarkerSchema MarkerTypeDisplay() {
     using MS = MarkerSchema;
     MS schema{T::Locations, std::size(T::Locations)};
-    if (T::AllLabels) {
+    if constexpr (T::AllLabels) {
       schema.SetAllLabels(T::AllLabels);
     }
-    if (T::ChartLabel) {
+    if constexpr (T::ChartLabel) {
       schema.SetChartLabel(T::ChartLabel);
     }
-    if (T::TableLabel) {
+    if constexpr (T::TableLabel) {
       schema.SetTableLabel(T::TableLabel);
     }
-    if (T::TooltipLabel) {
+    if constexpr (T::TooltipLabel) {
       schema.SetTooltipLabel(T::TooltipLabel);
     }
-    if (T::IsStackBased) {
+    if constexpr (T::IsStackBased) {
       schema.SetIsStackBased();
     }
-    if (T::ColorField) {
+    if constexpr (T::ColorField) {
       schema.SetColorField(T::ColorField);
     }
     for (const MS::PayloadField field : T::PayloadFields) {
@@ -1219,7 +1219,7 @@ struct BaseMarkerType {
         schema.AddKeyFormat(field.Key, field.Fmt, field.Flags);
       }
     }
-    if (T::Description) {
+    if constexpr (T::Description) {
       schema.AddStaticLabelValue("Description", T::Description);
     }
     return schema;

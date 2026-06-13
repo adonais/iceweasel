@@ -18,6 +18,9 @@ import org.mozilla.focus.GleanMetrics.SetDefaultBrowser
 import org.mozilla.focus.R
 import org.mozilla.focus.ext.tryAsActivity
 
+/**
+ * A custom preference for setting the application as the default browser.
+ */
 class DefaultBrowserPreference @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
@@ -39,6 +42,9 @@ class DefaultBrowserPreference @JvmOverloads constructor(
         update()
     }
 
+    /**
+     * Updates the checked state of the switch based on whether the app is the default browser.
+     */
     fun update() {
         switchView?.isChecked = Browsers.isDefaultBrowser(context)
     }

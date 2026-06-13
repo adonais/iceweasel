@@ -5,7 +5,10 @@ import { HttpServer } from "resource://testing-common/httpd.sys.mjs";
 import { NetUtil } from "resource://gre/modules/NetUtil.sys.mjs";
 
 const SERVER_PATH = "/api/v1/create";
-const MOCK_SHARE_URL = "https://share.firefox.com/mockShare001";
+const SHARE_PATH = "/share/mockShare001";
+const AUTH_COMPLETE_PATH = "/auth-complete";
+
+const COOKIE_CONTENTS = "auth=1; Path=/; Max-Age=6000; HttpOnly; SameSite=Lax";
 
 /**
  * Mock content sharing server. Handles POST /api/v1/create and returns a
@@ -14,13 +17,18 @@ const MOCK_SHARE_URL = "https://share.firefox.com/mockShare001";
 class ContentSharingMockServerClass {
   #httpServer = null;
   #url = null;
+  #mockShareURL = null;
   #requests = [];
   #originalServerUrl = null;
-  #mockResponse = { url: MOCK_SHARE_URL };
-  #mockResponseStatus = 200;
-
+  #mockResponse = null;
+  #mockResponseStatus = 201;
+  #blockedRespondFns = [];
   get url() {
     return this.#url;
+  }
+
+  get mockShareURL() {
+    return this.#mockShareURL;
   }
 
   get requests() {
@@ -41,10 +49,19 @@ class ContentSharingMockServerClass {
     this.#mockResponseStatus = value;
   }
 
+  blockNextResponse() {
+    return new Promise(resolve => {
+      this.#blockedRespondFns.push(resolve);
+    });
+  }
+
   constructor() {
     this.#httpServer = new HttpServer();
     this.#httpServer.registerPathHandler(SERVER_PATH, (req, resp) =>
       this.#handleRequest(req, resp)
+    );
+    this.#httpServer.registerPathHandler(AUTH_COMPLETE_PATH, (req, resp) =>
+      this.#handleAuthComplete(req, resp)
     );
   }
 
@@ -53,11 +70,12 @@ class ContentSharingMockServerClass {
       return;
     }
 
-    this.reset();
-
     this.#httpServer.start(-1);
     const port = this.#httpServer.identity.primaryPort;
-    this.#url = `http://localhost:${port}${SERVER_PATH}`;
+    this.#url = `http://localhost:${port}`;
+    this.#mockShareURL = `http://localhost:${port}${SHARE_PATH}`;
+
+    this.reset();
 
     this.#originalServerUrl = Services.prefs.getStringPref(
       "browser.contentsharing.server.url",
@@ -90,8 +108,9 @@ class ContentSharingMockServerClass {
 
   reset() {
     this.#requests = [];
-    this.#mockResponse = { url: MOCK_SHARE_URL };
-    this.#mockResponseStatus = 200;
+    this.#mockResponse = { url: this.#mockShareURL };
+    this.#mockResponseStatus = 201;
+    this.#blockedRespondFns = [];
   }
 
   #handleRequest(httpRequest, httpResponse) {
@@ -112,10 +131,31 @@ class ContentSharingMockServerClass {
     this.#requests.push({ body });
 
     httpResponse.processAsync();
-    httpResponse.setStatusLine("", this.#mockResponseStatus, "");
-    httpResponse.setHeader("Content-Type", "application/json", false);
-    httpResponse.write(JSON.stringify(this.#mockResponse));
-    httpResponse.finish();
+
+    const respond = () => {
+      httpResponse.setStatusLine("", this.#mockResponseStatus, "");
+      if (this.#mockResponseStatus !== 401) {
+        httpResponse.setHeader("Set-Cookie", COOKIE_CONTENTS);
+      }
+      httpResponse.setHeader("Content-Type", "application/json", false);
+      httpResponse.write(JSON.stringify(this.#mockResponse));
+      httpResponse.finish();
+    };
+
+    if (this.#blockedRespondFns.length) {
+      const resolveBlocked = this.#blockedRespondFns.shift();
+      resolveBlocked(respond);
+    } else {
+      respond();
+    }
+  }
+
+  #handleAuthComplete(httpRequest, httpResponse) {
+    httpResponse.setStatusLine("", 200, "OK");
+    httpResponse.setHeader("Content-Type", "text/html", false);
+    httpResponse.write(
+      "<!doctype html><title>Signed in</title><p>Signed in.</p>"
+    );
   }
 }
 

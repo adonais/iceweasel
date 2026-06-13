@@ -299,7 +299,7 @@ template <class K, class V, class AP>
 void WeakMap<K, V, AP>::trace(JSTracer* trc) {
   MOZ_ASSERT(isInList());
 
-  TraceNullableEdge(trc, &memberOf, "WeakMap owner");
+  TraceEdge(trc, &memberOf, "WeakMap owner");
 
   // Trace memory owned by our containers but not their contents.
   TraceOwnedAllocs(trc, memberOf, map_, "WeakMap storage");
@@ -345,17 +345,11 @@ void WeakMap<K, V, AP>::trace(JSTracer* trc) {
 
 template <class K, class V, class AP>
 void WeakMap<K, V, AP>::traceKey(JSTracer* trc, ModIterator& iter) {
-  PreBarriered<K> key = iter.get().key();
+  K key = iter.get().key();
   TraceWeakMapKeyEdge(trc, zone(), &key, "WeakMap entry key");
   if (key != iter.get().key()) {
     iter.rekey(key);
   }
-
-  // TODO: This is a work around to prevent the pre-barrier firing. The rekey()
-  // method requires passing in an instance of the key which in this case has a
-  // barrier. It should be possible to create the key in place by passing in a
-  // pointer as happens for other hash table methods that create entries.
-  key.unbarrieredSet(JS::SafelyInitialized<K>::create());
 }
 
 template <class K, class V, class AP>

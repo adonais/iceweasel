@@ -42,8 +42,8 @@ add_task(async function testDisabledByPolicy() {
   const helpMenu = HelpMenu();
   const protectionsPanel = ProtectionsPanel();
 
-  await BrowserTestUtils.withNewTab(REPORTABLE_PAGE_URL, async function () {
-    ReportBrokenSite.enableOrDisableMenuitems(window);
+  await withNewTab(REPORTABLE_PAGE_URL, async (_, tab) => {
+    await ReportBrokenSite.enableOrDisableMenuitems(tab);
     const test = "when disabled by DisableFeedbackCommands enterprise policy";
     await ensure(appMenu, isMenuItemHidden, test);
     await ensure(helpMenu, isMenuItemHidden, test);

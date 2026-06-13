@@ -20,7 +20,6 @@
 #include "nsNSSComponent.h"
 #include "nsNSSHelper.h"
 #include "nsNetCID.h"
-#include "nsPK11TokenDB.h"
 #include "pk11func.h"
 #include "pk11sdr.h"
 

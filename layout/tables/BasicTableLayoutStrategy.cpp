@@ -12,6 +12,7 @@
 #include <algorithm>
 
 #include "SpanningCellSorter.h"
+#include "mozilla/ReflowInput.h"
 #include "nsGkAtoms.h"
 #include "nsIContent.h"
 #include "nsLayoutUtils.h"

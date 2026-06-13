@@ -10,7 +10,7 @@
     {
       "platforms": ["desktop"],
       "content_scripts": {
-        "js": ["bug1905069-one.geekie.com.br-chrome-shims.js"]
+        "js": ["define_minimal_window_chrome.js", "use_chrome_vendor.js"]
       }
     }
   ]

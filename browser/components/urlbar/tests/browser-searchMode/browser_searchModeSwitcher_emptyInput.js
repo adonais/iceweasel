@@ -16,10 +16,10 @@ add_setup(async function setup() {
 // Tests that search mode chiclet remains when input is empty and
 // urlbar is unfocused.
 add_task(async function test_search_mode_chiclet_unfocus_home_page() {
-  let popup = await UrlbarTestUtils.openSearchModeSwitcher(window);
-  let popupHidden = UrlbarTestUtils.searchModeSwitcherPopupClosed(window);
-  popup.querySelector(".search-button-bookmarks").button.click();
-  await popupHidden;
+  await UrlbarTestUtils.activateSearchModeSwitcherItem(
+    window,
+    ".search-button-bookmarks"
+  );
 
   await UrlbarTestUtils.assertSearchMode(window, {
     source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
@@ -49,10 +49,10 @@ add_task(async function test_search_mode_chiclet_unfocus_loaded_sites() {
     value: "",
   });
 
-  let popup = await UrlbarTestUtils.openSearchModeSwitcher(window);
-  let popupHidden = UrlbarTestUtils.searchModeSwitcherPopupClosed(window);
-  popup.querySelector(".search-button-bookmarks").button.click();
-  await popupHidden;
+  await UrlbarTestUtils.activateSearchModeSwitcherItem(
+    window,
+    ".search-button-bookmarks"
+  );
 
   await UrlbarTestUtils.assertSearchMode(window, {
     source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,

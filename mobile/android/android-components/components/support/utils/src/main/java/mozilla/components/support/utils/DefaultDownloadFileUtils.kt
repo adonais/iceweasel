@@ -49,7 +49,7 @@ class DefaultDownloadFileUtils(
 
     /**
      * Keep aligned with desktop generic content types:
-     * https://searchfox.org/mozilla-central/source/browser/components/downloads/DownloadsCommon.jsm#208
+     * https://searchfox.org/firefox-main/source/browser/components/downloads/DownloadsCommon.jsm#208
      */
     private val genericContentTypes = arrayOf(
         "application/octet-stream",
@@ -430,7 +430,9 @@ class DefaultDownloadFileUtils(
             val directoryTreeUri = directoryPath.toUri()
             val directory = DocumentFile.fromTreeUri(context, directoryTreeUri)
 
-            directory?.findFile(fileName)?.uri
+            val file = directory?.listFiles()?.find { it.name?.equals(fileName, ignoreCase = true) == true }
+
+            file?.uri
         } catch (e: SecurityException) {
             logger.error("Security error finding file in SAF directory: ${e.message}")
             null

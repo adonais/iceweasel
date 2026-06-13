@@ -116,8 +116,8 @@ nsresult NS_GetNameAndMessageForDOMNSResult(nsresult aNSResult,
   NSResultToNameAndMessage(aNSResult, name, message, &code);
 
   if (!name.IsEmpty() && !message.IsEmpty()) {
-    aName = name;
-    aMessage = message;
+    aName = std::move(name);
+    aMessage = std::move(message);
     if (aCode) {
       *aCode = code;
     }

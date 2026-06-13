@@ -165,7 +165,7 @@ def _get_balrog_api_root(branch):
         scope = BALROG_SERVER_SCOPES["default"]
 
     if scope == "balrog:server:dep":
-        return "https://stage.balrog.nonprod.cloudops.mozgcp.net/api/v1"
+        return "https://stage.balrog.nonprod.webservices.mozgcp.net/api/v1"
     return "https://aus5.mozilla.org/api/v1"
 
 

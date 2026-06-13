@@ -26,8 +26,9 @@ class MIDIPortChild final : public PMIDIPortChild, public MIDIPortInterface {
 
   virtual void ActorDestroy(ActorDestroyReason aWhy) override;
 
-  mozilla::ipc::IPCResult RecvUpdateStatus(const uint32_t& aDeviceState,
-                                           const uint32_t& aConnectionState);
+  mozilla::ipc::IPCResult RecvUpdateStatus(
+      const MIDIPortDeviceState& aDeviceState,
+      const MIDIPortConnectionState& aConnectionState);
 
   MIDIPortChild(const MIDIPortInfo& aPortInfo, bool aSysexEnabled,
                 MIDIPort* aPort);

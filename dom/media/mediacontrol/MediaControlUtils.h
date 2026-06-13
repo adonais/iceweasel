@@ -105,8 +105,7 @@ inline nsresult GetEncodedImageBuffer(gfx::DataSourceSurface* aSurface,
     return NS_ERROR_FAILURE;
   }
 
-  RefPtr<gfxDrawable> drawable =
-      new gfxSurfaceDrawable(aSurface, aSurface->GetSize());
+  auto drawable = MakeRefPtr<gfxSurfaceDrawable>(aSurface, aSurface->GetSize());
   nsCOMPtr<imgIContainer> image = image::ImageOps::CreateFromDrawable(drawable);
 
   nsCOMPtr<nsIInputStream> inputStream;

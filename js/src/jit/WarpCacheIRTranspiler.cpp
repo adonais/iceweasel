@@ -2648,6 +2648,16 @@ bool WarpCacheIRTranspiler::emitTypedArraySubarrayResult(
   return resumeAfter(ins);
 }
 
+bool WarpCacheIRTranspiler::emitLinearizeString(StringOperandId strId,
+                                                StringOperandId resultId) {
+  MDefinition* str = getOperand(strId);
+
+  auto* ins = MLinearizeString::New(alloc(), str);
+  add(ins);
+
+  return defineOperand(resultId, ins);
+}
+
 bool WarpCacheIRTranspiler::emitLinearizeForCharAccess(
     StringOperandId strId, Int32OperandId indexId, StringOperandId resultId) {
   MDefinition* str = getOperand(strId);
@@ -5930,6 +5940,45 @@ bool WarpCacheIRTranspiler::emitDateSecondsFromSecondsIntoYearResult(
   add(ins);
 
   pushResult(ins);
+  return true;
+}
+
+bool WarpCacheIRTranspiler::emitDateNow(NumberOperandId resultId) {
+  auto* ins = MDateNow::New(alloc());
+  add(ins);
+
+  return defineOperand(resultId, ins);
+}
+
+bool WarpCacheIRTranspiler::emitDateParse(StringOperandId strId,
+                                          NumberOperandId resultId) {
+  MDefinition* str = getOperand(strId);
+
+  auto* ins = MDateParse::New(alloc(), str);
+  add(ins);
+
+  return defineOperand(resultId, ins);
+}
+
+bool WarpCacheIRTranspiler::emitTimeClip(NumberOperandId timeId,
+                                         NumberOperandId resultId) {
+  MDefinition* time = getOperand(timeId);
+
+  auto* ins = MTimeClip::New(alloc(), time);
+  add(ins);
+
+  return defineOperand(resultId, ins);
+}
+
+bool WarpCacheIRTranspiler::emitNewDateObjectResult(
+    uint32_t templateObjectOffset, NumberOperandId utcTimeId) {
+  JSObject* templateObj = tenuredObjectStubField(templateObjectOffset);
+  MDefinition* utcTime = getOperand(utcTimeId);
+
+  auto* obj = MNewDateObject::New(alloc(), utcTime, templateObj);
+  add(obj);
+
+  pushResult(obj);
   return true;
 }
 

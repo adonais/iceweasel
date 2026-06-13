@@ -320,7 +320,7 @@ export default class MozButton extends MozLitElement {
 
   labelTemplate() {
     if (this.label) {
-      return this.label;
+      return html`<span class="text" .textContent=${this.label}></span>`;
     }
     return html`<slot @slotchange=${this.checkForLabelText}></slot>`;
   }

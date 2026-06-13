@@ -18,13 +18,13 @@ typedef int platform_handle_t;
  * So use a custom and simplified version.  Only %p, %zu, %s and %% are
  * supported, %zu, %s, support width specifiers.
  */
-int VSNPrintf(char* aBuf, size_t aSize, const char* aFormat, va_list aArgs)
+int VSNPrintf(char* aBuf, std::size_t aSize, const char* aFormat, va_list aArgs)
 #ifdef __GNUC__
     __attribute__((format(printf, 3, 0)))
 #endif
     ;
 
-int SNPrintf(char* aBuf, size_t aSize, const char* aFormat, ...)
+int SNPrintf(char* aBuf, std::size_t aSize, const char* aFormat, ...)
 #ifdef __GNUC__
     __attribute__((format(printf, 3, 4)))
 #endif
@@ -51,6 +51,6 @@ void FdPrintf(platform_handle_t aFd, const char* aFormat, ...)
     ;
 
 // Write buffer contents without formatting (eg for use with SNPrintf).
-void FdPuts(platform_handle_t aFd, const char* aBuf, size_t aLen);
+void FdPuts(platform_handle_t aFd, const char* aBuf, std::size_t aLen);
 
 #endif /* FdPrintf_h_ */

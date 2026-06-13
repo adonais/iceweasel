@@ -112,7 +112,7 @@ load 347898-1.html
 load 348126-1.html
 load 348688-1.html
 load 348708-1.xhtml
-load 348729-1.html
+asserts-if(Android,0-2) load 348729-1.html
 load 349095-1.xhtml
 load 350267-1.html
 load 354133-1.html
@@ -244,7 +244,7 @@ load 455171-4.html
 load 455623-1.html
 skip-if(Android) load 457362-1.xhtml
 load 457514.html
-load 460389-1.html
+asserts-if(Android,0-3) load 460389-1.html
 load 462392.html
 load 466763-1.html
 load 467881-1.html

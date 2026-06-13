@@ -1631,6 +1631,14 @@ enum aome_enc_control_id {
    */
   AV1E_GET_GOP_INFO,
 
+  /*!\brief Codec control function to validate HBD input.
+   *
+   * AV1 allows the encoder to validate the high bitdepth (HBD) input and
+   * ensure that every pixel is within the valid range. To disable/enable,
+   * set this parameter to 0/1. The default value is set to be 1.
+   */
+  AOME_SET_VALIDATE_INPUT_HBD,
+
   // Any new encoder control IDs should be added above.
   // Maximum allowed encoder control ID is 229.
   // No encoder control ID should be added below.
@@ -2334,6 +2342,9 @@ AOM_CTRL_USE_TYPE(AV1E_SET_LOOPFILTER_CONTROL, int)
 
 AOM_CTRL_USE_TYPE(AOME_GET_LOOPFILTER_LEVEL, int *)
 #define AOM_CTRL_AOME_GET_LOOPFILTER_LEVEL
+
+AOM_CTRL_USE_TYPE(AOME_SET_VALIDATE_INPUT_HBD, int)
+#define AOM_CTRL_AOME_SET_VALIDATE_INPUT_HBD
 
 AOM_CTRL_USE_TYPE(AV1E_SET_AUTO_INTRA_TOOLS_OFF, unsigned int)
 #define AOM_CTRL_AV1E_SET_AUTO_INTRA_TOOLS_OFF

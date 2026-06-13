@@ -6,7 +6,6 @@
 #include "gfxMacFont.h"
 #include "gfxFontUtils.h"
 #include "gfxTextRun.h"
-#include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/ScaledFontMac.h"
 #include "mozilla/UniquePtrExtensions.h"
 
@@ -74,8 +73,7 @@ static bool IsBuggyIndicScript(intl::Script aScript) {
          aScript == intl::Script::ORIYA || aScript == intl::Script::KHMER;
 }
 
-bool gfxCoreTextShaper::ShapeText(DrawTarget* aDrawTarget,
-                                  const char16_t* aText, uint32_t aOffset,
+bool gfxCoreTextShaper::ShapeText(const char16_t* aText, uint32_t aOffset,
                                   uint32_t aLength, Script aScript,
                                   nsAtom* aLanguage, bool aVertical,
                                   RoundingFlags aRounding,

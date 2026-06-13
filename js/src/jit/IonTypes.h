@@ -312,6 +312,7 @@ class SimdConstant {
   // Doesn't have a default constructor, as it would prevent it from being
   // included in unions.
 
+  static SimdConstant Zero() { return SimdConstant::SplatX2(int64_t(0)); }
   static SimdConstant CreateX16(const int8_t* array) {
     SimdConstant cst;
     cst.type_ = Int8x16;

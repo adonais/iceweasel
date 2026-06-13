@@ -28,6 +28,9 @@ class AutoMemMap {
 
   ~AutoMemMap();
 
+  AutoMemMap(const AutoMemMap&) = delete;
+  void operator=(const AutoMemMap&) = delete;
+
   Result<Ok, nsresult> init(nsIFile* file, int flags = PR_RDONLY, int mode = 0,
                             PRFileMapProtect prot = PR_PROT_READONLY);
 
@@ -73,9 +76,6 @@ class AutoMemMap {
   void* addr = nullptr;
 
   bool persistent_ = 0;
-
-  AutoMemMap(const AutoMemMap&) = delete;
-  void operator=(const AutoMemMap&) = delete;
 };
 
 }  // namespace loader

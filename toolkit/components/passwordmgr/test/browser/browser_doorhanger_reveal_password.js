@@ -46,7 +46,7 @@ async function update_credentials(username, password, afterDoorhangerShown) {
         "passwordmgr/test/browser/form_basic.html",
     },
     async function (browser) {
-      await SimpleTest.promiseFocus(browser.ownerGlobal);
+      await SimpleTest.promiseFocus(browser.documentGlobal);
 
       info("Waiting for form-processed message");
       await formProcessedPromise;

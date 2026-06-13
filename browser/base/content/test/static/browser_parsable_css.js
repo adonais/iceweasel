@@ -106,6 +106,16 @@ if (!Services.prefs.getBoolPref("dom.viewTransitions.enabled")) {
   });
 }
 
+if (
+  !Services.prefs.getBoolPref("layout.css.scroll-driven-animations.enabled")
+) {
+  ignoreList.push({
+    sourceName: /smartbar\.css$/i,
+    errorMessage: /Unknown property .*animation-timeline/i,
+    isFromDevTools: false,
+  });
+}
+
 let propNameAllowlist = [
   // These custom properties are retrieved directly from CSSOM
   // in videocontrols.xml to get pre-defined style instead of computed
@@ -136,10 +146,9 @@ let propNameAllowlist = [
   // styles, which confuses the test.
   { propName: "--panel-border-radius", isFromDevTools: true },
   { propName: "--panel-padding", isFromDevTools: true },
-  { propName: "--panel-background", isFromDevTools: true },
+  { propName: "--panel-background-color", isFromDevTools: true },
   { propName: "--panel-border-color", isFromDevTools: true },
-  { propName: "--panel-shadow", isFromDevTools: true },
-  { propName: "--panel-shadow-margin", isFromDevTools: true },
+  { propName: "--panel-box-shadow", isFromDevTools: true },
 
   // These variables are set in host CSS but consumed in shadow DOM CSS
   // (content-search-handoff-ui component), which confuses the test.
@@ -192,6 +201,60 @@ let propNameAllowlist = [
   { propName: "--tab-group-color-gray", isFromDevTools: false },
   { propName: "--tab-group-color-gray-invert", isFromDevTools: false },
   { propName: "--tab-group-color-gray-pale", isFromDevTools: false },
+
+  { propName: "--tab-group-blue", isFromDevTools: false },
+  { propName: "--tab-group-blue-invert", isFromDevTools: false },
+  { propName: "--tab-group-blue-hover", isFromDevTools: false },
+  { propName: "--tab-group-blue-text", isFromDevTools: false },
+  { propName: "--tab-group-blue-text-invert", isFromDevTools: false },
+
+  { propName: "--tab-group-purple", isFromDevTools: false },
+  { propName: "--tab-group-purple-invert", isFromDevTools: false },
+  { propName: "--tab-group-purple-hover", isFromDevTools: false },
+  { propName: "--tab-group-purple-text", isFromDevTools: false },
+  { propName: "--tab-group-purple-text-invert", isFromDevTools: false },
+
+  { propName: "--tab-group-cyan", isFromDevTools: false },
+  { propName: "--tab-group-cyan-invert", isFromDevTools: false },
+  { propName: "--tab-group-cyan-hover", isFromDevTools: false },
+  { propName: "--tab-group-cyan-text", isFromDevTools: false },
+  { propName: "--tab-group-cyan-text-invert", isFromDevTools: false },
+
+  { propName: "--tab-group-orange", isFromDevTools: false },
+  { propName: "--tab-group-orange-invert", isFromDevTools: false },
+  { propName: "--tab-group-orange-hover", isFromDevTools: false },
+  { propName: "--tab-group-orange-text", isFromDevTools: false },
+  { propName: "--tab-group-orange-text-invert", isFromDevTools: false },
+
+  { propName: "--tab-group-yellow", isFromDevTools: false },
+  { propName: "--tab-group-yellow-invert", isFromDevTools: false },
+  { propName: "--tab-group-yellow-hover", isFromDevTools: false },
+  { propName: "--tab-group-yellow-text", isFromDevTools: false },
+  { propName: "--tab-group-yellow-text-invert", isFromDevTools: false },
+
+  { propName: "--tab-group-pink", isFromDevTools: false },
+  { propName: "--tab-group-pink-invert", isFromDevTools: false },
+  { propName: "--tab-group-pink-hover", isFromDevTools: false },
+  { propName: "--tab-group-pink-text", isFromDevTools: false },
+  { propName: "--tab-group-pink-text-invert", isFromDevTools: false },
+
+  { propName: "--tab-group-green", isFromDevTools: false },
+  { propName: "--tab-group-green-invert", isFromDevTools: false },
+  { propName: "--tab-group-green-hover", isFromDevTools: false },
+  { propName: "--tab-group-green-text", isFromDevTools: false },
+  { propName: "--tab-group-green-text-invert", isFromDevTools: false },
+
+  { propName: "--tab-group-red", isFromDevTools: false },
+  { propName: "--tab-group-red-invert", isFromDevTools: false },
+  { propName: "--tab-group-red-hover", isFromDevTools: false },
+  { propName: "--tab-group-red-text", isFromDevTools: false },
+  { propName: "--tab-group-red-text-invert", isFromDevTools: false },
+
+  { propName: "--tab-group-gray", isFromDevTools: false },
+  { propName: "--tab-group-gray-invert", isFromDevTools: false },
+  { propName: "--tab-group-gray-hover", isFromDevTools: false },
+  { propName: "--tab-group-gray-text", isFromDevTools: false },
+  { propName: "--tab-group-gray-text-invert", isFromDevTools: false },
 
   /* Allow design tokens in devtools without all variables being used there */
   { sourceName: /\/design-system\/tokens-.*\.css$/, isFromDevTools: true },

@@ -328,7 +328,7 @@ nsFaviconService::SetFaviconForPage(nsIURI* aPageURI, nsIURI* aFaviconURI,
     rv = imgLoader::GetMimeTypeFromContent((const char*)buffer.Elements(),
                                            bufferLength, sniffedMimeType);
     if (NS_SUCCEEDED(rv)) {
-      mimeType = sniffedMimeType;
+      mimeType = std::move(sniffedMimeType);
     } else {
       // When the MIME type is not available, fall back to checking for SVG in
       // the initial part of the buffer.
@@ -360,12 +360,12 @@ nsFaviconService::SetFaviconForPage(nsIURI* aPageURI, nsIURI* aFaviconURI,
   }
 
   IconPayload payload;
-  payload.mimeType = mimeType;
+  payload.mimeType = std::move(mimeType);
   payload.data.Assign(TO_CHARBUFFER(buffer.Elements()), buffer.Length());
   if (payload.mimeType.EqualsLiteral(SVG_MIME_TYPE)) {
     payload.width = UINT16_MAX;
   }
-  icon.payloads.AppendElement(payload);
+  icon.payloads.AppendElement(std::move(payload));
 
   rv = OptimizeIconSizes(icon);
   NS_ENSURE_SUCCESS(rv, rv);

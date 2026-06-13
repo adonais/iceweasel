@@ -58,8 +58,6 @@ release_partners: []
 release_product: null
 release_type: ''
 repository_type: hg
-required_signoffs: []
-signoff_urls: {}
 target_tasks_method: android-l10n-import
 tasks_for: cron
 test_manifest_loader: bugbug

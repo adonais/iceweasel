@@ -3,7 +3,7 @@
 ## Where to locate the list
 
 The devices list is a [RemoteSettings](https://firefox-source-docs.mozilla.org/services/settings/index.html) collection named `devtools-devices`.
-A dump of the list can be found in [services/settings/dumps/main/devtools-devices.json](https://searchfox.org/mozilla-central/source/services/settings/dumps/main/devtools-devices.json).
+A dump of the list can be found in [services/settings/dumps/main/devtools-devices.json](https://searchfox.org/firefox-main/source/services/settings/dumps/main/devtools-devices.json).
 
 ## Adding and removing devices
 

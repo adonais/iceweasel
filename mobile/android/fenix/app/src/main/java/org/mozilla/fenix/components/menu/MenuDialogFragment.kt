@@ -60,6 +60,8 @@ import mozilla.components.browser.state.selector.selectedTab
 import mozilla.components.concept.engine.translate.TranslationSupport
 import mozilla.components.concept.engine.translate.findLanguage
 import mozilla.components.feature.addons.Addon
+import mozilla.components.feature.ipprotection.store.IPProtectionAction
+import mozilla.components.feature.ipprotection.store.state.isEligible
 import mozilla.components.service.fxa.manager.AccountState.NotAuthenticated
 import mozilla.components.support.base.feature.ViewBoundFeatureWrapper
 import mozilla.components.support.ktx.android.util.dpToPx
@@ -68,7 +70,6 @@ import mozilla.components.support.utils.ext.isLandscape
 import mozilla.components.support.utils.ext.top
 import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.GleanMetrics.Events
-import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.R
 import org.mozilla.fenix.automotive.isAndroidAutomotiveAvailable
 import org.mozilla.fenix.components.appstate.SupportedMenuNotifications
@@ -91,7 +92,7 @@ import org.mozilla.fenix.components.menu.store.MenuStore
 import org.mozilla.fenix.components.menu.store.SummarizationMenuState
 import org.mozilla.fenix.components.menu.store.TranslationInfo
 import org.mozilla.fenix.components.menu.store.WebExtensionMenuItem
-import org.mozilla.fenix.components.share.ShareSheetLauncherImpl
+import org.mozilla.fenix.ext.canGoBackInHistoryOrToStories
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.openSetDefaultBrowserOption
 import org.mozilla.fenix.ext.openToBrowser
@@ -140,6 +141,7 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
 
     private val args by navArgs<MenuDialogFragmentArgs>()
     private val webExtensionsMenuBinding = ViewBoundFeatureWrapper<WebExtensionsMenuBinding>()
+    private val ipProtectionMenuBinding = ViewBoundFeatureWrapper<IPProtectionMenuBinding>()
     private var bottomSheetBehavior: BottomSheetBehavior<View>? = null
     private var isPrivate: Boolean = false
 
@@ -350,6 +352,7 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                                 openToBrowser = ::openToBrowser,
                                 sessionUseCases = components.useCases.sessionUseCases,
                                 webAppUseCases = webAppUseCases,
+                                shareUseCases = components.useCases.shareUseCases,
                                 settings = settings,
                                 onDismiss = {
                                     withContext(Dispatchers.Main) {
@@ -359,16 +362,6 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                                 scope = coroutineScope,
                                 customTab = customTab,
                                 webCompatReporterMoreInfoSender = webCompatReporterMoreInfoSender,
-                                shareSheetLauncher = ShareSheetLauncherImpl(
-                                    browserStore = browserStore,
-                                    navController = findNavController(),
-                                    onDismiss = {
-                                        lifecycleScope.launch(Dispatchers.Main) {
-                                            this@MenuDialogFragment.dismiss()
-                                        }
-                                    },
-                                    homeActivityClass = HomeActivity::class.java,
-                                ),
                             ),
                             MenuTelemetryMiddleware(
                                 accessPoint = args.accesspoint,
@@ -454,6 +447,17 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                             menuStore = store,
                             iconSize = 24.dpToPx(requireContext().resources.displayMetrics),
                             onDismiss = { this@MenuDialogFragment.dismiss() },
+                        ),
+                        owner = this@MenuDialogFragment,
+                        view = this,
+                    )
+
+                    ipProtectionMenuBinding.set(
+                        feature = IPProtectionMenuBinding(
+                            ipProtectionStore = components.ipProtection.store,
+                            onIPProtectionStatusUpdate = {
+                                store.dispatch(MenuAction.UpdateIPProtectionMenuState(it))
+                            },
                         ),
                         owner = this@MenuDialogFragment,
                         view = this,
@@ -668,7 +672,7 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                                     isReaderViewActive = isReaderViewActive,
                                     isMoreMenuHighlighted = isOpenInAppMenuHighlighted ||
                                             summarizationMenuState.overflowMenuHighlighted,
-                                    canGoBack = selectedTab?.content?.canGoBack ?: true,
+                                    canGoBack = browserStore.state.canGoBackInHistoryOrToStories(),
                                     canGoForward = selectedTab?.content?.canGoForward ?: true,
                                     extensionsMenuItemDescription = extensionsMenuItemDescription,
                                     scrollState = scrollState,
@@ -676,7 +680,7 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                                     isDownloadHighlighted = isDownloadHighlighted,
                                     webExtensionMenuCount = webExtensionsCount,
                                     isAllWebExtensionsDisabled = isAllWebExtensionsDisabled,
-                                    showIPProtection = settings.isIPProtectionAvailable,
+                                    showIPProtection = components.ipProtection.store.state.isEligible,
                                     ipProtectionMenuState = ipProtectionMenuState,
                                     onMozillaAccountButtonClick = {
                                         store.dispatch(
@@ -763,7 +767,7 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                                         }
                                     },
                                     onIPProtectionClick = {
-                                        // will be implemented in https://bugzilla.mozilla.org/show_bug.cgi?id=2030143
+                                        components.ipProtection.store.dispatch(IPProtectionAction.Toggle)
                                     },
                                     onIPProtectionNavigate = {
                                         store.dispatch(MenuAction.Navigate.IPProtectionSettings)

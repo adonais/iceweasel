@@ -23,7 +23,7 @@ async function changeRangeTo(helper, destination) {
   EventUtils.sendKey("space", helper.win);
 
   const selectPopup = await popupOpen;
-  if (nativeSelectEnabled()) {
+  if (selectPopup.isNativeMenu) {
     selectPopup.activateItem(selectPopup.childNodes[optionIndex]);
   } else {
     const enabledOptions = getRangeOptions(helper);

@@ -128,14 +128,17 @@ async function waitForWorkerRegistration(swTab) {
   );
 }
 
-function selectPage(panel, page) {
-  /**
-   * Select a page by simulating a user click in the sidebar.
-   *
-   * @param {string} page The page we want to select (see `PAGE_TYPES`)
-   */
+/**
+ * Select a page by simulating a user click in the sidebar.
+ *
+ * @param {string} page The page we want to select (see `PAGE_TYPES`)
+ */
+async function selectPage(panel, page) {
   info(`Selecting application page: ${page}`);
   const doc = panel.panelWin.document;
   const navItem = doc.querySelector(`.js-sidebar-${page}`);
+  // Force/wait for the element to be painted before clicking, to avoid a11y
+  // checks issues (Bug 1946641).
+  await waitFor(() => navItem.getBoundingClientRect().width > 0);
   navItem.click();
 }

@@ -63,6 +63,7 @@ dependencies {
     testFixturesImplementation libs.kotlinx.coroutines.core
     testImplementation libs.androidx.test.core
     testImplementation libs.androidx.test.junit
+    testImplementation libs.kotlin.test
     testImplementation libs.kotlinx.coroutines.test
     testImplementation libs.robolectric
 

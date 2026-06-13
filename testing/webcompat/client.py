@@ -40,7 +40,7 @@ class Client:
             self.execute_script(
                 r"""
                     const [ level ] = arguments;
-                    const win = browser.ownerGlobal;
+                    const win = browser.documentGlobal;
                     win.ZoomManager.setZoomForBrowser(win.gBrowser.selectedTab.linkedBrowser, level);
                     """,
                 level,
@@ -1679,7 +1679,7 @@ class Client:
                     );
                     return eventUtilsObject;
                 }
-                const win = browser.ownerGlobal;
+                const win = browser.documentGlobal;
                 if (!win.EventUtils) {
                     win.EventUtils = _getEventUtils(win);
                 }

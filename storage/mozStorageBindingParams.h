@@ -49,7 +49,7 @@ class BindingParams : public mozIStorageBindingParams,
                 Statement* aOwningStatement);
 
  protected:
-  virtual ~BindingParams() {}
+  virtual ~BindingParams() = default;
 
   explicit BindingParams(mozIStorageBindingParamsArray* aOwningArray);
 
@@ -97,7 +97,7 @@ class AsyncBindingParams : public BindingParams {
       sqlite3_stmt* aStatement) override;
 
   explicit AsyncBindingParams(mozIStorageBindingParamsArray* aOwningArray);
-  virtual ~AsyncBindingParams() {}
+  virtual ~AsyncBindingParams() = default;
 
  private:
   // Variants added to this array must be thread-safe, thus you should not use

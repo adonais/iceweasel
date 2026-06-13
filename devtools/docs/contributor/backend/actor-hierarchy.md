@@ -233,5 +233,5 @@ instantiated just in time to service the request.
 The actor IDs of all these actors can be retrieve in the "form" of each target actor.
 The "form" is notified by the Watcher actor via `target-avaible-form` RDP packet.
 
-[actors-folder]: https://searchfox.org/mozilla-central/source/devtools/server/actors/
-[resources-folder]: https://searchfox.org/mozilla-central/source/devtools/server/actors/resources/
+[actors-folder]: https://searchfox.org/firefox-main/source/devtools/server/actors/
+[resources-folder]: https://searchfox.org/firefox-main/source/devtools/server/actors/resources/

@@ -6,7 +6,6 @@ package org.mozilla.fenix.ui
 
 import android.content.Context
 import android.hardware.camera2.CameraManager
-import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import androidx.core.net.toUri
 import androidx.test.espresso.Espresso
 import androidx.test.espresso.Espresso.openActionBarOverflowOrOptionsMenu
@@ -53,6 +52,7 @@ import org.mozilla.fenix.ui.robots.navigationToolbar
 import org.mozilla.fenix.ui.robots.searchScreen
 import org.mozilla.fenix.ui.robots.settingsTurnOnSyncScreen
 import java.util.Locale
+import androidx.compose.ui.test.junit4.v2.AndroidComposeTestRule as AndroidComposeTestRuleV2
 
 /**
  *  Tests for verifying the search fragment
@@ -74,8 +74,8 @@ class SearchTest {
     @get:Rule(order = 0)
     val fenixTestRule: FenixTestRule = FenixTestRule()
 
-    @get:Rule
-    val composeTestRule = AndroidComposeTestRule(
+    @get:Rule(order = 1)
+    val composeTestRule = AndroidComposeTestRuleV2(
         HomeActivityTestRule(
             skipOnboarding = true,
             isPocketEnabled = false,
@@ -88,8 +88,8 @@ class SearchTest {
         ),
     ) { it.activity }
 
-    @get:Rule
-    val memoryLeaksRule = DetectMemoryLeaksRule()
+    @get:Rule(order = 2)
+    val memoryLeaksRule = DetectMemoryLeaksRule(composeTestRule = { composeTestRule })
 
     @get:Rule
     val searchMockServerRule = SearchMockServerRule()
@@ -178,7 +178,7 @@ class SearchTest {
         }
     }
 
-    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3135010
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/1059459
     @SmokeTest
     @Test
     fun verifyQRScanningCameraAccessDialogTest() {

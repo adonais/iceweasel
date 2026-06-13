@@ -10,7 +10,7 @@ const { ERRORS } = ChromeUtils.importESModule(
 let TEST_PROFILE_PATH;
 
 add_setup(async () => {
-  MockFilePicker.init(window.browsingContext);
+  MockFilePicker.init();
   TEST_PROFILE_PATH = await IOUtils.createUniqueDirectory(
     PathUtils.tempDir,
     "testBackup"

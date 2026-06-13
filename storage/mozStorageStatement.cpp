@@ -237,7 +237,7 @@ void Statement::MaybeRecordQueryStatus(int srv, bool isResetting) {
   mQueryStatusRecorded = !isResetting;
 }
 
-Statement::~Statement() { (void)internalFinalize(true); }
+Statement::~Statement() { internalFinalize(true); }
 
 ////////////////////////////////////////////////////////////////////////////////
 //// nsISupports
@@ -323,10 +323,15 @@ Statement::Clone(mozIStorageStatement** _statement) {
 }
 
 NS_IMETHODIMP
-Statement::Finalize() { return internalFinalize(false); }
+Statement::Finalize() {
+  internalFinalize(false);
+  return NS_OK;
+}
 
-nsresult Statement::internalFinalize(bool aDestructing) {
-  if (!mDBStatement) return NS_OK;
+void Statement::internalFinalize(bool aDestructing) {
+  if (!mDBStatement) {
+    return;
+  }
 
   int srv = SQLITE_OK;
 
@@ -341,6 +346,8 @@ nsresult Statement::internalFinalize(bool aDestructing) {
       MOZ_LOG(gStorageLog, LogLevel::Debug,
               ("Finalizing statement '%s' during garbage-collection",
                ::sqlite3_sql(mDBStatement)));
+      // Note this is not the result of finalization, it's the result from the
+      // last time the statement was evaluated.
       srv = ::sqlite3_finalize(mDBStatement);
     }
 #ifdef DEBUG
@@ -388,8 +395,6 @@ nsresult Statement::internalFinalize(bool aDestructing) {
   // Release the holders, so they can release the reference to us.
   mStatementParamsHolder = nullptr;
   mStatementRowHolder = nullptr;
-
-  return convertResultCode(srv);
 }
 
 NS_IMETHODIMP

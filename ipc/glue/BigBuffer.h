@@ -6,7 +6,6 @@
 #define mozilla_ipc_BigBuffer_h
 
 #include <stdlib.h>
-#include <inttypes.h>
 #include "nsDebug.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Span.h"

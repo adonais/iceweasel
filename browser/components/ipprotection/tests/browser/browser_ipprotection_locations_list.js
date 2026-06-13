@@ -23,7 +23,7 @@ const MOCK_LOCATIONS_LIST = [
  */
 async function openLocationsList(state = {}) {
   await openPanel({
-    isEnrolledAndEntitled: true,
+    isReady: true,
     locationsList: MOCK_LOCATIONS_LIST,
     ...state,
   });
@@ -87,10 +87,10 @@ add_task(async function test_locations_list_default_rendering() {
     checkmark,
     "checkmark element should exist on the recommended button"
   );
-  let checkmarkVisible =
-    getComputedStyle(checkmark).visibility === "visible" ||
-    recButton.getAttribute("aria-selected") === "true";
-  Assert.ok(checkmarkVisible, "checkmark should be visible on selected item");
+  await BrowserTestUtils.waitForCondition(
+    () => getComputedStyle(checkmark).visibility === "visible",
+    "checkmark should be visible on selected item"
+  );
 
   // Other items should not be selected
   for (let { code } of MOCK_LOCATIONS_LIST) {
@@ -102,11 +102,10 @@ add_task(async function test_locations_list_default_rendering() {
       "false",
       `${code} button should not be selected`
     );
-    let checkmarkHidden =
-      getComputedStyle(unSelectedButton.querySelector(".location-check"))
-        .visibility === "hidden";
-    Assert.ok(
-      checkmarkHidden,
+    await BrowserTestUtils.waitForCondition(
+      () =>
+        getComputedStyle(unSelectedButton.querySelector(".location-check"))
+          .visibility === "hidden",
       `checkmark should be hidden on unselected ${code} button`
     );
   }

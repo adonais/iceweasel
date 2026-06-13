@@ -37,7 +37,7 @@ typedef struct {
   unsigned long event_mask;    // event stuff
 } XScreenSaverInfo;
 
-typedef bool (*_XScreenSaverQueryExtension_fn)(Display* dpy, int* event_base,
+typedef Bool (*_XScreenSaverQueryExtension_fn)(Display* dpy, int* event_base,
                                                int* error_base);
 typedef XScreenSaverInfo* (*_XScreenSaverAllocInfo_fn)(void);
 typedef void (*_XScreenSaverQueryInfo_fn)(Display* dpy, Drawable drw,

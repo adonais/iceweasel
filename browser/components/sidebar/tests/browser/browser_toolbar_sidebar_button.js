@@ -216,8 +216,8 @@ add_task(async function test_states_for_hide_sidebar() {
     "The launcher is initially visible"
   );
   Assert.ok(
-    SidebarController.toolbarButton.checked,
-    "The toolbar button is initially checked"
+    !SidebarController.toolbarButton.checked,
+    "The toolbar button is not checked in horizontal tabs mode even when the launcher is visible"
   );
 
   const checkStates = async (
@@ -243,17 +243,15 @@ add_task(async function test_states_for_hide_sidebar() {
       () => !component.expanded
     );
     ok(true, "Sidebar should not be expanded");
-    info(
-      `Waiting for button to be ${hidden ? "not highlighted" : "highlighted"}`
-    );
+    info("Waiting for button to never be highlighted in horizontal tabs mode");
     await BrowserTestUtils.waitForMutationCondition(
       button,
       { attributes: true, attributeFilter: ["checked", "expanded"] },
-      () => button.checked == !hidden && !button.hasAttribute("expanded")
+      () => !button.checked && !button.hasAttribute("expanded")
     );
     ok(
       true,
-      "Toolbar button checked state is correct and expanded attribute is absent."
+      "Toolbar button is not checked in horizontal tabs mode and expanded attribute is absent."
     );
     Assert.deepEqual(
       document.l10n.getAttributes(button),
@@ -279,7 +277,7 @@ add_task(async function test_states_for_hide_sidebar() {
   await checkStates({ hidden: true });
   Assert.ok(
     !toolbarButton.checked,
-    "The toolbar button becomes unchecked when clicking it hides the launcher"
+    "The toolbar button is unchecked after hiding the launcher"
   );
 
   info("Check states on a new window.");
@@ -534,7 +532,10 @@ add_task(async function test_sidebar_button_runtime_pref_enabled() {
 
   button.doCommand();
   await SidebarController.waitUntilStable();
-  Assert.ok(button.checked, "Sidebar button should be checked");
+  Assert.ok(
+    !button.checked,
+    "Sidebar button should not be checked in horizontal tabs mode"
+  );
   Assert.ok(
     BrowserTestUtils.isVisible(document.querySelector("sidebar-main")),
     "The sidebar launcher is visible"

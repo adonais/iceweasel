@@ -74,7 +74,7 @@ add_task(async function testRollback() {
   Services.prefs.clearUserPref(prefs.ENABLED_PREF);
   await waitForStateTelemetry(["shutdown", "rollback"]);
   await ensureTRRMode(undefined);
-  ensureNoTRRSelectionTelemetry();
+  await ensureNoTRRSelectionTelemetry();
   await ensureNoHeuristicsTelemetry();
   simulateNetworkChange();
   await ensureNoTRRModeChange(undefined);
@@ -84,7 +84,7 @@ add_task(async function testRollback() {
   Services.prefs.setBoolPref(prefs.ENABLED_PREF, true);
 
   await ensureTRRMode(2);
-  ensureNoTRRSelectionTelemetry();
+  await ensureNoTRRSelectionTelemetry();
   await checkHeuristicsTelemetry("enable_doh", "startup");
 
   // Change the environment to failing and simulate a network change.
@@ -97,7 +97,7 @@ add_task(async function testRollback() {
   Services.prefs.clearUserPref(prefs.ENABLED_PREF);
   await waitForStateTelemetry(["shutdown", "rollback"]);
   await ensureTRRMode(undefined);
-  ensureNoTRRSelectionTelemetry();
+  await ensureNoTRRSelectionTelemetry();
   await ensureNoHeuristicsTelemetry();
   simulateNetworkChange();
   await ensureNoTRRModeChange(undefined);
@@ -107,7 +107,7 @@ add_task(async function testRollback() {
   Services.prefs.setBoolPref(prefs.ENABLED_PREF, true);
 
   await ensureTRRMode(0);
-  ensureNoTRRSelectionTelemetry();
+  await ensureNoTRRSelectionTelemetry();
   await checkHeuristicsTelemetry("disable_doh", "startup");
 
   // Change the environment to passing and simulate a network change.
@@ -120,7 +120,7 @@ add_task(async function testRollback() {
   Services.prefs.clearUserPref(prefs.ENABLED_PREF);
   await waitForStateTelemetry(["shutdown", "rollback"]);
   await ensureTRRMode(undefined);
-  ensureNoTRRSelectionTelemetry();
+  await ensureNoTRRSelectionTelemetry();
   await ensureNoHeuristicsTelemetry();
   simulateNetworkChange();
   await ensureNoTRRModeChange(undefined);
@@ -130,7 +130,7 @@ add_task(async function testRollback() {
   Services.prefs.setBoolPref(prefs.ENABLED_PREF, true);
 
   await ensureTRRMode(2);
-  ensureNoTRRSelectionTelemetry();
+  await ensureNoTRRSelectionTelemetry();
   await checkHeuristicsTelemetry("enable_doh", "startup");
   simulateNetworkChange();
   await ensureNoTRRModeChange(2);
@@ -143,7 +143,7 @@ add_task(async function testRollback() {
   Services.prefs.clearUserPref(prefs.ENABLED_PREF);
   await DoHController.init();
   await ensureTRRMode(undefined);
-  ensureNoTRRSelectionTelemetry();
+  await ensureNoTRRSelectionTelemetry();
   await ensureNoHeuristicsTelemetry();
   await waitForStateTelemetry(["rollback"]);
   simulateNetworkChange();

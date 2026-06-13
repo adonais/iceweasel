@@ -8,9 +8,13 @@
 newtab-page-title = Nova lapela
 newtab-settings-button =
     .title = Personalice a páxina de nova lapela
+#  (developer note): @nova-cleanup(remove-string): Remove newtab-customize-panel-icon-button once Nova lands, will be using newtab-customize-panel-label instead
 newtab-customize-panel-icon-button =
     .title = Personalizar esta páxina
+#  (developer note): @nova-cleanup(remove-string): Remove newtab-customize-panel-icon-button-label once Nova lands, will be using newtab-customize-panel-label instead
 newtab-customize-panel-icon-button-label = Personalizar
+newtab-customize-panel-label =
+    .label = Personalizar
 newtab-personalize-settings-icon-label =
     .title = Personalizar a nova pestana
     .aria-label = Configuración
@@ -632,15 +636,20 @@ newtab-widget-lists-label-beta =
     .label = Beta
 newtab-widget-task-list-menu-copy = Copiar
 newtab-widget-lists-menu-edit = Editar o nome da lista
+newtab-widget-lists-menu-edit2 =
+    .aria-label = Editar o nome da lista
 newtab-widget-lists-menu-create = Crea unha nova lista
 newtab-widget-lists-menu-delete = Eliminar esta lista
 newtab-widget-lists-menu-copy = Copiar a lista no portapapeis
 newtab-widget-lists-menu-learn-more = Máis información
+newtab-widget-lists-button-add-item = Engadir un elemento
+newtab-widget-lists-input-add-an-item2 =
+    .placeholder = Engadir un elemento
+    .aria-label = Engadir un elemento
 newtab-widget-lists-input-add-an-item =
     .placeholder = Engadir un elemento
 
-## Strings for timer productivity widget
-## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown
+## Strings introduced by the Nova redesign of the Timer widget
 
 newtab-widget-timer-label-play =
     .label = Reproducir

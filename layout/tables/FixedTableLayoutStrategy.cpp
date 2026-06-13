@@ -12,6 +12,7 @@
 #include <algorithm>
 
 #include "WritingModes.h"
+#include "mozilla/ReflowInput.h"
 #include "nsLayoutUtils.h"
 #include "nsStyleConsts.h"
 #include "nsTableCellFrame.h"

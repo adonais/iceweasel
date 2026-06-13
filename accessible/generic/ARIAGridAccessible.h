@@ -25,7 +25,7 @@ class ARIAGridCellAccessible : public HyperTextAccessible {
   virtual already_AddRefed<AccAttributes> NativeAttributes() override;
 
  protected:
-  virtual ~ARIAGridCellAccessible() {}
+  virtual ~ARIAGridCellAccessible() = default;
 };
 
 }  // namespace a11y

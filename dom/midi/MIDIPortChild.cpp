@@ -32,14 +32,15 @@ mozilla::ipc::IPCResult MIDIPortChild::RecvReceive(
 }
 
 mozilla::ipc::IPCResult MIDIPortChild::RecvUpdateStatus(
-    const uint32_t& aDeviceState, const uint32_t& aConnectionState) {
+    const MIDIPortDeviceState& aDeviceState,
+    const MIDIPortConnectionState& aConnectionState) {
   // Either a device is connected, and can have any connection state, or a
   // device is disconnected, and can only be closed or pending.
   MOZ_ASSERT(mDeviceState == MIDIPortDeviceState::Connected ||
              (mConnectionState == MIDIPortConnectionState::Closed ||
               mConnectionState == MIDIPortConnectionState::Pending));
-  mDeviceState = static_cast<MIDIPortDeviceState>(aDeviceState);
-  mConnectionState = static_cast<MIDIPortConnectionState>(aConnectionState);
+  mDeviceState = aDeviceState;
+  mConnectionState = aConnectionState;
   if (mDOMPort) {
     RefPtr<MIDIPort> self(mDOMPort);
     self->FireStateChangeEvent();

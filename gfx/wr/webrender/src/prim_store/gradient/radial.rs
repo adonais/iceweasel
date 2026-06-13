@@ -17,7 +17,7 @@ use crate::scene_building::IsVisible;
 use crate::intern::{Internable, InternDebug, Handle as InternHandle};
 use crate::internal_types::LayoutPrimitiveInfo;
 use crate::prim_store::{InternablePrimitive};
-use crate::prim_store::{PrimitiveInstanceKind, PrimitiveOpacity};
+use crate::prim_store::{PrimitiveKind, PrimitiveOpacity};
 use crate::prim_store::{PrimKeyCommonData, PrimTemplateCommonData, PrimitiveStore};
 use crate::prim_store::{NinePatchDescriptor, PointKey, SizeKey};
 use crate::segment::EdgeMask;
@@ -57,7 +57,9 @@ pub struct RadialGradientKey {
     pub extend_mode: ExtendMode,
     pub center: PointKey,
     pub params: RadialGradientParams,
-    pub stretch_size: SizeKey,
+    /// Per-axis tile size encoded as a fraction of `common.prim_size`. The
+    /// runtime `stretch_size` is `stretch_ratio * common.prim_size`.
+    pub stretch_ratio: SizeKey,
     pub stops: Vec<GradientStopKey>,
     pub tile_spacing: SizeKey,
     pub nine_patch: Option<Box<NinePatchDescriptor>>,
@@ -73,7 +75,7 @@ impl RadialGradientKey {
             extend_mode: radial_grad.extend_mode,
             center: radial_grad.center,
             params: radial_grad.params,
-            stretch_size: radial_grad.stretch_size,
+            stretch_ratio: radial_grad.stretch_ratio,
             stops: radial_grad.stops,
             tile_spacing: radial_grad.tile_spacing,
             nine_patch: radial_grad.nine_patch,
@@ -92,9 +94,10 @@ pub struct RadialGradientTemplate {
     pub extend_mode: ExtendMode,
     pub params: RadialGradientParams,
     pub center: LayoutPoint,
-    pub task_size: DeviceIntSize,
-    pub scale: DeviceVector2D,
-    pub stretch_size: LayoutSize,
+    /// Per-axis fraction of `common.prim_size` covered by one tile of the
+    /// gradient pattern. Multiply by `common.prim_size` at use to recover the
+    /// absolute stretch_size.
+    pub stretch_ratio: LayoutSize,
     pub tile_spacing: LayoutSize,
     pub border_nine_patch: Option<Box<NinePatchDescriptor>>,
     pub stops_opacity: PrimitiveOpacity,
@@ -156,33 +159,12 @@ impl From<RadialGradientKey> for RadialGradientTemplate {
         // should be drawn in.
         let stops_opacity = PrimitiveOpacity::from_alpha(min_alpha);
 
-        let mut stretch_size: LayoutSize = item.stretch_size.into();
-        stretch_size.width = stretch_size.width.min(common.prim_size.width);
-        stretch_size.height = stretch_size.height.min(common.prim_size.height);
-
-        // Avoid rendering enormous gradients. Radial gradients are mostly made of soft transitions,
-        // so it is unlikely that rendering at a higher resolution that 1024 would produce noticeable
-        // differences, especially with 8 bits per channel.
-        const MAX_SIZE: f32 = 1024.0;
-        let mut task_size: DeviceSize = stretch_size.cast_unit();
-        let mut scale = vec2(1.0, 1.0);
-        if task_size.width > MAX_SIZE {
-            scale.x = task_size.width/ MAX_SIZE;
-            task_size.width = MAX_SIZE;
-        }
-        if task_size.height > MAX_SIZE {
-            scale.y = task_size.height /MAX_SIZE;
-            task_size.height = MAX_SIZE;
-        }
-
         RadialGradientTemplate {
             common,
             center: item.center.into(),
             extend_mode: item.extend_mode,
             params: item.params,
-            stretch_size,
-            task_size: task_size.ceil().to_i32(),
-            scale,
+            stretch_ratio: item.stretch_ratio.into(),
             tile_spacing: item.tile_spacing.into(),
             border_nine_patch: item.nine_patch,
             stops_opacity,
@@ -200,7 +182,9 @@ pub struct RadialGradient {
     pub extend_mode: ExtendMode,
     pub center: PointKey,
     pub params: RadialGradientParams,
-    pub stretch_size: SizeKey,
+    /// Per-axis tile size encoded as a fraction of the prim's size. See
+    /// [`RadialGradientKey::stretch_ratio`].
+    pub stretch_ratio: SizeKey,
     pub stops: Vec<GradientStopKey>,
     pub tile_spacing: SizeKey,
     pub nine_patch: Option<Box<NinePatchDescriptor>>,
@@ -225,8 +209,8 @@ impl InternablePrimitive for RadialGradient {
         _key: RadialGradientKey,
         data_handle: RadialGradientDataHandle,
         _prim_store: &mut PrimitiveStore,
-    ) -> PrimitiveInstanceKind {
-        PrimitiveInstanceKind::RadialGradient {
+    ) -> PrimitiveKind {
+        PrimitiveKind::RadialGradient {
             data_handle,
         }
     }

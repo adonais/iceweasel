@@ -10,6 +10,9 @@ support-files = [
   "animated-gif_trailing-garbage.gif",
   "animated-gif-finalframe.gif",
   "animated-avif.avif",
+  "animation-1loop.jxl",
+  "animation-2loops.jxl",
+  "animation-infiniteloop.jxl",
   "animation.svg",
   "animationPolling.js",
   "bad.jpg",
@@ -128,6 +131,9 @@ skip-if = [
 
 ["test_animation2.html"]
 
+["test_animation_loop_count.html"]
+scheme = "https"
+
 ["test_animation_operators.html"]
 
 ["test_background_image_anim.html"]
@@ -234,7 +240,6 @@ skip-if = [
 
 ["test_jxl_progressive.html"]
 skip-if = [
-  "release_or_beta",
   "http2",
   "http3",
 ]

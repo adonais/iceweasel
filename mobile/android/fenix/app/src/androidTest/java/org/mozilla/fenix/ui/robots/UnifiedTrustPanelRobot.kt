@@ -17,6 +17,7 @@ import org.mozilla.fenix.helpers.Constants.TAG
 import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTime
 import org.mozilla.fenix.helpers.TestHelper.appName
+import org.mozilla.fenix.helpers.TestHelper.mDevice
 import org.mozilla.fenix.helpers.TestHelper.waitForAppWindowToBeUpdated
 
 class UnifiedTrustPanelRobot {
@@ -135,6 +136,7 @@ class UnifiedTrustPanelRobot {
         Log.i(TAG, "clickTheEnhancedTrackingProtectionOption: Trying to click the ETP option")
         composeTestRule.onNodeWithText(getStringResource(R.string.protection_panel_etp_toggle_label), useUnmergedTree = true).performClick()
         Log.i(TAG, "clickTheEnhancedTrackingProtectionOption: Clicked the ETP option")
+        mDevice.waitForIdle()
         composeTestRule.waitForIdle()
     }
 

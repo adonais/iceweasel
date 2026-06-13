@@ -2552,13 +2552,13 @@ ArraySortResult js::ArraySortFromJit(JSContext* cx,
 }
 
 void ArraySortData::trace(JSTracer* trc) {
-  TraceNullableRoot(trc, &comparator_, "comparator_");
+  TraceRoot(trc, &comparator_, "comparator_");
   TraceRoot(trc, &thisv, "thisv");
   TraceRoot(trc, &callArgs[0], "callArgs0");
   TraceRoot(trc, &callArgs[1], "callArgs1");
   vec.trace(trc);
   TraceRoot(trc, &item, "item");
-  TraceNullableRoot(trc, &obj_, "obj");
+  TraceRoot(trc, &obj_, "obj");
 }
 
 bool js::NewbornArrayPush(JSContext* cx, HandleObject obj, const Value& v) {
@@ -5325,8 +5325,12 @@ static SharedShape* GetArrayShapeWithProto(JSContext* cx, HandleObject proto) {
   // Get a shape with zero fixed slots, because arrays store the ObjectElements
   // header inline.
   Rooted<SharedShape*> shape(
-      cx, SharedShape::getInitialShape(cx, &ArrayObject::class_, cx->realm(),
-                                       TaggedProto(proto), /* nfixed = */ 0));
+      cx, SharedShape::getInitialShape(
+              cx, &ArrayObject::class_, cx->realm(), TaggedProto(proto),
+              /* nfixed = */ 0,
+              ObjectFlags({
+                  ObjectFlag::HasNonWritableOrAccessorPropExclProto,
+              })));
   if (!shape) {
     return nullptr;
   }
@@ -5457,16 +5461,7 @@ static bool array_proto_finish(JSContext* cx, JS::HandleObject ctor,
 }
 
 static const JSClassOps ArrayObjectClassOps = {
-    array_addProperty,  // addProperty
-    nullptr,            // delProperty
-    nullptr,            // enumerate
-    nullptr,            // newEnumerate
-    nullptr,            // resolve
-    nullptr,            // mayResolve
-    nullptr,            // finalize
-    nullptr,            // call
-    nullptr,            // construct
-    nullptr,            // trace
+    .addProperty = array_addProperty,
 };
 
 static const ClassSpec ArrayObjectClassSpec = {

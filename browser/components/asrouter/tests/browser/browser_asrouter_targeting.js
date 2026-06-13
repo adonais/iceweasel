@@ -82,6 +82,24 @@ const testFeatureCallout = {
   trigger: { id: "defaultBrowserCheck" },
 };
 
+const testCrashDumpFiles = [
+  {
+    path: "/path/to/crash1.dmp",
+    id: "crash1",
+    date: new Date(2026, 1, 1).getTime(), // Feb 1, 2026
+  },
+  {
+    path: "/path/to/crash2.dmp",
+    id: "crash2",
+    date: new Date(2026, 2, 1).getTime(), // Mar 1, 2026
+  },
+  {
+    path: "/path/to/crash3.dmp",
+    id: "crash3",
+    date: new Date(new Date().getTime() - 10 * 24 * 60 * 60 * 1000), // 10 days before current date
+  },
+];
+
 function sendFormAutofillMessage(name, data) {
   let actor =
     gBrowser.selectedBrowser.browsingContext.currentWindowGlobal.getActor(
@@ -1099,6 +1117,51 @@ add_task(async function check_current_tab_installed_as_web_app() {
   sandbox.restore();
 });
 
+add_task(async function check_installed_web_apps_count() {
+  const sandbox = sinon.createSandbox();
+  sandbox.stub(TaskbarTabsPin, "pinTaskbarTab");
+  sandbox.stub(TaskbarTabsPin, "unpinTaskbarTab");
+
+  const kUri1 = "https://example.com";
+  const kUri2 = "https://example.org";
+
+  is(
+    await ASRouterTargeting.Environment.installedWebAppsCount,
+    0,
+    "should be 0 with no Taskbar Tabs"
+  );
+
+  const { taskbarTab: tab1 } = await TaskbarTabs.findOrCreateTaskbarTab(
+    Services.io.newURI(kUri1),
+    0
+  );
+  is(
+    await ASRouterTargeting.Environment.installedWebAppsCount,
+    1,
+    "should be 1 after pinning one site"
+  );
+
+  const { taskbarTab: tab2 } = await TaskbarTabs.findOrCreateTaskbarTab(
+    Services.io.newURI(kUri2),
+    0
+  );
+  is(
+    await ASRouterTargeting.Environment.installedWebAppsCount,
+    2,
+    "should be 2 after pinning a second site"
+  );
+
+  await TaskbarTabs.removeTaskbarTab(tab1.id);
+  await TaskbarTabs.removeTaskbarTab(tab2.id);
+  is(
+    await ASRouterTargeting.Environment.installedWebAppsCount,
+    0,
+    "should be 0 after removing all Taskbar Tabs"
+  );
+
+  sandbox.restore();
+});
+
 add_task(async function check_pinned_tabs() {
   await BrowserTestUtils.withNewTab(
     { gBrowser, url: "about:blank" },
@@ -1120,6 +1183,32 @@ add_task(async function check_pinned_tabs() {
 
       gBrowser.unpinTab(tab);
     }
+  );
+});
+
+add_task(async function check_tabsOpenInTopWindow() {
+  const baseline = await ASRouterTargeting.Environment.tabsOpenInTopWindow;
+
+  const tab1 = BrowserTestUtils.addTab(gBrowser, "about:blank");
+  is(
+    await ASRouterTargeting.Environment.tabsOpenInTopWindow,
+    baseline + 1,
+    "Should count one additional tab"
+  );
+
+  const tab2 = BrowserTestUtils.addTab(gBrowser, "about:blank");
+  is(
+    await ASRouterTargeting.Environment.tabsOpenInTopWindow,
+    baseline + 2,
+    "Should count two additional tabs"
+  );
+
+  BrowserTestUtils.removeTab(tab2);
+  BrowserTestUtils.removeTab(tab1);
+  is(
+    await ASRouterTargeting.Environment.tabsOpenInTopWindow,
+    baseline,
+    "Should return to baseline after closing tabs"
   );
 });
 
@@ -2845,3 +2934,63 @@ add_task(
     }
   }
 );
+
+add_task(async function check_crashCount_noCrashesReturnsZero() {
+  const sandbox = sinon.createSandbox();
+  try {
+    sandbox.stub(QueryCache.getters.crashData, "get").resolves([]);
+    is(
+      await ASRouterTargeting.Environment.crashCount,
+      0,
+      "should return 0 for empty crash dumps"
+    );
+  } finally {
+    sandbox.restore();
+  }
+});
+
+add_task(async function check_crashCount_returnsNumberOfCrashes() {
+  const sandbox = sinon.createSandbox();
+  try {
+    sandbox
+      .stub(QueryCache.getters.crashData, "get")
+      .resolves(testCrashDumpFiles);
+    is(
+      await ASRouterTargeting.Environment.crashCount,
+      3,
+      "should return 3 for three crash dumps"
+    );
+  } finally {
+    sandbox.restore();
+  }
+});
+
+add_task(async function check_daysSinceLastCrash_noCrashesReturnsNull() {
+  const sandbox = sinon.createSandbox();
+  try {
+    sandbox.stub(QueryCache.getters.crashData, "get").resolves([]);
+    is(
+      await ASRouterTargeting.Environment.daysSinceLastCrash,
+      null,
+      "should return null for no crashes"
+    );
+  } finally {
+    sandbox.restore();
+  }
+});
+
+add_task(async function check_daysSinceLastCrash_returnsDaysSinceLastCrash() {
+  const sandbox = sinon.createSandbox();
+  try {
+    sandbox
+      .stub(QueryCache.getters.crashData, "get")
+      .resolves(testCrashDumpFiles);
+    is(
+      await ASRouterTargeting.Environment.daysSinceLastCrash,
+      10,
+      "should return 10 for most recent crash from 10 days ago"
+    );
+  } finally {
+    sandbox.restore();
+  }
+});

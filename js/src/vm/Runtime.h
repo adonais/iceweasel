@@ -15,7 +15,6 @@
 #include "mozilla/TimeStamp.h"
 #include "mozilla/XorShift128PlusRNG.h"
 
-#include <algorithm>
 #include <utility>
 
 #ifdef JS_HAS_INTL_API
@@ -216,46 +215,36 @@ class Metrics {
  public:
   explicit Metrics(JSRuntime* rt) : rt_(rt) {}
 
-  // Records a TimeDuration metric. These are converted to integers when being
-  // recorded so choose an appropriate scale. In the future these will be Glean
-  // Timing Distribution metrics.
-  struct TimeDuration_S {
+  // Records a TimeDuration metric.
+  struct TimeDuration {
     using SourceType = mozilla::TimeDuration;
-    static uint32_t convert(SourceType td) { return uint32_t(td.ToSeconds()); }
-  };
-  struct TimeDuration_MS {
-    using SourceType = mozilla::TimeDuration;
-    static uint32_t convert(SourceType td) {
-      return uint32_t(td.ToMilliseconds());
-    }
-  };
-  struct TimeDuration_US {
-    using SourceType = mozilla::TimeDuration;
-    static uint32_t convert(SourceType td) {
-      return uint32_t(td.ToMicroseconds());
+    static JSTelemetryData convert(SourceType td) {
+      return JSTelemetryData(td);
     }
   };
 
-  // Record a metric in bytes. In the future these will be Glean Memory
-  // Distribution metrics.
+  // Record a memory size metric.
   struct MemoryDistribution {
     using SourceType = size_t;
-    static uint32_t convert(SourceType sz) {
-      return static_cast<uint32_t>(std::min(sz, size_t(UINT32_MAX)));
+    static JSTelemetryData convert(SourceType sz) {
+      return JSTelemetryData(sz);
     }
   };
 
-  // Record a metric for a quanity of items. This doesn't currently have a Glean
-  // analogue and we avoid using MemoryDistribution directly to avoid confusion
-  // about units.
-  using QuantityDistribution = MemoryDistribution;
+  // Record a metric for a quanity of items.
+  struct QuantityDistribution {
+    using SourceType = size_t;
+    static JSTelemetryData convert(SourceType count) {
+      return JSTelemetryData(count);
+    }
+  };
 
   // Record the distribution of boolean values. In the future this will be a
   // Glean Rate metric.
   struct Boolean {
     using SourceType = bool;
-    static uint32_t convert(SourceType sample) {
-      return static_cast<uint32_t>(sample);
+    static JSTelemetryData convert(SourceType sample) {
+      return JSTelemetryData(sample);
     }
   };
 
@@ -264,9 +253,9 @@ class Metrics {
   // future, these should become Glean Labeled Counter metrics.
   struct Enumeration {
     using SourceType = unsigned int;
-    static uint32_t convert(SourceType sample) {
+    static JSTelemetryData convert(SourceType sample) {
       MOZ_ASSERT(sample <= 100);
-      return static_cast<uint32_t>(sample);
+      return JSTelemetryData(size_t(sample));
     }
   };
 
@@ -275,19 +264,21 @@ class Metrics {
   // Distribution unless they add a better match.
   struct Percentage {
     using SourceType = double;
-    static uint32_t convert(SourceType sample) {
+    static JSTelemetryData convert(SourceType sample) {
       MOZ_ASSERT(sample >= 0.0 && sample <= 100.0);
-      return static_cast<uint32_t>(sample);
+      return JSTelemetryData(size_t(sample));
     }
   };
 
   // Record an unsigned integer.
   struct Integer {
     using SourceType = uint32_t;
-    static uint32_t convert(SourceType sample) { return sample; }
+    static JSTelemetryData convert(SourceType sample) {
+      return JSTelemetryData(size_t(sample));
+    }
   };
 
-  inline void addTelemetry(JSMetric id, uint32_t sample);
+  inline void addTelemetry(JSMetric id, const JSTelemetryData& sample);
 
 #define DECLARE_METRIC_HELPER(NAME, TY)                \
   void NAME(TY::SourceType sample) {                   \
@@ -409,7 +400,7 @@ struct JSRuntime {
 
  public:
   // Accumulates data for Firefox telemetry.
-  void addTelemetry(JSMetric id, uint32_t sample);
+  void addTelemetry(JSMetric id, const JSTelemetryData& sample);
 
   void setTelemetryCallback(JSRuntime* rt,
                             JSAccumulateTelemetryDataCallback callback);
@@ -426,8 +417,9 @@ struct JSRuntime {
   js::UnprotectedData<JS::ConsumeStreamCallback> consumeStreamCallback;
   js::UnprotectedData<JS::ReportStreamErrorCallback> reportStreamErrorCallback;
 
-  bool getHostDefinedData(JSContext* cx,
-                          JS::MutableHandle<JSObject*> data) const;
+  bool getHostDefinedData(
+      JSContext* cx, JS::MutableHandle<JSObject*> incumbentGlobal,
+      JS::MutableHandle<JSObject*> optionalHostDefinedData) const;
 
   void addUnhandledRejectedPromise(JSContext* cx, js::HandleObject promise);
   void removeUnhandledRejectedPromise(JSContext* cx, js::HandleObject promise);
@@ -507,9 +499,7 @@ struct JSRuntime {
     js::PreBarriered<JSAtom*> name;
     bool isDebuggee;
 
-    void trace(JSTracer* trc) {
-      TraceNullableEdge(trc, &name, "JitCacheKey::name");
-    }
+    void trace(JSTracer* trc) { TraceEdge(trc, &name, "JitCacheKey::name"); }
   };
 
   struct JitCacheKeyHasher : public js::DefaultHasher<JitCacheKey> {
@@ -1130,7 +1120,7 @@ struct JSRuntime {
 
 namespace js {
 
-void Metrics::addTelemetry(JSMetric id, uint32_t sample) {
+void Metrics::addTelemetry(JSMetric id, const JSTelemetryData& sample) {
   rt_->addTelemetry(id, sample);
 }
 

@@ -873,13 +873,19 @@ nsBrowserContentHandler.prototype = {
             // greater or equal to minVersion set by the experiment.
             if (nimbusOverrideUrl && versionMatch) {
               try {
-                let uri = Services.io.newURI(nimbusOverrideUrl);
-                // Only allow https://www.mozilla.org and https://www.mozilla.com
+                let uri = Services.io.newURI(
+                  nimbusOverrideUrl.split("|")[0].trim()
+                );
+                // Only allow https://www.mozilla.org, https://www.mozilla.com, and https://www.firefox.com
                 if (
                   uri.scheme === "https" &&
-                  ["www.mozilla.org", "www.mozilla.com"].includes(uri.host)
+                  [
+                    "www.mozilla.org",
+                    "www.mozilla.com",
+                    "www.firefox.com",
+                  ].includes(uri.host)
                 ) {
-                  nimbusWNP = uri.spec;
+                  nimbusWNP = nimbusOverrideUrl;
                 } else {
                   throw new Error("Bad URL");
                 }
@@ -984,9 +990,10 @@ nsBrowserContentHandler.prototype = {
     if (overridePage == "" && prefb.prefHasUserValue(ONCE_PREF)) {
       try {
         // Show if we haven't passed the expiration or there's no expiration
-        const { expire, url } = JSON.parse(
-          Services.urlFormatter.formatURLPref(ONCE_PREF)
+        let { expire, url, feature_id, slug } = JSON.parse(
+          prefb.getStringPref(ONCE_PREF)
         );
+        url = Services.urlFormatter.formatURL(url);
         if (!(Date.now() > expire)) {
           // Only set allowed urls as override pages
           overridePage = url
@@ -1008,7 +1015,9 @@ nsBrowserContentHandler.prototype = {
                 )
             )
             .join("|");
-
+          if (feature_id && slug) {
+            lazy.NimbusFeatures[feature_id]?.recordExposureEvent({ slug });
+          }
           // Be noisy as properly configured urls should be unchanged
           if (overridePage != url) {
             console.error(`Mismatched once urls: ${url}`);
@@ -1275,8 +1284,8 @@ function maybeRecordToHandleTelemetry(uri, isLaunch) {
 
   if (uri instanceof Ci.nsIFileURL) {
     let extension = "." + uri.fileExtension.toLowerCase();
-    // Keep synchronized with https://searchfox.org/mozilla-central/source/browser/installer/windows/nsis/shared.nsh
-    // and https://searchfox.org/mozilla-central/source/browser/installer/windows/msix/AppxManifest.xml.in.
+    // Keep synchronized with https://searchfox.org/firefox-main/source/browser/installer/windows/nsis/shared.nsh
+    // and https://searchfox.org/firefox-main/source/browser/installer/windows/msix/AppxManifest.xml.in.
     let registeredExtensions = new Set([
       ".avif",
       ".htm",

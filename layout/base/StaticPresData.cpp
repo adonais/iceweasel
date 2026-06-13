@@ -202,7 +202,7 @@ nsStaticAtom* StaticPresData::GetLangGroup(nsAtom* aLanguage) const {
 }
 
 const LangGroupFontPrefs* StaticPresData::GetFontPrefsForLang(
-    nsAtom* aLanguage, bool* aNeedsToCache) {
+    nsAtom* aLanguage) {
   MOZ_ASSERT(aLanguage);
   MOZ_ASSERT(mLangService);
 
@@ -215,11 +215,6 @@ const LangGroupFontPrefs* StaticPresData::GetFontPrefsForLang(
         return p;
       }
     }
-  }
-
-  if (aNeedsToCache) {
-    *aNeedsToCache = true;
-    return nullptr;
   }
 
   AutoWriteLock lock(mLock);

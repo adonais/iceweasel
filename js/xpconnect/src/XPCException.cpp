@@ -23,6 +23,7 @@ static const struct ResultMap {
 } map[] = {
 #define XPC_MSG_DEF(val, format) {(val), #val, format},
 #include "xpc.msg"
+#include "extra_xpc_msg.h"
 #undef XPC_MSG_DEF
     {NS_OK, 0, 0}  // sentinel to mark end of array
 };

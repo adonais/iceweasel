@@ -237,6 +237,7 @@ void ExtensionAPIBase::CallWebExtMethodAsyncAmbiguous(
   auto lastElement =
       aArgs.IsEmpty() ? JS::UndefinedValue() : aArgs.LastElement();
   dom::Sequence<JS::Value> callArgs(aArgs);
+  dom::SequenceRooter<JS::Value> callArgsRooter(aCx, &callArgs);
   if (lastElement.isObject() && JS::IsCallable(&lastElement.toObject())) {
     JS::Rooted<JSObject*> tempRoot(aCx, &lastElement.toObject());
     JS::Rooted<JSObject*> tempGlobalRoot(aCx, JS::CurrentGlobalOrNull(aCx));

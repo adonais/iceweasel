@@ -25,7 +25,7 @@ class HTMLCanvasAccessible : public HyperTextAccessible {
   virtual a11y::role NativeRole() const override;
 
  protected:
-  virtual ~HTMLCanvasAccessible() {}
+  virtual ~HTMLCanvasAccessible() = default;
 };
 
 }  // namespace a11y

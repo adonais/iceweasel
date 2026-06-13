@@ -519,8 +519,10 @@ PurgeTrackerService.prototype = {
 
     lazy.logger.log("Batch finished, queueing next batch.");
     this._firstIteration = false;
-    Services.tm.idleDispatchToMainThread(() => {
-      this.purgeTrackingCookieJars();
+    await new Promise((resolve, reject) => {
+      Services.tm.idleDispatchToMainThread(() => {
+        this.purgeTrackingCookieJars().then(resolve, reject);
+      });
     });
   },
 };

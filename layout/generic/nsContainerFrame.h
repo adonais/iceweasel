@@ -515,7 +515,9 @@ class nsContainerFrame : public nsSplittableFrame {
   // Incorporate the child overflow areas into aOverflowAreas.
   // If the child does not have a overflow, use the child area.
   void ConsiderChildOverflow(mozilla::OverflowAreas& aOverflowAreas,
-                             nsIFrame* aChildFrame, bool aAsIfScrolled = false);
+                             nsIFrame* aChildFrame,
+                             mozilla::OverflowAreaUnionFlags aFlags =
+                                 mozilla::OverflowAreaUnionFlags::None);
 
  protected:
   nsContainerFrame(ComputedStyle* aStyle, nsPresContext* aPresContext,

@@ -2192,7 +2192,7 @@ async function getFluentStringHelper(resourceIds) {
 async function openRDM(tab, { waitForDeviceList = true } = {}) {
   info("Opening responsive design mode");
   const manager = ResponsiveUIManager;
-  const ui = await manager.openIfNeeded(tab.ownerGlobal, tab, {
+  const ui = await manager.openIfNeeded(tab.documentGlobal, tab, {
     trigger: "test",
   });
   info("Responsive design mode opened");
@@ -2225,7 +2225,7 @@ async function waitForRDMLoaded(ui, { waitForDeviceList = true } = {}) {
 async function closeRDM(tab, options) {
   info("Closing responsive design mode");
   const manager = ResponsiveUIManager;
-  await manager.closeIfNeeded(tab.ownerGlobal, tab, options);
+  await manager.closeIfNeeded(tab.documentGlobal, tab, options);
   info("Responsive design mode closed");
 }
 

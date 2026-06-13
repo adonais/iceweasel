@@ -48,11 +48,9 @@ import org.mozilla.fenix.helpers.Constants.RETRY_COUNT
 import org.mozilla.fenix.helpers.Constants.SPEECH_RECOGNITION
 import org.mozilla.fenix.helpers.Constants.TAG
 import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
-import org.mozilla.fenix.helpers.MatcherHelper.assertUIObjectExists
 import org.mozilla.fenix.helpers.MatcherHelper.itemContainingText
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithDescription
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithResId
-import org.mozilla.fenix.helpers.MatcherHelper.itemWithResIdContainingText
 import org.mozilla.fenix.helpers.SessionLoadedIdlingResource
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTime
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTimeShort
@@ -209,6 +207,10 @@ class SearchRobot(private val composeTestRule: ComposeTestRule) {
             closeSoftKeyboard()
             Log.i(TAG, "verifySearchSuggestionsAreDisplayed: Performed \"Close soft keyboard\" action.")
             Log.i(TAG, "verifySearchSuggestionsAreDisplayed: Waiting for $waitingTime ms until $searchSuggestion search suggestion exists.")
+            composeTestRule.waitUntilAtLeastOneExists(
+                hasTestTag("mozac.awesomebar.suggestion") and hasText(searchSuggestion, substring = true),
+                waitingTime,
+            )
             composeTestRule.onAllNodesWithTag("mozac.awesomebar.suggestion")
                 .assertAny(hasText(searchSuggestion, substring = true))
             Log.i(TAG, "verifySearchSuggestionsAreDisplayed: Verified $searchSuggestion search suggestion exists.")
@@ -409,9 +411,13 @@ class SearchRobot(private val composeTestRule: ComposeTestRule) {
         Log.i(TAG, "typeSearch: Compose is now idle")
     }
 
+    @OptIn(ExperimentalTestApi::class)
     fun clickClearButton() {
+        Log.i(TAG, "openSearch: Waiting for $waitingTime until the clear toolbar button exists")
+        composeTestRule.waitUntilAtLeastOneExists(hasContentDescription(getStringResource(toolbarR.string.mozac_clear_button_description)), waitingTime)
+        Log.i(TAG, "openSearch: Waited for $waitingTime until the clear toolbar button exists")
         Log.i(TAG, "clickClearButton: Trying to click the clear button")
-        composeTestRule.onNodeWithContentDescription(getStringResource(toolbarR.string.mozac_clear_button_description)).performClick()
+        itemWithDescription(getStringResource(toolbarR.string.mozac_clear_button_description)).click()
         Log.i(TAG, "clickClearButton: Clicked the clear button")
         Log.i(TAG, "clickClearButton: Waiting for compose test rule to be idle")
         composeTestRule.waitForIdle()
@@ -474,7 +480,8 @@ class SearchRobot(private val composeTestRule: ComposeTestRule) {
         composeTestRule.waitUntilAtLeastOneExists(hasTestTag(ADDRESSBAR_SEARCH_BOX), waitingTime)
         Log.i(TAG, "verifyTypedToolbarText: Waited for $waitingTime until the edit mode toolbar search box exists")
         Log.i(TAG, "verifyTypedToolbarText: Verifying that text '$expectedText' exists?: $exists")
-        assertUIObjectExists(itemWithResIdContainingText(ADDRESSBAR_SEARCH_BOX, expectedText), exists = exists)
+        val matcher = hasText(expectedText, substring = true)
+        composeTestRule.onNodeWithTag(ADDRESSBAR_SEARCH_BOX).assert(if (exists) matcher else matcher.not())
         Log.i(TAG, "verifyTypedToolbarText: Verification successful.")
     }
 
@@ -622,8 +629,6 @@ private fun clearButton() =
     mDevice.findObject(UiSelector().resourceId("$packageName:id/mozac_browser_toolbar_clear_view"))
 
 private fun searchWrapper() = mDevice.findObject(UiSelector().resourceId("$packageName:id/search_wrapper"))
-
-private fun searchSelectorButton() = itemWithResId("$packageName:id/search_selector")
 
 private fun searchShortcutList() =
     mDevice.findObject(UiSelector().resourceId("$packageName:id/mozac_browser_menu_recyclerView"))

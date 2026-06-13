@@ -20,7 +20,7 @@ Services.obs.addObserver(
       ) {
         Services.scriptloader.loadSubScript(
           "chrome://global/content/customElements.js",
-          doc.ownerGlobal
+          doc.documentGlobal
         );
       }
     },

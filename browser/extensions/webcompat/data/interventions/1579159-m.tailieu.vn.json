@@ -11,7 +11,7 @@
       "platforms": ["android"],
       "content_scripts": {
         "all_frames": true,
-        "js": ["bug1579159-m.tailieu.vn-pdfjs-worker-disable.js"]
+        "js": ["disable_PDFJS_workers.js"]
       }
     }
   ]

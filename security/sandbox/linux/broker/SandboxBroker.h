@@ -35,6 +35,10 @@ class FileDescriptor;
 class SandboxBroker final : private SandboxBrokerCommon,
                             public PlatformThread::Delegate {
  public:
+  // Holding a UniquePtr should disallow copying, but to make that explicit:
+  SandboxBroker(const SandboxBroker&) = delete;
+  void operator=(const SandboxBroker&) = delete;
+
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(SandboxBroker)
 
   enum Perms {
@@ -166,10 +170,6 @@ class SandboxBroker final : private SandboxBrokerCommon,
   // In SandboxBrokerRealPath.cpp
   char* SymlinkPath(const Policy* aPolicy, const char* __restrict aPath,
                     char* __restrict aResolved, int* aPermission);
-
-  // Holding a UniquePtr should disallow copying, but to make that explicit:
-  SandboxBroker(const SandboxBroker&) = delete;
-  void operator=(const SandboxBroker&) = delete;
 };
 
 }  // namespace mozilla

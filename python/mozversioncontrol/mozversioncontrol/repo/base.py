@@ -135,7 +135,12 @@ class Repository(abc.ABC):
     @property
     @abc.abstractmethod
     def head_ref(self):
-        """Hash of HEAD revision."""
+        """Head reference."""
+
+    @property
+    @abc.abstractmethod
+    def head_rev(self):
+        """Head revision."""
 
     @property
     @abc.abstractmethod
@@ -284,6 +289,20 @@ class Repository(abc.ABC):
         `dest_branch` specifies the destination branch name. If None, pushes ref to ref.
         `force` whether to use a force push (default False).
         """
+
+    def add_note(
+        self,
+        note: str,
+        content: str,
+        commit: Optional[str] = None,
+    ):
+        """Attach a git note with `content` to `commit`.
+
+        `note` is the notes namespace under refs/notes/.
+        `content` is the data to store in the note.
+        `commit` is the commit to associage the note with (defaults to HEAD).
+        """
+        raise NotImplementedError
 
     @abc.abstractmethod
     def push_to_try(

@@ -1,24 +1,26 @@
 From: Michael Froman <mfroman@mozilla.com>
-Date: Tue, 13 May 2025 22:39:00 +0000
-Subject: Bug 1966238 - (fix-bf85c38fb3) fix build for our added 'pid' field in
- DesktopCapturer::Source r?pehrsons!
+Date: Wed, 16 Jul 2025 21:08:00 +0300
+Subject: Bug 1974813 - turn off rust in libwebrtc since we don't use any
+ libwebrtc rust code. r=ng?
 
-Differential Revision: https://phabricator.services.mozilla.com/D249164
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/b6b37905a574e7706d98eb683e6800c9525815e7
+Note: no moz.build changes are caused by this change.
+
+Differential Revision: https://phabricator.services.mozilla.com/D257316
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/14ee98c4832a55bf32116c925540ab0f53e46cd3
 ---
- modules/desktop_capture/mac/screen_capturer_sck.mm | 2 +-
+ .gn | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/modules/desktop_capture/mac/screen_capturer_sck.mm b/modules/desktop_capture/mac/screen_capturer_sck.mm
-index 49c923e56b..0d0750f63e 100644
---- a/modules/desktop_capture/mac/screen_capturer_sck.mm
-+++ b/modules/desktop_capture/mac/screen_capturer_sck.mm
-@@ -444,7 +444,7 @@ bool ScreenCapturerSck::GetSourceList(SourceList* sources) {
-   sources->clear();
-   EnsurePickerHandle();
-   if (picker_handle_) {
--    sources->push_back({picker_handle_->Source(), std::string()});
-+    sources->push_back({picker_handle_->Source(), 0, std::string()});
-   }
-   return true;
- }
+diff --git a/.gn b/.gn
+index e03aab02cf..87e2c7af7b 100644
+--- a/.gn
++++ b/.gn
+@@ -89,7 +89,7 @@ default_args = {
+   use_fuzztest_wrapper = false
+ 
+   # Enable Rust in WebRTC
+-  enable_rust = true
++  enable_rust = false # Mozilla
+   enable_rust_cxx = true
+   enable_chromium_prelude = true
+ 

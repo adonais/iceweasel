@@ -110,7 +110,7 @@ bool SdpMediaSection::GetMaxMessageSize(uint32_t* size) const {
 }
 
 bool SdpMediaSection::HasRtcpFb(const std::string& pt,
-                                SdpRtcpFbAttributeList::Type type,
+                                const SdpRtcpFbAttributeList::Type type,
                                 const std::string& subType) const {
   const SdpAttributeList& attrs(GetAttributeList());
 

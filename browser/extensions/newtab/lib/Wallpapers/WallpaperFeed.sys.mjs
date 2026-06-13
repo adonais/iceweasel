@@ -4,7 +4,6 @@
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
-  BasePromiseWorker: "resource://gre/modules/PromiseWorker.sys.mjs",
   RemoteSettings: "resource://services-settings/remote-settings.sys.mjs",
   Utils: "resource://services-settings/Utils.sys.mjs",
 });
@@ -63,14 +62,6 @@ export class WallpaperFeed {
    */
   RemoteSettings(...args) {
     return lazy.RemoteSettings(...args);
-  }
-
-  /**
-   * This thin wrapper around lazy.BasePromiseWorker makes it easier for us to write
-   * automated tests
-   */
-  BasePromiseWorker(...args) {
-    return new lazy.BasePromiseWorker(...args);
   }
 
   async wallpaperSetup(isStartup = false) {
@@ -287,17 +278,16 @@ export class WallpaperFeed {
     );
   }
 
-  async wallpaperUpload(file) {
+  async wallpaperUpload(file, wallpaperTheme) {
+    if (!Blob.isInstance(file)) {
+      console.error("wallpaperUpload: file is not a Blob");
+      return null;
+    }
+    if (wallpaperTheme !== "dark" && wallpaperTheme !== "light") {
+      console.error("wallpaperUpload: invalid theme");
+      return null;
+    }
     try {
-      const customWallpaperThemeWorker = this.BasePromiseWorker(
-        "resource://newtab/lib/Wallpapers/WallpaperTheme.worker.mjs",
-        { type: "module" }
-      );
-      const wallpaperTheme = await customWallpaperThemeWorker.post(
-        "calculateTheme",
-        [file]
-      );
-      customWallpaperThemeWorker.terminate();
       const wallpaperDir = PathUtils.join(PathUtils.profileDir, "wallpaper");
 
       // create wallpaper directory if it does not exist
@@ -377,7 +367,8 @@ export class WallpaperFeed {
         if (
           action.data.name === "newtabWallpapers.customColor.enabled" ||
           action.data.name === "newtabWallpapers.customWallpaper.enabled" ||
-          action.data.name === "newtabWallpapers.enabled"
+          action.data.name === "newtabWallpapers.enabled" ||
+          action.data.name === "nova.enabled"
         ) {
           this.wallpaperTeardown();
           await this.wallpaperSetup(false /* isStartup */);
@@ -393,7 +384,7 @@ export class WallpaperFeed {
         this.wallpaperSeenEvent();
         break;
       case at.WALLPAPER_UPLOAD:
-        this.wallpaperUpload(action.data.file);
+        this.wallpaperUpload(action.data.file, action.data.theme);
         break;
       case at.WALLPAPER_REMOVE_UPLOAD:
         await this.removeCustomWallpaper();

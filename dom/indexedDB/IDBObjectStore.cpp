@@ -868,11 +868,16 @@ void IDBObjectStore::GetAddInfo(JSContext* aCx, ValueWrapper& aValueWrapper,
   {
     const bool shouldInactivate = mTransaction && mTransaction->IsActive();
     if (shouldInactivate) {
-      mTransaction->TransitionToInactive();
+      mTransaction->TransitionToInactiveWithDeferral();
     }
     auto guard = MakeScopeExit([&]() {
-      if (shouldInactivate && !mTransaction->IsAborted()) {
-        mTransaction->TransitionToActive();
+      if (shouldInactivate) {
+        if (!mTransaction->IsAborted()) {
+          mTransaction->TransitionToActive();
+        } else {
+          mTransaction->DeactivateDeferral();
+          mTransaction->DrainDeferredResponses();
+        }
       }
     });
 

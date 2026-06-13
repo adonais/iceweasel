@@ -26,10 +26,6 @@ function setupFakeHandler() {
 }
 
 add_task(async function () {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.settings-redesign.enabled", false]],
-  });
-
   setupFakeHandler();
 
   let appHandlerInitialized = TestUtils.topicObserved("app-handler-loaded");

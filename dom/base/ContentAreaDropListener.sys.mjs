@@ -264,7 +264,7 @@ ContentAreaDropListener.prototype = {
 
     // If drag source and drop target are in the same top window, don't allow.
     let eventWC =
-      aEvent.originalTarget.ownerGlobal.browsingContext.currentWindowContext;
+      aEvent.originalTarget.documentGlobal.browsingContext.currentWindowContext;
     if (eventWC && sourceTopWC == eventWC.topWindowContext) {
       return false;
     }

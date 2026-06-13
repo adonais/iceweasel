@@ -39,8 +39,4 @@
 
 #endif
 
-#if defined(EARLY_BETA_OR_EARLIER)
-
-  pref("pdfjs.enableOptimizedPartialRendering", true);
-
-#endif
+pref("pdfjs.enableOptimizedPartialRendering", true);

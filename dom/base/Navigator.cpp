@@ -280,7 +280,7 @@ void Navigator::GetUserAgent(nsAString& aUserAgent, CallerType aCallerType,
       docshell->GetBrowsingContext()->GetCustomUserAgent(customUserAgent);
 
       if (!customUserAgent.IsEmpty()) {
-        aUserAgent = customUserAgent;
+        aUserAgent = std::move(customUserAgent);
         return;
       }
     }
@@ -439,7 +439,7 @@ void Navigator::GetPlatform(nsAString& aPlatform, CallerType aCallerType,
       bc->GetCustomPlatform(customPlatform);
 
       if (!customPlatform.IsEmpty()) {
-        aPlatform = customPlatform;
+        aPlatform = std::move(customPlatform);
         return;
       }
     }
@@ -469,7 +469,7 @@ void Navigator::GetOscpu(nsAString& aOSCPU, CallerType aCallerType,
     nsAutoString override;
     nsresult rv = Preferences::GetString("general.oscpu.override", override);
     if (NS_SUCCEEDED(rv)) {
-      aOSCPU = override;
+      aOSCPU = std::move(override);
       return;
     }
   }
@@ -632,7 +632,7 @@ void Navigator::GetBuildID(nsAString& aBuildID, CallerType aCallerType,
     nsAutoString override;
     nsresult rv = Preferences::GetString("general.buildID.override", override);
     if (NS_SUCCEEDED(rv)) {
-      aBuildID = override;
+      aBuildID = std::move(override);
       return;
     }
 
@@ -2042,7 +2042,7 @@ nsresult Navigator::GetPlatform(nsAString& aPlatform, Document* aCallerDoc,
         mozilla::Preferences::GetString("general.platform.override", override);
 
     if (NS_SUCCEEDED(rv)) {
-      aPlatform = override;
+      aPlatform = std::move(override);
       return NS_OK;
     }
   }
@@ -2079,7 +2079,7 @@ nsresult Navigator::GetAppVersion(nsAString& aAppVersion, Document* aCallerDoc,
                                                   override);
 
     if (NS_SUCCEEDED(rv)) {
-      aAppVersion = override;
+      aAppVersion = std::move(override);
       return NS_OK;
     }
   }
@@ -2144,7 +2144,7 @@ nsresult Navigator::GetUserAgent(nsPIDOMWindowInner* aWindow,
         mozilla::Preferences::GetString("general.useragent.override", override);
 
     if (NS_SUCCEEDED(rv)) {
-      aUserAgent = override;
+      aUserAgent = std::move(override);
       return NS_OK;
     }
   }

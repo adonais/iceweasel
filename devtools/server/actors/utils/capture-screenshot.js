@@ -35,7 +35,7 @@ function simulateCameraFlash(browsingContext) {
   }
 
   // Don't take a screenshot if the user prefers reduced motion.
-  if (node.ownerGlobal.matchMedia("(prefers-reduced-motion)").matches) {
+  if (node.documentGlobal.matchMedia("(prefers-reduced-motion)").matches) {
     return;
   }
 

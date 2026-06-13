@@ -923,13 +923,15 @@ static int32_t MemoryInit(JSContext* cx, Instance* instance,
     return -1;
   }
 
-  if (&srcTable == &dstTable && dstOffset > srcOffset) {
+  if (srcTable.get() == dstTable.get() && dstOffset == srcOffset) {
+    // No-op
+  } else if (dstOffset > srcOffset) {
+    // Copy backwards
     for (uint32_t i = len; i > 0; i--) {
       dstTable->copy(*srcTable, dstOffset + (i - 1), srcOffset + (i - 1));
     }
-  } else if (&srcTable == &dstTable && dstOffset == srcOffset) {
-    // No-op
   } else {
+    // Copy forwards
     for (uint32_t i = 0; i < len; i++) {
       dstTable->copy(*srcTable, dstOffset + i, srcOffset + i);
     }
@@ -1925,7 +1927,7 @@ static bool ArrayCopyFromElem(JSContext* cx, Handle<WasmArrayObject*> arrayObj,
 /* static */ void Instance::contUnwind(Instance* instance,
                                        wasm::Handlers* handlers) {
   MOZ_ASSERT(SASigContUnwind.failureMode == FailureMode::Infallible);
-  ContStack::unwind(instance->cx(), handlers);
+  ContStack::unwind(handlers);
 }
 
 #endif  // ENABLE_WASM_JSPI
@@ -2687,8 +2689,8 @@ bool Instance::init(JSContext* cx, const JSObjectVector& funcImports,
       // Compile suspending function Wasm wrapper.
       const FuncType& funcType = codeMeta().getFuncType(i);
       RootedObject wrapped(cx, suspendingObject);
-      RootedFunction wrapper(
-          cx, WasmSuspendingFunctionCreate(cx, wrapped, funcType));
+      RootedFunction wrapper(cx, WasmSuspendingFunctionCreate(
+                                     cx, wrapped, funcType, codeMeta().types));
       if (!wrapper) {
         return false;
       }
@@ -2822,6 +2824,7 @@ bool Instance::init(JSContext* cx, const JSObjectVector& funcImports,
     data.boundsCheckLimit128 = limit > 15 ? limit - 15 : 0;
 #endif
     data.isShared = md.isShared();
+    data.mappedSize = memory->buffer().wasmMappedSize();
 
     // Add observer if our memory base may grow
     if (memory && memory->movingGrowable() &&
@@ -3221,6 +3224,24 @@ bool Instance::memoryAccessInGuardRegion(const uint8_t* addr,
   return false;
 }
 
+bool Instance::memoryAccessInMappedRegion(const uint8_t* addr,
+                                          uint32_t* memoryIndex,
+                                          uint64_t* offset) const {
+  for (uint32_t i = 0; i < codeMeta().memories.length(); i++) {
+    const MemoryInstanceData& md = memoryInstanceData(i);
+    if (addr >= md.base && addr < md.base + md.mappedSize) {
+      *memoryIndex = i;
+      *offset = addr - md.base;
+      return true;
+    }
+  }
+  return false;
+}
+
+size_t Instance::memoryMappedSize(uint32_t memoryIndex) const {
+  return memoryInstanceData(memoryIndex).mappedSize;
+}
+
 void Instance::tracePrivate(JSTracer* trc) {
   // This method is only called from WasmInstanceObject so the only reason why
   // TraceEdge is called is so that the pointer can be updated during a moving
@@ -3232,20 +3253,19 @@ void Instance::tracePrivate(JSTracer* trc) {
   // tables, they share the instance object.
   for (uint32_t funcIndex = 0; funcIndex < codeMeta().numFuncImports;
        funcIndex++) {
-    TraceNullableEdge(trc, &funcImportInstanceData(funcIndex).callable,
-                      "wasm import");
+    TraceEdge(trc, &funcImportInstanceData(funcIndex).callable, "wasm import");
   }
 
   for (uint32_t funcExportIndex = 0;
        funcExportIndex < codeMeta().numExportedFuncs(); funcExportIndex++) {
-    TraceNullableEdge(trc, &funcExportInstanceData(funcExportIndex).func,
-                      "wasm func export");
+    TraceEdge(trc, &funcExportInstanceData(funcExportIndex).func,
+              "wasm func export");
   }
 
   for (uint32_t memoryIndex = 0;
        memoryIndex < code().codeMeta().memories.length(); memoryIndex++) {
     MemoryInstanceData& memoryData = memoryInstanceData(memoryIndex);
-    TraceNullableEdge(trc, &memoryData.memory, "wasm memory object");
+    TraceEdge(trc, &memoryData.memory, "wasm memory object");
   }
 
   for (const SharedTable& table : tables_) {
@@ -3259,18 +3279,18 @@ void Instance::tracePrivate(JSTracer* trc) {
       continue;
     }
     GCPtr<AnyRef>* obj = (GCPtr<AnyRef>*)(data() + global.offset());
-    TraceNullableEdge(trc, obj, "wasm reference-typed global");
+    TraceEdge(trc, obj, "wasm reference-typed global");
   }
 
   for (uint32_t tagIndex = 0; tagIndex < code().codeMeta().tags.length();
        tagIndex++) {
-    TraceNullableEdge(trc, &tagInstanceData(tagIndex).object, "wasm tag");
+    TraceEdge(trc, &tagInstanceData(tagIndex).object, "wasm tag");
   }
 
   const SharedTypeContext& types = codeMeta().types;
   for (uint32_t typeIndex = 0; typeIndex < types->length(); typeIndex++) {
     TypeDefInstanceData* typeDefData = typeDefInstanceData(typeIndex);
-    TraceNullableEdge(trc, &typeDefData->shape, "wasm shape");
+    TraceEdge(trc, &typeDefData->shape, "wasm shape");
   }
 
   if (callRefMetrics_) {
@@ -3278,13 +3298,13 @@ void Instance::tracePrivate(JSTracer* trc) {
       CallRefMetrics* metrics = &callRefMetrics_[i];
       MOZ_ASSERT(metrics->checkInvariants());
       for (auto& target : metrics->targets) {
-        TraceNullableEdge(trc, &target, "indirect call target");
+        TraceEdge(trc, &target, "indirect call target");
       }
     }
   }
 
-  TraceNullableEdge(trc, &pendingException_, "wasm pending exception value");
-  TraceNullableEdge(trc, &pendingExceptionTag_, "wasm pending exception tag");
+  TraceEdge(trc, &pendingException_, "wasm pending exception value");
+  TraceEdge(trc, &pendingExceptionTag_, "wasm pending exception tag");
 
   passiveElemSegments_.trace(trc);
 
@@ -3369,8 +3389,8 @@ uintptr_t Instance::traceFrame(JSTracer* trc, const wasm::WasmFrameIter& wfi,
       continue;
     }
 
-    TraceManuallyBarrieredNullableEdge(trc, (AnyRef*)&stackWords[i],
-                                       "Instance::traceWasmFrame: normal word");
+    TraceManuallyBarrieredEdge(trc, (AnyRef*)&stackWords[i],
+                               "Instance::traceWasmFrame: normal word");
   }
 
   // Deal with any GC-managed fields in the DebugFrame, if it is
@@ -3382,7 +3402,7 @@ uintptr_t Instance::traceFrame(JSTracer* trc, const wasm::WasmFrameIter& wfi,
     for (size_t i = 0; i < MaxRegisterResults; i++) {
       if (debugFrame->hasSpilledRegisterRefResult(i)) {
         char* resultRefP = debugFrameP + DebugFrame::offsetOfRegisterResult(i);
-        TraceManuallyBarrieredNullableEdge(
+        TraceManuallyBarrieredEdge(
             trc, (AnyRef*)resultRefP,
             "Instance::traceWasmFrame: DebugFrame::resultResults_");
       }
@@ -3615,7 +3635,7 @@ class MOZ_RAII ReturnToJSResultCollector {
         if (result.onStack() && result.type().isRefRepr()) {
           char* loc = collector_.stackResultsArea_.get() + result.stackOffset();
           AnyRef* refLoc = reinterpret_cast<AnyRef*>(loc);
-          TraceNullableRoot(trc, refLoc, "StackResultsRooter::trace");
+          TraceRoot(trc, refLoc, "StackResultsRooter::trace");
         }
       }
     }
@@ -4231,6 +4251,7 @@ void Instance::onMovingGrowMemory(const WasmMemoryObject* memory) {
     ArrayBufferObject& buffer = md.memory->buffer().as<ArrayBufferObject>();
 
     md.base = buffer.dataPointer();
+    md.mappedSize = buffer.wasmMappedSize();
     size_t limit = md.memory->boundsCheckLimit();
 #if !defined(JS_64BIT)
     // We assume that the limit is a 32-bit quantity

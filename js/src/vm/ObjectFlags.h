@@ -44,9 +44,6 @@ enum class ObjectFlag : uint32_t {
   // If set, the object may have a non-writable property or an accessor
   // property.
   //
-  // * This is only set for PlainObjects because we only need it for these
-  //   objects and setting it for other objects confuses insertInitialShape.
-  //
   // * This flag does not account for properties named "__proto__". This is
   //   because |Object.prototype| has a "__proto__" accessor property and we
   //   don't want to include it because it would result in the flag being set on
@@ -98,6 +95,11 @@ enum class ObjectFlag : uint32_t {
   // If set, the object may have an accessor property where the getter or setter
   // is a non-JSFunction callable object.
   HasNonFunctionAccessor = 1 << 17,
+
+  // If set, the object is a regexp that was constructed using a non-standard
+  // constructor. This excludes it from IsOptimizableRegExpObject.
+  // If we run out of flag bits, this would be a good flag to try aliasing.
+  LegacyFeaturesDisabled = 1 << 18,
 };
 
 using ObjectFlags = EnumFlags<ObjectFlag>;

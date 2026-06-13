@@ -65,6 +65,7 @@ export default class MozMessageBar extends MozLitElement {
     supportPage: { type: String },
     messageL10nId: { type: String },
     messageL10nArgs: { type: String },
+    role: { type: String, reflect: true },
   };
 
   constructor() {
@@ -118,6 +119,13 @@ export default class MozMessageBar extends MozLitElement {
      * @type {string | undefined}
      */
     this.supportPage = undefined;
+
+    /**
+     * The ARIA role for the message bar.
+     *
+     * @type {string}
+     */
+    this.role = "alert";
   }
 
   onActionSlotchange() {
@@ -130,11 +138,6 @@ export default class MozMessageBar extends MozLitElement {
       "has-link-after",
       !!this.supportLinkEls.length || !!this.supportPage
     );
-  }
-
-  connectedCallback() {
-    super.connectedCallback();
-    this.setAttribute("role", "alert");
   }
 
   disconnectedCallback() {

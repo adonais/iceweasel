@@ -60,7 +60,7 @@ class HTMLLabelAccessible : public HyperTextAccessible {
   virtual bool HasPrimaryAction() const override;
 
  protected:
-  virtual ~HTMLLabelAccessible() {}
+  virtual ~HTMLLabelAccessible() = default;
   virtual ENameValueFlag NativeName(nsString& aName) const override;
   virtual void DOMAttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
                                    AttrModType aModType,
@@ -88,7 +88,7 @@ class HTMLOutputAccessible : public HyperTextAccessible {
                                    uint64_t aOldState) override;
 
  protected:
-  virtual ~HTMLOutputAccessible() {}
+  virtual ~HTMLOutputAccessible() = default;
 };
 
 /**
@@ -131,7 +131,7 @@ class HTMLHeaderOrFooterAccessible : public HyperTextAccessible {
   virtual a11y::role NativeRole() const override;
 
  protected:
-  virtual ~HTMLHeaderOrFooterAccessible() {}
+  virtual ~HTMLHeaderOrFooterAccessible() = default;
 };
 
 /**

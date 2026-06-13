@@ -45,7 +45,7 @@ void ContentCompositorBridgeParent::ActorDestroy(ActorDestroyReason aWhy) {
       &ContentCompositorBridgeParent::DeferredDestroy));
 }
 
-PAPZCTreeManagerParent*
+already_AddRefed<PAPZCTreeManagerParent>
 ContentCompositorBridgeParent::AllocPAPZCTreeManagerParent(
     const LayersId& aLayersId) {
   // Check to see if this child process has access to this layer tree.
@@ -71,7 +71,7 @@ ContentCompositorBridgeParent::AllocPAPZCTreeManagerParent(
     RefPtr<APZCTreeManager> temp = APZCTreeManager::Create(dummyId);
     RefPtr<APZUpdater> tempUpdater = new APZUpdater(temp, connectedToWebRender);
     tempUpdater->ClearTree(dummyId);
-    return new APZCTreeManagerParent(aLayersId, temp, tempUpdater);
+    return MakeAndAddRef<APZCTreeManagerParent>(aLayersId, temp, tempUpdater);
   }
 
   // If we do not have APZ enabled, we should gracefully fail.
@@ -79,29 +79,10 @@ ContentCompositorBridgeParent::AllocPAPZCTreeManagerParent(
     return nullptr;
   }
 
-  state.mParent->AllocateAPZCTreeManagerParent(lock, aLayersId, state);
-  return state.mApzcTreeManagerParent;
+  return state.mParent->AllocateAPZCTreeManagerParent(lock, aLayersId, state);
 }
 
-bool ContentCompositorBridgeParent::DeallocPAPZCTreeManagerParent(
-    PAPZCTreeManagerParent* aActor) {
-  APZCTreeManagerParent* parent = static_cast<APZCTreeManagerParent*>(aActor);
-
-  StaticMonitorAutoLock lock(CompositorBridgeParent::sIndirectLayerTreesLock);
-  auto iter =
-      CompositorBridgeParent::sIndirectLayerTrees.find(parent->GetLayersId());
-  if (iter != CompositorBridgeParent::sIndirectLayerTrees.end()) {
-    CompositorBridgeParent::LayerTreeState& state = iter->second;
-    MOZ_ASSERT(state.mApzcTreeManagerParent == parent);
-    state.mApzcTreeManagerParent = nullptr;
-  }
-
-  delete parent;
-
-  return true;
-}
-
-PAPZParent* ContentCompositorBridgeParent::AllocPAPZParent(
+already_AddRefed<PAPZParent> ContentCompositorBridgeParent::AllocPAPZParent(
     const LayersId& aLayersId) {
   // Check to see if this child process has access to this layer tree.
   if (!LayerTreeOwnerTracker::Get()->IsMapped(aLayersId, OtherPid())) {
@@ -109,11 +90,7 @@ PAPZParent* ContentCompositorBridgeParent::AllocPAPZParent(
     return nullptr;
   }
 
-  RemoteContentController* controller = new RemoteContentController();
-
-  // Increment the controller's refcount before we return it. This will keep the
-  // controller alive until it is released by IPDL in DeallocPAPZParent.
-  controller->AddRef();
+  auto controller = MakeRefPtr<RemoteContentController>();
 
   StaticMonitorAutoLock lock(CompositorBridgeParent::sIndirectLayerTreesLock);
   CompositorBridgeParent::LayerTreeState& state =
@@ -121,17 +98,10 @@ PAPZParent* ContentCompositorBridgeParent::AllocPAPZParent(
   MOZ_ASSERT(!state.mController);
   state.mController = controller;
 
-  return controller;
+  return controller.forget();
 }
 
-bool ContentCompositorBridgeParent::DeallocPAPZParent(PAPZParent* aActor) {
-  RemoteContentController* controller =
-      static_cast<RemoteContentController*>(aActor);
-  controller->Release();
-  return true;
-}
-
-PWebRenderBridgeParent*
+already_AddRefed<PWebRenderBridgeParent>
 ContentCompositorBridgeParent::AllocPWebRenderBridgeParent(
     const wr::PipelineId& aPipelineId, const LayoutDeviceIntSize& aSize,
     const WindowKind& aWindowKind) {
@@ -175,18 +145,15 @@ ContentCompositorBridgeParent::AllocPWebRenderBridgeParent(
                         root.get())
             .get());
     nsCString error("NO_PARENT");
-    WebRenderBridgeParent* parent =
-        WebRenderBridgeParent::CreateDestroyed(aPipelineId, std::move(error));
-    parent->AddRef();  // IPDL reference
-    return parent;
+    return WebRenderBridgeParent::CreateDestroyed(aPipelineId,
+                                                  std::move(error));
   }
 
   api = api->Clone();
   RefPtr<AsyncImagePipelineManager> holder = root->AsyncImageManager();
-  WebRenderBridgeParent* parent = new WebRenderBridgeParent(
+  auto parent = MakeRefPtr<WebRenderBridgeParent>(
       this, aPipelineId, root->CompositorScheduler(), std::move(api),
       std::move(holder), cbp->GetVsyncInterval());
-  parent->AddRef();  // IPDL reference
 
   {  // scope lock
     StaticMonitorAutoLock lock(CompositorBridgeParent::sIndirectLayerTreesLock);
@@ -195,15 +162,7 @@ ContentCompositorBridgeParent::AllocPWebRenderBridgeParent(
     CompositorBridgeParent::sIndirectLayerTrees[layersId].mWrBridge = parent;
   }
 
-  return parent;
-}
-
-bool ContentCompositorBridgeParent::DeallocPWebRenderBridgeParent(
-    PWebRenderBridgeParent* aActor) {
-  WebRenderBridgeParent* parent = static_cast<WebRenderBridgeParent*>(aActor);
-  EraseLayerState(wr::AsLayersId(parent->PipelineId()));
-  parent->Release();  // IPDL reference
-  return true;
+  return parent.forget();
 }
 
 mozilla::ipc::IPCResult ContentCompositorBridgeParent::RecvNotifyChildCreated(
@@ -429,21 +388,22 @@ ContentCompositorBridgeParent::~ContentCompositorBridgeParent() {
   MOZ_ASSERT(XRE_GetAsyncIOEventTarget());
 }
 
-PTextureParent* ContentCompositorBridgeParent::AllocPTextureParent(
+already_AddRefed<PTextureParent>
+ContentCompositorBridgeParent::AllocPTextureParent(
     const SurfaceDescriptor& aSharedData, ReadLockDescriptor& aReadLock,
     const LayersBackend& aLayersBackend, const TextureFlags& aFlags,
     const uint64_t& aSerial, const wr::MaybeExternalImageId& aExternalImageId) {
   if (aSharedData.type() == SurfaceDescriptor::TSurfaceDescriptorDcompSurface) {
     return nullptr;
   }
+  if (aExternalImageId.isSome() &&
+      !OwnsExternalImageId(aExternalImageId.ref())) {
+    NS_ERROR("We do not own this external image id.");
+    return nullptr;
+  }
   return TextureHost::CreateIPDLActor(
       this, aSharedData, std::move(aReadLock), aLayersBackend, aFlags,
       mCompositorManager->GetContentId(), aSerial, aExternalImageId);
-}
-
-bool ContentCompositorBridgeParent::DeallocPTextureParent(
-    PTextureParent* actor) {
-  return TextureHost::DestroyIPDLActor(actor);
 }
 
 bool ContentCompositorBridgeParent::IsSameProcess() const {

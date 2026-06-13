@@ -17,9 +17,16 @@ use std::{
 };
 use thiserror::Error;
 
-pub(crate) const CHILD_RENDEZVOUS_ANCILLARY_DATA_LEN: usize = 0;
+pub(crate) const PROCESS_RENDEZVOUS_ANCILLARY_DATA_LEN: usize = 0;
 
-pub type ProcessHandle = ();
+#[repr(transparent)]
+pub struct ProcessHandle(pub crate::Pid);
+
+impl Clone for ProcessHandle {
+    fn clone(&self) -> Self {
+        ProcessHandle(self.0)
+    }
+}
 
 #[derive(Error, Debug)]
 pub enum PlatformError {

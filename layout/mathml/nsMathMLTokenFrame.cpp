@@ -8,6 +8,7 @@
 
 #include "gfxContext.h"
 #include "mozilla/PresShell.h"
+#include "mozilla/ReflowInput.h"
 #include "nsContentUtils.h"
 #include "nsLayoutUtils.h"
 #include "nsPresContext.h"

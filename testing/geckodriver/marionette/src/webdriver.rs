@@ -148,7 +148,7 @@ pub enum SetPermissionState {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
-pub enum WebAuthnProtocol {
+pub enum AuthenticatorProtocol {
     #[serde(rename = "ctap1/u2f")]
     Ctap1U2f,
     #[serde(rename = "ctap2")]
@@ -171,7 +171,7 @@ pub enum AuthenticatorTransport {
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct AuthenticatorParameters {
-    pub protocol: WebAuthnProtocol,
+    pub protocol: AuthenticatorProtocol,
     pub transport: AuthenticatorTransport,
     pub has_resident_key: bool,
     pub has_user_verification: bool,
@@ -181,18 +181,40 @@ pub struct AuthenticatorParameters {
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
+pub struct AuthenticatorIdParameters {
+    pub authenticator_id: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct CredentialIdParameters {
+    pub authenticator_id: String,
+    pub credential_id: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
 pub struct CredentialParameters {
+    pub authenticator_id: String,
+    pub credentials: Credentials,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct Credentials {
     pub credential_id: String,
     pub is_resident_credential: bool,
     pub rp_id: String,
     pub private_key: String,
-    pub user_handle: String,
+    pub user_handle: Option<String>,
     pub sign_count: u64,
+    pub large_blob: Option<String>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct UserVerificationParameters {
+    pub authenticator_id: String,
     pub is_user_verified: bool,
 }
 
@@ -399,18 +421,18 @@ pub enum Command {
     AddonInstall(AddonInstallParameters),
     #[serde(rename = "Addon:Uninstall")]
     AddonUninstall { id: String },
-    #[serde(rename = "WebAuthn:AddVirtualAuthenticator")]
-    WebAuthnAddVirtualAuthenticator(AuthenticatorParameters),
-    #[serde(rename = "WebAuthn:RemoveVirtualAuthenticator")]
-    WebAuthnRemoveVirtualAuthenticator,
     #[serde(rename = "WebAuthn:AddCredential")]
     WebAuthnAddCredential(CredentialParameters),
+    #[serde(rename = "WebAuthn:AddVirtualAuthenticator")]
+    WebAuthnAddVirtualAuthenticator(AuthenticatorParameters),
     #[serde(rename = "WebAuthn:GetCredentials")]
-    WebAuthnGetCredentials,
-    #[serde(rename = "WebAuthn:RemoveCredential")]
-    WebAuthnRemoveCredential,
+    WebAuthnGetCredentials(AuthenticatorIdParameters),
     #[serde(rename = "WebAuthn:RemoveAllCredentials")]
-    WebAuthnRemoveAllCredentials,
+    WebAuthnRemoveAllCredentials(AuthenticatorIdParameters),
+    #[serde(rename = "WebAuthn:RemoveCredential")]
+    WebAuthnRemoveCredential(CredentialIdParameters),
+    #[serde(rename = "WebAuthn:RemoveVirtualAuthenticator")]
+    WebAuthnRemoveVirtualAuthenticator(AuthenticatorIdParameters),
     #[serde(rename = "WebAuthn:SetUserVerified")]
     WebAuthnSetUserVerified(UserVerificationParameters),
     #[serde(rename = "Marionette:GetContext")]

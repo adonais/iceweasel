@@ -18,6 +18,9 @@ import mozilla.components.support.utils.DefaultDownloadFileUtils
 import mozilla.components.support.utils.DownloadFileUtils
 import org.mozilla.focus.ext.components
 
+/**
+ * Service for handling downloads using the fetch library.
+ */
 class DownloadService : AbstractFetchDownloadService() {
     override val httpClient: Client by lazy { components.client }
     override val store: BrowserStore by lazy { components.store }

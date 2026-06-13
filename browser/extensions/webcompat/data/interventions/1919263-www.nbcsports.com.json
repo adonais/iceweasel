@@ -10,7 +10,7 @@
     {
       "platforms": ["all"],
       "content_scripts": {
-        "js": ["bug1919263-nbcsports.com-getCurrentUser-script-error-fix.js"]
+        "js": ["load_mParticle_synchronously.js"]
       }
     }
   ]

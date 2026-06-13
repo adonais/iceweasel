@@ -71,13 +71,14 @@ CssAltContent::CssAltContent(nsIContent* aContent) {
     }
   }
   mItems = frame->StyleContent()->AltContentItems();
-}
+  if (mItems.IsEmpty()) {
+    return;
+  }
 
-void CssAltContent::AppendToString(nsAString& aOut) {
   // There can be multiple alt text items.
   for (const auto& item : mItems) {
     if (item.IsString()) {
-      aOut.Append(NS_ConvertUTF8toUTF16(item.AsString().AsString()));
+      mText.Append(NS_ConvertUTF8toUTF16(item.AsString().AsString()));
     } else if (item.IsAttr()) {
       // This item gets its value from an attribute on the element or from
       // fallback text.
@@ -103,10 +104,12 @@ void CssAltContent::AppendToString(nsAString& aOut) {
           fallback->ToString(val);
         }
       }
-      aOut.Append(val);
+      mText.Append(val);
     }
   }
 }
+
+void CssAltContent::AppendToString(nsAString& aOut) { aOut.Append(mText); }
 
 /* static */
 bool CssAltContent::HandleAttributeChange(nsIContent* aContent,

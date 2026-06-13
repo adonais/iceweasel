@@ -103,8 +103,7 @@ ia2Accessible::get_relation(long aRelationIndex,
 
     RelationType relationType = sRelationTypePairs[idx].first;
     Relation rel = acc->RelationByType(relationType);
-    RefPtr<ia2AccessibleRelation> ia2Relation =
-        new ia2AccessibleRelation(relationType, &rel);
+    auto ia2Relation = MakeRefPtr<ia2AccessibleRelation>(relationType, &rel);
     if (ia2Relation->HasTargets()) {
       if (relIdx == aRelationIndex) {
         ia2Relation.forget(aRelation);
@@ -137,8 +136,7 @@ ia2Accessible::get_relations(long aMaxRelations,
 
     RelationType relationType = sRelationTypePairs[idx].first;
     Relation rel = acc->RelationByType(relationType);
-    RefPtr<ia2AccessibleRelation> ia2Rel =
-        new ia2AccessibleRelation(relationType, &rel);
+    auto ia2Rel = MakeRefPtr<ia2AccessibleRelation>(relationType, &rel);
     if (ia2Rel->HasTargets()) {
       ia2Rel.forget(aRelation + (*aNRelations));
       (*aNRelations)++;

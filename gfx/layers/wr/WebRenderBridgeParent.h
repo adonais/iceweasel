@@ -64,6 +64,8 @@ class WebRenderBridgeParent final : public PWebRenderBridgeParent,
                                     public CompositableParentManager,
                                     public FrameRecorder {
  public:
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(WebRenderBridgeParent, final);
+
   // Constructor for root WebRenderBridgeParents.
   WebRenderBridgeParent(CompositorBridgeParent* aCompositorBridge,
                         const wr::PipelineId& aPipelineId,
@@ -78,7 +80,9 @@ class WebRenderBridgeParent final : public PWebRenderBridgeParent,
                         RefPtr<AsyncImagePipelineManager>&& aImageMgr,
                         TimeDuration aVsyncRate);
 
-  static WebRenderBridgeParent* CreateDestroyed(
+  WebRenderBridgeParent(const wr::PipelineId& aPipelineId, nsCString&& aError);
+
+  static already_AddRefed<WebRenderBridgeParent> CreateDestroyed(
       const wr::PipelineId& aPipelineId, nsCString&& aError);
 
   // Ensures the WebRenderBridgeParent has completed initialization, returning
@@ -260,6 +264,11 @@ class WebRenderBridgeParent final : public PWebRenderBridgeParent,
     return aFontKey.mNamespace == mLateInit->mIdNamespace;
   }
 
+  bool OwnsExternalImageId(const wr::ExternalImageId& aId) const {
+    return static_cast<uint32_t>(wr::AsUint64(aId) >> 32) ==
+           mLateInit->mIdNamespace.mHandle;
+  }
+
   void FlushRendering(wr::RenderReasons aReasons, bool aBlocking);
 
   /**
@@ -334,7 +343,6 @@ class WebRenderBridgeParent final : public PWebRenderBridgeParent,
  private:
   class ScheduleSharedSurfaceRelease;
 
-  WebRenderBridgeParent(const wr::PipelineId& aPipelineId, nsCString&& aError);
   virtual ~WebRenderBridgeParent();
 
   bool ProcessEmptyTransactionUpdates(TransactionData& aData,
@@ -528,11 +536,11 @@ class WebRenderBridgeParent final : public PWebRenderBridgeParent,
   Maybe<ScreenPixelsRequest> mScreenPixelsRequest;
 #endif
 
-  uint32_t mBoolParameterBits;
+  uint32_t mBoolParameterBits = 0;
   uint16_t mBlobTileSize = 256;
   wr::RenderReasons mSkippedCompositeReasons = wr::RenderReasons::NONE;
-  bool mDestroyed;
-  bool mIsFirstPaint;
+  bool mDestroyed = false;
+  bool mIsFirstPaint = false;
   bool mLastNotifiedHasLayers = false;
   bool mReceivedDisplayList = false;
   bool mSkippedComposite = false;

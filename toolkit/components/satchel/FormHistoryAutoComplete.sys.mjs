@@ -147,7 +147,7 @@ export class FormHistoryAutoCompleteResult {
     if (this.#isFormHistoryEntry(index)) {
       const [removedEntry] = this.entries.splice(index, 1);
       const actor =
-        this.input.ownerGlobal.windowGlobalChild.getActor("FormHistory");
+        this.input.documentGlobal.windowGlobalChild.getActor("FormHistory");
       actor.sendAsyncMessage("FormHistory:RemoveEntry", {
         inputName: this.inputName,
         value: removedEntry.text,

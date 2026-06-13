@@ -265,7 +265,7 @@ static bool StripOriginString(const nsACString& aOrigin, bool aForceStripOA,
     return false;
   }
   PermissionManager::MaybeStripOriginAttributes(aForceStripOA, attrs);
-  aStripped = originNoSuffix;
+  aStripped = std::move(originNoSuffix);
   nsAutoCString oaSuffix;
   attrs.CreateSuffix(oaSuffix);
   aStripped.Append(oaSuffix);
@@ -298,7 +298,7 @@ nsresult GetOriginFromPrincipal(nsIPrincipal* aPrincipal, bool aForceStripOA,
   OriginAttributes attrs;
   NS_ENSURE_TRUE(attrs.PopulateFromSuffix(suffix), NS_ERROR_FAILURE);
 
-  OriginAppendOASuffix(attrs, aForceStripOA, aOrigin);
+  OriginAppendOASuffix(std::move(attrs), aForceStripOA, aOrigin);
 
   return NS_OK;
 }
@@ -328,7 +328,7 @@ nsresult GetSiteFromPrincipal(nsIPrincipal* aPrincipal, bool aForceStripOA,
   OriginAttributes attrs;
   NS_ENSURE_TRUE(attrs.PopulateFromSuffix(suffix), NS_ERROR_FAILURE);
 
-  OriginAppendOASuffix(attrs, aForceStripOA, aSite);
+  OriginAppendOASuffix(std::move(attrs), aForceStripOA, aSite);
 
   return NS_OK;
 }
@@ -342,7 +342,7 @@ nsresult GetOriginFromURIAndOA(nsIURI* aURI,
 
   OriginAppendOASuffix(*aOriginAttributes, aForceStripOA, origin);
 
-  aOrigin = origin;
+  aOrigin = std::move(origin);
 
   return NS_OK;
 }
@@ -1872,7 +1872,7 @@ PermissionManager::AddDefaultFromPrincipal(nsIPrincipal* aPrincipal,
     // Or add a new entry if there wasn't already one and we aren't deleting the
     // default permission
     if (!updatedExistingEntry) {
-      entry.mOrigin = origin;
+      entry.mOrigin = std::move(origin);
       entry.mPermission = aPermission;
       entry.mType = aType;
       if (aPermission != nsIPermissionManager::UNKNOWN_ACTION) {
@@ -3609,8 +3609,8 @@ void PermissionManager::UpdateDB(OperationType aOp, int64_t aID,
   RefPtr<PermissionManager> self = this;
   mThread->Dispatch(NS_NewRunnableFunction(
       "PermissionManager::UpdateDB",
-      [self, aOp, aID, origin, type, aPermission, aExpireType, aExpireTime,
-       aModificationTime] {
+      [self, aOp, aID, origin = std::move(origin), type = std::move(type),
+       aPermission, aExpireType, aExpireTime, aModificationTime] {
         nsresult rv;
 
         auto data = self->mThreadBoundData.Access();
@@ -3848,7 +3848,7 @@ nsresult PermissionManager::GetKeyForOrigin(const nsACString& aOrigin,
           mozilla::components::EffectiveTLD::Service();
       rv = etld->GetSite(uri, site);
       if (!NS_WARN_IF(NS_FAILED(rv))) {
-        aKey = site;
+        aKey = std::move(site);
       }
     }
   }
@@ -4890,7 +4890,8 @@ void PermissionManager::UpdateLastInteractionInternal(
   nsCString origin(aOrigin);
 
   mThread->Dispatch(NS_NewRunnableFunction(
-      "PermissionManager::UpdateLastInteractionInternal", [self, origin] {
+      "PermissionManager::UpdateLastInteractionInternal",
+      [self, origin = std::move(origin)] {
         auto data = self->mThreadBoundData.Access();
 
         if (self->mState == eClosed || !data->mDBConn ||

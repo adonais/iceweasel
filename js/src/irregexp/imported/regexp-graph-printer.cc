@@ -7,6 +7,7 @@
 #include "irregexp/imported/regexp-graph-printer.h"
 
 #include <iomanip>
+#include <queue>
 #include <unordered_set>
 
 #include "irregexp/imported/regexp-ast-printer.h"

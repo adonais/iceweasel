@@ -30,8 +30,7 @@ class XMLHttpRequest : public XMLHttpRequestEventTarget {
     constexpr EventType(const char* name, const char16_t* uname)
         : cStr(name), str(uname) {}
 
-    constexpr EventType(const EventType& other)
-        : cStr(other.cStr), str(other.str) {}
+    constexpr EventType(const EventType& other) = default;
 
     operator const nsDependentString() const { return nsDependentString(str); }
 

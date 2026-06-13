@@ -13,6 +13,9 @@ ChromeUtils.defineESModuleGetters(lazy, {
 });
 
 export class ASRouterStorage {
+  // Tracks in-flight IDB write promises so the shutdown blocker can await them.
+  #pendingWrites = new Set();
+
   /**
    * @param storeNames Array of strings used to create all the required stores
    */
@@ -27,6 +30,10 @@ export class ASRouterStorage {
     this.telemetry = telemetry;
   }
 
+  get pendingWriteCount() {
+    return this.#pendingWrites.size;
+  }
+
   get db() {
     if (!this._db) {
       this._db = this.createOrOpenDb().catch(e => {
@@ -35,6 +42,18 @@ export class ASRouterStorage {
       });
     }
     return this._db;
+  }
+
+  _trackedSet(storeName, key, value) {
+    const p = this._set(storeName, key, value).finally(() =>
+      this.#pendingWrites.delete(p)
+    );
+    p.catch(() => {});
+    this.#pendingWrites.add(p);
+  }
+
+  flush() {
+    return Promise.allSettled(this.#pendingWrites);
   }
 
   /**
@@ -49,7 +68,7 @@ export class ASRouterStorage {
         get: this._get.bind(this, storeName),
         getAll: this._getAll.bind(this, storeName),
         getAllKeys: this._getAllKeys.bind(this, storeName),
-        set: this._set.bind(this, storeName),
+        set: this._trackedSet.bind(this, storeName),
         getSharedMessageImpressions:
           this.getSharedMessageImpressions.bind(this),
         getSharedMessageBlocklist: this.getSharedMessageBlocklist.bind(this),
@@ -63,8 +82,8 @@ export class ASRouterStorage {
     throw new Error(`Store name ${storeName} does not exist.`);
   }
 
-  async _getStore(storeName) {
-    return (await this.db).objectStore(storeName, "readwrite");
+  async _getStore(storeName, mode = "readonly") {
+    return (await this.db).objectStore(storeName, mode);
   }
 
   _get(storeName, key) {
@@ -87,7 +106,7 @@ export class ASRouterStorage {
 
   _set(storeName, key, value) {
     return this._requestWrapper(async () =>
-      (await this._getStore(storeName)).put(value, key)
+      (await this._getStore(storeName, "readwrite")).put(value, key)
     );
   }
 
@@ -117,7 +136,7 @@ export class ASRouterStorage {
   async createOrOpenDb() {
     try {
       const db = await this._openDatabase();
-      return db;
+      return this._registerLifecycleHandlers(db);
     } catch (e) {
       if (this.telemetry) {
         this.telemetry.handleUndesiredEvent({ event: "INDEXEDDB_OPEN_FAILED" });
@@ -131,8 +150,24 @@ export class ASRouterStorage {
           });
         }
       }
-      return this._openDatabase();
+      const db = await this._openDatabase();
+      return this._registerLifecycleHandlers(db);
     }
+  }
+
+  // Register event handlers on a newly opened database connection so that
+  // external lifecycle events (version upgrades from other connections, or
+  // the backend closing the connection due to storage pressure/corruption)
+  // clear the cached _db promise and allow the next access to re-open.
+  _registerLifecycleHandlers(db) {
+    db.onversionchange = () => {
+      db.close();
+      this._db = null;
+    };
+    db.onclose = () => {
+      this._db = null;
+    };
+    return db;
   }
 
   async _requestWrapper(request) {

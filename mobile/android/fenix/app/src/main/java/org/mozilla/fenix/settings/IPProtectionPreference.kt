@@ -26,6 +26,7 @@ import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import androidx.preference.Preference
 import androidx.preference.PreferenceViewHolder
+import mozilla.components.compose.base.theme.information
 import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.PreviewThemeProvider
@@ -49,6 +50,7 @@ class IPProtectionPreference @JvmOverloads constructor(
     }
 
     override fun onBindViewHolder(holder: PreferenceViewHolder) {
+        super.onBindViewHolder(holder)
         holder.itemView.findViewById<ComposeView>(R.id.compose_view)?.apply {
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
@@ -92,13 +94,13 @@ internal fun IPProtectionPreferenceRow(
 private fun BetaBadge() {
     Surface(
         shape = RoundedCornerShape(8.dp),
-        color = FirefoxTheme.colors.actionInformation,
+        color = MaterialTheme.colorScheme.information,
     ) {
         Text(
             text = stringResource(R.string.preferences_ip_protection_beta_badge_label),
             modifier = Modifier.padding(horizontal = 8.dp),
             style = FirefoxTheme.typography.subtitle2,
-            color = FirefoxTheme.colors.textOnColorPrimary,
+            color = MaterialTheme.colorScheme.onPrimary,
         )
     }
 }

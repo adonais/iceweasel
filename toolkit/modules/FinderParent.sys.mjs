@@ -36,7 +36,8 @@ FinderParent.prototype = {
   },
 
   get useRemoteSubframes() {
-    return this._browser.ownerGlobal.docShell.nsILoadContext.useRemoteSubframes;
+    return this._browser.documentGlobal.docShell.nsILoadContext
+      .useRemoteSubframes;
   },
 
   swapBrowser(aBrowser) {

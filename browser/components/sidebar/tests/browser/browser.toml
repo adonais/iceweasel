@@ -10,6 +10,8 @@ prefs = [
 
 ["browser_bookmarks_keyboard_navigation.js"]
 
+["browser_bookmarks_multiselect.js"]
+
 ["browser_bookmarks_sidebar.js"]
 
 ["browser_bookmarks_sidebar_glean.js"]
@@ -49,6 +51,9 @@ skip-if = [
 ["browser_launcher_hidden_restore.js"]
 tags = "vertical-tabs"
 
+["browser_launcher_splitter_visibility.js"]
+tags = "vertical-tabs"
+
 ["browser_resize_sidebar.js"]
 skip-if = [
   "os == 'mac' && os_version == '10.15' && arch == 'x86_64'", # Bug 1946263
@@ -57,6 +62,8 @@ skip-if = [
 ["browser_sidebar_collapsed_close_tab_button.js"]
 
 ["browser_sidebar_context_menu.js"]
+
+["browser_sidebar_escape_collapse.js"]
 
 ["browser_sidebar_expand_on_hover.js"]
 

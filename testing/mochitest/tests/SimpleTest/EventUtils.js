@@ -3048,9 +3048,6 @@ function synthesizeCompositionChange(aEvent, aWindow = window, aCallback) {
 }
 
 // Must be synchronized with nsIDOMWindowUtils.
-const QUERY_CONTENT_FLAG_USE_NATIVE_LINE_BREAK = 0x0000;
-const QUERY_CONTENT_FLAG_USE_XP_LINE_BREAK = 0x0001;
-
 const QUERY_CONTENT_FLAG_SELECTION_NORMAL = 0x0000;
 const QUERY_CONTENT_FLAG_SELECTION_SPELLCHECK = 0x0002;
 const QUERY_CONTENT_FLAG_SELECTION_IME_RAWINPUT = 0x0004;
@@ -3086,7 +3083,7 @@ function synthesizeQueryTextContent(aOffset, aLength, aIsRelative, aWindow) {
   if (!utils) {
     return null;
   }
-  var flags = QUERY_CONTENT_FLAG_USE_NATIVE_LINE_BREAK;
+  let flags = 0;
   if (aIsRelative === true) {
     flags |= QUERY_CONTENT_FLAG_OFFSET_RELATIVE_TO_INSERTION_POINT;
   }
@@ -3112,7 +3109,7 @@ function synthesizeQueryTextContent(aOffset, aLength, aIsRelative, aWindow) {
  */
 function synthesizeQuerySelectedText(aSelectionType, aWindow) {
   var utils = _getDOMWindowUtils(aWindow);
-  var flags = QUERY_CONTENT_FLAG_USE_NATIVE_LINE_BREAK;
+  let flags = 0;
   if (aSelectionType) {
     flags |= aSelectionType;
   }
@@ -3141,14 +3138,7 @@ function synthesizeQueryCaretRect(aOffset, aWindow) {
   if (!utils) {
     return null;
   }
-  return utils.sendQueryContentEvent(
-    utils.QUERY_CARET_RECT,
-    aOffset,
-    0,
-    0,
-    0,
-    QUERY_CONTENT_FLAG_USE_NATIVE_LINE_BREAK
-  );
+  return utils.sendQueryContentEvent(utils.QUERY_CARET_RECT, aOffset, 0, 0, 0);
 }
 
 /**
@@ -3203,7 +3193,7 @@ function synthesizeQueryTextRect(aOffset, aLength, aIsRelative, aWindow) {
     );
   }
   var utils = _getDOMWindowUtils(aWindow);
-  let flags = QUERY_CONTENT_FLAG_USE_NATIVE_LINE_BREAK;
+  let flags = 0;
   if (aIsRelative === true) {
     flags |= QUERY_CONTENT_FLAG_OFFSET_RELATIVE_TO_INSERTION_POINT;
   }
@@ -3235,8 +3225,7 @@ function synthesizeQueryTextRectArray(aOffset, aLength, aWindow) {
     aOffset,
     aLength,
     0,
-    0,
-    QUERY_CONTENT_FLAG_USE_NATIVE_LINE_BREAK
+    0
   );
 }
 
@@ -3249,14 +3238,7 @@ function synthesizeQueryTextRectArray(aOffset, aLength, aWindow) {
  */
 function synthesizeQueryEditorRect(aWindow) {
   var utils = _getDOMWindowUtils(aWindow);
-  return utils.sendQueryContentEvent(
-    utils.QUERY_EDITOR_RECT,
-    0,
-    0,
-    0,
-    0,
-    QUERY_CONTENT_FLAG_USE_NATIVE_LINE_BREAK
-  );
+  return utils.sendQueryContentEvent(utils.QUERY_EDITOR_RECT, 0, 0, 0, 0);
 }
 
 /**
@@ -3274,8 +3256,7 @@ function synthesizeCharAtPoint(aX, aY, aWindow) {
     0,
     0,
     aX,
-    aY,
-    QUERY_CONTENT_FLAG_USE_NATIVE_LINE_BREAK
+    aY
   );
 }
 
@@ -4589,8 +4570,8 @@ async function synthesizeMockDragAndDrop(aParams) {
   let dragServiceCid;
   let sourceCxt;
   let targetCxt;
-  let srcWindowUtils = _getDOMWindowUtils(sourceBrowsingCxt.ownerGlobal);
-  let targetWindowUtils = _getDOMWindowUtils(targetBrowsingCxt.ownerGlobal);
+  let srcWindowUtils = _getDOMWindowUtils(sourceBrowsingCxt.documentGlobal);
+  let targetWindowUtils = _getDOMWindowUtils(targetBrowsingCxt.documentGlobal);
 
   try {
     // Disable native mouse events to avoid external interference while the test

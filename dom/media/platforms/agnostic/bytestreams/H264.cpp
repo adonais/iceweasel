@@ -597,6 +597,9 @@ bool H264::DecodeSPS(const mozilla::MediaByteBuffer* aSPS, SPSData& aDest) {
     READSE(offset_for_non_ref_pic, -231, 230);
     READSE(offset_for_top_to_bottom_field, -231, 230);
     uint32_t num_ref_frames_in_pic_order_cnt_cycle = br.ReadUE();
+    if (num_ref_frames_in_pic_order_cnt_cycle > 255) {
+      return false;
+    }
     for (uint32_t i = 0; i < num_ref_frames_in_pic_order_cnt_cycle; i++) {
       br.ReadSE();  // offset_for_ref_frame[i]
     }

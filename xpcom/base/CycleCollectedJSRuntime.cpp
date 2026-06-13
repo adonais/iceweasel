@@ -305,7 +305,7 @@ struct FixWeakMappingGrayBitsTracer : public js::WeakMapTracer {
     }
   }
 
-  MOZ_INIT_OUTSIDE_CTOR bool mAnyMarked;
+  bool mAnyMarked = false;
 };
 
 #ifdef DEBUG
@@ -1955,7 +1955,8 @@ IncrementalFinalizeRunnable::Run() {
   }
 
   MOZ_ASSERT(mRuntime->mFinalizeRunnable == this);
-  auto timerId = glean::cycle_collector::deferred_finalize_async.Start();
+  auto timerId =
+      glean::cycle_collector::deferred_finalize_async.ProcessGet().Start();
   ReleaseNow(true);
 
   if (mDeferredFinalizeFunctions.Length()) {
@@ -1967,8 +1968,8 @@ IncrementalFinalizeRunnable::Run() {
     MOZ_ASSERT(!mRuntime);
   }
 
-  glean::cycle_collector::deferred_finalize_async.StopAndAccumulate(
-      std::move(timerId));
+  glean::cycle_collector::deferred_finalize_async.ProcessGet()
+      .StopAndAccumulate(std::move(timerId));
 
   return NS_OK;
 }

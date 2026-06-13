@@ -27,7 +27,7 @@ import org.mozilla.fenix.utils.Settings
 
 /**
  * A wrapper over the [NavigationBar] composable that provides enhanced customization and
- * lifecycle-aware integration for use within the [BrowserToolbarView] framework.
+ * lifecycle-aware integration.
  *
  * @param context [Context] used to access resources and other application-level operations.
  * @param container [ViewGroup] which will serve as parent of this View.

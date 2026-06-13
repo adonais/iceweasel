@@ -4,6 +4,7 @@
 
 package org.mozilla.fenix.browser.applinks
 
+import android.content.DialogInterface
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -63,5 +64,23 @@ class AppLinksPromptFragmentTest {
         )
 
         assertFalse(fragment.requireArguments().getBoolean("show_checkbox"))
+    }
+
+    @Test
+    fun `WHEN dialog is cancelled THEN onDismissRedirect is invoked`() {
+        val fragment = AppLinksPromptFragment.create(
+            appName = "Firefox",
+            title = "title",
+            message = "message",
+            showCheckbox = false,
+        )
+        var dismissCalled = false
+        fragment.onDismissRedirect = { dismissCalled = true }
+        fragment.onCancel(object : DialogInterface {
+          override fun cancel() {}
+          override fun dismiss() {}
+        })
+
+        assertTrue(dismissCalled)
     }
 }

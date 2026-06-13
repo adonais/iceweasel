@@ -111,7 +111,7 @@ The YAML definition file
 ========================
 
 Any User Interaction recorded into Firefox Telemetry must be registered before it can be recorded.
-For any code that ships as part of Firefox that happens in `UserInteractions.yaml <https://searchfox.org/mozilla-central/source/toolkit/components/telemetry/UserInteractions.yaml>`_.
+For any code that ships as part of Firefox that happens in :searchfox:`UserInteractions.yaml <toolkit/components/telemetry/UserInteractions.yaml>`.
 
 The User Interactions in the definition file are represented in a fixed-depth, three-level structure.
 The first level contains *category* names (grouping multiple User Interactions together),

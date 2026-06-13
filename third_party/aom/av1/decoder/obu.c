@@ -988,7 +988,8 @@ int aom_decode_frame_from_obus(struct AV1Decoder *pbi, const uint8_t *data,
         }
         // Only decode first frame header received
         if (!pbi->seen_frame_header ||
-            (cm->tiles.large_scale && !pbi->camera_frame_header_ready)) {
+            (cm->tiles.large_scale && !pbi->camera_frame_header_ready &&
+             obu_header.type != OBU_REDUNDANT_FRAME_HEADER)) {
           frame_header_size = read_frame_header_obu(
               pbi, &rb, data, p_data_end, obu_header.type != OBU_FRAME);
           frame_header = data;

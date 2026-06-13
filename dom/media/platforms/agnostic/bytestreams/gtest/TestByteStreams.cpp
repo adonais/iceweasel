@@ -1500,4 +1500,162 @@ TEST(H265, ColorPrimariesTest)
   EXPECT_EQ(sps.ColorPrimaries(), 9 /* CP_BT2020 */);
 }
 
+static constexpr float kSEIPrimariesDivisor = 50000.0f;
+
+static void AppendU16BE(nsTArray<uint8_t>& aDest, uint16_t aValue) {
+  aDest.AppendElement(static_cast<uint8_t>(aValue >> 8));
+  aDest.AppendElement(static_cast<uint8_t>(aValue & 0xff));
+}
+
+static void AppendU32BE(nsTArray<uint8_t>& aDest, uint32_t aValue) {
+  aDest.AppendElement(static_cast<uint8_t>(aValue >> 24));
+  aDest.AppendElement(static_cast<uint8_t>((aValue >> 16) & 0xff));
+  aDest.AppendElement(static_cast<uint8_t>((aValue >> 8) & 0xff));
+  aDest.AppendElement(static_cast<uint8_t>(aValue & 0xff));
+}
+
+// Build a PREFIX_SEI_NUT NALU with SEI type 137 (mastering display) and/or
+// type 144 (CLL) payloads depending on the flags.
+// Values: primaries raw=50000 → 1.0f, luminance raw=10000 → 1.0f.
+static nsTArray<uint8_t> BuildSEINALU(bool aInclude137, bool aInclude144) {
+  nsTArray<uint8_t> nalu;
+  // 2-byte NALU header: nal_unit_type=39 (PREFIX_SEI_NUT), nuh_temporal_id=1
+  nalu.AppendElement(0x4E);  // (39 << 1) | 0
+  nalu.AppendElement(0x01);  // nuh_temporal_id_plus1=1
+
+  if (aInclude137) {
+    // SEI type 137 (mastering display colour volume), payload size 24
+    nalu.AppendElement(137);  // payloadType
+    nalu.AppendElement(24);   // payloadSize
+    // H.265 primary order: G[0], B[1], R[2] — values chosen as 50000 = 1.0f
+    AppendU16BE(nalu, 50000);     // G x
+    AppendU16BE(nalu, 25000);     // G y
+    AppendU16BE(nalu, 15000);     // B x
+    AppendU16BE(nalu, 7500);      // B y
+    AppendU16BE(nalu, 35000);     // R x
+    AppendU16BE(nalu, 17500);     // R y
+    AppendU16BE(nalu, 15635);     // white point x
+    AppendU16BE(nalu, 16450);     // white point y
+    AppendU32BE(nalu, 10000000);  // max luminance (10000000/10000 = 1000.0f)
+    AppendU32BE(nalu, 100);       // min luminance (100/10000 = 0.01f)
+  }
+
+  if (aInclude144) {
+    // SEI type 144 (content light level), payload size 4
+    nalu.AppendElement(144);  // payloadType
+    nalu.AppendElement(4);    // payloadSize
+    AppendU16BE(nalu, 1000);  // max CLL
+    AppendU16BE(nalu, 400);   // max FALL
+  }
+
+  // RBSP trailing bits
+  nalu.AppendElement(0x80);
+  return nalu;
+}
+
+TEST(H265, ParseSEIHDRMetadata_Type137Only)
+{
+  auto naluData = BuildSEINALU(true, false);
+  H265NALU nalu{naluData.Elements(), static_cast<uint32_t>(naluData.Length())};
+  auto result = H265::ParseSEIHDRMetadata(nalu);
+  ASSERT_TRUE(result.isSome());
+  const auto& hdr = result.value();
+
+  ASSERT_TRUE(hdr.mSmpte2086.isSome());
+  const auto& s = hdr.mSmpte2086.value();
+  // R primaries (raw G[0]=50000,25000 → Green; B[1]=15000,7500 → Blue;
+  //              R[2]=35000,17500 → Red — remapped per H.265 §D.3.4 Table D.2)
+  EXPECT_FLOAT_EQ(s.displayPrimaryRed.x, 35000.0f / kSEIPrimariesDivisor);
+  EXPECT_FLOAT_EQ(s.displayPrimaryRed.y, 17500.0f / kSEIPrimariesDivisor);
+  EXPECT_FLOAT_EQ(s.displayPrimaryGreen.x, 50000.0f / kSEIPrimariesDivisor);
+  EXPECT_FLOAT_EQ(s.displayPrimaryGreen.y, 25000.0f / kSEIPrimariesDivisor);
+  EXPECT_FLOAT_EQ(s.displayPrimaryBlue.x, 15000.0f / kSEIPrimariesDivisor);
+  EXPECT_FLOAT_EQ(s.displayPrimaryBlue.y, 7500.0f / kSEIPrimariesDivisor);
+  EXPECT_FLOAT_EQ(s.whitePoint.x, 15635.0f / kSEIPrimariesDivisor);
+  EXPECT_FLOAT_EQ(s.whitePoint.y, 16450.0f / kSEIPrimariesDivisor);
+  EXPECT_FLOAT_EQ(s.maxLuminance, 1000.0f);
+  EXPECT_FLOAT_EQ(s.minLuminance, 0.01f);
+  EXPECT_TRUE(hdr.mContentLightLevel.isNothing());
+}
+
+TEST(H265, ParseSEIHDRMetadata_Type144Only)
+{
+  auto naluData = BuildSEINALU(false, true);
+  H265NALU nalu{naluData.Elements(), static_cast<uint32_t>(naluData.Length())};
+  auto result = H265::ParseSEIHDRMetadata(nalu);
+  ASSERT_TRUE(result.isSome());
+  const auto& hdr = result.value();
+
+  EXPECT_TRUE(hdr.mSmpte2086.isNothing());
+  ASSERT_TRUE(hdr.mContentLightLevel.isSome());
+  EXPECT_EQ(hdr.mContentLightLevel->maxContentLightLevel, 1000u);
+  EXPECT_EQ(hdr.mContentLightLevel->maxFrameAverageLightLevel, 400u);
+}
+
+TEST(H265, ParseSEIHDRMetadata_Type137And144)
+{
+  auto naluData = BuildSEINALU(true, true);
+  H265NALU nalu{naluData.Elements(), static_cast<uint32_t>(naluData.Length())};
+  auto result = H265::ParseSEIHDRMetadata(nalu);
+  ASSERT_TRUE(result.isSome());
+  const auto& hdr = result.value();
+
+  EXPECT_TRUE(hdr.mSmpte2086.isSome());
+  EXPECT_TRUE(hdr.mContentLightLevel.isSome());
+}
+
+TEST(H265, ParseSEIHDRMetadata_NoHDRSEI)
+{
+  // A NALU with only user_data_unregistered (type 5) — no HDR SEI types
+  nsTArray<uint8_t> naluData;
+  naluData.AppendElement(0x4E);  // PREFIX_SEI_NUT header byte 1
+  naluData.AppendElement(0x01);  // header byte 2
+  naluData.AppendElement(5);     // payloadType = user_data_unregistered
+  naluData.AppendElement(2);     // payloadSize = 2
+  naluData.AppendElement(0xDE);
+  naluData.AppendElement(0xAD);
+  naluData.AppendElement(0x80);  // RBSP trailing bits
+
+  H265NALU nalu{naluData.Elements(), static_cast<uint32_t>(naluData.Length())};
+  auto result = H265::ParseSEIHDRMetadata(nalu);
+  EXPECT_TRUE(result.isNothing());
+}
+
+TEST(H265, ParseSEIHDRMetadata_WrongPayloadSize)
+{
+  // SEI type 137 with wrong payload size (not 24) — should be skipped.
+  nsTArray<uint8_t> naluData;
+  naluData.AppendElement(0x4E);
+  naluData.AppendElement(0x01);
+  naluData.AppendElement(137);  // payloadType = mastering display
+  naluData.AppendElement(5);    // wrong payloadSize (should be 24)
+  naluData.AppendElement(0x00);
+  naluData.AppendElement(0x01);
+  naluData.AppendElement(0x02);
+  naluData.AppendElement(0x03);
+  naluData.AppendElement(0x04);
+  naluData.AppendElement(0x80);  // RBSP trailing bits
+
+  H265NALU nalu{naluData.Elements(), static_cast<uint32_t>(naluData.Length())};
+  auto result = H265::ParseSEIHDRMetadata(nalu);
+  EXPECT_TRUE(result.isNothing());
+}
+
+TEST(H265, ParseSEIHDRMetadata_WrongCLLPayloadSize)
+{
+  // SEI type 144 with wrong payload size (not 4) — should be skipped.
+  nsTArray<uint8_t> naluData;
+  naluData.AppendElement(0x4E);
+  naluData.AppendElement(0x01);
+  naluData.AppendElement(144);  // payloadType = content light level
+  naluData.AppendElement(2);    // wrong payloadSize (should be 4)
+  naluData.AppendElement(0x03);
+  naluData.AppendElement(0xE8);
+  naluData.AppendElement(0x80);  // RBSP trailing bits
+
+  H265NALU nalu{naluData.Elements(), static_cast<uint32_t>(naluData.Length())};
+  auto result = H265::ParseSEIHDRMetadata(nalu);
+  EXPECT_TRUE(result.isNothing());
+}
+
 }  // namespace mozilla

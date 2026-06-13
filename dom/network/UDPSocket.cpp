@@ -381,7 +381,7 @@ nsresult UDPSocket::InitLocal(const nsAString& aLocalAddress,
     return rv;
   }
 
-  nsCOMPtr<nsIGlobalObject> global = GetOwnerGlobal();
+  nsCOMPtr<nsIGlobalObject> global = GetRelevantGlobal();
   if (!global) {
     return NS_ERROR_FAILURE;
   }
@@ -461,7 +461,7 @@ nsresult UDPSocket::InitRemote(const nsAString& aLocalAddress,
 
   mListenerProxy = new ListenerProxy(this);
 
-  nsCOMPtr<nsIGlobalObject> global = GetOwnerGlobal();
+  nsCOMPtr<nsIGlobalObject> global = GetRelevantGlobal();
   if (!global) {
     return NS_ERROR_FAILURE;
   }
@@ -494,7 +494,7 @@ nsresult UDPSocket::Init(const nsString& aLocalAddress,
   mAddressReuse = aAddressReuse;
   mLoopback = aLoopback;
 
-  nsCOMPtr<nsIGlobalObject> global = GetOwnerGlobal();
+  nsCOMPtr<nsIGlobalObject> global = GetRelevantGlobal();
 
   ErrorResult rv;
   mOpened = Promise::Create(global, rv);

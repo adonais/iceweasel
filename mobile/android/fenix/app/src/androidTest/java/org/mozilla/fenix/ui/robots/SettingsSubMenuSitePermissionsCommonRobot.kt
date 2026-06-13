@@ -196,6 +196,8 @@ class SettingsSubMenuSitePermissionsCommonRobot {
     }
 
     fun switchAppPermissionSystemSetting(permissionCategory: String, permission: String) {
+        Log.i(TAG, "switchAppPermissionSystemSetting: Waiting for $waitingTime ms for the $permissionCategory permission category to exist")
+        mDevice.findObject(UiSelector().textContains(permissionCategory)).waitForExists(waitingTime)
         Log.i(TAG, "switchAppPermissionSystemSetting: Trying to click the system permission category: $permissionCategory button")
         mDevice.findObject(UiSelector().textContains(permissionCategory)).click()
         Log.i(TAG, "switchAppPermissionSystemSetting: Clicked the system permission category: $permissionCategory button")

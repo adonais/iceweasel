@@ -174,7 +174,7 @@ CookieParser::~CookieParser() {
 
     set-cookie    = "Set-Cookie:" cookies
     cookies       = cookie *( cookie-sep cookie )
-    cookie        = [NAME "="] VALUE *(";" cookie-av)    ; cookie NAME/VALUE must come first
+    cookie        = NAME ["=" VALUE] *(";" cookie-av)    ; cookie NAME/VALUE must come first
     NAME          = token                                ; cookie name
     VALUE         = value                                ; cookie value
     cookie-av     = token ["=" value]
@@ -330,13 +330,16 @@ void CookieParser::ParseAttributes(nsCString& aCookieHeader,
   bool equalsFound;
 
   // extract cookie <NAME> & <VALUE> (first attribute), and copy the strings.
-  // note: if there's no '=', we assume token is <VALUE>. this is required by
-  //       some sites (see bug 169091).
-  // XXX fix the parser to parse according to <VALUE> grammar for this case
+  // if there's no '=', behavior depends on the valueless_cookie pref:
+  // - when true (default): treat the token as <NAME> with an empty value,
+  //   aligning with Safari's behavior contrary to the spec.
+  // - when false: treat the token as <VALUE> with an empty name (legacy).
   GetTokenValue(cookieStart, cookieEnd, tokenString, tokenValue, equalsFound);
   if (equalsFound) {
     mCookieData.name() = tokenString;
     mCookieData.value() = tokenValue;
+  } else if (StaticPrefs::network_cookie_valueless_cookie()) {
+    mCookieData.name() = tokenString;
   } else {
     mCookieData.value() = tokenString;
   }

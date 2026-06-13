@@ -14,6 +14,7 @@
 #include "mozilla/ComputedStyle.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/PresShell.h"
+#include "mozilla/ReflowInput.h"
 #include "mozilla/StaticPrefs_layout.h"
 #include "nsCSSRendering.h"
 #include "nsDisplayList.h"
@@ -395,9 +396,6 @@ Maybe<nscoord> nsTableRowFrame::GetRowBaseline(WritingMode aWM) {
   }
 
   // If we get here, we don't have a baseline on any of the cells in this row.
-  if (aWM.IsCentralBaseline()) {
-    return Nothing{};
-  }
   nscoord ascent = 0;
   for (nsIFrame* childFrame : mFrames) {
     MOZ_ASSERT(childFrame->IsTableCellFrame());

@@ -1215,12 +1215,6 @@ void SandboxBroker::SetSecurityLevelForContentProcess(int32_t aSandboxLevel,
       sandbox::SBOX_ALL_OK == result,
       "With these static arguments AddRule should never fail, what happened?");
 
-  // Allow content processes to use complex line breaking brokering.
-  result = config->AllowLineBreaking();
-  MOZ_RELEASE_ASSERT(
-      sandbox::SBOX_ALL_OK == result,
-      "With these static arguments AddRule should never fail, what happened?");
-
   if (aSandboxLevel >= 8) {
     // Content process still needs to be able to read fonts.
     AddCachedWindowsDirRule(config, sandbox::FileSemantics::kAllowReadonly,
@@ -1351,17 +1345,13 @@ void SandboxBroker::SetSecurityLevelForGPUProcess(int32_t aSandboxLevel) {
   sandbox::MitigationFlags initialMitigations =
       sandbox::MITIGATION_BOTTOM_UP_ASLR | sandbox::MITIGATION_HEAP_TERMINATE |
       sandbox::MITIGATION_SEHOP | sandbox::MITIGATION_DEP_NO_ATL_THUNK |
+      sandbox::MITIGATION_EXTENSION_POINT_DISABLE |
       sandbox::MITIGATION_KTM_COMPONENT | sandbox::MITIGATION_FSCTL_DISABLED |
       sandbox::MITIGATION_IMAGE_LOAD_NO_REMOTE |
       sandbox::MITIGATION_IMAGE_LOAD_NO_LOW_LABEL | sandbox::MITIGATION_DEP;
 
   if (StaticPrefs::security_sandbox_gpu_shadow_stack_enabled()) {
     initialMitigations |= sandbox::MITIGATION_CET_COMPAT_MODE;
-  }
-
-  // Bug 2008960 tracks removing the pref if we have seen no issues.
-  if (StaticPrefs::security_sandbox_gpu_extension_point_disable()) {
-    initialMitigations |= sandbox::MITIGATION_EXTENSION_POINT_DISABLE;
   }
 
   sandbox::MitigationFlags delayedMitigations =
@@ -1860,8 +1850,26 @@ bool SandboxBroker::SetSecurityLevelForUtilityProcess(
     case mozilla::ipc::SandboxingKind::UTILITY_AUDIO_DECODING_WMF:
       return BuildUtilitySandbox(config, UtilityAudioDecodingWmfSandboxProps());
 #ifdef MOZ_WMF_MEDIA_ENGINE
-    case mozilla::ipc::SandboxingKind::MF_MEDIA_ENGINE_CDM:
-      return BuildUtilitySandbox(config, UtilityMfMediaEngineCdmSandboxProps());
+    case mozilla::ipc::SandboxingKind::MF_MEDIA_ENGINE_CDM: {
+      if (!BuildUtilitySandbox(config, UtilityMfMediaEngineCdmSandboxProps())) {
+        return false;
+      }
+      // Allow MFTEnumEx to enumerate registered MFT decoders/encoders.
+      auto result = config->AllowRegistryRead(
+          L"HKEY_LOCAL_MACHINE\\Software\\Classes\\MediaFoundation\\*");
+      if (sandbox::SBOX_ALL_OK != result) {
+        NS_WARNING("Failed to add MediaFoundation registry rule for MFCDM.");
+      }
+      // MFTEnumEx reads CLSID subkeys to enumerate registered Media Foundation
+      // Transforms. The exact CLSIDs vary per system and are not known at build
+      // time, so a wildcard covering the full CLSID hive is required.
+      result = config->AllowRegistryRead(
+          L"HKEY_LOCAL_MACHINE\\Software\\Classes\\CLSID\\*");
+      if (sandbox::SBOX_ALL_OK != result) {
+        NS_WARNING("Failed to add CLSID registry rule for MFCDM.");
+      }
+      return true;
+    }
 #endif
     case mozilla::ipc::SandboxingKind::WINDOWS_UTILS:
       return BuildUtilitySandbox(config, WindowsUtilitySandboxProps());

@@ -1292,7 +1292,7 @@ export class DevToolsStartup {
     debugService.remoteActivationHandler = async (browser, callback) => {
       try {
         // Force selecting the freezing tab
-        const chromeWindow = browser.ownerGlobal;
+        const chromeWindow = browser.documentGlobal;
         const tab = chromeWindow.gBrowser.getTabForBrowser(browser);
         chromeWindow.gBrowser.selectedTab = tab;
 
@@ -1409,7 +1409,7 @@ const JsonView = {
    */
   onSave(message) {
     const browser = message.target;
-    const chrome = browser.ownerGlobal;
+    const chrome = browser.documentGlobal;
     if (message.data === null) {
       // Save original contents
       chrome.saveBrowser(browser);

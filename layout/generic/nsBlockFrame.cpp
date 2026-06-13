@@ -159,13 +159,10 @@ static bool FrameHasVisibleInlineText(nsIFrame* aFrame) {
 
 // Determines whether any of the frames from the given line have visible text.
 static bool LineHasVisibleInlineText(nsLineBox* aLine) {
-  nsIFrame* kid = aLine->mFirstChild;
-  int32_t n = aLine->GetChildCount();
-  while (n-- > 0) {
+  for (nsIFrame* kid : aLine->ChildFrames()) {
     if (FrameHasVisibleInlineText(kid)) {
       return true;
     }
-    kid = kid->GetNextSibling();
   }
   return false;
 }
@@ -208,12 +205,9 @@ static nsRect GetFrameTextArea(nsIFrame* aFrame,
 static nsRect GetLineTextArea(nsLineBox* aLine,
                               nsDisplayListBuilder* aBuilder) {
   nsRect textArea;
-  nsIFrame* kid = aLine->mFirstChild;
-  int32_t n = aLine->GetChildCount();
-  while (n-- > 0) {
+  for (nsIFrame* kid : aLine->ChildFrames()) {
     nsRect kidTextArea = GetFrameTextArea(kid, aBuilder);
     textArea.OrWith(kidTextArea);
-    kid = kid->GetNextSibling();
   }
 
   return textArea;
@@ -879,9 +873,7 @@ nscoord nsBlockFrame::MinISize(const IntrinsicSizeInput& aInput) {
         }
         data.mLine = &line;
         data.SetLineContainer(curFrame);
-        nsIFrame* kid = line->mFirstChild;
-        for (int32_t i = 0, i_end = line->GetChildCount(); i != i_end;
-             ++i, kid = kid->GetNextSibling()) {
+        for (nsIFrame* kid : line->ChildFrames()) {
           const IntrinsicSizeInput kidInput(aInput, kid->GetWritingMode(),
                                             GetWritingMode());
           kid->AddInlineMinISize(kidInput, &data);
@@ -967,9 +959,7 @@ nscoord nsBlockFrame::PrefISize(const IntrinsicSizeInput& aInput) {
         }
         data.mLine = &line;
         data.SetLineContainer(curFrame);
-        nsIFrame* kid = line->mFirstChild;
-        for (int32_t i = 0, i_end = line->GetChildCount(); i != i_end;
-             ++i, kid = kid->GetNextSibling()) {
+        for (nsIFrame* kid : line->ChildFrames()) {
           const IntrinsicSizeInput kidInput(aInput, kid->GetWritingMode(),
                                             GetWritingMode());
           kid->AddInlinePrefISize(kidInput, &data);
@@ -1028,7 +1018,6 @@ nsresult nsBlockFrame::GetPrefWidthTightBounds(gfxContext* aRenderingContext,
         }
         data.mLine = &line;
         data.SetLineContainer(curFrame);
-        nsIFrame* kid = line->mFirstChild;
         // Per comment in nsIFrame::GetPrefWidthTightBounds(), the function is
         // only implemented for nsBlockFrame and nsTextFrame and is used to
         // determine the intrinsic inline sizes of MathML token elements. These
@@ -1036,8 +1025,7 @@ nsresult nsBlockFrame::GetPrefWidthTightBounds(gfxContext* aRenderingContext,
         // percentage basis for resolution.
         const IntrinsicSizeInput kidInput(aRenderingContext, Nothing(),
                                           Nothing());
-        for (int32_t i = 0, i_end = line->GetChildCount(); i != i_end;
-             ++i, kid = kid->GetNextSibling()) {
+        for (nsIFrame* kid : line->ChildFrames()) {
           rv = kid->GetPrefWidthTightBounds(aRenderingContext, &childX,
                                             &childXMost);
           NS_ENSURE_SUCCESS(rv, rv);
@@ -2597,11 +2585,12 @@ void nsBlockFrame::UnionChildOverflow(OverflowAreas& aOverflowAreas,
     nsRect bounds = line.GetPhysicalBounds();
     OverflowAreas lineAreas(bounds, bounds);
 
-    int32_t n = line.GetChildCount();
-    for (nsIFrame* lineFrame = line.mFirstChild; n > 0;
-         lineFrame = lineFrame->GetNextSibling(), --n) {
+    const OverflowAreaUnionFlags flags =
+        aAsIfScrolled ? OverflowAreaUnionFlags::AsIfScrolled
+                      : OverflowAreaUnionFlags::None;
+    for (nsIFrame* lineFrame : line.ChildFrames()) {
       // Ensure this is called for each frame in the line
-      ConsiderChildOverflow(lineAreas, lineFrame, aAsIfScrolled);
+      ConsiderChildOverflow(lineAreas, lineFrame, flags);
 
       if (inkOverflowOnly || !isScrolled) {
         continue;
@@ -2616,7 +2605,7 @@ void nsBlockFrame::UnionChildOverflow(OverflowAreas& aOverflowAreas,
     // Consider the overflow areas of the floats attached to the line as well
     if (line.HasFloats()) {
       for (nsIFrame* f : line.Floats()) {
-        ConsiderChildOverflow(lineAreas, f, aAsIfScrolled);
+        ConsiderChildOverflow(lineAreas, f, flags);
         if (inkOverflowOnly || !isScrolled) {
           continue;
         }
@@ -2662,9 +2651,7 @@ void nsBlockFrame::LazyMarkLinesDirty() {
   if (HasAnyStateBits(NS_BLOCK_LOOK_FOR_DIRTY_FRAMES)) {
     for (LineIterator line = LinesBegin(), line_end = LinesEnd();
          line != line_end; ++line) {
-      int32_t n = line->GetChildCount();
-      for (nsIFrame* lineFrame = line->mFirstChild; n > 0;
-           lineFrame = lineFrame->GetNextSibling(), --n) {
+      for (nsIFrame* lineFrame : line->ChildFrames()) {
         if (lineFrame->IsSubtreeDirty()) {
           // NOTE:  MarkLineDirty does more than just marking the line dirty.
           MarkLineDirty(line, &mLines);
@@ -3693,9 +3680,7 @@ void nsBlockFrame::MarkLineDirtyForInterrupt(nsLineBox* aLine) {
   if (HasAnyStateBits(NS_FRAME_IS_DIRTY)) {
     // Mark all our child frames dirty so we make sure to reflow them
     // later.
-    int32_t n = aLine->GetChildCount();
-    for (nsIFrame* f = aLine->mFirstChild; n > 0;
-         f = f->GetNextSibling(), --n) {
+    for (nsIFrame* f : aLine->ChildFrames()) {
       f->MarkSubtreeDirty();
     }
     // And mark all the floats whose reflows we might be skipping dirty too.
@@ -3943,10 +3928,8 @@ void nsBlockFrame::MoveChildFramesOfLine(nsLineBox* aLine,
     // one of our parent frames may have moved and so the view's position
     // relative to its parent may have changed.
     if (aDeltaBCoord) {
-      int32_t n = aLine->GetChildCount();
-      while (--n >= 0) {
-        kid->MovePositionBy(wm, translation);
-        kid = kid->GetNextSibling();
+      for (nsIFrame* f : aLine->ChildFrames()) {
+        f->MovePositionBy(wm, translation);
       }
     }
   }
@@ -5581,9 +5564,7 @@ bool nsBlockFrame::PlaceLine(BlockReflowState& aState,
   aLineLayout.RelativePositionFrames(overflowAreas);
   if (Style()->GetPseudoType() == PseudoStyleType::MozScrolledContent) {
     Maybe<nsRect> inFlowBounds;
-    int32_t n = aLine->GetChildCount();
-    for (nsIFrame* lineFrame = aLine->mFirstChild; n > 0;
-         lineFrame = lineFrame->GetNextSibling(), --n) {
+    for (nsIFrame* lineFrame : aLine->ChildFrames()) {
       auto lineFrameBounds = GetLineFrameInFlowBounds(*aLine, *lineFrame);
       if (!lineFrameBounds) {
         continue;
@@ -7718,14 +7699,8 @@ static void DisplayLine(nsDisplayListBuilder* aBuilder,
           ? nsIFrame::DisplayChildFlags(nsIFrame::DisplayChildFlag::Inline)
           : nsIFrame::DisplayChildFlags();
 
-  nsIFrame* kid = aLine->mFirstChild;
-  int32_t n = aLine->GetChildCount();
-  while (--n >= 0) {
-#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
-    _mm_prefetch((char *)kid->GetNextSibling(), _MM_HINT_T0);
-#endif
+  for (nsIFrame* kid : aLine->ChildFrames()) {
     aFrame->BuildDisplayListForChild(aBuilder, kid, childLists, flags);
-    kid = kid->GetNextSibling();
   }
 
   if (aFrame->HasLineClampEllipsisDescendant() && !aLineInLine) {

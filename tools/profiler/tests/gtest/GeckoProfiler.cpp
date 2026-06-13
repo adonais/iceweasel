@@ -288,9 +288,16 @@ static void TestConstUnlockedConstReader(
   (void)aData.PlatformDataCRef();
 #endif
 
+#if defined(MOZ_ASAN)
+  // When ASan is enabled, onStackChar will be located on ASan's fake stack
+  // instead of the thread's native stack, thus interfering with the following
+  // check. See <https://bugzil.la/2040038>.
+  (void)aOnStackObject;
+#else
   EXPECT_GE(aData.StackTop(), aOnStackObject)
       << "StackTop should be at &onStackChar, or higher on some "
          "platforms";
+#endif  // defined(MOZ_ASAN)
 };
 
 static void TestConstUnlockedConstReaderAndAtomicRW(

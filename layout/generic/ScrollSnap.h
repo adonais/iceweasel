@@ -6,6 +6,7 @@
 #define mozilla_layout_ScrollSnap_h_
 
 #include "mozilla/Maybe.h"
+#include "mozilla/ScrollSnapInfo.h"
 #include "mozilla/ScrollSnapTargetId.h"
 #include "mozilla/ScrollTypes.h"
 
@@ -53,7 +54,8 @@ struct ScrollSnapUtils {
       const ScrollSnapInfo& aSnapInfo, const nsRect& aScrollRange,
       const nsPoint& aCurrentPosition,
       const UniquePtr<ScrollSnapTargetIds>& aLastSnapTargetIds,
-      const nsIContent* aFocusedContent, const WritingMode aWritingMode);
+      const nsIContent* aFocusedContent, const nsIContent* aTargetContent,
+      const WritingMode aWritingMode);
 
   static ScrollSnapTargetId GetTargetIdFor(const nsIFrame* aFrame);
 

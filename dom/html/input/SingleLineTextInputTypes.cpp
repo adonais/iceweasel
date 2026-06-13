@@ -251,7 +251,7 @@ bool EmailInputType::PunycodeEncodeEmailAddress(const nsAString& aEmail,
   *aIndexOfAt = (uint32_t)value.FindChar('@');
 
   if (*aIndexOfAt == (uint32_t)kNotFound || *aIndexOfAt == value.Length() - 1) {
-    aEncodedEmail = value;
+    aEncodedEmail = std::move(value);
     return true;
   }
 
@@ -275,6 +275,6 @@ bool EmailInputType::PunycodeEncodeEmailAddress(const nsAString& aEmail,
 
   value.Replace(indexOfDomain, domain.Length(), domainACE);
 
-  aEncodedEmail = value;
+  aEncodedEmail = std::move(value);
   return true;
 }

@@ -176,6 +176,81 @@ class BitSetSuite {
     }
   }
 
+  void testFormatting() {
+    TestBitSet<30> bitset;
+
+    auto&& check_fmt = [](const auto& bitset, const char* expected) {
+      auto formatted = fmt::format("{}", bitset);
+      MOZ_RELEASE_ASSERT(formatted == expected);
+    };
+
+    // No bits set.
+    check_fmt(bitset, "{}");
+
+    // Single bit set.
+    bitset[0] = true;
+    check_fmt(bitset, "{0}");
+
+    bitset.ResetAll();
+    bitset[7] = true;
+    check_fmt(bitset, "{7}");
+
+    bitset.ResetAll();
+    bitset[23] = true;
+    check_fmt(bitset, "{23}");
+
+    // Multiple bits.
+    bitset[0] = true;
+    check_fmt(bitset, "{0,23}");
+
+    bitset[1] = true;
+    check_fmt(bitset, "{0,1,23}");
+
+    bitset[2] = true;
+    check_fmt(bitset, "{0-2,23}");
+
+    bitset[22] = true;
+    check_fmt(bitset, "{0-2,22,23}");
+
+    bitset[24] = true;
+    check_fmt(bitset, "{0-2,22-24}");
+
+    bitset[1] = false;
+    check_fmt(bitset, "{0,2,22-24}");
+
+    // Bit ranges not anchored at the beginning.
+    bitset.ResetAll();
+    bitset[8] = true;
+    check_fmt(bitset, "{8}");
+
+    bitset[9] = true;
+    check_fmt(bitset, "{8,9}");
+
+    bitset[10] = true;
+    check_fmt(bitset, "{8-10}");
+
+    // Up against the end.
+    bitset.ResetAll();
+    bitset[29] = true;
+    check_fmt(bitset, "{29}");
+
+    bitset[28] = true;
+    check_fmt(bitset, "{28,29}");
+
+    bitset[27] = true;
+    check_fmt(bitset, "{27-29}");
+
+    // All bits on.
+    for (size_t i = 0; i < 30; i++) {
+      bitset[i] = true;
+    }
+    check_fmt(bitset, "{0-29}");
+
+    // Allow formatting flags.
+    auto formatted = fmt::format("{:#x}", bitset);
+    MOZ_RELEASE_ASSERT(formatted == "{0x0-0x1d}");
+  }
+
   void testCount() {
     testCountForSize<1>();
     testCountForSize<kBitsPerWord>();
@@ -288,6 +363,7 @@ class BitSetSuite {
     testCount();
     testComparison();
     testLogical();
+    testFormatting();
   }
 };
 

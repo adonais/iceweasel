@@ -33,6 +33,7 @@
 #include "nsIPrincipal.h"
 #include "nsIUUIDGenerator.h"
 #include "nsNetUtil.h"
+#include "nsQueryObject.h"
 #include "nsReadableUtils.h"
 
 #define RELEASING_TIMER 5000
@@ -57,6 +58,8 @@ struct DataInfo {
     MOZ_ASSERT(aPrincipal);
   }
 
+  // NOTE: This may not be present within content processes, if the BlobURL was
+  // created within a different process.
   RefPtr<BlobImpl> mBlobImpl;
 
   nsCOMPtr<nsIPrincipal> mPrincipal;
@@ -105,21 +108,6 @@ static mozilla::dom::DataInfo* GetDataInfo(const nsACString& aUri,
   }
 
   return res;
-}
-
-static mozilla::dom::DataInfo* GetDataInfoFromURI(nsIURI* aURI,
-                                                  bool aAlsoIfRevoked = false) {
-  if (!aURI) {
-    return nullptr;
-  }
-
-  nsCString spec;
-  nsresult rv = aURI->GetSpec(spec);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return nullptr;
-  }
-
-  return GetDataInfo(spec, aAlsoIfRevoked);
 }
 
 // Memory reporting for the hash table.
@@ -179,17 +167,18 @@ class BlobURLsReporter final : public nsIMemoryReporter {
     // Determine number of URLs per mozilla::dom::BlobImpl, to handle the case
     // where it's > 1.
     for (const auto& entry : *gDataTable) {
-      mozilla::dom::BlobImpl* blobImpl = entry.GetWeak()->mBlobImpl;
-      MOZ_ASSERT(blobImpl);
-
-      refCounts.LookupOrInsert(blobImpl, 0) += 1;
+      if (mozilla::dom::BlobImpl* blobImpl = entry.GetWeak()->mBlobImpl) {
+        refCounts.LookupOrInsert(blobImpl, 0) += 1;
+      }
     }
 
     for (const auto& entry : *gDataTable) {
       nsCStringHashKey::KeyType key = entry.GetKey();
       mozilla::dom::DataInfo* info = entry.GetWeak();
       mozilla::dom::BlobImpl* blobImpl = info->mBlobImpl;
-      MOZ_ASSERT(blobImpl);
+      if (!blobImpl) {
+        continue;
+      }
 
       constexpr auto desc =
           "A blob URL allocated with URL.createObjectURL; the referenced "
@@ -501,9 +490,8 @@ class ReleasingTimerHolder final : public Runnable,
 NS_IMPL_ISUPPORTS_INHERITED(ReleasingTimerHolder, Runnable, nsITimerCallback,
                             nsIAsyncShutdownBlocker)
 
-template <typename T>
 static void AddDataEntryInternal(
-    const nsACString& aURI, T aObject, nsIPrincipal* aPrincipal,
+    const nsACString& aURI, BlobImpl* aBlobImpl, nsIPrincipal* aPrincipal,
     const nsCString& aPartitionKey,
     Maybe<ContentParentId> aContentParentId = Nothing()) {
   MOZ_ASSERT(NS_IsMainThread(), "changing gDataTable is main-thread only");
@@ -514,7 +502,7 @@ static void AddDataEntryInternal(
 
   mozilla::UniquePtr<mozilla::dom::DataInfo> info =
       mozilla::MakeUnique<mozilla::dom::DataInfo>(
-          aObject, aPrincipal, aPartitionKey, aContentParentId);
+          aBlobImpl, aPrincipal, aPartitionKey, aContentParentId);
   BlobURLsReporter::GetJSStackForBlob(info.get());
 
   gDataTable->InsertOrUpdate(aURI, std::move(info));
@@ -525,7 +513,7 @@ void BlobURLProtocolHandler::Init(void) {
 
   if (!initialized) {
     initialized = true;
-    RegisterStrongMemoryReporter(new BlobURLsReporter());
+    RegisterStrongMemoryReporter(MakeAndAddRef<BlobURLsReporter>());
   }
 }
 
@@ -553,14 +541,24 @@ nsresult BlobURLProtocolHandler::AddDataEntry(mozilla::dom::BlobImpl* aBlobImpl,
 }
 
 /* static */
-void BlobURLProtocolHandler::AddDataEntry(
+void BlobURLProtocolHandler::AddDataEntryParent(
     const nsACString& aURI, nsIPrincipal* aPrincipal,
     const nsCString& aPartitionKey, mozilla::dom::BlobImpl* aBlobImpl,
-    const Maybe<ContentParentId>& aContentParentId) {
+    const ContentParentId& aContentParentId) {
+  MOZ_ASSERT(XRE_IsParentProcess());
   MOZ_ASSERT(aPrincipal);
   MOZ_ASSERT(aBlobImpl);
   AddDataEntryInternal(aURI, aBlobImpl, aPrincipal, aPartitionKey,
-                       aContentParentId);
+                       Some(aContentParentId));
+}
+
+/* static */
+void BlobURLProtocolHandler::AddDataEntryChild(const nsACString& aURI,
+                                               nsIPrincipal* aPrincipal,
+                                               const nsCString& aPartitionKey) {
+  MOZ_ASSERT(XRE_IsContentProcess());
+  MOZ_ASSERT(aPrincipal);
+  AddDataEntryInternal(aURI, nullptr, aPrincipal, aPartitionKey);
 }
 
 /* static */
@@ -568,6 +566,7 @@ bool BlobURLProtocolHandler::ForEachBlobURL(
     std::function<bool(mozilla::dom::BlobImpl*, nsIPrincipal*, const nsCString&,
                        const nsACString&, bool aRevoked)>&& aCb) {
   MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(XRE_IsParentProcess());
 
   if (!gDataTable) {
     return false;
@@ -721,30 +720,23 @@ bool BlobURLProtocolHandler::HasDataEntryTypeBlob(const nsACString& aUri) {
 /* static */
 nsresult BlobURLProtocolHandler::GenerateURIString(nsIPrincipal* aPrincipal,
                                                    nsACString& aUri) {
-  nsresult rv;
-  nsCOMPtr<nsIUUIDGenerator> uuidgen =
-      do_GetService("@mozilla.org/uuid-generator;1", &rv);
-  NS_ENSURE_SUCCESS(rv, rv);
+  NS_ENSURE_ARG(aPrincipal);
 
-  nsID id;
-  rv = uuidgen->GenerateUUIDInPlace(&id);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  aUri.AssignLiteral(BLOBURI_SCHEME);
-  aUri.Append(':');
-
-  if (aPrincipal) {
-    nsAutoCString origin;
-    rv = aPrincipal->GetWebExposedOriginSerialization(origin);
-    if (NS_FAILED(rv)) {
-      origin.AssignLiteral("null");
-    }
-
-    aUri.Append(origin);
-    aUri.Append('/');
+  nsID id{};
+  nsresult rv = nsID::GenerateUUIDInPlace(id);
+  if (NS_FAILED(rv)) {
+    return rv;
   }
 
-  aUri += NSID_TrimBracketsASCII(id);
+  nsAutoCString origin;
+  if (NS_FAILED(aPrincipal->GetWebExposedOriginSerialization(origin))) {
+    // Special case the system principal to have a "system" origin part, so that
+    // the system principal can be recovered from the URI.
+    // See bug 2006467 for removing system principal Blob URLs in the future.
+    origin = aPrincipal->IsSystemPrincipal() ? "system"_ns : "null"_ns;
+  }
+
+  aUri = BLOBURI_SCHEME ":"_ns + origin + "/"_ns + NSID_TrimBracketsASCII(id);
 
   return NS_OK;
 }
@@ -825,15 +817,18 @@ NS_IMPL_ISUPPORTS(BlobURLProtocolHandler, nsIProtocolHandler,
   // This method can be called on any thread, which is why we lock the mutex
   // for read access to gDataTable.
   bool revoked = true;
+  nsCOMPtr<nsIPrincipal> principal;
   {
     StaticMutexAutoLock lock(sMutex);
     mozilla::dom::DataInfo* info = GetDataInfo(aSpec);
     revoked = !info || info->mRevokeId != 0;
+    principal = info ? info->mPrincipal : nullptr;
   }
 
   return NS_MutateURI(new BlobURL::Mutator())
       .SetSpec(aSpec)
       .Apply(&nsIBlobURLMutator::SetRevoked, revoked)
+      .Apply(&nsIBlobURLMutator::MaybeSetNullPrincipal, principal)
       .Finalize(aResult);
 }
 
@@ -861,31 +856,49 @@ BlobURLProtocolHandler::GetScheme(nsACString& result) {
 
 /* static */
 bool BlobURLProtocolHandler::GetBlobURLPrincipal(nsIURI* aURI,
+                                                 const OriginAttributes& aAttrs,
                                                  nsIPrincipal** aPrincipal) {
   MOZ_ASSERT(aURI);
   MOZ_ASSERT(aPrincipal);
 
-  RefPtr<BlobURL> blobURL;
-  nsresult rv =
-      aURI->QueryInterface(kHOSTOBJECTURICID, getter_AddRefs(blobURL));
-  if (NS_FAILED(rv) || !blobURL) {
-    return false;
-  }
-
-  StaticMutexAutoLock lock(sMutex);
-  mozilla::dom::DataInfo* info =
-      GetDataInfoFromURI(aURI, true /*aAlsoIfRevoked */);
-  if (!info || !info->mBlobImpl) {
+  RefPtr<BlobURL> blobURL = do_QueryObject(aURI);
+  if (!blobURL) {
     return false;
   }
 
   nsCOMPtr<nsIPrincipal> principal;
 
-  if (blobURL->Revoked()) {
-    principal = NullPrincipal::Create(
-        BasePrincipal::Cast(info->mPrincipal)->OriginAttributesRef());
+  nsDependentCSubstring originPart = blobURL->OriginPart();
+  if (originPart == "system"_ns) {
+    principal = nsContentUtils::GetSystemPrincipal();
+  } else if (originPart == "null"_ns) {
+    // If the origin part is the string "null", the principal should have been
+    // cached on the URI when it was parsed.
+    principal = blobURL->GetNullPrincipal();
+
+    // If the principal has the "null" origin part, it cannot be a
+    // BlobURLBroadcastPrincipal, as in the future we will not broadcast
+    // registrations, so the principal would not be available.
+    MOZ_DIAGNOSTIC_ASSERT(!principal ||
+                          !IsBlobURLBroadcastPrincipal(principal));
   } else {
-    principal = info->mPrincipal;
+    // The web-exposed origin serialization is present, we have an origin URI.
+    nsCOMPtr<nsIURI> uri;
+    nsresult rv = NS_NewURI(getter_AddRefs(uri), originPart);
+    NS_ENSURE_SUCCESS(rv, false);
+
+    principal = BasePrincipal::CreateContentPrincipal(uri, aAttrs);
+
+    // Ensure the principal's origin serialization matches the origin part,
+    // otherwise we'll treat the origin part as invalid.
+    nsAutoCString serialization;
+    rv = principal->GetWebExposedOriginSerialization(serialization);
+    if (NS_WARN_IF(NS_FAILED(rv)) || NS_WARN_IF(originPart != serialization)) {
+      return false;
+    }
+  }
+  if (!principal) {
+    return false;
   }
 
   principal.forget(aPrincipal);
@@ -901,68 +914,11 @@ bool BlobURLProtocolHandler::IsBlobURLBroadcastPrincipal(
 }  // namespace dom
 }  // namespace mozilla
 
-nsresult NS_GetBlobForBlobURI(nsIURI* aURI, mozilla::dom::BlobImpl** aBlob) {
-  *aBlob = nullptr;
-  MOZ_ASSERT(NS_IsMainThread(),
-             "without locking gDataTable is main-thread only");
-  mozilla::dom::DataInfo* info =
-      mozilla::dom::GetDataInfoFromURI(aURI, false /* aAlsoIfRevoked */);
-  if (!info) {
-    return NS_ERROR_DOM_BAD_URI;
-  }
-
-  RefPtr<mozilla::dom::BlobImpl> blob = info->mBlobImpl;
-  blob.forget(aBlob);
-  return NS_OK;
-}
-
-nsresult NS_GetBlobForBlobURISpec(const nsACString& aSpec,
-                                  mozilla::dom::BlobImpl** aBlob,
-                                  bool aAlsoIfRevoked) {
-  *aBlob = nullptr;
-  MOZ_ASSERT(NS_IsMainThread(),
-             "without locking gDataTable is main-thread only");
-
-  mozilla::dom::DataInfo* info =
-      mozilla::dom::GetDataInfo(aSpec, aAlsoIfRevoked);
-  if (!info || !info->mBlobImpl) {
-    return NS_ERROR_DOM_BAD_URI;
-  }
-
-  RefPtr<mozilla::dom::BlobImpl> blob = info->mBlobImpl;
-  blob.forget(aBlob);
-  return NS_OK;
-}
-
-// Blob requests may specify a range header. We parse, validate, and
-// store that info here, and save it on the nsIBaseChannel, where it
-// can be accessed by BlobURLInputStream::StoreBlobImplStream.
-nsresult NS_SetChannelContentRangeForBlobURI(nsIChannel* aChannel, nsIURI* aURI,
-                                             nsACString& aRangeHeader) {
-  MOZ_ASSERT(aChannel);
-  MOZ_ASSERT(aURI);
-  RefPtr<mozilla::dom::BlobImpl> blobImpl;
-  if (NS_FAILED(NS_GetBlobForBlobURI(aURI, getter_AddRefs(blobImpl)))) {
-    return NS_BINDING_FAILED;
-  }
-  mozilla::IgnoredErrorResult result;
-  int64_t size = static_cast<int64_t>(blobImpl->GetSize(result));
-  if (result.Failed()) {
-    return NS_ERROR_NO_CONTENT;
-  }
-  nsCOMPtr<nsIBaseChannel> baseChan = do_QueryInterface(aChannel);
-  if (!baseChan || !baseChan->SetContentRangeFromHeader(aRangeHeader, size)) {
-    return NS_ERROR_NET_PARTIAL_TRANSFER;
-  }
-  return NS_OK;
-}
-
 namespace mozilla::dom {
 
 bool IsBlobURI(nsIURI* aUri) {
-  StaticMutexAutoLock lock(sMutex);
-  mozilla::dom::DataInfo* info = GetDataInfoFromURI(aUri);
-  return info != nullptr;
+  RefPtr<BlobURL> blobURL = do_QueryObject(aUri);
+  return blobURL != nullptr;
 }
 
 }  // namespace mozilla::dom

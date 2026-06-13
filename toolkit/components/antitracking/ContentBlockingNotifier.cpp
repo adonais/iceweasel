@@ -63,8 +63,8 @@ void ReportUnblockingToConsole(
 
   RefPtr<Runnable> runnable = NS_NewRunnableFunction(
       "ReportUnblockingToConsoleDelayed",
-      [aWindowID, loc = std::move(location), principal, trackingOrigin,
-       aReason]() {
+      [aWindowID, loc = std::move(location), principal = std::move(principal),
+       trackingOrigin = std::move(trackingOrigin), aReason]() {
         const char* messageWithSameOrigin = nullptr;
 
         switch (aReason) {

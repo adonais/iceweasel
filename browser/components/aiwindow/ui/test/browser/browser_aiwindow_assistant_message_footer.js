@@ -65,6 +65,37 @@ add_task(async function test_message_footer_wires_buttons() {
   });
 });
 
+add_task(async function test_feedback_buttons() {
+  await BrowserTestUtils.withNewTab(TEST_PAGE, async browser => {
+    await SpecialPowers.spawn(browser, [], async () => {
+      const footer = content.document.getElementById("footer");
+      footer.messageId = "msg-1";
+
+      await content.customElements.whenDefined("assistant-message-footer");
+
+      const shadow = footer.shadowRoot;
+      const thumbsUp = shadow.querySelector("moz-button.thumbs-up-button");
+      const thumbsDown = shadow.querySelector("moz-button.thumbs-down-button");
+
+      ok(thumbsUp, "thumbs-up button is visible");
+      ok(thumbsDown, "thumbs-down button is visible");
+
+      let upEventPromise = ContentTaskUtils.waitForEvent(footer, "thumbs-up");
+      thumbsUp.click();
+      let upEvent = await upEventPromise;
+      is(upEvent.detail.messageId, "msg-1", "thumbs-up includes messageId");
+
+      let downEventPromise = ContentTaskUtils.waitForEvent(
+        footer,
+        "thumbs-down"
+      );
+      thumbsDown.click();
+      let downEvent = await downEventPromise;
+      is(downEvent.detail.messageId, "msg-1", "thumbs-down includes messageId");
+    });
+  });
+});
+
 add_task(async function test_message_footer_shows_up_on_last_chunk() {
   const restoreSignIn = skipSignIn();
   const { restore } = await stubEngineNetworkBoundaries({

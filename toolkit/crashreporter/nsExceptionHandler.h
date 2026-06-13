@@ -13,7 +13,6 @@
 
 #include "mozilla/EnumeratedArray.h"
 #include "mozilla/Maybe.h"
-#include "mozilla/UniquePtrExtensions.h"  // For UniqueFileHandle
 
 #include "CrashAnnotations.h"
 
@@ -261,18 +260,15 @@ bool CreateMinidumpsAndPair(ProcessHandle aTargetPid,
                             AnnotationTable& aTargetAnnotations,
                             nsIFile** aTargetDumpOut);
 
-#if defined(XP_WIN) || defined(XP_MACOSX) || defined(XP_IOS)
-using CrashPipeType = const char*;
-#else
-using CrashPipeType = mozilla::UniqueFileHandle;
-#endif
-
 // Parent-side API for children
 #if defined(MOZ_WIDGET_ANDROID)
 void SetCrashHelperPipes(FileHandle breakpadFd, FileHandle crashHelperFd);
 #endif
-CrashPipeType GetChildNotificationPipe();
-bool RegisterChildIPCChannel(mozilla::geckoargs::ChildProcessArgs& aArgs);
+bool RegisterChildIPCChannel(mozilla::geckoargs::ChildProcessArgs& aArgs,
+                             GeckoChildID aID);
+#if defined(XP_WIN)
+bool ChildProcessProxyRendezvous(GeckoChildID aID, DWORD aPid, HANDLE aHandle);
+#endif  // defined(XP_WIN)
 
 // Child-side API
 MOZ_EXPORT bool SetRemoteExceptionHandler(int& aArgc, char** aArgv);

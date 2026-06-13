@@ -115,7 +115,7 @@ function adjustGeneralPaths() {
 
 /**
  * Initializes a mock app update.  Adapted from runAboutDialogUpdateTest:
- * https://searchfox.org/mozilla-central/source/toolkit/mozapps/update/tests/browser/head.js
+ * https://searchfox.org/firefox-main/source/toolkit/mozapps/update/tests/browser/head.js
  *
  * @param {object} params
  *   See the files in toolkit/mozapps/update/tests/browser.
@@ -179,7 +179,7 @@ async function initUpdate(params) {
 
 /**
  * Performs steps in a mock update.  Adapted from runAboutDialogUpdateTest:
- * https://searchfox.org/mozilla-central/source/toolkit/mozapps/update/tests/browser/head.js
+ * https://searchfox.org/firefox-main/source/toolkit/mozapps/update/tests/browser/head.js
  *
  * @param {Array} steps
  *   See the files in toolkit/mozapps/update/tests/browser.
@@ -192,7 +192,7 @@ async function processUpdateSteps(steps) {
 
 /**
  * Performs a step in a mock update.  Adapted from runAboutDialogUpdateTest:
- * https://searchfox.org/mozilla-central/source/toolkit/mozapps/update/tests/browser/head.js
+ * https://searchfox.org/firefox-main/source/toolkit/mozapps/update/tests/browser/head.js
  *
  * @param {object} step
  *   See the files in toolkit/mozapps/update/tests/browser.

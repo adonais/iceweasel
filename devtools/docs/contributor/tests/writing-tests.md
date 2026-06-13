@@ -106,7 +106,7 @@ For example, the head.js files in the `markupview` and `styleinspector` test fol
 
 ## Shared head.js file
 
-A [shared-head.js](https://searchfox.org/mozilla-central/source/devtools/client/shared/test/shared-head.js) file has been introduced to avoid duplicating code in various `head.js` files.
+A [shared-head.js](https://searchfox.org/firefox-main/source/devtools/client/shared/test/shared-head.js) file has been introduced to avoid duplicating code in various `head.js` files.
 
 It's important to know whether or not the `shared.js` in your test directory already imports `shared-head.js` (look for a <code>Services.scriptloader.loadSubScript</code> call), as common helpers in `shared-head.js` might be useful for your test.
 

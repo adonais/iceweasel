@@ -4,6 +4,8 @@
 
 #include "MockCubeb.h"
 
+#include <thread>
+
 namespace mozilla {
 
 using KeepProcessing = MockCubebStream::KeepProcessing;

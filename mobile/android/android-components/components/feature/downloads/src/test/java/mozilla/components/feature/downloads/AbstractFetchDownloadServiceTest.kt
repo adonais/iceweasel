@@ -72,7 +72,6 @@ import mozilla.components.support.utils.ext.stopForegroundCompat
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Before
@@ -109,6 +108,7 @@ import java.io.InputStream
 import java.time.LocalDate
 import java.time.ZoneId
 import kotlin.random.Random
+import kotlin.test.assertNotNull
 import kotlin.time.Duration.Companion.milliseconds
 
 @RunWith(AndroidJUnit4::class)

@@ -9,6 +9,7 @@
 
 namespace mozilla {
 class ScrollContainerFrame;
+struct TimelineRangeOffset;
 }  // namespace mozilla
 
 namespace mozilla::dom {
@@ -41,20 +42,30 @@ class ViewTimeline final : public ScrollTimeline {
       StyleScrollAxis aAxis, const StyleViewTimelineInset& aInset);
 
   JSObject* WrapObject(JSContext* aCx,
-                       JS::Handle<JSObject*> aGivenProto) override {
-    return nullptr;
+                       JS::Handle<JSObject*> aGivenProto) override;
+
+  // ViewTimeline methods.
+  Element* Subject() const {
+    MOZ_ASSERT(mSubject);
+    return mSubject;
   }
+  Nullable<double> GetStartOffset() const;
+  Nullable<double> GetEndOffset() const;
 
   bool IsViewTimeline() const override { return true; }
+  const ViewTimeline* AsViewTimeline() const override { return this; }
 
   void ReplacePropertiesWith(Element* aSubjectElement,
                              const PseudoStyleRequest& aPseudoRequest,
                              const StyleViewTimeline& aNew);
 
-  void UpdateCachedCurrentTime() override;
+  bool UpdateCachedCurrentTime() override;
 
   std::pair<double, double> IntervalForAttachmentRange(
       const AnimationRange& aStyleRange) const override;
+
+  Maybe<double> MapKeyframeOffsetToOffset(const StyleTimelineRangeName aName,
+                                          const double aPercentage) const;
 
   NonOwningAnimationTarget TimelineTarget() const override {
     return NonOwningAnimationTarget{mSubject,
@@ -77,6 +88,12 @@ class ViewTimeline final : public ScrollTimeline {
   std::pair<nscoord, nscoord> IntervalForTimelineRangeName(
       const StyleTimelineRangeName aName,
       const ScrollTimeline::ComputedTimelineData& aData) const;
+
+  template <typename F>
+  double ComputeOffsetToTimelineRange(
+      const StyleTimelineRangeName& aName,
+      const ScrollTimeline::ComputedTimelineData& aData,
+      F&& aFuncToResolveValue) const;
 
   // The subject element.
   // 1. For view(), the subject element is the animation target.
@@ -115,6 +132,10 @@ class ViewTimeline final : public ScrollTimeline {
              mSubjectPosition != aOther.mSubjectPosition ||
              mSubjectSize != aOther.mSubjectSize ||
              mInsetStart != aOther.mInsetStart || mInsetEnd != aOther.mInsetEnd;
+    }
+    bool operator==(const CurrentTimeData& aOther) const {
+      return mScrollData.mPosition == aOther.mScrollData.mPosition &&
+             !IsChanged(aOther);
     }
   };
   Maybe<CurrentTimeData> mCachedCurrentTime;

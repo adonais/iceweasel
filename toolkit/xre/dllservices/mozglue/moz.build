@@ -33,11 +33,6 @@ OS_LIBS += [
     "wintrust",
 ]
 
-DELAYLOAD_DLLS += [
-    "crypt32.dll",
-    "wintrust.dll",
-]
-
 EXPORTS += [
     "nsWindowsDllInterceptor.h",
 ]

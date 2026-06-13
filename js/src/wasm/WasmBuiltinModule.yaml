@@ -445,12 +445,13 @@
 - op: GetPromiseResults
   symbolic_address:
     name: GetPromiseResults
-    type: Args_General2
+    type: Args_General_GeneralGeneralInt32
     needs_thunk: true
   entry: GetPromiseResults
   export: getPromiseResults
   params:
     - 'externref'
+    - 'i32'
   result: 'anyref'
   fail_mode: FailOnNullPtr
   uses_memory: false

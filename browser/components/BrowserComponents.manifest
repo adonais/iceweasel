@@ -17,6 +17,7 @@ category browser-before-ui-startup resource:///modules/BuiltInThemes.sys.mjs Bui
 #ifdef MOZ_NORMANDY
 category browser-before-ui-startup resource://normandy/Normandy.sys.mjs Normandy.init
 #endif
+category browser-before-ui-startup moz-src:///browser/components/nova/NovaPrefs.sys.mjs NovaPrefs.init
 category browser-before-ui-startup moz-src:///browser/components/privatebrowsing/ResetPBMPanel.sys.mjs ResetPBMPanel.init
 category browser-before-ui-startup resource:///modules/AboutHomeStartupCache.sys.mjs AboutHomeStartupCache.init
 category browser-before-ui-startup resource:///modules/AccountsGlue.sys.mjs AccountsGlue.init
@@ -29,9 +30,15 @@ category browser-window-before-initial-xul-layout resource://gre/modules/Lightwe
 category browser-window-before-initial-xul-layout moz-src:///browser/themes/ToolbarIconColor.sys.mjs ToolbarIconColor.init
 category browser-window-before-initial-xul-layout chrome://browser/content/browser-customtitlebar.js CustomTitlebar.init
 
+# The two categories below are specific to Tabbrowser creation. For consumers that need to initialize during
+# 'DOMContentLoaded', use 'browser-window-domcontentloaded' instead.
 category browser-window-domcontentloaded-before-tabbrowser resource:///modules/BrowserDOMWindow.sys.mjs BrowserDOMWindow.setupInWindow
+category browser-window-domcontentloaded-tabbrowser chrome://browser/content/tabbrowser/tabbrowser.js Tabbrowser.create
+
 category browser-window-domcontentloaded resource:///modules/BrowserWindowTracker.sys.mjs BrowserWindowTracker.track
 category browser-window-domcontentloaded moz-src:///browser/components/customizableui/CustomizableUI.sys.mjs CustomizableUI.handleNewBrowserWindow
+category browser-window-domcontentloaded chrome://browser/content/browser-addons.js gUnifiedExtensions.init
+category browser-window-domcontentloaded chrome://browser/content/browser.js FirefoxViewHandler.init
 
 category browser-window-delayed-startup moz-src:///browser/components/contentanalysis/content/ContentAnalysis.sys.mjs ContentAnalysis.initialize
 category browser-window-delayed-startup resource:///modules/HomePage.sys.mjs HomePage.delayedStartup
@@ -42,9 +49,17 @@ category browser-window-delayed-startup resource:///modules/taskbartabs/TaskbarT
 
 category browser-window-unload-begin chrome://browser/content/browser-customtitlebar.js CustomTitlebar.uninit
 category browser-window-unload-begin moz-src:///browser/themes/ToolbarIconColor.sys.mjs ToolbarIconColor.uninit
+category browser-window-unload-begin moz-src:///browser/components/reportbrokensite/ReportBrokenSite.sys.mjs ReportBrokenSite.uninit
 
-category browser-window-unload resource:///modules/BrowserDOMWindow.sys.mjs BrowserDOMWindow.teardownInWindow
+category browser-window-unload chrome://browser/content/browser-addons.js gUnifiedExtensions.uninit
+category browser-window-unload chrome://browser/content/browser.js FirefoxViewHandler.uninit
 category browser-window-unload moz-src:///browser/components/tabbrowser/NewTabPagePreloading.sys.mjs NewTabPagePreloading.removePreloadedBrowser
+
+# The category below is specific to Tabbrowser destruction. For consumers that need to uninitialize during
+# window unload, use 'browser-window-unload' instead.
+category browser-window-unload-tabbrowser chrome://browser/content/tabbrowser/tabbrowser.js Tabbrowser.destroy
+
+category browser-window-final-unload resource:///modules/BrowserDOMWindow.sys.mjs BrowserDOMWindow.teardownInWindow
 
 # App startup consumers
 

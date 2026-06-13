@@ -444,16 +444,9 @@ static bool str_resolve(JSContext* cx, HandleObject obj, HandleId id,
 }
 
 static const JSClassOps StringObjectClassOps = {
-    nullptr,         // addProperty
-    nullptr,         // delProperty
-    str_enumerate,   // enumerate
-    nullptr,         // newEnumerate
-    str_resolve,     // resolve
-    str_mayResolve,  // mayResolve
-    nullptr,         // finalize
-    nullptr,         // call
-    nullptr,         // construct
-    nullptr,         // trace
+    .enumerate = str_enumerate,
+    .resolve = str_resolve,
+    .mayResolve = str_mayResolve,
 };
 
 const JSClass StringObject::class_ = {
@@ -1033,7 +1026,7 @@ static JSLinearString* TransformCase(JSContext* cx, Handle<JSString*> string,
     locale = CaseMappingLocale(requestedLocales[0]);
   } else {
     auto defaultLocale = LanguageId::und();
-    if (!cx->global()->globalIntlData().defaultLocale(cx, &defaultLocale)) {
+    if (!intl::DefaultLocale(cx, &defaultLocale)) {
       return nullptr;
     }
     locale = CaseMappingLocale(defaultLocale.language());
@@ -4328,7 +4321,10 @@ JSObject* StringObject::createPrototype(JSContext* cx, JSProtoKey key) {
   Rooted<StringObject*> proto(
       cx, GlobalObject::createBlankPrototype<StringObject>(
               cx, cx->global(),
-              ObjectFlags({ObjectFlag::NeedsProxyGetSetResultValidation})));
+              ObjectFlags({
+                  ObjectFlag::NeedsProxyGetSetResultValidation,
+                  ObjectFlag::HasNonWritableOrAccessorPropExclProto,
+              })));
   if (!proto) {
     return nullptr;
   }

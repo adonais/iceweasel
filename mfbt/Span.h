@@ -847,6 +847,12 @@ class MOZ_GSL_POINTER Span {
     return index_type(it - begin);
   }
 
+  // Returns whether the element is somewhere in the span.
+  template <typename Item>
+  constexpr bool Contains(const Item& aItem) const {
+    return IndexOf(aItem) != npos;
+  }
+
  private:
   // this implementation detail class lets us take advantage of the
   // empty base class optimization to pay for only storage of a single

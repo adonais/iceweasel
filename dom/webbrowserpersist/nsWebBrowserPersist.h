@@ -182,6 +182,8 @@ class nsWebBrowserPersist final : public nsIInterfaceRequestor,
   int16_t mWrapColumn;
   uint32_t mEncodingFlags;
   nsString mContentType;
+  // Random suffix added to downloaded filenames to make them less predictable.
+  nsCString mFilenameRandomSeed;
 };
 
 #endif

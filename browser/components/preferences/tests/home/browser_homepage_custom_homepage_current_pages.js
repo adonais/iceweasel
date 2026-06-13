@@ -9,7 +9,6 @@ const DEFAULT_HOMEPAGE_URL = "about:home";
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [
-      ["browser.settings-redesign.enabled", true],
       ["identity.fxaccounts.account.device.name", ""],
       // Pinning a tab during the test triggers the sidebar promo check,
       // which sets this pref. Track it to avoid test warnings.

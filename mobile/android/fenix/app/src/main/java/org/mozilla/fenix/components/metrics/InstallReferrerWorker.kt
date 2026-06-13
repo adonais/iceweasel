@@ -89,10 +89,13 @@ class InstallReferrerWorker(
             }
 
             settings.isUserTikTokAttributed =
-                MarketingAttributionService.isTikTokAttribution(installReferrerResponse)
+                InstallReferrerHandlingService.isTikTokAttribution(installReferrerResponse)
 
             settings.isUserRedditAttributed =
-                MarketingAttributionService.isRedditAttribution(installReferrerResponse)
+                InstallReferrerHandlingService.isRedditAttribution(installReferrerResponse)
+
+            settings.isUserXTwitterAttributed =
+                InstallReferrerHandlingService.isXTwitterAttribution(installReferrerResponse)
 
             utmParams.recordInstallReferrer(settings)
         }
@@ -179,35 +182,6 @@ class InstallReferrerWorker(
                 logger.error("Failed to end connection", e)
             }
         }
-    }
-}
-
-/**
- * Wrapper interface for InstallReferrerClient to enable testing.
- */
-@VisibleForTesting
-internal interface InstallReferrerClientWrapper {
-    fun startConnection(listener: InstallReferrerStateListener)
-    fun getInstallReferrer(): String?
-    fun endConnection()
-}
-
-/**
- * Default implementation that wraps the actual InstallReferrerClient.
- */
-private class DefaultInstallReferrerClient(context: Context) : InstallReferrerClientWrapper {
-    private val client = InstallReferrerClient.newBuilder(context).build()
-
-    override fun startConnection(listener: InstallReferrerStateListener) {
-        client.startConnection(listener)
-    }
-
-    override fun getInstallReferrer(): String? {
-        return client.installReferrer?.installReferrer
-    }
-
-    override fun endConnection() {
-        client.endConnection()
     }
 }
 

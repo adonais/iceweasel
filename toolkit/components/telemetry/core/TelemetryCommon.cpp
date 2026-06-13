@@ -110,9 +110,11 @@ nsresult MsSinceProcessStartExcludingSuspend(double* aResult) {
 void LogToBrowserConsole(uint32_t aLogLevel, const nsAString& aMsg) {
   if (!NS_IsMainThread()) {
     nsString msg(aMsg);
-    nsCOMPtr<nsIRunnable> task = NS_NewRunnableFunction(
-        "Telemetry::Common::LogToBrowserConsole",
-        [aLogLevel, msg]() { LogToBrowserConsole(aLogLevel, msg); });
+    nsCOMPtr<nsIRunnable> task =
+        NS_NewRunnableFunction("Telemetry::Common::LogToBrowserConsole",
+                               [aLogLevel, msg = std::move(msg)]() {
+                                 LogToBrowserConsole(aLogLevel, msg);
+                               });
     NS_DispatchToMainThread(task.forget(), NS_DISPATCH_NORMAL);
     return;
   }

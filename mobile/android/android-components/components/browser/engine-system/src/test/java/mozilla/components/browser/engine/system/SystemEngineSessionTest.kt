@@ -29,7 +29,6 @@ import mozilla.components.support.test.robolectric.testContext
 import mozilla.components.support.test.whenever
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
@@ -48,6 +47,7 @@ import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
 import org.robolectric.Shadows.shadowOf
 import java.lang.reflect.Modifier
+import kotlin.test.assertNotNull
 import org.mockito.ArgumentMatchers.any as mockitoAny
 
 @RunWith(AndroidJUnit4::class)
@@ -98,7 +98,7 @@ class SystemEngineSessionTest {
         assertEquals("http://mozilla.org", loadedUrl)
 
         assertNotNull(loadHeaders)
-        assertEquals(1, loadHeaders!!.size)
+        assertEquals(1, loadHeaders.size)
         assertTrue(loadHeaders.containsKey("X-Requested-With"))
         assertEquals("", loadHeaders["X-Requested-With"])
 
@@ -378,7 +378,7 @@ class SystemEngineSessionTest {
             engineSession.trackingProtectionPolicy,
         )
         assertNotNull(enabledObserved)
-        assertTrue(enabledObserved as Boolean)
+        assertTrue(enabledObserved)
     }
 
     @Test
@@ -398,7 +398,7 @@ class SystemEngineSessionTest {
         engineSession.disableTrackingProtection()
         assertNull(engineSession.trackingProtectionPolicy)
         assertNotNull(enabledObserved)
-        assertFalse(enabledObserved as Boolean)
+        assertFalse(enabledObserved)
     }
 
     @Test
@@ -604,7 +604,7 @@ class SystemEngineSessionTest {
 
         assertNotNull(response)
 
-        assertEquals("<h1>Hello World</h1>", response!!.data.bufferedReader().use { it.readText() })
+        assertEquals("<h1>Hello World</h1>", response.data.bufferedReader().use { it.readText() })
         assertEquals("text/html", response.mimeType)
         assertEquals("UTF-8", response.encoding)
     }

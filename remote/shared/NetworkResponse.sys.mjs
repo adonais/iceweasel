@@ -41,6 +41,9 @@ export class NetworkResponse {
    *     Whether the response was read from the cache or not.
    * @param {boolean} params.fromServiceWorker
    *     Whether the response is coming from a service worker or not.
+   * @param {boolean} params.hasResponseCollector
+   *     Whether there is an active response collector for the context which
+   *     owns this request.
    * @param {boolean} params.isCachedResource
    *     Whether the response is served by the stencil (image/CSS/JS) cache.
    * @param {string?} params.memoryCacheKey
@@ -53,6 +56,7 @@ export class NetworkResponse {
     const {
       fromCache,
       fromServiceWorker,
+      hasResponseCollector = false,
       isCachedResource,
       memoryCacheKey = undefined,
       rawHeaders = "",
@@ -74,8 +78,7 @@ export class NetworkResponse {
     this.#hasCachedResponseBody = false;
     this.#cachedResponseBody = "";
 
-    // Bug 2018237: This should be done only when there's data collector.
-    if (memoryCacheKey) {
+    if (memoryCacheKey && hasResponseCollector) {
       let charset = "";
       const httpChannel = channel.QueryInterface(Ci.nsIHttpChannel);
       if (httpChannel) {

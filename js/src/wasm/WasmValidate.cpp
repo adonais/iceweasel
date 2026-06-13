@@ -3219,27 +3219,27 @@ struct ExternType {
   DefinitionKind kind() const { return kind_; }
 
   uint32_t asFunc() const {
-    MOZ_ASSERT(kind_ == DefinitionKind::Function);
+    MOZ_RELEASE_ASSERT(kind_ == DefinitionKind::Function);
     return funcTypeIndex;
   }
 
   const TableType& asTable() const {
-    MOZ_ASSERT(kind_ == DefinitionKind::Table);
+    MOZ_RELEASE_ASSERT(kind_ == DefinitionKind::Table);
     return tableType;
   }
 
   const Limits& asMemory() const {
-    MOZ_ASSERT(kind_ == DefinitionKind::Memory);
+    MOZ_RELEASE_ASSERT(kind_ == DefinitionKind::Memory);
     return memType;
   }
 
   const GlobalType& asGlobal() const {
-    MOZ_ASSERT(kind_ == DefinitionKind::Global);
+    MOZ_RELEASE_ASSERT(kind_ == DefinitionKind::Global);
     return globalType;
   }
 
   uint32_t asTag() const {
-    MOZ_ASSERT(kind_ == DefinitionKind::Tag);
+    MOZ_RELEASE_ASSERT(kind_ == DefinitionKind::Tag);
     return tagFuncTypeIndex;
   }
 };
@@ -3571,6 +3571,53 @@ static bool CheckImportsAgainstBuiltinModules(Decoder& d,
           continue;
         }
         return d.fail("unrecognized builtin import");
+      }
+    }
+  }
+
+  return true;
+}
+
+// A standalone validation pass that occurs after we have finished decoding all
+// memories and therefore can determine if any imported builtin functions are
+// invalid due to lack of memory.
+static bool CheckBuiltinImportsHaveMemory(Decoder& d, CodeMetadata* codeMeta) {
+  // Skip this pass if there are no builtin modules enabled.
+  if (codeMeta->features().builtinModules.hasNone()) {
+#ifdef DEBUG
+    for (BuiltinModuleFuncId& id : codeMeta->knownFuncImports) {
+      MOZ_ASSERT(id == BuiltinModuleFuncId::None);
+    }
+#endif
+    return true;
+  }
+
+  for (size_t i = 0; i < codeMeta->knownFuncImports.length(); i++) {
+    BuiltinModuleFuncId builtinFuncId = codeMeta->knownFuncImports[i];
+    if (builtinFuncId == BuiltinModuleFuncId::None) {
+      continue;
+    }
+
+    const BuiltinModuleFunc& builtinModuleFunc =
+        BuiltinModuleFuncs::getFromId(builtinFuncId);
+    if (builtinModuleFunc.usesMemory()) {
+      if (codeMeta->memories.length() == 0) {
+        return d.failf("func %zu is a builtin function that requires a memory",
+                       i);
+      }
+
+      // NOTE(bvisness): As of today, no builtins use shared memory. If this
+      // changes in the future, you will need to update this to pick up the
+      // expected shared-ness from the associated builtin module. Unfortunately
+      // this is currently defined exclusively by which BuiltinMemory we
+      // construct in CompileBuiltinModule in WasmBuiltinModule.cpp, and there
+      // is no straightforward way to map from a BuiltinModuleFuncId to a
+      // BuiltinModuleId, much less to know what kind of memory it expects. It
+      // would be nice to have some kind of BuiltinModuleDesc that holistically
+      // describes what kind of module to construct and what functions it
+      // contains, but we are not building this today :)
+      if (codeMeta->memories[0].isShared()) {
+        return d.fail("builtin funcs are not compatible with shared memories");
       }
     }
   }
@@ -4356,6 +4403,10 @@ bool wasm::DecodeModuleEnvironment(Decoder& d, CodeMetadata* codeMeta,
   }
 
   if (!DecodeMemorySection(d, codeMeta)) {
+    return false;
+  }
+
+  if (!CheckBuiltinImportsHaveMemory(d, codeMeta)) {
     return false;
   }
 

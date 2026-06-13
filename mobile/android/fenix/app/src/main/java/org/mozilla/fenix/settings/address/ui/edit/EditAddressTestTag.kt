@@ -5,6 +5,7 @@
 package org.mozilla.fenix.settings.address.ui.edit
 
 internal object EditAddressTestTag {
+    const val FORM = "address.edit.form"
     const val NAME_FIELD = "address.edit.field.name"
     const val ORGANIZATION_FIELD = "address.edit.field.organization"
     const val STREET_ADDRESS_FIELD = "address.edit.field.street_address"

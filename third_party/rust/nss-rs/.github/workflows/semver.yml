@@ -1,0 +1,48 @@
+name: Check semver
+on:
+  pull_request:
+  merge_group:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  semver:
+    name: Check semver
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+          fetch-tags: true
+          sparse-checkout: min_version.txt
+          sparse-checkout-cone-mode: false
+
+      - name: Get latest tag
+        id: tag
+        run: |
+          TAG=$(git tag --sort=-version:refname | head -n 1)
+          if [ -z "$TAG" ]; then
+            echo "::error::No tags found; cannot determine semver baseline"
+            exit 1
+          fi
+          echo "ref=$TAG" >> "$GITHUB_OUTPUT"
+
+      - uses: mozilla/actions/nss@25cb84d060946c0ad6d2c3f79da479b16d180d71 # v1.1.0
+        with:
+          version-file: min_version.txt
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: mozilla/actions/semver@a832d8ca9b69e2c0f166d430a40d8d2affceb075 # v1.1.2
+        with:
+          base-ref: ${{ steps.tag.outputs.ref }}

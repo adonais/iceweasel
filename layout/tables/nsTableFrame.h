@@ -393,9 +393,6 @@ class nsTableFrame : public nsContainerFrame {
   nscoord GetRowSpacing();
 
  public:
-  nscoord SynthesizeFallbackBaseline(
-      mozilla::WritingMode aWM,
-      BaselineSharingGroup aBaselineGroup) const override;
   Maybe<nscoord> GetNaturalBaselineBOffset(
       mozilla::WritingMode aWM, BaselineSharingGroup aBaselineGroup,
       BaselineExportContext) const override;
@@ -706,7 +703,6 @@ class nsTableFrame : public nsContainerFrame {
  protected:
   void SetBorderCollapse(bool aValue);
 
-  mozilla::TableBCData* GetOrCreateTableBCData();
   void SetFullBCDamageArea();
   void CalcBCBorders();
 

@@ -36,7 +36,7 @@ bool ReadFloat32Array(T* aDestination, const Float32Array& aSource,
 };  // anonymous namespace
 
 VRMockDisplay::VRMockDisplay(VRServiceTest* aVRServiceTest)
-    : DOMEventTargetHelper(aVRServiceTest->GetOwnerGlobal()),
+    : DOMEventTargetHelper(aVRServiceTest->GetRelevantGlobal()),
       mVRServiceTest(aVRServiceTest) {}
 
 JSObject* VRMockDisplay::WrapObject(JSContext* aCx,
@@ -337,7 +337,7 @@ NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED_0(VRMockController,
 
 VRMockController::VRMockController(VRServiceTest* aVRServiceTest,
                                    uint32_t aControllerIdx)
-    : DOMEventTargetHelper(aVRServiceTest->GetOwnerGlobal()),
+    : DOMEventTargetHelper(aVRServiceTest->GetRelevantGlobal()),
       mVRServiceTest(aVRServiceTest),
       mControllerIdx(aControllerIdx) {
   MOZ_ASSERT(aControllerIdx < kVRControllerMaxCount);

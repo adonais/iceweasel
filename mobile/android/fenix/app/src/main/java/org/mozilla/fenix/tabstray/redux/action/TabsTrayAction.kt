@@ -77,21 +77,6 @@ sealed interface TabsTrayAction : Action {
     data class UpdateInactiveExpanded(val expanded: Boolean) : TabsTrayAction
 
     /**
-     * Updates the list of tabs in [org.mozilla.fenix.tabstray.redux.state.TabsTrayState.inactiveTabs].
-     */
-    data class UpdateInactiveTabs(val tabs: List<TabsTrayItem.Tab>) : TabsTrayAction
-
-    /**
-     * Updates the list of tabs in [org.mozilla.fenix.tabstray.redux.state.TabsTrayState.normalTabs].
-     */
-    data class UpdateNormalTabs(val tabs: List<TabsTrayItem>) : TabsTrayAction
-
-    /**
-     * Updates the list of tabs in [org.mozilla.fenix.tabstray.redux.state.TabsTrayState.privateTabs].
-     */
-    data class UpdatePrivateTabs(val tabs: List<TabsTrayItem>) : TabsTrayAction
-
-    /**
      * Updates the list of synced tabs in [org.mozilla.fenix.tabstray.redux.state.TabsTrayState.syncedTabs].
      */
     data class UpdateSyncedTabs(val tabs: List<SyncedTabsListItem>) : TabsTrayAction
@@ -171,4 +156,33 @@ sealed interface TabsTrayAction : Action {
      * [TabsTrayAction] fired when the user dismisses the inactive tabs auto-close dialog.
      */
     object DismissInactiveTabsAutoCloseDialog : TabsTrayAction
+
+    /**
+     * [TabsTrayAction] Fired when a reorder is requested from a TabsTray gesture.
+     *
+     * @property sourceId The id of the item being reordered
+     * @property destinationId The id of the reorder target
+     * @property placeAfter Whether to place the item before or after the target
+     */
+    data class ReorderTabsTrayItem(
+        val sourceId: String,
+        val destinationId: String?,
+        val placeAfter: Boolean,
+    ) : TabsTrayAction, TabsStorageAction
+
+    /**
+     * [TabsTrayAction] fired when a tab drag is started from the tabs tray.
+     *
+     * @property sourceId The id of the item being dragged.
+     * @property preserveSelectMode Whether select mode should be preserved on a drag.
+     */
+    data class TabDragStart(
+        val sourceId: String,
+        val preserveSelectMode: Boolean,
+    ) : TabsTrayAction
+
+    /**
+     * [TabsTrayAction] fired when a tab drag is cancelled from the tabs tray.
+     */
+    object TabDragCancel : TabsTrayAction
 }

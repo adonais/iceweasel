@@ -133,6 +133,14 @@ describe("SmartWindowRequestResponseTelemetry", () => {
           "model_response: latency is greater than 0"
         );
         Assert.ok(
+          /^\d+$/.test(responseEvents[0].extra.latency),
+          `model_response: latency is integer ms (got ${responseEvents[0].extra.latency})`
+        );
+        Assert.ok(
+          /^\d+$/.test(responseEvents[0].extra.duration),
+          `model_response: duration is integer ms (got ${responseEvents[0].extra.duration})`
+        );
+        Assert.ok(
           "chat_id" in responseEvents[0].extra,
           "model_response: chat_id exists"
         );
@@ -145,13 +153,15 @@ describe("SmartWindowRequestResponseTelemetry", () => {
           requestEvents[0].extra.request_id,
           "model_request and model_response share the same request_id"
         );
-        Assert.ok(
-          "error" in responseEvents[0].extra,
-          "model_response: error attribute exists"
+        Assert.equal(
+          responseEvents[0].extra.error,
+          "",
+          "model_response: error is empty on success"
         );
-        Assert.ok(
-          !responseEvents[0].extra.error,
-          "model_response: error is empty"
+        Assert.equal(
+          Number(responseEvents[0].extra.http_status),
+          0,
+          "model_response: http_status is 0 on success"
         );
       }
     );
@@ -496,14 +506,190 @@ describe("SmartWindowRequestResponseTelemetry", () => {
       "chat_id" in responseEvents[0].extra,
       "model_response: chat_id exists"
     );
-    Assert.ok(
-      "error" in responseEvents[0].extra,
-      "model_response: error attribute exists"
-    );
     Assert.equal(
       responseEvents[0].extra.error,
-      "Budget exceeded",
-      "model_response: error code is 1 which is budget exceeded"
+      "budgetExceeded",
+      "model_response: error is budgetExceeded"
+    );
+    Assert.equal(
+      Number(responseEvents[0].extra.http_status),
+      0,
+      "model_response: http_status is 0"
+    );
+  });
+
+  const ERROR_TELEMETRY_CASES = [
+    {
+      errorProps: { error: 5, status: 429 },
+      expectedName: "upstreamRateLimit",
+      expectedHttpStatus: 429,
+    },
+    {
+      errorProps: { error: 6, status: 429 },
+      expectedName: "fastlyWafRateLimit",
+      expectedHttpStatus: 429,
+    },
+    {
+      errorProps: { error: 4, status: 403 },
+      expectedName: "maxUsersReached",
+      expectedHttpStatus: 403,
+    },
+    {
+      errorProps: { clientReason: "fxaTokenUnavailable" },
+      expectedName: "fxaTokenUnavailable",
+      expectedHttpStatus: 0,
+    },
+    {
+      errorProps: { status: 401 },
+      expectedName: "serverError",
+      expectedHttpStatus: 401,
+    },
+    {
+      errorProps: { error: 99, status: 500 },
+      expectedName: "serverError",
+      expectedHttpStatus: 500,
+    },
+    {
+      errorProps: { status: 502 },
+      expectedName: "serverError",
+      expectedHttpStatus: 502,
+    },
+    {
+      errorProps: {},
+      expectedName: "Error",
+      expectedHttpStatus: 0,
+    },
+    {
+      errorProps: { name: "TypeError" },
+      expectedName: "TypeError",
+      expectedHttpStatus: 0,
+    },
+    {
+      errorProps: { name: "APIConnectionError" },
+      expectedName: "APIConnectionError",
+      expectedHttpStatus: 0,
+    },
+  ];
+
+  // Share one AI window across all error cases — a fresh window per case
+  // pushed the file past the per-task timeout in test-verify chaos mode.
+  it("records expected error name and http_status for build errors", async () => {
+    win = await openAIWindow();
+    const browser = win.gBrowser.selectedBrowser;
+
+    for (const {
+      errorProps,
+      expectedName,
+      expectedHttpStatus,
+    } of ERROR_TELEMETRY_CASES) {
+      info(`Error case: ${JSON.stringify(errorProps)} -> ${expectedName}`);
+      Services.fog.testResetFOG();
+
+      const error = new Error("test error");
+      Object.assign(error, errorProps);
+      const buildStub = sb.stub(openAIEngine, "build").rejects(error);
+
+      await typeInSmartbar(browser, "trigger error");
+      await submitSmartbar(browser);
+
+      await TestUtils.waitForCondition(
+        () => Glean.smartWindow.modelResponse.testGetValue()?.length > 0,
+        `Wait for model_response event for ${expectedName}`
+      );
+
+      const events = Glean.smartWindow.modelResponse.testGetValue();
+      Assert.equal(
+        events.length,
+        1,
+        `${expectedName}: one model_response event was recorded`
+      );
+      Assert.equal(
+        events[0].extra.error,
+        expectedName,
+        `${expectedName}: model_response.error matches`
+      );
+      Assert.equal(
+        Number(events[0].extra.http_status),
+        expectedHttpStatus,
+        `${expectedName}: model_response.http_status is ${expectedHttpStatus}`
+      );
+
+      buildStub.restore();
+    }
+  });
+
+  function makeFakeEngine({ runWithGenerator } = {}) {
+    return {
+      feature: "chat",
+      model: "custom-model",
+      loadPrompt: async () => "",
+      getConfig: () => ({}),
+      runWithGenerator: runWithGenerator ?? async function* () {},
+    };
+  }
+
+  it("records fxaTokenUnavailable when FxA token is missing", async () => {
+    sb.stub(openAIEngine, "build").resolves(makeFakeEngine());
+    sb.stub(openAIEngine, "getFxAccountToken").resolves(null);
+
+    win = await openAIWindow();
+    const browser = win.gBrowser.selectedBrowser;
+    await typeInSmartbar(browser, "trigger fxa error");
+    await submitSmartbar(browser);
+
+    await TestUtils.waitForCondition(
+      () => Glean.smartWindow.modelResponse.testGetValue()?.length > 0,
+      "Wait for model_response event with FxA error"
+    );
+
+    const events = Glean.smartWindow.modelResponse.testGetValue();
+    Assert.equal(events.length, 1, "One model_response event was recorded");
+    Assert.equal(
+      events[0].extra.error,
+      "fxaTokenUnavailable",
+      "model_response: error is fxaTokenUnavailable"
+    );
+    Assert.equal(
+      Number(events[0].extra.http_status),
+      0,
+      "model_response: http_status is 0"
+    );
+  });
+
+  it("records invalidPageContent and http_status 406 on streaming 406", async () => {
+    sb.stub(openAIEngine, "build").resolves(
+      makeFakeEngine({
+        // eslint-disable-next-line require-yield
+        async *runWithGenerator() {
+          const err = new Error("test 406 from upstream");
+          err.status = 406;
+          throw err;
+        },
+      })
+    );
+    sb.stub(openAIEngine, "getFxAccountToken").resolves("mock-fxa-token");
+
+    win = await openAIWindow();
+    const browser = win.gBrowser.selectedBrowser;
+    await typeInSmartbar(browser, "trigger 406");
+    await submitSmartbar(browser);
+
+    await TestUtils.waitForCondition(
+      () => Glean.smartWindow.modelResponse.testGetValue()?.length > 0,
+      "Wait for model_response event with 406 error"
+    );
+
+    const events = Glean.smartWindow.modelResponse.testGetValue();
+    Assert.equal(events.length, 1, "One model_response event was recorded");
+    Assert.equal(
+      events[0].extra.error,
+      "invalidPageContent",
+      "model_response: error is invalidPageContent"
+    );
+    Assert.equal(
+      Number(events[0].extra.http_status),
+      406,
+      "model_response: http_status is 406"
     );
   });
 });

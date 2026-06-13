@@ -56,8 +56,8 @@ Atomic<int32_t> Image::sSerialCounter(0);
 Atomic<uint32_t> ImageContainer::sGenerationCounter(0);
 
 static void CopyPlane(uint8_t* aDst, const uint8_t* aSrc,
-                      const gfx::IntSize& aSize, int32_t aStride,
-                      int32_t aSkip);
+                      const gfx::IntSize& aSize, int32_t aStride, int32_t aSkip,
+                      int32_t aBytesPerElement = 1);
 
 RefPtr<PlanarYCbCrImage> ImageFactory::CreatePlanarYCbCrImage(
     const gfx::IntSize& aScaleHint, BufferRecycleBin* aRecycleBin) {
@@ -645,7 +645,7 @@ ImageContainer::GetMacIOSurfaceRecycleAllocator() {
 #endif
 
 // -
-// https://searchfox.org/mozilla-central/source/dom/media/ipc/RemoteImageHolder.cpp#46
+// https://searchfox.org/firefox-main/source/dom/media/ipc/RemoteImageHolder.cpp#46
 
 Maybe<PlanarYCbCrData> PlanarYCbCrData::From(
     const SurfaceDescriptorBuffer& sdb) {
@@ -847,7 +847,7 @@ nsresult PlanarYCbCrImage::BuildSurfaceDescriptorBuffer(
       pdata->mPictureRect, ySize, pdata->mYStride, cbcrSize, pdata->mCbCrStride,
       yOffset, cbOffset, crOffset, pdata->mStereoMode, pdata->mColorDepth,
       pdata->mYUVColorSpace, pdata->mColorRange, pdata->mTransferFunction,
-      pdata->mChromaSubsampling);
+      pdata->mChromaSubsampling, pdata->mHDRMetadata);
 
   CopyPlane(buffer + yOffset, pdata->mYChannel, ySize, pdata->mYStride,
             pdata->mYSkip);
@@ -887,12 +887,13 @@ UniquePtr<uint8_t[]> RecyclingPlanarYCbCrImage::AllocateBuffer(uint32_t aSize) {
 }
 
 static void CopyPlane(uint8_t* aDst, const uint8_t* aSrc,
-                      const gfx::IntSize& aSize, int32_t aStride,
-                      int32_t aSkip) {
+                      const gfx::IntSize& aSize, int32_t aStride, int32_t aSkip,
+                      int32_t aBytesPerElement) {
   int32_t height = aSize.height;
   int32_t width = aSize.width;
+  const int32_t rowBytes = width * aBytesPerElement;
 
-  MOZ_RELEASE_ASSERT(width <= aStride);
+  MOZ_RELEASE_ASSERT(rowBytes <= aStride);
 
   if (!aSkip) {
     // Fast path: planar input.
@@ -903,9 +904,14 @@ static void CopyPlane(uint8_t* aDst, const uint8_t* aSrc,
       uint8_t* dst = aDst;
       // Slow path
       for (int x = 0; x < width; ++x) {
-        *dst++ = *src++;
-        src += aSkip;
+        for (int b = 0; b < aBytesPerElement; ++b) {
+          *dst++ = *src++;
+        }
+        src += aSkip * aBytesPerElement;
       }
+      // Trailing stride bytes are not pixel data; zero them so
+      // VideoFrame.copyTo() does not expose stale buffer contents to JS.
+      memset(dst, 0, aStride - rowBytes);
       aSrc += aStride;
       aDst += aStride;
     }
@@ -939,12 +945,15 @@ nsresult RecyclingPlanarYCbCrImage::CopyData(const Data& aData) {
   mData.mCrChannel = mData.mCbChannel + mData.mCbCrStride * cbcrSize.height;
   mData.mYSkip = mData.mCbSkip = mData.mCrSkip = 0;
 
+  const int32_t bytesPerSample =
+      aData.mColorDepth == gfx::ColorDepth::COLOR_8 ? 1 : 2;
+
   CopyPlane(mData.mYChannel, aData.mYChannel, ySize, aData.mYStride,
             aData.mYSkip);
   CopyPlane(mData.mCbChannel, aData.mCbChannel, cbcrSize, aData.mCbCrStride,
-            aData.mCbSkip);
+            aData.mCbSkip, bytesPerSample);
   CopyPlane(mData.mCrChannel, aData.mCrChannel, cbcrSize, aData.mCbCrStride,
-            aData.mCrSkip);
+            aData.mCrSkip, bytesPerSample);
   if (aData.mAlpha) {
     MOZ_ASSERT(mData.mAlpha);
     mData.mAlpha->mChannel =

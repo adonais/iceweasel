@@ -5,8 +5,8 @@
 #include "jit/mips-shared/Architecture-mips-shared.h"
 
 #include "jit/FlushICache.h"  // js::jit::FlushICache
-#include "jit/mips64/Simulator-mips64.h"
 #include "jit/RegisterSets.h"
+#include "jit/Simulator.h"
 
 #if defined(__linux__)
 #  include <fcntl.h>

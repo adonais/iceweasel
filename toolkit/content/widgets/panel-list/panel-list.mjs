@@ -689,7 +689,7 @@ export class PanelItem extends HTMLElement {
   #badge;
 
   static get observedAttributes() {
-    return ["accesskey", "type", "disabled", "badge-type"];
+    return ["accesskey", "type", "disabled", "badge-type", "aria-haspopup"];
   }
 
   constructor() {
@@ -835,7 +835,11 @@ export class PanelItem extends HTMLElement {
       } else {
         this._accessKey = null;
       }
-    } else if (name === "type" || name === "disabled") {
+    } else if (
+      name === "type" ||
+      name === "disabled" ||
+      name === "aria-haspopup"
+    ) {
       this.#setButtonAttributes();
     } else if (name === "badge-type") {
       this.#updateBadge();
@@ -851,6 +855,14 @@ export class PanelItem extends HTMLElement {
       this.button.removeAttribute("aria-checked");
     }
     this.button.toggleAttribute("disabled", this.disabled);
+    if (this.hasAttribute("aria-haspopup")) {
+      this.button.setAttribute(
+        "aria-haspopup",
+        this.getAttribute("aria-haspopup")
+      );
+    } else {
+      this.button.removeAttribute("aria-haspopup");
+    }
   }
 
   #updateBadge() {
@@ -908,6 +920,10 @@ export class PanelItem extends HTMLElement {
 
   set type(val) {
     this.setAttribute("type", val);
+  }
+
+  click() {
+    this.button.click();
   }
 
   focus() {

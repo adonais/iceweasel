@@ -7,7 +7,9 @@ import {
   kTextureDimensions,
   kTextureUsages,
   isValidTextureUsageCombination,
-  kValidCombinationsOfOneOrTwoTextureUsages } from
+  kValidCombinationsOfOneOrTwoTextureUsages,
+  kAllTextureUsages,
+  kSomeBogusTextureUsage } from
 '../../capability_info.js';
 import { GPUConst } from '../../constants.js';
 import {
@@ -358,7 +360,7 @@ fn((t) => {
   if ((usage & GPUConst.TextureUsage.RENDER_ATTACHMENT) !== 0) {
     t.skipIfTextureFormatNotUsableAsRenderAttachment(format);
   }
-  // MAINTENANCE_TODO(#4509): Remove this when TRANSIENT_ATTACHMENT is added to the WebGPU spec.
+  // MAINTENANCE_TODO(#4509): Remove this after all implementations have TRANSIENT_ATTACHMENT.
   if ((usage & GPUConst.TextureUsage.TRANSIENT_ATTACHMENT) !== 0) {
     t.skipIfTransientAttachmentNotSupported();
   }
@@ -1035,7 +1037,7 @@ fn((t) => {
     usage
   };
 
-  // MAINTENANCE_TODO(#4509): Remove this when TRANSIENT_ATTACHMENT is added to the WebGPU spec.
+  // MAINTENANCE_TODO(#4509): Remove this after all implementations have TRANSIENT_ATTACHMENT.
   if ((usage & GPUConst.TextureUsage.TRANSIENT_ATTACHMENT) !== 0) {
     t.skipIfTransientAttachmentNotSupported();
   }
@@ -1075,7 +1077,7 @@ combine('depthOrArrayLayers', [1, 2]).
 combine('mipLevelCount', [1, 2])
 ).
 fn((t) => {
-  // MAINTENANCE_TODO(#4509): Remove this when TRANSIENT_ATTACHMENT is added to the WebGPU spec.
+  // MAINTENANCE_TODO(#4509): Remove this after all implementations have TRANSIENT_ATTACHMENT.
   t.skipIfTransientAttachmentNotSupported();
 
   const { format, depthOrArrayLayers, mipLevelCount } = t.params;
@@ -1096,6 +1098,67 @@ fn((t) => {
   t.expectValidationError(() => {
     t.createTextureTracked(descriptor);
   }, !success);
+});
+
+g.test('usage').
+desc('Test combinations of zero to two usage flags are validated to be valid.').
+params((u) =>
+u.
+combine('usage1', [0, ...kTextureUsages, kSomeBogusTextureUsage]).
+combine('usage2', [0, ...kTextureUsages, kSomeBogusTextureUsage]).
+filter((p) => p.usage1 <= p.usage2)
+).
+fn((t) => {
+  const { usage1, usage2 } = t.params;
+  const usage = usage1 | usage2;
+
+  // MAINTENANCE_TODO(#4509): Remove this after all implementations have TRANSIENT_ATTACHMENT.
+  if ((usage & GPUConst.TextureUsage.TRANSIENT_ATTACHMENT) !== 0) {
+    t.skipIfTransientAttachmentNotSupported();
+  }
+
+  const isValid =
+  usage !== 0 &&
+  (usage & ~kAllTextureUsages) === 0 && (
+  (usage & GPUTextureUsage.TRANSIENT_ATTACHMENT) === 0 ||
+  usage === (GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TRANSIENT_ATTACHMENT));
+
+  t.expectGPUError(
+    'validation',
+    () => {
+      t.createTextureTracked({ format: 'rgba8unorm', size: [1, 1], usage });
+    },
+    !isValid
+  );
+});
+
+g.test('new_usages').
+desc(`Valid usages not present in GPUTextureUsage shouldn't be accepted by createTexture().`).
+params((u) =>
+u.
+combine('usage', [
+...kTextureUsages,
+GPUConst.TextureUsage.RENDER_ATTACHMENT | GPUConst.TextureUsage.TRANSIENT_ATTACHMENT]
+).
+filter((p) => isValidTextureUsageCombination(p.usage))
+).
+fn((t) => {
+  const { usage } = t.params;
+
+  let exposedUsages = 0;
+  for (const v of Object.values(GPUTextureUsage)) {
+    exposedUsages |= v;
+  }
+
+  const success = (usage & exposedUsages) === usage;
+
+  t.expectGPUError(
+    'validation',
+    () => {
+      t.createTextureTracked({ format: 'rgba8unorm', size: [1, 1], usage });
+    },
+    !success
+  );
 });
 
 g.test('viewFormats').

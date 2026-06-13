@@ -60,9 +60,10 @@ sealed class MatchStatus {
      *
      * @property period Period description string ("1", "2", "Extra", etc.)
      * @property clock Minutes of elapsed play time, with extra time denoted as a "+"
-     * (e.g. "42", "90+3" (indicating 3 minutes extra time)).
+     * (e.g. "42", "90+3" (indicating 3 minutes extra time)). Null when the feed omits it.
+     * @property isHalftime True when play is paused for halftime (feed detail status "Break").
      */
-    data class Live(val period: String, val clock: String) : MatchStatus()
+    data class Live(val period: String, val clock: String?, val isHalftime: Boolean = false) : MatchStatus()
 
     /**
      * Match is in a penalty shootout.
@@ -102,6 +103,13 @@ internal fun MatchStatus.isLive(): Boolean =
  */
 internal fun MatchStatus.isPast(): Boolean =
     this is MatchStatus.Final || this is MatchStatus.FinalAfterPenalties
+
+/**
+ * True when this period description denotes extra time — the feed uses both "ET" and
+ * "Extra" (case-insensitively), so match either form.
+ */
+internal val String.isExtraTime: Boolean
+    get() = contains("ET", ignoreCase = true) || contains("Extra", ignoreCase = true)
 
 /**
  * Information related to a given sport event (game/match).

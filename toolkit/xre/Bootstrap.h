@@ -59,11 +59,11 @@ struct BootstrapConfig {
  */
 class Bootstrap {
  protected:
-  Bootstrap() {}
+  Bootstrap() = default;
 
   // Because of allocator mismatches, code outside libxul shouldn't delete a
   // Bootstrap instance. Use Dispose().
-  virtual ~Bootstrap() {}
+  virtual ~Bootstrap() = default;
 
   /**
    * Destroy and deallocate this Bootstrap instance.
@@ -75,7 +75,7 @@ class Bootstrap {
    */
   class BootstrapDelete {
    public:
-    constexpr BootstrapDelete() {}
+    constexpr BootstrapDelete() = default;
     void operator()(Bootstrap* aPtr) const { aPtr->Dispose(); }
   };
 

@@ -47,7 +47,6 @@ import mozilla.components.support.utils.ClipboardHandler
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -92,6 +91,7 @@ import org.mozilla.fenix.search.fixtures.buildExpectedSearchSelector
 import org.mozilla.fenix.settings.ShortcutType
 import org.mozilla.fenix.tabstray.redux.state.Page
 import org.mozilla.fenix.utils.Settings
+import kotlin.test.assertNotNull
 import mozilla.components.ui.icons.R as iconsR
 import mozilla.components.ui.tabcounter.R as tabcounterR
 
@@ -112,8 +112,7 @@ class BrowserToolbarMiddlewareTest {
         appStore = spyk(AppStore())
         every { testContext.settings().shouldUseExpandedToolbar } returns false
         every { testContext.settings().isTabStripEnabled } returns false
-        every { testContext.settings().shouldShowToolbarCustomization } returns false
-        every { testContext.settings().toolbarExpandedShortcut } returns ShortcutType.BOOKMARK.value
+        every { testContext.settings().toolbarExpandedShortcutKey } returns ShortcutType.BOOKMARK.value
     }
 
     @Test
@@ -808,9 +807,8 @@ class BrowserToolbarMiddlewareTest {
 
     @Test
     fun `GIVEN expanded toolbar use translate shortcut WHEN initializing toolbar THEN show DISABLED Translate in navigation actions`() = runTest {
-        every { testContext.settings().shouldShowToolbarCustomization } returns true
         every { testContext.settings().shouldUseExpandedToolbar } returns true
-        every { testContext.settings().toolbarExpandedShortcut } returns ShortcutType.TRANSLATE.value
+        every { testContext.settings().toolbarExpandedShortcutKey } returns ShortcutType.TRANSLATE.value
 
         val (_, toolbarStore) = buildMiddlewareAndAddToStore()
 
@@ -820,9 +818,8 @@ class BrowserToolbarMiddlewareTest {
 
     @Test
     fun `GIVEN expanded toolbar use homepage shortcut WHEN initializing toolbar THEN show DISABLED Homepage in navigation actions`() = runTest {
-        every { testContext.settings().shouldShowToolbarCustomization } returns true
         every { testContext.settings().shouldUseExpandedToolbar } returns true
-        every { testContext.settings().toolbarExpandedShortcut } returns ShortcutType.HOMEPAGE.value
+        every { testContext.settings().toolbarExpandedShortcutKey } returns ShortcutType.HOMEPAGE.value
 
         val (_, toolbarStore) = buildMiddlewareAndAddToStore()
 
@@ -832,9 +829,8 @@ class BrowserToolbarMiddlewareTest {
 
     @Test
     fun `GIVEN expanded toolbar use back shortcut WHEN initializing toolbar THEN show DISABLED Back in navigation actions`() = runTest {
-        every { testContext.settings().shouldShowToolbarCustomization } returns true
         every { testContext.settings().shouldUseExpandedToolbar } returns true
-        every { testContext.settings().toolbarExpandedShortcut } returns ShortcutType.BACK.value
+        every { testContext.settings().toolbarExpandedShortcutKey } returns ShortcutType.BACK.value
 
         val (_, toolbarStore) = buildMiddlewareAndAddToStore()
 

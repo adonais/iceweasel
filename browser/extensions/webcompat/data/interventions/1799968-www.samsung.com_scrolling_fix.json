@@ -10,7 +10,7 @@
     {
       "platforms": ["linux"],
       "content_scripts": {
-        "js": ["bug1799968-www.samsung.com-appVersion-linux-fix.js"]
+        "js": ["use_linux_appVersion.js"]
       }
     }
   ]

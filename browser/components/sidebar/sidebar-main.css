@@ -50,6 +50,15 @@
   margin-inline: var(--tab-inner-inline-margin);
   margin-block-end: var(--space-small);
   min-height: 2px;
+  /* stylelint-disable-next-line media-query-no-invalid */
+  @media -moz-pref("browser.nova.enabled") {
+    min-height: 4px;
+  }
+
+  /* stylelint-disable-next-line media-query-no-invalid */
+  @media -moz-pref("browser.nova.enabled") {
+    min-height: 4px;
+  }
 
   &:hover {
     background-color: var(--focus-outline-color);
@@ -95,7 +104,7 @@
 
   moz-button:not([type~="ghost"]):not(:hover) {
     &::part(button) {
-      background-color: var(--toolbarbutton-active-background);
+      background-color: var(--toolbarbutton-background-color-active);
     }
   }
 
@@ -118,6 +127,11 @@
     gap: var(--space-xxsmall);
     padding-inline: var(--space-medium);
     padding-block-end: var(--space-small);
+
+    /* stylelint-disable-next-line media-query-no-invalid */
+    @media -moz-pref("browser.nova.enabled") {
+      gap: 12.5px;
+    }
 
     /* stylelint-disable-next-line media-query-no-invalid */
     @media -moz-pref("sidebar.visibility", "expand-on-hover") {

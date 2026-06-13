@@ -25,6 +25,8 @@ class xpcAccessibleTextRange final : public nsIAccessibleTextRange {
  public:
   explicit xpcAccessibleTextRange(TextRange& aRange) { SetRange(aRange); }
 
+  xpcAccessibleTextRange& operator=(const xpcAccessibleTextRange&) = delete;
+
   NS_DECL_ISUPPORTS
 
   NS_IMETHOD GetStartContainer(nsIAccessibleText** aAnchor) final;
@@ -42,13 +44,10 @@ class xpcAccessibleTextRange final : public nsIAccessibleTextRange {
   NS_INLINE_DECL_STATIC_IID(NS_ACCESSIBLETEXTRANGE_IMPL_IID)
 
  private:
-  xpcAccessibleTextRange() {}
-
-  ~xpcAccessibleTextRange() {}
+  xpcAccessibleTextRange() = default;
+  ~xpcAccessibleTextRange() = default;
 
   friend class xpcAccessibleHyperText;
-
-  xpcAccessibleTextRange& operator=(const xpcAccessibleTextRange&) = delete;
 
   void SetRange(TextRange& aRange);
 

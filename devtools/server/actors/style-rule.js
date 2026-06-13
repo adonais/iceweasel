@@ -284,7 +284,7 @@ class StyleRuleActor extends Actor {
         // Element style attributes don't have a rule index; use the generated selector.
         index: data.selector,
         // Whether the element lives in a different frame than the host document.
-        isFramed: this.rawNode.ownerGlobal !== this.pageStyle.ownerWindow,
+        isFramed: this.rawNode.documentGlobal !== this.pageStyle.ownerWindow,
       };
 
       const nodeActor = this.pageStyle.walker.getNode(this.rawNode);
@@ -364,7 +364,7 @@ class StyleRuleActor extends Actor {
     if (selectedElement.nodeName !== nodeName) {
       const walker = new DocumentWalker(
         selectedElement,
-        selectedElement.ownerGlobal
+        selectedElement.documentGlobal
       );
 
       for (let next = walker.firstChild(); next; next = walker.nextSibling()) {
@@ -385,7 +385,7 @@ class StyleRuleActor extends Actor {
 
     const { selectedElement } = this.pageStyle;
 
-    return selectedElement.ownerGlobal.getComputedStyle(
+    return selectedElement.documentGlobal.getComputedStyle(
       selectedElement,
       // If we are selecting the pseudo element parent, we need to pass the pseudo element
       // to getComputedStyle to actually get the computed style of the pseudo element.

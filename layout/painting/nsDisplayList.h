@@ -1590,37 +1590,6 @@ class nsDisplayListBuilder {
     return mCurrentContainerASR;
   }
 
-  /**
-   * Add the current frame to the will-change budget if possible and
-   * remeber the outcome. Subsequent calls to IsInWillChangeBudget
-   * will return the same value as return here.
-   */
-  bool AddToWillChangeBudget(nsIFrame* aFrame, const nsSize& aSize);
-
-  /**
-   * This will add the current frame to the will-change budget the first
-   * time it is seen. On subsequent calls this will return the same
-   * answer. This effectively implements a first-come, first-served
-   * allocation of the will-change budget.
-   */
-  bool IsInWillChangeBudget(nsIFrame* aFrame, const nsSize& aSize);
-
-  /**
-   * Clears the will-change budget status for the given |aFrame|.
-   * This will also remove the frame from will-change budgets.
-   */
-  void ClearWillChangeBudgetStatus(nsIFrame* aFrame);
-
-  /**
-   * Removes the given |aFrame| from will-change budgets.
-   */
-  void RemoveFromWillChangeBudgets(const nsIFrame* aFrame);
-
-  /**
-   * Clears the will-change budgets.
-   */
-  void ClearWillChangeBudgets();
-
   void EnterSVGEffectsContents(nsIFrame* aEffectsFrame,
                                nsDisplayList* aHoistedItemsStorage);
   void ExitSVGEffectsContents();
@@ -1870,19 +1839,6 @@ class nsDisplayListBuilder {
 
   void AddSizeOfExcludingThis(nsWindowSizes&) const;
 
-  struct FrameWillChangeBudget {
-    FrameWillChangeBudget() : mPresContext(nullptr), mUsage(0) {}
-
-    FrameWillChangeBudget(const nsPresContext* aPresContext, uint32_t aUsage)
-        : mPresContext(aPresContext), mUsage(aUsage) {}
-
-    const nsPresContext* mPresContext;
-    uint32_t mUsage;
-  };
-
-  // will-change budget tracker
-  typedef uint32_t DocumentWillChangeBudget;
-
   nsIFrame* const mReferenceFrame;
   nsIFrame* mIgnoreScrollFrame;
 
@@ -1923,14 +1879,6 @@ class nsDisplayListBuilder {
                    nsTArray<nsIWidget::ThemeGeometry>>
       mThemeGeometries;
   DisplayListClipState mClipState;
-  nsTHashMap<nsPtrHashKey<const nsPresContext>, DocumentWillChangeBudget>
-      mDocumentWillChangeBudgets;
-
-  // Any frame listed in this set is already counted in the budget
-  // and thus is in-budget.
-  nsTHashMap<nsPtrHashKey<const nsIFrame>, FrameWillChangeBudget>
-      mFrameWillChangeBudgets;
-
   nsTHashSet<nsCString> mDestinations;  // Destination names emitted.
 
   // Stores reusable items collected during display list preprocessing.
@@ -2808,12 +2756,8 @@ class nsDisplayItem {
     return nsRect();
   }
 
-  /**
-   * Check if we can add async animations to the layer for this display item.
-   */
-  virtual bool CanUseAsyncAnimations(nsDisplayListBuilder* aBuilder) {
-    return false;
-  }
+  // Check if we can add async animations to the layer for this display item.
+  virtual bool CanUseAsyncAnimations() { return false; }
 
   virtual bool SupportsOptimizingToImage() const { return false; }
 
@@ -4631,7 +4575,7 @@ class nsDisplayBackgroundColor : public nsPaintedDisplayItem {
 
   void WriteDebugInfo(std::stringstream& aStream) override;
 
-  bool CanUseAsyncAnimations(nsDisplayListBuilder* aBuilder) override;
+  bool CanUseAsyncAnimations() override;
 
  protected:
   const nsRect mBackgroundRect;
@@ -4669,9 +4613,7 @@ class nsDisplayTableBackgroundColor final : public nsDisplayBackgroundColor {
     nsDisplayBackgroundColor::RemoveFrame(aFrame);
   }
 
-  bool CanUseAsyncAnimations(nsDisplayListBuilder* aBuilder) override {
-    return false;
-  }
+  bool CanUseAsyncAnimations() override { return false; }
 
  protected:
   nsIFrame* mAncestorFrame;
@@ -5259,10 +5201,11 @@ class nsDisplayOpacity final : public nsDisplayWrapList {
     return mChildOpacityState == ChildOpacityState::Applied;
   }
 
-  static bool NeedsActiveLayer(nsDisplayListBuilder* aBuilder,
-                               nsIFrame* aFrame);
+  static bool NeedsActiveLayer(nsIFrame* aFrame);
+  bool NeedsActiveLayer() const { return mNeedsActiveLayer; }
+
   void WriteDebugInfo(std::stringstream& aStream) override;
-  bool CanUseAsyncAnimations(nsDisplayListBuilder* aBuilder) override;
+  bool CanUseAsyncAnimations() override;
   bool CreateWebRenderCommands(
       wr::DisplayListBuilder& aBuilder, wr::IpcResourceUpdateQueue& aResources,
       const StackingContextHelper& aSc,
@@ -6564,7 +6507,7 @@ class nsDisplayTransform final : public nsPaintedDisplayItem {
   static PrerenderInfo ShouldPrerenderTransformedContent(
       nsDisplayListBuilder* aBuilder, nsIFrame* aFrame, nsRect* aDirtyRect);
 
-  bool CanUseAsyncAnimations(nsDisplayListBuilder* aBuilder) override;
+  bool CanUseAsyncAnimations() override;
 
   bool MayBeAnimated(nsDisplayListBuilder* aBuilder) const;
 

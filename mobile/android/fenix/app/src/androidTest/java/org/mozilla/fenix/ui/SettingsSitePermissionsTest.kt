@@ -4,15 +4,12 @@
 
 package org.mozilla.fenix.ui
 
-import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import androidx.core.net.toUri
 import androidx.test.espresso.Espresso.pressBack
 import androidx.test.filters.SdkSuppress
 import mozilla.components.concept.engine.mediasession.MediaSession
 import org.junit.Rule
 import org.junit.Test
-import org.mozilla.fenix.HomeActivity
-import org.mozilla.fenix.customannotations.SkipLeaks
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.AppAndSystemHelper.grantSystemPermission
 import org.mozilla.fenix.helpers.FenixTestRule
@@ -29,6 +26,7 @@ import org.mozilla.fenix.ui.robots.browserScreen
 import org.mozilla.fenix.ui.robots.clickPageObject
 import org.mozilla.fenix.ui.robots.homeScreen
 import org.mozilla.fenix.ui.robots.navigationToolbar
+import androidx.compose.ui.test.junit4.v2.AndroidComposeTestRule as AndroidComposeTestRuleV2
 
 /**
  *  Tests for verifying
@@ -37,25 +35,9 @@ import org.mozilla.fenix.ui.robots.navigationToolbar
  *
  */
 class SettingsSitePermissionsTest {
-    @get:Rule(order = 0)
-    val retryTestRule = RetryTestRule(3)
-
     // Test page created and handled by the Mozilla mobile test-eng team
-    @get:Rule(order = 1)
+    @get:Rule(order = 0)
     val fenixTestRule: FenixTestRule = FenixTestRule()
-
-    @get:Rule(order = 2)
-    val retryableComposeTestRule = RetryableComposeTestRule<HomeActivity, HomeActivityTestRule> {
-        AndroidComposeTestRule(
-            HomeActivityTestRule(
-                isPWAsPromptEnabled = false,
-                isDeleteSitePermissionsEnabled = true,
-            ),
-        ) { it.activity }
-    }
-
-    @get:Rule(order = 3)
-    val memoryLeaksRule = DetectMemoryLeaksRule()
 
     private val mockWebServer get() = fenixTestRule.mockWebServer
 
@@ -65,10 +47,28 @@ class SettingsSitePermissionsTest {
     private val permissionsTestPageOrigin = "https://mozilla-mobile.github.io"
     private val permissionsTestPageHost = "mozilla-mobile.github.io"
 
+    @get:Rule(order = 1)
+    val retryTestRule = RetryTestRule(3)
+
+    @get:Rule(order = 2)
+    val retryableComposeTestRule = RetryableComposeTestRule {
+        AndroidComposeTestRuleV2(
+            HomeActivityTestRule(
+                isPWAsPromptEnabled = false,
+                isDeleteSitePermissionsEnabled = true,
+            ),
+        ) { it.activity }
+    }
+
+    private val composeTestRule get() = retryableComposeTestRule.current
+
+    @get:Rule(order = 3)
+    val memoryLeaksRule = DetectMemoryLeaksRule(composeTestRule = { composeTestRule })
+
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/246974
     @Test
     fun sitePermissionsItemsTest() {
-        homeScreen(retryableComposeTestRule.current) {
+        homeScreen(composeTestRule) {
         }.openThreeDotMenu {
         }.clickSettingsButton {
         }.openSettingsSubMenuSiteSettings {
@@ -96,7 +96,7 @@ class SettingsSitePermissionsTest {
     @Test
     @SdkSuppress(minSdkVersion = 29)
     fun systemBlockedPermissionsRedirectToSystemAppSettingsTest() {
-        homeScreen(retryableComposeTestRule.current) {
+        homeScreen(composeTestRule) {
         }.openThreeDotMenu {
         }.clickSettingsButton {
         }.openSettingsSubMenuSiteSettings {
@@ -137,7 +137,7 @@ class SettingsSitePermissionsTest {
         val genericPage = mockWebServer.getGenericAsset(1)
         val videoTestPage = mockWebServer.videoPageAsset
 
-        homeScreen(retryableComposeTestRule.current) {
+        homeScreen(composeTestRule) {
         }.openThreeDotMenu {
         }.clickSettingsButton {
         }.openSettingsSubMenuSiteSettings {
@@ -145,22 +145,22 @@ class SettingsSitePermissionsTest {
             verifySitePermissionsAutoPlaySubMenuItems()
             exitMenu()
         }
-        navigationToolbar(retryableComposeTestRule.current) {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(genericPage.url) {
             verifyPageContent(genericPage.content)
         }
-        navigationToolbar(retryableComposeTestRule.current) {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(videoTestPage.url) {
             try {
                 verifyPageContent(videoTestPage.content)
-                clickPageObject(retryableComposeTestRule.current, itemWithText("Play"))
+                clickPageObject(composeTestRule, itemWithText("Play"))
                 assertPlaybackState(browserStore, MediaSession.PlaybackState.PLAYING)
             } catch (e: AssertionError) {
-                browserScreen(retryableComposeTestRule.current) {
+                browserScreen(composeTestRule) {
                 }.openThreeDotMenu {
                 }.clickRefreshButton {
                     verifyPageContent(videoTestPage.content)
-                    clickPageObject(retryableComposeTestRule.current, itemWithText("Play"))
+                    clickPageObject(composeTestRule, itemWithText("Play"))
                     assertPlaybackState(browserStore, MediaSession.PlaybackState.PLAYING)
                 }
             }
@@ -174,16 +174,16 @@ class SettingsSitePermissionsTest {
         val genericPage = mockWebServer.getGenericAsset(1)
         val mutedVideoTestPage = mockWebServer.mutedVideoPageAsset
 
-        navigationToolbar(retryableComposeTestRule.current) {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(genericPage.url) {
             verifyPageContent(genericPage.content)
         }
-        navigationToolbar(retryableComposeTestRule.current) {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(mutedVideoTestPage.url) {
             try {
                 verifyPageContent("Media file is playing")
             } catch (e: AssertionError) {
-                browserScreen(retryableComposeTestRule.current) {
+                browserScreen(composeTestRule) {
                 }.openThreeDotMenu {
                 }.clickRefreshButton {
                     verifyPageContent("Media file is playing")
@@ -194,12 +194,11 @@ class SettingsSitePermissionsTest {
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2095124
     @Test
-    @SkipLeaks
     fun verifyAutoplayAllowAudioVideoSettingOnNotMutedVideoTestTest() {
         val genericPage = mockWebServer.getGenericAsset(1)
         val videoTestPage = mockWebServer.videoPageAsset
 
-        homeScreen(retryableComposeTestRule.current) {
+        homeScreen(composeTestRule) {
         }.openThreeDotMenu {
         }.clickSettingsButton {
         }.openSettingsSubMenuSiteSettings {
@@ -207,17 +206,17 @@ class SettingsSitePermissionsTest {
             selectAutoplayOption("Allow audio and video")
             exitMenu()
         }
-        navigationToolbar(retryableComposeTestRule.current) {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(genericPage.url) {
             verifyPageContent(genericPage.content)
         }
-        navigationToolbar(retryableComposeTestRule.current) {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(videoTestPage.url) {
             try {
                 verifyPageContent(videoTestPage.content)
                 assertPlaybackState(browserStore, MediaSession.PlaybackState.PLAYING)
             } catch (e: AssertionError) {
-                browserScreen(retryableComposeTestRule.current) {
+                browserScreen(composeTestRule) {
                 }.openThreeDotMenu {
                 }.clickRefreshButton {
                     verifyPageContent(videoTestPage.content)
@@ -232,7 +231,7 @@ class SettingsSitePermissionsTest {
     fun verifyAutoplayAllowAudioVideoSettingOnMutedVideoTest() {
         val mutedVideoTestPage = mockWebServer.mutedVideoPageAsset
 
-        homeScreen(retryableComposeTestRule.current) {
+        homeScreen(composeTestRule) {
         }.openThreeDotMenu {
         }.clickSettingsButton {
         }.openSettingsSubMenuSiteSettings {
@@ -240,12 +239,12 @@ class SettingsSitePermissionsTest {
             selectAutoplayOption("Allow audio and video")
             exitMenu()
         }
-        navigationToolbar(retryableComposeTestRule.current) {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(mutedVideoTestPage.url) {
             try {
                 verifyPageContent("Media file is playing")
             } catch (e: AssertionError) {
-                browserScreen(retryableComposeTestRule.current) {
+                browserScreen(composeTestRule) {
                 }.openThreeDotMenu {
                 }.clickRefreshButton {
                     verifyPageContent("Media file is playing")
@@ -256,11 +255,10 @@ class SettingsSitePermissionsTest {
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2095126
     @Test
-    @SkipLeaks
     fun verifyAutoplayBlockAudioAndVideoSettingOnNotMutedVideoTest() {
         val videoTestPage = mockWebServer.videoPageAsset
 
-        homeScreen(retryableComposeTestRule.current) {
+        homeScreen(composeTestRule) {
         }.openThreeDotMenu {
         }.clickSettingsButton {
         }.openSettingsSubMenuSiteSettings {
@@ -268,18 +266,18 @@ class SettingsSitePermissionsTest {
             selectAutoplayOption("Block audio and video")
             exitMenu()
         }
-        navigationToolbar(retryableComposeTestRule.current) {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(videoTestPage.url) {
             try {
                 verifyPageContent(videoTestPage.content)
-                clickPageObject(retryableComposeTestRule.current, itemWithText("Play"))
+                clickPageObject(composeTestRule, itemWithText("Play"))
                 assertPlaybackState(browserStore, MediaSession.PlaybackState.PLAYING)
             } catch (e: AssertionError) {
-                browserScreen(retryableComposeTestRule.current) {
+                browserScreen(composeTestRule) {
                 }.openThreeDotMenu {
                 }.clickRefreshButton {
                     verifyPageContent(videoTestPage.content)
-                    clickPageObject(retryableComposeTestRule.current, itemWithText("Play"))
+                    clickPageObject(composeTestRule, itemWithText("Play"))
                     assertPlaybackState(browserStore, MediaSession.PlaybackState.PLAYING)
                 }
             }
@@ -288,11 +286,10 @@ class SettingsSitePermissionsTest {
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2286808
     @Test
-    @SkipLeaks
     fun verifyAutoplayBlockAudioAndVideoSettingOnMutedVideoTest() {
         val mutedVideoTestPage = mockWebServer.mutedVideoPageAsset
 
-        homeScreen(retryableComposeTestRule.current) {
+        homeScreen(composeTestRule) {
         }.openThreeDotMenu {
         }.clickSettingsButton {
         }.openSettingsSubMenuSiteSettings {
@@ -300,17 +297,17 @@ class SettingsSitePermissionsTest {
             selectAutoplayOption("Block audio and video")
             exitMenu()
         }
-        navigationToolbar(retryableComposeTestRule.current) {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(mutedVideoTestPage.url) {
             verifyPageContent("Media file not playing")
-            clickPageObject(retryableComposeTestRule.current, itemWithText("Play"))
+            clickPageObject(composeTestRule, itemWithText("Play"))
             try {
                 verifyPageContent("Media file is playing")
             } catch (e: AssertionError) {
-                browserScreen(retryableComposeTestRule.current) {
+                browserScreen(composeTestRule) {
                 }.openThreeDotMenu {
                 }.clickRefreshButton {
-                    clickPageObject(retryableComposeTestRule.current, itemWithText("Play"))
+                    clickPageObject(composeTestRule, itemWithText("Play"))
                     verifyPageContent("Media file is playing")
                 }
             }
@@ -320,15 +317,15 @@ class SettingsSitePermissionsTest {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/247362
     @Test
     fun verifyCameraPermissionSettingsTest() {
-        navigationToolbar(retryableComposeTestRule.current) {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(permissionsTestPage.toUri()) {
         }.clickStartCameraButton {
             grantSystemPermission()
             verifyCameraPermissionPrompt(permissionsTestPageHost)
             pressBack()
         }
-        browserScreen(retryableComposeTestRule.current) {
-            browserScreen(retryableComposeTestRule.current) {
+        browserScreen(composeTestRule) {
+            browserScreen(composeTestRule) {
             }.openThreeDotMenu {
             }.clickSettingsButton {
             }.openSettingsSubMenuSiteSettings {
@@ -338,7 +335,7 @@ class SettingsSitePermissionsTest {
                 exitMenu()
             }
         }.clickStartCameraButton {}
-        browserScreen(retryableComposeTestRule.current) {
+        browserScreen(composeTestRule) {
             verifyPageContent("Camera not allowed")
         }
     }
@@ -346,15 +343,15 @@ class SettingsSitePermissionsTest {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/247364
     @Test
     fun verifyMicrophonePermissionSettingsTest() {
-        navigationToolbar(retryableComposeTestRule.current) {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(permissionsTestPage.toUri()) {
         }.clickStartMicrophoneButton {
             grantSystemPermission()
             verifyMicrophonePermissionPrompt(permissionsTestPageHost)
             pressBack()
         }
-        browserScreen(retryableComposeTestRule.current) {
-            browserScreen(retryableComposeTestRule.current) {
+        browserScreen(composeTestRule) {
+            browserScreen(composeTestRule) {
             }.openThreeDotMenu {
             }.clickSettingsButton {
             }.openSettingsSubMenuSiteSettings {
@@ -364,7 +361,7 @@ class SettingsSitePermissionsTest {
                 exitMenu()
             }
         }.clickStartMicrophoneButton {}
-        browserScreen(retryableComposeTestRule.current) {
+        browserScreen(composeTestRule) {
             verifyPageContent("Microphone not allowed")
         }
     }
@@ -372,14 +369,14 @@ class SettingsSitePermissionsTest {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/247363
     @Test
     fun verifyLocationPermissionSettingsTest() {
-        navigationToolbar(retryableComposeTestRule.current) {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(permissionsTestPage.toUri()) {
         }.clickGetLocationButton {
             verifyLocationPermissionPrompt(permissionsTestPageHost)
             pressBack()
         }
-        browserScreen(retryableComposeTestRule.current) {
-            browserScreen(retryableComposeTestRule.current) {
+        browserScreen(composeTestRule) {
+            browserScreen(composeTestRule) {
             }.openThreeDotMenu {
             }.clickSettingsButton {
             }.openSettingsSubMenuSiteSettings {
@@ -389,7 +386,7 @@ class SettingsSitePermissionsTest {
                 exitMenu()
             }
         }.clickGetLocationButton {}
-        browserScreen(retryableComposeTestRule.current) {
+        browserScreen(composeTestRule) {
             verifyPageContent("User denied geolocation prompt")
         }
     }
@@ -397,14 +394,14 @@ class SettingsSitePermissionsTest {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/247365
     @Test
     fun verifyNotificationsPermissionSettingsTest() {
-        navigationToolbar(retryableComposeTestRule.current) {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(permissionsTestPage.toUri()) {
         }.clickOpenNotificationButton {
             verifyNotificationsPermissionPrompt(permissionsTestPageHost)
             pressBack()
         }
-        browserScreen(retryableComposeTestRule.current) {
-            browserScreen(retryableComposeTestRule.current) {
+        browserScreen(composeTestRule) {
+            browserScreen(composeTestRule) {
             }.openThreeDotMenu {
             }.clickSettingsButton {
             }.openSettingsSubMenuSiteSettings {
@@ -414,7 +411,7 @@ class SettingsSitePermissionsTest {
                 exitMenu()
             }
         }.clickOpenNotificationButton {}
-        browserScreen(retryableComposeTestRule.current) {
+        browserScreen(composeTestRule) {
             verifyPageContent("Notifications not allowed")
         }
     }
@@ -422,14 +419,14 @@ class SettingsSitePermissionsTest {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/1923415
     @Test
     fun verifyPersistentStoragePermissionSettingsTest() {
-        navigationToolbar(retryableComposeTestRule.current) {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(permissionsTestPage.toUri()) {
         }.clickRequestPersistentStorageAccessButton {
             verifyPersistentStoragePermissionPrompt(permissionsTestPageHost)
             pressBack()
         }
-        browserScreen(retryableComposeTestRule.current) {
-            browserScreen(retryableComposeTestRule.current) {
+        browserScreen(composeTestRule) {
+            browserScreen(composeTestRule) {
             }.openThreeDotMenu {
             }.clickSettingsButton {
             }.openSettingsSubMenuSiteSettings {
@@ -439,7 +436,7 @@ class SettingsSitePermissionsTest {
                 exitMenu()
             }
         }.clickRequestPersistentStorageAccessButton {}
-        browserScreen(retryableComposeTestRule.current) {
+        browserScreen(composeTestRule) {
             verifyPageContent("Persistent storage permission denied")
         }
     }
@@ -447,12 +444,12 @@ class SettingsSitePermissionsTest {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/1923417
     @Test
     fun verifyDRMControlledContentPermissionSettingsTest() {
-        navigationToolbar(retryableComposeTestRule.current) {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(permissionsTestPage.toUri()) {
         }.clickRequestDRMControlledContentAccessButton {
             verifyDRMContentPermissionPrompt(permissionsTestPageHost)
             pressBack()
-            browserScreen(retryableComposeTestRule.current) {
+            browserScreen(composeTestRule) {
             }.openThreeDotMenu {
             }.clickSettingsButton {
             }.openSettingsSubMenuSiteSettings {
@@ -461,9 +458,9 @@ class SettingsSitePermissionsTest {
                 selectDRMControlledContentPermissionSettingOption("Blocked")
                 exitMenu()
             }
-            browserScreen(retryableComposeTestRule.current) {
+            browserScreen(composeTestRule) {
             }.clickRequestDRMControlledContentAccessButton {}
-            browserScreen(retryableComposeTestRule.current) {
+            browserScreen(composeTestRule) {
                 verifyDRMControlledContentPageContent("DRM-controlled content not allowed")
             }.openThreeDotMenu {
             }.clickSettingsButton {
@@ -472,11 +469,11 @@ class SettingsSitePermissionsTest {
                 selectDRMControlledContentPermissionSettingOption("Allowed")
                 exitMenu()
             }
-            browserScreen(retryableComposeTestRule.current) {
+            browserScreen(composeTestRule) {
             }.openThreeDotMenu {
             }.clickRefreshButton {
             }.clickRequestDRMControlledContentAccessButton {}
-            browserScreen(retryableComposeTestRule.current) {
+            browserScreen(composeTestRule) {
                 verifyDRMControlledContentPageContent("DRM-controlled content allowed")
             }
         }
@@ -486,7 +483,7 @@ class SettingsSitePermissionsTest {
     @SmokeTest
     @Test
     fun clearAllSitePermissionsExceptionsTest() {
-        navigationToolbar(retryableComposeTestRule.current) {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(permissionsTestPage.toUri()) {
         }.clickOpenNotificationButton {
             verifyNotificationsPermissionPrompt(permissionsTestPageHost)
@@ -508,7 +505,7 @@ class SettingsSitePermissionsTest {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/247007
     @Test
     fun addAndClearOneWebPagePermission() {
-        navigationToolbar(retryableComposeTestRule.current) {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(permissionsTestPage.toUri()) {
         }.clickOpenNotificationButton {
             verifyNotificationsPermissionPrompt(permissionsTestPageHost)
@@ -531,7 +528,7 @@ class SettingsSitePermissionsTest {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/326477
     @Test
     fun clearIndividuallyAWebPagePermission() {
-        navigationToolbar(retryableComposeTestRule.current) {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(permissionsTestPage.toUri()) {
         }.clickOpenNotificationButton {
             verifyNotificationsPermissionPrompt(permissionsTestPageHost)

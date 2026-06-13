@@ -299,7 +299,7 @@ class FilterNodeColorMatrixSoftware : public FilterNodeSoftware {
 
  private:
   Matrix5x4 mMatrix;
-  AlphaMode mAlphaMode;
+  AlphaMode mAlphaMode = ALPHA_MODE_PREMULTIPLIED;
 };
 
 class FilterNodeFloodSoftware : public FilterNodeSoftware {

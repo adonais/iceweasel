@@ -53,6 +53,8 @@ GFXINFO_FEATURE(WEBRTC_HW_ACCELERATION_H264, "webrtc.hw.acceleration.h264")
 GFXINFO_FEATURE(DIRECT3D_11_LAYERS, "layers.direct3d11")
 /* Whether hardware accelerated video decoding is supported, starting in 36. */
 GFXINFO_FEATURE(HARDWARE_VIDEO_DECODING, "hardwarevideodecoding")
+/* Whether Vulkan hardware video decoding is supported (Linux). */
+GFXINFO_FEATURE(HARDWARE_VIDEO_DECODING_VULKAN, "hardwarevideodecodingvulkan")
 /* Whether Direct3D 11 is supported for ANGLE, starting in 38. */
 GFXINFO_FEATURE(DIRECT3D_11_ANGLE, "direct3d11angle")
 /* Whether Webrtc Hardware acceleration is supported, starting in 42. */
@@ -88,7 +90,7 @@ GFXINFO_FEATURE(WEBRENDER_COMPOSITOR, "webrender.compositor")
 /* Whether WebRender can use scissored clears for cached surfaces, staring in 79 */
 GFXINFO_FEATURE(WEBRENDER_SCISSORED_CACHE_CLEARS, "webrender.scissored_cache_clears")
 /* Support webgl.out-of-process: true (starting in 83) */
-GFXINFO_FEATURE(ALLOW_WEBGL_OUT_OF_PROCESS, "webgl.allow-oop")
+GFXINFO_FEATURE_RETIRED(ALLOW_WEBGL_OUT_OF_PROCESS, "webgl.allow-oop")
 /* Is OpenGL threadsafe (starting in 83) */
 GFXINFO_FEATURE(THREADSAFE_GL, "gl.threadsafe")
 /* Whether webrender uses pre-optimized shaders, starting in 87; downloadable blocking in 133. */
@@ -156,4 +158,4 @@ GFXINFO_FEATURE(MESA_THREADING, "mesa.threading")
 /* Whether WebGL is allowed, starting in 150. */
 GFXINFO_FEATURE(WEBGL, "webgl")
 /* Whether high dynamic range video is reported in media capabilities, starting in 152. */
-GFXINFO_FEATURE_ALLOWLIST(VIDEO_HDR, "video-hdr")
+GFXINFO_FEATURE(VIDEO_HDR, "video-hdr")

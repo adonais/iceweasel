@@ -186,6 +186,22 @@ describe("sidebar conversation starter prompts", () => {
         gAiWindow.document.getElementById("ai-window-browser");
       await typeInSmartbar(sidebarBrowser, "Hello world");
       await submitSmartbar(sidebarBrowser);
+      await TestUtils.waitForCondition(
+        () => !getSidebarPromptButtons(gAiWindow).length,
+        "Starter prompts should be hidden after starting a conversation on tab 2"
+      );
+
+      // Navigate tab 1 in the background so switching back to it triggers
+      // an uncached starter request instead of reusing the starters cached
+      // for the initial example.com load.
+      const firstTabLoaded = BrowserTestUtils.browserLoaded(
+        firstTab.linkedBrowser
+      );
+      BrowserTestUtils.startLoadingURIString(
+        firstTab.linkedBrowser,
+        "https://example.com"
+      );
+      await firstTabLoaded;
 
       // wait for conversation messages
       await TestUtils.waitForCondition(() => {
@@ -232,14 +248,6 @@ describe("sidebar conversation starter prompts", () => {
   });
 
   describe("when the conversation is empty", () => {
-    beforeEach(async () => {
-      sinon.spy(lazy.AIWindowUI, "updateStarterPrompts");
-    });
-
-    afterEach(async () => {
-      lazy.AIWindowUI.updateStarterPrompts.restore();
-    });
-
     it("should load new prompts when the tab changes URL", async () => {
       await navigateTo("https://example.com", gAiWindow);
 
@@ -273,6 +281,53 @@ describe("sidebar conversation starter prompts", () => {
     });
 
     it("should not reload prompts when background tabs change URL", async () => {
+      const updateStarterPromptsSpy = sinon.spy(
+        lazy.AIWindowUI,
+        "updateStarterPrompts"
+      );
+
+      try {
+        await navigateTo("https://example.com", gAiWindow);
+
+        await TestUtils.waitForCondition(
+          () => AIWindowUI.isSidebarOpen(gAiWindow),
+          "Sidebar should be open"
+        );
+        await TestUtils.waitForCondition(
+          () => getSidebarPromptButtons(gAiWindow).includes("prompt 1"),
+          "First set of prompts should be rendered"
+        );
+
+        Assert.deepEqual(
+          getSidebarPromptButtons(gAiWindow),
+          ["prompt 1", "prompt 2"],
+          "Should display first set of prompts"
+        );
+
+        responseContent[0] = "prompt 3\nprompt 4";
+        updateStarterPromptsSpy.resetHistory();
+
+        backgroundTab = await openBackgroundTab(
+          "https://example.org",
+          gAiWindow
+        );
+
+        Assert.deepEqual(
+          getSidebarPromptButtons(gAiWindow),
+          ["prompt 1", "prompt 2"],
+          "Should continue to display initial starter prompts after background URL load"
+        );
+        Assert.equal(
+          0,
+          updateStarterPromptsSpy.callCount,
+          "There should not be any more calls to update starter prompts"
+        );
+      } finally {
+        updateStarterPromptsSpy.restore();
+      }
+    });
+
+    it("should load new prompts when navigating back to a previously visited URI", async () => {
       await navigateTo("https://example.com", gAiWindow);
 
       await TestUtils.waitForCondition(
@@ -284,26 +339,61 @@ describe("sidebar conversation starter prompts", () => {
         "First set of prompts should be rendered"
       );
 
-      Assert.deepEqual(
-        getSidebarPromptButtons(gAiWindow),
-        ["prompt 1", "prompt 2"],
-        "Should display first set of prompts"
-      );
+      const requestCountAfterFirstLoad = mock.requestCount;
 
       responseContent[0] = "prompt 3\nprompt 4";
-      lazy.AIWindowUI.updateStarterPrompts.resetHistory();
-
-      backgroundTab = await openBackgroundTab("https://example.org", gAiWindow);
-
-      Assert.deepEqual(
-        getSidebarPromptButtons(gAiWindow),
-        ["prompt 1", "prompt 2"],
-        "Should continue to display initial starter prompts after background URL load"
+      await navigateTo("https://example.org", gAiWindow);
+      await TestUtils.waitForCondition(
+        () => getSidebarPromptButtons(gAiWindow).includes("prompt 3"),
+        "Second set of prompts should be rendered"
       );
       Assert.equal(
-        0,
-        lazy.AIWindowUI.updateStarterPrompts.callCount,
-        "There should not be any more calls to update starter prompts"
+        mock.requestCount,
+        requestCountAfterFirstLoad + 1,
+        "Navigating to a new URI should generate a new starter request"
+      );
+
+      responseContent[0] = "prompt 5\nprompt 6";
+      await navigateTo("https://example.com", gAiWindow);
+      await TestUtils.waitForCondition(
+        () => getSidebarPromptButtons(gAiWindow).includes("prompt 5"),
+        "New prompts should be rendered when navigating back"
+      );
+      Assert.deepEqual(
+        getSidebarPromptButtons(gAiWindow),
+        ["prompt 5", "prompt 6"],
+        "Should display newly generated prompts when navigating back"
+      );
+      Assert.equal(
+        mock.requestCount,
+        requestCountAfterFirstLoad + 2,
+        "Navigating back to a previously visited URI should generate a new starter request"
+      );
+    });
+
+    it("should evict the oldest cached prompts after exceeding the cache limit", async () => {
+      for (let i = 0; i <= 20; i++) {
+        responseContent[0] = `prompt ${i}a\nprompt ${i}b`;
+        await navigateTo(`https://example.com/${i}`, gAiWindow);
+        await TestUtils.waitForCondition(
+          () => getSidebarPromptButtons(gAiWindow).includes(`prompt ${i}a`),
+          `Prompts for URI ${i} should be rendered`
+        );
+      }
+
+      const requestCountAfterFillingCache = mock.requestCount;
+
+      responseContent[0] = "prompt evicted a\nprompt evicted b";
+      await navigateTo("https://example.com/0", gAiWindow);
+      await TestUtils.waitForCondition(
+        () => getSidebarPromptButtons(gAiWindow).includes("prompt evicted a"),
+        "Evicted prompts should be regenerated for the oldest URI"
+      );
+
+      Assert.equal(
+        mock.requestCount,
+        requestCountAfterFillingCache + 1,
+        "Revisiting the oldest URI after the cache limit should generate a new starter request"
       );
     });
   });

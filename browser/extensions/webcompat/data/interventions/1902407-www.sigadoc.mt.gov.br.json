@@ -10,7 +10,7 @@
     {
       "platforms": ["all"],
       "content_scripts": {
-        "js": ["bug1902407-www.sigadoc.mt.gov.br-user-agent-spoof.js"]
+        "js": ["use_chrome_useragent.js", "define_minimal_window_chrome.js"]
       }
     }
   ]

@@ -21,7 +21,6 @@ add_setup(async function setup() {
       ["browser.urlbar.scotchBonnet.enableOverride", true],
       ["browser.urlbar.suggest.topsites", true],
       ["browser.newtabpage.activity-stream.default.sites", TOPSITES],
-      ["widget.macos.native-anchored-menus", false],
     ],
   });
   await PlacesUtils.history.clear();

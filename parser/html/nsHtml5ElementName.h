@@ -37,6 +37,7 @@
 #include "jArray.h"
 #include "nsHtml5ArrayCopy.h"
 #include "nsAHtml5TreeBuilderState.h"
+#include "nsGkAtoms.h"
 #include "nsHtml5ByteReadable.h"
 #include "nsHtml5Macros.h"
 #include "nsIContentHandle.h"
@@ -381,6 +382,7 @@ class nsHtml5ElementName {
   static nsHtml5ElementName* ELT_RECT;
   static nsHtml5ElementName* ELT_RADIALGRADIENT;
   static nsHtml5ElementName* ELT_SELECT;
+  static nsHtml5ElementName* ELT_SELECTEDCONTENT;
   static nsHtml5ElementName* ELT_SLOT;
   static nsHtml5ElementName* ELT_SCRIPT;
   static nsHtml5ElementName* ELT_TFOOT;

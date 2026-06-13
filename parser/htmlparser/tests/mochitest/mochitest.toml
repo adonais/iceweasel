@@ -104,6 +104,7 @@ support-files = [
   "html5lib_tree_construction/scripted/ark.dat",
   "blue.png",
 ]
+prefs = ["dom.lift_select_parser_restrictions.enabled=true"]
 
 ["test_base_csp_img.html"]
 support-files = [

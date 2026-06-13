@@ -8,7 +8,7 @@ ChromeUtils.defineESModuleGetters(this, {
 let win;
 
 function waitForChildren(element, callback) {
-  let MutationObserver = element.ownerGlobal.MutationObserver;
+  let MutationObserver = element.documentGlobal.MutationObserver;
   return new Promise(resolve => {
     let observer = new MutationObserver(() => {
       if (callback()) {

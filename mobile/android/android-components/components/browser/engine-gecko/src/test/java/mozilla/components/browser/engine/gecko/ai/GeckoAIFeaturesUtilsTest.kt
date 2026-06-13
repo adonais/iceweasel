@@ -7,7 +7,6 @@ package mozilla.components.browser.engine.gecko.ai
 import mozilla.components.browser.engine.gecko.ai.GeckoAIFeaturesUtils.intoAIFeaturesError
 import mozilla.components.concept.engine.ai.AIFeaturesError
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.geckoview.AIFeaturesController.AIFeaturesException
@@ -16,6 +15,7 @@ import org.mozilla.geckoview.AIFeaturesController.AIFeaturesException.ERROR_COUL
 import org.mozilla.geckoview.AIFeaturesController.AIFeaturesException.ERROR_COULD_NOT_SET
 import org.mozilla.geckoview.AIFeaturesController.AIFeaturesException.ERROR_UNKNOWN_FEATURE
 import org.robolectric.RobolectricTestRunner
+import kotlin.test.assertIs
 
 @RunWith(RobolectricTestRunner::class)
 class GeckoAIFeaturesUtilsTest {
@@ -25,30 +25,30 @@ class GeckoAIFeaturesUtilsTest {
         val couldNotParseException =
             AIFeaturesException(ERROR_COULD_NOT_PARSE)
         val error1 = couldNotParseException.intoAIFeaturesError()
-        assertTrue(error1 is AIFeaturesError.CouldNotParseError)
+        assertIs<AIFeaturesError.CouldNotParseError>(error1)
         assertEquals(couldNotParseException, error1.cause)
 
         val unknownFeatureException =
             AIFeaturesException(ERROR_UNKNOWN_FEATURE)
         val error2 = unknownFeatureException.intoAIFeaturesError()
-        assertTrue(error2 is AIFeaturesError.UnknownFeatureError)
+        assertIs<AIFeaturesError.UnknownFeatureError>(error2)
         assertEquals(unknownFeatureException, error2.cause)
 
         val couldNotSetException =
             AIFeaturesException(ERROR_COULD_NOT_SET)
         val error3 = couldNotSetException.intoAIFeaturesError()
-        assertTrue(error3 is AIFeaturesError.CouldNotSetError)
+        assertIs<AIFeaturesError.CouldNotSetError>(error3)
         assertEquals(couldNotSetException, error3.cause)
 
         val couldNotMakeAvailableException =
             AIFeaturesException(ERROR_COULD_NOT_MAKE_AVAILABLE)
         val error4 = couldNotMakeAvailableException.intoAIFeaturesError()
-        assertTrue(error4 is AIFeaturesError.CouldNotMakeAvailableError)
+        assertIs<AIFeaturesError.CouldNotMakeAvailableError>(error4)
         assertEquals(couldNotMakeAvailableException, error4.cause)
 
         val unknownCodeException = AIFeaturesException(999)
         val error5 = unknownCodeException.intoAIFeaturesError()
-        assertTrue(error5 is AIFeaturesError.UnknownError)
+        assertIs<AIFeaturesError.UnknownError>(error5)
         assertEquals(unknownCodeException, error5.cause)
     }
 
@@ -58,7 +58,7 @@ class GeckoAIFeaturesUtilsTest {
 
         val error = genericException.intoAIFeaturesError()
 
-        assertTrue(error is AIFeaturesError.UnknownError)
+        assertIs<AIFeaturesError.UnknownError>(error)
         assertEquals(genericException, error.cause)
     }
 }

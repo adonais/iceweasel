@@ -218,12 +218,12 @@ nsis-3.07-win:
         add-prefix: nsis/
 
 upx:
-    description: upx 5.1.0 source
+    description: upx 5.1.1 source
     fetch:
         type: static-url
-        url: https://github.com/upx/upx/releases/download/v5.1.0/upx-5.1.0-src.tar.xz
-        sha256: 9f7a810b8a810b1ca2c5cb01ffcf23066e3fb8a51ddc406ea05bdd5d37d0b8bd
-        size: 1406744
+        url: https://github.com/upx/upx/releases/download/v5.1.1/upx-5.1.1-src.tar.xz
+        sha256: 8eb914115b306fd9fd2110bd3d27ddb8ae7c5a03bb965f7d10f046a3a4ff9dfe
+        size: 1435728
         artifact-name: upx-src.tar.zst
         strip-components: 1
         add-prefix: upx/
@@ -232,9 +232,9 @@ wine:
     description: wine source code
     fetch:
         type: static-url
-        url: https://dl.winehq.org/wine/source/11.x/wine-11.3.tar.xz
-        sha256: bbe42158cfdc673280971e00c9be820b05816c8f6a568b80ae7829c06c455e24
-        size: 33238452
+        url: https://dl.winehq.org/wine/source/11.x/wine-11.6.tar.xz
+        sha256: d49d166975478f609e6a9cdbda0a07c65a3b795e061fc454d3f1034c828d19e0
+        size: 43700900
         gpg-signature:
             sig-url: "{url}.sign"
             key-path: build/unix/build-gcc/DA23579A74D4AD9AF9D3F945CEFAC8EAAF17519D.key
@@ -472,20 +472,20 @@ macosx64-cmake:
     description: cmake 4.2.3
     fetch:
         type: static-url
-        url: https://github.com/Kitware/CMake/releases/download/v4.2.3/cmake-4.2.3-macos-universal.tar.gz
-        sha256: c2302d3e9c48daabee5ea7c4db4b2b93b989bcc89dae8b760880e00120641b5b
-        size: 84254384
+        url: https://github.com/Kitware/CMake/releases/download/v4.3.1/cmake-4.3.1-macos-universal.tar.gz
+        sha256: c21fe4ade82a6a236aae0b9fbd8263c7ac6824a3fb32d03594456e30b06f3b7f
+        size: 87032455
         artifact-name: cmake.tar.zst
         strip-components: 3
         add-prefix: cmake/
 
 cmake:
-    description: cmake 4.2.3 source code
+    description: cmake 4.3.1 source code
     fetch:
         type: static-url
-        url: https://github.com/Kitware/CMake/releases/download/v4.2.3/cmake-4.2.3.tar.gz
-        sha256: 7efaccde8c5a6b2968bad6ce0fe60e19b6e10701a12fce948c2bf79bac8a11e9
-        size: 12345147
+        url: https://github.com/Kitware/CMake/releases/download/v4.3.1/cmake-4.3.1.tar.gz
+        sha256: 0798f4be7a1a406a419ac32db90c2956936fecbf50db3057d7af47d69a2d7edb
+        size: 12966559
         artifact-name: cmake.tar.zst
         strip-components: 1
         add-prefix: cmake/
@@ -653,6 +653,17 @@ nodejs-22-source:
         strip-components: 1
         add-prefix: node/
 
+nodejs-24-linux64:
+    description: nodejs 24 for x64 linux
+    fetch:
+        type: static-url
+        url: https://nodejs.org/dist/v24.15.0/node-v24.15.0-linux-x64.tar.xz
+        sha256: 472655581fb851559730c48763e0c9d3bc25975c59d518003fc0849d3e4ba0f6
+        size: 31164460
+        artifact-name: nodejs.tar.zst
+        strip-components: 1
+        add-prefix: node/
+
 gnumake:
     description: GNU make source
     fetch:
@@ -701,15 +712,15 @@ symbol-scrapers:
     fetch:
         type: git
         repo: https://github.com/mozilla/symbol-scrapers
-        revision: c9f6fe6a16cb9bba11976d85fc924efaad643a9d
+        revision: 1f59a3cca3ef7cff850915e5071559858ae32571
 
 xz:
-    description: xz 5.8.2 source code
+    description: xz 5.8.3 source code
     fetch:
         type: static-url
-        url: https://github.com/tukaani-project/xz/releases/download/v5.8.2/xz-5.8.2.tar.xz
-        sha256: 890966ec3f5d5cc151077879e157c0593500a522f413ac50ba26d22a9a145214
-        size: 1511132
+        url: https://github.com/tukaani-project/xz/releases/download/v5.8.3/xz-5.8.3.tar.xz
+        sha256: fff1ffcf2b0da84d308a14de513a1aa23d4e9aa3464d17e64b9714bfdd0bbfb6
+        size: 1548064
         artifact-name: xz-source.tar.zst
         strip-components: 1
         add-prefix: xz-source/
@@ -768,11 +779,11 @@ windows-rs:
         add-prefix: windows-rs/
 
 libxml2:
-    description: libxml2 2.15.1 source code
+    description: libxml2 2.15.3 source code
     fetch:
         type: git
         repo: https://gitlab.gnome.org/GNOME/libxml2
-        revision: b7fa62cbe8ef0df5869e000d5b690bdedd07f33e
+        revision: c94eb0210183b9d7cb43f8e7fddc6be55843ef49
 
 mozilla-pdf.js:
     description: Mozilla pdf.js Github repo
@@ -816,7 +827,7 @@ firefox-profiler:
     fetch:
         type: git
         repo: https://github.com/firefox-devtools/profiler
-        revision: f37398ff0376cbab4d3d58faa3a00a04bee5f737
+        revision: 8c0afb1f47190487b08ea2561ae3cc0f7a5d31e9
 
 # See https://learn.microsoft.com/en-us/windows/apps/windows-app-sdk/downloads
 windowsappsdk-redist:

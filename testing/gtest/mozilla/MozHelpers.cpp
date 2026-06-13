@@ -1,7 +1,5 @@
 #include "MozHelpers.h"
 
-#include <iostream>
-
 #include "gtest/gtest-spi.h"
 #include "mozilla/Mutex.h"
 #include "nsDebug.h"

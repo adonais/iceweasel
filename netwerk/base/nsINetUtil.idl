@@ -10,7 +10,7 @@ interface nsIPrefBranch;
 /**
  * nsINetUtil provides various network-related utility methods.
  */
-[scriptable, uuid(fe2625ec-b884-4df1-b39c-9e830e47aa94)]
+[scriptable, builtinclass, uuid(fe2625ec-b884-4df1-b39c-9e830e47aa94)]
 interface nsINetUtil : nsISupports
 {
   /**

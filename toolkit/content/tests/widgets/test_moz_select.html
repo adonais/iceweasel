@@ -52,7 +52,7 @@
         select.addEventListener("click", trackEvent);
 
         let changed = BrowserTestUtils.waitForEvent(select, "change");
-        let topWindow = window.docShell.chromeEventHandler.ownerGlobal;
+        let topWindow = window.docShell.chromeEventHandler.documentGlobal;
         let pickerOpened = BrowserTestUtils.waitForSelectPopupShown(topWindow);
         select.focus();
         synthesizeKey(" ");
@@ -167,7 +167,7 @@
       });
 
       function openSelectAndGetMenuPopup(select) {
-        let topWindow = window.docShell.chromeEventHandler.ownerGlobal;
+        let topWindow = window.docShell.chromeEventHandler.documentGlobal;
         let pickerOpened = BrowserTestUtils.waitForSelectPopupShown(topWindow);
         select.focus();
         synthesizeKey(" ");

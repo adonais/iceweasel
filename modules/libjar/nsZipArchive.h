@@ -82,6 +82,9 @@ class nsZipArchive final {
   ~nsZipArchive();
 
  public:
+  nsZipArchive& operator=(const nsZipArchive& rhs) = delete;
+  nsZipArchive(const nsZipArchive& rhs) = delete;
+
   static const char* sFileCorruptedReason;
 
   /**
@@ -208,9 +211,6 @@ class nsZipArchive final {
   nsZipItem* CreateZipItem() MOZ_REQUIRES(mLock);
   nsresult BuildFileList(PRFileDesc* aFd = nullptr);
   nsresult BuildSynthetics();
-
-  nsZipArchive& operator=(const nsZipArchive& rhs) = delete;
-  nsZipArchive(const nsZipArchive& rhs) = delete;
 };
 
 /**
@@ -223,6 +223,9 @@ class nsZipFind final {
   nsZipFind(nsZipArchive* aZip, char* aPattern, bool regExp);
   ~nsZipFind();
 
+  nsZipFind& operator=(const nsZipFind& rhs) = delete;
+  nsZipFind(const nsZipFind& rhs) = delete;
+
   nsresult FindNext(const char** aResult, uint16_t* aNameLen);
 
  private:
@@ -231,9 +234,6 @@ class nsZipFind final {
   nsZipItem* mItem;
   uint16_t mSlot;
   bool mRegExp;
-
-  nsZipFind& operator=(const nsZipFind& rhs) = delete;
-  nsZipFind(const nsZipFind& rhs) = delete;
 };
 
 /**

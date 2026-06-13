@@ -12,7 +12,7 @@
 #include "nsString.h"
 
 #if defined(NIGHTLY_BUILD) && !defined(MOZ_NO_SMART_CARDS)
-#include "mozilla/psm/PPKCS11Module.h"
+#  include "mozilla/psm/PPKCS11Module.h"
 #endif  // NIGHTLY_BUILD && !MOZ_NO_SMART_CARDS
 
 class PKCS11Slot : public nsIPKCS11Slot {
@@ -21,7 +21,6 @@ class PKCS11Slot : public nsIPKCS11Slot {
   NS_DECL_NSIPKCS11SLOT
 
   explicit PKCS11Slot(PK11SlotInfo* slot);
-
 
 #if defined(NIGHTLY_BUILD) && !defined(MOZ_NO_SMART_CARDS)
   nsresult GetSlotInfo(mozilla::psm::SlotInfo& slotInfo);

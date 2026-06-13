@@ -83,7 +83,29 @@ already_AddRefed<Image> RemoteImageHolder::DeserializeImage(
         descriptor.chromaSubsampling());
     if (NS_WARN_IF(descriptorSize.isNothing() ||
                    descriptorSize.value() > bufferSize)) {
-      MOZ_ASSERT_UNREACHABLE("Buffer too small to fit descriptor!");
+      // Skip assertion during gtests.
+      if (!PR_GetEnv("MOZ_RUN_GTEST")) {
+        MOZ_ASSERT_UNREACHABLE("Buffer too small to fit descriptor!");
+      }
+      return nullptr;
+    }
+
+    if (!IntRect(IntPoint(), descriptor.ySize())
+             .Contains(descriptor.display())) {
+      if (!PR_GetEnv("MOZ_RUN_GTEST")) {
+        MOZ_ASSERT_UNREACHABLE(
+            "YCbCr display rect exceeds Y plane dimensions!");
+      }
+      return nullptr;
+    }
+
+    auto croppedCbCr = ImageDataSerializer::GetCroppedCbCrSize(descriptor);
+    if (croppedCbCr.width > descriptor.cbCrSize().width ||
+        croppedCbCr.height > descriptor.cbCrSize().height) {
+      if (!PR_GetEnv("MOZ_RUN_GTEST")) {
+        MOZ_ASSERT_UNREACHABLE(
+            "YCbCr chroma dimensions exceed CbCr plane size!");
+      }
       return nullptr;
     }
 

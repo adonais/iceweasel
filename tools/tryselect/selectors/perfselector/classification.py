@@ -753,4 +753,23 @@ class ClassificationProvider:
                     "Our most important set of tests for android performance."
                 ),
             },
+            "Critical Desktop Performance": {
+                "query": {
+                    Suites.RAPTOR.value: ["'browsertime 'speedometer3"],
+                },
+                "variant-restrictions": {Suites.RAPTOR.value: [Variants.FISSION.value]},
+                "suites": [Suites.RAPTOR.value],
+                "platform-restrictions": [
+                    Platforms.DESKTOP.value,
+                    Platforms.LINUX.value,
+                    Platforms.MACOSX.value,
+                    Platforms.WINDOWS.value,
+                ],
+                "app-restrictions": {},
+                "tasks": [],
+                "try-config-defaults": {"rebuild": 20},
+                "description": (
+                    "Our most important set of tests for desktop performance."
+                ),
+            },
         }

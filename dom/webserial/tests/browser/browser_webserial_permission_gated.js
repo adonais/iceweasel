@@ -141,7 +141,7 @@ add_task(async function testRequestPort() {
   is(
     installDialog.querySelector("popupnotificationcontent description")
       .textContent,
-    l10n.formatValueSync("webext-site-perms-description-gated-perms-serial"),
+    l10n.formatValueSync("webext-site-perms-description-gated-perms-webserial"),
     "Install dialog has expected description"
   );
 
@@ -312,7 +312,7 @@ add_task(async function testRequestPort() {
   );
 
   Assert.deepEqual(
-    [{ suspicious_site: "example.com" }],
+    [{ suspicious_site: "example.com", permission_type: "serial" }],
     AddonTestUtils.getAMGleanEvents("reportSuspiciousSite"),
     "Expected Glean event recorded."
   );

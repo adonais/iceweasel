@@ -1877,6 +1877,22 @@ VARIABLES = {
         the library will not be built as part of the default build.
         """,
     ),
+    "RUST_PROGRAM_OUTPUT_CATEGORY": (
+        str,
+        str,
+        """The output category for this context's Rust program(s). If set this will
+        correspond to the build command that will build these Rust programs, and
+        the programs will not be built as part of the default build.
+        """,
+    ),
+    "HOST_RUST_PROGRAM_OUTPUT_CATEGORY": (
+        str,
+        str,
+        """The output category for this context's host Rust program(s). If set this will
+        correspond to the build command that will build these host Rust programs, and
+        the programs will not be built as part of the default build.
+        """,
+    ),
     "IS_FRAMEWORK": (
         bool,
         bool,

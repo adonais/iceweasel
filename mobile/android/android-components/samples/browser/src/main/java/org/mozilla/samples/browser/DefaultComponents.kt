@@ -469,7 +469,7 @@ open class DefaultComponents(private val applicationContext: Context) {
             isInPrimaryState = {
                 store.state.selectedTab?.content?.loading == false
             },
-            secondaryImageResource = iconsR.drawable.mozac_ic_stop,
+            secondaryImageResource = iconsR.drawable.mozac_ic_cross_24,
             secondaryContentDescription = "Stop",
             secondaryImageTintResource = colorsR.color.photonBlue90,
             disableInSecondaryState = false,

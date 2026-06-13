@@ -41,7 +41,7 @@ index 38e4dedc33e0..1e443770520a 100644
 +                appendTo += u"GMT";
 +            } else if (zoneString == u"GMT+1" && strcmp(fLocale.getBaseName(), "en_GB") == 0 && tz.getID(id) == u"Europe/London") {
 +                // Avoid formatting +2 as "BST". This is about formatting correctness, not Web compat.
-+                // The same form that requires +0 to be formatted as "GMT" appears not
++                // The same bank form that requires +0 to be formatted as "GMT" appears not
 +                // to expect a specific formatting for cases other than +0.
 +                // https://unicode-org.atlassian.net/browse/CLDR-19382
 +                appendTo += u"BST";

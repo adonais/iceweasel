@@ -45,6 +45,7 @@ interface MediaController : EventTarget {
 
   attribute EventHandler onactivated;
   attribute EventHandler ondeactivated;
+  attribute EventHandler onaudiblechange;
 
   // Following events would only be dispatched after controller is active.
   attribute EventHandler onmetadatachange;

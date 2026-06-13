@@ -773,7 +773,7 @@ export class PageAction {
               },
             },
           },
-          this.window
+          this.window.gBrowser.selectedBrowser
         );
         break;
     }
@@ -897,7 +897,7 @@ export const CFRPageActions = {
    * that's been updated
    */
   updatePageActions(browser) {
-    const win = browser.ownerGlobal;
+    const win = browser.documentGlobal;
     const pageAction = PageActionMap.get(win);
     if (!pageAction || browser !== win.gBrowser.selectedBrowser) {
       return;
@@ -970,7 +970,7 @@ export const CFRPageActions = {
       return false;
     }
     // If we are forcing via the Admin page, the browser comes in a different format
-    const win = browser.ownerGlobal;
+    const win = browser.documentGlobal;
     const { id, content } = recommendation;
     RecommendationMap.set(browser, {
       id,
@@ -1008,7 +1008,7 @@ export const CFRPageActions = {
     if (!browser) {
       return false;
     }
-    const win = browser.ownerGlobal;
+    const win = browser.documentGlobal;
     if (
       browser !== win.gBrowser.selectedBrowser ||
       // We can have recommendations without URL restrictions

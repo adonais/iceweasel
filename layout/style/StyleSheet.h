@@ -32,7 +32,7 @@ namespace mozilla {
 
 class ServoCSSRuleList;
 class ServoStyleSet;
-class DeclarationBlock;
+struct StyleLockedDeclarationBlock;
 
 using StyleSheetParsePromise = MozPromise</* Dummy */ bool,
                                           /* Dummy */ bool,
@@ -45,14 +45,15 @@ struct StyleRuleChange {
   StyleRuleChange() = delete;
   MOZ_IMPLICIT StyleRuleChange(StyleRuleChangeKind aKind) : mKind(aKind) {}
   // Only relevant for Kind::*Declarations.
-  StyleRuleChange(StyleRuleChangeKind aKind, const DeclarationBlock* aOldBlock,
-                  const DeclarationBlock* aNewBlock)
+  StyleRuleChange(StyleRuleChangeKind aKind,
+                  const StyleLockedDeclarationBlock* aOldBlock,
+                  const StyleLockedDeclarationBlock* aNewBlock)
       : mKind(aKind), mOldBlock(aOldBlock), mNewBlock(aNewBlock) {}
 
   const StyleRuleChangeKind mKind;
   // mOldBlock and mNewBlock can be the same object.
-  const DeclarationBlock* const mOldBlock = nullptr;
-  const DeclarationBlock* const mNewBlock = nullptr;
+  const StyleLockedDeclarationBlock* const mOldBlock = nullptr;
+  const StyleLockedDeclarationBlock* const mNewBlock = nullptr;
 };
 
 namespace css {
@@ -558,8 +559,6 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
 
   // Drop our reference to mMedia
   void DropMedia();
-  // Set our relevant global if needed.
-  void UpdateRelevantGlobal();
   // Unlink our inner, if needed, for cycle collection.
   void UnlinkInner();
   // Traverse our inner, if needed, for cycle collection
@@ -569,13 +568,6 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
   static bool RuleHasPendingChildSheet(css::Rule* aRule);
 
   StyleSheet* mParentSheet;  // weak ref
-
-  // A pointer to the sheet's relevant global object. This is populated when the
-  // sheet gets an associated document and is complete.
-  //
-  // This is required for the sheet to be able to create a promise.
-  // https://html.spec.whatwg.org/#concept-relevant-everything
-  nsCOMPtr<nsIGlobalObject> mRelevantGlobal;
 
   RefPtr<dom::Document> mConstructorDocument;
 

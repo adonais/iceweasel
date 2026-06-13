@@ -44,6 +44,11 @@ options-collapse-attrs-label = Truncate DOM attributes
 options-collapse-attrs-tooltip =
     .title = Truncate long attributes in the inspector
 
+# The label for the checkbox option to enable the display of comments in the Inspector
+options-show-comments-label = Show comments
+options-show-comments-tooltip =
+    .title = Display comment nodes in the inspector
+
 # The label for the checkbox option to enable the "drag to update" feature
 options-inspector-draggable-properties-label = Click and drag to edit size values
 options-inspector-draggable-properties-tooltip =

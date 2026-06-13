@@ -428,7 +428,7 @@ nsBaseFilePicker::GetOkButtonLabel(nsAString& aLabel) {
   return NS_OK;
 }
 
-nsIGlobalObject* nsBaseFilePicker::GetOwnerGlobal() const {
+nsIGlobalObject* nsBaseFilePicker::GetRelevantGlobal() const {
   if (mGlobal) {
     return mGlobal;
   }
@@ -455,7 +455,7 @@ nsBaseFilePicker::GetDomFileOrDirectory(nsISupports** aValue) {
     return NS_OK;
   }
 
-  auto* innerParent = GetOwnerGlobal();
+  auto* innerParent = GetRelevantGlobal();
   if (!innerParent) {
     return NS_ERROR_FAILURE;
   }
@@ -473,7 +473,7 @@ nsBaseFilePicker::GetDomFileOrDirectoryEnumerator(
   nsresult rv = GetFiles(getter_AddRefs(iter));
   NS_ENSURE_SUCCESS(rv, rv);
 
-  auto* global = GetOwnerGlobal();
+  auto* global = GetRelevantGlobal();
   if (!global) {
     return NS_ERROR_FAILURE;
   }

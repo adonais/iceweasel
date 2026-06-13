@@ -350,6 +350,9 @@ class nsAutoRefCnt {
   nsrefcnt operator++() { return ++mValue; }
   nsrefcnt operator--() { return --mValue; }
 
+  nsrefcnt operator++(int) = delete;
+  nsrefcnt operator--(int) = delete;
+
   nsrefcnt operator=(nsrefcnt aValue) { return (mValue = aValue); }
   operator nsrefcnt() const { return mValue; }
   nsrefcnt get() const { return mValue; }
@@ -357,8 +360,6 @@ class nsAutoRefCnt {
   static const bool isThreadSafe = false;
 
  private:
-  nsrefcnt operator++(int) = delete;
-  nsrefcnt operator--(int) = delete;
   nsrefcnt mValue;
 };
 
@@ -412,6 +413,10 @@ class ThreadSafeAutoRefCnt {
     mValue.store(aValue, std::memory_order_release);
     return aValue;
   }
+
+  nsrefcnt operator++(int) = delete;
+  nsrefcnt operator--(int) = delete;
+
   // Atomically decrements the refcount if it is strictly above Limit.
   // Returns the pair of {success, new value}.
   template <nsrefcnt Limit>
@@ -447,8 +452,6 @@ class ThreadSafeAutoRefCnt {
   static const bool isThreadSafe = true;
 
  private:
-  nsrefcnt operator++(int) = delete;
-  nsrefcnt operator--(int) = delete;
   std::atomic<nsrefcnt> mValue;
 };
 

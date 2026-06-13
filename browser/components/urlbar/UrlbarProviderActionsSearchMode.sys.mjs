@@ -71,7 +71,7 @@ export class UrlbarProviderActionsSearchMode extends UrlbarProvider {
       queryContext,
       controller,
       details.element,
-      details.element.ownerGlobal
+      details.element.documentGlobal
     );
   }
 

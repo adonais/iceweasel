@@ -18,6 +18,7 @@ internal fun SportsWidgetMenu(
     onDismissRequest: () -> Unit,
     onChangeTeam: ((CountrySelectorSource) -> Unit)?,
     onGetCustomWallpaper: () -> Unit,
+    onShare: () -> Unit,
     onRemove: () -> Unit,
 ) {
     DropdownMenu(
@@ -42,6 +43,13 @@ internal fun SportsWidgetMenu(
                 onClick = {
                     onDismissRequest()
                     onGetCustomWallpaper()
+                },
+            ),
+            MenuItem.TextItem(
+                text = Text.Resource(R.string.share_header_2),
+                onClick = {
+                    onDismissRequest()
+                    onShare()
                 },
             ),
             MenuItem.TextItem(

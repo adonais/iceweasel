@@ -140,7 +140,8 @@ class GMPServiceChild : public PGMPServiceChild {
   // implementations in PGMPServiceChild.
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(GMPServiceChild, final)
 
-  explicit GMPServiceChild() = default;
+  explicit GMPServiceChild(GeckoMediaPluginServiceChild* aService)
+      : mService(aService) {}
 
   already_AddRefed<GMPContentParent> GetBridgedGMPContentParent(
       ProcessId aOtherPid, ipc::Endpoint<PGMPContentParent>&& endpoint);
@@ -159,10 +160,16 @@ class GMPServiceChild : public PGMPServiceChild {
 
   bool HaveContentParents() const;
 
+  GeckoMediaPluginServiceChild* Service() const { return mService; }
+
  private:
   ~GMPServiceChild() = default;
 
   nsRefPtrHashtable<nsUint64HashKey, GMPContentParent> mContentParents;
+
+  // Raw pointer to our owning service. The service owns us via a RefPtr in
+  // mServiceChild, so it strictly outlives us.
+  GeckoMediaPluginServiceChild* const mService;
 };
 
 }  // namespace mozilla::gmp

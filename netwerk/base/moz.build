@@ -133,6 +133,7 @@ EXPORTS += [
     "nsBaseParentChannel.h",
     "nsFileStreams.h",
     "nsInputStreamPump.h",
+    "nsIURIWithSizeOf.h",
     "nsMIMEInputStream.h",
     "nsNetUtil.h",
     "nsReadLine.h",
@@ -294,6 +295,7 @@ DIRS += [
     "rust-helper",
     "http-sfv",
     "idna_glue",
+    "ssl_tokens_cache",
     "uritemplate_glue",
     "urlpattern_glue",
 ]

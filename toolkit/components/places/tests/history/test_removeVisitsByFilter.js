@@ -33,7 +33,7 @@ add_task(async function test_removeVisitsByFilter() {
           Math.random();
     for (let i = 0; i < SAMPLE_SIZE; ++i) {
       let spec = getURL(i);
-      let uri = NetUtil.newURI(spec);
+      let uri = Services.io.newURI(spec);
       let jsDate = new Date(Number(referenceDate) + 3600 * 1000 * i);
       let dbDate = jsDate * 1000;
       let hasBookmark = bookmarkIndices.has(i);
@@ -391,7 +391,7 @@ add_task(async function test_error_cases() {
 });
 
 add_task(async function test_orphans() {
-  let uri = NetUtil.newURI("http://moz.org/");
+  let uri = Services.io.newURI("http://moz.org/");
   await PlacesTestUtils.addVisits({ uri });
   await PlacesTestUtils.setFaviconForPage(
     uri,

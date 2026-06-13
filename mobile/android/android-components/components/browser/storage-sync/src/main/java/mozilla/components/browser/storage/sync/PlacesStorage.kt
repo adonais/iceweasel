@@ -33,7 +33,7 @@ abstract class PlacesStorage(
     context: Context,
     val crashReporter: CrashReporting? = null,
     readDispatcher: CoroutineDispatcher = Dispatchers.IO,
-    writeDispatcher: CoroutineDispatcher = Executors.newSingleThreadExecutor(
+    internal val writeDispatcher: CoroutineDispatcher = Executors.newSingleThreadExecutor(
         NamedThreadFactory("PlacesStorageWriteScope"),
     ).asCoroutineDispatcher(),
 ) : Storage, SyncableStore, StorageMaintenanceRegistry {

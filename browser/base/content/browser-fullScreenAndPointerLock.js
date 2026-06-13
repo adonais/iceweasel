@@ -501,7 +501,8 @@ var FullScreen = {
     // don't need that kind of precision in our CSS.
     shiftSize = shiftSize.toFixed(2);
     let translate = shiftSize > 0 ? `0 ${shiftSize}px` : "";
-    document.body.style.translate = translate;
+    gNavToolbox.classList.toggle("fullscreen-floating-toolbox", shiftSize > 0);
+    gNavToolbox.style.translate = translate;
     gURLBar.style.translate = gURLBar.hasAttribute("breakout") ? translate : "";
     let searchbar = document.getElementById("searchbar-new");
     if (searchbar) {
@@ -639,7 +640,10 @@ var FullScreen = {
       let notifications = PopupNotifications.getNotification(
         this._permissionNotificationIDs
       ).filter(n => !n.dismissed);
-      PopupNotifications.remove(notifications, true);
+      PopupNotifications.remove(
+        notifications,
+        /* withoutUserResponse = */ true
+      );
       if (notifications.length) {
         this._logWarningPermissionPromptFS("promptCanceled");
       }

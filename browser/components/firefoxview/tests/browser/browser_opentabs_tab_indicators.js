@@ -13,7 +13,7 @@ add_task(async function test_notification_dot_indicator() {
   clearHistory();
   await withFirefoxView({}, async browser => {
     const { document } = browser.contentWindow;
-    let win = browser.ownerGlobal;
+    let win = browser.documentGlobal;
     await navigateToViewAndWait(document, "opentabs");
     // load page that opens prompt when page is hidden
     let openedTab = await BrowserTestUtils.openNewForegroundTab(
@@ -61,7 +61,7 @@ add_task(async function test_container_indicator() {
   clearHistory();
   await withFirefoxView({}, async browser => {
     const { document } = browser.contentWindow;
-    let win = browser.ownerGlobal;
+    let win = browser.documentGlobal;
 
     // Load a page in a container tab
     let userContextId = 1;

@@ -87,6 +87,18 @@
           "properties": {
             "id": {
               "type": "string",
+              "enum": ["userBookmarkFolderActivity"]
+            }
+          },
+          "required": ["id"],
+          "additionalProperties": false,
+          "description": "Happens when the user either creates a new bookmark folder or saves a bookmark into a user-created folder. Does not fire for tag operations or while a private window is active."
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
               "enum": ["frequentVisits"]
             },
             "params": {
@@ -445,6 +457,16 @@
             "id": {
               "type": "string",
               "enum": ["pageActionInUrlbar"]
+            },
+            "params": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Hosts to match against the current tab's host"
+            },
+            "patterns": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "URL patterns to match against the current tab's URL"
             }
           },
           "additionalProperties": false,

@@ -36,8 +36,8 @@ macosx64-sdk-26.4:
         symbol: TM(sdk26.4)
     run:
         arguments:
-            - https://swcdn.apple.com/content/downloads/32/53/047-96692-A_OAHIHT53YB/ybtshxmrcju8m2qvw3w5elr4rajtg1x3y3/CLTools_macOSNMOS_SDK.pkg
-            - 8c0571820cbf6eb977610a08922a2158ff3ed86389d4faa7eba34288f467047c6bacccc23aa6991f0d18450e393dd56cf581b08010fac45254db2c649610e9fc
+            - https://swcdn.apple.com/content/downloads/60/13/122-35686-A_30JUXWIJFR/ck0gzuw5qccefzm3ptlwou3pu6a55d0o02/CLTools_macOSNMOS_SDK.pkg
+            - 3e4e755526d97d4ccc8caa0d42c6ecb41cfd009a9e2848f86766f0eb30990f0f26709339caa926151becd4501df59cfeaa47a0caa7b8ad13c4211b607d1e63c8
             - Library/Developer/CommandLineTools/SDKs/MacOSX26.4.sdk
         toolchain-artifact: project/gecko/mac-sdk/MacOSX26.4.sdk.tar.zst
         toolchain-alias:

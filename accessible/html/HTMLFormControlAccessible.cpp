@@ -15,7 +15,7 @@
 #include "States.h"
 #include "TextLeafAccessible.h"
 
-#include "nsContentList.h"
+#include "mozilla/dom/ContentList.h"
 #include "mozilla/dom/HTMLInputElement.h"
 #include "mozilla/dom/HTMLMeterElement.h"
 #include "mozilla/dom/HTMLTextAreaElement.h"
@@ -57,8 +57,8 @@ void HTMLFormAccessible::DOMAttributeChanged(int32_t aNameSpaceID,
               !acc->Elm()->AttrValueIs(kNameSpaceID_None,
                                        nsGkAtoms::autocomplete, nsGkAtoms::OFF,
                                        eIgnoreCase)) {
-            RefPtr<AccEvent> stateChangeEvent =
-                new AccStateChangeEvent(acc, states::SUPPORTS_AUTOCOMPLETION);
+            auto stateChangeEvent = MakeRefPtr<AccStateChangeEvent>(
+                acc, states::SUPPORTS_AUTOCOMPLETION);
             mDoc->FireDelayedEvent(stateChangeEvent);
           }
         }
@@ -114,7 +114,7 @@ Relation HTMLRadioButtonAccessible::ComputeGroupAttributes(
   nsAutoString name;
   mContent->AsElement()->GetAttr(nsGkAtoms::name, name);
 
-  RefPtr<nsContentList> inputElms;
+  RefPtr<ContentList> inputElms;
 
   if (dom::Element* formElm =
           nsIFormControl::FromNode(mContent)->GetFormInternal()) {
@@ -879,7 +879,7 @@ void HTMLProgressAccessible::DOMAttributeChanged(int32_t aNameSpaceID,
 
     uint64_t currState = NativeState();
     if ((aOldState ^ currState) & states::MIXED) {
-      RefPtr<AccEvent> stateChangeEvent = new AccStateChangeEvent(
+      auto stateChangeEvent = MakeRefPtr<AccStateChangeEvent>(
           this, states::MIXED, (currState & states::MIXED));
       mDoc->FireDelayedEvent(stateChangeEvent);
     }

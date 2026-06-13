@@ -4,6 +4,7 @@
 
 include CrashReporterInitArgs;
 include PrefsTypes;
+include ProfilerTypes;
 include protocol PGMPContent;
 include protocol PGMPTimer;
 include protocol PGMPStorage;
@@ -82,7 +83,8 @@ child:
   async TestTriggerMetrics() returns (bool unused);
 
   // Attempt a graceful shutdown and collect a profile if available.
-  async Shutdown() returns (nsCString profile);
+  async Shutdown()
+      returns (ProfileAndAdditionalInformation profileAndAdditionalInformation);
 };
 
 } // namespace gmp

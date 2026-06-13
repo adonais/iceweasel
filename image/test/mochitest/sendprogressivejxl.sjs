@@ -2,7 +2,26 @@
  * http://creativecommons.org/publicdomain/zero/1.0/
  */
 
+// Streams progressive.jxl to the client in stages so the test can observe
+// the partial-decode states the JXL decoder produces. The byte counts at
+// each stop come from the same probe used by the gtest in
+// image/test/gtest/TestDecoders.cpp (search "kBenchmarks" in
+// JXLProgressiveDecodingMatches), set ~30-100 bytes past each change point
+// so the rendered surface is in a stable post-flush state.
+//
+// Usage:
+//   GET sendprogressivejxl.sjs           - opens the streamed response,
+//                                          immediately writes bytes [0,
+//                                          stops[0]) and then waits.
+//   GET sendprogressivejxl.sjs?continue=N - tells the streamed response to
+//                                           catch up to stops[N], or, when
+//                                           N == stops.length, to write
+//                                           the rest of the file and
+//                                           finish.
+
 var gTimer = null;
+
+const kStops = [400, 4300, 17400, 46100];
 
 function getFileStream(filename) {
   var self = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
@@ -17,50 +36,56 @@ function getFileStream(filename) {
   return fileStream;
 }
 
-// Split point: enough bytes to contain the complete LF frame so that
-// FlushPartialFrame() fires with the LF approximation visible, but not
-// enough to decode the full AC data for the final image.
-const kSplitPoint = 1000;
-
 function handleRequest(request, response) {
-  // The test calls this with ?continue once it has observed the LF frame,
-  // signalling that we should send the rest of the image data.
-  if (request.queryString === "continue") {
-    setState("jxl_progressive_continue", "1");
+  if (request.queryString.startsWith("continue=")) {
+    setState(
+      "jxl_progressive_step",
+      request.queryString.slice("continue=".length)
+    );
     response.setStatusLine(request.httpVersion, 200, "OK");
     response.write("ok");
     return;
   }
 
-  setState("jxl_progressive_continue", "0");
+  setState("jxl_progressive_step", "0");
 
   response.processAsync();
   response.setStatusLine(request.httpVersion, 200, "OK");
   response.setHeader("Content-Type", "image/jxl", false);
   response.setHeader("Cache-Control", "no-cache", false);
 
-  var firstStream = getFileStream("progressive.jxl");
-  response.bodyOutputStream.writeFrom(firstStream, kSplitPoint);
-  firstStream.close();
+  var stream = getFileStream("progressive.jxl");
+  // Send the bytes the first stop covers; the rest go out as ?continue
+  // signals come in.
+  response.bodyOutputStream.writeFrom(stream, kStops[0]);
+  var sent = kStops[0];
+  var currentStep = 0;
 
-  function checkAndContinue() {
-    if (getState("jxl_progressive_continue") === "1") {
-      var secondStream = getFileStream("progressive.jxl");
-      secondStream
-        .QueryInterface(Ci.nsISeekableStream)
-        .seek(Ci.nsISeekableStream.NS_SEEK_SET, kSplitPoint);
-      response.bodyOutputStream.writeFrom(
-        secondStream,
-        secondStream.available()
-      );
-      secondStream.close();
-      response.finish();
-    } else {
-      gTimer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
-      gTimer.initWithCallback(checkAndContinue, 500, Ci.nsITimer.TYPE_ONE_SHOT);
+  function pollAndAdvance() {
+    var requestedStep = parseInt(getState("jxl_progressive_step"), 10) || 0;
+
+    while (requestedStep > currentStep) {
+      currentStep++;
+      if (currentStep < kStops.length) {
+        var toSend = kStops[currentStep] - sent;
+        response.bodyOutputStream.writeFrom(stream, toSend);
+        sent += toSend;
+      } else {
+        // The client has signalled "everything else now" (continue=stops.length).
+        var remaining = stream.available();
+        if (remaining > 0) {
+          response.bodyOutputStream.writeFrom(stream, remaining);
+        }
+        stream.close();
+        response.finish();
+        return;
+      }
     }
+
+    gTimer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
+    gTimer.initWithCallback(pollAndAdvance, 500, Ci.nsITimer.TYPE_ONE_SHOT);
   }
 
   gTimer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
-  gTimer.initWithCallback(checkAndContinue, 500, Ci.nsITimer.TYPE_ONE_SHOT);
+  gTimer.initWithCallback(pollAndAdvance, 500, Ci.nsITimer.TYPE_ONE_SHOT);
 }

@@ -12,6 +12,7 @@ UNIFIED_SOURCES += [
     "TestBufferRotation.cpp",
     "TestConfigManager.cpp",
     "TestCoord.cpp",
+    "TestCopyPlane.cpp",
     "TestFontFallback.cpp",
     "TestFontOverlapPrevention.cpp",
     "TestGfxWidgets.cpp",

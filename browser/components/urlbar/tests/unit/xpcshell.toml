@@ -34,11 +34,15 @@ support-files = ["data/engine.xml"]
 
 ["test_UrlbarUtils_addToUrlbarHistory.js"]
 
+["test_UrlbarUtils_autofillBackspaceCount.js"]
+
 ["test_UrlbarUtils_autofillBlock.js"]
 
 ["test_UrlbarUtils_copySnakeKeysToCamel.js"]
 
 ["test_UrlbarUtils_formatDate.js"]
+
+["test_UrlbarUtils_getBackspaceBlock.js"]
 
 ["test_UrlbarUtils_getShortcutOrURIAndPostData.js"]
 
@@ -54,6 +58,10 @@ support-files = ["data/engine.xml"]
 
 ["test_autofill_adaptiveHistory.js"]
 requesttimeoutfactor = 3  # Slow on Mac debug
+
+["test_autofill_adaptiveHistory_bookmarks.js"]
+
+["test_autofill_adaptiveHistory_history_disabled.js"]
 
 ["test_autofill_adaptive_origin_fallback.js"]
 

@@ -27,6 +27,9 @@ describe("AboutPreferences Feed", () => {
     globals.set("NimbusFeatures", {
       newtab: { getAllVariables: sandbox.stub() },
     });
+    globals.set("Management", {
+      asyncLoadSettingsModules: sandbox.stub(),
+    });
   });
   afterEach(() => {
     globals.restore();
@@ -50,26 +53,26 @@ describe("AboutPreferences Feed", () => {
     it("should call .openPreferences on SETTINGS_OPEN", () => {
       const action = {
         type: at.SETTINGS_OPEN,
-        _target: { browser: { ownerGlobal: { openPreferences: sinon.spy() } } },
+        _target: {
+          window: { openPreferences: sinon.spy() },
+        },
       };
       instance.onAction(action);
-      assert.calledOnce(action._target.browser.ownerGlobal.openPreferences);
+      assert.calledOnce(action._target.window.openPreferences);
     });
     it("should call .BrowserAddonUI.openAddonsMgr with the extension id on OPEN_WEBEXT_SETTINGS", () => {
       const action = {
         type: at.OPEN_WEBEXT_SETTINGS,
         data: "foo",
         _target: {
-          browser: {
-            ownerGlobal: {
-              BrowserAddonUI: { openAddonsMgr: sinon.spy() },
-            },
+          window: {
+            BrowserAddonUI: { openAddonsMgr: sinon.spy() },
           },
         },
       };
       instance.onAction(action);
       assert.calledWith(
-        action._target.browser.ownerGlobal.BrowserAddonUI.openAddonsMgr,
+        action._target.window.BrowserAddonUI.openAddonsMgr,
         "addons://detail/foo"
       );
     });
@@ -150,12 +153,22 @@ describe("AboutPreferences Feed", () => {
 
     describe("when browser.settings-redesign.enabled is true", () => {
       let registerGroups;
+      let getSettingGroup;
 
       beforeEach(() => {
         sandbox.stub(Services.prefs, "getBoolPref").returns(true);
         registerGroups = sandbox.stub();
+        getSettingGroup = sandbox.stub();
+        getSettingGroup
+          .withArgs("homepage")
+          .onFirstCall()
+          .throws(new Error("Not yet registered"));
+        getSettingGroup.withArgs("homepage").onSecondCall().returns(true);
         // SettingGroupManager lives on the preferences window object.
-        globals.set("SettingGroupManager", { registerGroups });
+        globals.set("SettingGroupManager", {
+          registerGroups,
+          get: getSettingGroup,
+        });
         // Stub the setup methods so we can focus on the routing logic in observe().
         sandbox.stub(instance, "_registerPreferences");
         sandbox.stub(instance, "_setupHomepageGroup").returns({});
@@ -180,6 +193,14 @@ describe("AboutPreferences Feed", () => {
 
         assert.notCalled(renderPreferenceSection);
         assert.notCalled(toggleRestoreDefaults);
+      });
+
+      it("should not register a second time when observe fires again for the same window", async () => {
+        await instance.observe(window, PREFERENCES_LOADED_EVENT);
+        await instance.observe(window, PREFERENCES_LOADED_EVENT_SUBPANE);
+
+        assert.calledOnce(instance._registerPreferences);
+        assert.calledOnce(registerGroups);
       });
     });
   });
@@ -209,6 +230,14 @@ describe("AboutPreferences Feed", () => {
           p =>
             p.id ===
             "browser.newtabpage.activity-stream.section.highlights.includeVisited"
+        )
+      );
+      assert.isTrue(
+        prefs.some(
+          p =>
+            p.id === "browser.newtabpage.activity-stream.hideLogo" &&
+            p.type === "bool" &&
+            p.inverted === true
         )
       );
     });

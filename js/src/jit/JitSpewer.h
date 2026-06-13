@@ -247,7 +247,7 @@ static inline Fprinter& JitSpewPrinter() {
 class JitSpewIndent {
  public:
   explicit JitSpewIndent(JitSpewChannel channel) {}
-  ~JitSpewIndent() {}
+  ~JitSpewIndent() = default;
 };
 
 // The computation of some of the argument of the spewing functions might be

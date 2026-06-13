@@ -249,7 +249,7 @@ class imgRequest final : public nsIThreadRetargetableStreamListener,
   nsCOMPtr<nsITimedChannel> mTimedChannel;
 
   nsCString mContentType;
-  int64_t mContentLength;
+  int64_t mContentLength = 0;
 
   /* we hold on to this to this so long as we have observers */
   RefPtr<imgCacheEntry> mCacheEntry;

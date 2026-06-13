@@ -195,6 +195,7 @@
          id="selection-shortcut-action-panel"
          noautofocus="true"
          consumeoutsideclicks="never"
+         nonnative=""
          type="arrow">
     <hbox class="panel-subview-body">
       <html:moz-button id="ai-action-button"/>
@@ -206,6 +207,7 @@
   <panel class="panel-no-padding"
          id="chat-shortcuts-options-panel"
          noautofocus="true"
+         nonnative=""
          type="arrow">
     <vbox class="panel-subview-body"/>
   </panel>
@@ -411,6 +413,16 @@
   </menupopup>
 
   <menupopup id="sidebar-synced-tabs-context-menu">
+    <menuitem data-l10n-id="sidebar-context-menu-open-in-tab"
+              id="sidebar-synced-tabs-context-open-in-tab"/>
+    <menu id="sidebar-synced-tabs-context-menu-container-tab"
+            data-l10n-id="sidebar-context-menu-open-in-container-tab"
+            selection-type="single"
+            node-type="link"
+            hide-if-private-browsing="true"
+            hide-if-usercontext-disabled="true">
+      <menupopup id="sidebar-synced-tabs-context-menu-container-popup"/>
+    </menu>
     <menuitem data-l10n-id="sidebar-context-menu-open-in-window"
               id="sidebar-synced-tabs-context-open-in-window"/>
     <menuitem data-l10n-id="sidebar-context-menu-open-in-private-window"
@@ -613,6 +625,7 @@
          noautofocus="true"
          norolluponanchor="true"
          consumeoutsideclicks="false"
+         nonnative=""
          role="tooltip">
     <html:div class="tab-preview-content-interactive"></html:div>
     <html:div class="tab-preview-content-main">

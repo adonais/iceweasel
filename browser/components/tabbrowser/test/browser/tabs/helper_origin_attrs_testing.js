@@ -18,7 +18,7 @@ function handleEvent(aEvent) {
     return;
   }
   // Ignore <browser> element in about:preferences and any other special pages
-  if ("gBrowser" in aEvent.target.ownerGlobal) {
+  if ("gBrowser" in aEvent.target.documentGlobal) {
     xulFrameLoaderCreatedListenerInfo.numCalledSoFar++;
   }
 }

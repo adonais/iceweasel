@@ -15,4 +15,3 @@ browser.jar:
   skin/classic/browser/preferences/alwaysAsk.png            (preferences/alwaysAsk.png)
   skin/classic/browser/preferences/application.png          (preferences/application.png)
   skin/classic/browser/preferences/saveFile.png             (preferences/saveFile.png)
-  skin/classic/browser/qrcode.svg                           (../shared/icons/qrcode.svg)

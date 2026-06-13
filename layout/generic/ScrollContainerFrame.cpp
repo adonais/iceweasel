@@ -14,6 +14,7 @@
 #include <tuple>    // for std::tie
 
 #include "DisplayItemClip.h"
+#include "GeckoProfiler.h"
 #include "MobileViewportManager.h"
 #include "ScrollAnimationBezierPhysics.h"
 #include "ScrollAnimationMSDPhysics.h"
@@ -32,11 +33,13 @@
 #include "mozilla/ContentEvents.h"
 #include "mozilla/DisplayPortUtils.h"
 #include "mozilla/EventDispatcher.h"
+#include "mozilla/EventStateManager.h"
 #include "mozilla/LookAndFeel.h"
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/PresState.h"
+#include "mozilla/ReflowInput.h"
 #include "mozilla/SVGOuterSVGFrame.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/ScrollbarPreferences.h"
@@ -93,6 +96,7 @@
 #include "nsListControlFrame.h"
 #include "nsNameSpaceManager.h"
 #include "nsNodeInfoManager.h"
+#include "nsPlaceholderFrame.h"
 #include "nsPresContext.h"
 #include "nsPresContextInlines.h"
 #include "nsRefreshDriver.h"
@@ -167,6 +171,7 @@ class ScrollContainerFrame::ScrollEvent : public Runnable {
   NS_DECL_NSIRUNNABLE
   explicit ScrollEvent(ScrollContainerFrame* aHelper);
   void Revoke() { mHelper = nullptr; }
+  UniquePtr<ProfileChunkedBuffer> mBacktrace;
 
  private:
   ScrollContainerFrame* mHelper;
@@ -297,7 +302,7 @@ ScrollContainerFrame::ScrollContainerFrame(ComputedStyle* aStyle,
   AppendScrollUpdate(ScrollPositionUpdate::NewScrollframe(nsPoint()));
 
   if (PresContext()->UseOverlayScrollbars()) {
-    mScrollbarActivity = new ScrollbarActivity(this);
+    mScrollbarActivity = MakeRefPtr<ScrollbarActivity>(this);
   }
 
   if (mIsRoot) {
@@ -1749,7 +1754,7 @@ void ScrollContainerFrame::HandleScrollbarStyleSwitching() {
     mScrollbarActivity->Destroy();
     mScrollbarActivity = nullptr;
   } else if (!mScrollbarActivity && PresContext()->UseOverlayScrollbars()) {
-    mScrollbarActivity = new ScrollbarActivity(this);
+    mScrollbarActivity = MakeRefPtr<ScrollbarActivity>(this);
   }
 }
 
@@ -2606,7 +2611,7 @@ void ScrollContainerFrame::ScrollToWithOrigin(nsPoint aScrollPosition,
         return;
       }
 
-      mAsyncSmoothMSDScroll = new AsyncSmoothMSDScroll(
+      mAsyncSmoothMSDScroll = MakeRefPtr<AsyncSmoothMSDScroll>(
           GetScrollPosition(), mDestination, currentVelocity,
           GetLayoutScrollRange(), now, presContext, std::move(snapTargetIds),
           aParams.mTriggeredByScript);
@@ -2638,7 +2643,7 @@ void ScrollContainerFrame::ScrollToWithOrigin(nsPoint aScrollPosition,
       return;
     }
 
-    mAsyncScroll = new AsyncScroll(aParams.mTriggeredByScript);
+    mAsyncScroll = MakeRefPtr<AsyncScroll>(aParams.mTriggeredByScript);
     mAsyncScroll->SetRefreshObserver(this);
   }
 
@@ -3523,15 +3528,14 @@ void ScrollContainerFrame::AppendScrollPartsTo(nsDisplayListBuilder* aBuilder,
     clipState.ClipContentDescendants(scrollPartsClip);
   }
 
-  for (uint32_t i = 0; i < scrollParts.Length(); ++i) {
-    MOZ_ASSERT(scrollParts[i]);
+  for (nsIFrame* scrollPart : scrollParts) {
     Maybe<ScrollDirection> scrollDirection;
     uint32_t appendToTopFlags = 0;
-    if (scrollParts[i] == mVScrollbarBox) {
+    if (scrollPart == mVScrollbarBox) {
       scrollDirection.emplace(ScrollDirection::eVertical);
       appendToTopFlags |= APPEND_SCROLLBAR_CONTAINER;
     }
-    if (scrollParts[i] == mHScrollbarBox) {
+    if (scrollPart == mHScrollbarBox) {
       MOZ_ASSERT(!scrollDirection.isSome());
       scrollDirection.emplace(ScrollDirection::eHorizontal);
       appendToTopFlags |= APPEND_SCROLLBAR_CONTAINER;
@@ -3543,14 +3547,14 @@ void ScrollContainerFrame::AppendScrollPartsTo(nsDisplayListBuilder* aBuilder,
     // zoomable, and where the scrollbar sizes are bounded by the widget.
     const nsRect visible =
         mIsRoot && PresContext()->IsRootContentDocumentCrossProcess()
-            ? scrollParts[i]->InkOverflowRectRelativeToParent()
+            ? scrollPart->InkOverflowRectRelativeToParent()
             : aBuilder->GetVisibleRect();
     if (visible.IsEmpty()) {
       continue;
     }
     const nsRect dirty =
         mIsRoot && PresContext()->IsRootContentDocumentCrossProcess()
-            ? scrollParts[i]->InkOverflowRectRelativeToParent()
+            ? scrollPart->InkOverflowRectRelativeToParent()
             : aBuilder->GetDirtyRect();
 
     // Always create layers for overlay scrollbars so that we don't create a
@@ -3569,15 +3573,16 @@ void ScrollContainerFrame::AppendScrollPartsTo(nsDisplayListBuilder* aBuilder,
       nsDisplayListBuilder::AutoCurrentScrollbarInfoSetter infoSetter(
           aBuilder, scrollTargetId, scrollDirection, createLayer);
       BuildDisplayListForChild(
-          aBuilder, scrollParts[i], partList,
+          aBuilder, scrollPart, partList,
           nsIFrame::DisplayChildFlag::ForceStackingContext);
     }
 
-    // DisplayChildFlag::ForceStackingContext put everything into
-    // partList.PositionedDescendants().
-    if (partList.PositionedDescendants()->IsEmpty()) {
+    if (partList.IsEmpty()) {
       continue;
     }
+
+    nsDisplayList list(aBuilder);
+    partList.SerializeWithCorrectZOrder(&list, scrollPart->GetContent());
 
     if (createLayer) {
       appendToTopFlags |= APPEND_OWN_LAYER;
@@ -3586,7 +3591,7 @@ void ScrollContainerFrame::AppendScrollPartsTo(nsDisplayListBuilder* aBuilder,
       appendToTopFlags |= APPEND_POSITIONED;
     }
 
-    if (isOverlayScrollbar || scrollParts[i] == mResizerBox) {
+    if (isOverlayScrollbar || scrollPart == mResizerBox) {
       if (isOverlayScrollbar && mIsRoot) {
         appendToTopFlags |= APPEND_TOP;
       } else {
@@ -3597,13 +3602,13 @@ void ScrollContainerFrame::AppendScrollPartsTo(nsDisplayListBuilder* aBuilder,
 
     {
       nsDisplayListBuilder::AutoBuildingDisplayList buildingForChild(
-          aBuilder, scrollParts[i], visible + GetOffsetTo(scrollParts[i]),
-          dirty + GetOffsetTo(scrollParts[i]));
-      if (scrollParts[i]->IsTransformed()) {
+          aBuilder, scrollPart, visible + GetOffsetTo(scrollPart),
+          dirty + GetOffsetTo(scrollPart));
+      if (scrollPart->IsTransformed()) {
         nsPoint toOuterReferenceFrame;
         const nsIFrame* outerReferenceFrame = aBuilder->FindReferenceFrameFor(
-            scrollParts[i]->GetParent(), &toOuterReferenceFrame);
-        toOuterReferenceFrame += scrollParts[i]->GetPosition();
+            scrollPart->GetParent(), &toOuterReferenceFrame);
+        toOuterReferenceFrame += scrollPart->GetPosition();
 
         buildingForChild.SetReferenceFrameAndCurrentOffset(
             outerReferenceFrame, toOuterReferenceFrame);
@@ -3611,8 +3616,8 @@ void ScrollContainerFrame::AppendScrollPartsTo(nsDisplayListBuilder* aBuilder,
       nsDisplayListBuilder::AutoCurrentScrollbarInfoSetter infoSetter(
           aBuilder, scrollTargetId, scrollDirection, createLayer);
 
-      ::AppendToTop(aBuilder, aLists, partList.PositionedDescendants(),
-                    scrollParts[i], this, appendToTopFlags);
+      ::AppendToTop(aBuilder, aLists, &list, scrollPart, this,
+                    appendToTopFlags);
     }
   }
 }
@@ -4036,12 +4041,6 @@ void ScrollContainerFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   // in the positioned-elements layer on top of everything else by the call
   // to AppendScrollPartsTo(..., true) further down.
   AppendScrollPartsTo(aBuilder, aLists, createLayersForScrollbars, false);
-
-  const nsStyleDisplay* disp = StyleDisplay();
-  if (aBuilder->IsForPainting() &&
-      disp->mWillChange.bits & StyleWillChangeBits::SCROLL) {
-    aBuilder->AddToWillChangeBudget(this, GetVisualViewportSize());
-  }
 
   mScrollParentID = aBuilder->GetCurrentScrollParentId();
 
@@ -5528,7 +5527,7 @@ void ScrollContainerFrame::PostScrollEndEvent() {
   }
 
   // The ScrollEndEvent constructor registers itself.
-  mScrollEndEvent = new ScrollEndEvent(this);
+  mScrollEndEvent = MakeRefPtr<ScrollEndEvent>(this);
 }
 
 RefPtr<nsINode> ScrollContainerFrame::ScrollEventTargetNode(
@@ -6047,10 +6046,15 @@ ScrollContainerFrame::ScrollEndEvent::Run() {
 void ScrollContainerFrame::FireScrollEvent() {
   RefPtr<nsIContent> content = GetContent();
   RefPtr<nsPresContext> presContext = PresContext();
-  AUTO_PROFILER_MARKER_DOCSHELL("FireScrollEvent", GRAPHICS,
-                                presContext->GetDocShell());
-
   MOZ_ASSERT(mScrollEvent);
+  UniquePtr<ProfileChunkedBuffer> backtrace =
+      std::move(mScrollEvent->mBacktrace);
+  AutoProfilerTracing scrollEventMarker(
+      "FireScrollEvent", geckoprofiler::category::GRAPHICS,
+      std::move(backtrace),
+      geckoprofiler::markers::detail::
+          profiler_get_inner_window_id_from_docshell(
+              presContext->GetDocShell()));
   mScrollEvent->Revoke();
   mScrollEvent = nullptr;
 
@@ -6084,7 +6088,9 @@ void ScrollContainerFrame::PostScrollEvent() {
   }
 
   // The ScrollEvent constructor registers itself.
-  mScrollEvent = new ScrollEvent(this);
+  mScrollEvent = MakeRefPtr<ScrollEvent>(this);
+  // Capture stack trace now rather when FireScrollEvent runs async
+  mScrollEvent->mBacktrace = profiler_capture_backtrace();
 }
 
 // TODO: Convert this to MOZ_CAN_RUN_SCRIPT (bug 1415230, bug 1535398)
@@ -6119,7 +6125,7 @@ void ScrollContainerFrame::PostOverflowEvent() {
     return;
   }
 
-  mAsyncScrollPortEvent = new AsyncScrollPortEvent(this);
+  mAsyncScrollPortEvent = MakeRefPtr<AsyncScrollPortEvent>(this);
   rpc->AddWillPaintObserver(mAsyncScrollPortEvent.get());
 }
 
@@ -7053,8 +7059,6 @@ StyleDirection ScrollContainerFrame::GetScrolledFrameDir(
       auto sr = aScrolledFrame->ScrollableOverflowRectRelativeToSelf();
       auto leftOverflow = -sr.x;
       auto rightOverflow = sr.XMost() - aScrolledFrame->GetRect().Width();
-      MOZ_ASSERT(leftOverflow >= 0);
-      MOZ_ASSERT(rightOverflow >= 0);
       return leftOverflow > rightOverflow ? StyleDirection::Rtl
                                           : StyleDirection::Ltr;
     }
@@ -7375,7 +7379,7 @@ void ScrollContainerFrame::PostScrolledAreaEvent() {
   if (mScrolledAreaEvent.IsPending()) {
     return;
   }
-  mScrolledAreaEvent = new ScrolledAreaEvent(this);
+  mScrolledAreaEvent = MakeRefPtr<ScrolledAreaEvent>(this);
   nsContentUtils::AddScriptRunner(mScrolledAreaEvent.get());
 }
 
@@ -7633,6 +7637,8 @@ static void AppendScrollPositionsForSnap(
   }
 }
 
+enum class ContainingBlockContext { Direct, Nested };
+
 /**
  * Collect the scroll positions corresponding to snap positions of frames in the
  * subtree rooted at |aFrame|, relative to |aScrolledFrame|, into |aSnapInfo|.
@@ -7641,16 +7647,42 @@ static void CollectScrollPositionsForSnap(
     nsIFrame* aFrame, nsIFrame* aScrolledFrame, const nsRect& aScrolledRect,
     const nsMargin& aScrollPadding, const nsRect& aScrollRange,
     WritingMode aWritingModeOnScroller, ScrollSnapInfo& aSnapInfo,
-    ScrollContainerFrame::SnapTargetSet* aSnapTargets) {
+    ScrollContainerFrame::SnapTargetSet* aSnapTargets,
+    ContainingBlockContext aContext) {
+  ScrollContainerFrame* sf = do_QueryFrame(aFrame);
+  // Absolute containing block inside a sub-scroller,
+  // will not contain any OOF snap targets for the
+  // outer scroller.
+  if (aFrame->IsAbsPosContainingBlock() &&
+      aContext == ContainingBlockContext::Nested) {
+    return;
+  }
   // Snap positions only affect the nearest ancestor scroll container on the
   // element's containing block chain.
-  ScrollContainerFrame* sf = do_QueryFrame(aFrame);
   if (sf) {
+    // Note: this function is called initially with `mScrolledFrame` as
+    // `aFrame`, not the `ScrollContainerFrame` itself, so this branch is only
+    // reached for nested scroll containers.
+    // If the sub-scroll container is an abs-pos containing block, all its
+    // position:absolute descendants are contained by it, so there are no
+    // OOF snap targets to collect for the outer scroll container.
+    if (aFrame->IsAbsPosContainingBlock()) {
+      return;
+    }
+    // Sub-scroll container: don't collect its own snap targets, but traverse
+    // into it to find OOF placeholders for position:absolute elements whose
+    // containing block is an ancestor.
+    for (nsIFrame* f : aFrame->PrincipalChildList()) {
+      CollectScrollPositionsForSnap(
+          f, aScrolledFrame, aScrolledRect, aScrollPadding, aScrollRange,
+          aWritingModeOnScroller, aSnapInfo, aSnapTargets,
+          ContainingBlockContext::Nested);
+    }
     return;
   }
 
-  for (const auto& childList : aFrame->ChildLists()) {
-    for (nsIFrame* f : childList.mList) {
+  auto processFrame = [&](nsIFrame* f, ContainingBlockContext aCtx) {
+    if (aCtx == ContainingBlockContext::Direct) {
       const nsStyleDisplay* styleDisplay = f->StyleDisplay();
       if (styleDisplay->mScrollSnapAlign.inline_ !=
               StyleScrollSnapAlignKeyword::None ||
@@ -7660,10 +7692,23 @@ static void CollectScrollPositionsForSnap(
             f, aScrolledFrame, aScrolledRect, aScrollPadding, aScrollRange,
             aWritingModeOnScroller, aSnapInfo, aSnapTargets);
       }
-      CollectScrollPositionsForSnap(
-          f, aScrolledFrame, aScrolledRect, aScrollPadding, aScrollRange,
-          aWritingModeOnScroller, aSnapInfo, aSnapTargets);
     }
+    CollectScrollPositionsForSnap(
+        f, aScrolledFrame, aScrolledRect, aScrollPadding, aScrollRange,
+        aWritingModeOnScroller, aSnapInfo, aSnapTargets, aCtx);
+  };
+
+  for (nsIFrame* f : aFrame->PrincipalChildList()) {
+    if (f->IsPlaceholderFrame()) {
+      if (nsIFrame* oof =
+              static_cast<nsPlaceholderFrame*>(f)->GetOutOfFlowFrame()) {
+        if (nsLayoutUtils::IsProperAncestorFrame(aScrolledFrame, oof)) {
+          processFrame(oof, ContainingBlockContext::Direct);
+        }
+      }
+      continue;
+    }
+    processFrame(f, aContext);
   }
 }
 
@@ -7741,9 +7786,10 @@ ScrollSnapInfo ScrollContainerFrame::ComputeScrollSnapInfo() {
     return result;
   }
 
-  CollectScrollPositionsForSnap(
-      mScrolledFrame, mScrolledFrame, GetScrolledRect(), GetScrollPadding(),
-      GetLayoutScrollRange(), writingMode, result, &mSnapTargets);
+  CollectScrollPositionsForSnap(mScrolledFrame, mScrolledFrame,
+                                GetScrolledRect(), GetScrollPadding(),
+                                GetLayoutScrollRange(), writingMode, result,
+                                &mSnapTargets, ContainingBlockContext::Direct);
   return result;
 }
 
@@ -7770,13 +7816,16 @@ Maybe<SnapDestination> ScrollContainerFrame::GetSnapPointForResnap() {
   nsIContent* focusedContent =
       GetContent()->GetComposedDoc()->GetUnretargetedFocusedContent();
 
+  nsIContent* targetContent =
+      PresContext()->EventStateManager()->GetURLTargetContent();
+
   // While we are reconstructing this scroll container, we might be in the
   // process of restoring the scroll position, we need to respect it.
   nsPoint currentOrRestorePos =
       NeedRestorePosition() ? mRestorePos : GetScrollPosition();
   return ScrollSnapUtils::GetSnapPointForResnap(
       ComputeScrollSnapInfo(), GetLayoutScrollRange(), currentOrRestorePos,
-      mLastSnapTargetIds, focusedContent, GetWritingMode());
+      mLastSnapTargetIds, focusedContent, targetContent, GetWritingMode());
 }
 
 bool ScrollContainerFrame::NeedsResnap() {
@@ -7867,11 +7916,6 @@ ScrollContainerFrame::GetScrollSnapAlignFor(const nsIFrame* aFrame) const {
 
   nsIFrame* styleFrame = GetFrameForStyle();
   if (!styleFrame) {
-    return {alignForX, alignForY};
-  }
-
-  if (styleFrame->StyleDisplay()->mScrollSnapType.strictness ==
-      StyleScrollSnapStrictness::None) {
     return {alignForX, alignForY};
   }
 

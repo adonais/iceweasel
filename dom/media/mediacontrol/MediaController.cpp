@@ -196,7 +196,9 @@ void MediaController::Unmute() {
 
 uint64_t MediaController::Id() const { return mTopLevelBrowsingContextId; }
 
-bool MediaController::IsAudible() const { return IsMediaAudible(); }
+bool MediaController::IsAudible() const {
+  return IsMediaAudible() || !mUncontrollableAudibleMap.IsEmpty();
+}
 
 bool MediaController::IsPlaying() const { return IsMediaPlaying(); }
 
@@ -228,9 +230,14 @@ bool MediaController::ShouldPropagateActionToAllContexts(
 
 void MediaController::UpdateMediaControlActionToContentMediaIfNeeded(
     const MediaControlAction& aAction) {
-  // If the controller isn't active or it has been shutdown, we don't need to
-  // update media action to the content process.
-  if (!mIsActive || mShutdown) {
+  if (mShutdown) {
+    return;
+  }
+  // Stop must be allowed through on inactive controllers because uncontrollable
+  // receivers need to silence on audio focus loss even though they never
+  // activate the controller. For all other actions an inactive controller has
+  // nothing to dispatch.
+  if (!mIsActive && aAction.mKey != Some(MediaControlKey::Stop)) {
     return;
   }
 
@@ -348,17 +355,32 @@ NS_IMETHODIMP MediaController::GetName(nsACString& aName) {
 }
 
 void MediaController::NotifyMediaAudibleChanged(uint64_t aBrowsingContextId,
-                                                MediaAudibleState aState) {
+                                                MediaAudibleState aState,
+                                                ControlType aType) {
   if (mShutdown) {
     return;
   }
 
   bool oldAudible = IsAudible();
-  MediaStatusManager::NotifyMediaAudibleChanged(aBrowsingContextId, aState);
+  if (aType == ControlType::eControllable) {
+    MediaStatusManager::NotifyMediaAudibleChanged(aBrowsingContextId, aState);
+  } else {
+    // Uncontrollable source: track audible-source counts per browsing context
+    // directly here so that activation logic stays untouched.
+    if (aState == MediaAudibleState::eAudible) {
+      ++mUncontrollableAudibleMap.LookupOrInsert(aBrowsingContextId, 0u);
+    } else if (auto entry =
+                   mUncontrollableAudibleMap.Lookup(aBrowsingContextId)) {
+      if (--entry.Data() == 0) {
+        entry.Remove();
+      }
+    }
+  }
   if (IsAudible() == oldAudible) {
     return;
   }
   UpdateActivatedStateIfNeeded();
+  DispatchAsyncEvent(u"audiblechange"_ns);
 
   // Request the audio focus amongs different controllers that could cause
   // pausing other audible controllers if we enable the audio focus management.
@@ -567,7 +589,11 @@ void MediaController::DispatchAsyncEvent(already_AddRefed<Event> aEvent) {
   MOZ_ASSERT(event);
   nsAutoString eventType;
   event->GetType(eventType);
-  if (!mIsActive && !eventType.EqualsLiteral("deactivated")) {
+  // 'audiblechange' must fire even on inactive controllers because
+  // uncontrollable sources never activate the controller, but their
+  // audibility still matters to listeners.
+  if (!mIsActive && !eventType.EqualsLiteral("deactivated") &&
+      !eventType.EqualsLiteral("audiblechange")) {
     LOG("Only 'deactivated' can be dispatched on a deactivated controller, not "
         "'%s'",
         NS_ConvertUTF16toUTF8(eventType).get());

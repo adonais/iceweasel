@@ -90,8 +90,8 @@ GeckoMediaPluginServiceChild::GetContentParent(
 
   GetServiceChild()->Then(
       thread, __func__,
-      [nodeIdVariant = aNodeIdVariant, self, api, tags = aTags.Clone(), helper,
-       rawHolder](GMPServiceChild* child) {
+      [nodeIdVariant = aNodeIdVariant, self, api = std::move(api),
+       tags = aTags.Clone(), helper, rawHolder](GMPServiceChild* child) {
         nsTArray<base::ProcessId> alreadyBridgedTo;
 
         // We want to force the content process to keep all of our
@@ -296,6 +296,19 @@ void GeckoMediaPluginServiceChild::BeginShutdown() {
   // It's possible this gets called twice if the parent sends us a message to
   // shutdown and we block shutdown in content in close proximity.
   mShuttingDownOnGMPThread = true;
+
+  // Drain any in-flight GetServiceChild promises. After this point we will
+  // not call SetServiceChild (the only thing that resolves them), so any
+  // stranded holder would keep mPendingGetContentParents>0 forever and wedge
+  // xpcom-will-shutdown.
+  nsTArray<MozPromiseHolder<GetServiceChildPromise>> holders =
+      std::move(mGetServiceChildPromises);
+  for (auto& holder : holders) {
+    holder.Reject(MediaResult(NS_ERROR_ABORT,
+                              "GeckoMediaPluginServiceChild shutting down"_ns),
+                  __func__);
+  }
+
   RemoveShutdownBlockerIfNeeded();
 }
 
@@ -341,7 +354,9 @@ GeckoMediaPluginServiceChild::GetNodeId(
   nsString gmpName(aGMPName);
   GetServiceChild()->Then(
       thread, __func__,
-      [rawCallback, origin, topLevelOrigin, gmpName](GMPServiceChild* child) {
+      [rawCallback, origin = std::move(origin),
+       topLevelOrigin = std::move(topLevelOrigin),
+       gmpName = std::move(gmpName)](GMPServiceChild* child) {
         child->SendGetGMPNodeId(
             origin, topLevelOrigin, gmpName,
             [rawCallback](nsCString&& aId) {
@@ -368,10 +383,19 @@ GeckoMediaPluginServiceChild::Observe(nsISupports* aSubject, const char* aTopic,
   GMP_LOG_DEBUG("%s::%s: aTopic=%s", __CLASS__, __FUNCTION__, aTopic);
   if (!strcmp(NS_XPCOM_SHUTDOWN_THREADS_OBSERVER_ID, aTopic)) {
     if (mServiceChild) {
-      MutexAutoLock lock(mMutex);
-      mozilla::SyncRunnable::DispatchToThread(
-          mGMPThread,
-          WrapRunnable(mServiceChild.get(), &PGMPServiceChild::Close));
+      // Resolve the GMP thread without holding mMutex across the
+      // SyncRunnable-dispatch. GetThread() acquires and releases the mutex
+      // internally, so this call site stays lock-free. The GMP thread may
+      // be processing RecvBeginShutdown, whose BeginShutdown() calls
+      // AssertOnGMPThread() which also takes mMutex in debug builds -
+      // holding the mutex across the sync dispatch would deadlock there.
+      nsCOMPtr<nsIThread> gmpThread;
+      nsresult rv = GetThread(getter_AddRefs(gmpThread));
+      if (NS_SUCCEEDED(rv) && gmpThread) {
+        mozilla::SyncRunnable::DispatchToThread(
+            gmpThread,
+            WrapRunnable(mServiceChild.get(), &PGMPServiceChild::Close));
+      }
       mServiceChild = nullptr;
     }
     ShutdownGMPThread();
@@ -553,8 +577,9 @@ class OpenPGMPServiceChild : public mozilla::Runnable {
         mEndpoint(std::move(aEndpoint)) {}
 
   NS_IMETHOD Run() override {
-    RefPtr<GeckoMediaPluginServiceChild> gmp =
-        GeckoMediaPluginServiceChild::GetSingleton();
+    // Use the actor's cached back-pointer rather than GetSingleton() to
+    // avoid an unnecessary sync dispatch to the main thread.
+    RefPtr<GeckoMediaPluginServiceChild> gmp = mGMPServiceChild->Service();
     MOZ_RELEASE_ASSERT(gmp);
     MOZ_ASSERT(!gmp->mServiceChild);
     if (mEndpoint.Bind(mGMPServiceChild.get())) {
@@ -580,7 +605,7 @@ bool GMPServiceChild::Create(Endpoint<PGMPServiceChild>&& aGMPService) {
 
   MOZ_ASSERT(!gmp->mServiceChild);
 
-  RefPtr<GMPServiceChild> serviceChild(new GMPServiceChild());
+  RefPtr<GMPServiceChild> serviceChild(new GMPServiceChild(gmp));
 
   nsCOMPtr<nsIThread> gmpThread;
   nsresult rv = gmp->GetThread(getter_AddRefs(gmpThread));
@@ -593,12 +618,12 @@ bool GMPServiceChild::Create(Endpoint<PGMPServiceChild>&& aGMPService) {
 }
 
 ipc::IPCResult GMPServiceChild::RecvBeginShutdown() {
-  RefPtr<GeckoMediaPluginServiceChild> service =
-      GeckoMediaPluginServiceChild::GetSingleton();
-  MOZ_ASSERT(service && service->mServiceChild.get() == this);
-  if (service) {
-    service->BeginShutdown();
-  }
+  // Use the cached back-pointer to avoid GetSingleton()'s sync dispatch to
+  // the main thread. At xpcom-shutdown-threads, the main thread may already
+  // be sync-dispatching to us (for PGMPServiceChild::Close), which would
+  // otherwise deadlock.
+  MOZ_ASSERT(mService && mService->mServiceChild.get() == this);
+  mService->BeginShutdown();
   return IPC_OK();
 }
 

@@ -25,10 +25,12 @@ fail-if = [
   "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
 ]
 
-["browser_boxmodel_editablemodel_allproperties.js"]
-disabled = "too many intermittent failures (bug 1009322)"
-
 ["browser_boxmodel_editablemodel_bluronclick.js"]
+fail-if = [
+  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
+]
+
+["browser_boxmodel_editablemodel_border-box.js"]
 fail-if = [
   "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
 ]

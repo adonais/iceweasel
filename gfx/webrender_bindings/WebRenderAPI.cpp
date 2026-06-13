@@ -1241,6 +1241,21 @@ Maybe<wr::WrSpatialId> DisplayListBuilder::PushStackingContext(
       aParams.mTransformPtr ? ToString(*aParams.mTransformPtr).c_str() : "none",
       aParams.animation ? aParams.animation->id : 0);
 
+  // Diagnostics for bug 2031107: validate FFI inputs before crossing into
+  // Rust to distinguish C++-side invariant violations from corruption that
+  // occurs inside the Rust frame.
+  MOZ_ASSERT(mWrState);
+  MOZ_DIAGNOSTIC_ASSERT(aParams.mFilters.Length() < 1024);
+  MOZ_DIAGNOSTIC_ASSERT(aParams.mFilterDatas.Length() < 1024);
+  MOZ_DIAGNOSTIC_ASSERT(
+      reinterpret_cast<uintptr_t>(aParams.mFilters.Elements()) %
+          alignof(wr::FilterOp) ==
+      0);
+  MOZ_DIAGNOSTIC_ASSERT(
+      reinterpret_cast<uintptr_t>(aParams.mFilterDatas.Elements()) %
+          alignof(wr::WrFilterData) ==
+      0);
+
   auto spatialId = wr_dp_push_stacking_context(
       mWrState, aBounds, mCurrentSpaceAndClipChain.space, &aParams,
       aParams.mTransformPtr, aParams.mFilters.Elements(),

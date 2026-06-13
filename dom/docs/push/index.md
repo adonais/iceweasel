@@ -43,7 +43,7 @@ sequenceDiagram
 
 ### Flow diagram for source code
 
-The source code for push is available under [`dom/push`](https://searchfox.org/mozilla-central/source/dom/push) in mozilla-central.
+The source code for push is available under [`dom/push`](https://searchfox.org/firefox-main/source/dom/push) in mozilla-central.
 
 The following flow diagram describes how different modules interact with each other to provide the push API to consumers.
 
@@ -131,13 +131,13 @@ See also:
 
 The source code for push is available under the following paths in mozilla-central:
 
-* [`dom/push/`](https://searchfox.org/mozilla-central/source/dom/push/)
+* [`dom/push/`](https://searchfox.org/firefox-main/source/dom/push/)
 * [`mobile/shared/components/geckoview/GeckoViewPush.sys.mjs`](mobile/shared/components/geckoview/GeckoViewPush.sys.mjs)
-* [`mobile/android/geckoview/src/main/java/org/mozilla/geckoview/WebPush*.java`](https://searchfox.org/mozilla-central/source/mobile/android/geckoview/src/main/java/org/mozilla/geckoview/)
+* [`mobile/android/geckoview/src/main/java/org/mozilla/geckoview/WebPush*.java`](https://searchfox.org/firefox-main/source/mobile/android/geckoview/src/main/java/org/mozilla/geckoview/)
 * Under `mobile/android/android-components/components`:
-	* [`feature/push/src/main/java/mozilla/components/feature/push/`](https://searchfox.org/mozilla-central/source/mobile/android/android-components/components/feature/push/src/main/java/mozilla/components/feature/push/)
-	* [`browser/engine-gecko/src/main/java/mozilla/components/browser/engine/gecko/webpush/`](https://searchfox.org/mozilla-central/source/mobile/android/android-components/components/browser/engine-gecko/src/main/java/mozilla/components/browser/engine/gecko/webpush/)
-	* [`concept/engine/src/main/java/mozilla/components/concept/engine/webpush`](https://searchfox.org/mozilla-central/source/mobile/android/android-components/components/concept/engine/src/main/java/mozilla/components/concept/engine/webpush/)
+	* [`feature/push/src/main/java/mozilla/components/feature/push/`](https://searchfox.org/firefox-main/source/mobile/android/android-components/components/feature/push/src/main/java/mozilla/components/feature/push/)
+	* [`browser/engine-gecko/src/main/java/mozilla/components/browser/engine/gecko/webpush/`](https://searchfox.org/firefox-main/source/mobile/android/android-components/components/browser/engine-gecko/src/main/java/mozilla/components/browser/engine/gecko/webpush/)
+	* [`concept/engine/src/main/java/mozilla/components/concept/engine/webpush`](https://searchfox.org/firefox-main/source/mobile/android/android-components/components/concept/engine/src/main/java/mozilla/components/concept/engine/webpush/)
 * [Rust Push Component](https://github.com/mozilla/application-services/tree/main/components/push)
 
 The following flow diagram describes how different modules interact with each other to provide the push API to consumers.

@@ -230,6 +230,7 @@
 #ifdef MOZ_MAY_HAVE_HTMLACCEL
 #  include "mozilla/htmlaccel/htmlaccelNotInline.h"
 #endif
+#include "mozilla/dom/ContentList.h"
 #include "mozilla/intl/LocaleService.h"
 #include "mozilla/ipc/ProtocolUtils.h"
 #include "mozilla/net/UrlClassifierCommon.h"
@@ -254,7 +255,6 @@
 #include "nsContainerFrame.h"
 #include "nsContentCreatorFunctions.h"
 #include "nsContentDLF.h"
-#include "nsContentList.h"
 #include "nsContentListDeclarations.h"
 #include "nsContentPolicyUtils.h"
 #include "nsCoord.h"
@@ -1064,7 +1064,8 @@ nsresult nsContentUtils::Init() {
     sEventListenerManagersHash =
         new nsTHashMap<const nsINode*, RefPtr<EventListenerManager>>();
 
-    RegisterStrongMemoryReporter(new DOMEventListenerManagersHashReporter());
+    RegisterStrongMemoryReporter(
+        MakeAndAddRef<DOMEventListenerManagersHashReporter>());
   }
 
   sBlockedScriptRunners = new AutoTArray<nsCOMPtr<nsIRunnable>, 8>;
@@ -1192,11 +1193,11 @@ void nsContentUtils::InitializeModifierStrings() {
     bundle->GetStringFromName("MODIFIER_SEPARATOR", modifierSeparator);
   }
   // if any of these don't exist, we get  an empty string
-  sShiftText = new nsString(shiftModifier);
-  sCommandOrWinText = new nsString(commandOrWinModifier);
-  sAltText = new nsString(altModifier);
-  sControlText = new nsString(controlModifier);
-  sModifierSeparator = new nsString(modifierSeparator);
+  sShiftText = new nsString(std::move(shiftModifier));
+  sCommandOrWinText = new nsString(std::move(commandOrWinModifier));
+  sAltText = new nsString(std::move(altModifier));
+  sControlText = new nsString(std::move(controlModifier));
+  sModifierSeparator = new nsString(std::move(modifierSeparator));
 }
 
 mozilla::EventClassID nsContentUtils::GetEventClassIDFromMessage(
@@ -2951,7 +2952,7 @@ bool nsContentUtils::ShouldResistFingerprinting_dangerous(
     return ShouldResistFingerprinting("Null object", aTarget);
   }
 
-  auto originAttributes =
+  const auto& originAttributes =
       BasePrincipal::Cast(aPrincipal)->OriginAttributesRef();
   // With this check, we can ensure that the prefs and target say yes, so only
   // an exemption would cause us to return false.
@@ -3832,7 +3833,7 @@ Element* nsContentUtils::GetTargetElement(Document* aDocument,
   //
   // FIXME(emilio): Why the different code-paths for HTML and non-HTML docs?
   if (aDocument->IsHTMLDocument()) {
-    nsCOMPtr<nsINodeList> list = aDocument->GetElementsByName(aAnchorName);
+    RefPtr<NodeList> list = aDocument->GetElementsByName(aAnchorName);
     // Loop through the named nodes looking for the first anchor
     uint32_t length = list->Length();
     for (uint32_t i = 0; i < length; i++) {
@@ -3844,7 +3845,7 @@ Element* nsContentUtils::GetTargetElement(Document* aDocument,
   } else {
     constexpr auto nameSpace = u"http://www.w3.org/1999/xhtml"_ns;
     // Get the list of anchor elements
-    nsCOMPtr<nsINodeList> list =
+    RefPtr<NodeList> list =
         aDocument->GetElementsByTagNameNS(nameSpace, u"a"_ns);
     // Loop through the anchors looking for the first one with the given name.
     for (uint32_t i = 0; true; i++) {
@@ -4199,8 +4200,8 @@ void nsContentUtils::GenerateStateKey(nsIContent* aContent, Document* aDocument,
           control->GetParserInsertedControlNumberForStateKey();
       bool parserInserted = controlNumber != -1;
 
-      RefPtr<nsContentList> htmlForms;
-      RefPtr<nsContentList> htmlFormControls;
+      RefPtr<ContentList> htmlForms;
+      RefPtr<ContentList> htmlFormControls;
       if (!parserInserted) {
         // Getting these lists is expensive, as we need to keep them up to date
         // as the document loads, so we avoid it if we don't need them.
@@ -4494,6 +4495,20 @@ bool nsContentUtils::IsCustomElementName(nsAtom* aName, uint32_t aNameSpaceID) {
          aName != nsGkAtoms::font_face_uri &&
          aName != nsGkAtoms::font_face_format &&
          aName != nsGkAtoms::font_face_name && aName != nsGkAtoms::missingGlyph;
+}
+
+bool nsContentUtils::IsValidShadowHostName(nsAtom* aName,
+                                           uint32_t aNameSpaceID) {
+  return IsCustomElementName(aName, aNameSpaceID) ||
+         aName == nsGkAtoms::article || aName == nsGkAtoms::aside ||
+         aName == nsGkAtoms::blockquote || aName == nsGkAtoms::body ||
+         aName == nsGkAtoms::div || aName == nsGkAtoms::footer ||
+         aName == nsGkAtoms::h1 || aName == nsGkAtoms::h2 ||
+         aName == nsGkAtoms::h3 || aName == nsGkAtoms::h4 ||
+         aName == nsGkAtoms::h5 || aName == nsGkAtoms::h6 ||
+         aName == nsGkAtoms::header || aName == nsGkAtoms::main ||
+         aName == nsGkAtoms::nav || aName == nsGkAtoms::p ||
+         aName == nsGkAtoms::section || aName == nsGkAtoms::span;
 }
 
 // static
@@ -6331,7 +6346,7 @@ static void SetAndFilterHTML(
 
   // Step 2. Let sanitizer be the result of calling get a sanitizer instance
   // from options with options and safe.
-  nsCOMPtr<nsIGlobalObject> global = aTarget->GetOwnerGlobal();
+  nsCOMPtr<nsIGlobalObject> global = aTarget->GetRelevantGlobal();
   if (!global) {
     aError.ThrowInvalidStateError("Missing owner global.");
     return;
@@ -7767,7 +7782,7 @@ nsresult nsContentUtils::GetWebExposedOriginSerialization(nsIURI* aURI,
     rv = uri->GetPrePath(prePath);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    aOrigin = prePath;
+    aOrigin = std::move(prePath);
   } else {
     aOrigin.AssignLiteral("null");
   }
@@ -8025,11 +8040,11 @@ bool nsContentUtils::PlatformToDOMLineBreaks(nsAString& aString,
   return true;
 }
 
-already_AddRefed<nsContentList> nsContentUtils::GetElementsByClassName(
+already_AddRefed<ContentList> nsContentUtils::GetElementsByClassName(
     nsINode* aRootNode, const nsAString& aClasses) {
   MOZ_ASSERT(aRootNode, "Must have root node");
 
-  return GetFuncStringContentList<nsCacheableFuncStringHTMLCollection>(
+  return GetFuncStringContentList<CacheableFuncStringHTMLCollection>(
       aRootNode, MatchClassNames, DestroyClassNameArray, AllocClassMatchingInfo,
       aClasses);
 }
@@ -8167,8 +8182,6 @@ nsContentUtils::FindInternalDocumentViewer(const nsACString& aType,
     if (docFactory && aLoaderType) {
       if (contractID.EqualsLiteral(CONTENT_DLF_CONTRACTID))
         *aLoaderType = TYPE_CONTENT;
-      else if (contractID.EqualsLiteral(PLUGIN_DLF_CONTRACTID))
-        *aLoaderType = TYPE_FALLBACK;
       else
         *aLoaderType = TYPE_UNKNOWN;
     }
@@ -9618,8 +9631,7 @@ already_AddRefed<imgIContainer> nsContentUtils::IPCImageToImage(
     return nullptr;
   }
 
-  RefPtr<gfxDrawable> drawable =
-      new gfxSurfaceDrawable(surface, surface->GetSize());
+  auto drawable = MakeRefPtr<gfxSurfaceDrawable>(surface, surface->GetSize());
   nsCOMPtr<imgIContainer> imageContainer =
       image::ImageOps::CreateFromDrawable(drawable);
   return imageContainer.forget();
@@ -10139,6 +10151,7 @@ bool nsContentUtils::IsPreloadType(nsContentPolicyType aType) {
           aType == nsIContentPolicy::TYPE_INTERNAL_STYLESHEET_PRELOAD ||
           aType == nsIContentPolicy::TYPE_INTERNAL_FONT_PRELOAD ||
           aType == nsIContentPolicy::TYPE_INTERNAL_JSON_PRELOAD ||
+          aType == nsIContentPolicy::TYPE_INTERNAL_TEXT_PRELOAD ||
           aType == nsIContentPolicy::TYPE_INTERNAL_FETCH_PRELOAD);
 }
 
@@ -10771,19 +10784,24 @@ static CheckedInt<uint32_t> ExtraSpaceNeededForAttrEncoding(
   return CheckedInt<uint32_t>(numEncodedChars) * maxCharExtraSpace;
 }
 
+static void AppendEncodedAtomAttributeValue(nsAtom* aAtom,
+                                            StringBuilder& aBuilder) {
+  nsDependentAtomString atomStr(aAtom);
+  auto space = ExtraSpaceNeededForAttrEncoding(atomStr);
+  if (space.isValid() && !space.value()) {
+    aBuilder.Append(aAtom);
+  } else {
+    aBuilder.AppendWithAttrEncode(nsString(atomStr), space + atomStr.Length());
+  }
+}
+
 static void AppendEncodedAttributeValue(const nsAttrValue& aValue,
                                         StringBuilder& aBuilder) {
   if (nsAtom* atom = aValue.GetStoredAtom()) {
-    nsDependentAtomString atomStr(atom);
-    auto space = ExtraSpaceNeededForAttrEncoding(atomStr);
-    if (space.isValid() && !space.value()) {
-      aBuilder.Append(atom);
-    } else {
-      aBuilder.AppendWithAttrEncode(nsString(atomStr),
-                                    space + atomStr.Length());
-    }
+    AppendEncodedAtomAttributeValue(atom, aBuilder);
     return;
   }
+
   // NOTE(emilio): In most cases this will just be a reference to the stored
   // nsStringBuffer.
   nsString str;
@@ -10812,7 +10830,7 @@ static void StartElement(Element* aElement, StringBuilder& aBuilder) {
     nsAtom* isAttr = ceData->GetIs(aElement);
     if (isAttr && !aElement->HasAttr(nsGkAtoms::is)) {
       aBuilder.Append(uR"( is=")");
-      aBuilder.Append(isAttr);
+      AppendEncodedAtomAttributeValue(isAttr, aBuilder);
       aBuilder.Append(uR"(")");
     }
   }
@@ -12080,8 +12098,7 @@ static bool HtmlObjectContentSupportsDocument(const nsCString& aMimeType) {
   }
 
   if (supported != nsIWebNavigationInfo::UNSUPPORTED) {
-    // Don't want to support plugins as documents
-    return supported != nsIWebNavigationInfo::FALLBACK;
+    return true;
   }
 
   // Try a stream converter

@@ -5,6 +5,7 @@
 #define mozilla_dom_TransitionEvent_h_
 
 #include "mozilla/EventForwards.h"
+#include "mozilla/dom/CSSTransition.h"
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/TransitionEventBinding.h"
 #include "nsStringFwd.h"
@@ -31,6 +32,7 @@ class TransitionEvent : public Event {
   void GetPseudoElement(nsAString& aPreudoElement) const;
 
   float ElapsedTime();
+  CSSTransition* GetAnimation();
 
  protected:
   ~TransitionEvent() = default;

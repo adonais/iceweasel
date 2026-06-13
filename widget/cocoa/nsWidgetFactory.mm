@@ -110,6 +110,9 @@ MAKE_GENERIC_CTOR(nsSystemStatusBarCocoa, nsISystemStatusBar)
 #include "nsTouchBarUpdater.h"
 MAKE_GENERIC_CTOR(nsTouchBarUpdater, nsITouchBarUpdater)
 
+#include "nsMacPermissionMonitor.h"
+MAKE_GENERIC_CTOR(nsMacPermissionMonitor, nsIPermissionMonitor)
+
 void nsWidgetCocoaModuleCtor() { nsAppShellInit(); }
 
 void nsWidgetCocoaModuleDtor() {

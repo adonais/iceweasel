@@ -942,7 +942,7 @@ def get_unbranded_builds(command_context, channel):
         },
         "Linux 64-bit": {
             "namespace": f"gecko.v2.{repo}.latest.firefox.linux64-add-on-devel",
-            "artifact": "public/build/target.tar.bz2",
+            "artifact": "public/build/target.tar.xz",
         },
     }
 

@@ -124,6 +124,30 @@ void PlatformFocusEvent(Accessible* aTarget) {
   }
 }
 
+void PlatformFocusedAccLocationChanged(Accessible* aFocusedAcc) {
+  // XXX: This function is called when CacheDomain::Viewport is updated on the
+  // document and the focused acc's bounds have changed. We redirect here
+  // instead of doing this work in maybeFireUAZoomChangeFocusEvent because
+  // other platforms will want this hook, too. See bug 1469779.
+  mozAccessible* nativeFocused = GetNativeFromGeckoAccessible(aFocusedAcc);
+  if (nativeFocused) {
+    int focusType = aFocusedAcc->IsEditableRoot()
+                        ? kUAZoomFocusTypeInsertionPoint
+                        : kUAZoomFocusTypeOther;
+    [nativeFocused maybeFireUAZoomChangeFocusEvent:focusType];
+  }
+}
+
+bool PlatformShouldTrackFocusedAccLocation() {
+  // We want to track location changes for the focused acc if the
+  // macOS magnifier is enabled, or we're running tests that have
+  // the bounds domain enabled. We can't just check that we're in a
+  // testing environment, because this will break our caching granularity
+  // tests.
+  return UAZoomEnabled() ||
+         (xpc::IsInAutomation() && DomainsAreActive(CacheDomain::Bounds));
+}
+
 void PlatformCaretMoveEvent(Accessible* aTarget, int32_t aOffset,
                             bool aIsSelectionCollapsed, int32_t aGranularity,
                             bool aFromUser) {
@@ -163,7 +187,15 @@ void PlatformTextChangeEvent(Accessible* aTarget, const nsAString& aStr,
   }
 }
 
-void PlatformShowHideEvent(Accessible*, Accessible*, bool, bool) {}
+void PlatformShowHideEvent(Accessible* aTarget, Accessible* aParent,
+                           bool aIsInsert, bool aFromUser) {
+  mozAccessible* wrapper = GetNativeFromGeckoAccessible(aTarget);
+  if (wrapper) {
+    [wrapper
+        handleAccessibleEvent:(aIsInsert ? nsIAccessibleEvent::EVENT_SHOW
+                                         : nsIAccessibleEvent::EVENT_HIDE)];
+  }
+}
 
 void PlatformSelectionEvent(Accessible* aTarget, Accessible* aWidget,
                             uint32_t aEventType) {

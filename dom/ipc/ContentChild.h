@@ -476,7 +476,7 @@ class ContentChild final : public PContentChild,
       const nsID& aUUID, const GetFilesResponseResult& aResult);
 
   mozilla::ipc::IPCResult RecvBlobURLRegistration(
-      const nsCString& aURI, const IPCBlob& aBlob, nsIPrincipal* aPrincipal,
+      const nsCString& aURI, nsIPrincipal* aPrincipal,
       const nsCString& aPartitionKey);
 
   mozilla::ipc::IPCResult RecvBlobURLUnregistration(

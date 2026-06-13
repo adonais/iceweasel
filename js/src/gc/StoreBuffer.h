@@ -603,7 +603,8 @@ class StoreBuffer {
 class ArenaCellSet {
   friend class StoreBuffer;
 
-  using ArenaCellBits = BitArray<MaxArenaCellIndex>;
+  // Use a 32 bit word to make it easier to access ArenaCellBits from JIT code.
+  using ArenaCellBits = BitArray<MaxArenaCellIndex, uint32_t>;
 
   // The arena this relates to.
   Arena* arena = nullptr;
@@ -627,7 +628,6 @@ class ArenaCellSet {
  public:
   using WordT = ArenaCellBits::WordT;
   static constexpr size_t BitsPerWord = ArenaCellBits::bitsPerElement;
-  static constexpr size_t NumWords = ArenaCellBits::numSlots;
 
   explicit ArenaCellSet(Arena* arena);
 
@@ -647,10 +647,6 @@ class ArenaCellSet {
 
   WordT getWord(size_t wordIndex) const { return bits.getWord(wordIndex); }
 
-  void setWord(size_t wordIndex, WordT value) {
-    bits.setWord(wordIndex, value);
-  }
-
   // Sweep this set, returning whether it also needs to be swept later.
   void trace(TenuringTracer& mover);
 
@@ -661,15 +657,16 @@ class ArenaCellSet {
   static ArenaCellSet Empty;
 
   static size_t getCellIndex(const TenuredCell* cell);
-  static void getWordIndexAndMask(size_t cellIndex, size_t* wordp,
-                                  uint32_t* maskp);
+  static std::pair<size_t, uint32_t> getWordIndexAndMask(size_t cellIndex);
 
   // Attempt to trigger a minor GC if free space in the nursery (where these
   // objects are allocated) falls below this threshold.
   static const size_t NurseryFreeThresholdBytes = 64 * 1024;
 
   static size_t offsetOfArena() { return offsetof(ArenaCellSet, arena); }
-  static size_t offsetOfBits() { return offsetof(ArenaCellSet, bits); }
+  static size_t offsetOfBits() {
+    return offsetof(ArenaCellSet, bits) + ArenaCellBits::offsetOfMap();
+  }
 };
 
 // Post-write barrier implementation for GC cells.

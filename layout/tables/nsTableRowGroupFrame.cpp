@@ -7,6 +7,7 @@
 
 #include "mozilla/ComputedStyle.h"
 #include "mozilla/PresShell.h"
+#include "mozilla/ReflowInput.h"
 #include "mozilla/StaticPrefs_layout.h"
 #include "nsCOMPtr.h"
 #include "nsCSSFrameConstructor.h"

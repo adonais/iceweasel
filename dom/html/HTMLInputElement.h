@@ -689,8 +689,8 @@ class HTMLInputElement final : public TextControlElement,
   // <input> element.
   bool StepsInputValue(const WidgetKeyboardEvent&) const;
 
-  already_AddRefed<nsINodeList> GetLabelsForBindings();
-  already_AddRefed<nsINodeList> GetLabelsInternal();
+  already_AddRefed<NodeList> GetLabelsForBindings();
+  already_AddRefed<NodeList> GetLabelsInternal();
 
   MOZ_CAN_RUN_SCRIPT void Select();
 

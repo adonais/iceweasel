@@ -64,16 +64,26 @@ static uint32_t GetGTKPixelDepth() {
   return gdk_visual_get_depth(visual);
 }
 
+#ifdef MOZ_WAYLAND
+static already_AddRefed<Screen> MakeDummyScreen(unsigned int aMonitor) {
+  LOG_SCREEN("MakeScreenGtk() create dummy screen for monitor [%d]", aMonitor);
+  return MakeAndAddRef<Screen>(LayoutDeviceIntRect(), LayoutDeviceIntRect(), 0,
+                               0, 0, DesktopToLayoutDeviceScale(1.0),
+                               CSSToLayoutDeviceScale(1.0), 1,
+                               Screen::IsPseudoDisplay::No, Screen::IsHDR(0));
+}
+#endif
+
 static already_AddRefed<Screen> MakeScreenGtk(unsigned int aMonitor,
                                               bool aIsHDR) {
   gint geometryScaleFactor =
       ScreenHelperGTK::GetGTKMonitorScaleFactor(aMonitor);
-  GdkScreen* defaultScreen = gdk_screen_get_default();
 
   LOG_SCREEN("MakeScreenGtk() Monitor [%d] scale %d aIsHDR %d", aMonitor,
              geometryScaleFactor, aIsHDR);
 
   GdkRectangle workarea;
+  GdkScreen* defaultScreen = gdk_screen_get_default();
   gdk_screen_get_monitor_workarea(defaultScreen, aMonitor, &workarea);
   LayoutDeviceIntRect availRect(workarea.x * geometryScaleFactor,
                                 workarea.y * geometryScaleFactor,
@@ -212,6 +222,7 @@ class ScreenGetterGtk final {
   NS_INLINE_DECL_REFCOUNTING(ScreenGetterGtk)
 
   explicit ScreenGetterGtk(int aSerial, bool aHDRInfoOnly);
+  bool CheckGetterSerial() const;
   void AddScreen(RefPtr<Screen> aScreen);
   bool AddScreenHDRAsync(unsigned int aMonitor);
   void Finish();
@@ -445,7 +456,10 @@ static const struct wp_image_description_info_v1_listener
 void WaylandMonitor::ImageDescriptionDone() {
   LOG_SCREEN("WaylandMonitor() [%p] ImageDescriptionDone HDR %d", this, mIsHDR);
   if (mScreenGetter) {
-    mScreenGetter->AddScreen(MakeScreenGtk(mMonitor, mIsHDR));
+    // Don't create proper screen if it's thrown away anyway.
+    bool dummyScreen = !mScreenGetter->CheckGetterSerial();
+    mScreenGetter->AddScreen(dummyScreen ? MakeDummyScreen(mMonitor)
+                                         : MakeScreenGtk(mMonitor, mIsHDR));
   }
 }
 
@@ -622,6 +636,18 @@ RefPtr<Screen> ScreenHelperGTK::GetScreenForWindow(nsWindow* aWindow) {
   return nullptr;
 }
 
+bool ScreenGetterGtk::CheckGetterSerial() const {
+  if (mSerial != ScreenHelperGTK::GetLastSerial()) {
+    MOZ_DIAGNOSTIC_ASSERT(mSerial <= ScreenHelperGTK::GetLastSerial());
+    LOG_SCREEN(
+        "[%p] ScreenGetterGtk::CheckGetterSerial(): rejected, old serial %d "
+        "latest %d",
+        this, mSerial, ScreenHelperGTK::GetLastSerial());
+    return false;
+  }
+  return true;
+}
+
 void ScreenGetterGtk::AddScreen(RefPtr<Screen> aScreen) {
   mScreenList.AppendElement(std::move(aScreen));
   MOZ_DIAGNOSTIC_ASSERT(mScreenList.Length() <= mMonitorNum);
@@ -633,13 +659,7 @@ void ScreenGetterGtk::AddScreen(RefPtr<Screen> aScreen) {
 
   auto finish = MakeScopeExit([&] { Finish(); });
 
-  if (mSerial != ScreenHelperGTK::GetLastSerial()) {
-    MOZ_DIAGNOSTIC_ASSERT(mSerial <= ScreenHelperGTK::GetLastSerial());
-    LOG_SCREEN(
-        "ScreenGetterGtk::AddScreen() [%p]: rejected, old wrong serial %d "
-        "latest "
-        "%d",
-        this, mSerial, ScreenHelperGTK::GetLastSerial());
+  if (!CheckGetterSerial()) {
     return;
   }
 
@@ -729,12 +749,12 @@ float ScreenHelperGTK::GetGTKMonitorFractionalScaleFactor(gint aMonitor) {
   return GetGTKMonitorScaleFactor(aMonitor);
 }
 
-#ifdef MOZ_X11
 static void monitors_changed(GdkScreen* aScreen, gpointer unused) {
   LOG_SCREEN("Received monitors-changed event");
   ScreenHelperGTK::RequestRefreshScreens();
 }
 
+#ifdef MOZ_X11
 static void screen_resolution_changed(GdkScreen* aScreen, GParamSpec* aPspec,
                                       gpointer unused) {
   LOG_SCREEN("Received resolution-changed event");
@@ -783,11 +803,11 @@ ScreenHelperGTK::ScreenHelperGTK() {
             ("defaultScreen is nullptr, running headless"));
     return;
   }
+  g_signal_connect(defaultScreen, "monitors-changed",
+                   G_CALLBACK(monitors_changed), nullptr);
 
 #ifdef MOZ_X11
   if (GdkIsX11Display()) {
-    g_signal_connect(defaultScreen, "monitors-changed",
-                     G_CALLBACK(monitors_changed), this);
     // Use _after to ensure this callback is run after gfxPlatformGtk.cpp's
     // handler.
     g_signal_connect_after(defaultScreen, "notify::resolution",

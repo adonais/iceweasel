@@ -18,6 +18,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   pprint: "chrome://remote/content/shared/Format.sys.mjs",
   setDevicePixelRatioForBrowsingContext:
     "chrome://remote/content/webdriver-bidi/modules/root/browsingContext.sys.mjs",
+  setDownloadFolderOverrideForBrowsingContext:
+    "chrome://remote/content/webdriver-bidi/modules/root/browser.sys.mjs",
   setLocaleOverrideForBrowsingContext:
     "chrome://remote/content/webdriver-bidi/modules/root/emulation.sys.mjs",
   setNetworkConditionsForBrowsingContext:
@@ -55,6 +57,7 @@ const NULL = Symbol("NULL");
 // Apply here only the configurations that will be initialized in the parent process,
 // except from `viewport-override` which is handled separately.
 const CONFIGURATIONS_TO_APPLY = [
+  "download-behavior-override",
   "locale-override",
   "network-conditions",
   "screen-orientation-override",
@@ -94,10 +97,12 @@ class _ConfigurationModule extends RootBiDiModule {
 
       // User agent override also supports a global setting.
       // see https://www.w3.org/TR/webdriver-bidi/#command-emulation-setUserAgentOverride.
-      if (configuration === "user-agent-override") {
-        this.#configurationMap["user-agent-override"][
-          lazy.ContextDescriptorType.All
-        ] = null;
+      if (
+        configuration === "user-agent-override" ||
+        configuration === "download-behavior-override"
+      ) {
+        this.#configurationMap[configuration][lazy.ContextDescriptorType.All] =
+          null;
       }
     }
   }
@@ -235,6 +240,17 @@ class _ConfigurationModule extends RootBiDiModule {
     // that would apply a configuration for a browsing context, a user context, and in some cases globally.
     // Now from these items we have to choose the one that would take precedence.
     // The order is the user context item supersedes the global one, and the browsing context supersedes the user context item.
+    const downloadBehaviorOverride = this.#findCorrectConfigurationValue(
+      configurationMap["download-behavior-override"],
+      "object"
+    );
+    if (downloadBehaviorOverride !== null) {
+      lazy.setDownloadFolderOverrideForBrowsingContext({
+        context: browsingContext,
+        value: downloadBehaviorOverride,
+      });
+    }
+
     const localeOverride = this.#findCorrectConfigurationValue(
       configurationMap["locale-override"],
       "string"
@@ -334,6 +350,10 @@ class _ConfigurationModule extends RootBiDiModule {
 
     const hasContextConfiguration = contextIds !== NULL;
     const hasUserContextConfiguration = userContextIds !== NULL;
+    const hasGlobalConfiguration =
+      supportsGlobalConfiguration &&
+      !hasContextConfiguration &&
+      !hasUserContextConfiguration;
 
     const { navigables, userContexts } = this.#getConfigurationTargets(
       contextIds,
@@ -348,7 +368,7 @@ class _ConfigurationModule extends RootBiDiModule {
     const sessionDataItems = this.#generateSessionDataUpdate({
       category,
       hasContextConfiguration,
-      hasGlobalConfiguration: true,
+      hasGlobalConfiguration,
       navigables,
       resetValue,
       userContexts,
@@ -424,6 +444,8 @@ class _ConfigurationModule extends RootBiDiModule {
 
   #applyConfigurationForCategory(category, commandArgs) {
     switch (category) {
+      case "download-behavior-override":
+        return lazy.setDownloadFolderOverrideForBrowsingContext(commandArgs);
       case "geolocation-override":
         return this.#applyGeolocationOverride(commandArgs);
       case "locale-override":

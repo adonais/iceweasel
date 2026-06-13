@@ -215,22 +215,30 @@ struct AllocSpace {
   using AtomicPerAllocBitmap =
       mozilla::BitSet<MaxAllocCount, mozilla::Atomic<size_t, mozilla::Relaxed>>;
 
-  // Mark bitmap: one bit minimum per allocation, no gray bits.
+  // Mark bitmap: one bit minimum per allocation, no gray bits. This is atomic
+  // because parallel marking may try and mark the same allocation on different
+  // threads at the same time.
   MainThreadOrGCTaskData<AtomicBitmap<MaxAllocCount>> markBits;
 
-  // Allocation start and end bitmaps: these have a bit set corresponding to the
-  // start of the allocation and to the byte after the end of allocation (except
-  // for the end of the chunk).
+  // Allocation start and end bitmaps: for every allocation these have a bit set
+  // corresponding to the start of the allocation and to the last byte of the
+  // allocation. |allocEndBitmap| is atomic so we can get allocation sizes for
+  // resize while sweeping is happening.
   MainThreadOrGCTaskData<PerAllocBitmap> allocStartBitmap;
   MainThreadOrGCTaskData<AtomicPerAllocBitmap> allocEndBitmap;
 
   // A bitmap indicating whether an allocation is owned by a nursery or a
-  // tenured GC thing.
+  // tenured GC thing. This is atomic because we read it for major GC tracing,
+  // which can happen at the same time as the chunk is being swept for minor GC.
   MainThreadOrGCTaskData<AtomicPerAllocBitmap> nurseryOwnedBitmap;
 
   static constexpr uintptr_t firstAllocOffset() {
     return RoundUp(sizeof(Derived), GranularityBytes);
   }
+
+  using AllocIter =
+      BitmapToBlockIter<BitSetIter<MaxAllocCount>, GranularityBytes>;
+  AllocIter allocIter() { return {asDerived(), allocStartBitmap.ref()}; }
 
   void setAllocated(void* alloc, size_t bytes, bool allocated);
   void updateEndOffset(void* alloc, size_t oldBytes, size_t newBytes);
@@ -283,6 +291,17 @@ struct AllocSpace {
   FreeRegion* findFollowingFreeRegion(uintptr_t startAddr);
   FreeRegion* findPrecedingFreeRegion(uintptr_t endAddr);
 
+  using FreeLists = BufferAllocator::FreeLists;
+  using SweepKind = BufferAllocator::SweepKind;
+  struct SweepResult {
+    bool isEmpty = false;
+    bool hasNurseryOwnedAllocs = false;
+    size_t bytesFreed = 0;
+  };
+  SweepResult sweep(BufferAllocator* allocator, FreeLists& freeLists,
+                    SweepKind sweepKind, bool sweptAnyPreviously,
+                    bool shouldDecommit);
+
  protected:
   AllocSpace() {
     MOZ_ASSERT(allocStartBitmap.ref().IsEmpty());
@@ -314,12 +333,18 @@ struct AllocSpace {
     return reinterpret_cast<void*>(startAddress() + offset);
   }
 
+  size_t endBitIndex(size_t startIndex, size_t bytes) {
+    MOZ_ASSERT(startIndex < MaxAllocCount);
+    MOZ_ASSERT(bytes != 0);
+    MOZ_ASSERT(bytes % GranularityBytes == 0);
+    size_t endIndex = startIndex + bytes / GranularityBytes - 1;
+    MOZ_ASSERT(endIndex < MaxAllocCount);
+    return endIndex;
+  }
+
   size_t findEndBit(size_t startIndex) const {
     MOZ_ASSERT(startIndex < MaxAllocCount);
-    if (startIndex + 1 == MaxAllocCount) {
-      return MaxAllocCount;
-    }
-    size_t endIndex = allocEndBitmap.ref().FindNext(startIndex + 1);
+    size_t endIndex = allocEndBitmap.ref().FindNext(startIndex);
     if (endIndex == SIZE_MAX) {
       return MaxAllocCount;
     }
@@ -331,6 +356,9 @@ struct AllocSpace {
     return offset >= firstAllocOffset() && offset < SizeBytes;
   }
 #endif
+
+ private:
+  Derived* asDerived() { return static_cast<Derived*>(this); }
 };
 
 // A chunk containing medium buffer allocations for a single zone. Unlike
@@ -353,6 +381,9 @@ struct BufferChunk
   using PerPageBitmap = mozilla::BitSet<PagesPerChunk, uint32_t>;
   MainThreadOrGCTaskData<PerPageBitmap> decommittedPages;
 
+  // A bitmap indicating which areas of the chunk are used to hold
+  // SmallBufferRegions. This is atomic because it can be read to determine the
+  // kind of an allocation while the chunk is being swept.
   static constexpr size_t SmallRegionsPerChunk = ChunkSize / SmallRegionSize;
   using SmallRegionBitmap = AtomicBitmap<SmallRegionsPerChunk>;
   MainThreadOrGCTaskData<SmallRegionBitmap> smallRegionBitmap;
@@ -363,10 +394,6 @@ struct BufferChunk
   // use.
   MainThreadOrGCTaskData<BufferAllocator::FreeLists> freeLists;
   MainThreadOrGCTaskData<bool> ownsFreeLists;
-
-  using AllocIter =
-      BitmapToBlockIter<BitSetIter<MaxAllocCount>, MediumAllocGranularity>;
-  AllocIter allocIter() { return {this, allocStartBitmap.ref()}; }
 
   using SmallRegionIter = BitmapToBlockIter<SmallRegionBitmap::Iter,
                                             SmallRegionSize, SmallBufferRegion>;
@@ -401,10 +428,6 @@ constexpr size_t FirstMediumAllocOffset = BufferChunk::firstAllocOffset();
 struct SmallBufferRegion : public AllocSpace<SmallBufferRegion, SmallRegionSize,
                                              SmallAllocGranularity> {
   MainThreadOrGCTaskData<bool> hasNurseryOwnedAllocs_;
-
-  using AllocIter =
-      BitmapToBlockIter<BitSetIter<MaxAllocCount>, SmallAllocGranularity>;
-  AllocIter allocIter() { return {this, allocStartBitmap.ref()}; }
 
   static SmallBufferRegion* from(void* alloc) {
     uintptr_t addr = uintptr_t(alloc) & ~SmallRegionMask;

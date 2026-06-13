@@ -346,7 +346,7 @@ already_AddRefed<Promise> DocumentPictureInPicture::RequestWindow(
   asyncDispatcher->PostDOMEvent();
 
   // 18. Return pipTraversable
-  RefPtr<Promise> promise = Promise::CreateInfallible(GetOwnerGlobal());
+  RefPtr<Promise> promise = Promise::CreateInfallible(GetRelevantGlobal());
   promise->MaybeResolve(nsGlobalWindowInner::Cast(mLastOpenedWindow));
   return promise.forget();
 }

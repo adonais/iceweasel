@@ -119,11 +119,11 @@ class EventSourceImpl final : public nsIChannelEventSink,
     Close();
     GlobalTeardownObserver::DisconnectFromOwner();
   }
-  void FrozenCallback(nsIGlobalObject* aOwner) override {
+  void FrozenCallback(nsIGlobalObject* aGlobal) override {
     DebugOnly<nsresult> rv = Freeze();
     MOZ_ASSERT(NS_SUCCEEDED(rv), "Freeze() failed");
   }
-  void ThawedCallback(nsIGlobalObject* aOwner) override {
+  void ThawedCallback(nsIGlobalObject* aGlobal) override {
     DebugOnly<nsresult> rv = Thaw();
     MOZ_ASSERT(NS_SUCCEEDED(rv), "Thaw() failed");
   }
@@ -561,7 +561,7 @@ nsresult EventSourceImpl::ParseURL(const nsAString& aURL) {
     lock->mEventSource->mOriginalURL = NS_ConvertUTF8toUTF16(spec);
   }
   mSrc = std::move(srcURI);
-  mOrigin = origin;
+  mOrigin = std::move(origin);
   return NS_OK;
 }
 
@@ -570,8 +570,8 @@ nsresult EventSourceImpl::AddGlobalObservers(nsIGlobalObject* aGlobal) {
   MOZ_ASSERT(mIsMainThread);
   MOZ_ASSERT(!mIsShutDown);
 
-  GlobalTeardownObserver::BindToOwner(aGlobal);
-  GlobalFreezeObserver::BindToOwner(aGlobal);
+  GlobalTeardownObserver::BindToGlobal(aGlobal);
+  GlobalFreezeObserver::BindToGlobal(aGlobal);
 
   return NS_OK;
 }
@@ -778,6 +778,27 @@ EventSourceImpl::OnStopRequest(nsIRequest* aRequest, nsresult aStatusCode) {
   // There could be additional network errors that are not covered in the above
   // checks
   //  See Bug 1808511
+  if (aStatusCode == NS_BINDING_ABORTED) {
+    nsAutoCString cancelReason;
+    if (mHttpChannel) {
+      mHttpChannel->GetCanceledReason(cancelReason);
+    }
+    if (cancelReason.EqualsLiteral("navigation")) {
+      nsresult rv = Dispatch(NewRunnableMethod("dom::EventSourceImpl::Close",
+                                               this, &EventSourceImpl::Close),
+                             NS_DISPATCH_NORMAL);
+      NS_ENSURE_SUCCESS(rv, rv);
+    } else {
+      // window.stop() or manual cancellation: fail the connection per spec
+      // (fires onerror + CLOSED) but suppress the console error.
+      nsresult rv =
+          Dispatch(NewRunnableMethod("dom::EventSourceImpl::FailConnection",
+                                     this, &EventSourceImpl::FailConnection),
+                   NS_DISPATCH_NORMAL);
+      NS_ENSURE_SUCCESS(rv, rv);
+    }
+    return NS_OK;
+  }
   if (NS_FAILED(aStatusCode) && aStatusCode != NS_ERROR_CONNECTION_REFUSED &&
       aStatusCode != NS_ERROR_NET_TIMEOUT &&
       aStatusCode != NS_ERROR_NET_RESET &&
@@ -1467,7 +1488,7 @@ void EventSourceImpl::DispatchAllMessageEvents() {
       return;
     }
 
-    if (NS_WARN_IF(!jsapi.Init(lock->mEventSource->GetOwnerGlobal()))) {
+    if (NS_WARN_IF(!jsapi.Init(lock->mEventSource->GetRelevantGlobal()))) {
       return;
     }
   }

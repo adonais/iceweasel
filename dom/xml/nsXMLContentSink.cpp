@@ -1050,7 +1050,7 @@ nsresult nsXMLContentSink::HandleStartElement(
   if (!mXSLTProcessor) {
     if (content == mDocElement) {
       nsContentUtils::AddScriptRunner(
-          new nsDocElementCreatedNotificationRunner(mDocument));
+          MakeAndAddRef<nsDocElementCreatedNotificationRunner>(mDocument));
 
       if (aInterruptable && NS_SUCCEEDED(result) && mParser &&
           !mParser->IsParserEnabled()) {

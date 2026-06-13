@@ -66,7 +66,8 @@ using namespace mozilla::dom;
 already_AddRefed<nsComputedDOMStyle> NS_NewComputedDOMStyle(
     dom::Element* aElement, const nsAString& aPseudoElt, Document* aDocument,
     nsComputedDOMStyle::StyleType aStyleType, mozilla::ErrorResult&) {
-  auto request = PseudoStyleRequest::Parse(aPseudoElt);
+  auto request = PseudoStyleRequest::Parse(
+      aPseudoElt, aElement->OwnerDoc()->DefaultStyleAttrURLData());
   auto returnEmpty = nsComputedDOMStyle::AlwaysReturnEmptyStyle::No;
   if (!request) {
     if (!aPseudoElt.IsEmpty() && aPseudoElt.First() == u':') {
@@ -738,12 +739,12 @@ void nsComputedDOMStyle::GetCSSImageURLs(const nsACString& aPropertyName,
 // nsDOMCSSDeclaration abstract methods which should never be called
 // on a nsComputedDOMStyle object, but must be defined to avoid
 // compile errors.
-DeclarationBlock* nsComputedDOMStyle::GetOrCreateCSSDeclaration(
-    Operation aOperation, DeclarationBlock** aCreated) {
+StyleLockedDeclarationBlock* nsComputedDOMStyle::GetOrCreateCSSDeclaration(
+    Operation aOperation, StyleLockedDeclarationBlock** aCreated) {
   MOZ_CRASH("called nsComputedDOMStyle::GetCSSDeclaration");
 }
 
-nsresult nsComputedDOMStyle::SetCSSDeclaration(DeclarationBlock*,
+nsresult nsComputedDOMStyle::SetCSSDeclaration(StyleLockedDeclarationBlock*,
                                                MutationClosureData*) {
   MOZ_CRASH("called nsComputedDOMStyle::SetCSSDeclaration");
 }
@@ -903,7 +904,7 @@ static bool PaddingNeedsUsedValue(const LengthPercentage& aValue,
 
 static bool HasPositionFallbacks(nsIFrame* aFrame) {
   return aFrame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW) &&
-         !aFrame->StylePosition()->mPositionTryFallbacks._0.IsEmpty();
+         !aFrame->StylePosition()->mPositionTryFallbacks.value._0.IsEmpty();
 }
 
 bool nsComputedDOMStyle::NeedsToFlushLayout(
@@ -1098,7 +1099,7 @@ void nsComputedDOMStyle::UpdateCurrentStyleSources(
       const auto* style = mInnerFrame->Style();
       if (auto* data = mInnerFrame->GetProperty(
               nsIFrame::LastSuccessfulPositionFallback())) {
-        style = data->mStyle.get();
+        style = data->mLastStyle.get();
       }
       SetFrameComputedStyle(std::move(style), currentGeneration);
       NS_ASSERTION(mComputedStyle, "Frame without style?");

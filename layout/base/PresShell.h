@@ -656,20 +656,27 @@ class PresShell final : public nsStubDocumentObserver,
   already_AddRefed<AccessibleCaretEventHub> GetAccessibleCaretEventHub() const;
 
   /**
-   * Get the caret, if it exists. AddRefs it.
+   * Get the active caret, if it exists. This will return the
+   * drag & drop caret if a D&D operation is ongoing. AddRefs it.
    */
-  already_AddRefed<nsCaret> GetCaret() const;
+  already_AddRefed<nsCaret> GetActiveCaret() const;
 
   /**
-   * Set the current caret to a new caret. To undo this, call RestoreCaret.
+   * Get the original caret this PresShell was created with.
    */
-  void SetCaret(nsCaret* aNewCaret);
+  already_AddRefed<nsCaret> GetOriginalCaret() const;
+
+  /**
+   * Set the active caret to a new caret. To undo this, call
+   * RestoreOriginalCaret.
+   */
+  void SetActiveCaret(nsCaret* aNewCaret);
 
   /**
    * Restore the caret to the original caret that this pres shell was created
    * with.
    */
-  void RestoreCaret();
+  void RestoreOriginalCaret();
 
   dom::Selection* GetCurrentSelection(SelectionType aSelectionType);
 
@@ -1439,6 +1446,8 @@ class PresShell final : public nsStubDocumentObserver,
   MOZ_CAN_RUN_SCRIPT NS_IMETHOD LineMove(bool aForward, bool aExtend) override;
   MOZ_CAN_RUN_SCRIPT NS_IMETHOD IntraLineMove(bool aForward,
                                               bool aExtend) override;
+  MOZ_CAN_RUN_SCRIPT NS_IMETHOD ParagraphMove(bool aForward,
+                                              bool aExtend) override;
   MOZ_CAN_RUN_SCRIPT NS_IMETHOD PageMove(bool aForward, bool aExtend) override;
   NS_IMETHOD ScrollPage(bool aForward) override;
   NS_IMETHOD ScrollLine(bool aForward) override;
@@ -1585,11 +1594,7 @@ class PresShell final : public nsStubDocumentObserver,
   void ResetVisualViewportSize();
   bool IsVisualViewportSizeSet() { return mVisualViewportSizeSet; }
   void SetNeedsWindowPropertiesSync();
-  nsSize GetVisualViewportSize() {
-    NS_ASSERTION(mVisualViewportSizeSet,
-                 "asking for visual viewport size when its not set?");
-    return mVisualViewportSize;
-  }
+  nsSize GetVisualViewportSize() const;
 
   nsPoint GetVisualViewportOffsetRelativeToLayoutViewport() const;
 
@@ -1886,6 +1891,9 @@ class PresShell final : public nsStubDocumentObserver,
   void MergeAnchorPosAnchorChanges();
 
   void CleanupFullscreenState();
+
+  void MaybeExitKeyboardLockedFullscreen(WidgetKeyboardEvent* aKeyboardEvent,
+                                         Document* aFullscreenRoot);
 
  private:
   ~PresShell();

@@ -136,6 +136,11 @@ static const Command sMoveCommands[][2][2] = {
     // GTK differentiates between logical position, which is prev/next,
     // and visual position, which is always left/right.
     // We should fix this to work the same way for RTL text input.
+    // For WORDS, the selection variants use visual (physical Left/Right)
+    // commands so that ctrl-shift-Left/Right select toward the actual key's
+    // direction in RTL text. The non-extend variants already behave
+    // visually in RTL because bidi.edit.caret_movement_style defaults to 2
+    // on Linux ("visual, but logical during selection").
     {// LOGICAL_POSITIONS
      {Command::CharPrevious, Command::CharNext},
      {Command::SelectCharPrevious, Command::SelectCharNext}},
@@ -144,7 +149,7 @@ static const Command sMoveCommands[][2][2] = {
      {Command::SelectCharPrevious, Command::SelectCharNext}},
     {// WORDS
      {Command::WordPrevious, Command::WordNext},
-     {Command::SelectWordPrevious, Command::SelectWordNext}},
+     {Command::SelectLeft2, Command::SelectRight2}},
     {// DISPLAY_LINES
      {Command::LinePrevious, Command::LineNext},
      {Command::SelectLinePrevious, Command::SelectLineNext}},

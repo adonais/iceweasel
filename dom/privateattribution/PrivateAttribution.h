@@ -26,7 +26,7 @@ class PrivateAttribution final : public nsWrapperCache {
   explicit PrivateAttribution(nsIGlobalObject* aGlobal);
   static already_AddRefed<PrivateAttribution> Create(nsIGlobalObject& aGlobal);
 
-  nsIGlobalObject* GetParentObject() const { return mOwner; }
+  nsIGlobalObject* GetParentObject() const { return mGlobal; }
   JSObject* WrapObject(JSContext*, JS::Handle<JSObject*> aGivenProto) override;
 
   void SaveImpression(const PrivateAttributionImpressionOptions&, ErrorResult&);
@@ -40,7 +40,7 @@ class PrivateAttribution final : public nsWrapperCache {
 
   ~PrivateAttribution();
 
-  nsCOMPtr<nsIGlobalObject> mOwner;
+  nsCOMPtr<nsIGlobalObject> mGlobal;
 };
 
 }  // namespace mozilla::dom

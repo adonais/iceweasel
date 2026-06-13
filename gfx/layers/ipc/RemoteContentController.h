@@ -27,15 +27,15 @@ struct DoubleTapToZoomMetrics;
  * which must be called on the repaint thread, which in this case is the
  * compositor thread.
  */
-class RemoteContentController : public GeckoContentController,
-                                public PAPZParent {
+class RemoteContentController final : public GeckoContentController,
+                                      public PAPZParent {
   using GeckoContentController::APZStateChange;
   using GeckoContentController::TapType;
 
  public:
-  RemoteContentController();
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(RemoteContentController, final);
 
-  virtual ~RemoteContentController();
+  RemoteContentController();
 
   void NotifyLayerTransforms(nsTArray<MatrixMessage>&& aTransforms) override;
 
@@ -95,6 +95,8 @@ class RemoteContentController : public GeckoContentController,
   bool IsRemote() override;
 
  private:
+  virtual ~RemoteContentController();
+
   nsCOMPtr<nsISerialEventTarget> mCompositorThread;
   bool mCanSend;
 

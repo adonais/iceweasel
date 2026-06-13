@@ -65,7 +65,7 @@ struct ImportValues {
   WasmGlobalObjectVector globalObjs;
   ValVector globalValues;
 
-  ImportValues() {}
+  ImportValues() = default;
 
   void trace(JSTracer* trc) {
     funcs.trace(trc);

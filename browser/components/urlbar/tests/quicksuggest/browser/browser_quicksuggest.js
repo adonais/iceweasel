@@ -137,7 +137,11 @@ add_task(async function sponsoredPriorityButNotSponsoredSuggestion() {
 
   let row = await UrlbarTestUtils.waitForAutocompleteResultAt(window, 1);
   let before = window.getComputedStyle(row, "::before");
-  Assert.equal(before.content, "attr(label)", "::before.content is enabled");
+  Assert.equal(
+    before.content,
+    '"Firefox Suggest"',
+    "::before.content is enabled"
+  );
   Assert.equal(
     row.getAttribute("label"),
     "Firefox Suggest",
@@ -211,7 +215,11 @@ add_task(async function ampTopPickCharThreshold_belowThreshold() {
 
   // Group label.
   let before = window.getComputedStyle(row, "::before");
-  Assert.equal(before.content, "attr(label)", "::before.content is enabled");
+  Assert.equal(
+    before.content,
+    '"Firefox Suggest"',
+    "::before.content is enabled"
+  );
   Assert.equal(
     row.getAttribute("label"),
     "Firefox Suggest",

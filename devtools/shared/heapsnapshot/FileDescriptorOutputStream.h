@@ -25,7 +25,7 @@ class FileDescriptorOutputStream final : public nsIOutputStream {
  private:
   explicit FileDescriptorOutputStream(PRFileDesc* prfd) : fd(prfd) {}
 
-  virtual ~FileDescriptorOutputStream() {}
+  virtual ~FileDescriptorOutputStream() = default;
 
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIOUTPUTSTREAM

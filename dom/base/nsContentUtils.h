@@ -71,7 +71,6 @@ class imgRequestProxy;
 class nsAtom;
 class nsAttrValue;
 class nsAutoScriptBlockerSuppressNodeRemoved;
-class nsContentList;
 class nsCycleCollectionTraversalCallback;
 class nsDocShell;
 class nsGlobalWindowInner;
@@ -166,6 +165,7 @@ class BrowserParent;
 class BrowsingContext;
 class BrowsingContextGroup;
 class ContentChild;
+class ContentList;
 class ContentFrameMessageManager;
 class ContentParent;
 struct CustomElementDefinition;
@@ -1056,6 +1056,13 @@ class nsContentUtils {
    * customElements.define.
    */
   static bool IsCustomElementName(nsAtom* aName, uint32_t aNameSpaceID);
+
+  /**
+   * Returns true if |aName| is a valid shadow host name, per
+   * https://dom.spec.whatwg.org/#valid-shadow-host-name
+   */
+  static bool IsValidShadowHostName(nsAtom* aName,
+                                    uint32_t aNameSpaceID = kNameSpaceID_XHTML);
 
   static nsresult CheckQName(const nsAString& aQualifiedName,
                              bool aNamespaceAware = true,
@@ -2143,7 +2150,7 @@ class nsContentUtils {
       TextContentDiscoverMode aDiscoverMode = eDontRecurseIntoChildren);
 
   /**
-   * Delete strings allocated for nsContentList matches
+   * Delete strings allocated for ContentList matches
    */
   static void DestroyMatchString(void* aData);
 
@@ -2528,7 +2535,7 @@ class nsContentUtils {
    * Utility method for getElementsByClassName.  aRootNode is the node (either
    * document or element), which getElementsByClassName was called on.
    */
-  static already_AddRefed<nsContentList> GetElementsByClassName(
+  static already_AddRefed<mozilla::dom::ContentList> GetElementsByClassName(
       nsINode* aRootNode, const nsAString& aClasses);
 
   /**
@@ -2672,12 +2679,7 @@ class nsContentUtils {
    */
   static bool IsSecureContextOrWebExtension(JSContext*, JSObject*);
 
-  enum DocumentViewerType {
-    TYPE_UNSUPPORTED,
-    TYPE_CONTENT,
-    TYPE_FALLBACK,
-    TYPE_UNKNOWN
-  };
+  enum DocumentViewerType { TYPE_UNSUPPORTED, TYPE_CONTENT, TYPE_UNKNOWN };
 
   static already_AddRefed<nsIDocumentLoaderFactory> FindInternalDocumentViewer(
       const nsACString& aType, DocumentViewerType* aLoaderType = nullptr);
@@ -3875,6 +3877,9 @@ nsContentUtils::InternalContentPolicyTypeToExternal(nsContentPolicyType aType) {
     case nsIContentPolicy::TYPE_INTERNAL_JSON_PRELOAD:
       return ExtContentPolicy::TYPE_JSON;
 
+    case nsIContentPolicy::TYPE_INTERNAL_TEXT_PRELOAD:
+      return ExtContentPolicy::TYPE_TEXT;
+
     case nsIContentPolicy::TYPE_INVALID:
     case nsIContentPolicy::TYPE_OTHER:
     case nsIContentPolicy::TYPE_SCRIPT:
@@ -3902,11 +3907,10 @@ nsContentUtils::InternalContentPolicyTypeToExternal(nsContentPolicyType aType) {
     case nsIContentPolicy::TYPE_WEB_IDENTITY:
     case nsIContentPolicy::TYPE_WEB_TRANSPORT:
     case nsIContentPolicy::TYPE_JSON:
+    case nsIContentPolicy::TYPE_TEXT:
       // NOTE: When adding something here make sure the enumerator is defined!
       return static_cast<ExtContentPolicyType>(aType);
 
-    case nsIContentPolicy::TYPE_END:
-      break;
       // Do not add default: so that compilers can catch the missing case.
   }
 

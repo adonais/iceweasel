@@ -10,6 +10,7 @@
 #include "mozilla/PresShell.h"
 #include "mozilla/StyleSheet.h"
 #include "mozilla/dom/AnimatableBinding.h"
+#include "mozilla/dom/ContentList.h"
 #include "mozilla/dom/CustomElementRegistry.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/HTMLInputElement.h"
@@ -262,10 +263,10 @@ Element* DocumentOrShadowRoot::GetElementById(nsAtom* aElementId) const {
   return nullptr;
 }
 
-already_AddRefed<nsContentList> DocumentOrShadowRoot::GetElementsByTagNameNS(
+already_AddRefed<ContentList> DocumentOrShadowRoot::GetElementsByTagNameNS(
     const nsAString& aNamespaceURI, const nsAString& aLocalName) {
   ErrorResult rv;
-  RefPtr<nsContentList> list =
+  RefPtr<ContentList> list =
       GetElementsByTagNameNS(aNamespaceURI, aLocalName, rv);
   if (rv.Failed()) {
     return nullptr;
@@ -273,7 +274,7 @@ already_AddRefed<nsContentList> DocumentOrShadowRoot::GetElementsByTagNameNS(
   return list.forget();
 }
 
-already_AddRefed<nsContentList> DocumentOrShadowRoot::GetElementsByTagNameNS(
+already_AddRefed<ContentList> DocumentOrShadowRoot::GetElementsByTagNameNS(
     const nsAString& aNamespaceURI, const nsAString& aLocalName,
     ErrorResult& aResult) {
   int32_t nameSpaceId = kNameSpaceID_Wildcard;
@@ -290,7 +291,7 @@ already_AddRefed<nsContentList> DocumentOrShadowRoot::GetElementsByTagNameNS(
   return NS_GetContentList(&AsNode(), nameSpaceId, aLocalName);
 }
 
-already_AddRefed<nsContentList> DocumentOrShadowRoot::GetElementsByClassName(
+already_AddRefed<ContentList> DocumentOrShadowRoot::GetElementsByClassName(
     const nsAString& aClasses) {
   return nsContentUtils::GetElementsByClassName(&AsNode(), aClasses);
 }
@@ -621,7 +622,11 @@ void DocumentOrShadowRoot::GetAnimations(
        child = child->GetNextSibling()) {
     if (RefPtr<Element> element = Element::FromNode(child)) {
       nsTArray<RefPtr<Animation>> result;
-      element->GetAnimationsWithoutFlush(options, result);
+      IgnoredErrorResult error;
+      element->GetAnimationsWithoutFlush(options, result, error);
+      MOZ_ASSERT(
+          !error.Failed(),
+          "We only expect exceptions with invalid pseudoElement arguments");
       aAnimations.AppendElements(std::move(result));
     }
   }

@@ -95,7 +95,7 @@ add_task(async function step_4() {
 
 add_task(async function step_5() {
   info("Running step 5 - remove tab immediately");
-  let tab = BrowserTestUtils.addTab(gBrowser, "about:logo");
+  let tab = BrowserTestUtils.addTab(gBrowser, "about:mozilla");
   BrowserTestUtils.removeTab(tab);
   await ensure_opentabs_match_db();
 });

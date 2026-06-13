@@ -141,7 +141,7 @@ impl Parse for HyphenateLimitChars {
             .unwrap_or(IntegerOrAuto::Auto);
         let post_hyphen_length = input
             .try_parse(|i| IntegerOrAuto::parse(context, i))
-            .unwrap_or(pre_hyphen_length);
+            .unwrap_or_else(|_| pre_hyphen_length.clone());
         Ok(Self {
             total_word_length,
             pre_hyphen_length,
@@ -556,13 +556,11 @@ pub enum TextAlignKeyword {
     ToShmem,
     ToTyped,
 )]
-#[typed(todo_derive_fields)]
 pub enum TextAlign {
     /// Keyword value of text-align property.
     Keyword(TextAlignKeyword),
     /// `match-parent` value of text-align property. It has a different handling
     /// unlike other keywords.
-    #[cfg(feature = "gecko")]
     MatchParent,
     /// This is how we implement the following HTML behavior from
     /// https://html.spec.whatwg.org/#tables-2:
@@ -587,7 +585,6 @@ impl ToComputedValue for TextAlign {
     fn to_computed_value(&self, _context: &Context) -> Self::ComputedValue {
         match *self {
             TextAlign::Keyword(key) => key,
-            #[cfg(feature = "gecko")]
             TextAlign::MatchParent => {
                 // on the root <html> element we should still respect the dir
                 // but the parent dir of that element is LTR even if it's <html dir=rtl>

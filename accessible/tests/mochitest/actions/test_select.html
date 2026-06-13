@@ -15,26 +15,24 @@
   <script type="application/javascript"
           src="../states.js"></script>
   <script type="application/javascript"
-          src="../events.js"></script>
+          src="../promisified-events.js"></script>
   <script type="application/javascript"
           src="../actions.js"></script>
 
   <script type="application/javascript">
+    /* global testAction */
     // gA11yEventDumpToConsole = true; // debugging
-    function doTest() {
-      var actionsArray = [
-        {
-          ID: "lb_apple",
-          actionIndex: 0,
-          actionName: "select",
-          events: CLICK_EVENTS,
-          eventSeq: [
-            new focusChecker("lb_apple"),
-          ],
-        },
-      ];
-
-      testActions(actionsArray);
+    async function doTest() {
+      await testAction({
+        id: "lb_apple",
+        actionIndex: 0,
+        actionName: "select",
+        events: CLICK_EVENTS,
+        eventSeq: [
+          [EVENT_FOCUS, "lb_apple"],
+        ],
+      });
+      SimpleTest.finish();
     }
 
     SimpleTest.waitForExplicitFinish();

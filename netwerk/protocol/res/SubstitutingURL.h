@@ -52,7 +52,7 @@ class SubstitutingURL : public nsStandardURL {
     return NS_OK;
   }
 
-  NS_IMETHOD_(void) Serialize(ipc::URIParams& aParams) override;
+  virtual void Serialize(ipc::URIParams& aParams) override;
 
   friend BaseURIMutator<SubstitutingURL>;
   friend TemplatedMutator<SubstitutingURL>;

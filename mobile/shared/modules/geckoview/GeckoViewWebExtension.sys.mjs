@@ -214,7 +214,7 @@ export class GeckoViewConnection {
       // If this is a WebExtension Page we will have a GeckoSession associated
       // to it and thus a dispatcher.
       const dispatcher = GeckoViewUtils.getDispatcherForWindow(
-        this.target.ownerGlobal
+        this.target.documentGlobal
       );
       if (dispatcher) {
         return dispatcher;
@@ -230,7 +230,7 @@ export class GeckoViewConnection {
       // If this message came from a content script, send the message to
       // the corresponding tab messenger so that GeckoSession can pick it
       // up.
-      return GeckoViewUtils.getDispatcherForWindow(this.target.ownerGlobal);
+      return GeckoViewUtils.getDispatcherForWindow(this.target.documentGlobal);
     }
 
     throw new Error(`Uknown sender envType: ${this.sender.envType}`);

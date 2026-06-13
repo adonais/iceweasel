@@ -31,7 +31,7 @@ class NotificationChild final : public PNotificationChild,
   IPCResult RecvNotifyClick();
 
   void ActorDestroy(ActorDestroyReason aWhy) override;
-  void FrozenCallback(nsIGlobalObject* aOwner) override;
+  void FrozenCallback(nsIGlobalObject* aGlobal) override;
 
  private:
   ~NotificationChild() = default;

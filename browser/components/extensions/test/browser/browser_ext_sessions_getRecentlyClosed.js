@@ -211,3 +211,43 @@ add_task(
     await extension.unload();
   }
 );
+
+add_task(async function test_sessions_get_recently_closed_no_default_cap() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.sessionstore.max_tabs_undo", 40]],
+  });
+
+  function background() {
+    browser.test.onMessage.addListener(async msg => {
+      if (msg == "get-all") {
+        let recentlyClosed = await browser.sessions.getRecentlyClosed();
+        browser.test.sendMessage("all-results", recentlyClosed.length);
+      }
+    });
+  }
+
+  let extension = ExtensionTestUtils.loadExtension({
+    manifest: { permissions: ["sessions", "tabs"] },
+    background,
+  });
+  await extension.startup();
+
+  for (let i = 0; i < 30; i++) {
+    let tab = await BrowserTestUtils.openNewForegroundTab(
+      gBrowser,
+      "https://example.com/"
+    );
+    BrowserTestUtils.removeTab(tab);
+  }
+
+  extension.sendMessage("get-all");
+  let count = await extension.awaitMessage("all-results");
+  Assert.greaterOrEqual(
+    count,
+    30,
+    "getRecentlyClosed() with no filter returns more than the old 25-entry cap"
+  );
+
+  await extension.unload();
+  await SpecialPowers.popPrefEnv();
+});

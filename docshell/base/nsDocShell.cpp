@@ -1721,7 +1721,7 @@ nsDocShell::GetHasTrackingContentBlocked(Promise** aPromise) {
 
   ErrorResult rv;
   RefPtr<Document> doc(GetDocument());
-  RefPtr<Promise> retPromise = Promise::Create(doc->GetOwnerGlobal(), rv);
+  RefPtr<Promise> retPromise = Promise::Create(doc->GetRelevantGlobal(), rv);
   if (NS_WARN_IF(rv.Failed())) {
     return rv.StealNSResult();
   }
@@ -4188,6 +4188,14 @@ nsresult nsDocShell::StopInternal(
     // XXXbz We could also pass |this| to nsIURILoader::Stop.  That will
     // just call Stop() on us as an nsIDocumentLoader... We need fewer
     // redundant apis!
+    if (aUnsetOngoingNavigation == UnsetOngoingNavigation::No && mLoadGroup) {
+      // Tag load group cancellation as navigation-caused so that XHR can
+      // suppress abort events (bug 1505389). SetCanceledReason is
+      // first-write-wins, so nsDocLoader::Stop's reason won't overwrite.
+
+      // XXX Consider using a flag on LoadGroup instead of CanceledReason
+      mLoadGroup->SetCanceledReason("navigation"_ns);
+    }
     Stop();
 
     // Clear out mChannelToDisconnectOnPageHide. This page won't go in the
@@ -6337,21 +6345,22 @@ nsresult nsDocShell::CreateInitialDocumentViewer(
   MOZ_DIAGNOSTIC_ASSERT(!mDocumentViewer);
   MOZ_ASSERT(aOpenWindowInfo, "Why don't we have openwindowinfo?");
 
+  nsCOMPtr<nsIPrincipal> principal =
+      aOpenWindowInfo->PrincipalToInheritForAboutBlank();
+  nsCOMPtr<nsIPrincipal> partitionedPrincipal =
+      aOpenWindowInfo->PartitionedPrincipalToInheritForAboutBlank();
+
   // Previously, CreateDocumentViewerForActor would've used the actor's
   // principal.
+  MOZ_ASSERT_IF(aWindowActor, aWindowActor->DocumentPrincipal() == principal);
   MOZ_ASSERT_IF(aWindowActor,
-                aWindowActor->DocumentPrincipal() ==
-                    aOpenWindowInfo->PrincipalToInheritForAboutBlank());
-  MOZ_ASSERT_IF(
-      aWindowActor,
-      aWindowActor->DocumentPrincipal() ==
-          aOpenWindowInfo->PartitionedPrincipalToInheritForAboutBlank());
+                aWindowActor->DocumentPrincipal() == partitionedPrincipal);
 
+  nsCOMPtr<nsIPolicyContainer> policyContainer =
+      aOpenWindowInfo->PolicyContainerToInheritForAboutBlank();
+  nsCOMPtr<nsIURI> base = aOpenWindowInfo->BaseUriToInheritForAboutBlank();
   MOZ_TRY(CreateAboutBlankDocumentViewer(
-      aOpenWindowInfo->PrincipalToInheritForAboutBlank(),
-      aOpenWindowInfo->PartitionedPrincipalToInheritForAboutBlank(),
-      aOpenWindowInfo->PolicyContainerToInheritForAboutBlank(),
-      aOpenWindowInfo->BaseUriToInheritForAboutBlank(),
+      principal, partitionedPrincipal, policyContainer, base,
       /* aIsInitialDocument */ true,
       aOpenWindowInfo->CoepToInheritForAboutBlank(),
       /* aTryToSaveOldPresentation */ true,
@@ -6669,14 +6678,6 @@ nsresult nsDocShell::CreateAboutBlankDocumentViewer(
         }
         rv = Embed(viewer, aActor, true, nullptr, mCurrentURI);
         NS_ENSURE_SUCCESS(rv, rv);
-
-        if (nsIContentSecurityPolicy* csp =
-                PolicyContainer::GetCSP(blankDoc->GetPolicyContainer())) {
-          // We do this here rather than earlier where we inherit
-          // aPolicyContainer so that the client source uses the parent's URI as
-          // self (bug 2021482).
-          MOZ_TRY(csp->SetRequestContextWithDocument(blankDoc));
-        }
 
         SetCurrentURI(blankDoc->GetDocumentURI(), nullptr,
                       /* aFireLocationChange */ true,
@@ -7789,7 +7790,7 @@ bool nsDocShell::IsSameDocumentNavigation(nsDocShellLoadState* aLoadState,
               // At this point the requested URI is for sure a fragment
               // navigation via HTTP and HTTPS-Only mode or HTTPS-First is
               // enabled. Also it is not interfering the upgrade order of
-              // https://searchfox.org/mozilla-central/source/netwerk/base/nsNetUtil.cpp#2948-2953.
+              // https://searchfox.org/firefox-main/source/netwerk/base/nsNetUtil.cpp#2948-2953.
               // Since we are on an HTTPS site the fragment
               // navigation should also be an HTTPS.
               // For that reason we should upgrade the URI to HTTPS.
@@ -9029,6 +9030,8 @@ nsIPrincipal* nsDocShell::GetInheritedPrincipal(
     MOZ_TRY(vsh->NewSrcdocChannel(aURI, aBaseURI, aSrcdoc, aLoadInfo,
                                   getter_AddRefs(channel)));
   } else {
+    MOZ_RELEASE_ASSERT(NS_IsAboutSrcdoc(aURI));
+
     MOZ_TRY(NS_NewInputStreamChannelInternal(getter_AddRefs(channel), aURI,
                                              aSrcdoc, "text/html"_ns, aLoadInfo,
                                              true));
@@ -10069,9 +10072,11 @@ nsresult nsDocShell::CompleteInitialAboutBlankLoad(
   // the right principal (bug 1979032)
   if (principalMismatch || shouldBeSandboxed) {
     // This will sandbox the principals as needed
+    nsCOMPtr<nsIPolicyContainer> policyContainer =
+        aLoadState->PolicyContainer();
+    nsCOMPtr<nsIURI> base = doc->GetDocBaseURI();
     rv = CreateAboutBlankDocumentViewer(
-        expectedPrincipal, expectedPartitionedPrincipal,
-        aLoadState->PolicyContainer(), doc->GetDocBaseURI(),
+        expectedPrincipal, expectedPartitionedPrincipal, policyContainer, base,
         /* aIsInitialDocument */ true);
     NS_ENSURE_SUCCESS(rv, rv);
 
@@ -10089,6 +10094,13 @@ nsresult nsDocShell::CompleteInitialAboutBlankLoad(
   MOZ_ASSERT(doc->GetReadyStateEnum() == Document::READYSTATE_COMPLETE);
   MOZ_ASSERT(!mIsLoadingDocument);
 
+  if (nsIContentSecurityPolicy* csp =
+          PolicyContainer::GetCSP(doc->GetPolicyContainer())) {
+    // We do this here rather than when inheriting the CSP in
+    // CreateAboutBlankDocumentViewer so that client source and parsed policies
+    // use the parent's URI as self (bug 2021482, 2035423).
+    MOZ_TRY(csp->SetRequestContextWithDocument(doc));
+  }
   doc->ApplyCspFromLoadInfo(aLoadInfo);
   doc->ApplySettingsFromCSP(false);
   doc->RecomputeResistFingerprinting();
@@ -10144,7 +10156,7 @@ nsresult nsDocShell::CompleteInitialAboutBlankLoad(
   doc->BeginLoad();
 
   nsContentUtils::AddScriptRunner(
-      new nsDocElementCreatedNotificationRunner(doc));
+      MakeAndAddRef<nsDocElementCreatedNotificationRunner>(doc));
   // When scripts are not blocked (are they ever blocked here?), the runnable
   // runs immediately, so let's check if this docshell got destroyed or the
   // document got swapped. Unclear if this ever happens; this is a defensive
@@ -11289,9 +11301,11 @@ nsresult nsDocShell::LoadHistoryEntry(nsDocShellLoadState* aLoadState,
     // Don't cache the presentation if we're going to just reload the
     // current entry. Caching would lead to trying to save the different
     // content viewers in the same SessionHistoryEntry object.
+    nsCOMPtr<nsIPrincipal> principal = aLoadState->PrincipalToInherit();
+    nsCOMPtr<nsIPrincipal> partitionedPrincipal =
+        aLoadState->PartitionedPrincipalToInherit();
     rv = CreateAboutBlankDocumentViewer(
-        aLoadState->PrincipalToInherit(),
-        aLoadState->PartitionedPrincipalToInherit(), nullptr, nullptr,
+        principal, partitionedPrincipal, nullptr, nullptr,
         /* aIsInitialDocument */ false, Nothing(), !aLoadingCurrentEntry);
 
     if (NS_FAILED(rv)) {
@@ -13103,7 +13117,7 @@ void nsDocShell::InformNavigationAPIAboutAbortingNavigation() {
   }
 
   AutoJSAPI jsapi;
-  if (!jsapi.Init(navigation->GetOwnerGlobal())) {
+  if (!jsapi.Init(navigation->GetRelevantGlobal())) {
     return;
   }
 
@@ -13130,7 +13144,7 @@ void nsDocShell::InformNavigationAPIAboutChildNavigableDestruction() {
   }
 
   AutoJSAPI jsapi;
-  if (!jsapi.Init(navigation->GetOwnerGlobal())) {
+  if (!jsapi.Init(navigation->GetRelevantGlobal())) {
     return;
   }
 

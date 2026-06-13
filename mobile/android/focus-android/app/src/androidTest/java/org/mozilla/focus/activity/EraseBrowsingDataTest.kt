@@ -9,7 +9,6 @@ import androidx.test.internal.runner.junit4.AndroidJUnit4ClassRunner
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.Until
 import org.junit.After
-import org.junit.Assert
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -29,6 +28,7 @@ import org.mozilla.focus.helpers.TestHelper.pressHomeKey
 import org.mozilla.focus.helpers.TestHelper.restartApp
 import org.mozilla.focus.helpers.TestHelper.verifySnackBarText
 import org.mozilla.focus.testAnnotations.SmokeTest
+import kotlin.test.assertNotNull
 
 // These tests verify interaction with the browsing notification and erasing browsing data
 @RunWith(AndroidJUnit4ClassRunner::class)
@@ -145,7 +145,7 @@ class EraseBrowsingDataTest {
             expandEraseBrowsingNotification()
         }.clickNotificationMessage {
             // Wait for launcher
-            Assert.assertNotNull(launcherPackage)
+            assertNotNull(launcherPackage)
             mDevice.wait(
                 Until.hasObject(By.pkg(launcherPackage).depth(0)),
                 launcherLoadTimeoutMillis.toLong(),

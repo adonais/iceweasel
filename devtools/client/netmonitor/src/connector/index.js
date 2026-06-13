@@ -64,6 +64,7 @@ class Connector {
 
   static NETWORK_RESOURCES = [
     TYPES.NETWORK_EVENT,
+    TYPES.NETWORK_EVENT_DECODED_BODY_SIZE,
     TYPES.NETWORK_EVENT_STACKTRACE,
     TYPES.WEBSOCKET,
     TYPES.SERVER_SENT_EVENT,
@@ -214,6 +215,11 @@ class Connector {
 
       if (resource.resourceType === TYPES.NETWORK_EVENT_STACKTRACE) {
         this.dataProvider.onStackTraceAvailable(resource);
+        continue;
+      }
+
+      if (resource.resourceType === TYPES.NETWORK_EVENT_DECODED_BODY_SIZE) {
+        this.dataProvider.onDecodedBodySizeAvailable(resource);
         continue;
       }
 

@@ -3131,3 +3131,61 @@ add_task(
     sandbox.restore();
   }
 );
+
+add_task(async function test_recordEnabledWidgets_partial() {
+  info(
+    "recordEnabledWidgets should set widgetsEnabledList with only enabled widget names"
+  );
+  Services.fog.testResetFOG();
+
+  let instance = new TelemetryFeed();
+  instance.store = {
+    getState: () => ({
+      Prefs: {
+        values: {
+          "widgets.lists.enabled": true,
+          "widgets.focusTimer.enabled": false,
+          "widgets.weather.enabled": true,
+          "widgets.sportsWidget.enabled": false,
+        },
+      },
+    }),
+  };
+
+  instance.recordEnabledWidgets();
+
+  Assert.deepEqual(
+    Glean.newtab.widgetsEnabledList.testGetValue(),
+    ["lists", "weather"],
+    "widgetsEnabledList should contain only enabled widget names"
+  );
+});
+
+add_task(async function test_recordEnabledWidgets_none_enabled() {
+  info(
+    "recordEnabledWidgets should set an empty list when no widgets are enabled"
+  );
+  Services.fog.testResetFOG();
+
+  let instance = new TelemetryFeed();
+  instance.store = {
+    getState: () => ({
+      Prefs: {
+        values: {
+          "widgets.lists.enabled": false,
+          "widgets.focusTimer.enabled": false,
+          "widgets.weather.enabled": false,
+          "widgets.sportsWidget.enabled": false,
+        },
+      },
+    }),
+  };
+
+  instance.recordEnabledWidgets();
+
+  Assert.deepEqual(
+    Glean.newtab.widgetsEnabledList.testGetValue(),
+    [],
+    "widgetsEnabledList should be empty when no widgets are enabled"
+  );
+});

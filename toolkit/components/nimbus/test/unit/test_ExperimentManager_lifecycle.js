@@ -23,7 +23,7 @@ const { ProfilesDatastoreService } = ChromeUtils.importESModule(
  * onStartup()
  * - should set call setExperimentActive for each active experiment
  */
-async function test_onStartup_setExperimentActive_called() {
+add_task(async function test_onStartup_setExperimentActive_called() {
   const { sandbox, manager, cleanup } = await NimbusTestUtils.setupTest({
     init: false,
     storePath: await NimbusTestUtils.createStoreWith(store => {
@@ -72,18 +72,9 @@ async function test_onStartup_setExperimentActive_called() {
   manager.unenroll("bar");
 
   await cleanup();
-}
-
-add_task(test_onStartup_setExperimentActive_called);
-add_task(async function test_onStartup_setExperimentActive_called_db() {
-  const resetNimbusEnrollmentPrefs = NimbusTestUtils.enableNimbusEnrollments({
-    read: true,
-  });
-  await test_onStartup_setExperimentActive_called();
-  resetNimbusEnrollmentPrefs();
 });
 
-async function test_startup_unenroll() {
+add_task(async function test_startup_unenroll() {
   Services.prefs.setBoolPref("app.shield.optoutstudies.enabled", false);
 
   const { sandbox, manager, cleanup } = await NimbusTestUtils.setupTest({
@@ -114,15 +105,6 @@ async function test_startup_unenroll() {
   Services.prefs.clearUserPref("app.shield.optoutstudies.enabled");
 
   await cleanup();
-}
-
-add_task(test_startup_unenroll);
-add_task(async function test_startup_unenroll_db() {
-  const resetNimbusEnrollmentPrefs = NimbusTestUtils.enableNimbusEnrollments({
-    read: true,
-  });
-  await test_startup_unenroll();
-  resetNimbusEnrollmentPrefs();
 });
 
 add_task(async function test_onRecipe_enroll() {
@@ -272,11 +254,7 @@ add_task(async function test_onRecipe_isFirefoxLabsOptin_recipe() {
 
   const optInRecipe = NimbusTestUtils.factories.recipe("opt-in", {
     isFirefoxLabsOptIn: true,
-    firefoxLabsTitle: "title",
-    firefoxLabsDescription: "description",
-    firefoxLabsDescriptionLinks: null,
-    firefoxLabsGroup: "group",
-    requiresRestart: false,
+    isRollout: true,
   });
   const recipe = NimbusTestUtils.factories.recipe("recipe");
 
@@ -540,6 +518,135 @@ add_task(async function testDb() {
     experimentEnrollment.branchSlug,
     manager.store.get(experimentRecipe.slug).branch.slug,
     "experiment branch slug matches"
+  );
+
+  await cleanup();
+});
+
+add_task(async function testForceEnrollMultifeature() {
+  const { manager, cleanup } = await NimbusTestUtils.setupTest({
+    features: [
+      new ExperimentFeature("test-feature-1", { variables: {} }),
+      new ExperimentFeature("test-feature-2", { variables: {} }),
+    ],
+  });
+
+  await manager.enroll(
+    NimbusTestUtils.factories.recipe("recipe-1", {
+      branches: [
+        {
+          slug: "control",
+          ratio: 1,
+          features: [
+            {
+              featureId: "test-feature-1",
+              value: {},
+            },
+            {
+              featureId: "test-feature-2",
+              value: {},
+            },
+          ],
+        },
+      ],
+    }),
+    "test"
+  );
+
+  Assert.ok(
+    manager.store.get("recipe-1")?.active,
+    "Enrollment in recipe-1 is active"
+  );
+
+  const recipe = NimbusTestUtils.factories.recipe("recipe-2", {
+    branches: [
+      {
+        slug: "control",
+        ratio: 1,
+        features: [
+          {
+            featureId: "test-feature-1",
+            value: {},
+          },
+          {
+            featureId: "test-feature-2",
+            value: {},
+          },
+        ],
+      },
+    ],
+  });
+
+  const result = manager.canEnroll(recipe);
+  Assert.ok(!result.ok);
+  Assert.equal(result.reason, "enrolled-in-feature");
+  Assert.deepEqual(Array.from(result.conflictingEnrollments), ["recipe-1"]);
+
+  await manager.forceEnroll(recipe, "control");
+
+  Assert.ok(
+    !manager.store.get("recipe-1").active,
+    "Enrollment in recipe-1 is inactive"
+  );
+  Assert.ok(
+    manager.store.get("optin-recipe-2")?.active,
+    "Enrollment in recipe-2 is active"
+  );
+
+  manager.unenroll("optin-recipe-2", "test");
+
+  await cleanup();
+});
+
+// `ExperimentAPI.init()` is now called by multiple consumers. If a second
+// caller arrives while the first is still doing init work, the second caller's
+// `await init()` shouldn't resolve until the first caller's work has
+// actually completed. See Bug 2042553
+add_task(async function test_concurrent_init_callers_await_real_completion() {
+  const { sandbox, loader, cleanup } = await NimbusTestUtils.setupTest({
+    init: false,
+  });
+
+  // Gate _rsLoader.enable() so the first init() can be held in flight
+  const enableGate = Promise.withResolvers();
+  const realEnable = loader.enable.bind(loader);
+  sandbox.stub(loader, "enable").callsFake(async (...args) => {
+    await enableGate.promise;
+    return realEnable(...args);
+  });
+
+  // Kick off both callers without awaiting, and capture loader state at the
+  // moment the second call resolves
+  const p1 = ExperimentAPI.init();
+  let hasUpdatedOnceWhenP2Resolved = null;
+  const p2 = ExperimentAPI.init().then(result => {
+    hasUpdatedOnceWhenP2Resolved = loader._hasUpdatedOnce;
+    return result;
+  });
+
+  // Unblock init now that both callers are pending
+  enableGate.resolve();
+
+  const [result1, result2] = await Promise.all([p1, p2]);
+
+  Assert.strictEqual(result1, true, "First caller returned true");
+  Assert.strictEqual(
+    result2,
+    false,
+    "Second caller returned false (init was already in flight)"
+  );
+  Assert.strictEqual(
+    hasUpdatedOnceWhenP2Resolved,
+    true,
+    "Second init() did not resolve until the RS loader had actually finished updating"
+  );
+
+  // A subsequent call after completion still returns false
+  const result3 = await ExperimentAPI.init();
+  Assert.strictEqual(
+    result3,
+    false,
+    "Post-completion caller returned false (init already done)"
   );
 
   await cleanup();

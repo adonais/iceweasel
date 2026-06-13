@@ -306,8 +306,9 @@ describe("SmartWindowSwitcherTelemetry", () => {
 
     it("records uri_load from location change", async () => {
       await SpecialPowers.pushPrefEnv({
-        set: [["browser.smartwindow.firstrun.modelChoice", "test-model"]],
+        set: [["browser.smartwindow.firstrun.modelChoice", "1"]],
       });
+      const expectedModel = await modelFor("1");
 
       win = await openAIWindow();
       const browser = win.gBrowser.selectedBrowser;
@@ -337,13 +338,14 @@ describe("SmartWindowSwitcherTelemetry", () => {
 
       const events = Glean.smartWindow.uriLoad.testGetValue();
       Assert.equal(events?.length, 1, "One uri_load event was recorded");
-      Assert.equal(events[0].extra.model, "test-model", "model is correct");
+      Assert.equal(events[0].extra.model, expectedModel, "model is correct");
     });
 
     it("records uri_load from open link", async () => {
       await SpecialPowers.pushPrefEnv({
-        set: [["browser.smartwindow.firstrun.modelChoice", "test-model"]],
+        set: [["browser.smartwindow.firstrun.modelChoice", "1"]],
       });
+      const expectedModel = await modelFor("1");
 
       win = await openAIWindow();
       const browser = win.gBrowser.selectedBrowser;
@@ -377,7 +379,7 @@ describe("SmartWindowSwitcherTelemetry", () => {
 
       const events = Glean.smartWindow.uriLoad.testGetValue();
       Assert.equal(events?.length, 1, "One uri_load event was recorded");
-      Assert.equal(events[0].extra.model, "test-model", "model is correct");
+      Assert.equal(events[0].extra.model, expectedModel, "model is correct");
     });
   });
 

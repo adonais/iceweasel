@@ -10,8 +10,8 @@ const UpdatePolicyEnforcer = ChromeUtils.importESModule(
 
 const PREF_APP_UPDATE_COMPULSORY_RESTART = "app.update.compulsory_restart";
 
-add_task(function test_calculateDelay_shouldUpdateTonight() {
-  const now = Temporal.ZonedDateTime.from({
+add_task(function test_calculateSchedule_shouldUpdateTonight() {
+  const nowInstant = Temporal.ZonedDateTime.from({
     timeZone: Temporal.Now.timeZoneId(),
     year: 1970,
     month: 1,
@@ -19,35 +19,42 @@ add_task(function test_calculateDelay_shouldUpdateTonight() {
     hour: 13,
     minute: 15,
     second: 0,
-  });
+  }).toInstant();
   const notificationPeriodHours = 4;
   const restartTimeOfDay = { Hour: 18, Minute: 15 };
-  const taskSchedule = UpdatePolicyEnforcer.calculateDelay(
-    now,
+  const taskSchedule = UpdatePolicyEnforcer.calculateSchedule(
+    nowInstant,
     notificationPeriodHours,
     restartTimeOfDay
   );
   Assert.ok(taskSchedule, "Expcted non-null taskSchedule");
-  Assert.equal(
-    0,
-    Temporal.Duration.compare(
-      Temporal.Duration.from({ hours: 4 }),
-      taskSchedule.notificationDelay
-    ),
-    "Expected notification delay to be 4 hours"
+  Assert.ok(
+    Temporal.ZonedDateTime.from({
+      timeZone: Temporal.Now.timeZoneId(),
+      year: 1970,
+      month: 1,
+      day: 1,
+      hour: 17,
+      minute: 15,
+      second: 0,
+    }).equals(taskSchedule.notificationZonedDateTime)
   );
-  Assert.equal(
-    0,
-    Temporal.Duration.compare(
-      Temporal.Duration.from({ hours: 5 }),
-      taskSchedule.restartDelay
-    ),
-    "Expect restart delay to be 5 hours"
+
+  Assert.ok(
+    Temporal.ZonedDateTime.from({
+      timeZone: Temporal.Now.timeZoneId(),
+      year: 1970,
+      month: 1,
+      day: 1,
+      hour: 18,
+      minute: 15,
+      second: 0,
+    }).equals(taskSchedule.restartZonedDateTime)
   );
 });
 
-add_task(function test_calculateDelay_shouldUpdateTomorrow() {
-  const now = Temporal.ZonedDateTime.from({
+add_task(function test_calculateSchedule_shouldUpdateTomorrow() {
+  const nowInstant = Temporal.ZonedDateTime.from({
     timeZone: Temporal.Now.timeZoneId(),
     year: 1970,
     month: 1,
@@ -55,47 +62,74 @@ add_task(function test_calculateDelay_shouldUpdateTomorrow() {
     hour: 13,
     minute: 16,
     second: 0,
-  });
+  }).toInstant();
   const notificationPeriodHours = 4;
   const restartTimeOfDay = { Hour: 18, Minute: 15 };
-  const taskSchedule = UpdatePolicyEnforcer.calculateDelay(
-    now,
+  const taskSchedule = UpdatePolicyEnforcer.calculateSchedule(
+    nowInstant,
     notificationPeriodHours,
     restartTimeOfDay
   );
   Assert.ok(taskSchedule, "Expcted non-null taskSchedule");
-  Assert.equal(
-    0,
-    Temporal.Duration.compare(
-      Temporal.Duration.from({ hours: 4 }),
-      taskSchedule.notificationDelay
-    ),
-    "Expected notification delay to be 4 hours"
+  Assert.ok(
+    Temporal.ZonedDateTime.from({
+      timeZone: Temporal.Now.timeZoneId(),
+      year: 1970,
+      month: 1,
+      day: 1,
+      hour: 17,
+      minute: 16,
+      second: 0,
+    }).equals(taskSchedule.notificationZonedDateTime),
+    `Unexpected notification time: ${taskSchedule.notificationZonedDateTime}`
   );
-  Assert.equal(
-    0,
-    Temporal.Duration.compare(
-      Temporal.Duration.from({ hours: 28, minutes: 59 }),
-      taskSchedule.restartDelay
-    ),
-    "Expect restart delay to be 28 hours, 59 minutes"
+
+  Assert.ok(
+    Temporal.ZonedDateTime.from({
+      timeZone: Temporal.Now.timeZoneId(),
+      year: 1970,
+      month: 1,
+      day: 2,
+      hour: 18,
+      minute: 15,
+      second: 0,
+    }).equals(taskSchedule.restartZonedDateTime),
+    `Unexpected restart time: ${taskSchedule.restartZonedDateTime}`
   );
 });
 
 add_task(function test_createDeferredRestartTasks() {
-  const notificationDelay = Temporal.Duration.from({ hours: 48 });
-  const restartDelay = Temporal.Duration.from({ hours: 49 });
-  const { deferredNotificationTask, deferredRestartTask } =
-    UpdatePolicyEnforcer.createDeferredRestartTasks(
-      restartDelay,
-      notificationDelay
+  const notificationZonedDateTime = Temporal.ZonedDateTime.from({
+    timeZone: Temporal.Now.timeZoneId(),
+    year: 2525,
+    month: 1,
+    day: 1,
+    hour: 17,
+    minute: 16,
+    second: 0,
+  });
+  const restartZonedDateTime = Temporal.ZonedDateTime.from({
+    timeZone: Temporal.Now.timeZoneId(),
+    year: 2525,
+    month: 1,
+    day: 2,
+    hour: 18,
+    minute: 15,
+    second: 0,
+  });
+  const { notificationTask, restartTask } =
+    UpdatePolicyEnforcer.createScheduledRestartTasks(
+      restartZonedDateTime,
+      notificationZonedDateTime
     );
-  Assert.ok(deferredNotificationTask);
-  Assert.ok(deferredRestartTask);
-  Assert.ok(deferredNotificationTask.isArmed);
-  Assert.ok(deferredRestartTask.isArmed);
-  deferredNotificationTask.disarm();
-  deferredRestartTask.disarm();
+  Assert.ok(notificationTask);
+  Assert.ok(restartTask);
+  Assert.ok(notificationTask.isArmed);
+  Assert.ok(restartTask.isArmed);
+  notificationTask.disarm();
+  restartTask.disarm();
+  Assert.ok(!notificationTask.isArmed);
+  Assert.ok(!restartTask.isArmed);
 });
 
 add_task(function test_getCompulsoryRestartPolicy_has_setting() {

@@ -161,7 +161,7 @@ void HTMLElement::RestoreFormAssociatedCustomElementState() {
   }
 
   auto& ce = content.get_CustomElementTuple();
-  nsCOMPtr<nsIGlobalObject> global = GetOwnerGlobal();
+  nsCOMPtr<nsIGlobalObject> global = GetRelevantGlobal();
   internals->RestoreFormValue(
       nsContentUtils::ExtractFormAssociatedCustomElementValue(global,
                                                               ce.value()),
@@ -291,6 +291,8 @@ void HTMLElement::AfterClearForm(bool aUnbindOrDelete) {
 
 void HTMLElement::UpdateFormOwner() {
   MOZ_ASSERT(IsFormAssociatedElement());
+  DebugOnly<CustomElementData*> data = GetCustomElementData();
+  MOZ_ASSERT(data && data->mState == CustomElementData::State::eCustom);
 
   // If @form is set, the element *has* to be in a composed document,
   // otherwise it wouldn't be possible to find an element with the
@@ -392,6 +394,13 @@ void HTMLElement::UpdateDisabledState(bool aNotify) {
 }
 
 void HTMLElement::UpdateFormOwner(bool aBindToTree, Element* aFormIdElement) {
+  MOZ_ASSERT(IsFormAssociatedElement());
+
+  CustomElementData* data = GetCustomElementData();
+  if (data->mState != CustomElementData::State::eCustom) {
+    return;
+  }
+
   HTMLFormElement* oldForm = GetFormInternal();
   nsGenericHTMLFormElement::UpdateFormOwner(aBindToTree, aFormIdElement);
   HTMLFormElement* newForm = GetFormInternal();

@@ -13,6 +13,7 @@
 #include "mozjemalloc_types.h"
 #include "mozjemalloc_profiling.h"
 
+#include "ArenaAvailRuns.h"
 #include "Constants.h"
 #include "Chunk.h"
 #include "Globals.h"
@@ -45,6 +46,7 @@ class SizeClass {
   enum ClassType {
     Quantum,
     QuantumWide,
+    SubPage,
     Large,
   };
 
@@ -60,6 +62,9 @@ class SizeClass {
     } else if (aSize <= kMaxQuantumWideClass) {
       mType = QuantumWide;
       mSize = QUANTUM_WIDE_CEILING(aSize);
+    } else if (aSize <= mozilla::gMaxSubPageClass) {
+      mType = SubPage;
+      mSize = SUBPAGE_CEILING(aSize);
     } else if (aSize <= mozilla::gMaxLargeClass) {
       mType = Large;
       mSize = PAGE_CEILING(aSize);
@@ -87,38 +92,6 @@ class SizeClass {
 // Arena data structures.
 
 struct arena_bin_t;
-
-struct ArenaChunkMapLink {
-  static RedBlackTreeNode<arena_chunk_map_t>& GetTreeNode(
-      arena_chunk_map_t* aThis) {
-    return aThis->link;
-  }
-};
-
-struct ArenaAvailTreeTrait : public ArenaChunkMapLink {
-  // This compare function is used to compare to existing runs within a red
-  // black tree.  It compares both size and address to create a consistent
-  // total order.
-  static inline Order Compare(arena_chunk_map_t* aNode,
-                              arena_chunk_map_t* aOther) {
-    size_t size1 = aNode->bits & ~mozilla::gPageSizeMask;
-    size_t size2 = aOther->bits & ~mozilla::gPageSizeMask;
-    Order ret = CompareInt(size1, size2);
-    return (ret != Order::eEqual) ? ret : CompareAddr(aNode, aOther);
-  }
-
-  using SearchKey = size_t;
-
-  // This Compare function is used to search for a run of a given size
-  // within a red-black tree. It will first compare size and if that's equal
-  // it will return eLess so that the leftmost node of the tree of that size
-  // is returned.
-  static inline Order Compare(SearchKey aSize, arena_chunk_map_t* aOther) {
-    size_t size2 = aOther->bits & ~mozilla::gPageSizeMask;
-    Order ret = CompareInt(aSize, size2);
-    return (ret != Order::eEqual) ? ret : Order::eLess;
-  }
-};
 
 namespace mozilla {
 
@@ -306,7 +279,7 @@ struct arena_t : public BaseAllocClass {
   // and newly-dirtied chunks are placed at the end.  We assume that this makes
   // finding larger runs of dirty pages easier, it probably doesn't affect the
   // chance that a new allocation has a page fault since that is controlled by
-  // the order of mAvailRuns.
+  // the order of mRunsAvail.
   mozilla::DoublyLinkedList<arena_chunk_t, mozilla::DirtyChunkListTrait>
       mChunksDirty MOZ_GUARDED_BY(mLock);
 
@@ -413,10 +386,9 @@ struct arena_t : public BaseAllocClass {
   chunk_allocator_t* mChunkAllocator;
 
  private:
-  // Size/address-ordered tree of this arena's available runs.  This tree
-  // is used for first-best-fit run allocation.
-  RedBlackTree<arena_chunk_map_t, ArenaAvailTreeTrait> mRunsAvail
-      MOZ_GUARDED_BY(mLock);
+  // Collection of this arena's available runs.  This is used for
+  // first-best-fit run allocation.
+  ArenaAvailRuns mRunsAvail MOZ_GUARDED_BY(mLock);
 
  public:
   // mBins is used to store rings of free regions of the following sizes,

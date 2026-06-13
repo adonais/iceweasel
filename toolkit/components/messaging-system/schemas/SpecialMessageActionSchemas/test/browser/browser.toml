@@ -73,6 +73,12 @@ run-if = [
   "os == 'win' && msix",
 ]
 
+["browser_sma_pin_taskbar_tab.js"]
+run-if = [
+  "os == 'win'",
+  "os == 'linux'",
+]
+
 ["browser_sma_restore_session.js"]
 
 ["browser_sma_set_bookmarks_toolbar_visibility.js"]

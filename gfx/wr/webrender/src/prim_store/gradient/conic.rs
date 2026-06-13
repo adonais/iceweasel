@@ -8,7 +8,6 @@
 //!
 //! Conic gradients are rendered via cached render tasks and composited with the image brush.
 
-use euclid::vec2;
 use api::{ExtendMode, GradientStop};
 use api::units::*;
 use crate::pattern::gradient::{conic_gradient_pattern};
@@ -16,7 +15,7 @@ use crate::pattern::{Pattern, PatternBuilder, PatternBuilderContext, PatternBuil
 use crate::scene_building::IsVisible;
 use crate::intern::{Internable, InternDebug, Handle as InternHandle};
 use crate::internal_types::LayoutPrimitiveInfo;
-use crate::prim_store::{PrimitiveInstanceKind, PrimitiveOpacity};
+use crate::prim_store::{PrimitiveKind, PrimitiveOpacity};
 use crate::prim_store::{PrimKeyCommonData, PrimTemplateCommonData, PrimitiveStore};
 use crate::prim_store::{NinePatchDescriptor, PointKey, SizeKey, InternablePrimitive};
 
@@ -52,7 +51,9 @@ pub struct ConicGradientKey {
     pub extend_mode: ExtendMode,
     pub center: PointKey,
     pub params: ConicGradientParams,
-    pub stretch_size: SizeKey,
+    /// Per-axis tile size encoded as a fraction of `common.prim_size`. The
+    /// runtime `stretch_size` is `stretch_ratio * common.prim_size`.
+    pub stretch_ratio: SizeKey,
     pub stops: Vec<GradientStopKey>,
     pub tile_spacing: SizeKey,
     pub nine_patch: Option<Box<NinePatchDescriptor>>,
@@ -68,7 +69,7 @@ impl ConicGradientKey {
             extend_mode: conic_grad.extend_mode,
             center: conic_grad.center,
             params: conic_grad.params,
-            stretch_size: conic_grad.stretch_size,
+            stretch_ratio: conic_grad.stretch_ratio,
             stops: conic_grad.stops,
             tile_spacing: conic_grad.tile_spacing,
             nine_patch: conic_grad.nine_patch,
@@ -86,9 +87,10 @@ pub struct ConicGradientTemplate {
     pub extend_mode: ExtendMode,
     pub center: LayoutPoint,
     pub params: ConicGradientParams,
-    pub task_size: DeviceIntSize,
-    pub scale: DeviceVector2D,
-    pub stretch_size: LayoutSize,
+    /// Per-axis fraction of `common.prim_size` covered by one tile of the
+    /// gradient pattern. Multiply by `common.prim_size` at use to recover the
+    /// absolute stretch_size.
+    pub stretch_ratio: LayoutSize,
     pub tile_spacing: LayoutSize,
     pub border_nine_patch: Option<Box<NinePatchDescriptor>>,
     pub stops_opacity: PrimitiveOpacity,
@@ -149,72 +151,12 @@ impl From<ConicGradientKey> for ConicGradientTemplate {
         // should be drawn in.
         let stops_opacity = PrimitiveOpacity::from_alpha(min_alpha);
 
-        let mut stretch_size: LayoutSize = item.stretch_size.into();
-        stretch_size.width = stretch_size.width.min(common.prim_size.width);
-        stretch_size.height = stretch_size.height.min(common.prim_size.height);
-
-        fn approx_eq(a: f32, b: f32) -> bool { (a - b).abs() < 0.01 }
-
-        // Attempt to detect some of the common configurations with hard gradient stops. Allow
-        // those a higher maximum resolution to avoid the worst cases of aliasing artifacts with
-        // large conic gradients. A better solution would be to go back to rendering very large
-        // conic gradients via a brush shader instead of caching all of them (unclear whether
-        // it is important enough to warrant the better solution).
-        let mut has_hard_stops = false;
-        let mut prev_stop = None;
-        let offset_range = item.params.end_offset - item.params.start_offset;
-        for stop in &stops {
-            if offset_range <= 0.0 {
-                break;
-            }
-            if let Some(prev_offset) = prev_stop {
-                // Check whether two consecutive stops are very close (hard stops).
-                if stop.offset < prev_offset + 0.005 / offset_range {
-                    // a is the angle of the stop normalized into 0-1 space and repeating in the 0-0.25 range.
-                    // If close to 0.0 or 0.25 it means the stop is vertical or horizontal. For those, the lower
-                    // resolution isn't a big issue.
-                    let a = item.params.angle / (2.0 * std::f32::consts::PI)
-                        + item.params.start_offset
-                        + stop.offset / offset_range;
-                    let a = a.rem_euclid(0.25);
-
-                    if !approx_eq(a, 0.0) && !approx_eq(a, 0.25) {
-                        has_hard_stops = true;
-                        break;
-                    }
-                }
-            }
-            prev_stop = Some(stop.offset);
-        }
-
-        let max_size = if has_hard_stops {
-            2048.0
-        } else {
-            1024.0
-        };
-
-        // Avoid rendering enormous gradients. Radial gradients are mostly made of soft transitions,
-        // so it is unlikely that rendering at a higher resolution that 1024 would produce noticeable
-        // differences, especially with 8 bits per channel.
-        let mut task_size: DeviceSize = stretch_size.cast_unit();
-        let mut scale = vec2(1.0, 1.0);
-        if task_size.width > max_size {
-            scale.x = task_size.width / max_size;
-            task_size.width = max_size;
-        }
-        if task_size.height > max_size {
-            scale.y = task_size.height / max_size;
-            task_size.height = max_size;
-        }
-
         ConicGradientTemplate {
             common,
             center: item.center.into(),
             extend_mode: item.extend_mode,
             params: item.params,
-            stretch_size,
-            task_size: task_size.ceil().to_i32(),
-            scale,
+            stretch_ratio: item.stretch_ratio.into(),
             tile_spacing: item.tile_spacing.into(),
             border_nine_patch: item.nine_patch,
             stops_opacity,
@@ -232,7 +174,9 @@ pub struct ConicGradient {
     pub extend_mode: ExtendMode,
     pub center: PointKey,
     pub params: ConicGradientParams,
-    pub stretch_size: SizeKey,
+    /// Per-axis tile size encoded as a fraction of the prim's size. See
+    /// [`ConicGradientKey::stretch_ratio`].
+    pub stretch_ratio: SizeKey,
     pub stops: Vec<GradientStopKey>,
     pub tile_spacing: SizeKey,
     pub nine_patch: Option<Box<NinePatchDescriptor>>,
@@ -257,8 +201,8 @@ impl InternablePrimitive for ConicGradient {
         _key: ConicGradientKey,
         data_handle: ConicGradientDataHandle,
         _prim_store: &mut PrimitiveStore,
-    ) -> PrimitiveInstanceKind {
-        PrimitiveInstanceKind::ConicGradient {
+    ) -> PrimitiveKind {
+        PrimitiveKind::ConicGradient {
             data_handle,
         }
     }

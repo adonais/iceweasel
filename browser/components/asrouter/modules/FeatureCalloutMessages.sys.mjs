@@ -1121,7 +1121,7 @@ const MESSAGES = () => {
     {
       id: "SMARTWINDOW_NEWTAB_CALLOUT",
       template: "feature_callout",
-      groups: ["cfr"],
+      groups: [],
       content: {
         id: "SMARTWINDOW_NEWTAB_CALLOUT",
         template: "multistage",

@@ -64,6 +64,9 @@ class nsRange final : public mozilla::dom::AbstractRange,
   explicit nsRange(nsINode* aNode);
 
  public:
+  nsRange(const nsRange&) = delete;
+  nsRange& operator=(const nsRange&) = delete;
+
   /**
    * The following Create() returns `nsRange` instance which is initialized
    * only with aNode.  The result is never positioned.
@@ -368,10 +371,6 @@ class nsRange final : public mozilla::dom::AbstractRange,
       const CharacterDataChangeInfo& aInfo, const RawRangeBoundary& aBoundary);
 
  private:
-  // no copy's or assigns
-  nsRange(const nsRange&);
-  nsRange& operator=(const nsRange&);
-
   void SetStartInternal(const RawRangeBoundary& aPoint,
                         AllowRangeCrossShadowBoundary aAllowCrossShadowBoundary,
                         ErrorResult& aRv);

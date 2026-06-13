@@ -96,6 +96,7 @@ class BackupCompatibilityTest(BackupTestBase):
         self.logger.info(f"Verified storeID matches: {store_id}")
 
         self._verify_common_data(version)
+        self.assert_profile_source("backup")
 
         for check in config["extra_checks_selectable"]:
             verify_method = getattr(self, f"_verify_{check}")

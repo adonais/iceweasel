@@ -12,7 +12,7 @@ import androidx.core.net.toUri
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import mozilla.components.browser.engine.gecko.ext.isExcludedForTrackingProtection
 import mozilla.components.browser.engine.gecko.fetch.toResponse
@@ -107,9 +107,9 @@ class GeckoEngineSession(
             .build()
         GeckoSession(settings)
     },
-    private val context: CoroutineContext = Dispatchers.IO,
+    context: CoroutineContext = Dispatchers.IO,
     openGeckoSession: Boolean = true,
-) : CoroutineScope, EngineSession() {
+) : EngineSession() {
 
     // This logger is temporary and parsed by FNPRMS for performance measurements. It can be
     // removed once FNPRMS is replaced: https://github.com/mozilla-mobile/android-components/issues/8662
@@ -129,7 +129,8 @@ class GeckoEngineSession(
     // The Gecko site permissions for the loaded site.
     internal var geckoPermissions: List<ContentPermission> = emptyList()
 
-    internal var job: Job = Job()
+    internal val job: Job = SupervisorJob()
+    private val scope = CoroutineScope(context + job)
     private var canGoBack: Boolean = false
     private var canGoForward: Boolean = false
 
@@ -154,9 +155,6 @@ class GeckoEngineSession(
     }
 
     internal var initialLoad = true
-
-    override val coroutineContext: CoroutineContext
-        get() = context + job
 
     init {
         createGeckoSession(shouldOpen = openGeckoSession)
@@ -454,7 +452,7 @@ class GeckoEngineSession(
         // store thread. Since this notification can be delayed until an observer
         // is registered we switch to the main scope to make sure we're not notifying
         // on the store thread.
-        MainScope().launch {
+        scope.launch(Dispatchers.Main) {
             observer.onTrackerBlockingEnabledChange(enabled)
         }
     }
@@ -1300,7 +1298,7 @@ class GeckoEngineSession(
                 else -> null
             }
 
-            return launchGeckoResult {
+            return scope.launchGeckoResult {
                 delegate.onVisited(url, PageVisit(visitType, redirectSource))
                 true
             }
@@ -1316,7 +1314,7 @@ class GeckoEngineSession(
 
             val delegate = settings.historyTrackingDelegate ?: return GeckoResult.fromValue(null)
 
-            return launchGeckoResult {
+            return scope.launchGeckoResult {
                 val visits = delegate.getVisited(urls.toList())
                 visits.toBooleanArray()
             }
@@ -1440,7 +1438,7 @@ class GeckoEngineSession(
                                 // delegate before the session is closed (and the corresponding coroutine
                                 // job is cancelled). Observers will always be notified of the title
                                 // change though.
-                                launch(coroutineContext) {
+                                scope.launch {
                                     delegate.onTitleChanged(url, title ?: "")
                                 }
                             }
@@ -1457,7 +1455,7 @@ class GeckoEngineSession(
                 currentUrl?.let { url ->
                     settings.historyTrackingDelegate?.let { delegate ->
                         if (delegate.shouldStoreUri(url)) {
-                            launch(coroutineContext) {
+                            scope.launch {
                                 delegate.onPreviewImageChange(url, previewImageUrl)
                             }
                         }

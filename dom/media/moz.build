@@ -169,6 +169,7 @@ EXPORTS += [
     "FileBlockCache.h",
     "ForwardedInputTrack.h",
     "FrameStatistics.h",
+    "HDRUtils.h",
     "ImageConversion.h",
     "Intervals.h",
     "MediaCache.h",

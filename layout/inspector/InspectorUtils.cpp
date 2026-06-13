@@ -29,6 +29,7 @@
 #include "mozilla/dom/CSSStyleRule.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "mozilla/dom/CharacterData.h"
+#include "mozilla/dom/ContentList.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/Element.h"
@@ -48,7 +49,6 @@
 #include "nsCSSValue.h"
 #include "nsColor.h"
 #include "nsComputedDOMStyle.h"
-#include "nsContentList.h"
 #include "nsFieldSetFrame.h"
 #include "nsGlobalWindowInner.h"
 #include "nsGridContainerFrame.h"
@@ -297,12 +297,10 @@ class ReadOnlyInspectorDeclaration final : public nsDOMCSSDeclaration {
     return CSSStyleProperties_Binding::Wrap(aCx, this, aGivenProto);
   }
   // These ones are a bit sad, but matches e.g. nsComputedDOMStyle.
-  nsresult SetCSSDeclaration(DeclarationBlock* aDecl,
-                             MutationClosureData*) final {
+  nsresult SetCSSDeclaration(Block* aDecl, MutationClosureData*) final {
     MOZ_CRASH("called ReadOnlyInspectorDeclaration::SetCSSDeclaration");
   }
-  DeclarationBlock* GetOrCreateCSSDeclaration(Operation,
-                                              DeclarationBlock**) override {
+  Block* GetOrCreateCSSDeclaration(Operation, Block**) override {
     MOZ_CRASH("called ReadOnlyInspectorDeclaration::GetOrCreateCSSDeclaration");
   }
   ParsingEnvironment GetParsingEnvironment(nsIPrincipal*) const final {
@@ -418,7 +416,8 @@ void InspectorUtils::GetMatchingCSSRules(
     GlobalObject& aGlobalObject, Element& aElement, const nsAString& aPseudo,
     bool aIncludeVisitedStyle, bool aWithStartingStyle,
     nsTArray<OwningCSSRuleOrInspectorDeclaration>& aResult) {
-  auto pseudo = PseudoStyleRequest::Parse(aPseudo);
+  auto pseudo = PseudoStyleRequest::Parse(
+      aPseudo, aElement.OwnerDoc()->DefaultStyleAttrURLData());
   if (!pseudo) {
     return;
   }
@@ -1120,7 +1119,7 @@ static bool IsFrameOutsideOfAncestor(const nsIFrame* aFrame,
 static void AddOverflowingChildrenOfElement(const nsIFrame* aFrame,
                                             const nsIFrame* aAncestorFrame,
                                             const nsRect& aRect,
-                                            nsSimpleContentList& aList) {
+                                            SimpleContentList& aList) {
   MOZ_ASSERT(aFrame, "we assume the passed-in frame is non-null");
   for (const auto& childList : aFrame->ChildLists()) {
     for (const nsIFrame* child : childList.mList) {
@@ -1156,9 +1155,9 @@ static void AddOverflowingChildrenOfElement(const nsIFrame* aFrame,
   }
 }
 
-already_AddRefed<nsINodeList> InspectorUtils::GetOverflowingChildrenOfElement(
+already_AddRefed<dom::NodeList> InspectorUtils::GetOverflowingChildrenOfElement(
     GlobalObject& aGlobal, Element& aElement) {
-  auto list = MakeRefPtr<nsSimpleContentList>(&aElement);
+  auto list = MakeRefPtr<SimpleContentList>(&aElement);
   const ScrollContainerFrame* scrollContainerFrame =
       aElement.GetScrollContainerFrame();
   // Element must be a ScrollContainerFrame.

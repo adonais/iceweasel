@@ -13,7 +13,6 @@ import mozilla.components.feature.addons.Addon
 import mozilla.components.lib.state.Middleware
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -27,6 +26,7 @@ import org.mozilla.fenix.components.menu.store.SummarizationMenuState
 import org.mozilla.fenix.components.menu.store.WebExtensionMenuItem
 import org.mozilla.fenix.components.menu.store.copyWithBrowserMenuState
 import org.mozilla.fenix.components.menu.store.copyWithExtensionMenuState
+import kotlin.test.assertNotNull
 
 class MenuStoreTest {
 

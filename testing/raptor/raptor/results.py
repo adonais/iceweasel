@@ -1134,18 +1134,31 @@ class BrowsertimeResultsHandler(PerftestResultsHandler):
                     else:
                         self.results.append(_new_pageload_result(new_result))
                 elif test["type"] == "benchmark":
-                    for i, item in enumerate(self.results):
-                        if item["name"] == test["name"] and not _is_supporting_data(
-                            item
-                        ):
-                            # add page cycle custom measurements to the existing results
-                            for measurement in new_result["measurements"].items():
-                                self.results[i]["measurements"][measurement[0]].extend(
-                                    measurement[1]
-                                )
-                            break
+                    if test.get("simpleperf"):
+                        for i, item in enumerate(self.results):
+                            if item["name"] == test["name"] and not _is_supporting_data(
+                                item
+                            ):
+                                for key, value in new_result["measurements"].items():
+                                    self.results[i]["measurements"].setdefault(
+                                        key, []
+                                    ).extend(value)
+                                break
+                        else:
+                            self.results.append(_new_benchmark_result(new_result))
                     else:
-                        self.results.append(_new_benchmark_result(new_result))
+                        for i, item in enumerate(self.results):
+                            if item["name"] == test["name"] and not _is_supporting_data(
+                                item
+                            ):
+                                # add page cycle custom measurements to the existing results
+                                for measurement in new_result["measurements"].items():
+                                    self.results[i]["measurements"][
+                                        measurement[0]
+                                    ].extend(measurement[1])
+                                break
+                        else:
+                            self.results.append(_new_benchmark_result(new_result))
 
         # now have all results gathered from all browsertime test URLs; format them for output
         output = BrowsertimeOutput(

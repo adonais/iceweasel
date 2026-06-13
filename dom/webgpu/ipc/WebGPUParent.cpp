@@ -509,7 +509,8 @@ void WebGPUParent::MaintainDevices() {
   ffi::wgpu_server_poll_all_devices(mContext.get(), false);
 }
 
-void WebGPUParent::LoseDevice(const RawId aDeviceId, uint8_t aReason,
+void WebGPUParent::LoseDevice(const RawId aDeviceId,
+                              dom::GPUDeviceLostReason aReason,
                               const nsACString& aMessage) {
   if (mActiveDeviceIds.Contains(aDeviceId)) {
     mActiveDeviceIds.Remove(aDeviceId);
@@ -542,8 +543,7 @@ bool WebGPUParent::ForwardError(ErrorBuffer& aError) {
     // "No errors are generated after device loss."
     if (error->isDeviceLost) {
       if (error->deviceId) {
-        LoseDevice(error->deviceId,
-                   static_cast<uint8_t>(dom::GPUDeviceLostReason::Unknown),
+        LoseDevice(error->deviceId, dom::GPUDeviceLostReason::Unknown,
                    error->message);
       }
     } else {
@@ -604,13 +604,13 @@ static void DeviceLostCleanupCallback(uint8_t* aUserData) {
 
   // NOTE: Based on `u8` discriminant values provided for `DeviceLostReason` in
   // `wgpu_bindings`.
-  uint8_t reason;
+  dom::GPUDeviceLostReason reason;
   switch (aReason) {
     case 0:
-      reason = static_cast<uint8_t>(dom::GPUDeviceLostReason::Unknown);
+      reason = dom::GPUDeviceLostReason::Unknown;
       break;
     case 1:
-      reason = static_cast<uint8_t>(dom::GPUDeviceLostReason::Destroyed);
+      reason = dom::GPUDeviceLostReason::Destroyed;
       break;
     default:
       MOZ_CRASH_UNSAFE_PRINTF(
@@ -714,8 +714,7 @@ void WebGPUParent::MapCallback(uint8_t* aUserData,
     // need to lose the device.
     if (aStatus == ffi::WGPUBufferMapAsyncStatus_ContextLost) {
       req->mParent->LoseDevice(
-          req->mDeviceId,
-          static_cast<uint8_t>(dom::GPUDeviceLostReason::Unknown),
+          req->mDeviceId, dom::GPUDeviceLostReason::Unknown,
           nsPrintfCString("Buffer %" PRIu64 " invalid", req->mBufferId));
     }
     auto error = nsPrintfCString("Mapping WebGPU buffer failed: %s",

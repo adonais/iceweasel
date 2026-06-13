@@ -110,7 +110,7 @@ var gTabsPanel = {
 
     this.allTabsView.addEventListener("command", event => {
       let { target } = event;
-      let { PanelUI } = target.ownerGlobal;
+      let { PanelUI } = target.documentGlobal;
       switch (target.id) {
         case "allTabsMenu-searchTabs":
           Glean.browserUiInteraction.listAllTabsAction.search_tabs.add(1);

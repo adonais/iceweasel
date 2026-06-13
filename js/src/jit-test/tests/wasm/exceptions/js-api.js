@@ -97,6 +97,13 @@ assertErrorMessage(
   /first argument must be a WebAssembly.Tag/
 );
 
+// Per spec, creating a new wasm exception with a JSTag value is rejected.
+assertErrorMessage(
+  () => new WebAssembly.Exception(WebAssembly.JSTag, [42]),
+  TypeError,
+  /cannot wrap a WebAssembly.JSTag exception/
+);
+
 const { tag1, tag2, tag3, tag4, tag5, tag6, tag7, tag8, tag9 } = wasmEvalText(
   `(module
      (tag (export "tag1") (param))

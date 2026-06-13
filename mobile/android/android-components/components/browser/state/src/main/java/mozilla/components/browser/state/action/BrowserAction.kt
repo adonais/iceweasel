@@ -401,6 +401,17 @@ sealed class LastAccessAction : BrowserAction() {
     ) : LastAccessAction()
 
     /**
+     * Updates the [TabSessionState.lastVisibleAt] timestamp of the tab with the given [tabId].
+     *
+     * @property tabId the ID of the tab to update.
+     * @property lastVisibleAt the timestamp when the tab was last visible to the user.
+     */
+    data class UpdateLastVisibleAtAction(
+        val tabId: String,
+        val lastVisibleAt: Long,
+    ) : LastAccessAction()
+
+    /**
      * Updates [TabSessionState.lastMediaAccessState] for when media started playing in the tab identified by [tabId].
      *
      * @property tabId the ID of the tab to update.

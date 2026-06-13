@@ -158,7 +158,6 @@ void a11y::PlatformCaretMoveEvent(Accessible* aTarget, int32_t aOffset,
     // Pivot to the caret's position if it has an expanded selection.
     // This is used mostly for find in page.
     Accessible* leaf = TextLeafPoint::GetCaret(aTarget).mAcc;
-    MOZ_ASSERT(leaf);
     if (leaf) {
       if (Accessible* result = AccessibleWrap::DoPivot(
               leaf, java::SessionAccessibility::HTML_GRANULARITY_DEFAULT, true,

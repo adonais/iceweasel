@@ -111,6 +111,8 @@ static bool AsyncFunctionResume(JSContext* cx,
     return true;
   }
 
+  AutoAsyncResumeDepth autoDepth(cx);
+
   Rooted<PromiseObject*> resultPromise(cx, generator->promise());
 
   RootedObject stack(cx);
@@ -244,16 +246,7 @@ const JSClass AsyncFunctionGeneratorObject::class_ = {
 };
 
 const JSClassOps AsyncFunctionGeneratorObject::classOps_ = {
-    nullptr,                                   // addProperty
-    nullptr,                                   // delProperty
-    nullptr,                                   // enumerate
-    nullptr,                                   // newEnumerate
-    nullptr,                                   // resolve
-    nullptr,                                   // mayResolve
-    nullptr,                                   // finalize
-    nullptr,                                   // call
-    nullptr,                                   // construct
-    CallTraceMethod<AbstractGeneratorObject>,  // trace
+    .trace = CallTraceMethod<AbstractGeneratorObject>,
 };
 
 AsyncFunctionGeneratorObject* AsyncFunctionGeneratorObject::create(

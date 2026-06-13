@@ -122,9 +122,6 @@ DefaultJitOptions::DefaultJitOptions() {
   // Toggles whether stubs with different offsets in Loads or Stores are folded.
   SET_DEFAULT(disableStubFoldingLoadsAndStores, false);
 
-  // Toggles whether sink code motion is globally disabled.
-  SET_DEFAULT(disableSink, true);
-
   // Toggles whether redundant shape guard elimination is globally disabled.
   SET_DEFAULT(disableRedundantShapeGuards, false);
 

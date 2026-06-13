@@ -24,8 +24,7 @@ AddonTestUtils.initMochitest(this);
 
 async function optInUser() {
   setupService({
-    isSignedIn: true,
-    isEnrolledAndEntitled: true,
+    isReady: true,
   });
   let content = await openPanel();
   let unauthenticatedContent = content.unauthenticatedEl;
@@ -98,8 +97,7 @@ add_task(async function test_IPProtectionService_updateEligibility() {
 add_task(async function test_IPProtectionService_updateEnrollment() {
   Services.prefs.clearUserPref("browser.ipProtection.enabled");
   setupService({
-    isSignedIn: true,
-    isEnrolledAndEntitled: true,
+    isReady: true,
   });
 
   await SpecialPowers.pushPrefEnv({
@@ -124,7 +122,7 @@ add_task(async function test_IPProtectionService_updateEnrollment() {
  */
 add_task(async function test_IPProtectionService_enroll() {
   setupService({
-    isEnrolledAndEntitled: false,
+    isReady: false,
     canEnroll: true,
   });
 
@@ -133,7 +131,7 @@ add_task(async function test_IPProtectionService_enroll() {
   await waitForWidgetAdded();
 
   setupService({
-    isSignedIn: true,
+    isReady: false,
   });
 
   IPProtectionService.updateState();
@@ -162,8 +160,7 @@ add_task(
   async function test_IPProtectionService_updateEntitlement_in_experiment() {
     Services.prefs.clearUserPref("browser.ipProtection.enabled");
     setupService({
-      isEnrolledAndEntitled: true,
-      isSignedIn: true,
+      isReady: true,
       canEnroll: true,
     });
 
@@ -191,8 +188,7 @@ add_task(
 add_task(async function test_IPProtectionService_updateEntitlement() {
   Services.prefs.clearUserPref("browser.ipProtection.enabled");
   setupService({
-    isSignedIn: true,
-    isEnrolledAndEntitled: true,
+    isReady: true,
   });
 
   await SpecialPowers.pushPrefEnv({
@@ -217,7 +213,7 @@ add_task(async function test_IPProtectionService_updateEntitlement() {
  */
 add_task(async function test_IPProtectionService_update_usage_on_sign_in() {
   Services.prefs.clearUserPref("browser.ipProtection.enabled");
-  IPPEnrollAndEntitleManager.resetEntitlement();
+  IPPFxaAuthProvider.resetEntitlement();
   // Remove the no-op stub so that we can call the real updateEntitlement
   STUBS.updateEntitlement.restore();
 
@@ -227,7 +223,7 @@ add_task(async function test_IPProtectionService_update_usage_on_sign_in() {
   );
   let usage = makeUsage("5368709120", "4294967296");
   setupService({
-    isSignedIn: false,
+    isReady: false,
   });
 
   await SpecialPowers.pushPrefEnv({
@@ -236,10 +232,11 @@ add_task(async function test_IPProtectionService_update_usage_on_sign_in() {
 
   await waitForWidgetAdded();
 
+  const sandbox = sinon.createSandbox();
+  sandbox.stub(IPPSignInWatcher, "isSignedIn").get(() => true);
+
   setupService({
-    isSignedIn: true,
-    isEnrolledAndEntitled: true,
-    isLinkedToGuardian: true,
+    isReady: true,
     usageInfo: usage,
   });
   // Dispatch a sign-in event to trigger the usage refresh.
@@ -275,18 +272,18 @@ add_task(async function test_IPProtectionService_update_usage_on_sign_in() {
 
   await closePanel();
   cleanupService();
+  sandbox.restore();
   await SpecialPowers.popPrefEnv();
   // Restore the stubbed updateEntitlement for other tests
   STUBS.updateEntitlement = setupSandbox
-    .stub(IPPEnrollAndEntitleManager, "updateEntitlement")
+    .stub(IPPFxaAuthProvider, "updateEntitlement")
     .resolves();
 });
 
 add_task(async function test_ipprotection_ready() {
   Services.prefs.clearUserPref("browser.ipProtection.enabled");
   setupService({
-    isSignedIn: true,
-    isEnrolledAndEntitled: true,
+    isReady: true,
   });
 
   const sandbox = sinon.createSandbox();
@@ -314,7 +311,7 @@ add_task(async function test_ipprotection_ready() {
  */
 add_task(async function test_IPProtectionService_pass_errors() {
   setupService({
-    isSignedIn: true,
+    isReady: true,
     proxyPass: {
       status: 403,
     },
@@ -383,8 +380,7 @@ add_task(async function test_IPProtectionService_pass_errors() {
  */
 add_task(async function test_IPProtectionService_retry_errors() {
   setupService({
-    isSignedIn: true,
-    isEnrolledAndEntitled: true,
+    isReady: true,
     canEnroll: true,
   });
   let cleanupAlpha = await setupExperiment({ enabled: true, variant: "alpha" });
@@ -395,7 +391,7 @@ add_task(async function test_IPProtectionService_retry_errors() {
   let statusCard = content.statusCardEl;
 
   // Mock a failure
-  IPPEnrollAndEntitleManager.resetEntitlement();
+  IPPFxaAuthProvider.resetEntitlement();
   IPPProxyManager.setErrorState(ERRORS.GENERIC);
 
   let startedEventPromise = BrowserTestUtils.waitForEvent(
@@ -423,7 +419,7 @@ add_task(async function test_IPProtectionService_retry_errors() {
  */
 add_task(async function test_IPProtectionService_stop_on_signout() {
   setupService({
-    isSignedIn: true,
+    isReady: true,
     canEnroll: true,
   });
   let cleanupAlpha = await setupExperiment({ enabled: true, variant: "alpha" });
@@ -460,7 +456,7 @@ add_task(async function test_IPProtectionService_stop_on_signout() {
   );
 
   setupService({
-    isSignedIn: false,
+    isReady: false,
   });
   IPProtectionService.updateState();
   await vpnOffPromise;

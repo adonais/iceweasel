@@ -24,12 +24,12 @@ class nsChromeProtocolHandler final : public nsIProtocolHandler,
   NS_DECL_NSIPROTOCOLHANDLER
 
   // nsChromeProtocolHandler methods:
-  nsChromeProtocolHandler() {}
+  nsChromeProtocolHandler() = default;
   static nsresult CreateNewURI(const nsACString& aSpec, const char* aCharset,
                                nsIURI* aBaseURI, nsIURI** result);
 
  private:
-  ~nsChromeProtocolHandler() {}
+  ~nsChromeProtocolHandler() = default;
 };
 
 #endif /* nsChromeProtocolHandler_h_ */

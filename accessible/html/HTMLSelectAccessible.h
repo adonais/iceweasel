@@ -65,7 +65,7 @@ class HTMLSelectOptionAccessible : public HyperTextAccessible {
   enum { eAction_Select = 0 };
 
   HTMLSelectOptionAccessible(nsIContent* aContent, DocAccessible* aDoc);
-  virtual ~HTMLSelectOptionAccessible() {}
+  virtual ~HTMLSelectOptionAccessible() = default;
 
   // LocalAccessible
   virtual a11y::role NativeRole() const override;
@@ -135,7 +135,7 @@ class HTMLSelectOptGroupAccessible : public HTMLSelectOptionAccessible {
       : HTMLSelectOptionAccessible(aContent, aDoc) {
     mType = eHTMLOptGroupType;
   }
-  virtual ~HTMLSelectOptGroupAccessible() {}
+  virtual ~HTMLSelectOptGroupAccessible() = default;
 
   // LocalAccessible
   virtual a11y::role NativeRole() const override;
@@ -160,7 +160,7 @@ class HTMLComboboxAccessible final : public AccessibleWrap {
   enum { eAction_Click = 0 };
 
   HTMLComboboxAccessible(nsIContent* aContent, DocAccessible* aDoc);
-  virtual ~HTMLComboboxAccessible() {}
+  virtual ~HTMLComboboxAccessible() = default;
 
   // LocalAccessible
   virtual void Shutdown() override;
@@ -203,7 +203,7 @@ class HTMLComboboxListAccessible : public HTMLSelectListAccessible {
  public:
   HTMLComboboxListAccessible(LocalAccessible* aParent, nsIContent* aContent,
                              DocAccessible* aDoc);
-  virtual ~HTMLComboboxListAccessible() {}
+  virtual ~HTMLComboboxListAccessible() = default;
 
   // LocalAccessible
   virtual a11y::role NativeRole() const override;

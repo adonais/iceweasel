@@ -9,5 +9,16 @@
         }
       }
     }
+  },
+  "space": {
+    "block": {
+      "start": {
+        "value": {
+          "brand": {
+            "default": "64px"
+          }
+        }
+      }
+    }
   }
 }

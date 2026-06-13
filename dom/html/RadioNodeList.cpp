@@ -52,6 +52,6 @@ void RadioNodeList::SetValue(const nsAString& value, CallerType aCallerType) {
   }
 }
 
-NS_IMPL_ISUPPORTS_INHERITED(RadioNodeList, nsSimpleContentList, RadioNodeList)
+NS_IMPL_ISUPPORTS_INHERITED(RadioNodeList, SimpleContentList, RadioNodeList)
 
 }  // namespace mozilla::dom

@@ -3,14 +3,20 @@
 
 do_get_profile();
 
-const { openAIEngine } = ChromeUtils.importESModule(
+const { openAIEngine, FEATURE_MAJOR_VERSIONS } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs"
 );
 
-const { getModelForChoice, getAllModelsData, getCurrentModelName } =
-  ChromeUtils.importESModule(
-    "moz-src:///browser/components/aiwindow/ui/modules/AIWindowConstants.sys.mjs"
-  );
+const {
+  FALLBACK_MODELS,
+  getModelForChoice,
+  getAllModelsData,
+  getCachedModelsData,
+  getCurrentModelName,
+  _clearModelsDataCacheForTesting,
+} = ChromeUtils.importESModule(
+  "moz-src:///browser/components/aiwindow/ui/modules/AIWindowConstants.sys.mjs"
+);
 
 const { sinon } = ChromeUtils.importESModule(
   "resource://testing-common/Sinon.sys.mjs"
@@ -83,6 +89,7 @@ add_task(async function test_getModelForChoice_custom_model() {
 });
 
 add_task(async function test_getAllModelsData_with_remote_settings() {
+  _clearModelsDataCacheForTesting();
   const sb = sinon.createSandbox();
   try {
     const fakeRecords = [
@@ -133,15 +140,88 @@ add_task(async function test_getAllModelsData_with_remote_settings() {
   }
 });
 
-add_task(function test_getCurrentModelName_returns_fallback_for_known_choice() {
-  Services.prefs.setStringPref("browser.smartwindow.firstrun.modelChoice", "1");
-  Assert.equal(
-    getCurrentModelName(),
-    "gemini-2.5-flash-lite",
-    "Should return fallback model name for choice 1"
+add_task(function test_getCachedModelsData_returns_fallback_before_fetch() {
+  _clearModelsDataCacheForTesting();
+  const result = getCachedModelsData();
+  Assert.deepEqual(
+    result,
+    FALLBACK_MODELS,
+    "Should return FALLBACK_MODELS before getAllModelsData has been called"
   );
-  Services.prefs.clearUserPref("browser.smartwindow.firstrun.modelChoice");
 });
+
+add_task(async function test_getCachedModelsData_returns_rs_data_after_fetch() {
+  _clearModelsDataCacheForTesting();
+  const sb = sinon.createSandbox();
+  try {
+    const fakeRecords = [
+      {
+        feature: "chat",
+        version: `${FEATURE_MAJOR_VERSIONS.chat}.13`, // RS only loads the current major version for chat
+        model: "gemini-rs-model",
+        model_choice_id: "1",
+        owner_name: "Google",
+      },
+    ];
+    sb.stub(openAIEngine, "getRemoteClient").returns({
+      get: sb.stub().resolves(fakeRecords),
+    });
+
+    await getAllModelsData();
+
+    const result = getCachedModelsData();
+    Assert.equal(
+      result["1"].model,
+      "gemini-rs-model",
+      "Should return RS-resolved data after getAllModelsData has been called"
+    );
+  } finally {
+    sb.restore();
+  }
+});
+
+add_task(
+  async function test_getCurrentModelName_returns_correctly_before_and_after_cache() {
+    Services.prefs.setStringPref(
+      "browser.smartwindow.firstrun.modelChoice",
+      "1"
+    );
+    _clearModelsDataCacheForTesting();
+    const sb = sinon.createSandbox();
+
+    try {
+      const fakeRecords = [
+        {
+          feature: "chat",
+          version: `${FEATURE_MAJOR_VERSIONS.chat}.13`, // RS only loads the current major version for chat
+          model: "gemini-rs-model",
+          model_choice_id: "1",
+          owner_name: "Google",
+        },
+      ];
+      sb.stub(openAIEngine, "getRemoteClient").returns({
+        get: sb.stub().resolves(fakeRecords),
+      });
+
+      Assert.equal(
+        getCurrentModelName(),
+        FALLBACK_MODELS[1].model,
+        "Should return fallback model name for choice 1"
+      );
+
+      await getAllModelsData();
+
+      Assert.equal(
+        getCurrentModelName(),
+        "gemini-rs-model",
+        "Should return rs model name for choice 1 after cache initialized"
+      );
+    } finally {
+      sb.restore();
+      Services.prefs.clearUserPref("browser.smartwindow.firstrun.modelChoice");
+    }
+  }
+);
 
 add_task(function test_getCurrentModelName_returns_empty_when_no_choice() {
   Services.prefs.clearUserPref("browser.smartwindow.firstrun.modelChoice");
@@ -153,6 +233,7 @@ add_task(function test_getCurrentModelName_returns_empty_when_no_choice() {
 });
 
 add_task(async function test_getAllModelsData_with_fallbacks() {
+  _clearModelsDataCacheForTesting();
   const sb = sinon.createSandbox();
   try {
     const fakeRecords = [

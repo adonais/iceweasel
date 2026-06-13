@@ -209,6 +209,8 @@ nsresult nsGIFDecoder2::BeginImageFrame(const OrientedIntRect& aFrameRect,
                                         uint16_t aDepth, bool aIsInterlaced) {
   MOZ_ASSERT(HasSize());
 
+  bool hasTransparency = CheckForTransparency(aFrameRect);
+
   // If we are just counting frames for a metadata decode, there is no actual
   // decoding done. We are just iterating over the blocks to find when a frame
   // begins and ends.
@@ -216,8 +218,6 @@ nsresult nsGIFDecoder2::BeginImageFrame(const OrientedIntRect& aFrameRect,
     mCurrentFrameIndex = mGIFStruct.images_decoded;
     return NS_OK;
   }
-
-  bool hasTransparency = CheckForTransparency(aFrameRect);
 
   // Make sure there's no animation if we're downscaling.
   MOZ_ASSERT_IF(Size() != OutputSize(), !GetImageMetadata().HasAnimation());

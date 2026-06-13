@@ -5,7 +5,6 @@
 #ifndef nsCharTraits_h_
 #define nsCharTraits_h_
 
-#include <ctype.h>   // for |EOF|, |WEOF|
 #include <stdint.h>  // for |uint32_t|
 #include <string.h>  // for |memcpy|, et al
 #include "mozilla/MemoryChecking.h"

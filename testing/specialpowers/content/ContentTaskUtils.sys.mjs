@@ -203,7 +203,7 @@ export var ContentTaskUtils = {
       /**
        * @backward-compat { version 152 }
        *
-       * Get rid of the ownerGlobal fallback once 152 makes it to release.
+       * Get rid of the documentGlobal fallback once 152 makes it to release.
        */
       let global = subject.documentGlobal ?? subject.ownerGlobal;
       let obs = new global.MutationObserver(function () {
@@ -219,7 +219,7 @@ export var ContentTaskUtils = {
 
   /**
    * Gets an instance of the `EventUtils` helper module for usage in
-   * content tasks. See https://searchfox.org/mozilla-central/source/testing/mochitest/tests/SimpleTest/EventUtils.js
+   * content tasks. See https://searchfox.org/firefox-main/source/testing/mochitest/tests/SimpleTest/EventUtils.js
    *
    * @param content
    *        The `content` global object from your content task.

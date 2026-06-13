@@ -125,9 +125,18 @@ static const Scale ScalePointer = TimesEight;
 
 class Assembler;
 
-typedef js::jit::AssemblerBufferWithConstantPools<4, Instruction, Assembler,
-                                                  NumShortBranchRangeTypes>
-    Buffer;
+using Buffer =
+    js::jit::AssemblerBufferWithConstantPools<Instruction, Assembler,
+                                              js::jit::AssemblerBufferSettings{
+                                                  .instSize = 4,
+                                                  .guardSize = 2,
+                                                  .headerSize = 2,
+                                                  .pcBias = 8,
+                                                  .alignFillInst = kNopByte,
+                                                  .nopFillInst = kNopByte,
+                                                  .numShortBranchRanges =
+                                                      NumShortBranchRangeTypes,
+                                              }>;
 
 class Assembler : public AssemblerShared,
                   public AssemblerRISCVI,
@@ -198,9 +207,7 @@ class Assembler : public AssemblerShared,
 #ifdef JS_JITSPEW
         printer(nullptr),
 #endif
-        m_buffer(/*guardSize*/ 2, /*headerSize*/ 2, /*instBufferAlign*/ 8,
-                 /*poolMaxOffset*/ GetPoolMaxOffset(), /*pcBias*/ 8,
-                 /*alignFillInst*/ kNopByte, /*nopFillInst*/ kNopByte),
+        m_buffer(/*poolMaxOffset*/ GetPoolMaxOffset(), /*nopFill*/ 0),
         isFinished(false) {
   }
   static uint32_t NopFill;
@@ -296,8 +303,8 @@ class Assembler : public AssemblerShared,
   BufferOffset nextOffset() { return m_buffer.nextOffset(); }
   // Get the buffer offset of the next inserted instruction. This may flush
   // constant pools.
-  BufferOffset nextInstrOffset(int numInstr = 1) {
-    return m_buffer.nextInstrOffset(numInstr);
+  BufferOffset nextInstrOffset(unsigned numInsts, unsigned numNewDeadlines) {
+    return m_buffer.nextInstrOffset(numInsts, numNewDeadlines);
   }
   void comment(const char* msg) { spew("; %s", msg); }
 

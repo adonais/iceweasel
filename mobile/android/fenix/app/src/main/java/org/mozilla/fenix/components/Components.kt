@@ -35,6 +35,7 @@ import mozilla.components.service.fxrelay.eligibility.RelayEligibilityStore
 import mozilla.components.service.fxrelay.eligibility.middlewares.ClearLastUsedMiddleware
 import mozilla.components.support.base.android.DefaultProcessInfoProvider
 import mozilla.components.support.base.android.NotificationsDelegate
+import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.base.worker.Frequency
 import mozilla.components.support.remotesettings.DefaultRemoteSettingsSyncScheduler
 import mozilla.components.support.remotesettings.RemoteSettingsServer
@@ -42,6 +43,7 @@ import mozilla.components.support.remotesettings.RemoteSettingsService
 import mozilla.components.support.remotesettings.into
 import mozilla.components.support.utils.BuildManufacturerChecker
 import mozilla.components.support.utils.ClipboardHandler
+import mozilla.components.support.utils.ext.packageManagerCompatHelper
 import mozilla.components.support.utils.ext.packageManagerWrapper
 import org.mozilla.fenix.BuildConfig
 import org.mozilla.fenix.Config
@@ -57,6 +59,7 @@ import org.mozilla.fenix.components.appstate.AppState
 import org.mozilla.fenix.components.appstate.setup.checklist.SetupChecklistState
 import org.mozilla.fenix.components.appstate.setup.checklist.getSetupChecklistCollection
 import org.mozilla.fenix.components.appstate.sports.SportsWidgetState
+import org.mozilla.fenix.components.ipprotection.IPProtection
 import org.mozilla.fenix.components.llm.Llm
 import org.mozilla.fenix.components.llm.ext.accessTokenProvider
 import org.mozilla.fenix.components.metrics.MetricsMiddleware
@@ -84,6 +87,8 @@ import org.mozilla.fenix.home.sports.SportsWidgetMiddleware
 import org.mozilla.fenix.home.sports.WorldCupMatchesRepository
 import org.mozilla.fenix.home.sports.client.AppServicesWorldCupMatchesClient
 import org.mozilla.fenix.home.sports.client.mockWorldCupBaseHost
+import org.mozilla.fenix.ipprotection.IPProtectionManager
+import org.mozilla.fenix.ipprotection.store.DefaultIPProtectionPromptRepository
 import org.mozilla.fenix.messaging.state.MessagingMiddleware
 import org.mozilla.fenix.nimbus.FxNimbus
 import org.mozilla.fenix.onboarding.FenixOnboarding
@@ -95,11 +100,15 @@ import org.mozilla.fenix.perf.StrictModeManager
 import org.mozilla.fenix.perf.lazyMonitored
 import org.mozilla.fenix.reviewprompt.ReviewPromptMiddleware
 import org.mozilla.fenix.search.VoiceSearchAIControlFeature
+import org.mozilla.fenix.settings.ai.AIControlsSearchProvider
 import org.mozilla.fenix.settings.datachoices.DataChoicesSearchProvider
+import org.mozilla.fenix.settings.labs.FirefoxLabsSettingsSearchProvider
+import org.mozilla.fenix.settings.pagesummaries.PageSummariesSettingsSearchProvider
 import org.mozilla.fenix.settings.settingssearch.DefaultFenixSettingsIndexer
 import org.mozilla.fenix.termsofuse.TermsOfUseManager
 import org.mozilla.fenix.termsofuse.store.DefaultTermsOfUsePromptRepository
 import org.mozilla.fenix.utils.Settings
+import org.mozilla.fenix.utils.getApplicationInstalledTime
 import org.mozilla.fenix.utils.isLargeScreenSize
 import org.mozilla.fenix.wifi.WifiConnectionMonitor
 import java.util.concurrent.TimeUnit
@@ -216,7 +225,7 @@ class Components(private val context: Context) {
     val remoteSettingsSyncScheduler by lazyMonitored {
         DefaultRemoteSettingsSyncScheduler(
             context,
-            Frequency(24, TimeUnit.HOURS),
+            Frequency(2, TimeUnit.HOURS),
         )
     }
 
@@ -233,6 +242,9 @@ class Components(private val context: Context) {
                 context.getString(R.string.remote_settings_server_prod) -> RemoteSettingsServer.Prod.into()
                 context.getString(R.string.remote_settings_server_dev) -> RemoteSettingsServer.Dev.into()
                 context.getString(R.string.remote_settings_server_stage) -> RemoteSettingsServer.Stage.into()
+                context.getString(R.string.remote_settings_server_prod_v2) -> RemoteSettingsServer.ProdV2.into()
+                context.getString(R.string.remote_settings_server_dev_v2) -> RemoteSettingsServer.DevV2.into()
+                context.getString(R.string.remote_settings_server_stage_v2) -> RemoteSettingsServer.StageV2.into()
                 else -> RemoteSettingsServer.Prod.into()
             },
             channel = BuildConfig.BUILD_TYPE,
@@ -301,7 +313,6 @@ class Components(private val context: Context) {
                 expandedCollections = emptySet(),
                 topSites = core.topSitesStorage.cachedTopSites.sort(),
                 bookmarks = emptyList(),
-                showCollectionPlaceholder = settings.showCollectionsPlaceholderOnHome,
                 // Provide an initial state for recent tabs to prevent re-rendering on the home screen.
                 //  This will otherwise cause a visual jump as the section gets rendered from no state
                 //  to some state.
@@ -438,8 +449,32 @@ class Components(private val context: Context) {
             context = context,
             additionalProviders = listOf(
                 DataChoicesSearchProvider,
+                AIControlsSearchProvider,
+                PageSummariesSettingsSearchProvider(
+                    summarizationFeatureConfiguration = core.summarizeFeatureSettings,
+                ),
+                FirefoxLabsSettingsSearchProvider(
+                    isLabsEnabled = { context.settings().enableFirefoxLabs },
+                ),
             ),
         )
+    }
+
+    val ipProtectionPromptRepository by lazyMonitored {
+        DefaultIPProtectionPromptRepository(
+            settings = settings,
+            installedTimeMillis = {
+                getApplicationInstalledTime(
+                    packageManagerCompatHelper = context.packageManagerCompatHelper,
+                    packageName = context.packageName,
+                    logger = Logger("DefaultIPProtectionPromptRepository"),
+                )
+            },
+        )
+    }
+
+    val ipProtectionManager by lazyMonitored {
+        IPProtectionManager(ipProtectionPromptRepository)
     }
 
     val ads by lazyMonitored {
@@ -496,6 +531,17 @@ class Components(private val context: Context) {
     }
 
     val clientUUID by lazyMonitored { ClientUUID.build(context) }
+
+    val ipProtection by lazyMonitored {
+        IPProtection(
+            engine = core.engine,
+            browserStore = core.store,
+            syncStore = backgroundServices.syncStore,
+            lazyFxaAccountManager = lazy { backgroundServices.accountManager },
+            settings = settings,
+            context = context,
+        )
+    }
 }
 
 /**

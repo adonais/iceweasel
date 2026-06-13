@@ -47,6 +47,8 @@ class nsPIDOMWindowOuter;
 
 namespace mozilla {
 
+enum class NativeKeyBindingsType : uint8_t;
+
 namespace a11y {
 class DocAccessibleParent;
 }
@@ -494,7 +496,7 @@ class BrowserParent final : public PBrowserParent,
   LayoutDeviceToCSSScale GetLayoutDeviceToCSSScale();
 
   MOZ_CAN_RUN_SCRIPT_BOUNDARY mozilla::ipc::IPCResult
-  RecvRequestNativeKeyBindings(const uint32_t& aType,
+  RecvRequestNativeKeyBindings(const mozilla::NativeKeyBindingsType& aType,
                                const mozilla::WidgetKeyboardEvent& aEvent,
                                nsTArray<mozilla::CommandInt>* aCommands);
 
@@ -546,16 +548,20 @@ class BrowserParent final : public PBrowserParent,
       const double& aDeltaY, const int32_t& aModifierFlags,
       const Maybe<uint64_t>& aCallbackId);
 
-  mozilla::ipc::IPCResult RecvLockNativePointer();
+  mozilla::ipc::IPCResult RecvLockNativePointer(
+      const nsIWidget::NativePointerLockMode& aNativePointerLockMode);
 
   mozilla::ipc::IPCResult RecvUnlockNativePointer();
 
+  mozilla::ipc::IPCResult RecvSetNativePointerLockMode(
+      const nsIWidget::NativePointerLockMode& aNativePointerLockMode);
+
   /**
-   * The following Send*Event() marks aEvent as posted to remote process if
-   * it succeeded.  So, you can check the result with
-   * aEvent.HasBeenPostedToRemoteProcess().
+   * The following Send*Event() marks aMouseOrPointerEvent as posted to remote
+   * process if it succeeded.  So, you can check the result with
+   * aMouseOrPointerEvent.HasBeenPostedToRemoteProcess().
    */
-  void SendRealMouseEvent(WidgetMouseEvent& aEvent);
+  void SendRealMouseEvent(WidgetMouseEvent& aMouseOrPointerEvent);
 
   void SendRealDragEvent(WidgetDragEvent& aEvent, uint32_t aDragAction,
                          uint32_t aDropEffect, nsIPrincipal* aPrincipal,
@@ -795,8 +801,6 @@ class BrowserParent final : public PBrowserParent,
   bool QueryDropLinksForVerification();
 
   void UnlockNativePointer();
-
-  void UpdateNativePointerLockCenter(nsIWidget* aWidget);
 
  private:
   // This is used when APZ needs to find the BrowserParent associated with a

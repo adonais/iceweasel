@@ -21,6 +21,7 @@
 #include "mozilla/StaticPrefs_widget.h"
 #include "mozilla/WidgetUtils.h"
 #include "nsIPowerManagerService.h"
+#include "mozilla/Preferences.h"
 #ifdef MOZ_ENABLE_DBUS
 #  include <gio/gio.h>
 #  include "nsIObserverService.h"
@@ -54,9 +55,16 @@ LazyLogModule gWidgetVsync("WidgetVSync");
 LazyLogModule gDmabufLog("Dmabuf");
 LazyLogModule gWidgetCompositorLog("WidgetCompositor");
 
+#undef LOGW
+#ifdef MOZ_LOGGING
+#  define LOGW(...) MOZ_LOG(gWidgetLog, mozilla::LogLevel::Debug, (__VA_ARGS__))
+#else
+#  define LOGW(...)
+#endif
+
 static GPollFunc sPollFunc;
 
-nsAppShell* sAppShell = nullptr;
+nsAppShell* nsAppShell::sAppShell = nullptr;
 
 // Wrapper function to disable hang monitoring while waiting in poll().
 static gint PollWrapper(GPollFD* aUfds, guint aNfsd, gint aTimeout) {
@@ -169,6 +177,12 @@ nsAppShell::~nsAppShell() {
   if (mTag) g_source_remove(mTag);
   if (mPipeFDs[0]) close(mPipeFDs[0]);
   if (mPipeFDs[1]) close(mPipeFDs[1]);
+
+  nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
+  if (obs) {
+    obs->RemoveObserver(this, "sessionstore-restoring-on-startup");
+    obs->RemoveObserver(this, "sessionstore-windows-restored");
+  }
 }
 
 mozilla::StaticRefPtr<WakeLockListener> sWakeLockListener;
@@ -437,6 +451,7 @@ void nsAppShell::InstallTermSignalHandler() {
 }
 
 nsresult nsAppShell::Init() {
+  MOZ_ASSERT(!sAppShell);
   mozilla::hal::Init();
 
 #ifdef MOZ_ENABLE_DBUS
@@ -469,6 +484,13 @@ nsresult nsAppShell::Init() {
       if (gAppData) {
         gdk_set_program_class(gAppData->remotingName);
       }
+    }
+
+    nsCOMPtr<nsIObserverService> obsServ =
+        mozilla::services::GetObserverService();
+    if (obsServ) {
+      obsServ->AddObserver(this, "sessionstore-restoring-on-startup", false);
+      obsServ->AddObserver(this, "sessionstore-windows-restored", false);
     }
   }
 
@@ -574,4 +596,41 @@ bool nsAppShell::ProcessNextNativeEvent(bool mayWait) {
   }
   bool didProcessEvent = g_main_context_iteration(nullptr, mayWait);
   return didProcessEvent;
+}
+
+SessionRestoreState nsAppShell::UpdateAndGetSessionState() {
+  if (!sAppShell) {
+    return eSessionRestoreFinished;
+  }
+#ifdef MOZ_WAYLAND
+  // If session restore is not supported, report 'finished' as we don't want to
+  // block window creation.
+  if (!WaylandDisplayGet()->GetSessionManager()) {
+    return eSessionRestoreFinished;
+  }
+#endif
+  // Check for browser.startup.page / re-open previous windows and tabs (session
+  // restore enabled).
+  if (sAppShell->mSessionRestoreState == eSessionDefault &&
+      Preferences::GetInt("browser.startup.page", 0) == 3) {
+    sAppShell->mSessionRestoreState = eSessionRestoring;
+  }
+  LOGW("nsAppShell::GetSessionState() state %d",
+       int(sAppShell->mSessionRestoreState));
+  return sAppShell->mSessionRestoreState;
+}
+
+NS_IMETHODIMP
+nsAppShell::Observe(nsISupports* aSubject, const char* aTopic,
+                    const char16_t* aData) {
+  LOGW("nsAppShell::Observe() topic %s", aTopic);
+  if (!nsCRT::strcmp(aTopic, "sessionstore-restoring-on-startup")) {
+    mSessionRestoreState = eSessionRestoring;
+  } else if (!nsCRT::strcmp(aTopic, "sessionstore-windows-restored")) {
+    mSessionRestoreState = eSessionRestoreFinished;
+    nsWindow::SessionRestoreFinished();
+  } else {
+    return nsBaseAppShell::Observe(aSubject, aTopic, aData);
+  }
+  return NS_OK;
 }

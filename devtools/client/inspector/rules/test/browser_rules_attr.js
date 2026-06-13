@@ -19,11 +19,18 @@ const TEST_URI = `data:text/html,<meta charset=utf8>
     div::after::marker {
       content: attr(data-marker, "-");
     }
+
+    article {
+      background-color: attr(unknown, attr(data-x type(<color>), attr(data-y type(<color>), tomato)));
+    }
   </style>
   <div id=with-attr data-before="→" data-after="←" data-marker="❥"></div>
-  <div id=without-attr></div>`;
+  <div id=without-attr></div>
+  <article data-x=10 data-y=gold>hello</article>`;
 
 add_task(async function () {
+  await pushPref("layout.css.attr.enabled", true);
+
   await addTab(TEST_URI);
   const { inspector, view } = await openRuleView();
 
@@ -240,6 +247,55 @@ add_task(async function () {
       fallback: `"✕"`,
     },
   });
+
+  await selectNode("article", inspector);
+  info(
+    "Check that the declarations using nested `attr()` are properly rendered and that the preview tooltip works as expected"
+  );
+  await assertAttr({
+    view,
+    description: `with nested attr()`,
+    propertyName: "background-color",
+    selector: "article",
+    attrIndex: 0,
+    expected: {
+      text: `attr(unknown, attr(data-x type(<color>), attr(data-y type(<color>), tomato)))`,
+      attributeName: "unknown",
+      attributeUnmatched: true,
+      tooltipText: `Attribute unknown is not set`,
+      fallback: `attr(data-x type(<color>), attr(data-y type(<color>), tomato))`,
+    },
+  });
+  await assertAttr({
+    view,
+    description: `nested attr() in fallback`,
+    propertyName: "background-color",
+    selector: "article",
+    attrIndex: 1,
+    expected: {
+      text: `attr(unknown, attr(data-x type(<color>), attr(data-y type(<color>), tomato)))`,
+      attributeName: "data-x",
+      // Should be true, see Bug 2014751
+      attributeUnmatched: false,
+      tooltipText: `"10"`,
+      fallback: `attr(data-y type(<color>), tomato)`,
+    },
+  });
+  await assertAttr({
+    view,
+    description: `2-level deep nested attr()`,
+    propertyName: "background-color",
+    selector: "article",
+    attrIndex: 2,
+    expected: {
+      text: `attr(unknown, attr(data-x type(<color>), attr(data-y type(<color>), tomato)))`,
+      attributeName: "data-y",
+      // Should be true, see Bug 2014751
+      attributeUnmatched: false,
+      tooltipText: `"gold"`,
+      fallback: "tomato",
+    },
+  });
 });
 
 async function assertAttr({
@@ -247,6 +303,7 @@ async function assertAttr({
   propertyName,
   selector,
   description,
+  attrIndex = 0,
   expected,
 }) {
   info(description);
@@ -256,12 +313,14 @@ async function assertAttr({
     expected.text,
     `Got expected text for the property value`
   );
-  const attributeEl = valueSpan.querySelector(".inspector-attribute");
-  const fallbackEl = valueSpan.querySelector(".inspector-attr-fallback");
+  const attributeEl =
+    valueSpan.querySelectorAll(".inspector-attr-name")[attrIndex] || null;
+  const fallbackEl =
+    valueSpan.querySelectorAll(".inspector-attr-fallback")[attrIndex] || null;
   if (!attributeEl) {
     ok(
       false,
-      `Could not find an .inspector-attribute element on passed ruleViewPropertyValueSpan`
+      `Could not find an .inspector-attr-name element on passed ruleViewPropertyValueSpan`
     );
     return;
   }
@@ -272,7 +331,9 @@ async function assertAttr({
     "attribute element is the expected one"
   );
   is(
-    attributeEl.classList.contains("inspector-unmatched"),
+    attributeEl
+      .closest(".inspector-attr-param")
+      .classList.contains("inspector-unmatched"),
     expected.attributeUnmatched,
     `attribute element ${expected.attributeUnmatched ? "has " : "doesn't have"} unmatched style`
   );

@@ -17,7 +17,6 @@
 #  include "gfxWindowsPlatform.h"  // for gfxWindowsPlatform
 #  include "mozilla/layers/TextureD3D11.h"
 #endif
-#include "IPDLActor.h"
 #include "gfxUtils.h"
 
 namespace mozilla {

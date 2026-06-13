@@ -29,6 +29,9 @@ support-files = [
   "external_script.js"
 ]
 
+["browser_test_feature_js_sources_shutdown_process.js"]
+support-files = ["simple.html"]
+
 ["browser_test_feature_jsallocations.js"]
 support-files = ["do_work_500ms.html"]
 

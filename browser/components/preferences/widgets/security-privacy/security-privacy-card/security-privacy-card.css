@@ -72,8 +72,8 @@ h3 {
   margin: 0;
 }
 
-.status-label-holder > moz-box-link {
-  margin-top: 0.5ex;
+.status-alert moz-box-link {
+  margin-block-start: var(--space-medium);
 }
 
 .status-image {

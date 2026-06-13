@@ -354,7 +354,7 @@ C/C++ practices
 ---------------
 
 -  **Have you checked for compiler warnings?** Warnings often point to
-   real bugs. `Many of them <https://searchfox.org/mozilla-central/source/build/moz.configure/warnings.configure>`__
+   real bugs. :searchfox:`Many of them <build/moz.configure/warnings.configure>`
    are enabled by default in the build system.
 -  In C++ code, use ``nullptr`` for pointers. In C code, using ``NULL``
    or ``0`` is allowed.

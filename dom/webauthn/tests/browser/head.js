@@ -6,14 +6,7 @@
 
 let exports = this;
 
-const scripts = [
-  "pkijs/common.js",
-  "pkijs/asn1.js",
-  "pkijs/x509_schema.js",
-  "pkijs/x509_simpl.js",
-  "browser/cbor.js",
-  "browser/u2futil.js",
-];
+const scripts = ["browser/cbor.js", "browser/u2futil.js"];
 
 for (let script of scripts) {
   Services.scriptloader.loadSubScript(

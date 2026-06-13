@@ -93,6 +93,10 @@ RegExpObject* js::RegExpAlloc(JSContext* cx, NewObjectKind newKind,
     // internal slot to true. Step 5. Else, Step 5.i. Set the value of obj’s
     // [[LegacyFeaturesEnabled]] internal slot to false.
     legacyFeaturesEnabled = (!newTarget || newTarget == thisRealmRegExp);
+    if (!legacyFeaturesEnabled &&
+        !JSObject::setLegacyFeaturesDisabled(cx, regexp)) {
+      return nullptr;
+    }
   }
   regexp->setLegacyFeaturesEnabled(legacyFeaturesEnabled);
 
@@ -643,14 +647,14 @@ RegExpShared::RegExpShared(JSAtom* source, RegExpFlags flags)
     : CellWithTenuredGCPointer(source), pairCount_(0), flags(flags) {}
 
 void RegExpShared::traceChildren(JSTracer* trc) {
-  TraceNullableCellHeaderEdge(trc, this, "RegExpShared source");
+  TraceCellHeaderEdge(trc, this, "RegExpShared source");
   if (kind() == RegExpShared::Kind::Atom) {
-    TraceNullableEdge(trc, &patternAtom_, "RegExpShared pattern atom");
+    TraceEdge(trc, &patternAtom_, "RegExpShared pattern atom");
   } else {
     for (auto& comp : compilationArray) {
-      TraceNullableEdge(trc, &comp.jitCode, "RegExpShared code");
+      TraceEdge(trc, &comp.jitCode, "RegExpShared code");
     }
-    TraceNullableEdge(trc, &groupsTemplate_, "RegExpShared groups template");
+    TraceEdge(trc, &groupsTemplate_, "RegExpShared groups template");
   }
 }
 
@@ -1057,7 +1061,7 @@ void RegExpRealm::trace(JSTracer* trc) {
   }
 
   for (auto& shape : matchResultShapes_) {
-    TraceNullableEdge(trc, &shape, "RegExpRealm::matchResultShapes_");
+    TraceEdge(trc, &shape, "RegExpRealm::matchResultShapes_");
   }
 }
 

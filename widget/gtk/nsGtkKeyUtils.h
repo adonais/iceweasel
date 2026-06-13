@@ -316,7 +316,7 @@ class KeymapWrapper {
     INDEX_LEVEL5,
     COUNT_OF_MODIFIER_INDEX
   };
-  guint mModifierMasks[COUNT_OF_MODIFIER_INDEX];
+  guint mModifierMasks[COUNT_OF_MODIFIER_INDEX] = {};
 
   guint GetGdkModifierMask(MappedModifier aModifier) const;
 

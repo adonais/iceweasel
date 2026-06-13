@@ -1683,21 +1683,16 @@ void FetchEventOp::ResolvedCallback(JSContext* aCx,
 
   autoCancel.Reset();
 
-  // https://w3c.github.io/ServiceWorker/#on-fetch-request-algorithm Step 26: If
-  // eventHandled is not null, then resolve eventHandled.
-  //
-  // Take an immutable snapshot of the headers now, while still on the worker
-  // thread.
-  ir->SnapshotUnfilteredHeaders();
-
-  mHandled->MaybeResolveWithUndefined();
-
   ChildToParentSynthesizeResponseArgs synthesizeResponseArgs;
   synthesizeResponseArgs.closure() = mRespondWithClosure.ref();
   synthesizeResponseArgs.timeStamps() =
       FetchEventTimeStamps(mFetchHandlerStart, mFetchHandlerFinish);
   ir->ToChildToParentInternalResponse(
       &synthesizeResponseArgs.internalResponse());
+
+  // https://w3c.github.io/ServiceWorker/#on-fetch-request-algorithm Step 26: If
+  // eventHandled is not null, then resolve eventHandled.
+  mHandled->MaybeResolveWithUndefined();
 
   mRespondWithPromiseHolder.Resolve(
       FetchEventRespondWithResult(

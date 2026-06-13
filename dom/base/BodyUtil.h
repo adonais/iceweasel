@@ -17,10 +17,9 @@ class ErrorResult;
 namespace dom {
 
 class BodyUtil final {
- private:
+ public:
   BodyUtil() = delete;
 
- public:
   /**
    * Creates an array buffer from an array, assigning the result to |aValue|.
    * The array buffer takes ownership of |aInput|, which must be allocated

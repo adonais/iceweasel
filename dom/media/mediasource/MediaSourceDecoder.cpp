@@ -150,7 +150,7 @@ IntervalType MediaSourceDecoder::GetSeekableImpl() {
     }
   }
   MSE_DEBUG("ranges=%s", DumpTimeRanges(seekable).get());
-  return IntervalType(seekable);
+  return IntervalType(std::move(seekable));
 }
 
 media::TimeIntervals MediaSourceDecoder::GetSeekable() {

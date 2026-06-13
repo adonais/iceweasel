@@ -7,26 +7,53 @@ HTTP requests in Firefox go through several steps.  Each piece of the request me
 What is Available When
 ----------------------
 
-+-----------------------+---------------------------------------------------+---------------------------------------+------------------------+-------------------------------+
-| Data                  | When it's available                               | Sample JS code                        | Interfaces             | Test code                     |
-+=======================+===================================================+=======================================+========================+===============================+
-| HTTP request method   | *http-on-modify-request* observer notification    | channel.requestMethod                 | nsIHttpChannel_        |                               |
-+-----------------------+---------------------------------------------------+---------------------------------------+------------------------+-------------------------------+
-| HTTP request URI      | *http-on-modify-request* observer notification    | channel.URI                           | nsIChannel_            |                               |
-+-----------------------+---------------------------------------------------+---------------------------------------+------------------------+-------------------------------+
-| HTTP request headers  | *http-on-modify-request* observer notification    | channel.visitRequestHeaders(visitor)  | nsIHttpChannel_        |                               |
-+-----------------------+---------------------------------------------------+---------------------------------------+------------------------+-------------------------------+
-| HTTP request body     | *http-on-modify-request* observer notification    | channel.uploadStream                  | nsIUploadChannel_      |                               |
-+-----------------------+---------------------------------------------------+---------------------------------------+------------------------+-------------------------------+
-|| HTTP response status || *http-on-examine-response* observer notification || channel.responseStatus               || nsIHttpChannel_       || test_basic_functionality.js_ |
-||                      ||                                                  || channel.responseStatusText           ||                       ||                              |
-+-----------------------+---------------------------------------------------+---------------------------------------+------------------------+-------------------------------+
-| HTTP response headers | *http-on-examine-response* observer notification  | channel.visitResponseHeaders(visitor) | nsIHttpChannel_        |                               |
-+-----------------------+---------------------------------------------------+---------------------------------------+------------------------+-------------------------------+
-|| HTTP response body   || *onStopRequest* via stream listener tee          || See below                            || nsITraceableChannel_  || test_traceable_channel.js_   |
-||                      ||                                                  ||                                      || nsIStreamListenerTee_ ||                              |
-||                      ||                                                  ||                                      || nsIPipe_              ||                              |
-+-----------------------+---------------------------------------------------+---------------------------------------+------------------------+-------------------------------+
+.. list-table::
+   :header-rows: 1
+   :widths: auto
+
+   * - Data
+     - When it's available
+     - Sample JS code
+     - Interfaces
+     - Test code
+   * - HTTP request method
+     - *http-on-modify-request* observer notification
+     - channel.requestMethod
+     - :searchfox:`nsIHttpChannel <netwerk/protocol/http/nsIHttpChannel.idl>`
+     -
+   * - HTTP request URI
+     - *http-on-modify-request* observer notification
+     - channel.URI
+     - :searchfox:`nsIChannel <netwerk/base/nsIChannel.idl>`
+     -
+   * - HTTP request headers
+     - *http-on-modify-request* observer notification
+     - channel.visitRequestHeaders(visitor)
+     - :searchfox:`nsIHttpChannel <netwerk/protocol/http/nsIHttpChannel.idl>`
+     -
+   * - HTTP request body
+     - *http-on-modify-request* observer notification
+     - channel.uploadStream
+     - :searchfox:`nsIUploadChannel <netwerk/base/nsIUploadChannel.idl>`
+     -
+   * - HTTP response status
+     - *http-on-examine-response* observer notification
+     - | channel.responseStatus
+       | channel.responseStatusText
+     - :searchfox:`nsIHttpChannel <netwerk/protocol/http/nsIHttpChannel.idl>`
+     - :searchfox:`test_basic_functionality.js <netwerk/test/httpserver/test/test_basic_functionality.js>`
+   * - HTTP response headers
+     - *http-on-examine-response* observer notification
+     - channel.visitResponseHeaders(visitor)
+     - :searchfox:`nsIHttpChannel <netwerk/protocol/http/nsIHttpChannel.idl>`
+     -
+   * - HTTP response body
+     - *onStopRequest* via stream listener tee
+     - See below
+     - | :searchfox:`nsITraceableChannel <netwerk/base/nsITraceableChannel.idl>`
+       | :searchfox:`nsIStreamListenerTee <netwerk/base/nsIStreamListenerTee.idl>`
+       | :searchfox:`nsIPipe <xpcom/io/nsIPipe.idl>`
+     - :searchfox:`test_traceable_channel.js <netwerk/test/unit/test_traceable_channel.js>`
 
 The Request: http-on-modify-request
 -----------------------------------
@@ -48,7 +75,7 @@ Attaching a listener for a request is pretty simple::
 
   Services.obs.addObserver(observer, "http-on-modify-request", false);
 
-See nsIObserverService_ for the details.
+See :searchfox:`nsIObserverService <xpcom/ds/nsIObserverService.idl>` for the details.
 
 The request method and URI are immediately available at this time.  Request headers are trivially easy to get::
 
@@ -75,9 +102,9 @@ The request method and URI are immediately available at this time.  Request head
   const visitor = new HeaderVisitor(requestHeaders);
   channel.visitRequestHeaders(visitor);
 
-This is also the time to set request headers, if you need to.  The method for that on the nsIHttpChannel_ interface is `channel.setRequestHeader(header, value);`
+This is also the time to set request headers, if you need to.  The method for that on the :searchfox:`nsIHttpChannel <netwerk/protocol/http/nsIHttpChannel.idl>` interface is `channel.setRequestHeader(header, value);`
 
-Most HTTP requests don't have a body, as they are GET requests.  POST requests often have them, though.  As the nsIUploadChannel_ documentation indicates, the body of most HTTP requests is available via a seekable stream (nsISeekableStream_).  So you can simply capture the body stream and its current position, to revisit it later.  network-helper.js_ has code to read the request body.
+Most HTTP requests don't have a body, as they are GET requests.  POST requests often have them, though.  As the :searchfox:`nsIUploadChannel <netwerk/base/nsIUploadChannel.idl>` documentation indicates, the body of most HTTP requests is available via a seekable stream (:searchfox:`nsISeekableStream <xpcom/io/nsISeekableStream.idl>`).  So you can simply capture the body stream and its current position, to revisit it later.  :searchfox:`network-helper.js <devtools/shared/webconsole/network-helper.js>` has code to read the request body.
 
 The Response: http-on-examine-response
 --------------------------------------
@@ -175,7 +202,7 @@ Here's some sample code to illustrate what you need::
     }
   }
 
-test_traceable_channel.js_ does essentially this.
+:searchfox:`test_traceable_channel.js <netwerk/test/unit/test_traceable_channel.js>` does essentially this.
 
 Character Encodings and Compression
 -----------------------------------
@@ -203,18 +230,4 @@ Order of Operations
 Useful Code Samples and References
 ----------------------------------
 
-- nsIHttpProtocolHandler_ defines a lot of observer topics, and has a lot of details.
-
-.. _nsIHttpChannel: https://searchfox.org/mozilla-central/source/netwerk/protocol/http/nsIHttpChannel.idl
-.. _nsIChannel: https://searchfox.org/mozilla-central/source/netwerk/base/nsIChannel.idl
-.. _nsIUploadChannel: https://searchfox.org/mozilla-central/source/netwerk/base/nsIUploadChannel.idl
-.. _nsITraceableChannel: https://searchfox.org/mozilla-central/source/netwerk/base/nsITraceableChannel.idl
-.. _nsISeekableStream: https://searchfox.org/mozilla-central/source/xpcom/io/nsISeekableStream.idl
-.. _nsIObserverService: https://searchfox.org/mozilla-central/source/xpcom/ds/nsIObserverService.idl
-.. _nsIHttpProtocolHandler: https://searchfox.org/mozilla-central/source/netwerk/protocol/http/nsIHttpProtocolHandler.idl
-.. _nsIStreamListenerTee: https://searchfox.org/mozilla-central/source/netwerk/base/nsIStreamListenerTee.idl
-.. _nsIPipe: https://searchfox.org/mozilla-central/source/xpcom/io/nsIPipe.idl
-
-.. _test_basic_functionality.js: https://searchfox.org/mozilla-central/source/netwerk/test/httpserver/test/test_basic_functionality.js
-.. _test_traceable_channel.js: https://searchfox.org/mozilla-central/source/netwerk/test/unit/test_traceable_channel.js
-.. _network-helper.js: https://searchfox.org/mozilla-central/source/devtools/shared/webconsole/network-helper.js
+- :searchfox:`nsIHttpProtocolHandler <netwerk/protocol/http/nsIHttpProtocolHandler.idl>` defines a lot of observer topics, and has a lot of details.

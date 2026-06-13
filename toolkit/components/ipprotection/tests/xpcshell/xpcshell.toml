@@ -17,6 +17,10 @@ prefs = [
 
 ["test_IPPExceptionsManager.js"]
 
+["test_IPPFxaAuthProvider.js"]
+
+["test_IPPGpiAuthProvider.js"]
+
 ["test_IPPSessionPrefManager.js"]
 
 ["test_IPPStartupCache.js"]

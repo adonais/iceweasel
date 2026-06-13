@@ -17,10 +17,18 @@ class MOZ_STACK_CLASS CssAltContent {
   explicit CssAltContent(nsIContent* aContent);
 
   /**
-   * Checks whether any CSS alt text has been specified. For example:
+   * Checks whether any CSS alt text has been specified. It could be explicitly
+   * empty. Usage example:
    * if (CssAltContent(someContentNode)) ...
    */
   explicit operator bool() const { return !mItems.IsEmpty(); }
+
+  /**
+   * Checks whether the CSS alt text is empty or unspecified. To check for alt
+   * text which is explicitly specified as empty, combine this with operator
+   * bool().
+   */
+  bool IsEmpty() const { return mText.IsEmpty(); }
 
   /**
    * Append all CSS alt text to a string.
@@ -40,6 +48,7 @@ class MOZ_STACK_CLASS CssAltContent {
   dom::Element* mRealElement = nullptr;
   dom::Element* mPseudoElement = nullptr;
   mozilla::Span<const mozilla::StyleContentItem> mItems;
+  nsString mText;
 };
 
 }  // namespace mozilla::a11y

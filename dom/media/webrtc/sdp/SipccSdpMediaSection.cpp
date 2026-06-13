@@ -34,7 +34,7 @@ SipccSdpMediaSection::SipccSdpMediaSection(
 
 unsigned int SipccSdpMediaSection::GetPort() const { return mPort; }
 
-void SipccSdpMediaSection::SetPort(unsigned int port) { mPort = port; }
+void SipccSdpMediaSection::SetPort(const unsigned int port) { mPort = port; }
 
 unsigned int SipccSdpMediaSection::GetPortCount() const { return mPortCount; }
 
@@ -72,7 +72,7 @@ SdpDirectionAttribute SipccSdpMediaSection::GetDirectionAttribute() const {
   return SdpDirectionAttribute(mAttributeList.GetDirection());
 }
 
-bool SipccSdpMediaSection::Load(sdp_t* sdp, uint16_t level,
+bool SipccSdpMediaSection::Load(sdp_t* sdp, const uint16_t level,
                                 InternalResults& results) {
   switch (sdp_get_media_type(sdp, level)) {
     case SDP_MEDIA_AUDIO:
@@ -130,7 +130,7 @@ bool SipccSdpMediaSection::Load(sdp_t* sdp, uint16_t level,
   return LoadConnection(sdp, level, results);
 }
 
-bool SipccSdpMediaSection::LoadProtocol(sdp_t* sdp, uint16_t level,
+bool SipccSdpMediaSection::LoadProtocol(sdp_t* sdp, const uint16_t level,
                                         InternalResults& results) {
   switch (sdp_get_media_transport(sdp, level)) {
     case SDP_TRANSPORT_RTPAVP:
@@ -175,7 +175,7 @@ bool SipccSdpMediaSection::LoadProtocol(sdp_t* sdp, uint16_t level,
   return true;
 }
 
-bool SipccSdpMediaSection::LoadFormats(sdp_t* sdp, uint16_t level,
+bool SipccSdpMediaSection::LoadFormats(sdp_t* sdp, const uint16_t level,
                                        InternalResults& results) {
   sdp_media_e mtype = sdp_get_media_type(sdp, level);
 
@@ -220,7 +220,7 @@ bool SipccSdpMediaSection::LoadFormats(sdp_t* sdp, uint16_t level,
   return true;
 }
 
-bool SipccSdpMediaSection::ValidateSimulcast(sdp_t* sdp, uint16_t level,
+bool SipccSdpMediaSection::ValidateSimulcast(sdp_t* sdp, const uint16_t level,
                                              InternalResults& results) const {
   if (!GetAttributeList().HasAttribute(SdpAttribute::kSimulcastAttribute)) {
     return true;
@@ -239,8 +239,9 @@ bool SipccSdpMediaSection::ValidateSimulcast(sdp_t* sdp, uint16_t level,
 }
 
 bool SipccSdpMediaSection::ValidateSimulcastVersions(
-    sdp_t* sdp, uint16_t level, const SdpSimulcastAttribute::Versions& versions,
-    sdp::Direction direction, InternalResults& results) const {
+    sdp_t* sdp, const uint16_t level,
+    const SdpSimulcastAttribute::Versions& versions,
+    const sdp::Direction direction, InternalResults& results) const {
   for (const SdpSimulcastAttribute::Version& version : versions) {
     for (const SdpSimulcastAttribute::Encoding& encoding : version.choices) {
       const SdpRidAttributeList::Rid* ridAttr = FindRid(encoding.rid);
@@ -303,8 +304,9 @@ bool SipccSdpMediaSection::LoadConnection(sdp_t* sdp, uint16_t level,
 }
 
 void SipccSdpMediaSection::AddCodec(const std::string& pt,
-                                    const std::string& name, uint32_t clockrate,
-                                    uint16_t channels) {
+                                    const std::string& name,
+                                    const uint32_t clockrate,
+                                    const uint16_t channels) {
   mFormats.push_back(pt);
 
   SdpRtpmapAttributeList* rtpmap = new SdpRtpmapAttributeList();
@@ -344,8 +346,9 @@ void SipccSdpMediaSection::ClearCodecs() {
 }
 
 void SipccSdpMediaSection::AddDataChannel(const std::string& name,
-                                          uint16_t port, uint16_t streams,
-                                          uint32_t message_size) {
+                                          const uint16_t port,
+                                          const uint16_t streams,
+                                          const uint32_t message_size) {
   // Only one allowed, for now. This may change as the specs (and deployments)
   // evolve.
   mFormats.clear();
@@ -384,7 +387,7 @@ void SipccSdpMediaSection::Serialize(std::ostream& os) const {
   }
   os << CRLF;
 
-  // We dont do i=
+  // We don't do i=
 
   if (mConnection) {
     os << *mConnection;
@@ -392,7 +395,7 @@ void SipccSdpMediaSection::Serialize(std::ostream& os) const {
 
   mBandwidths.Serialize(os);
 
-  // We dont do k= because they're evil
+  // We don't do k= because they're evil
 
   os << mAttributeList;
 }

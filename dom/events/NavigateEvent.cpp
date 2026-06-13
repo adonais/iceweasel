@@ -388,7 +388,7 @@ void NavigateEvent::PotentiallyResetFocus() {
   }
 
   // Step 7
-  Document* document = window->GetExtantDoc();
+  RefPtr<Document> document = window->GetExtantDoc();
 
   // If we don't have a document here, there's not much we can do.
   if (NS_WARN_IF(!document)) {
@@ -432,6 +432,8 @@ void NavigateEvent::PotentiallyResetFocus() {
         focusManager->ClearFocus(focusedWindow);
       }
     }
+    // Step 12
+    document->SetFocusNavigationStartingPoint(nullptr);
   }
 }
 

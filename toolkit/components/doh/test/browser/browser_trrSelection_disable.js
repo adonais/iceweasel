@@ -33,7 +33,7 @@ add_task(async function testTrrSelectionDisable() {
     "https://example.com/1",
     "doh-rollout.uri set to first provider in the list."
   );
-  ensureNoTRRSelectionTelemetry();
+  await ensureNoTRRSelectionTelemetry();
 
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, EXAMPLE_URL);
   let panel = await promise;
@@ -65,7 +65,7 @@ add_task(async function testTrrSelectionDisable() {
 
   // Restart the controller for good measure.
   await restartDoHController();
-  ensureNoTRRSelectionTelemetry();
+  await ensureNoTRRSelectionTelemetry();
   ok(
     !Services.prefs.prefHasUserValue(prefs.TRR_SELECT_DRY_RUN_RESULT_PREF),
     "TRR selection dry run not performed."

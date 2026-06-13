@@ -104,6 +104,18 @@ const APIS = {
   NotifyUserGestureActivation({ tab }) {
     return browser.test.notifyUserGestureActivation(tab.id);
   },
+  SaveTrackingDBEvents({ log }) {
+    return browser.test.saveTrackingDBEvents(log);
+  },
+  ClearTrackingDB() {
+    return browser.test.clearTrackingDB();
+  },
+  AddVirtualAuthenticator() {
+    return browser.test.addVirtualAuthenticator();
+  },
+  RemoveVirtualAuthenticator({ authenticatorId }) {
+    return browser.test.removeVirtualAuthenticator(authenticatorId);
+  },
 };
 
 port.onMessage.addListener(async message => {

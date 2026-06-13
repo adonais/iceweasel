@@ -7,6 +7,9 @@
 #define _nsNSSComponent_h_
 
 #include "nsINSSComponent.h"
+#ifdef ENABLE_TESTS
+#  include "nsISSLTokensCacheTest.h"
+#endif
 
 #include "EnterpriseRoots.h"
 #include "ScopedNSSTypes.h"
@@ -71,7 +74,13 @@ class AutoSearchingForClientAuthCertificates {
 };
 
 // Implementation of the PSM component interface.
-class nsNSSComponent final : public nsINSSComponent, public nsIObserver {
+class nsNSSComponent final : public nsINSSComponent,
+                             public nsIObserver
+#ifdef ENABLE_TESTS
+    ,
+                             public nsISSLTokensCacheTest
+#endif
+{
  public:
   // LoadLoadableCertsTask updates mLoadableCertsLoaded and
   // mLoadableCertsLoadedResult and then signals mLoadableCertsLoadedMonitor.
@@ -85,6 +94,9 @@ class nsNSSComponent final : public nsINSSComponent, public nsIObserver {
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSINSSCOMPONENT
   NS_DECL_NSIOBSERVER
+#ifdef ENABLE_TESTS
+  NS_DECL_NSISSLTOKENSCACHETEST
+#endif
 
   nsresult Init();
 

@@ -56,6 +56,8 @@ requesttimeoutfactor = 4  # Slow on Linux condprof
 ["test_shutdown_exception_permission.js"]
 requesttimeoutfactor = 4  # Slow on condprof
 
+["test_ssl_tokens_cache.js"]
+
 ["test_storage_permission.js"]
 
 ["test_storage_permission_clearing.js"]

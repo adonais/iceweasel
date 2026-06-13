@@ -129,11 +129,11 @@ class _SidebarTestUtils {
    *
    * @param {ChromeWindow} win
    */
-  async ensureLauncherVisible(win) {
+  async ensureLauncherVisible(win, message = "Sidebar launcher is visible") {
     await this._ensureLauncherShowing(win, true);
     Assert.ok(
       BrowserTestUtils.isVisible(win.SidebarController.sidebarContainer),
-      "Sidebar launcher is visible"
+      message
     );
   }
 
@@ -142,11 +142,11 @@ class _SidebarTestUtils {
    *
    * @param {ChromeWindow} win
    */
-  async ensureLauncherHidden(win) {
+  async ensureLauncherHidden(win, message = "Sidebar launcher is hidden") {
     await this._ensureLauncherShowing(win, false);
     Assert.ok(
       BrowserTestUtils.isHidden(win.SidebarController.sidebarContainer),
-      "Sidebar launcher is hidden"
+      message
     );
   }
 

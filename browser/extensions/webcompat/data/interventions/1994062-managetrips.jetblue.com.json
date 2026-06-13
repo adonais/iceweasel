@@ -6,12 +6,13 @@
       "matches": ["*://managetrips.jetblue.com/*"]
     }
   },
+  "css": {
+    "fix_only_one_page_printing": "@media print { body { overflow: initial !important; } }"
+  },
   "interventions": [
     {
       "platforms": ["all"],
-      "content_scripts": {
-        "css": ["1994062-managetrips.jetblue.com-fix-print-layout.css"]
-      }
+      "css": ["fix_only_one_page_printing"]
     }
   ]
 }

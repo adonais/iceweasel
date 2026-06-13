@@ -45,6 +45,7 @@
 #include "mozilla/StaticPrefs_fission.h"
 #include "mozilla/StaticPrefs_security.h"
 #include "mozilla/glean/DomMetrics.h"
+#include "mozilla/ProfilerMarkers.h"
 #include "nsILayoutHistoryState.h"
 #include "nsIParentalControlsService.h"
 #include "nsIPrintSettings.h"
@@ -122,6 +123,29 @@ static void DecreasePrivateCount() {
     }
   }
 }
+
+namespace geckoprofiler::markers {
+
+class BFCacheNotCachedMarker
+    : public mozilla::BaseMarkerType<BFCacheNotCachedMarker> {
+ public:
+  static constexpr const char* Name = "BFCacheNotCached";
+  static constexpr const char* Description =
+      "Page not stored in the BFCache during navigation.";
+
+  using MS = mozilla::MarkerSchema;
+  static constexpr MS::PayloadField PayloadFields[] = {
+      {"url", MS::InputType::CString, "URL", MS::Format::Url},
+      {"blockedBy", MS::InputType::CString, "Blocked By", MS::Format::String}};
+
+  static constexpr MS::Location Locations[] = {MS::Location::MarkerChart,
+                                               MS::Location::MarkerTable};
+  static constexpr const char* TableLabel =
+      "{marker.data.url} blocked by {marker.data.blockedBy}";
+  static constexpr const char* ChartLabel = "{marker.name}";
+};
+
+}  // namespace geckoprofiler::markers
 
 namespace mozilla::dom {
 
@@ -1469,6 +1493,7 @@ void CanonicalBrowsingContext::ReplaceActiveSessionHistoryEntry(
   nsSHistory* shistory = static_cast<nsSHistory*>(GetSessionHistory());
   if (shistory) {
     shistory->NotifyOnHistoryReplaceEntry();
+    shistory->NotifyOnEntryUpdated(mActiveEntry);
   }
 
   ResetSHEntryHasUserInteractionCache();
@@ -3412,6 +3437,16 @@ bool CanonicalBrowsingContext::AllowedInBFCache(
 
   if (StaticPrefs::docshell_shistory_bfcache_allow_unload_listeners()) {
     bfcacheCombo &= ~BFCacheStatus::UNLOAD_LISTENER;
+  }
+
+  if (bfcacheCombo != 0 && profiler_is_collecting_markers()) {
+    nsAutoCString uri("[no uri]");
+    if (nsCOMPtr<nsIURI> currentURI = GetCurrentURI()) {
+      uri = currentURI->GetSpecOrDefault();
+    }
+    nsCString blockedBy = BFCacheStatusToString(bfcacheCombo);
+    PROFILER_MARKER("BFCache not cached", DOM, {}, BFCacheNotCachedMarker, uri,
+                    blockedBy);
   }
 
   return bfcacheCombo == 0;

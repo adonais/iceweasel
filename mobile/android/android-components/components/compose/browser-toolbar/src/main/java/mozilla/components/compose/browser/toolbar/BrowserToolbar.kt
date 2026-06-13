@@ -51,8 +51,6 @@ private const val CFR_VERTICAL_OFFSET = 0
  * @property enabled Whether the CFR is currently active and should be displayed.
  * @property title The headline text displayed in the CFR banner.
  * @property description A short descriptive message explaining the feature or action.
- * @property onShown Callback invoked when the CFR is first shown to the user.
- * @property onDismiss Callback invoked when the CFR is dismissed.
  */
 data class BrowserToolbarCFR(
     val tag: String,
@@ -61,16 +59,6 @@ data class BrowserToolbarCFR(
     val title: Int?,
     @get:StringRes
     val description: Int,
-    @Deprecated(
-        message = "This callback is deprecated, " +
-            "and should be removed when the composable toolbar CFR is removed",
-    )
-    val onShown: () -> Unit = {},
-    @Deprecated(
-        message = "This callback is deprecated, " +
-            "and should be removed when the composable toolbar CFR is removed",
-    )
-    val onDismiss: () -> Unit = {},
 )
 
 /**
@@ -174,9 +162,6 @@ private fun DisplayToolbarWithCFR(
 
     val state = rememberCFRState()
     val onDismiss = {
-        // Should be removed when toolbar CFR is removed
-        @Suppress("Deprecation")
-        cfr.onDismiss()
         state.dismiss()
         onCFRDismissed(cfr.tag)
     }
@@ -205,10 +190,6 @@ private fun DisplayToolbarWithCFR(
 
     LaunchedEffect(cfr) {
         if (cfr.enabled) {
-            // Should be removed when Toolbar Redesign CFR is removed
-            @Suppress("Deprecation")
-            cfr.onShown()
-
             state.show()
         }
     }

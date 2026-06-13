@@ -222,6 +222,10 @@ class JSObject
     return setFlag(cx, obj, js::ObjectFlag::HasNonFunctionAccessor);
   }
 
+  static bool setLegacyFeaturesDisabled(JSContext* cx, JS::HandleObject obj) {
+    return setFlag(cx, obj, js::ObjectFlag::LegacyFeaturesDisabled);
+  }
+
   bool hasObjectFuse() const { return hasFlag(js::ObjectFlag::HasObjectFuse); }
 
   // A "qualified" varobj is the object on which "qualified" variable
@@ -313,9 +317,11 @@ class JSObject
     return JS::shadow::Zone::from(zone());
   }
   MOZ_ALWAYS_INLINE JS::Zone* zoneFromAnyThread() const {
-    MOZ_ASSERT_IF(!isTenured(),
-                  nurseryZoneFromAnyThread() == shape()->zoneFromAnyThread());
-    return shape()->zoneFromAnyThread();
+    MOZ_ASSERT_IF(!isTenured(), nurseryZoneFromAnyThread() ==
+                                    shapeMaybeForwarded()->zoneFromAnyThread());
+    // Use shapeMaybeForwarded() (atomic read) as parallel GC compacting workers
+    // may concurrently update this header via setAtomic().
+    return shapeMaybeForwarded()->zoneFromAnyThread();
   }
   MOZ_ALWAYS_INLINE JS::shadow::Zone* shadowZoneFromAnyThread() const {
     return JS::shadow::Zone::from(zoneFromAnyThread());
@@ -585,6 +591,9 @@ class JSObject
       4 * sizeof(void*) + 16 * sizeof(JS::Value);
 #endif
 
+  JSObject(const JSObject& other) = delete;
+  void operator=(const JSObject& other) = delete;
+
  protected:
   // JIT Accessors.
   //
@@ -593,10 +602,6 @@ class JSObject
   friend class js::jit::MacroAssembler;
 
   static constexpr size_t offsetOfShape() { return offsetOfHeaderPtr(); }
-
- private:
-  JSObject(const JSObject& other) = delete;
-  void operator=(const JSObject& other) = delete;
 
  protected:
   // For the allocator only, to be used with placement new.
@@ -1088,8 +1093,12 @@ extern bool TestIntegrityLevel(JSContext* cx, HandleObject obj,
     JSContext* cx, HandleObject obj, JSProtoKey ctorKey,
     bool (*isDefaultSpecies)(JSContext*, JSFunction*));
 
-extern bool GetObjectFromHostDefinedData(JSContext* cx,
-                                         MutableHandleObject obj);
+extern bool GetObjectFromHostDefinedData(
+    JSContext* cx, MutableHandleObject incumbentGlobal,
+    MutableHandleObject optionalHostDefinedData);
+
+extern bool GetIncumbentGlobalRepresentative(
+    JSContext* cx, MutableHandleObject incumbentGlobalRepresentative);
 
 #ifdef DEBUG
 inline bool IsObjectValueInCompartment(const Value& v, JS::Compartment* comp) {

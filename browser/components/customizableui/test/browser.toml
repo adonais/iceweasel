@@ -9,6 +9,7 @@ prefs = [
   "browser.toolbars.share-button.enabled=true",
   "browser.urlbar.trustPanel.featureGate=false",
   "sidebar.revamp=false",
+  "browser.tabs.groups.alternateMenu=true",
 ]
 
 ["browser_1003588_no_specials_in_panel.js"]
@@ -422,9 +423,6 @@ support-files = ["browser_shareurl.html"]
 ["browser_sidebar_position_start.js"]
 
 ["browser_sidebar_toggle.js"]
-skip-if = [
-  "os == 'win' && os_version == '11.26200' && asan", # Bug 2019745
-]
 
 ["browser_switch_to_customize_mode.js"]
 skip-if = [
@@ -435,6 +433,8 @@ skip-if = [
 fail-if = [
   "a11y_checks", # Bug 1854536 clicked #PanelUI-remotetabs-connect-device-button may not be focusable
 ]
+
+["browser_tab_groups_button.js"]
 
 ["browser_tabbar_big_widgets.js"]
 

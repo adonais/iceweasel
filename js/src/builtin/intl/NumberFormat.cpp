@@ -14,6 +14,7 @@
 #include "mozilla/intl/NumberRangeFormat.h"
 #include "mozilla/intl/PluralRules.h"
 #include "mozilla/TextUtils.h"
+#include "mozilla/UsingEnum.h"
 
 #include <algorithm>
 #include <stddef.h>
@@ -33,7 +34,6 @@
 #include "builtin/intl/NumberFormatOptions.h"
 #include "builtin/intl/ParameterNegotiation.h"
 #include "builtin/intl/RelativeTimeFormat.h"
-#include "builtin/intl/UsingEnum.h"
 #include "builtin/Number.h"
 #include "gc/GCContext.h"
 #include "js/CharacterEncoding.h"
@@ -55,16 +55,7 @@ using namespace js;
 using namespace js::intl;
 
 const JSClassOps NumberFormatObject::classOps_ = {
-    nullptr,                       // addProperty
-    nullptr,                       // delProperty
-    nullptr,                       // enumerate
-    nullptr,                       // newEnumerate
-    nullptr,                       // resolve
-    nullptr,                       // mayResolve
-    NumberFormatObject::finalize,  // finalize
-    nullptr,                       // call
-    nullptr,                       // construct
-    nullptr,                       // trace
+    .finalize = NumberFormatObject::finalize,
 };
 
 const JSClass NumberFormatObject::class_ = {
@@ -481,12 +472,9 @@ static bool ToWellFormedUnitIdentifier(JSContext* cx,
 
 static constexpr std::string_view RoundingModeToString(
     NumberFormatDigitOptions::RoundingMode roundingMode) {
-#ifndef USING_ENUM
-  using enum NumberFormatDigitOptions::RoundingMode;
-#else
-  USING_ENUM(NumberFormatDigitOptions::RoundingMode, Ceil, Floor, Expand, Trunc,
-             HalfCeil, HalfFloor, HalfExpand, HalfTrunc, HalfEven, HalfOdd);
-#endif
+  MOZ_USING_ENUM(NumberFormatDigitOptions::RoundingMode, Ceil, Floor, Expand,
+                 Trunc, HalfCeil, HalfFloor, HalfExpand, HalfTrunc, HalfEven,
+                 HalfOdd);
   switch (roundingMode) {
     case Ceil:
       return "ceil";
@@ -515,12 +503,8 @@ static constexpr std::string_view RoundingModeToString(
 
 static constexpr std::string_view RoundingPriorityToString(
     NumberFormatDigitOptions::RoundingPriority roundingPriority) {
-#ifndef USING_ENUM
-  using enum NumberFormatDigitOptions::RoundingPriority;
-#else
-  USING_ENUM(NumberFormatDigitOptions::RoundingPriority, Auto, MorePrecision,
-             LessPrecision);
-#endif
+  MOZ_USING_ENUM(NumberFormatDigitOptions::RoundingPriority, Auto,
+                 MorePrecision, LessPrecision);
   switch (roundingPriority) {
     case Auto:
       return "auto";
@@ -534,12 +518,8 @@ static constexpr std::string_view RoundingPriorityToString(
 
 static constexpr std::string_view TrailingZeroDisplayToString(
     NumberFormatDigitOptions::TrailingZeroDisplay trailingZeroDisplay) {
-#ifndef USING_ENUM
-  using enum NumberFormatDigitOptions::TrailingZeroDisplay;
-#else
-  USING_ENUM(NumberFormatDigitOptions::TrailingZeroDisplay, Auto,
-             StripIfInteger);
-#endif
+  MOZ_USING_ENUM(NumberFormatDigitOptions::TrailingZeroDisplay, Auto,
+                 StripIfInteger);
   switch (trailingZeroDisplay) {
     case Auto:
       return "auto";
@@ -551,11 +531,8 @@ static constexpr std::string_view TrailingZeroDisplayToString(
 
 static constexpr std::string_view NumberFormatStyleToString(
     NumberFormatUnitOptions::Style style) {
-#ifndef USING_ENUM
-  using enum NumberFormatUnitOptions::Style;
-#else
-  USING_ENUM(NumberFormatUnitOptions::Style, Decimal, Percent, Currency, Unit);
-#endif
+  MOZ_USING_ENUM(NumberFormatUnitOptions::Style, Decimal, Percent, Currency,
+                 Unit);
   switch (style) {
     case Decimal:
       return "decimal";
@@ -571,12 +548,8 @@ static constexpr std::string_view NumberFormatStyleToString(
 
 static constexpr std::string_view CurrencyDisplayToString(
     NumberFormatUnitOptions::CurrencyDisplay currencyDisplay) {
-#ifndef USING_ENUM
-  using enum NumberFormatUnitOptions::CurrencyDisplay;
-#else
-  USING_ENUM(NumberFormatUnitOptions::CurrencyDisplay, Symbol, NarrowSymbol,
-             Code, Name);
-#endif
+  MOZ_USING_ENUM(NumberFormatUnitOptions::CurrencyDisplay, Symbol, NarrowSymbol,
+                 Code, Name);
   switch (currencyDisplay) {
     case Symbol:
       return "symbol";
@@ -592,11 +565,7 @@ static constexpr std::string_view CurrencyDisplayToString(
 
 static constexpr std::string_view CurrencySignToString(
     NumberFormatUnitOptions::CurrencySign currencySign) {
-#ifndef USING_ENUM
-  using enum NumberFormatUnitOptions::CurrencySign;
-#else
-  USING_ENUM(NumberFormatUnitOptions::CurrencySign, Standard, Accounting);
-#endif
+  MOZ_USING_ENUM(NumberFormatUnitOptions::CurrencySign, Standard, Accounting);
   switch (currencySign) {
     case Standard:
       return "standard";
@@ -608,11 +577,7 @@ static constexpr std::string_view CurrencySignToString(
 
 static constexpr std::string_view UnitDisplayToString(
     NumberFormatUnitOptions::UnitDisplay unitDisplay) {
-#ifndef USING_ENUM
-  using enum NumberFormatUnitOptions::UnitDisplay;
-#else
-  USING_ENUM(NumberFormatUnitOptions::UnitDisplay, Short, Narrow, Long);
-#endif
+  MOZ_USING_ENUM(NumberFormatUnitOptions::UnitDisplay, Short, Narrow, Long);
   switch (unitDisplay) {
     case Short:
       return "short";
@@ -626,12 +591,8 @@ static constexpr std::string_view UnitDisplayToString(
 
 static constexpr std::string_view NotationToString(
     NumberFormatOptions::Notation notation) {
-#ifndef USING_ENUM
-  using enum NumberFormatOptions::Notation;
-#else
-  USING_ENUM(NumberFormatOptions::Notation, Standard, Scientific, Engineering,
-             Compact);
-#endif
+  MOZ_USING_ENUM(NumberFormatOptions::Notation, Standard, Scientific,
+                 Engineering, Compact);
   switch (notation) {
     case Standard:
       return "standard";
@@ -647,11 +608,7 @@ static constexpr std::string_view NotationToString(
 
 static constexpr std::string_view CompactDisplayToString(
     NumberFormatOptions::CompactDisplay compactDisplay) {
-#ifndef USING_ENUM
-  using enum NumberFormatOptions::CompactDisplay;
-#else
-  USING_ENUM(NumberFormatOptions::CompactDisplay, Short, Long);
-#endif
+  MOZ_USING_ENUM(NumberFormatOptions::CompactDisplay, Short, Long);
   switch (compactDisplay) {
     case Short:
       return "short";
@@ -665,11 +622,7 @@ enum class UseGroupingOption { Auto, Min2, Always, True, False };
 
 static constexpr std::string_view UseGroupingOptionToString(
     UseGroupingOption useGrouping) {
-#ifndef USING_ENUM
-  using enum UseGroupingOption;
-#else
-  USING_ENUM(UseGroupingOption, Auto, Min2, Always, True, False);
-#endif
+  MOZ_USING_ENUM(UseGroupingOption, Auto, Min2, Always, True, False);
   switch (useGrouping) {
     case Auto:
       return "auto";
@@ -687,11 +640,7 @@ static constexpr std::string_view UseGroupingOptionToString(
 
 static constexpr std::string_view UseGroupingToString(
     NumberFormatOptions::UseGrouping useGrouping) {
-#ifndef USING_ENUM
-  using enum NumberFormatOptions::UseGrouping;
-#else
-  USING_ENUM(NumberFormatOptions::UseGrouping, Auto, Min2, Always, Never);
-#endif
+  MOZ_USING_ENUM(NumberFormatOptions::UseGrouping, Auto, Min2, Always, Never);
   switch (useGrouping) {
     case Auto:
       return "auto";
@@ -707,11 +656,7 @@ static constexpr std::string_view UseGroupingToString(
 
 static constexpr auto ToUseGroupingOption(
     NumberFormatOptions::UseGrouping useGrouping) {
-#ifndef USING_ENUM
-  using enum UseGroupingOption;
-#else
-  USING_ENUM(UseGroupingOption, Auto, Min2, Always, False);
-#endif
+  MOZ_USING_ENUM(UseGroupingOption, Auto, Min2, Always, False);
   switch (useGrouping) {
     case NumberFormatOptions::UseGrouping::Auto:
       return Auto;
@@ -728,11 +673,7 @@ static constexpr auto ToUseGroupingOption(
 static constexpr auto ToUseGrouping(
     UseGroupingOption useGrouping,
     NumberFormatOptions::UseGrouping defaultUseGrouping) {
-#ifndef USING_ENUM
-  using enum NumberFormatOptions::UseGrouping;
-#else
-  USING_ENUM(NumberFormatOptions::UseGrouping, Auto, Min2, Always);
-#endif
+  MOZ_USING_ENUM(NumberFormatOptions::UseGrouping, Auto, Min2, Always);
   switch (useGrouping) {
     case UseGroupingOption::Auto:
       return Auto;
@@ -749,12 +690,8 @@ static constexpr auto ToUseGrouping(
 
 static constexpr std::string_view SignDisplayToString(
     NumberFormatOptions::SignDisplay signDisplay) {
-#ifndef USING_ENUM
-  using enum NumberFormatOptions::SignDisplay;
-#else
-  USING_ENUM(NumberFormatOptions::SignDisplay, Auto, Never, Always, ExceptZero,
-             Negative);
-#endif
+  MOZ_USING_ENUM(NumberFormatOptions::SignDisplay, Auto, Never, Always,
+                 ExceptZero, Negative);
   switch (signDisplay) {
     case Auto:
       return "auto";
@@ -1551,12 +1488,8 @@ static UniqueChars NumberFormatLocale(
 
 static auto ToNotation(NumberFormatOptions::Notation notation,
                        NumberFormatOptions::CompactDisplay compactDisplay) {
-#ifndef USING_ENUM
-  using enum mozilla::intl::NumberFormatOptions::Notation;
-#else
-  USING_ENUM(mozilla::intl::NumberFormatOptions::Notation, Standard, Scientific,
-             Engineering, CompactShort, CompactLong);
-#endif
+  MOZ_USING_ENUM(mozilla::intl::NumberFormatOptions::Notation, Standard,
+                 Scientific, Engineering, CompactShort, CompactLong);
   switch (notation) {
     case NumberFormatOptions::Notation::Standard:
       return Standard;
@@ -2687,11 +2620,8 @@ static bool numberFormat_resolvedOptions(JSContext* cx, const CallArgs& args) {
     return false;
   }
 
-#ifndef USING_ENUM
-  using enum NumberFormatUnitOptions::Style;
-#else
-  USING_ENUM(NumberFormatUnitOptions::Style, Decimal, Percent, Currency, Unit);
-#endif
+  MOZ_USING_ENUM(NumberFormatUnitOptions::Style, Decimal, Percent, Currency,
+                 Unit);
   switch (nfOptions.unitOptions.style) {
     case Decimal:
     case Percent:

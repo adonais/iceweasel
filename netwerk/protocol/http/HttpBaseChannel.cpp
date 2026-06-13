@@ -106,7 +106,7 @@
 #include "nsThreadUtils.h"
 #include "nsURLHelper.h"
 #include "mozilla/RemoteLazyInputStreamChild.h"
-#include "mozilla/net/SFVService.h"
+#include "mozilla/net/SFV.h"
 #include "mozilla/dom/ContentChild.h"
 #include "nsQueryObject.h"
 
@@ -1417,7 +1417,8 @@ class InterceptFailedOnStop : public nsIThreadRetargetableStreamListener {
   NS_DECL_NSITHREADRETARGETABLESTREAMLISTENER
 
   NS_IMETHOD OnStartRequest(nsIRequest* aRequest) override {
-    return mNext->OnStartRequest(aRequest);
+    nsCOMPtr<nsIStreamListener> next = mNext;
+    return next->OnStartRequest(aRequest);
   }
 
   NS_IMETHOD OnStopRequest(nsIRequest* aRequest,
@@ -1427,12 +1428,14 @@ class InterceptFailedOnStop : public nsIThreadRetargetableStreamListener {
            mChannel, static_cast<uint32_t>(aStatusCode)));
       mChannel->mStatus = aStatusCode;
     }
-    return mNext->OnStopRequest(aRequest, aStatusCode);
+    nsCOMPtr<nsIStreamListener> next = mNext;
+    return next->OnStopRequest(aRequest, aStatusCode);
   }
 
   NS_IMETHOD OnDataAvailable(nsIRequest* aRequest, nsIInputStream* aInputStream,
                              uint64_t aOffset, uint32_t aCount) override {
-    return mNext->OnDataAvailable(aRequest, aInputStream, aOffset, aCount);
+    nsCOMPtr<nsIStreamListener> next = mNext;
+    return next->OnDataAvailable(aRequest, aInputStream, aOffset, aCount);
   }
 };
 
@@ -1505,6 +1508,19 @@ nsresult HttpBaseChannel::DoApplyContentConversionsInternal(
     }
   }
 #endif
+  // dcb/dcz must be decompressed in the parent process. If we reach here
+  // in the content process with dcb/dcz, the parent failed to handle it.
+  if (XRE_IsContentProcess()) {
+    nsAutoCString contentEncoding;
+    nsresult rv =
+        mResponseHead->GetHeader(nsHttp::Content_Encoding, contentEncoding);
+    if (NS_SUCCEEDED(rv) && (contentEncoding.LowerCaseEqualsLiteral("dcb") ||
+                             contentEncoding.LowerCaseEqualsLiteral("dcz"))) {
+      MOZ_DIAGNOSTIC_ASSERT(
+          false, "dcb/dcz Content-Encoding reached the content process");
+      return NS_ERROR_INVALID_CONTENT_ENCODING;
+    }
+  }
 
   if (!LoadApplyConversion()) {
     LOG(("not applying conversion per ApplyConversion\n"));
@@ -3214,10 +3230,22 @@ nsresult EnsureMIMEOfScript(HttpBaseChannel* aChannel, nsIURI* aURI,
   nsContentPolicyType internalType = aLoadInfo->InternalContentPolicyType();
 
   // We restrict importScripts() in worker code to JavaScript MIME types.
-  if (internalType == nsIContentPolicy::TYPE_INTERNAL_WORKER_IMPORT_SCRIPTS ||
-      internalType == nsIContentPolicy::TYPE_INTERNAL_WORKER_STATIC_MODULE) {
+  if (internalType == nsIContentPolicy::TYPE_INTERNAL_WORKER_IMPORT_SCRIPTS) {
     ReportMimeTypeMismatch(aChannel, "BlockImportScriptsWithWrongMimeType",
                            aURI, contentType, Report::Error);
+    return NS_ERROR_CORRUPTED_CONTENT;
+  }
+
+  if (internalType == nsIContentPolicy::TYPE_INTERNAL_WORKER_STATIC_MODULE) {
+#ifdef NIGHTLY_BUILD
+    if (StaticPrefs::javascript_options_experimental_wasm_esm_integration()) {
+      if (nsContentUtils::HasWasmMimeTypeEssence(typeString)) {
+        return NS_OK;
+      }
+    }
+#endif
+    ReportMimeTypeMismatch(aChannel, "BlockModuleWithWrongMimeType", aURI,
+                           contentType, Report::Error);
     return NS_ERROR_CORRUPTED_CONTENT;
   }
 
@@ -3685,7 +3713,8 @@ OpaqueResponse HttpBaseChannel::PerformOpaqueResponseSafelistCheckAfterSniff(
 }
 
 bool HttpBaseChannel::NeedOpaqueResponseAllowedCheckAfterSniff() const {
-  return mORB ? mORB->IsSniffing() : false;
+  RefPtr<OpaqueResponseBlocker> orb(mORB);
+  return orb ? orb->IsSniffing() : false;
 }
 
 void HttpBaseChannel::BlockOpaqueResponseAfterSniff(
@@ -3693,12 +3722,14 @@ void HttpBaseChannel::BlockOpaqueResponseAfterSniff(
     const OpaqueResponseBlockedTelemetryReason aTelemetryReason) {
   MOZ_DIAGNOSTIC_ASSERT(mORB);
   LogORBError(aReason, aTelemetryReason);
-  mORB->BlockResponse(this, NS_BINDING_ABORTED);
+  RefPtr<OpaqueResponseBlocker> orb(mORB);
+  orb->BlockResponse(this, NS_BINDING_ABORTED);
 }
 
 void HttpBaseChannel::AllowOpaqueResponseAfterSniff() {
   MOZ_DIAGNOSTIC_ASSERT(mORB);
-  mORB->AllowResponse();
+  RefPtr<OpaqueResponseBlocker> orb(mORB);
+  orb->AllowResponse();
 }
 
 void HttpBaseChannel::SetChannelBlockedByOpaqueResponse() {
@@ -4046,6 +4077,14 @@ HttpBaseChannel::SetBypassProxy(bool aBypassProxy) {
 }
 
 NS_IMETHODIMP
+HttpBaseChannel::GetProxyDNSStrategy(
+    nsIHttpChannelInternal::ProxyDNSStrategy* aStrategy) {
+  NS_ENSURE_ARG_POINTER(aStrategy);
+  *aStrategy = nsIHttpChannelInternal::PROXY_DNS_STRATEGY_ORIGIN;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
 HttpBaseChannel::GetIsTRRServiceChannel(bool* aIsTRRServiceChannel) {
   NS_ENSURE_ARG_POINTER(aIsTRRServiceChannel);
 
@@ -4227,15 +4266,15 @@ HttpBaseChannel::GetFetchCacheMode(uint32_t* aFetchCacheMode) {
 
 namespace {
 
-void SetCacheFlags(uint32_t& aLoadFlags, uint32_t aFlags) {
-  // First, clear any possible cache related flags.
+void SetCacheFlags(Atomic<uint32_t, Relaxed>& aLoadFlags, uint32_t aFlags) {
+  // First, clear any possible cache related flags
   uint32_t allPossibleFlags =
       nsIRequest::INHIBIT_CACHING | nsIRequest::LOAD_BYPASS_CACHE |
       nsIRequest::VALIDATE_ALWAYS | nsIRequest::LOAD_FROM_CACHE |
       nsICachingChannel::LOAD_ONLY_FROM_CACHE;
   aLoadFlags &= ~allPossibleFlags;
 
-  // Then set the new flags.
+  // Then set the new flags
   aLoadFlags |= aFlags;
 }
 
@@ -5944,6 +5983,18 @@ HttpBaseChannel::GetResponseStart(TimeStamp* _retval) {
 }
 
 NS_IMETHODIMP
+HttpBaseChannel::GetFirstInterimResponseStart(TimeStamp* _retval) {
+  *_retval = mTransactionTimings.firstInterimResponseStart;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+HttpBaseChannel::GetFinalResponseHeadersStart(TimeStamp* _retval) {
+  *_retval = mTransactionTimings.finalResponseHeadersStart;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
 HttpBaseChannel::GetResponseEnd(TimeStamp* _retval) {
   *_retval = mTransactionTimings.responseEnd;
   return NS_OK;
@@ -6010,6 +6061,8 @@ IMPL_TIMING_ATTR(SecureConnectionStart)
 IMPL_TIMING_ATTR(ConnectEnd)
 IMPL_TIMING_ATTR(RequestStart)
 IMPL_TIMING_ATTR(ResponseStart)
+IMPL_TIMING_ATTR(FirstInterimResponseStart)
+IMPL_TIMING_ATTR(FinalResponseHeadersStart)
 IMPL_TIMING_ATTR(ResponseEnd)
 IMPL_TIMING_ATTR(CacheReadStart)
 IMPL_TIMING_ATTR(CacheReadEnd)
@@ -6491,26 +6544,7 @@ NS_IMETHODIMP HttpBaseChannel::ComputeCrossOriginOpenerPolicy(
   //                              %s"same-origin-allow-popups" /
   //                              %s"unsafe-none"; case-sensitive
 
-  nsCOMPtr<nsISFVService> sfv = GetSFVService();
-
-  nsCOMPtr<nsISFVItem> item;
-  nsresult rv = sfv->ParseItem(openerPolicy, getter_AddRefs(item));
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
-  nsCOMPtr<nsISFVBareItem> value;
-  rv = item->GetValue(getter_AddRefs(value));
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
-  nsCOMPtr<nsISFVToken> token = do_QueryInterface(value);
-  if (!token) {
-    return NS_ERROR_UNEXPECTED;
-  }
-
-  rv = token->GetValue(openerPolicy);
+  nsresult rv = SFV::ParseItem<SFV::Token>(openerPolicy, openerPolicy);
   if (NS_FAILED(rv)) {
     return rv;
   }
@@ -6600,22 +6634,7 @@ HttpBaseChannel::GetOriginAgentClusterHeader(bool* aValue) {
   }
 
   // Origin-Agent-Cluster = <boolean>
-  nsCOMPtr<nsISFVService> sfv = GetSFVService();
-  nsCOMPtr<nsISFVItem> item;
-  rv = sfv->ParseItem(content, getter_AddRefs(item));
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-  nsCOMPtr<nsISFVBareItem> value;
-  rv = item->GetValue(getter_AddRefs(value));
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-  nsCOMPtr<nsISFVBool> flag = do_QueryInterface(value);
-  if (!flag) {
-    return NS_ERROR_NOT_AVAILABLE;
-  }
-  return flag->GetValue(aValue);
+  return SFV::ParseItem<SFV::SFVBool>(content, *aValue);
 }
 
 void HttpBaseChannel::MaybeFlushConsoleReports() {
@@ -6845,6 +6864,11 @@ static void CollectORBBlockTelemetry(
       // Don't bother extending the telemetry for this.
       glean::orb::block_initiator
           .EnumGet(glean::orb::BlockInitiatorLabel::eOther)
+          .Add();
+      break;
+    case ExtContentPolicy::TYPE_TEXT:
+      glean::orb::block_initiator
+          .EnumGet(glean::orb::BlockInitiatorLabel::eText)
           .Add();
       break;
     case ExtContentPolicy::TYPE_DOCUMENT:

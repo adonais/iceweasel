@@ -25,9 +25,9 @@ interface HTMLElement : Element {
   [CEReactions, SetterThrows, Pure]
            attribute DOMString dir;
 
-  [CEReactions, GetterThrows, Pure]
+  [CEReactions, GetterThrows]
            attribute [LegacyNullToEmptyString] DOMString innerText;
-  [CEReactions, GetterThrows, SetterThrows, Pure]
+  [CEReactions, GetterThrows, SetterThrows]
            attribute [LegacyNullToEmptyString] DOMString outerText;
 
   // user interaction
@@ -48,6 +48,8 @@ interface HTMLElement : Element {
            attribute DOMString contentEditable;
   [Pure]
   readonly attribute boolean isContentEditable;
+  [Pure, SetterThrows, Pref="dom.editcontext.enabled"]
+  attribute EditContext? editContext;
   [CEReactions, SetterThrows, Pure]
            attribute DOMString? popover;
   [CEReactions, SetterThrows, Pure]
@@ -120,7 +122,7 @@ interface mixin TouchEventHandlers {
 
 HTMLElement includes ElementOffsetAttributes;
 HTMLElement includes GlobalEventHandlers;
-HTMLElement includes HTMLOrForeignElement;
+HTMLElement includes HTMLOrSVGOrMathMLElement;
 HTMLElement includes ElementCSSInlineStyle;
 HTMLElement includes TouchEventHandlers;
 HTMLElement includes OnErrorEventHandlerForNodes;

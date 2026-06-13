@@ -22,16 +22,11 @@ support-files = ["browser_fxa_web_channel.html"]
 
 ["browser_sendtab_telemetry.js"]
 
+["browser_sendtab_toolbarbutton.js"]
+
 ["browser_signed_out_avatar_variants.js"]
-skip-if = [
-  "os == 'win' && os_version == '11.26200' && asan", # Bug 2019745
-  "os == 'win' && arch == 'x86_64' && asan", # Bug 1938790
-]
 
 ["browser_sync.js"]
-skip-if = [
-  "os == 'win' && os_version == '11.26200' && asan", # Bug 2019745
-]
 support-files = ["!/browser/components/profiles/tests/browser/head.js"]
 
 ["browser_synced_tabs_view.js"]

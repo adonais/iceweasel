@@ -25,6 +25,7 @@ import org.mozilla.geckoview.PageExtractionController.PageExtractionException.ER
 import org.mozilla.geckoview.PageExtractionController.PageMetadata
 import org.mozilla.geckoview.PageExtractionController.SessionPageExtractor
 import org.robolectric.Shadows.shadowOf
+import kotlin.test.assertIs
 
 /**
  * Test cases for the "Page Extraction" feature of [GeckoEngineSession]
@@ -65,7 +66,7 @@ class GeckoEngineSessionPageExtractionTest {
         shadowOf(getMainLooper()).idle()
 
         // then assert that an unexpected null exception is received
-        assertTrue(resultError is PageExtractionError.UnexpectedNull)
+        assertIs<PageExtractionError.UnexpectedNull>(resultError)
     }
 
     @Test
@@ -85,7 +86,7 @@ class GeckoEngineSessionPageExtractionTest {
         shadowOf(getMainLooper()).idle()
 
         // then assert that an unexpected null exception is received
-        assertTrue(resultError is PageExtractionError.UnexpectedNull)
+        assertIs<PageExtractionError.UnexpectedNull>(resultError)
     }
 
     @Test
@@ -105,7 +106,7 @@ class GeckoEngineSessionPageExtractionTest {
         shadowOf(getMainLooper()).idle()
 
         // then assert that a malformed result error is received
-        assertTrue(resultError is PageExtractionError.MalformedResult)
+        assertIs<PageExtractionError.MalformedResult>(resultError)
     }
 
     @Test
@@ -125,7 +126,7 @@ class GeckoEngineSessionPageExtractionTest {
         shadowOf(getMainLooper()).idle()
 
         // then assert that an unknown error is received
-        assertTrue(resultError is PageExtractionError.UnknownError)
+        assertIs<PageExtractionError.UnknownError>(resultError)
     }
 
     @Test
@@ -163,7 +164,7 @@ class GeckoEngineSessionPageExtractionTest {
 
         shadowOf(getMainLooper()).idle()
 
-        assertTrue(resultError is PageExtractionError.UnexpectedNull)
+        assertIs<PageExtractionError.UnexpectedNull>(resultError)
     }
 
     @Test
@@ -179,7 +180,7 @@ class GeckoEngineSessionPageExtractionTest {
 
         shadowOf(getMainLooper()).idle()
 
-        assertTrue(resultError is PageExtractionError.UnexpectedNull)
+        assertIs<PageExtractionError.UnexpectedNull>(resultError)
     }
 
     @Test
@@ -195,7 +196,7 @@ class GeckoEngineSessionPageExtractionTest {
 
         shadowOf(getMainLooper()).idle()
 
-        assertTrue(resultError is PageExtractionError.MalformedResult)
+        assertIs<PageExtractionError.MalformedResult>(resultError)
     }
 
     @Test
@@ -211,7 +212,7 @@ class GeckoEngineSessionPageExtractionTest {
 
         shadowOf(getMainLooper()).idle()
 
-        assertTrue(resultError is PageExtractionError.UnknownError)
+        assertIs<PageExtractionError.UnknownError>(resultError)
     }
 
     @Test

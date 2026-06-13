@@ -104,7 +104,7 @@ CreateSpeechRecognitionService(nsPIDOMWindowInner* aWindow,
   nsAutoCString speechRecognitionService;
 
   if (!prefValue.IsEmpty()) {
-    speechRecognitionService = prefValue;
+    speechRecognitionService = std::move(prefValue);
   } else {
     speechRecognitionService = DEFAULT_RECOGNITION_SERVICE;
   }
@@ -157,7 +157,7 @@ SpeechRecognition::SpeechRecognition(nsPIDOMWindowInner* aOwnerWindow)
       mEndpointer(kSAMPLE_RATE),
       mAudioSamplesPerChunk(mEndpointer.FrameSize()),
       mSpeechDetectionTimer(NS_NewTimer()),
-      mSpeechGrammarList(new SpeechGrammarList(GetOwnerGlobal())),
+      mSpeechGrammarList(new SpeechGrammarList(GetRelevantGlobal())),
       mContinuous(false),
       mInterimResults(false),
       mMaxAlternatives(1) {

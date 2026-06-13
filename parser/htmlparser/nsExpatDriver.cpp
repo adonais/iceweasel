@@ -1619,11 +1619,12 @@ nsresult nsExpatDriver::Initialize(nsIURI* aURI, nsIContentSink* aSink) {
                     XML_PARAM_ENTITY_PARSING_ALWAYS);
 #endif
 
-  rlbox_sandbox_expat::convert_to_sandbox_equivalent_nonclass_t<unsigned long>
-      salt;
-  MOZ_RELEASE_ASSERT(mozilla::GenerateRandomBytesFromOS(&salt, sizeof(salt)));
-  MOZ_RELEASE_ASSERT(
-      RLBOX_EXPAT_SAFE_MCALL(MOZ_XML_SetHashSalt, safe_unverified<int>, salt));
+  char salt[16];
+  MOZ_RELEASE_ASSERT(mozilla::GenerateRandomBytesFromOS(salt, sizeof(salt)));
+  auto saltBuf = TransferBuffer<char>(Sandbox(), salt, std::size(salt));
+  MOZ_RELEASE_ASSERT(*saltBuf);
+  MOZ_RELEASE_ASSERT(RLBOX_EXPAT_SAFE_MCALL(
+      MOZ_XML_SetHashSalt16Bytes, safe_unverified<XML_Bool>, *saltBuf));
   MOZ_RELEASE_ASSERT(RLBOX_EXPAT_SAFE_MCALL(
       MOZ_XML_SetReparseDeferralEnabled, safe_unverified<XML_Bool>, XML_FALSE));
 

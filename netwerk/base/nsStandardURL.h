@@ -8,6 +8,7 @@
 #include <bitset>
 
 #include "nsString.h"
+#include "nsIIPCSerializableURI.h"
 #include "nsISerializable.h"
 #include "nsIFileURL.h"
 #include "nsIStandardURL.h"
@@ -18,6 +19,7 @@
 #include "mozilla/LinkedList.h"
 #include "nsISensitiveInfoHiddenURI.h"
 #include "nsIURIMutator.h"
+#include "nsIURIWithSizeOf.h"
 
 #ifdef NS_BUILD_REFCNT_LOGGING
 #  define DEBUG_DUMP_URLS_AT_SHUTDOWN
@@ -109,7 +111,9 @@ class URLSegmentNumber {
 class nsStandardURL : public nsIFileURL,
                       public nsIStandardURL,
                       public nsISerializable,
-                      public nsISensitiveInfoHiddenURI
+                      public nsISensitiveInfoHiddenURI,
+                      public nsIIPCSerializableURI,
+                      public nsIURIWithSizeOf
 #ifdef DEBUG_DUMP_URLS_AT_SHUTDOWN
     ,
                       public LinkedListElement<nsStandardURL>
@@ -127,6 +131,8 @@ class nsStandardURL : public nsIFileURL,
   NS_DECL_NSISTANDARDURL
   NS_DECL_NSISERIALIZABLE
   NS_DECL_NSISENSITIVEINFOHIDDENURI
+  NS_DECL_NSIIPCSERIALIZABLEURI
+  NS_DECL_NSIURIWITHSIZEOF
 
   static void InitGlobalObjects();
   static void ShutdownGlobalObjects();
@@ -406,6 +412,9 @@ class nsStandardURL : public nsIFileURL,
     }
 
     [[nodiscard]] NS_IMETHOD Finalize(nsIURI** aURI) override {
+      if (!BaseURIMutator<T>::mURI) {
+        return NS_ERROR_NULL_POINTER;
+      }
       BaseURIMutator<T>::mURI.forget(aURI);
       return NS_OK;
     }

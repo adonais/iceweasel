@@ -115,7 +115,7 @@ class _RFPHelper {
       case "TabOpen": {
         let browser = aMessage.target.linkedBrowser;
         this._roundOrResetContentSize(browser, /* isNewTab = */ true);
-        let resizeObserver = this._resizeObservers.get(browser.ownerGlobal);
+        let resizeObserver = this._resizeObservers.get(browser.documentGlobal);
         resizeObserver.observe(browser.parentElement);
         break;
       }
@@ -409,7 +409,7 @@ class _RFPHelper {
   async _roundContentSize(aBrowser, isNewTab = false) {
     let logPrefix = `_roundContentSize[${Math.random()}]`;
     log(logPrefix);
-    let win = aBrowser.ownerGlobal;
+    let win = aBrowser.documentGlobal;
     let browserContainer = aBrowser
       .getTabBrowser()
       .getBrowserContainer(aBrowser);

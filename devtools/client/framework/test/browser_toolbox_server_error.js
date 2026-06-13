@@ -38,6 +38,12 @@ add_task(async function () {
     "toolboxServerError event has the expected error name"
   );
   is(
+    events[0].extra.is_destroying,
+    // Note: type is boolean, but extra_keys values are serialized as strings.
+    "false",
+    "toolboxServerError event has the expected is_destroying flag"
+  );
+  is(
     events[0].extra.packet_error,
     "TypeError",
     "toolboxServerError event has the expected packet error name"
@@ -50,8 +56,14 @@ add_task(async function () {
     "toolboxServerError event has the expected stack"
   );
   ok(
-    events[0].extra.server_stack.includes("/document-event.js"),
+    events[0].extra.server_stack.includes(
+      "watchResources@resource://devtools/server/actors/watcher.js"
+    ),
     "toolboxServerError event has the expected server stack"
+  );
+  ok(
+    events[0].extra.server_content_process_stack.includes("/document-event.js"),
+    "toolboxServerError event has the expected server content process stack"
   );
   is(
     events[0].extra.packet_type,

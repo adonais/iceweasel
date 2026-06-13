@@ -61,6 +61,7 @@ child:
   async RequestSample(TrackType type, bool isEnough);
   async UpdateStatisticData(StatisticData data);
   async NotifyResizing(uint32_t width, uint32_t height);
+  async NotifyFrameServerMode();
 };
 
 } // namespace mozilla

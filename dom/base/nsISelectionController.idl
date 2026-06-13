@@ -212,7 +212,7 @@ interface nsISelectionController : nsISelectionDisplay
    *  the "point" of selection that is extended is considered the "focus" point.
    *  or the last point adjusted by the selection.
    *  @param aDirection
-   *  @param aAmount    character/line; word/lineBoundary
+   *  @param aAmount    0: character/line; 1: word/lineBoundary; 2: visual line edge
    *  @param aExtend    should it collapse the selection of extend it?
    */
   [can_run_script]
@@ -257,6 +257,17 @@ interface nsISelectionController : nsISelectionDisplay
    */
   [can_run_script]
   void intraLineMove(in boolean forward, in boolean extend);
+
+  /** ParagraphMove will move the selection to the beginning or end of the
+   *  current paragraph in the document.
+   *  this will also have the effect of collapsing the selection if the aExtend = false
+   *  the "point" of selection that is extended is considered the "focus" point.
+   *  or the last point adjusted by the selection.
+   *  @param aForward forward or backward if false
+   *  @param aExtend  should it collapse the selection of extend it?
+   */
+  [can_run_script]
+  void paragraphMove(in boolean forward, in boolean extend);
 
   /** PageMove will move the selection one page forward/backward in the document.
    *  this will also have the effect of collapsing the selection if the aExtend = false

@@ -42,6 +42,11 @@ class MFMediaEngineVideoStream final : public MFMediaEngineStream {
 
   void SetDCompSurfaceHandle(HANDLE aDCompSurfaceHandle, gfx::IntSize aDisplay);
 
+  // Called when the engine operates in frame server mode (without a DComp
+  // surface). Bypasses the DComp-readiness gate in OutputData/Drain so that
+  // video decode promises resolve immediately with empty outputs.
+  void SetFrameServerMode();
+
   MFMediaEngineVideoStream* AsVideoStream() override { return this; }
 
   MediaDataDecoder::ConversionRequired NeedsConversion() const override;
@@ -136,6 +141,11 @@ class MFMediaEngineVideoStream final : public MFMediaEngineStream {
   // True once the first encrypted config has been seen on a ClearLead stream.
   // We want the engine to request an ITA only after the encrypted part starts.
   bool mSwitchedClearToEncrypted = false;
+
+  // Set when the engine operates in frame server mode (without a DComp
+  // surface). Bypasses the DComp-readiness gate so decode promises resolve
+  // without a real image.
+  bool mFrameServerMode = false;
 };
 
 }  // namespace mozilla

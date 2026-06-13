@@ -4,7 +4,7 @@
 #ifndef mozilla_dom_HTMLTableSectionElement_h
 #define mozilla_dom_HTMLTableSectionElement_h
 
-#include "nsContentList.h"  // For ctor.
+#include "mozilla/dom/ContentList.h"  // For ctor.
 #include "nsGenericHTMLElement.h"
 
 namespace mozilla::dom {
@@ -20,7 +20,7 @@ class HTMLTableSectionElement final : public nsGenericHTMLElement {
   // nsISupports
   NS_DECL_ISUPPORTS_INHERITED
 
-  nsIHTMLCollection* Rows();
+  HTMLCollection* Rows();
   already_AddRefed<nsGenericHTMLElement> InsertRow(int32_t aIndex,
                                                    ErrorResult& aError);
   void DeleteRow(int32_t aValue, ErrorResult& aError);
@@ -51,17 +51,17 @@ class HTMLTableSectionElement final : public nsGenericHTMLElement {
   nsMapRuleToAttributesFunc GetAttributeMappingFunction() const override;
   NS_IMETHOD_(bool) IsAttributeMapped(const nsAtom* aAttribute) const override;
 
-  virtual nsresult Clone(dom::NodeInfo*, nsINode** aResult) const override;
+  nsresult Clone(dom::NodeInfo*, nsINode** aResult) const override;
 
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(HTMLTableSectionElement,
                                            nsGenericHTMLElement)
  protected:
   virtual ~HTMLTableSectionElement();
 
-  virtual JSObject* WrapNode(JSContext* aCx,
-                             JS::Handle<JSObject*> aGivenProto) override;
+  JSObject* WrapNode(JSContext* aCx,
+                     JS::Handle<JSObject*> aGivenProto) override;
 
-  RefPtr<nsContentList> mRows;
+  RefPtr<ContentList> mRows;
 
  private:
   static void MapAttributesIntoRule(MappedDeclarationsBuilder&);

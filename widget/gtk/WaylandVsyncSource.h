@@ -98,7 +98,8 @@ class WaylandVsyncSource final : public gfx::VsyncSource {
 
   TimeDuration mVsyncRate MOZ_GUARDED_BY(mMutex);
   TimeStamp mLastVsyncTimeStamp MOZ_GUARDED_BY(mMutex);
-  uint32_t mLastFrameTime MOZ_GUARDED_BY(mMutex) = 0;
+  uint32_t mLastTime MOZ_GUARDED_BY(mMutex) = 0;
+  bool mLastTimeEmulated MOZ_GUARDED_BY(mMutex) = false;
 
   guint mHiddenWindowTimerID = 0;    // Main thread only.
   const guint mHiddenWindowTimeout;  // Main thread only.

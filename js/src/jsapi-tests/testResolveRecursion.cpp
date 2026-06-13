@@ -12,16 +12,7 @@
  */
 BEGIN_TEST(testResolveRecursion) {
   static const JSClassOps my_resolve_classOps = {
-      nullptr,     // addProperty
-      nullptr,     // delProperty
-      nullptr,     // enumerate
-      nullptr,     // newEnumerate
-      my_resolve,  // resolve
-      nullptr,     // mayResolve
-      nullptr,     // finalize
-      nullptr,     // call
-      nullptr,     // construct
-      nullptr,     // trace
+      .resolve = my_resolve,
   };
 
   static const JSClass my_resolve_class = {
@@ -155,16 +146,8 @@ BEGIN_TEST(testResolveRecursion_InitStandardClasses) {
 
 const JSClass* getGlobalClass() override {
   static const JSClassOps myGlobalClassOps = {
-      nullptr,                   // addProperty
-      nullptr,                   // delProperty
-      nullptr,                   // enumerate
-      nullptr,                   // newEnumerate
-      my_resolve,                // resolve
-      nullptr,                   // mayResolve
-      nullptr,                   // finalize
-      nullptr,                   // call
-      nullptr,                   // construct
-      JS_GlobalObjectTraceHook,  // trace
+      .resolve = my_resolve,
+      .trace = JS_GlobalObjectTraceHook,
   };
 
   static const JSClass myGlobalClass = {

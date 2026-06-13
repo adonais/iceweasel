@@ -304,7 +304,7 @@ def setup_gecko_profile_from_try_config(config, jobs):
             simpleperf_deps = [
                 "linux64-android-simpleperf-linux-repack",
                 "linux64-samply",
-                "symbolicator-cli",
+                "profiler-node-tools",
             ]
             for dep in simpleperf_deps:
                 if dep not in fetch_toolchains:

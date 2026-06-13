@@ -54,7 +54,7 @@ class WebGLSync final : public WebGLContextBoundObject, public SupportsWeakPtr {
   template <class F>
   void OnCompleteTaskAdd(F&& fn) {
     MOZ_RELEASE_ASSERT(mOnCompleteTasks);
-    auto task = std::make_unique<webgl::FnTask<F>>(std::move(fn));
+    auto task = std::make_unique<webgl::FnTask<F>>(std::forward<F>(fn));
     mOnCompleteTasks->push_back(std::move(task));
   }
 

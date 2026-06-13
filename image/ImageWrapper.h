@@ -55,7 +55,7 @@ class ImageWrapper : public Image {
     MOZ_ASSERT(aInnerImage, "Need an image to wrap");
   }
 
-  virtual ~ImageWrapper() {}
+  virtual ~ImageWrapper() = default;
 
   /**
    * Returns a weak reference to the inner image wrapped by this ImageWrapper.

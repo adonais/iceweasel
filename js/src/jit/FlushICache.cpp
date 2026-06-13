@@ -4,7 +4,11 @@
 
 #include "jit/FlushICache.h"
 
-#ifdef JS_CODEGEN_ARM64
+#include "mozilla/Atomics.h"
+
+#include <stdint.h>
+
+#ifdef JS_SIMULATOR_ARM64
 #  include "jit/arm64/vixl/MozCachingDecoder.h"
 #  include "jit/arm64/vixl/Simulator-vixl.h"
 #endif

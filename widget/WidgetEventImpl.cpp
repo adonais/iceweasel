@@ -19,6 +19,8 @@
 #include "mozilla/StaticPrefs_mousewheel.h"
 #include "mozilla/StaticPrefs_ui.h"
 #include "mozilla/WritingModes.h"
+#include "mozilla/dom/CSSAnimation.h"
+#include "mozilla/dom/CSSTransition.h"
 #include "mozilla/dom/KeyboardEventBinding.h"
 #include "mozilla/dom/MouseEventBinding.h"
 #include "mozilla/dom/WheelEventBinding.h"
@@ -183,6 +185,75 @@ bool IsForbiddenDispatchingToNonElementContent(EventMessage aMessage) {
   }
 }
 
+bool IsValidMessageForIPC(EventMessage aMessage, EventClassID aClassID) {
+  switch (aMessage) {
+    case eKeyDown:
+    case eKeyUp:
+    case eKeyPress:
+      return aClassID == eKeyboardEventClass;
+    case eMouseMove:
+    case eMouseUp:
+    case eMouseDown:
+    case eMouseEnterIntoWidget:
+    case eMouseExitFromWidget:
+    case eMouseDoubleClick:
+    case eMouseActivate:
+    case eMouseOver:
+    case eMouseOut:
+    case eMouseHitTest:
+    case eMouseEnter:
+    case eMouseLeave:
+    case eMouseTouchDrag:
+    case eMouseLongTap:
+    case eMouseExploreByTouch:
+      return aClassID == eMouseEventClass;
+    case eWheel:
+    case eWheelOperationStart:
+    case eWheelOperationEnd:
+      return aClassID == eWheelEventClass;
+    case eDragEnter:
+    case eDragOver:
+    case eDragExit:
+    case eDrag:
+    case eDragEnd:
+    case eDragStart:
+    case eDrop:
+    case eDragLeave:
+      return aClassID == eDragEventClass;
+    case ePointerMove:
+    case ePointerUp:
+    case ePointerDown:
+    case ePointerOver:
+    case ePointerOut:
+    case ePointerEnter:
+    case ePointerLeave:
+    case ePointerCancel:
+    case ePointerRawUpdate:
+    case ePointerGotCapture:
+    case ePointerLostCapture:
+    case ePointerClick:
+    case ePointerAuxClick:
+    case eContextMenu:
+      return aClassID == ePointerEventClass;
+    case eTouchStart:
+    case eTouchMove:
+    case eTouchEnd:
+    case eTouchCancel:
+    case eTouchPointerCancel:
+      return aClassID == eTouchEventClass;
+    case eCompositionStart:
+    case eCompositionEnd:
+    case eCompositionChange:
+    case eCompositionCommitAsIs:
+    case eCompositionCommit:
+      return aClassID == eCompositionEventClass;
+    case eSetSelection:
+      return aClassID == eSelectionEventClass;
+    default:
+      return false;
+  }
+}
+
 const char* ToChar(EventClassID aEventClassID) {
   switch (aEventClassID) {
 #define NS_ROOT_EVENT_CLASS(aPrefix, aName) \
@@ -197,6 +268,8 @@ const char* ToChar(EventClassID aEventClassID) {
 
 #undef NS_EVENT_CLASS
 #undef NS_ROOT_EVENT_CLASS
+    case eEventClassUninitialized:
+      return "eEventClassUninitialized";
     default:
       return "illegal event class ID";
   }
@@ -2337,6 +2410,82 @@ EditorInputType InternalEditorInputEvent::GetEditorInputType(
   }
   return sInputTypeHashtable->MaybeGet(aInputType)
       .valueOr(EditorInputType::eUnknown);
+}
+
+/******************************************************************************
+ * mozilla::InternalTransitionEvent (ContentEvents.h)
+ ******************************************************************************/
+
+InternalTransitionEvent::InternalTransitionEvent(bool aIsTrusted,
+                                                 EventMessage aMessage,
+                                                 const WidgetEventTime* aTime)
+    : WidgetEvent(aIsTrusted, aMessage, eTransitionEventClass, aTime),
+      mElapsedTime(0.0) {}
+
+InternalTransitionEvent::InternalTransitionEvent(InternalTransitionEvent&&) =
+    default;
+InternalTransitionEvent& InternalTransitionEvent::operator=(
+    InternalTransitionEvent&&) = default;
+
+InternalTransitionEvent::~InternalTransitionEvent() {
+  NS_ASSERT_EVENT_CLASS_ID(eTransitionEventClass, eBasicEventClass);
+}
+
+WidgetEvent* InternalTransitionEvent::Duplicate() const {
+  MOZ_ASSERT(mClass == eTransitionEventClass,
+             "Duplicate() must be overridden by sub class");
+  InternalTransitionEvent* result =
+      new InternalTransitionEvent(false, mMessage, this);
+  result->AssignTransitionEventData(*this, true);
+  result->mFlags = mFlags;
+  return result;
+}
+
+void InternalTransitionEvent::AssignTransitionEventData(
+    const InternalTransitionEvent& aEvent, bool aCopyTargets) {
+  AssignEventData(aEvent, aCopyTargets);
+  mPropertyName = aEvent.mPropertyName;
+  mElapsedTime = aEvent.mElapsedTime;
+  mPseudoElement = aEvent.mPseudoElement;
+  mAnimation = aEvent.mAnimation;
+}
+
+/******************************************************************************
+ * mozilla::InternalAnimationEvent (ContentEvents.h)
+ ******************************************************************************/
+
+InternalAnimationEvent::InternalAnimationEvent(bool aIsTrusted,
+                                               EventMessage aMessage,
+                                               const WidgetEventTime* aTime)
+    : WidgetEvent(aIsTrusted, aMessage, eAnimationEventClass, aTime),
+      mElapsedTime(0.0) {}
+
+InternalAnimationEvent::~InternalAnimationEvent() {
+  NS_ASSERT_EVENT_CLASS_ID(eAnimationEventClass, eBasicEventClass);
+}
+
+InternalAnimationEvent::InternalAnimationEvent(InternalAnimationEvent&&) =
+    default;
+InternalAnimationEvent& InternalAnimationEvent::operator=(
+    InternalAnimationEvent&&) = default;
+
+WidgetEvent* InternalAnimationEvent::Duplicate() const {
+  MOZ_ASSERT(mClass == eAnimationEventClass,
+             "Duplicate() must be overridden by sub class");
+  InternalAnimationEvent* result =
+      new InternalAnimationEvent(false, mMessage, this);
+  result->AssignAnimationEventData(*this, true);
+  result->mFlags = mFlags;
+  return result;
+}
+
+void InternalAnimationEvent::AssignAnimationEventData(
+    const InternalAnimationEvent& aEvent, bool aCopyTargets) {
+  AssignEventData(aEvent, aCopyTargets);
+  mAnimationName = aEvent.mAnimationName;
+  mElapsedTime = aEvent.mElapsedTime;
+  mPseudoElement = aEvent.mPseudoElement;
+  mAnimation = aEvent.mAnimation;
 }
 
 }  // namespace mozilla

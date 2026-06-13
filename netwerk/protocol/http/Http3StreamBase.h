@@ -46,6 +46,11 @@ class Http3StreamBase : public SupportsWeakPtr, public ARefBase {
   virtual void Close(nsresult aResult) = 0;
 
   nsAHttpTransaction* Transaction() { return mTransaction; }
+  // Replace the stream's backing transaction. Used by the HE / 0-RTT
+  // flow when a HappyEyeballsTransaction shim is adopted by the real
+  // nsHttpTransaction so the session's stream and its hash both point
+  // at the real txn (see Http3Session::SwapTransaction).
+  void SetTransaction(nsAHttpTransaction* aTrans) { mTransaction = aTrans; }
 
   // Mirrors nsAHttpTransaction
   virtual bool Do0RTT() { return false; }

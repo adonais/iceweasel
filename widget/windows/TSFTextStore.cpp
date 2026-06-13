@@ -61,9 +61,6 @@ const MSG* TSFTextStore::sHandlingKeyMsg = nullptr;
 bool TSFTextStore::sIsKeyboardEventDispatched = false;
 
 TSFTextStore::TSFTextStore() : TSFTextStoreBase(Editable::Yes) {
-  // We hope that 5 or more actions don't occur at once.
-  mPendingActions.SetCapacity(5);
-
   MOZ_LOG(gIMELog, LogLevel::Info,
           ("0x%p TSFTextStore::TSFTextStore() SUCCEEDED", this));
 }
@@ -294,7 +291,12 @@ void TSFTextStore::FlushPendingActions() {
     // Note that don't clear mContentForTSF because TIP may try to commit
     // composition with a document lock.  In such case, TSFTextStore needs to
     // behave as expected by TIP.
-    mPendingActions.Clear();
+    if (NS_WARN_IF(!mPendingActions.Clear())) [[unlikely]] {
+      MOZ_LOG(gIMELog, LogLevel::Error,
+              ("0x%p   TSFTextStore::FlushPendingActions() "
+               "FAILED due to trying to clear locked pending actions",
+               this));
+    }
     mPendingSelectionChangeData.reset();
     mHasReturnedNoLayoutError = false;
     return;
@@ -317,8 +319,17 @@ void TSFTextStore::FlushPendingActions() {
              this));
     return;
   }
-  for (uint32_t i = 0; i < mPendingActions.Length(); i++) {
-    PendingAction& action = mPendingActions[i];
+  if (NS_WARN_IF(mPendingActions.IsLocked())) [[unlikely]] {
+    MOZ_LOG(gIMELog, LogLevel::Error,
+            ("0x%p   TSFTextStore::FlushPendingActions() "
+             "FAILED due to trying to flush pending actions during the pending "
+             "actions locked",
+             this));
+    return;
+  }
+  PendingActions pendingActions = std::move(mPendingActions);
+  mPendingActions.Clear();
+  for (PendingAction& action : pendingActions) {
     switch (action.mType) {
       case PendingAction::Type::KeyboardEvent:
         if (mDestroyed) {
@@ -566,11 +577,10 @@ void TSFTextStore::FlushPendingActions() {
 
     MOZ_LOG(gIMELog, LogLevel::Info,
             ("0x%p   TSFTextStore::FlushPendingActions(), "
-             "qutting since the mWidget has gone",
+             "quitting since the mWidget has gone",
              this));
     break;
   }
-  mPendingActions.Clear();
 }
 
 void TSFTextStore::MaybeFlushPendingNotifications() {
@@ -701,9 +711,12 @@ void TSFTextStore::MaybeDispatchKeyboardEventAsProcessedByIME() {
         ("0x%p   TSFTextStore::MaybeDispatchKeyboardEventAsProcessedByIME(), "
          "adding to dispatch a keyboard event into the queue...",
          this));
-    PendingAction* action = mPendingActions.AppendElement();
-    action->mType = PendingAction::Type::KeyboardEvent;
-    memcpy(&action->mKeyMsg, sHandlingKeyMsg, sizeof(MSG));
+    {  // Scope for AutoLockPendingActions
+      PendingAction* action = mPendingActions.CreateNewAction();
+      AutoLockPendingActions lockPendingActions(mPendingActions);
+      action->mType = PendingAction::Type::KeyboardEvent;
+      memcpy(&action->mKeyMsg, sHandlingKeyMsg, sizeof(MSG));
+    }
     return;
   }
 
@@ -1253,21 +1266,24 @@ HRESULT TSFTextStore::RestartComposition(Composition& aCurrentComposition,
                                  oldComposition.Length(), commitString);
   MOZ_ASSERT(mComposition.isSome());
   // Record a compositionupdate action for commit the part of composing string.
-  PendingAction* action = LastOrNewPendingCompositionUpdate();
-  if (mComposition.isSome()) {
-    action->mData = mComposition->DataRef();
+  {  // Scope for AutoLockPendingActions
+    PendingAction* action = mPendingActions.LastOrNewPendingCompositionUpdate();
+    AutoLockPendingActions lockPendingActions(mPendingActions);
+    if (mComposition.isSome()) {
+      action->mData = mComposition->DataRef();
+    }
+    action->mRanges->Clear();
+    // Note that we shouldn't append ranges when composition string
+    // is empty because it may cause TextComposition confused.
+    if (!action->mData.IsEmpty()) {
+      TextRange caretRange;
+      caretRange.mStartOffset = caretRange.mEndOffset = static_cast<uint32_t>(
+          oldComposition.StartOffset() + commitString.Length());
+      caretRange.mRangeType = TextRangeType::eCaret;
+      action->mRanges->AppendElement(caretRange);
+    }
+    action->mIncomplete = false;
   }
-  action->mRanges->Clear();
-  // Note that we shouldn't append ranges when composition string
-  // is empty because it may cause TextComposition confused.
-  if (!action->mData.IsEmpty()) {
-    TextRange caretRange;
-    caretRange.mStartOffset = caretRange.mEndOffset = static_cast<uint32_t>(
-        oldComposition.StartOffset() + commitString.Length());
-    caretRange.mRangeType = TextRangeType::eCaret;
-    action->mRanges->AppendElement(caretRange);
-  }
-  action->mIncomplete = false;
 
   // Record compositionend action.
   RecordCompositionEndAction();
@@ -1357,155 +1373,157 @@ HRESULT TSFTextStore::RecordCompositionUpdateAction() {
     return E_FAIL;
   }
 
-  PendingAction* action = LastOrNewPendingCompositionUpdate();
-  action->mData = mComposition->DataRef();
-  // The ranges might already have been initialized, however, if this is
-  // called again, that means we need to overwrite the ranges with current
-  // information.
-  action->mRanges->Clear();
+  {  // Scope for AutoLockPendingActions
+    PendingAction* action = mPendingActions.LastOrNewPendingCompositionUpdate();
+    AutoLockPendingActions lockPendingActions(mPendingActions);
+    action->mData = mComposition->DataRef();
+    // The ranges might already have been initialized, however, if this is
+    // called again, that means we need to overwrite the ranges with current
+    // information.
+    action->mRanges->Clear();
 
-  // Note that we shouldn't append ranges when composition string
-  // is empty because it may cause TextComposition confused.
-  if (!action->mData.IsEmpty()) {
-    TextRange newRange;
-    // No matter if we have display attribute info or not,
-    // we always pass in at least one range to eCompositionChange
-    newRange.mStartOffset = 0;
-    newRange.mEndOffset = action->mData.Length();
-    newRange.mRangeType = TextRangeType::eRawClause;
-    action->mRanges->AppendElement(newRange);
-
-    RefPtr<ITfRange> range;
-    while (enumRanges->Next(1, getter_AddRefs(range), nullptr) == S_OK) {
-      if (NS_WARN_IF(!range)) {
-        break;
-      }
-      const TSFUtils::AutoRangeExtant rangeExtant(range);
-      if (MOZ_UNLIKELY(rangeExtant.isErr())) {
-        continue;
-      }
-      // The range may include out of composition string.  We should ignore
-      // outside of the composition string.
-      LONG start = std::clamp(rangeExtant.mStart, mComposition->StartOffset(),
-                              mComposition->EndOffset());
-      LONG end = std::clamp(rangeExtant.End(), mComposition->StartOffset(),
-                            mComposition->EndOffset());
-      LONG length = end - start;
-      if (length < 0) {
-        MOZ_LOG(gIMELog, LogLevel::Error,
-                ("0x%p   TSFTextStore::RecordCompositionUpdateAction() "
-                 "ignores invalid range (%ld-%ld)",
-                 this, rangeExtant.mStart - mComposition->StartOffset(),
-                 rangeExtant.End() - mComposition->StartOffset()));
-        continue;
-      }
-      if (!length) {
-        MOZ_LOG(gIMELog, LogLevel::Debug,
-                ("0x%p   TSFTextStore::RecordCompositionUpdateAction() "
-                 "ignores a range due to outside of the composition or empty "
-                 "(%ld-%ld)",
-                 this, rangeExtant.mStart - mComposition->StartOffset(),
-                 rangeExtant.End() - mComposition->StartOffset()));
-        continue;
-      }
-
+    // Note that we shouldn't append ranges when composition string
+    // is empty because it may cause TextComposition confused.
+    if (!action->mData.IsEmpty()) {
       TextRange newRange;
-      newRange.mStartOffset =
-          static_cast<uint32_t>(start - mComposition->StartOffset());
-      // The end of the last range in the array is
-      // always kept at the end of composition
-      newRange.mEndOffset = mComposition->Length();
+      // No matter if we have display attribute info or not,
+      // we always pass in at least one range to eCompositionChange
+      newRange.mStartOffset = 0;
+      newRange.mEndOffset = action->mData.Length();
+      newRange.mRangeType = TextRangeType::eRawClause;
+      action->mRanges->AppendElement(newRange);
 
-      TF_DISPLAYATTRIBUTE attr;
-      hr = GetDisplayAttribute(attrProperty, range, &attr);
-      if (FAILED(hr)) {
-        newRange.mRangeType = TextRangeType::eRawClause;
-      } else {
-        newRange.mRangeType = GetGeckoSelectionValue(attr);
-        if (const Maybe<nscolor> foregroundColor =
-                TSFUtils::GetColor(attr.crText)) {
-          newRange.mRangeStyle.mForegroundColor = *foregroundColor;
-          newRange.mRangeStyle.mDefinedStyles |=
-              TextRangeStyle::DEFINED_FOREGROUND_COLOR;
+      RefPtr<ITfRange> range;
+      while (enumRanges->Next(1, getter_AddRefs(range), nullptr) == S_OK) {
+        if (NS_WARN_IF(!range)) {
+          break;
         }
-        if (const Maybe<nscolor> backgroundColor =
-                TSFUtils::GetColor(attr.crBk)) {
-          newRange.mRangeStyle.mBackgroundColor = *backgroundColor;
-          newRange.mRangeStyle.mDefinedStyles |=
-              TextRangeStyle::DEFINED_BACKGROUND_COLOR;
+        const TSFUtils::AutoRangeExtant rangeExtant(range);
+        if (MOZ_UNLIKELY(rangeExtant.isErr())) {
+          continue;
         }
-        if (const Maybe<nscolor> underlineColor =
-                TSFUtils::GetColor(attr.crLine)) {
-          newRange.mRangeStyle.mUnderlineColor = *underlineColor;
-          newRange.mRangeStyle.mDefinedStyles |=
-              TextRangeStyle::DEFINED_UNDERLINE_COLOR;
+        // The range may include out of composition string.  We should ignore
+        // outside of the composition string.
+        LONG start = std::clamp(rangeExtant.mStart, mComposition->StartOffset(),
+                                mComposition->EndOffset());
+        LONG end = std::clamp(rangeExtant.End(), mComposition->StartOffset(),
+                              mComposition->EndOffset());
+        LONG length = end - start;
+        if (length < 0) {
+          MOZ_LOG(gIMELog, LogLevel::Error,
+                  ("0x%p   TSFTextStore::RecordCompositionUpdateAction() "
+                   "ignores invalid range (%ld-%ld)",
+                   this, rangeExtant.mStart - mComposition->StartOffset(),
+                   rangeExtant.End() - mComposition->StartOffset()));
+          continue;
         }
-        if (const Maybe<TextRangeStyle::LineStyle> lineStyle =
-                TSFUtils::GetLineStyle(attr.lsStyle)) {
-          newRange.mRangeStyle.mLineStyle = *lineStyle;
-          newRange.mRangeStyle.mDefinedStyles |=
-              TextRangeStyle::DEFINED_LINESTYLE;
-          newRange.mRangeStyle.mIsBoldLine = attr.fBoldLine != 0;
+        if (!length) {
+          MOZ_LOG(gIMELog, LogLevel::Debug,
+                  ("0x%p   TSFTextStore::RecordCompositionUpdateAction() "
+                   "ignores a range due to outside of the composition or empty "
+                   "(%ld-%ld)",
+                   this, rangeExtant.mStart - mComposition->StartOffset(),
+                   rangeExtant.End() - mComposition->StartOffset()));
+          continue;
+        }
+
+        TextRange newRange;
+        newRange.mStartOffset =
+            static_cast<uint32_t>(start - mComposition->StartOffset());
+        // The end of the last range in the array is
+        // always kept at the end of composition
+        newRange.mEndOffset = mComposition->Length();
+
+        TF_DISPLAYATTRIBUTE attr;
+        hr = GetDisplayAttribute(attrProperty, range, &attr);
+        if (FAILED(hr)) {
+          newRange.mRangeType = TextRangeType::eRawClause;
+        } else {
+          newRange.mRangeType = GetGeckoSelectionValue(attr);
+          if (const Maybe<nscolor> foregroundColor =
+                  TSFUtils::GetColor(attr.crText)) {
+            newRange.mRangeStyle.mForegroundColor = *foregroundColor;
+            newRange.mRangeStyle.mDefinedStyles |=
+                TextRangeStyle::DEFINED_FOREGROUND_COLOR;
+          }
+          if (const Maybe<nscolor> backgroundColor =
+                  TSFUtils::GetColor(attr.crBk)) {
+            newRange.mRangeStyle.mBackgroundColor = *backgroundColor;
+            newRange.mRangeStyle.mDefinedStyles |=
+                TextRangeStyle::DEFINED_BACKGROUND_COLOR;
+          }
+          if (const Maybe<nscolor> underlineColor =
+                  TSFUtils::GetColor(attr.crLine)) {
+            newRange.mRangeStyle.mUnderlineColor = *underlineColor;
+            newRange.mRangeStyle.mDefinedStyles |=
+                TextRangeStyle::DEFINED_UNDERLINE_COLOR;
+          }
+          if (const Maybe<TextRangeStyle::LineStyle> lineStyle =
+                  TSFUtils::GetLineStyle(attr.lsStyle)) {
+            newRange.mRangeStyle.mLineStyle = *lineStyle;
+            newRange.mRangeStyle.mDefinedStyles |=
+                TextRangeStyle::DEFINED_LINESTYLE;
+            newRange.mRangeStyle.mIsBoldLine = attr.fBoldLine != 0;
+          }
+        }
+
+        TextRange& lastRange = action->mRanges->LastElement();
+        if (lastRange.mStartOffset == newRange.mStartOffset) {
+          // Replace range if last range is the same as this one
+          // So that ranges don't overlap and confuse the editor
+          lastRange = newRange;
+        } else {
+          lastRange.mEndOffset = newRange.mStartOffset;
+          action->mRanges->AppendElement(newRange);
         }
       }
 
-      TextRange& lastRange = action->mRanges->LastElement();
-      if (lastRange.mStartOffset == newRange.mStartOffset) {
-        // Replace range if last range is the same as this one
-        // So that ranges don't overlap and confuse the editor
-        lastRange = newRange;
-      } else {
-        lastRange.mEndOffset = newRange.mStartOffset;
-        action->mRanges->AppendElement(newRange);
+      // We need to hack for Korean Input System which is Korean standard TIP.
+      // It sets no change style to IME selection (the selection is always only
+      // one).  So, the composition string looks like normal (or committed)
+      // string.  At this time, current selection range is same as the
+      // composition string range.  Other applications set a wide caret which
+      // covers the composition string,  however, Gecko doesn't support the wide
+      // caret drawing now (Gecko doesn't support XOR drawing), unfortunately.
+      // For now, we should change the range style to undefined.
+      if (!selectionForTSF->Collapsed() && action->mRanges->Length() == 1) {
+        TextRange& range = action->mRanges->ElementAt(0);
+        LONG start = selectionForTSF->MinOffset();
+        LONG end = selectionForTSF->MaxOffset();
+        if (static_cast<LONG>(range.mStartOffset) ==
+                start - mComposition->StartOffset() &&
+            static_cast<LONG>(range.mEndOffset) ==
+                end - mComposition->StartOffset() &&
+            range.mRangeStyle.IsNoChangeStyle()) {
+          range.mRangeStyle.Clear();
+          // The looks of selected type is better than others.
+          range.mRangeType = TextRangeType::eSelectedRawClause;
+        }
+      }
+
+      // The caret position has to be collapsed.
+      uint32_t caretPosition = static_cast<uint32_t>(
+          selectionForTSF->HasRange()
+              ? selectionForTSF->MaxOffset() - mComposition->StartOffset()
+              : mComposition->StartOffset());
+
+      // If caret is in the target clause and it doesn't have specific style,
+      // the target clause will be painted as normal selection range.  Since
+      // caret shouldn't be in selection range on Windows, we shouldn't append
+      // caret range in such case.
+      const TextRange* targetClause = action->mRanges->GetTargetClause();
+      if (!targetClause || targetClause->mRangeStyle.IsDefined() ||
+          caretPosition < targetClause->mStartOffset ||
+          caretPosition > targetClause->mEndOffset) {
+        TextRange caretRange;
+        caretRange.mStartOffset = caretRange.mEndOffset = caretPosition;
+        caretRange.mRangeType = TextRangeType::eCaret;
+        action->mRanges->AppendElement(caretRange);
       }
     }
 
-    // We need to hack for Korean Input System which is Korean standard TIP.
-    // It sets no change style to IME selection (the selection is always only
-    // one).  So, the composition string looks like normal (or committed)
-    // string.  At this time, current selection range is same as the
-    // composition string range.  Other applications set a wide caret which
-    // covers the composition string,  however, Gecko doesn't support the wide
-    // caret drawing now (Gecko doesn't support XOR drawing), unfortunately.
-    // For now, we should change the range style to undefined.
-    if (!selectionForTSF->Collapsed() && action->mRanges->Length() == 1) {
-      TextRange& range = action->mRanges->ElementAt(0);
-      LONG start = selectionForTSF->MinOffset();
-      LONG end = selectionForTSF->MaxOffset();
-      if (static_cast<LONG>(range.mStartOffset) ==
-              start - mComposition->StartOffset() &&
-          static_cast<LONG>(range.mEndOffset) ==
-              end - mComposition->StartOffset() &&
-          range.mRangeStyle.IsNoChangeStyle()) {
-        range.mRangeStyle.Clear();
-        // The looks of selected type is better than others.
-        range.mRangeType = TextRangeType::eSelectedRawClause;
-      }
-    }
-
-    // The caret position has to be collapsed.
-    uint32_t caretPosition = static_cast<uint32_t>(
-        selectionForTSF->HasRange()
-            ? selectionForTSF->MaxOffset() - mComposition->StartOffset()
-            : mComposition->StartOffset());
-
-    // If caret is in the target clause and it doesn't have specific style,
-    // the target clause will be painted as normal selection range.  Since
-    // caret shouldn't be in selection range on Windows, we shouldn't append
-    // caret range in such case.
-    const TextRange* targetClause = action->mRanges->GetTargetClause();
-    if (!targetClause || targetClause->mRangeStyle.IsDefined() ||
-        caretPosition < targetClause->mStartOffset ||
-        caretPosition > targetClause->mEndOffset) {
-      TextRange caretRange;
-      caretRange.mStartOffset = caretRange.mEndOffset = caretPosition;
-      caretRange.mRangeType = TextRangeType::eCaret;
-      action->mRanges->AppendElement(caretRange);
-    }
+    action->mIncomplete = false;
   }
-
-  action->mIncomplete = false;
-
   MOZ_LOG(gIMELog, LogLevel::Info,
           ("0x%p   TSFTextStore::RecordCompositionUpdateAction() "
            "succeeded",
@@ -1626,12 +1644,15 @@ HRESULT TSFTextStore::SetSelectionInternal(
   }
 
   CompleteLastActionIfStillIncomplete();
-  PendingAction* action = mPendingActions.AppendElement();
-  action->mType = PendingAction::Type::SetSelection;
-  action->mSelectionStart = selectionInContent.acpStart;
-  action->mSelectionLength =
-      selectionInContent.acpEnd - selectionInContent.acpStart;
-  action->mSelectionReversed = (selectionInContent.style.ase == TS_AE_START);
+  {  // Scope for AutoLockPendingActions
+    PendingAction* action = mPendingActions.CreateNewAction();
+    AutoLockPendingActions lockPendingActions(mPendingActions);
+    action->mType = PendingAction::Type::SetSelection;
+    action->mSelectionStart = selectionInContent.acpStart;
+    action->mSelectionLength =
+        selectionInContent.acpEnd - selectionInContent.acpStart;
+    action->mSelectionReversed = (selectionInContent.style.ase == TS_AE_START);
+  }
 
   // Use TSF specified selection for updating mSelectionForTSF.
   selectionForTSF->SetSelection(*pSelection);
@@ -2550,7 +2571,7 @@ bool TSFTextStore::InsertTextAtSelectionInternal(const nsAString& aInsertStr,
   TS_SELECTION_ACP oldSelection = contentForTSF->Selection()->ACPRef();
   if (mComposition.isNothing()) {
     // Use a temporary composition to contain the text
-    PendingAction* compositionStart = mPendingActions.AppendElements(2);
+    PendingAction* compositionStart = mPendingActions.CreateNewActions(2);
     PendingAction* compositionEnd = compositionStart + 1;
 
     compositionStart->mType = PendingAction::Type::CompositionStart;
@@ -2665,11 +2686,21 @@ HRESULT TSFTextStore::RecordCompositionStartAction(
   // when user removes last character of composition string with Backspace
   // key (bug 1462257).
   if (!aPreserveSelection &&
-      IsLastPendingActionCompositionEndAt(aStart, aLength)) {
-    const PendingAction& pendingCompositionEnd = mPendingActions.LastElement();
-    contentForTSF->RestoreCommittedComposition(aCompositionView,
-                                               pendingCompositionEnd);
-    mPendingActions.RemoveLastElement();
+      mPendingActions.IsLastPendingActionCompositionEndAt(aStart, aLength)) {
+    {  // Scope for AutoLockPendingActions
+      const PendingAction& pendingCompositionEnd = mPendingActions.LastAction();
+      AutoLockPendingActions lockPendingActions(mPendingActions);
+      contentForTSF->RestoreCommittedComposition(aCompositionView,
+                                                 pendingCompositionEnd);
+    }
+    if (NS_WARN_IF(!mPendingActions.RemoveLastAction())) {
+      MOZ_LOG(gIMELog, LogLevel::Error,
+              ("0x%p   TSFTextStore::RecordCompositionStartAction() "
+               "FAILED due to trying to remove the last action during the "
+               "pending actions locked",
+               this));
+      return E_FAIL;
+    }
     MOZ_LOG(gIMELog, LogLevel::Info,
             ("0x%p   TSFTextStore::RecordCompositionStartAction() "
              "succeeded: restoring the committed string as composing string, "
@@ -2679,39 +2710,42 @@ HRESULT TSFTextStore::RecordCompositionStartAction(
     return S_OK;
   }
 
-  PendingAction* action = mPendingActions.AppendElement();
-  action->mType = PendingAction::Type::CompositionStart;
-  action->mSelectionStart = aStart;
-  action->mSelectionLength = aLength;
+  {  // Scope for AutoLockPendingActions
+    PendingAction* action = mPendingActions.CreateNewAction();
+    AutoLockPendingActions lockPendingActions(mPendingActions);
+    action->mType = PendingAction::Type::CompositionStart;
+    action->mSelectionStart = aStart;
+    action->mSelectionLength = aLength;
 
-  Maybe<Selection>& selectionForTSF = SelectionForTSF();
-  if (selectionForTSF.isNothing()) {
-    MOZ_LOG(gIMELog, LogLevel::Error,
-            ("0x%p   TSFTextStore::RecordCompositionStartAction() FAILED "
-             "due to SelectionForTSF() failure",
-             this));
-    action->mAdjustSelection = true;
-  } else if (!selectionForTSF->HasRange()) {
-    // If there is no selection, let's collapse seletion to the insertion point.
-    action->mAdjustSelection = true;
-  } else if (selectionForTSF->MinOffset() != aStart ||
-             selectionForTSF->MaxOffset() != aStart + aLength) {
-    // If new composition range is different from current selection range,
-    // we need to set selection before dispatching compositionstart event.
-    action->mAdjustSelection = true;
-  } else {
-    // We shouldn't dispatch selection set event before dispatching
-    // compositionstart event because it may cause put caret different
-    // position in HTML editor since generated flat text content and offset in
-    // it are lossy data of HTML contents.
-    action->mAdjustSelection = false;
+    Maybe<Selection>& selectionForTSF = SelectionForTSF();
+    if (selectionForTSF.isNothing()) {
+      MOZ_LOG(gIMELog, LogLevel::Error,
+              ("0x%p   TSFTextStore::RecordCompositionStartAction() FAILED "
+               "due to SelectionForTSF() failure",
+               this));
+      action->mAdjustSelection = true;
+    } else if (!selectionForTSF->HasRange()) {
+      // If there is no selection, let's collapse selection to the insertion
+      // point.
+      action->mAdjustSelection = true;
+    } else if (selectionForTSF->MinOffset() != aStart ||
+               selectionForTSF->MaxOffset() != aStart + aLength) {
+      // If new composition range is different from current selection range,
+      // we need to set selection before dispatching compositionstart event.
+      action->mAdjustSelection = true;
+    } else {
+      // We shouldn't dispatch selection set event before dispatching
+      // compositionstart event because it may cause put caret different
+      // position in HTML editor since generated flat text content and offset in
+      // it are lossy data of HTML contents.
+      action->mAdjustSelection = false;
+    }
+
+    contentForTSF->StartComposition(aCompositionView, *action,
+                                    aPreserveSelection);
+    MOZ_ASSERT(mComposition.isSome());
+    action->mData = mComposition->DataRef();
   }
-
-  contentForTSF->StartComposition(aCompositionView, *action,
-                                  aPreserveSelection);
-  MOZ_ASSERT(mComposition.isSome());
-  action->mData = mComposition->DataRef();
-
   MOZ_LOG(gIMELog, LogLevel::Info,
           ("0x%p   TSFTextStore::RecordCompositionStartAction() succeeded: "
            "mComposition=%s, mSelectionForTSF=%s }",
@@ -2750,29 +2784,45 @@ HRESULT TSFTextStore::RecordCompositionEndAction() {
   // the latest composition string and it overwrites the composition string
   // even if we dispatch eCompositionChange event before that.  So, let's
   // forget all composition updates now.
-  RemoveLastCompositionUpdateActions();
-  PendingAction* action = mPendingActions.AppendElement();
-  action->mType = PendingAction::Type::CompositionEnd;
-  action->mData = mComposition->DataRef();
-  action->mSelectionStart = mComposition->StartOffset();
-
-  Maybe<Content>& contentForTSF = ContentForTSF();
-  if (contentForTSF.isNothing()) {
+  if (NS_WARN_IF(!mPendingActions.RemoveLastCompositionUpdateActions())) {
     MOZ_LOG(gIMELog, LogLevel::Error,
-            ("0x%p   TSFTextStore::RecordCompositionEndAction() FAILED due "
-             "to ContentForTSF() failure",
+            ("0x%p   TSFTextStore::RecordCompositionEndAction() "
+             "FAILED due to trying to remove the last composition update "
+             "actions during the pending actions locked",
              this));
     return E_FAIL;
   }
-  contentForTSF->EndComposition(*action);
+  const nsString data = mComposition->DataRef();
+  {  // Scope for AutoLockPendingActions
+    PendingAction* action = mPendingActions.CreateNewAction();
+    AutoLockPendingActions lockPendingActions(mPendingActions);
+    action->mType = PendingAction::Type::CompositionEnd;
+    action->mData = data;
+    action->mSelectionStart = mComposition->StartOffset();
+
+    Maybe<Content>& contentForTSF = ContentForTSF();
+    if (contentForTSF.isNothing()) {
+      MOZ_LOG(gIMELog, LogLevel::Error,
+              ("0x%p   TSFTextStore::RecordCompositionEndAction() FAILED due "
+               "to ContentForTSF() failure",
+               this));
+      return E_FAIL;
+    }
+    contentForTSF->EndComposition(*action);
+  }
 
   // If this composition was restart but the composition doesn't modify
   // anything, we should remove the pending composition for preventing to
   // dispatch redundant composition events.
-  for (size_t i = mPendingActions.Length(), j = 1; i > 0; --i, ++j) {
-    PendingAction& pendingAction = mPendingActions[i - 1];
-    if (pendingAction.mType == PendingAction::Type::CompositionStart) {
-      if (pendingAction.mData != action->mData) {
+  for (const auto i : Reversed(IntegerRange(mPendingActions.Length()))) {
+    Maybe<PendingAction> pendingSetSelection;
+    {  // Scope for AutoLockPendingActions
+      PendingAction& pendingAction = mPendingActions[i];
+      AutoLockPendingActions lockPendingActions(mPendingActions);
+      if (pendingAction.mType != PendingAction::Type::CompositionStart) {
+        continue;
+      }
+      if (pendingAction.mData != data) {
         break;
       }
       // When only setting selection is necessary, we should append it.
@@ -2780,20 +2830,30 @@ HRESULT TSFTextStore::RecordCompositionEndAction() {
         LONG selectionStart = pendingAction.mSelectionStart;
         LONG selectionLength = pendingAction.mSelectionLength;
 
-        PendingAction* setSelection = mPendingActions.AppendElement();
-        setSelection->mType = PendingAction::Type::SetSelection;
-        setSelection->mSelectionStart = selectionStart;
-        setSelection->mSelectionLength = selectionLength;
-        setSelection->mSelectionReversed = false;
+        pendingSetSelection.emplace();
+        pendingSetSelection->mType = PendingAction::Type::SetSelection;
+        pendingSetSelection->mSelectionStart = selectionStart;
+        pendingSetSelection->mSelectionLength = selectionLength;
+        pendingSetSelection->mSelectionReversed = false;
       }
-      // Remove the redundant pending composition.
-      mPendingActions.RemoveElementsAt(i - 1, j);
-      MOZ_LOG(gIMELog, LogLevel::Info,
-              ("0x%p   TSFTextStore::RecordCompositionEndAction(), "
-               "succeeded, but the composition was canceled due to redundant",
-               this));
-      return S_OK;
     }
+    // Remove the redundant pending composition.
+    if (NS_WARN_IF(!mPendingActions.RemoveActionsFrom(i))) {
+      MOZ_LOG(gIMELog, LogLevel::Error,
+              ("0x%p   TSFTextStore::RecordCompositionEndAction() "
+               "FAILED due to trying to replace the unnecessary pending "
+               "actions during the pending actions locked",
+               this));
+      return E_FAIL;
+    }
+    if (pendingSetSelection) {
+      mPendingActions.AppendNewAction(pendingSetSelection.extract());
+    }
+    MOZ_LOG(gIMELog, LogLevel::Info,
+            ("0x%p   TSFTextStore::RecordCompositionEndAction(), "
+             "succeeded, but the composition was canceled due to redundant",
+             this));
+    return S_OK;
   }
 
   MOZ_LOG(
@@ -2887,8 +2947,12 @@ STDMETHODIMP TSFTextStore::OnUpdateComposition(ITfCompositionView* pComposition,
                this));
       return E_FAIL;
     }
-    PendingAction* action = LastOrNewPendingCompositionUpdate();
-    action->mIncomplete = true;
+    {  // Scope for AutoLockPendingActions
+      PendingAction* action =
+          mPendingActions.LastOrNewPendingCompositionUpdate();
+      AutoLockPendingActions lockPendingActions(mPendingActions);
+      action->mIncomplete = true;
+    }
     MOZ_LOG(gIMELog, LogLevel::Info,
             ("0x%p   TSFTextStore::OnUpdateComposition() succeeded but "
              "not complete",

@@ -12,11 +12,11 @@ namespace mozilla::gmp {
 
 class GMPParent;
 
-class GMPStorageParent : public PGMPStorageParent {
+class GMPStorageParent final : public PGMPStorageParent {
   friend class PGMPStorageParent;
 
  public:
-  NS_INLINE_DECL_REFCOUNTING(GMPStorageParent)
+  NS_INLINE_DECL_REFCOUNTING(GMPStorageParent, final)
   GMPStorageParent(const nsACString& aNodeId, GMPParent* aPlugin);
 
   nsresult Init();

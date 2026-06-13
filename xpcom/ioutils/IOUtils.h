@@ -94,7 +94,7 @@ class IOUtils final {
 
   static already_AddRefed<dom::Promise> WriteJSON(
       dom::GlobalObject& aGlobal, const nsAString& aPath,
-      JS::Handle<JS::Value> aValue, const dom::WriteOptions& aOptions,
+      JS::Handle<JS::Value> aValue, const dom::WriteJSONOptions& aOptions,
       ErrorResult& aError);
 
   static already_AddRefed<dom::Promise> Move(dom::GlobalObject& aGlobal,
@@ -736,9 +736,12 @@ struct IOUtils::InternalWriteOpts {
   dom::WriteMode mMode;
   bool mFlush = false;
   bool mCompress = false;
+  size_t mLengthHint = 0;
 
   static Result<InternalWriteOpts, IOUtils::IOError> FromBinding(
       const dom::WriteOptions& aOptions);
+  static Result<InternalWriteOpts, IOUtils::IOError> FromBinding(
+      const dom::WriteJSONOptions& aOptions);
 };
 
 /**

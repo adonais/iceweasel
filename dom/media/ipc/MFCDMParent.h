@@ -53,6 +53,7 @@ class MFCDMParent final : public PMFCDMParent {
     return sRegisteredCDMs.Get(aId);
   }
   uint64_t Id() const { return mId; }
+  const nsString& GetKeySystem() const { return mKeySystem; }
 
   mozilla::ipc::IPCResult RecvGetCapabilities(
       const MFCDMCapabilitiesRequest& aRequest,

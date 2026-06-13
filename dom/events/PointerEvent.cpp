@@ -439,7 +439,7 @@ void PointerEvent::GetCoalescedEvents(
   if (mCoalescedEvents.IsEmpty() && widgetEvent &&
       widgetEvent->mCoalescedWidgetEvents &&
       !widgetEvent->mCoalescedWidgetEvents->mEvents.IsEmpty()) {
-    nsCOMPtr<EventTarget> owner = do_QueryInterface(mOwner);
+    nsCOMPtr<EventTarget> owner = do_QueryInterface(mGlobal);
     for (WidgetPointerEvent& event :
          widgetEvent->mCoalescedWidgetEvents->mEvents) {
       RefPtr<PointerEvent> domEvent =

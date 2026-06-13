@@ -9,6 +9,7 @@ import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import androidx.annotation.VisibleForTesting
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import mozilla.components.concept.fetch.Client
@@ -204,13 +205,20 @@ class WallpapersUseCases(
         internal suspend fun loadWallpaperFromDisk(
             wallpaper: Wallpaper,
             orientation: Int,
-        ): Bitmap? = Result.runCatching {
+        ): Bitmap? = try {
             val path = wallpaper.getLocalPathFromContext(orientation)
             withContext(Dispatchers.IO) {
                 val file = File(getFilesDir(), path)
                 BitmapFactory.decodeStream(file.inputStream())
             }
-        }.getOrNull()
+        } catch (e: CancellationException) {
+            // CancellationException must not be swallowed: if the coroutine was canceled while loading,
+            // rethrowing ensures the cancellation propagates and callers won't treat a null result as a
+            // load failure.
+            throw e
+        } catch (_: Exception) {
+            null
+        }
 
         /**
          * Get the expected local path on disk for a wallpaper. This will differ depending

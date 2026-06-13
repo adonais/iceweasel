@@ -31,6 +31,12 @@ abstract class RedirectDialogFragment : BottomSheetDialogFragment() {
      */
     var onCancelRedirect: () -> Unit? = {}
 
+    /**
+     * A callback to trigger when the user dismisses the dialog without taking an explicit action,
+     * for example by tapping outside the dialog or pressing the back button.
+     */
+    var onDismissRedirect: () -> Unit = {}
+
     companion object {
         const val FRAGMENT_TAG = "SHOULD_OPEN_APP_LINK_PROMPT_DIALOG"
     }

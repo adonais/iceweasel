@@ -647,6 +647,9 @@ static void set_good_speed_features_lc_dec_framesize_dependent(
   const int boosted = frame_is_boosted(cpi);
   const int is_key_frame = frame_is_intra_only(cm);
 
+  // Need to study the decoder time impact.
+  sf->interp_sf.use_more_sharp_interp = 0;
+
   // Speed features for vertical videos
   if (is_vertical_video && is_between_608p_and_1080p) {
     const int leaf_and_overlay_frames =
@@ -690,6 +693,9 @@ static void set_good_speed_features_lc_dec_framesize_dependent(
 static void set_good_speed_features_lc_dec_framesize_independent(
     const AV1_COMP *const cpi, SPEED_FEATURES *const sf, int speed) {
   if (speed < 1 || speed > 3) return;
+
+  // Need to study the decoder time impact.
+  sf->interp_sf.use_more_sharp_interp = 0;
 
   const FRAME_UPDATE_TYPE update_type =
       get_frame_update_type(&cpi->ppi->gf_group, cpi->gf_frame_index);
@@ -1131,6 +1137,7 @@ static void set_good_speed_features_framesize_independent(
 
   sf->interp_sf.use_fast_interpolation_filter_search = 1;
   sf->interp_sf.disable_dual_filter = 1;
+  sf->interp_sf.use_more_sharp_interp = boosted ? 0 : 1;
 
   sf->intra_sf.intra_pruning_with_hog = 1;
 
@@ -1378,6 +1385,7 @@ static void set_good_speed_features_framesize_independent(
     sf->interp_sf.cb_pred_filter_search = 1;
     sf->interp_sf.skip_sharp_interp_filter_search = 1;
     sf->interp_sf.use_interp_filter = 2;
+    sf->interp_sf.use_more_sharp_interp = 0;
 
     sf->intra_sf.intra_uv_mode_mask[TX_16X16] = UV_INTRA_DC_H_V_CFL;
     sf->intra_sf.intra_uv_mode_mask[TX_32X32] = UV_INTRA_DC_H_V_CFL;
@@ -2407,6 +2415,7 @@ static inline void init_interp_sf(INTERP_FILTER_SPEED_FEATURES *interp_sf) {
   interp_sf->use_fast_interpolation_filter_search = 0;
   interp_sf->use_interp_filter = 0;
   interp_sf->skip_interp_filter_search = 0;
+  interp_sf->use_more_sharp_interp = 0;
 }
 
 static inline void init_intra_sf(INTRA_MODE_SPEED_FEATURES *intra_sf) {
@@ -2842,6 +2851,9 @@ static void set_good_speed_features_lc_dec_qindex_dependent(
   const bool is_between_608p_and_1080p = AOMMIN(cm->width, cm->height) >= 608 &&
                                          AOMMIN(cm->width, cm->height) <= 1080;
   const bool is_vertical_video = cm->width < cm->height;
+
+  // Need to study the decoder time impact.
+  sf->interp_sf.use_more_sharp_interp = 0;
 
   // Speed features for vertical videos
   if (is_vertical_video && is_between_608p_and_1080p) {

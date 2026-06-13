@@ -10,6 +10,7 @@
 #include "mozilla/Likely.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/PresShellInlines.h"
+#include "mozilla/ReflowInput.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/HTMLSelectElement.h"
 #include "nsContentUtils.h"
@@ -172,7 +173,7 @@ dom::HTMLSelectElement& nsComboboxControlFrame::Select() const {
 void nsComboboxControlFrame::GetOptionText(uint32_t aIndex,
                                            nsAString& aText) const {
   aText.Truncate();
-  if (Element* el = Select().Options()->GetElementAt(aIndex)) {
+  if (Element* el = Select().Options()->Item(aIndex)) {
     static_cast<dom::HTMLOptionElement*>(el)->GetRenderedLabel(aText);
   }
 }

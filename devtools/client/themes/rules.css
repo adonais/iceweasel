@@ -964,7 +964,7 @@
   white-space: break-spaces;
 }
 
-.ruleview-propertyvalue .inspector-attribute:not(.inspector-unmatched) {
+.ruleview-propertyvalue .inspector-attr-param:not(.inspector-unmatched) .inspector-attr-name {
   color: var(--theme-highlight-blue);
 }
 
@@ -977,4 +977,9 @@
     var(--rule-enableproperty-margin-inline-start) +
     var(--rule-enableproperty-margin-inline-end)
   );
+}
+
+[data-function-expression] .css-explainers-function-name {
+  text-decoration: 1px solid underline;
+  text-underline-offset: 2px;
 }

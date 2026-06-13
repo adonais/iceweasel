@@ -8,6 +8,7 @@
   @include widget-base-style;
 
   z-index: 1;
+  height: 100%;
 
   .weather-anchor {
     position: absolute;
@@ -241,16 +242,13 @@
     }
   }
 
-  // Size Specific Layout Rules
+  // Only applies to sidebar.
   &.small-widget {
     grid-column: span 2;
     grid-row: span 2;
   }
 
   &.medium-widget {
-    grid-column: span 4;
-    grid-row: span 2;
-
     .weather-container {
       align-items: center;
       justify-content: space-between;
@@ -302,9 +300,6 @@
   }
 
   &.large-widget {
-    grid-column: span 4;
-    grid-row: span 4;
-
     .weather-container {
       flex: 1;
       flex-direction: column;

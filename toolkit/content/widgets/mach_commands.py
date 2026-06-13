@@ -279,7 +279,17 @@ def addstory(command_context, name, project_name, path):
     category="misc",
     description="Build the design tokens CSS files",
 )
-def buildtokens(command_context):
+@CommandArgument(
+    "--nova",
+    action="store_true",
+    help="Also fetch (unless --no-fetch) and build Nova design tokens overrides from Figma",
+)
+@CommandArgument(
+    "--no-fetch",
+    action="store_true",
+    help="Don't download the new tokens, just update the .nova.tokens.json files",
+)
+def buildtokens(command_context, nova, no_fetch):
     if run_mach(
         command_context,
         "npm",
@@ -290,8 +300,31 @@ def buildtokens(command_context):
             "npm",
             args=["ci", "--prefix=toolkit/themes/shared/design-system"],
         )
+    if nova:
+        if not no_fetch:
+            run_mach(
+                command_context,
+                "npm",
+                args=[
+                    "run",
+                    "fetch-figma-nova",
+                    "--prefix=toolkit/themes/shared/design-system",
+                ],
+            )
+        run_mach(
+            command_context,
+            "npm",
+            args=[
+                "run",
+                "build-figma-nova",
+                "--prefix=toolkit/themes/shared/design-system",
+            ],
+        )
     run_mach(
         command_context,
         "npm",
         args=["run", "build", "--prefix=toolkit/themes/shared/design-system"],
     )
+    if nova:
+        run_mach(command_context, "newtab", subcommand="install")
+        run_mach(command_context, "newtab", subcommand="bundle")

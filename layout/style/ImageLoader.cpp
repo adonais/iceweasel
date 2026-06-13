@@ -77,7 +77,7 @@ static StaticRefPtr<GlobalImageObserver> sImageObserver;
 /* static */
 void ImageLoader::Init() {
   sImages = new GlobalRequestTable();
-  sImageObserver = new GlobalImageObserver();
+  sImageObserver = MakeRefPtr<GlobalImageObserver>();
 }
 
 /* static */

@@ -88,7 +88,7 @@ class nsChromeRegistry : public nsIToolkitChromeRegistry,
                               mozilla::FileLocation& aFile)
         : mType(aType), mFile(aFile) {}
 
-    ~ManifestProcessingContext() {}
+    ~ManifestProcessingContext() = default;
 
     nsIURI* GetManifestURI();
     already_AddRefed<nsIURI> ResolveURI(const char* uri);

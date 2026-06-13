@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef SDPATTRIBUTELIST_H_
-#define SDPATTRIBUTELIST_H_
+#ifndef DOM_MEDIA_WEBRTC_SDP_SDPATTRIBUTELIST_H_
+#define DOM_MEDIA_WEBRTC_SDP_SDPATTRIBUTELIST_H_
 
 #include "sdp/SdpAttribute.h"
 
@@ -15,20 +15,21 @@ class SdpAttributeList {
   typedef SdpAttribute::AttributeType AttributeType;
 
   // Avoid default params on virtual functions
-  bool HasAttribute(AttributeType type) const {
+  bool HasAttribute(const AttributeType type) const {
     return HasAttribute(type, true);
   }
 
-  const SdpAttribute* GetAttribute(AttributeType type) const {
+  const SdpAttribute* GetAttribute(const AttributeType type) const {
     return GetAttribute(type, true);
   }
 
-  virtual bool HasAttribute(AttributeType type, bool sessionFallback) const = 0;
-  virtual const SdpAttribute* GetAttribute(AttributeType type,
-                                           bool sessionFallback) const = 0;
+  virtual bool HasAttribute(const AttributeType type,
+                            const bool sessionFallback) const = 0;
+  virtual const SdpAttribute* GetAttribute(
+      const AttributeType type, const bool sessionFallback) const = 0;
   // The setter takes an attribute of any type, and takes ownership
   virtual void SetAttribute(SdpAttribute* attr) = 0;
-  virtual void RemoveAttribute(AttributeType type) = 0;
+  virtual void RemoveAttribute(const AttributeType type) = 0;
   virtual void Clear() = 0;
   virtual uint32_t Count() const = 0;
 

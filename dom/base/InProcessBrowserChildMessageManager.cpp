@@ -249,7 +249,7 @@ void InProcessBrowserChildMessageManager::LoadFrameScript(
     const nsAString& aURL, bool aRunInGlobalScope) {
   if (!nsContentUtils::IsSafeToRunScript()) {
     nsContentUtils::AddScriptRunner(
-        new nsAsyncScriptLoad(this, aURL, aRunInGlobalScope));
+        MakeAndAddRef<nsAsyncScriptLoad>(this, aURL, aRunInGlobalScope));
     return;
   }
   bool tmp = mLoadingScript;

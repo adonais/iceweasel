@@ -80,6 +80,16 @@ interface nsIEnterprisePolicies : nsISupports
   boolean mayInstallAddon(in jsval addon);
 
   /**
+   * Checks whether an enterprise policy requires the given addon to be
+   * present (force_installed, normal_installed, or the legacy Extensions.Locked
+   * list). This reflects policy intent and does not consult the addon
+   * database.
+   *
+   * @returns A boolean - true if the addon is required by policy.
+   */
+  boolean isAddonRequiredByPolicy(in ACString addonID);
+
+  /**
    * Uses install_sources to determine if an addon can be installed
    * from the given URI.
    *

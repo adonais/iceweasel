@@ -80,7 +80,12 @@ export default class IPProtectionStatusBox extends MozLitElement {
       <div id="content-container" class=${this.type}>
         <div id="header">
           <div>
-            <h1 id="title" data-l10n-id=${this.headerL10nId} tabindex="-1"></h1>
+            <h1
+              id="title"
+              data-l10n-id=${this.headerL10nId}
+              data-l10n-attrs="aria-label"
+              tabindex="-1"
+            ></h1>
             <slot name="bandwidth"></slot>
             <div id="content">
               ${this.descriptionL10nId

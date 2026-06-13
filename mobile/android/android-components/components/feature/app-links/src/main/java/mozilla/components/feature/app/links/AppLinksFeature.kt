@@ -191,6 +191,25 @@ class AppLinksFeature(
     }
 
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    internal fun dismissRedirect(
+        sessionState: SessionState,
+        url: String,
+        fallbackUrl: String?,
+    ) {
+        val urlToLoad = when {
+            isSchemeSupported(url) -> url
+            fallbackUrl != null && isSchemeSupported(fallbackUrl) -> fallbackUrl
+            else -> return // No supported URL to load.
+        }
+
+        loadUrlUseCase?.invoke(
+            url = urlToLoad,
+            sessionId = sessionState.id,
+            flags = EngineSession.LoadUrlFlags.select(EXTERNAL, LOAD_FLAGS_BYPASS_LOAD_URI_DELEGATE),
+        )
+    }
+
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     internal fun cancelRedirect(
         sessionState: SessionState,
         url: String,
@@ -238,6 +257,9 @@ class AppLinksFeature(
             }
             onCancelRedirect = {
                 cancelRedirect(sessionState, url, fallbackUrl, appIntent)
+            }
+            onDismissRedirect = {
+                dismissRedirect(sessionState, url, fallbackUrl)
             }
         }.showNow(fragmentManager, FRAGMENT_TAG)
     }

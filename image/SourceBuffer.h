@@ -42,7 +42,7 @@ struct IResumable {
   virtual void Resume() = 0;
 
  protected:
-  virtual ~IResumable() {}
+  virtual ~IResumable() = default;
 };
 
 /**
@@ -98,6 +98,9 @@ class SourceBufferIterator final {
 
   SourceBufferIterator& operator=(SourceBufferIterator&& aOther);
 
+  SourceBufferIterator(const SourceBufferIterator&) = delete;
+  SourceBufferIterator& operator=(const SourceBufferIterator&) = delete;
+
   /**
    * Returns true if there are no more than @aBytes remaining in the
    * SourceBuffer. If the SourceBuffer is not yet complete, returns false.
@@ -143,6 +146,18 @@ class SourceBufferIterator final {
    *           data).
    */
   State AdvanceOrScheduleResume(size_t aRequestedBytes, IResumable* aConsumer);
+
+  /**
+   * Records that only @aConsumed bytes of the current chunk have been
+   * processed. The iterator position advances by @aConsumed and
+   * mNextReadLength is set to the remaining bytes, so that Data()/Length()
+   * immediately reflect the unconsumed portion and IsReady() remains true.
+   * Once all remaining bytes are consumed and mNextReadLength reaches zero,
+   * the next AdvanceOrScheduleResume() will fetch the next chunk.
+   */
+  void MarkConsumed(size_t aConsumed);
+
+  bool IsReady() const { return mState == READY; }
 
   /// If at the end, returns the status passed to SourceBuffer::Complete().
   nsresult CompletionStatus() const {
@@ -190,9 +205,6 @@ class SourceBufferIterator final {
 
  private:
   friend class SourceBuffer;
-
-  SourceBufferIterator(const SourceBufferIterator&) = delete;
-  SourceBufferIterator& operator=(const SourceBufferIterator&) = delete;
 
   bool HasMore() const { return mState != COMPLETE; }
 
@@ -448,10 +460,10 @@ class SourceBuffer final {
       return true;
     }
 
-   private:
     Chunk(const Chunk&) = delete;
     Chunk& operator=(const Chunk&) = delete;
 
+   private:
     size_t mCapacity;
     size_t mLength;
     char* mData;

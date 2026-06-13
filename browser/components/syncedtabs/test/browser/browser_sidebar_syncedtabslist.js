@@ -557,7 +557,7 @@ async function testContextMenu(
     "popupshown"
   );
 
-  let chromeWindow = triggerElement.ownerGlobal.top;
+  let chromeWindow = triggerElement.documentGlobal.top;
   let rect = triggerElement.getBoundingClientRect();
   let contentRect =
     chromeWindow.SidebarController.browser.getBoundingClientRect();

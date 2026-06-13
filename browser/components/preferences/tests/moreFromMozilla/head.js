@@ -19,26 +19,36 @@ async function getPromoCards() {
     leaveOpen: true,
   });
 
-  let doc = gBrowser.contentDocument;
-  let vpnPromoCard = doc.getElementById("mozilla-vpn");
-  let monitorPromoCard = doc.getElementById("mozilla-monitor");
-  let mobileCard = doc.getElementById("firefox-mobile");
-  let relayPromoCard = doc.getElementById("firefox-relay");
+  let win = gBrowser.contentWindow;
+  let doc = win.document;
+
+  if (Services.prefs.getBoolPref("browser.settings-redesign.enabled", false)) {
+    let gridControl = await settingControlRenders(
+      "moreFromMozillaProductGrid",
+      win
+    );
+    let promoControl = await settingControlRenders("firefoxMobilePromo", win);
+
+    return {
+      grid: gridControl?.querySelector(".products-grid"),
+      mobilePromo: promoControl?.querySelector("moz-promo"),
+      vpnPromoCard: doc.getElementById("mozilla-vpn"),
+      monitorPromoCard: doc.getElementById("mozilla-monitor"),
+      relayPromoCard: doc.getElementById("firefox-relay"),
+      thunderbirdCard: doc.getElementById("thunderbird"),
+      newProductsCard: doc.getElementById("mozilla-new-products"),
+      mdnCard: doc.getElementById("mdn"),
+      soloCard: doc.getElementById("solo-ai"),
+    };
+  }
 
   return {
-    vpnPromoCard,
-    monitorPromoCard,
-    mobileCard,
-    relayPromoCard,
+    vpnPromoCard: doc.getElementById("mozilla-vpn"),
+    monitorPromoCard: doc.getElementById("mozilla-monitor"),
+    relayPromoCard: doc.getElementById("firefox-relay"),
+    mobilePromo: doc.getElementById("firefox-mobile"),
   };
 }
-
-// Home Settings test helpers
-/**
- * Opens the Home preferences page and waits for it to fully render.
- *
- * @returns {Promise<object>} Object containing the window, document, and tab references.
- */
 
 async function mockDefaultFxAInstance() {
   /**

@@ -7,7 +7,7 @@
 
 #include "js/RootingAPI.h"
 #include "mozilla/AlreadyAddRefed.h"
-#include "nsContentList.h"
+#include "mozilla/dom/ContentList.h"
 
 class JSObject;
 class nsINode;
@@ -19,9 +19,9 @@ class ErrorResult;
 namespace dom {
 class GlobalObject;
 
-class ChromeNodeList final : public nsSimpleContentList {
+class ChromeNodeList final : public SimpleContentList {
  public:
-  explicit ChromeNodeList(nsINode* aOwner) : nsSimpleContentList(aOwner) {}
+  explicit ChromeNodeList(nsINode* aOwner) : SimpleContentList(aOwner) {}
 
   static already_AddRefed<ChromeNodeList> Constructor(
       const GlobalObject& aGlobal);

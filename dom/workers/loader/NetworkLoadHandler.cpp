@@ -361,6 +361,12 @@ nsresult NetworkLoadHandler::PrepareForRequest(nsIRequest* aRequest) {
             || (StaticPrefs::
                     javascript_options_experimental_wasm_esm_integration() &&
                 nsContentUtils::HasWasmMimeTypeEssence(mimeTypeUTF16))
+            // Allow non-toplevel text modules
+            || (JS::Prefs::experimental_import_text() &&
+                !loadContext->IsTopLevel() &&
+                loadContext->mRequest->IsModuleRequest() &&
+                loadContext->mRequest->AsModuleRequest()->mModuleType ==
+                    JS::ModuleType::Text)
 #endif
                 )) {
         const nsCString& scope = mWorkerRef->Private()

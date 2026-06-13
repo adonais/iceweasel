@@ -1,3 +1,4 @@
+/* -*- Mode: c; tab-width: 8; c-basic-offset: 4; indent-tabs-mode: t; -*- */
 /* cairo - a vector graphics library with display and print output
  *
  * Copyright © 2009 Chris Wilson
@@ -82,8 +83,7 @@ _freed_pool_reset (freed_pool_t *pool)
     int i;
 
     for (i = 0; i < ARRAY_LENGTH (pool->pool); i++) {
-	free (pool->pool[i]);
-	pool->pool[i] = NULL;
+	free (_atomic_fetch (&pool->pool[i]));
     }
 
     _cairo_atomic_int_set_relaxed (&pool->top, 0);

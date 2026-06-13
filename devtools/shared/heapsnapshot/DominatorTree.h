@@ -19,7 +19,7 @@ class DominatorTree final : public nsISupports, public nsWrapperCache {
  protected:
   nsCOMPtr<nsISupports> mParent;
 
-  virtual ~DominatorTree() {}
+  virtual ~DominatorTree() = default;
 
  private:
   JS::ubi::DominatorTree mDominatorTree;

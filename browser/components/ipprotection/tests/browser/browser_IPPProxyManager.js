@@ -10,8 +10,7 @@ const { IPProtectionServerlist } = ChromeUtils.importESModule(
 
 add_task(async function test_IPPProxyManager_handleProxyErrorEvent() {
   setupService({
-    isSignedIn: true,
-    isEnrolledAndEntitled: true,
+    isReady: true,
   });
 
   IPProtectionService.updateState();
@@ -140,8 +139,7 @@ add_task(async function test_IPPProxyManager_bug_1999946() {
   STUBS.fetchProxyPass.rejects(new Error("Simulate a Fail"));
 
   setupService({
-    isSignedIn: true,
-    isEnrolledAndEntitled: true,
+    isReady: true,
   });
 
   await SpecialPowers.pushPrefEnv({
@@ -173,8 +171,7 @@ add_task(async function test_IPPProxyManager_paused_shown() {
 
   const usage = makeUsage("5368709120", "0", "2027-01-01T00:00:00.000Z");
   setupService({
-    isSignedIn: true,
-    isEnrolledAndEntitled: true,
+    isReady: true,
     usageInfo: usage,
   });
   IPProtectionService.updateState();
@@ -213,8 +210,7 @@ add_task(async function test_IPPProxyManager_unpause_on_available() {
   const sandbox = sinon.createSandbox();
   IPPProxyManager.reset();
   setupService({
-    isSignedIn: true,
-    isEnrolledAndEntitled: true,
+    isReady: true,
   });
 
   IPProtectionService.updateState();
@@ -285,8 +281,7 @@ add_task(async function test_IPPProxyManager_update_usage_on_stop() {
   const sandbox = sinon.createSandbox();
   IPPProxyManager.reset();
   setupService({
-    isSignedIn: true,
-    isEnrolledAndEntitled: true,
+    isReady: true,
   });
 
   IPProtectionService.updateState();
@@ -374,8 +369,7 @@ add_task(async function test_IPPProxyManager_active_shown() {
 
   const usage = makeUsage();
   setupService({
-    isSignedIn: true,
-    isEnrolledAndEntitled: true,
+    isReady: true,
     usageInfo: usage,
   });
   IPProtectionService.updateState();
@@ -425,8 +419,7 @@ add_task(async function test_IPPProxyManager_paused_on_activation() {
   IPPProxyManager.reset();
 
   setupService({
-    isSignedIn: true,
-    isEnrolledAndEntitled: true,
+    isReady: true,
   });
   IPProtectionService.updateState();
 
@@ -471,8 +464,7 @@ add_task(async function test_IPPProxyManager_rotateProxyPass_when_paused() {
   IPPProxyManager.reset();
 
   setupService({
-    isSignedIn: true,
-    isEnrolledAndEntitled: true,
+    isReady: true,
   });
   IPProtectionService.updateState();
 

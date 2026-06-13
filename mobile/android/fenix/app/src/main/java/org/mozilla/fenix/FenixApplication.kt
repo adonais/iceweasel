@@ -236,6 +236,11 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
         // Note: The A-C / Fenix crash service processes are responsible for their own setup and
         //       should minimize their dependencies to avoid also crashing.
         runOnlyInMainProcess {
+            // Start loading the SharedPreferences file from disk on a background thread immediately.
+            applicationScope.launch(IO) {
+                applicationContext.getSharedPreferences(Settings.FENIX_PREFERENCES, MODE_PRIVATE)
+            }
+
             // Initialization is split into two phases based on if libmegazord is fully initialized.
             setupEarlyMain()
             setupPostMegazord()
@@ -375,6 +380,8 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
         }
 
         setupPush()
+
+        maybeSetupIPProtection()
 
         GlobalFxSuggestDependencyProvider.initialize(components.fxSuggest.storage)
 
@@ -529,13 +536,12 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
     }
 
     @OptIn(DelicateCoroutinesApi::class)
-    private fun queueEngineWarmup(queue: RunWhenReadyQueue) = {
+    private fun queueEngineWarmup(queue: RunWhenReadyQueue) =
         runOnVisualCompleteness(queue) {
             GlobalScope.launch(Dispatchers.Main) {
                 components.core.engine.warmUp()
             }
         }
-    }
 
     @OptIn(DelicateCoroutinesApi::class) // GlobalScope usage
     private fun queueIncrementNumberOfAppLaunches(queue: RunWhenReadyQueue) =
@@ -566,7 +572,7 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
     private fun queueIntegrityClientWarmUp(queue: RunWhenReadyQueue) {
         // We want to avoid shipping this warmup into UI test builds to reduce quota impact, especially given
         // that the Integrity verdicts will always fail anyway.
-        if (!BuildConfig.MOZILLA_OFFICIAL) {
+        if (!BuildConfig.TELEMETRY) {
             return
         }
         runOnVisualCompleteness(queue) {
@@ -654,6 +660,11 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
             // Initialize the service. This could potentially be done in a coroutine in the future.
             it.initialize()
         }
+    }
+
+    private fun maybeSetupIPProtection() {
+        components.ipProtection.feature.initialize()
+//        components.ipProtection.storageSynchronizer.onResume(ProcessLifecycleOwner.get())
     }
 
     private fun setupCrashReporting(): CrashReporter {
@@ -1132,10 +1143,8 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
                 },
             )
 
-            if (settings.shouldShowToolbarCustomization) {
-                toolbarSimpleShortcut.set(settings.toolbarSimpleShortcut)
-                toolbarExpandedShortcut.set(settings.toolbarExpandedShortcut)
-            }
+            toolbarSimpleShortcut.set(settings.toolbarSimpleShortcutKey)
+            toolbarExpandedShortcut.set(settings.toolbarExpandedShortcutKey)
 
             enhancedTrackingProtection.set(
                 when {

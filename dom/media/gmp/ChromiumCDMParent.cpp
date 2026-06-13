@@ -126,8 +126,8 @@ RefPtr<ChromiumCDMParent::InitPromise> ChromiumCDMParent::Init(
 }
 
 void ChromiumCDMParent::CreateSession(uint32_t aCreateSessionToken,
-                                      uint32_t aSessionType,
-                                      uint32_t aInitDataType,
+                                      cdm::SessionType aSessionType,
+                                      cdm::InitDataType aInitDataType,
                                       uint32_t aPromiseId,
                                       const nsTArray<uint8_t>& aInitData) {
   MOZ_ASSERT(mGMPThread->IsOnCurrentThread());
@@ -145,12 +145,13 @@ void ChromiumCDMParent::CreateSession(uint32_t aCreateSessionToken,
   mPromiseToCreateSessionToken.InsertOrUpdate(aPromiseId, aCreateSessionToken);
 }
 
-void ChromiumCDMParent::LoadSession(uint32_t aPromiseId, uint32_t aSessionType,
+void ChromiumCDMParent::LoadSession(uint32_t aPromiseId,
+                                    cdm::SessionType aSessionType,
                                     nsString aSessionId) {
   MOZ_ASSERT(mGMPThread->IsOnCurrentThread());
   GMP_LOG_DEBUG("ChromiumCDMParent::LoadSession(this=%p, pid=%" PRIu32
                 ", type=%" PRIu32 ", sid=%s)",
-                this, aPromiseId, aSessionType,
+                this, aPromiseId, static_cast<uint32_t>(aSessionType),
                 NS_ConvertUTF16toUTF8(aSessionId).get());
   if (mIsShutdown) {
     RejectPromiseShutdown(aPromiseId);

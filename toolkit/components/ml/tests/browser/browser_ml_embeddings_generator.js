@@ -226,3 +226,67 @@ add_task(async function test_onnx() {
     "Check other backend"
   );
 });
+
+add_task(
+  async function test_ensureEngine_all_concurrent_callers_reject_on_failure() {
+    const embeddingsGenerator = new EmbeddingsGenerator();
+
+    sinon
+      .stub(embeddingsGenerator, "createEngineIfNotPresent")
+      .callsFake(async () => {
+        throw new Error("Engine init failed");
+      });
+
+    const p1 = embeddingsGenerator.ensureEngine();
+    const p2 = embeddingsGenerator.ensureEngine();
+    const p3 = embeddingsGenerator.ensureEngine();
+
+    const [r1, r2, r3] = await Promise.allSettled([p1, p2, p3]);
+
+    for (const result of [r1, r2, r3]) {
+      Assert.equal(
+        result.status,
+        "rejected",
+        "All callers should reject on failure"
+      );
+      Assert.ok(
+        result.reason.message.includes("Engine init failed"),
+        "All callers should receive the original error"
+      );
+    }
+
+    sinon.restore();
+  }
+);
+
+add_task(async function test_ensureEngine_allows_retry_after_failure() {
+  const embeddingsGenerator = new EmbeddingsGenerator();
+
+  let callCount = 0;
+  sinon
+    .stub(embeddingsGenerator, "createEngineIfNotPresent")
+    .callsFake(async () => {
+      callCount++;
+      if (callCount === 1) {
+        throw new Error("Engine init failed");
+      }
+    });
+
+  let threw = false;
+  try {
+    await embeddingsGenerator.ensureEngine();
+  } catch (e) {
+    threw = true;
+  }
+  Assert.ok(threw, "First call should reject on failure");
+  Assert.equal(callCount, 1, "createEngineIfNotPresent was called once");
+
+  await embeddingsGenerator.ensureEngine();
+  Assert.equal(
+    callCount,
+    2,
+    "createEngineIfNotPresent should be retried after failure"
+  );
+
+  sinon.restore();
+});

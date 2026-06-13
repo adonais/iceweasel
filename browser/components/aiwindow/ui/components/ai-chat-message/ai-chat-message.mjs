@@ -2,16 +2,16 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/* global Sanitizer */
+
 import { html } from "chrome://global/content/vendor/lit.all.mjs";
 import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
 import {
-  defaultMarkdownParser,
-  DOMSerializer,
-} from "chrome://browser/content/multilineeditor/prosemirror.bundle.mjs";
+  parseMarkdown,
+  CHAT_WRAPPER_ELEMENTS,
+} from "chrome://browser/content/aiwindow/modules/ChatMarkdownParser.mjs";
 // eslint-disable-next-line import/no-unassigned-import
-import "chrome://browser/content/aiwindow/components/ai-chat-search-button.mjs";
-
-const SERIALIZER = DOMSerializer.fromSchema(defaultMarkdownParser.schema);
+import "chrome://browser/content/aiwindow/components/ai-chat-table.mjs";
 
 /**
  * A custom element for rendering a single chat message, either a user message or an
@@ -41,7 +41,6 @@ export class AIChatMessage extends MozLitElement {
     role: { type: String }, // "user" | "assistant"
     message: { type: String },
     messageId: { type: String, reflect: true, attribute: "data-message-id" },
-    searchTokens: { type: Array },
     complete: { type: Boolean },
     seenUrls: { type: Object, attribute: false },
     conversationId: { type: String },
@@ -49,7 +48,6 @@ export class AIChatMessage extends MozLitElement {
 
   constructor() {
     super();
-    this.searchTokens = [];
 
     /**
      * The URLs seen in the conversation, used for link unfurling.
@@ -68,10 +66,6 @@ export class AIChatMessage extends MozLitElement {
 
   connectedCallback() {
     super.connectedCallback();
-    this.addEventListener(
-      "AIWindow:chat-search",
-      this.handleSearchHandoffEvent.bind(this)
-    );
     this.#initLinkNavigationListener();
   }
 
@@ -122,20 +116,6 @@ export class AIChatMessage extends MozLitElement {
       // urls can be completely different.
       this.#unfurledUrlsNeedUpdating = true;
     }
-  }
-
-  /**
-   * Handle search handoff events
-   *
-   * @param {CustomEvent} event - The custom event containing the search query.
-   */
-  handleSearchHandoffEvent(event) {
-    const e = new CustomEvent("AIChatContent:DispatchSearch", {
-      detail: event.detail,
-      bubbles: true,
-      composed: true,
-    });
-    this.dispatchEvent(e);
   }
 
   updated(changed) {
@@ -313,21 +293,28 @@ export class AIChatMessage extends MozLitElement {
   }
 
   /**
-   * Parse markdown content to HTML using ProseMirror
+   * Custom sanitizer for chat messages.
+   *
+   * @type {Sanitizer}
+   */
+  static #chatMessageSanitizer;
+  static {
+    this.#chatMessageSanitizer = new Sanitizer();
+    for (const element of Object.values(CHAT_WRAPPER_ELEMENTS)) {
+      this.#chatMessageSanitizer.allowElement(element);
+    }
+  }
+
+  /**
+   * Parse markdown content to HTML.
    *
    * @param {string} markdown the Markdown to parse
    * @param {Element} element the element in which to insert the parsed markdown.
    */
-  parseMarkdown(markdown, element) {
-    const node = defaultMarkdownParser.parse(markdown);
-    const fragment = SERIALIZER.serializeFragment(node.content);
-
-    // Convert DocumentFragment to HTML string
-    const container = this.ownerDocument.createElement("div");
-    container.appendChild(fragment);
-
-    // Sanitize the HTML string by using "setHTML"
-    element.setHTML(container.innerHTML);
+  #parseMarkdown(markdown, element) {
+    element.setHTML(parseMarkdown(markdown), {
+      sanitizer: AIChatMessage.#chatMessageSanitizer,
+    });
   }
 
   /**
@@ -337,7 +324,7 @@ export class AIChatMessage extends MozLitElement {
    * @param {Element} element
    */
   parseUserMarkdown(markdown, element) {
-    this.parseMarkdown(markdown, element);
+    this.#parseMarkdown(markdown, element);
     this.#replaceWebsiteMentions(element);
   }
 
@@ -364,7 +351,7 @@ export class AIChatMessage extends MozLitElement {
     }
 
     // Parse the message into markdown, and unfurl any unseen links.
-    this.parseMarkdown(this.message, messageElement);
+    this.#parseMarkdown(this.message, messageElement);
     this.#unfurlUnseenLinks(messageElement);
 
     // Track the properties for memoization.
@@ -406,15 +393,6 @@ export class AIChatMessage extends MozLitElement {
         ${this.role === "user"
           ? this.getUserMessage()
           : this.getAssistantMessage()}
-        ${this.role === "assistant"
-          ? html`${this.searchTokens.map(
-              token =>
-                html`<ai-chat-search-button
-                  .query=${token}
-                  .label=${token}
-                ></ai-chat-search-button>`
-            )}`
-          : null}
       </article>
     `;
   }

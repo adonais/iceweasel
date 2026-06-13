@@ -45,7 +45,8 @@ add_task(async function test_backgroundtask_profile_is_slim() {
   profD.append("test_profile_is_slim");
   let profile = profileService.createUniqueProfile(
     profD,
-    "test_profile_is_slim"
+    "test_profile_is_slim",
+    "tests"
   );
 
   registerCleanupFunction(() => {

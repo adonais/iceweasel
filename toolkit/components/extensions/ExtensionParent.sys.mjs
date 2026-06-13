@@ -761,7 +761,7 @@ class ExtensionPageContextParent extends ProxyContextParent {
 
   // The window that contains this context. This may change due to moving tabs.
   get appWindow() {
-    let win = this.xulBrowser.ownerGlobal;
+    let win = this.xulBrowser.documentGlobal;
     return win.browsingContext.topChromeWindow;
   }
 

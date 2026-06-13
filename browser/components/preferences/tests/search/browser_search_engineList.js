@@ -91,7 +91,7 @@ async function selectEngine(tree, index) {
     x,
     y,
     { clickCount: 1 },
-    tree.ownerGlobal
+    tree.documentGlobal
   );
   return promise;
 }
@@ -120,7 +120,13 @@ add_setup(async function () {
     await SearchService.findContextualSearchEngineByHost("moz.test");
 
   await SearchService.addSearchEngine(userInstalledAppEngine);
-  // The added engines are removed in the last test.
+
+  registerCleanupFunction(async () => {
+    let leftover = SearchService.getEngineByName("User Engine");
+    if (leftover) {
+      await SearchService.removeEngine(leftover);
+    }
+  });
 });
 
 async function test_engine_list(engineList) {
@@ -254,7 +260,7 @@ async function test_change_keyword_legacy(tree) {
   // has user-defined and extension-provided keywords.
   let x = rect.x + rect.width / 2;
   let y = rect.y + rect.height / 2;
-  let win = tree.ownerGlobal;
+  let win = tree.documentGlobal;
 
   let promise = BrowserTestUtils.waitForEvent(tree, "dblclick");
   EventUtils.synthesizeMouse(tree.body, x, y, { clickCount: 1 }, win);
@@ -322,7 +328,7 @@ engine_list_test(async function test_rename_engines(tree) {
   );
   let x = rect.x + rect.width / 2;
   let y = rect.y + rect.height / 2;
-  let win = tree.ownerGlobal;
+  let win = tree.documentGlobal;
 
   let promise = BrowserTestUtils.waitForEvent(tree, "dblclick");
   EventUtils.synthesizeMouse(tree.body, x, y, { clickCount: 1 }, win);
@@ -381,14 +387,8 @@ engine_list_test(async function test_remove_button_disabled_state(tree, doc) {
   }
 });
 
-engine_list_test(async function test_remove_button(tree, doc) {
-  if (SRD_PREF_VALUE) {
-    Assert.ok(true, "New settings redesign UI is enabled.");
-    // Bail early, as this test doesn't apply to the redesigned settings.
-    return;
-  }
-
-  let win = tree.ownerGlobal;
+async function test_remove_button_legacy(tree, doc) {
+  let win = tree.documentGlobal;
   let alertSpy = sinon.stub(win, "alert");
 
   info("Removing user engine.");
@@ -460,6 +460,20 @@ engine_list_test(async function test_remove_button(tree, doc) {
   );
   await selectEngine(tree, lastAppEngineIndex);
 
+  let defaultEngineDropdown = doc.getElementById("defaultEngineNormal");
+  let includesLastAppEngine = () =>
+    defaultEngineDropdown.options.some(opt => opt.value == lastAppEngine.id);
+  // Validate that the engine is included in the dropdown before we remove it.
+  Assert.ok(
+    includesLastAppEngine(),
+    "Last app-provided engine is included in the default engine dropdown."
+  );
+
+  let dropdownChanged = BrowserTestUtils.waitForMutationCondition(
+    defaultEngineDropdown,
+    { childList: true, subtree: true, attributes: true },
+    () => !includesLastAppEngine()
+  );
   doc.querySelector("#removeEngineButton").click();
   removedEngine = await SearchTestUtils.promiseSearchNotification(
     SearchUtils.MODIFIED_TYPE.REMOVED,
@@ -469,6 +483,13 @@ engine_list_test(async function test_remove_button(tree, doc) {
     removedEngine.id,
     lastAppEngine.id,
     "Last app provided engine was removed without a prompt."
+  );
+  await dropdownChanged;
+  // Last app-provided engine should be removed from the default engine
+  // dropdown. (See bug 2007059)
+  Assert.ok(
+    !includesLastAppEngine(),
+    "Last app-provided engine is not displayed in the default engine dropdown."
   );
 
   // Cleanup.
@@ -481,4 +502,62 @@ engine_list_test(async function test_remove_button(tree, doc) {
   await updatedPromise;
   // The user engine is purposefully not re-added.
   // The extension engine is removed automatically on cleanup.
-});
+}
+
+async function test_toggle_engine_off(engineList, doc) {
+  let appProvidedEngines = await SearchService.getAppProvidedEngines();
+  let defaultEngineId = SearchService.defaultEngine.id;
+  let defaultPrivateEngineId = SearchService.defaultPrivateEngine?.id;
+  let engineToHide = appProvidedEngines.find(
+    e => e.id != defaultEngineId && e.id != defaultPrivateEngineId
+  );
+  let defaultEngineDropdown = doc.getElementById("defaultEngineNormal");
+  let includesHiddenEngine = () =>
+    defaultEngineDropdown.options.some(opt => opt.value == engineToHide.id);
+
+  Assert.ok(
+    engineToHide,
+    "Found a non-default app-provided engine to hide via toggle."
+  );
+  // Validate that the engine is included in the dropdown before we toggle it off.
+  Assert.ok(
+    includesHiddenEngine(),
+    "Non-default app-provided engine is included in the default engine dropdown."
+  );
+
+  info(`Hiding app-provided engine "${engineToHide.name}".`);
+  let toggle = doc.getElementById(`toggleEngine-${engineToHide.id}`);
+  Assert.ok(toggle.pressed, "Toggle is initially pressed (engine visible).");
+
+  let dropdownChanged = BrowserTestUtils.waitForMutationCondition(
+    defaultEngineDropdown,
+    { childList: true, subtree: true, attributes: true },
+    () => !includesHiddenEngine()
+  );
+  let changedPromise = SearchTestUtils.promiseSearchNotification(
+    SearchUtils.MODIFIED_TYPE.CHANGED,
+    SearchUtils.TOPIC_ENGINE_MODIFIED
+  );
+  toggle.click();
+  await changedPromise;
+  Assert.ok(engineToHide.hidden, "Engine should be hidden after toggling off.");
+  await dropdownChanged;
+  // Hidden engines (i.e. app-provided engines not displayed in the UI) should
+  // be removed from the default engine dropdown. (See bug 2007059)
+  Assert.ok(
+    !includesHiddenEngine(),
+    "Hidden engine is not displayed in the default engine dropdown."
+  );
+
+  // Cleanup.
+  let restoredPromise = SearchTestUtils.promiseSearchNotification(
+    SearchUtils.MODIFIED_TYPE.CHANGED,
+    SearchUtils.TOPIC_ENGINE_MODIFIED
+  );
+  engineToHide.hidden = false;
+  await restoredPromise;
+}
+
+engine_list_test(
+  SRD_PREF_VALUE ? test_toggle_engine_off : test_remove_button_legacy
+);

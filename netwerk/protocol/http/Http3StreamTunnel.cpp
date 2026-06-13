@@ -133,8 +133,8 @@ Http3TransportLayer::InputStreamTunnel::AsyncWait(
        "callback=%p]\n",
        this, callback));
   // The following parameters are not used:
-  MOZ_ASSERT(!flags);
-  MOZ_ASSERT(!amount);
+  (void)flags;
+  (void)amount;
   (void)target;
 
   RefPtr<InputStreamTunnel> self(this);
@@ -278,8 +278,8 @@ Http3TransportLayer::OutputStreamTunnel::AsyncWait(
   LOG(("OutputStreamTunnel::AsyncWait [this=%p]\n", this));
 
   // The following parameters are not used:
-  MOZ_ASSERT(!flags);
-  MOZ_ASSERT(!amount);
+  (void)flags;
+  (void)amount;
   (void)target;
 
   RefPtr<OutputStreamTunnel> self(this);
@@ -319,6 +319,10 @@ Http3TransportLayer::~Http3TransportLayer() {
 
 already_AddRefed<Http3StreamTunnel> Http3TransportLayer::GetStream() {
   RefPtr<Http3StreamTunnel> stream = mStream;
+  if (!stream || stream->Closed()) {
+    return nullptr;
+  }
+
   return stream.forget();
 }
 

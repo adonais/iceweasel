@@ -10,7 +10,7 @@
     {
       "platforms": ["desktop"],
       "content_scripts": {
-        "js": ["bug1959598-www.signal-tech.com-round-pageYOffset.js"]
+        "js": ["round_pageYOffset.js"]
       }
     }
   ]

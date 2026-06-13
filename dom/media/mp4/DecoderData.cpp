@@ -344,8 +344,8 @@ MediaResult MP4VideoInfo::Update(const Mp4parseTrackInfo* track,
   Mp4parseByteData extraData = video->sample_info[0].extra_data;
   // If length is 0 we append nothing
   mExtraData->AppendElements(extraData.data, extraData.length);
-  if (video->sample_info[0].has_colour_info) {
-    const auto& si = video->sample_info[0];
+  const auto& si = video->sample_info[0];
+  if (si.has_colour_info) {
     mTransferFunction = gfxUtils::CicpToTransferFunction(
         static_cast<gfx::CICP::TransferCharacteristics>(
             si.transfer_characteristics));
@@ -358,6 +358,32 @@ MediaResult MP4VideoInfo::Update(const Mp4parseTrackInfo* track,
         gMP4MetadataLog);
     mColorRange =
         si.full_range_flag ? gfx::ColorRange::FULL : gfx::ColorRange::LIMITED;
+  }
+  if (si.has_mastering_display || si.has_content_light_level) {
+    gfx::HDRMetadata hdr;
+    if (si.has_mastering_display) {
+      const auto& md = si.mastering_display;
+      gfx::Smpte2086Metadata smpte;
+      // display_primaries_x/y are remapped by mp4parse from G/B/R wire order
+      // to R[0], G[1], B[2].
+      smpte.displayPrimaryRed = {md.display_primaries_x[0] / 50000.0f,
+                                 md.display_primaries_y[0] / 50000.0f};
+      smpte.displayPrimaryGreen = {md.display_primaries_x[1] / 50000.0f,
+                                   md.display_primaries_y[1] / 50000.0f};
+      smpte.displayPrimaryBlue = {md.display_primaries_x[2] / 50000.0f,
+                                  md.display_primaries_y[2] / 50000.0f};
+      smpte.whitePoint = {md.white_point_x / 50000.0f,
+                          md.white_point_y / 50000.0f};
+      smpte.maxLuminance = md.max_display_mastering_luminance / 10000.0f;
+      smpte.minLuminance = md.min_display_mastering_luminance / 10000.0f;
+      hdr.mSmpte2086 = Some(smpte);
+    }
+    if (si.has_content_light_level) {
+      const auto& cll = si.content_light_level;
+      hdr.mContentLightLevel = Some(gfx::ContentLightLevel{
+          cll.max_content_light_level, cll.max_pic_average_light_level});
+    }
+    mHDRMetadata = Some(hdr);
   }
   return NS_OK;
 }

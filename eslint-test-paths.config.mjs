@@ -94,6 +94,7 @@ const extraBrowserTestPaths = [
   "browser/base/content/test/linkHandling/",
   "browser/base/content/test/menubar/",
   "browser/base/content/test/metaTags/",
+  "browser/base/content/test/mousepostracker/",
   "browser/base/content/test/notificationbox/",
   "browser/base/content/test/outOfProcess/",
   "browser/base/content/test/pageActions/",

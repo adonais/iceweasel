@@ -10,7 +10,69 @@
  * that inject runtime context into static configurations.
  */
 
-import { getErrorConfig } from "chrome://global/content/errors/error-registry.mjs";
+import {
+  getErrorConfig,
+  isErrorSupported,
+} from "chrome://global/content/errors/error-registry.mjs";
+
+/**
+ * Resolve browser error signals to a canonical registry ID.
+ *
+ * Handles resolution scenarios in priority order:
+ * 1. System state overrides (no connectivity, VPN active)
+ * 2. Direct registry lookup by errorCodeString (C++ error strings)
+ * 3. Fallback to a shared config when errorCodeString is unregistered
+ * 4. Direct registry lookup by gErrorCode (URL-derived error codes)
+ *
+ * @param {object} signals
+ * @param {string} signals.errorCodeString - Raw error string from the security/network layer
+ * @param {string} signals.gErrorCode - URL-derived error code (e= parameter)
+ * @param {boolean} signals.noConnectivity - System has no network connectivity
+ * @param {boolean} signals.vpnActive - VPN is currently active
+ * @returns {string|null} Canonical registry ID, or null if the error has no
+ *   Felt Privacy config.
+ */
+export function resolveErrorID({
+  errorCodeString,
+  gErrorCode,
+  noConnectivity,
+  vpnActive,
+}) {
+  // System state overrides.
+  // Currently these are all network-related.
+  if (noConnectivity) {
+    return "NS_ERROR_OFFLINE";
+  }
+  if (gErrorCode === "proxyConnectFailure" && vpnActive) {
+    return "vpnFailure";
+  }
+
+  // Default: use errorCodeString if it is set and registered. This value comes
+  // from getFailedCertSecurityInfo() or getNetErrorInfo() and identifies the
+  // specific error.
+  if (errorCodeString && isErrorSupported(errorCodeString)) {
+    return errorCodeString;
+  }
+
+  // In some cases, errorCodeString will be set but not registered. This can
+  // be done on purpose to allow many different yet similar errors to share a
+  // config in the error registry. For example, if we see an unregistered error
+  // where gErrorCode is "nssFailure2", we use the nssFailure2 registry entry.
+  if (errorCodeString) {
+    if (gErrorCode !== "nssFailure2" || !isErrorSupported("nssFailure2")) {
+      return null;
+    }
+  }
+
+  // In some cases, errorCodeString will not be set. Use the code in
+  // gErrorCode, which is parsed from the URL e= parameter and set by
+  // nsDocShell, as a fallback.
+  if (gErrorCode && isErrorSupported(gErrorCode)) {
+    return gErrorCode;
+  }
+
+  return null;
+}
 
 /**
  * Check if an error has no action the user can take to fix it.
@@ -52,6 +114,7 @@ export function resolveL10nArgs(l10nConfig, l10nArgValues) {
     date: Date.now(),
     now: l10nArgValues.now ?? Date.now(),
     errorMessage: l10nArgValues.errorInfo?.errorMessage ?? "",
+    errorCodeString: l10nArgValues.errorInfo?.errorCodeString ?? "",
     validHosts: l10nArgValues.domainMismatchNames ?? "",
     mitm: l10nArgValues.mitmName ?? "",
     responsestatus: l10nArgValues.errorInfo?.responseStatus ?? 0,

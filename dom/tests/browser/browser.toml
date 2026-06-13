@@ -137,6 +137,13 @@ support-files = [
 ["browser_persist_cross_origin_iframe.js"]
 support-files = ["image.html"]
 
+["browser_persist_filename.js"]
+support-files = [
+  "file_browserPersist_filename.html",
+  "file_browserPersist_filename.css",
+  "file_browserPersist_a_very_long_filename_used_for_truncation_test.css",
+]
+
 ["browser_persist_image_accept.js"]
 
 ["browser_persist_mixed_content_image.js"]

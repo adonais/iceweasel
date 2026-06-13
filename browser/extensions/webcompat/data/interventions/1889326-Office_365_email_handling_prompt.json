@@ -19,7 +19,7 @@
       "platforms": ["desktop"],
       "content_scripts": {
         "all_frames": true,
-        "js": ["bug1889326-office365-email-handling-prompt-autohide.js"]
+        "js": ["deduplicate_registerProtocolHandler.js"]
       }
     }
   ]

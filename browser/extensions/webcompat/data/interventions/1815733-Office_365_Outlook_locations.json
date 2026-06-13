@@ -18,7 +18,7 @@
       "platforms": ["desktop"],
       "content_scripts": {
         "all_frames": true,
-        "js": ["bug1815733-outlook365-clipboard-read-noop.js"]
+        "js": ["disable_navigator_clipboard_read.js"]
       }
     }
   ]

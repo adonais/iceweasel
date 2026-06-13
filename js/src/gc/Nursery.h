@@ -632,7 +632,7 @@ class Nursery {
 
 #ifdef JS_GC_ZEAL
   // Report on the kinds of things promoted.
-  bool reportPromotion_;
+  bool reportPromotion_ = false;
 #endif
 
   // Whether to report information on pretenuring, and if so the allocation

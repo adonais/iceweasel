@@ -35,7 +35,7 @@ class HTMLImageMapAccessible final : public ImageAccessible {
   LocalAccessible* GetChildAccessibleFor(const nsINode* aNode) const;
 
  protected:
-  virtual ~HTMLImageMapAccessible() {}
+  virtual ~HTMLImageMapAccessible() = default;
 };
 
 /**

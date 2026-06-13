@@ -95,7 +95,7 @@ add_task(async function test_focus_restored_after_activating() {
 add_task(async function test_keyboard_navigation_in_panel() {
   const openLinkStub = sinon.stub(window, "openWebLinkIn");
   let content = await openPanel({
-    isEnrolledAndEntitled: true,
+    isReady: true,
   });
 
   Assert.ok(

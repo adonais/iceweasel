@@ -134,7 +134,6 @@ class nsAttrValue {
     // struct.
     eCSSDeclaration = 0x10,
     eURL,
-    eImage,
     eAtomArray,
     eDoubleValue,
     // eShadowParts is refcounted in the misc container, as we do copy attribute

@@ -23,12 +23,14 @@ class SportsSuggestionParserTest {
                         name = "Los Angeles Lakers",
                         colors = listOf("#552583", "#FDB927"),
                         score = 112,
+                        icon = "http://example.com/lakers.png",
                     ),
                     awayTeam = TeamDto(
                         key = "BOS",
                         name = "Boston Celtics",
                         colors = listOf("#007A33", "#FFFFFF"),
                         score = 109,
+                        icon = "http://example.com/celtics.png",
                     ),
                     status = "Final",
                     statusType = "past",
@@ -53,13 +55,13 @@ class SportsSuggestionParserTest {
             Assert.assertEquals("Los Angeles Lakers", homeTeam.name)
             Assert.assertEquals(listOf("#552583", "#FDB927"), homeTeam.colors)
             Assert.assertEquals(112, homeTeam.score)
-            Assert.assertEquals(null, homeTeam.iconUrl)
+            Assert.assertEquals("http://example.com/lakers.png", homeTeam.icon)
 
             Assert.assertEquals("BOS", awayTeam.key)
             Assert.assertEquals("Boston Celtics", awayTeam.name)
             Assert.assertEquals(listOf("#007A33", "#FFFFFF"), awayTeam.colors)
             Assert.assertEquals(109, awayTeam.score)
-            Assert.assertEquals(null, awayTeam.iconUrl)
+            Assert.assertEquals("http://example.com/celtics.png", awayTeam.icon)
         }
     }
 

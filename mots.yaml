@@ -8,7 +8,7 @@
 # documentation and how to modify this file.
 repo: mozilla-central
 created_at: '2021-10-14T12:50:40.073465'
-updated_at: '2026-04-13T15:42:58.632917+00:00'
+updated_at: '2026-05-04T15:54:11.381350+00:00'
 export:
   path: ./docs/mots/index.rst
   format: rst
@@ -3968,6 +3968,7 @@ modules:
           - *emz
         peers:
           - *timhuang
+          - *daleharvey
         machine_name: security_and_privacy_ui
 
       - name: Session Restore
@@ -4755,5 +4756,5 @@ modules:
         - Ryan Tilder
       group: dev-platform
 hashes:
-  config: 52e640ee3f784c3b5b10a5efc6edeeeb294829d9
-  export: 0032a1e2290ce3a7e59b3d872a526767c9be8aaf
+  config: 597912a134f7fcd57622c0ce222d3c1afcef67d7
+  export: 4c64c0ea58f5856d29834def047e139a60bf5a3e

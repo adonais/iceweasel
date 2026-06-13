@@ -401,16 +401,8 @@ void WasmArrayObject::fillVal(const Val& val, uint32_t itemIndex,
 }
 
 static const JSClassOps WasmArrayObjectClassOps = {
-    nullptr, /* addProperty */
-    nullptr, /* delProperty */
-    nullptr, /* enumerate   */
-    WasmGcObject::obj_newEnumerate,
-    nullptr, /* resolve     */
-    nullptr, /* mayResolve  */
-    nullptr, /* finalize    */
-    nullptr, /* call        */
-    nullptr, /* construct   */
-    WasmArrayObject::obj_trace,
+    .newEnumerate = WasmGcObject::obj_newEnumerate,
+    .trace = WasmArrayObject::obj_trace,
 };
 static const ClassExtension WasmArrayObjectClassExt = {
     WasmArrayObject::obj_moved, /* objectMovedOp */
@@ -579,16 +571,8 @@ void WasmStructObject::storeVal(const Val& val, uint32_t fieldIndex) {
 }
 
 static const JSClassOps WasmStructObjectOutlineClassOps = {
-    nullptr, /* addProperty */
-    nullptr, /* delProperty */
-    nullptr, /* enumerate   */
-    WasmGcObject::obj_newEnumerate,
-    nullptr, /* resolve     */
-    nullptr, /* mayResolve  */
-    nullptr, /* finalize    */
-    nullptr, /* call        */
-    nullptr, /* construct   */
-    WasmStructObject::obj_trace,
+    .newEnumerate = WasmGcObject::obj_newEnumerate,
+    .trace = WasmStructObject::obj_trace,
 };
 static const ClassExtension WasmStructObjectOutlineClassExt = {
     WasmStructObject::obj_moved, /* objectMovedOp */
@@ -606,16 +590,8 @@ const JSClass WasmStructObject::classOutline_ = {
 // finalizer. This class should otherwise be identical to the class for
 // structs with outline data.
 static const JSClassOps WasmStructObjectInlineClassOps = {
-    nullptr, /* addProperty */
-    nullptr, /* delProperty */
-    nullptr, /* enumerate   */
-    WasmGcObject::obj_newEnumerate,
-    nullptr, /* resolve     */
-    nullptr, /* mayResolve  */
-    nullptr, /* finalize    */
-    nullptr, /* call        */
-    nullptr, /* construct   */
-    WasmStructObject::obj_trace,
+    .newEnumerate = WasmGcObject::obj_newEnumerate,
+    .trace = WasmStructObject::obj_trace,
 };
 static const ClassExtension WasmStructObjectInlineClassExt = {
     nullptr, /* objectMovedOp */

@@ -29,6 +29,8 @@ const EVENT_SCROLLING = nsIAccessibleEvent.EVENT_SCROLLING;
 const EVENT_SCROLLING_START = nsIAccessibleEvent.EVENT_SCROLLING_START;
 const EVENT_SCROLLING_END = nsIAccessibleEvent.EVENT_SCROLLING_END;
 const EVENT_SELECTION = nsIAccessibleEvent.EVENT_SELECTION;
+const EVENT_SELECTION_ADD = nsIAccessibleEvent.EVENT_SELECTION_ADD;
+const EVENT_SELECTION_REMOVE = nsIAccessibleEvent.EVENT_SELECTION_REMOVE;
 const EVENT_SELECTION_WITHIN = nsIAccessibleEvent.EVENT_SELECTION_WITHIN;
 const EVENT_SHOW = nsIAccessibleEvent.EVENT_SHOW;
 const EVENT_STATE_CHANGE = nsIAccessibleEvent.EVENT_STATE_CHANGE;
@@ -53,6 +55,8 @@ const EVENT_LIVE_REGION_REMOVED = nsIAccessibleEvent.EVENT_LIVE_REGION_REMOVED;
 const EVENT_OBJECT_ATTRIBUTE_CHANGED =
   nsIAccessibleEvent.EVENT_OBJECT_ATTRIBUTE_CHANGED;
 const EVENT_INNER_REORDER = nsIAccessibleEvent.EVENT_INNER_REORDER;
+const EVENT_MENU_START = nsIAccessibleEvent.EVENT_MENU_START;
+const EVENT_MENU_END = nsIAccessibleEvent.EVENT_MENU_END;
 const EVENT_MENUPOPUP_START = nsIAccessibleEvent.EVENT_MENUPOPUP_START;
 const EVENT_MENUPOPUP_END = nsIAccessibleEvent.EVENT_MENUPOPUP_END;
 const EVENT_ERRORMESSAGE_CHANGED =
@@ -210,6 +214,34 @@ class UnexpectedEvents {
     }
   }
 
+  async flush(invokerOrWindow = null) {
+    let flushQueue = async win => {
+      // Flush all notifications or queued a11y events.
+      win.windowUtils.advanceTimeAndRefresh(100);
+
+      // Flush all DOM async events.
+      await new Promise(r => win.setTimeout(r, 0));
+
+      // Flush all notifications or queued a11y events resulting from async DOM events.
+      win.windowUtils.advanceTimeAndRefresh(100);
+
+      // Flush all notifications or a11y events that may have been queued in the last tick.
+      win.windowUtils.advanceTimeAndRefresh(100);
+
+      // Return refresh to normal.
+      win.windowUtils.restoreNormalRefresh();
+    };
+
+    if (invokerOrWindow instanceof Function) {
+      await invokerOrWindow([flushQueue.toString()], async _flushQueue => {
+        // eslint-disable-next-line no-eval, no-undef
+        await eval(_flushQueue)(content);
+      });
+    } else {
+      await flushQueue(invokerOrWindow ? invokerOrWindow : window);
+    }
+  }
+
   stop() {
     if (this.unexpected) {
       Services.obs.removeObserver(this, "accessible-event");
@@ -253,31 +285,7 @@ async function waitForEvents(
   );
 
   if (unexpectedListener) {
-    let flushQueue = async win => {
-      // Flush all notifications or queued a11y events.
-      win.windowUtils.advanceTimeAndRefresh(100);
-
-      // Flush all DOM async events.
-      await new Promise(r => win.setTimeout(r, 0));
-
-      // Flush all notifications or queued a11y events resulting from async DOM events.
-      win.windowUtils.advanceTimeAndRefresh(100);
-
-      // Flush all notifications or a11y events that may have been queued in the last tick.
-      win.windowUtils.advanceTimeAndRefresh(100);
-
-      // Return refresh to normal.
-      win.windowUtils.restoreNormalRefresh();
-    };
-
-    if (invokerOrWindow instanceof Function) {
-      await invokerOrWindow([flushQueue.toString()], async _flushQueue => {
-        // eslint-disable-next-line no-eval, no-undef
-        await eval(_flushQueue)(content);
-      });
-    } else {
-      await flushQueue(invokerOrWindow ? invokerOrWindow : window);
-    }
+    await unexpectedListener.flush(invokerOrWindow);
 
     unexpectedListener.stop();
   }

@@ -28,18 +28,20 @@
 #ifndef jit_arm_Simulator_arm_h
 #define jit_arm_Simulator_arm_h
 
-#ifdef JS_SIMULATOR_ARM
+#ifndef JS_SIMULATOR_ARM
+#  error "simulator disabled"
+#endif
 
-#  include "mozilla/Atomics.h"
+#include "mozilla/Atomics.h"
 
-#  include "jit/arm/Architecture-arm.h"
-#  include "jit/arm/disasm/Disasm-arm.h"
-#  include "jit/IonTypes.h"
-#  include "js/AllocPolicy.h"
-#  include "js/ProfilingFrameIterator.h"
-#  include "threading/Thread.h"
-#  include "vm/MutexIDs.h"
-#  include "wasm/WasmSignalHandlers.h"
+#include "jit/arm/Architecture-arm.h"
+#include "jit/arm/disasm/Disasm-arm.h"
+#include "jit/IonTypes.h"
+#include "js/AllocPolicy.h"
+#include "js/ProfilingFrameIterator.h"
+#include "threading/Thread.h"
+#include "vm/MutexIDs.h"
+#include "wasm/WasmSignalHandlers.h"
 
 namespace js {
 namespace jit {
@@ -626,7 +628,5 @@ class SimulatorProcess {
 
 }  // namespace jit
 }  // namespace js
-
-#endif /* JS_SIMULATOR_ARM */
 
 #endif /* jit_arm_Simulator_arm_h */

@@ -92,7 +92,7 @@ template <class Continuation>
 class WriteRecordSuccessTask {
  public:
   WriteRecordSuccessTask(std::string aId, Continuation aThen)
-      : mId(aId), mThen(std::move(aThen)) {}
+      : mId(std::move(aId)), mThen(std::move(aThen)) {}
 
   void operator()() { ReadRecord(FakeDecryptor::sInstance->mHost, mId, mThen); }
 
@@ -154,9 +154,10 @@ class TruncateContinuation : public ReadContinuation {
     }
     auto cont = TestEmptyContinuation(mTestmanager, mTestID);
     auto msg = "FAIL in TruncateContinuation write.";
-    WriteRecord(FakeDecryptor::sInstance->mHost, mID, nullptr, 0,
-                WriteRecordSuccessTask<TestEmptyContinuation>(mID, cont),
-                WriteRecordFailureTask(msg, mTestmanager, mTestID));
+    WriteRecord(
+        FakeDecryptor::sInstance->mHost, mID, nullptr, 0,
+        WriteRecordSuccessTask<TestEmptyContinuation>(mID, std::move(cont)),
+        WriteRecordFailureTask(msg, mTestmanager, mTestID));
   }
 
  private:
@@ -170,7 +171,9 @@ class VerifyAndFinishContinuation : public ReadContinuation {
   explicit VerifyAndFinishContinuation(std::string aValue,
                                        TestManager* aTestManager,
                                        const std::string& aTestID)
-      : mValue(aValue), mTestmanager(aTestManager), mTestID(aTestID) {}
+      : mValue(std::move(aValue)),
+        mTestmanager(aTestManager),
+        mTestID(aTestID) {}
 
   virtual void operator()(bool aSuccess, const uint8_t* aData,
                           uint32_t aDataSize) override {
@@ -195,9 +198,9 @@ class VerifyAndOverwriteContinuation : public ReadContinuation {
                                  std::string aOverwrite,
                                  TestManager* aTestManager,
                                  const std::string& aTestID)
-      : mId(aId),
-        mValue(aValue),
-        mOverwrite(aOverwrite),
+      : mId(std::move(aId)),
+        mValue(std::move(aValue)),
+        mOverwrite(std::move(aOverwrite)),
         mTestmanager(aTestManager),
         mTestID(aTestID) {}
 
@@ -212,7 +215,8 @@ class VerifyAndOverwriteContinuation : public ReadContinuation {
     auto cont = VerifyAndFinishContinuation(mOverwrite, mTestmanager, mTestID);
     auto msg = "FAIL in VerifyAndOverwriteContinuation write.";
     WriteRecord(FakeDecryptor::sInstance->mHost, mId, mOverwrite,
-                WriteRecordSuccessTask<VerifyAndFinishContinuation>(mId, cont),
+                WriteRecordSuccessTask<VerifyAndFinishContinuation>(
+                    mId, std::move(cont)),
                 WriteRecordFailureTask(msg, mTestmanager, mTestID));
   }
 
@@ -262,7 +266,7 @@ class OpenedFirstTimeContinuation : public OpenContinuation {
     }
 
     auto cont = OpenedSecondTimeContinuation(mTestmanager, mTestID);
-    OpenRecord(FakeDecryptor::sInstance->mHost, mID, cont);
+    OpenRecord(FakeDecryptor::sInstance->mHost, mID, std::move(cont));
   }
 
  private:
@@ -291,9 +295,10 @@ static void DoTestStorage(const std::string& aPrefix,
   aTestManager->BeginTest(testID1);
   auto cont1 = TruncateContinuation(id1, aTestManager, testID1);
   auto msg1 = "FAIL in TestStorage writing TruncateRecord.";
-  WriteRecord(FakeDecryptor::sInstance->mHost, id1, TruncateRecordData,
-              WriteRecordSuccessTask<TruncateContinuation>(id1, cont1),
-              WriteRecordFailureTask(msg1, aTestManager, testID1));
+  WriteRecord(
+      FakeDecryptor::sInstance->mHost, id1, TruncateRecordData,
+      WriteRecordSuccessTask<TruncateContinuation>(id1, std::move(cont1)),
+      WriteRecordFailureTask(msg1, aTestManager, testID1));
 
   // Test 2: Test that overwriting a record with a shorter record truncates
   // the record to the shorter record.
@@ -310,10 +315,10 @@ static void DoTestStorage(const std::string& aPrefix,
   auto task2 = VerifyAndOverwriteContinuation(id2, record1, overwrite,
                                               aTestManager, testID2);
   auto msg2 = "FAIL in TestStorage writing record1.";
-  WriteRecord(
-      FakeDecryptor::sInstance->mHost, id2, record1,
-      WriteRecordSuccessTask<VerifyAndOverwriteContinuation>(id2, task2),
-      WriteRecordFailureTask(msg2, aTestManager, testID2));
+  WriteRecord(FakeDecryptor::sInstance->mHost, id2, record1,
+              WriteRecordSuccessTask<VerifyAndOverwriteContinuation>(
+                  id2, std::move(task2)),
+              WriteRecordFailureTask(msg2, aTestManager, testID2));
 
   // Test 3: Test that opening a record while it's already open fails.
   //
@@ -324,7 +329,7 @@ static void DoTestStorage(const std::string& aPrefix,
   const std::string testID3 = aPrefix + "open-test-1";
   aTestManager->BeginTest(testID3);
   auto task3 = OpenedFirstTimeContinuation(id3, aTestManager, testID3);
-  OpenRecord(FakeDecryptor::sInstance->mHost, id3, task3);
+  OpenRecord(FakeDecryptor::sInstance->mHost, id3, std::move(task3));
 }
 
 void FakeDecryptor::TestStorage() {

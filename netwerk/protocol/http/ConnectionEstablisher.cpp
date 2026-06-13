@@ -191,6 +191,18 @@ ConnectionEstablisher::ConnectionEstablisher(nsHttpConnectionInfo* aConnInfo,
 ConnectionEstablisher::~ConnectionEstablisher() {
   LOG(("ConnectionEstablisher dtor:%p", this));
   MaybeSetConnectingDone();
+
+  if (!OnSocketThread() && gSocketTransportService) {
+    gSocketTransportService->Dispatch(
+        NS_NewRunnableFunction(
+            "~ConnectionEstablisher",
+            [transaction = std::move(mTransaction), handle = std::move(mHandle),
+             resultConn = std::move(mResultConn),
+             transportStatusCallback = std::move(mTransportStatusCallback),
+             lnaCheckCallback = std::move(mLnaCheckCallback),
+             callback = std::move(mCallback)]() {}),
+        NS_DISPATCH_NORMAL);
+  }
 }
 
 void ConnectionEstablisher::SetConnecting() {
@@ -213,8 +225,8 @@ nsresult ConnectionEstablisher::ActivateConnectionWithTransaction(
     std::function<void(nsresult)> aOnActivated) {
   LOG(
       ("ConnectionEstablisher::ActivateConnectionWithTransaction %p conn=%p "
-       "proxyTrans=%p",
-       this, aConn.get(), mProxyTransaction.get()));
+       "trans=%p",
+       this, aConn.get(), mTransaction.get()));
 
   aConn->SetIsRacing(true);
 
@@ -222,60 +234,27 @@ nsresult ConnectionEstablisher::ActivateConnectionWithTransaction(
   mResultConn = aConn;
   mHandle = new ConnectionHandle(aConn);
 
-  if (mProxyTransaction && !mProxyTransaction->IsDetached()) {
-    LOG(("proxy transaction %p will drive first attempt on conn %p",
-         mProxyTransaction.get(), aConn.get()));
+  MOZ_ASSERT(mTransaction,
+             "HappyEyeballsConnectionAttempt must hand us a transaction "
+             "before we can activate a connection.");
 
-    mProxyTransaction->SetConnectedCallback(
-        [self = RefPtr{this},
-         onActivated = std::move(aOnActivated)](nsresult aResult) {
-          NS_DispatchToCurrentThread(NS_NewRunnableFunction(
-              "ConnectionEstablisher::ActivateCallback",
-              [self, aResult, onActivated = std::move(onActivated)]() {
-                if (NS_FAILED(aResult)) {
-                  self->Finish(aResult);
-                  return;
-                }
+  mTransaction->SetConnectedCallback(
+      [self = RefPtr{this},
+       onActivated = std::move(aOnActivated)](nsresult aResult) {
+        NS_DispatchToCurrentThread(NS_NewRunnableFunction(
+            "ConnectionEstablisher::ActivateCallback",
+            [self, aResult, onActivated = std::move(onActivated)]() {
+              if (NS_FAILED(aResult)) {
+                self->Finish(aResult);
+                return;
+              }
 
-                onActivated(NS_OK);
-              }));
-        });
+              onActivated(NS_OK);
+            }));
+      });
 
-    mProxyTransaction->SetConnection(mHandle);
-    nsresult rv = aConn->Activate(mProxyTransaction, mCaps, 0);
-    if (NS_FAILED(rv)) {
-      Finish(rv);
-      return rv;
-    }
-
-    return NS_OK;
-  }
-
-  auto callback = [self = RefPtr{this},
-                   onActivated = std::move(aOnActivated)](nsresult aResult) {
-    NS_DispatchToCurrentThread(NS_NewRunnableFunction(
-        "ConnectionEstablisher::ActivateCallback",
-        [self, aResult, onActivated = std::move(onActivated)]() {
-          if (NS_FAILED(aResult)) {
-            self->Finish(aResult);
-            return;
-          }
-
-          onActivated(NS_OK);
-        }));
-  };
-
-  // For SpeculativeTransaction used in connection racing, do not report its
-  // activity.
-  RefPtr<SpeculativeTransaction> trans = new SpeculativeTransaction(
-      mConnInfo, this, mCaps, std::move(callback), false);
-
-  LOG(("speculative transaction %p will be used to finish handshake on conn %p",
-       trans.get(), aConn.get()));
-
-  trans->SetConnection(mHandle);
-
-  nsresult rv = aConn->Activate(trans, mCaps, 0);
+  mTransaction->SetConnection(mHandle);
+  nsresult rv = aConn->Activate(mTransaction, mCaps, 0);
   if (NS_FAILED(rv)) {
     Finish(rv);
     return rv;
@@ -298,17 +277,24 @@ void ConnectionEstablisher::FinishInternal(nsresult aResult) {
   mLnaCheckCallback = nullptr;
   mAddrRecord = nullptr;
 
-  bool hadProxyTransaction = !!mProxyTransaction;
-  if (mProxyTransaction) {
-    mProxyTransaction->SetConnectedCallback(nullptr);
-    mProxyTransaction = nullptr;
+  if (mTransaction) {
+    // Detach the connected-callback so later Close/cleanup on the
+    // transaction can't call us back. Keep the ref itself: the winning
+    // HandleTCPConnectionResult / HandleUDPConnectionResult still needs
+    // to query establisher->Transaction() afterwards to grab the
+    // handshake timings.
+    mTransaction->SetConnectedCallback(nullptr);
   }
 
   if (mCallback) {
     auto cb = std::move(mCallback);
     mCallback = nullptr;
-    if (!hadProxyTransaction && mHandle && mHandle->Conn() &&
-        !mHandle->Conn()->UsingSpdy() && !mHandle->Conn()->UsingHttp3()) {
+    // HappyEyeballsTransaction is speculative — the real transaction is
+    // never driving I/O on this conn — so the H1 fallback path always
+    // applies: reset the handle so the conn doesn't cling to it after
+    // we're done (H2/H3 manage reuse via their sessions).
+    if (mHandle && mHandle->Conn() && !mHandle->Conn()->UsingSpdy() &&
+        !mHandle->Conn()->UsingHttp3()) {
       mHandle->Reset();
     }
 
@@ -376,7 +362,18 @@ TCPConnectionEstablisher::TCPConnectionEstablisher(
       mSpeculative(aSpeculative),
       mAllow1918(aAllow1918) {}
 
-TCPConnectionEstablisher::~TCPConnectionEstablisher() = default;
+TCPConnectionEstablisher::~TCPConnectionEstablisher() {
+  // mSocketTransport / mStreamOut / mStreamIn must be released on the
+  // socket thread.
+  if (!OnSocketThread() && gSocketTransportService) {
+    gSocketTransportService->Dispatch(
+        NS_NewRunnableFunction("~TCPConnectionEstablisher",
+                               [socketTransport = std::move(mSocketTransport),
+                                streamOut = std::move(mStreamOut),
+                                streamIn = std::move(mStreamIn)]() {}),
+        NS_DISPATCH_NORMAL);
+  }
+}
 
 bool TCPConnectionEstablisher::Start(DoneCallback&& aCallback) {
   mCallback = std::move(aCallback);
@@ -408,21 +405,23 @@ void TCPConnectionEstablisher::Close(nsresult aReason) {
 
   mHandle = nullptr;
   if (mResultConn) {
-    if (mHasConnected && mProxyTransaction &&
-        !mProxyTransaction->IsDetached()) {
-      LOG(
-          ("TCPConnectionEstablisher::Close DontReuse connection %p "
-           "(has active HappyEyeballsTransaction)",
+    // Every connection touched by HE is marked non-reusable: adopted conns
+    // finish serving the in-flight real txn then close; losing conns are
+    // torn down immediately below.  Either way the CM must never hand a new
+    // transaction to a connection that participated in an HE race.
+    bool adopted = mTransaction && mTransaction->IsAdopted();
+    mResultConn->DontReuse();
+    if (adopted) {
+      LOG(("TCPConnectionEstablisher::Close %p adopted conn %p DontReuse", this,
            mResultConn.get()));
-      mResultConn->DontReuse();
     } else {
       LOG(("TCPConnectionEstablisher::Close closing connection %p",
            mResultConn.get()));
-      // Use CloseTransaction instead of Close to properly clean up the SPDY
-      // session and transaction. If we only call Close, the Http2Session in
-      // mSpdySession/mTransaction is never released, keeping the connection
-      // alive indefinitely when no pending socket read triggers
-      // CloseTransaction naturally.
+      // Use CloseTransaction rather than Close to properly clean up the
+      // SPDY session: if we only called Close, an Http2Session in
+      // mSpdySession/mTransaction would never be released and the conn
+      // would stay alive indefinitely without a pending socket read to
+      // trigger CloseTransaction naturally.
       mResultConn->CloseTransaction(mResultConn->Transaction(), aReason);
     }
     mResultConn = nullptr;
@@ -692,11 +691,22 @@ void UDPConnectionEstablisher::Close(nsresult aReason) {
 
   mHandle = nullptr;
   if (mResultConn) {
-    LOG(("UDPConnectionEstablisher::Close closing connection %p",
-         mResultConn.get()));
-    // TODO: for some cases we might want to exclude HTTP/3.
-    mResultConn->SetDontExclude();
-    mResultConn->Close(aReason);
+    // If the HT on this conn has been adopted, the conn is already
+    // driving the real nsHttpTransaction — tearing it down here would
+    // close the real txn. Just mark the conn non-reusable and let it
+    // finish serving the in-flight request naturally.
+    bool adopted = mTransaction && mTransaction->IsAdopted();
+    if (adopted) {
+      LOG(("UDPConnectionEstablisher::Close %p adopted conn %p DontReuse", this,
+           mResultConn.get()));
+      mResultConn->DontReuse();
+    } else {
+      LOG(("UDPConnectionEstablisher::Close closing connection %p",
+           mResultConn.get()));
+      // TODO: for some cases we might want to exclude HTTP/3.
+      mResultConn->SetDontExclude();
+      mResultConn->Close(aReason);
+    }
     mResultConn = nullptr;
   }
 

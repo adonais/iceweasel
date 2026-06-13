@@ -15,12 +15,12 @@ class AboutRedirector : public nsIAboutModule {
   NS_DECL_ISUPPORTS
   NS_DECL_NSIABOUTMODULE
 
-  AboutRedirector() {}
+  AboutRedirector() = default;
 
   static nsresult Create(REFNSIID aIID, void** aResult);
 
  protected:
-  virtual ~AboutRedirector() {}
+  virtual ~AboutRedirector() = default;
 };
 
 }  // namespace browser

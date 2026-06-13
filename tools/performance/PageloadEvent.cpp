@@ -6,6 +6,7 @@
 #include "mozilla/HelperMacros.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/PageloadEvent.h"
+#include "mozilla/Preferences.h"
 #include "mozilla/RandomNum.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/glean/DomMetrics.h"
@@ -21,6 +22,8 @@
 #include "ScopedNSSTypes.h"
 #include "cert.h"
 #include "portreg.h"
+
+#include <string_view>
 
 namespace mozilla::performance::pageload_event {
 
@@ -325,6 +328,25 @@ void PageloadEventData::SendAsPageLoadDomainEvent() {
   int32_t majorVersion = version.ToInteger(&rv);
   if (NS_SUCCEEDED(rv)) {
     extra.appVersionMajor = mozilla::Some(static_cast<uint32_t>(majorVersion));
+  }
+
+  if constexpr (std::string_view(MOZ_STRINGIFY(MOZ_UPDATE_CHANNEL)) ==
+                "release") {
+    nsAutoCString country;
+    if (NS_SUCCEEDED(mozilla::Preferences::GetCString("browser.search.region",
+                                                      country)) &&
+        !country.IsEmpty()) {
+      static constexpr std::string_view kAllowedCountries[] = {
+          "US", "DE", "FR", "GB", "CA", "PL", "JP",
+          "IN", "BR", "ID", "MX", "IT", "ES", "NL",
+      };
+      for (const auto& allowed : kAllowedCountries) {
+        if (country.EqualsASCII(allowed.data(), allowed.size())) {
+          extra.country = mozilla::Some(country);
+          break;
+        }
+      }
+    }
   }
 
   // If the event is a page_load_domain event, then immediately send it.

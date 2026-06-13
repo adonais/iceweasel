@@ -58,6 +58,8 @@ if CONFIG['TARGET_CPU'] == 'arm' and CONFIG['HAVE_ARM_NEON']:
     SOURCES += [
         'yuv_convert_arm.cpp',
     ]
+    # yuv_row_arm.s requires preprocessing
+    ASFLAGS += ["-x", "assembler-with-cpp"]
 
 LOCAL_INCLUDES += ['/media/libyuv/libyuv/include']
 

@@ -203,7 +203,7 @@ class RtpPacket {
   ExtensionInfo& FindOrCreateExtensionInfo(int id);
 
   // Allocates and returns place to store rtp header extension.
-  // Returns empty arrayview on failure.
+  // Returns empty std::span on failure.
   std::span<uint8_t> AllocateRawExtension(int id, size_t length);
 
   // Promotes existing one-byte header extensions to two-byte header extensions

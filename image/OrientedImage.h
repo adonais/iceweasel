@@ -82,7 +82,7 @@ class OrientedImage : public ImageWrapper {
   OrientedImage(Image* aImage, Orientation aOrientation)
       : ImageWrapper(aImage), mOrientation(aOrientation) {}
 
-  virtual ~OrientedImage() {}
+  virtual ~OrientedImage() = default;
 
   gfxMatrix OrientationMatrix(const nsIntSize& aSize, bool aInvert = false) {
     return OrientationMatrix(mOrientation, aSize, aInvert);

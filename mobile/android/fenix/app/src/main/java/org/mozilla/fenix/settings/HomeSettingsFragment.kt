@@ -84,7 +84,6 @@ class HomeSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragm
         }
 
         requirePreference<SwitchPreferenceCompat>(R.string.pref_key_privacy_report).apply {
-            isVisible = fenixSettings.showPrivacyReportSectionToggle
             isChecked = fenixSettings.showPrivacyReportFeature
             onPreferenceChangeListener = createMetricPreferenceChangeListener("privacy_report")
         }

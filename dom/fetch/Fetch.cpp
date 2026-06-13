@@ -1343,9 +1343,9 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(FetchBodyBase)
 NS_INTERFACE_MAP_END
 
 template <class Derived>
-FetchBody<Derived>::FetchBody(nsIGlobalObject* aOwner)
-    : mOwner(aOwner), mBodyUsed(false) {
-  MOZ_ASSERT(aOwner);
+FetchBody<Derived>::FetchBody(nsIGlobalObject* aGlobal)
+    : mGlobal(aGlobal), mBodyUsed(false) {
+  MOZ_ASSERT(aGlobal);
 
   if (!NS_IsMainThread()) {
     WorkerPrivate* wp = GetCurrentThreadWorkerPrivate();
@@ -1358,9 +1358,9 @@ FetchBody<Derived>::FetchBody(nsIGlobalObject* aOwner)
   MOZ_ASSERT(mMainThreadEventTarget);
 }
 
-template FetchBody<Request>::FetchBody(nsIGlobalObject* aOwner);
+template FetchBody<Request>::FetchBody(nsIGlobalObject* aGlobal);
 
-template FetchBody<Response>::FetchBody(nsIGlobalObject* aOwner);
+template FetchBody<Response>::FetchBody(nsIGlobalObject* aGlobal);
 
 template <class Derived>
 FetchBody<Derived>::~FetchBody() {
@@ -1392,7 +1392,7 @@ template bool FetchBody<Response>::BodyUsed() const;
 template <class Derived>
 void FetchBody<Derived>::SetBodyUsed(JSContext* aCx, ErrorResult& aRv) {
   MOZ_ASSERT(aCx);
-  MOZ_ASSERT(mOwner->SerialEventTarget()->IsOnCurrentThread());
+  MOZ_ASSERT(mGlobal->SerialEventTarget()->IsOnCurrentThread());
 
   MOZ_DIAGNOSTIC_ASSERT(!BodyUsed(), "Consuming already used body?");
   if (BodyUsed()) {
@@ -1502,10 +1502,10 @@ already_AddRefed<Promise> FetchBody<Derived>::ConsumeBody(
     blobStorageType = MutableBlobStorage::eCouldBeInTemporaryFile;
   }
 
-  RefPtr<Promise> promise = BodyConsumer::Create(
-      global, mMainThreadEventTarget, bodyStream, signalImpl, aType,
-      BodyBlobURISpec(), BodyLocalPath(), mimeType, mixedCaseMimeType,
-      blobStorageType, aRv);
+  RefPtr<Promise> promise =
+      BodyConsumer::Create(global, mMainThreadEventTarget, bodyStream,
+                           signalImpl, aType, BodyBlobImpl(), BodyLocalPath(),
+                           mimeType, mixedCaseMimeType, blobStorageType, aRv);
   if (NS_WARN_IF(aRv.Failed())) {
     return nullptr;
   }
@@ -1592,15 +1592,15 @@ template void FetchBody<Response>::GetMimeType(nsACString& aMimeType,
                                                nsACString& aMixedCaseMimeType);
 
 template <class Derived>
-const nsACString& FetchBody<Derived>::BodyBlobURISpec() const {
-  return DerivedClass()->BodyBlobURISpec();
+BlobImpl* FetchBody<Derived>::BodyBlobImpl() const {
+  return DerivedClass()->BodyBlobImpl();
 }
 
-template const nsACString& FetchBody<Request>::BodyBlobURISpec() const;
+template BlobImpl* FetchBody<Request>::BodyBlobImpl() const;
 
-template const nsACString& FetchBody<Response>::BodyBlobURISpec() const;
+template BlobImpl* FetchBody<Response>::BodyBlobImpl() const;
 
-template const nsACString& FetchBody<EmptyBody>::BodyBlobURISpec() const;
+template BlobImpl* FetchBody<EmptyBody>::BodyBlobImpl() const;
 
 template <class Derived>
 const nsAString& FetchBody<Derived>::BodyLocalPath() const {
@@ -1753,7 +1753,7 @@ void FetchBody<Derived>::MaybeTeeReadableStreamBody(
   mReadableStreamBody = branches[0];
   branches[1].forget(aBodyOut);
 
-  aRv = FetchStreamReader::Create(aCx, mOwner, aStreamReader, aInputStream);
+  aRv = FetchStreamReader::Create(aCx, mGlobal, aStreamReader, aInputStream);
   if (NS_WARN_IF(aRv.Failed())) {
     return;
   }
@@ -1776,7 +1776,7 @@ void FetchBody<Derived>::RunAbortAlgorithm() {
   }
 
   AutoJSAPI jsapi;
-  if (!jsapi.Init(mOwner)) {
+  if (!jsapi.Init(mGlobal)) {
     return;
   }
 
@@ -1796,14 +1796,14 @@ NS_IMPL_RELEASE_INHERITED(EmptyBody, FetchBody<EmptyBody>)
 NS_IMPL_CYCLE_COLLECTION_CLASS(EmptyBody)
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(EmptyBody, FetchBody<EmptyBody>)
-  NS_IMPL_CYCLE_COLLECTION_UNLINK(mOwner)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mGlobal)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mAbortSignalImpl)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mFetchStreamReader)
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(EmptyBody,
                                                   FetchBody<EmptyBody>)
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mOwner)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mGlobal)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mAbortSignalImpl)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mFetchStreamReader)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END

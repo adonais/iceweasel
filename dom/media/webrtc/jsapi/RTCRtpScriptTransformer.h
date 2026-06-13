@@ -8,6 +8,7 @@
 #include <memory>
 
 #include "js/RootingAPI.h"
+#include "jsapi/RTCStatsReport.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/dom/ReadableStream.h"
@@ -187,6 +188,7 @@ class RTCRtpScriptTransformer final : public nsISupports,
   // ask the FrameTransformerProxy again, and just bulk resolve/reject.
   GenerateKeyFramePromises mGenerateKeyFramePromises;
   Maybe<bool> mVideo;
+  Maybe<RTCStatsTimestampMaker> mTimestampMaker;
   RefPtr<StrongWorkerRef> mWorkerRef;
 };
 

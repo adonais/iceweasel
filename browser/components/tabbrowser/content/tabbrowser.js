@@ -171,6 +171,15 @@
   }
 
   window.Tabbrowser = class {
+    static create(window) {
+      window.gBrowser = new window.Tabbrowser();
+      window.gBrowser.init();
+    }
+
+    static destroy(window) {
+      window.gBrowser.destroy();
+    }
+
     init() {
       this.tabContainer = document.getElementById("tabbrowser-tabs");
       this.tabGroupMenu = document.getElementById("tab-group-editor");
@@ -333,7 +342,7 @@
       this._initialized = true;
     }
 
-    ownerGlobal = window;
+    documentGlobal = window;
 
     ownerDocument = document;
 
@@ -867,6 +876,7 @@
       }
 
       for (const tab of unchangedRemoteness) {
+        ReducedProtectionNotification.markUserReload(tab.linkedBrowser);
         reloadBrowser(tab);
       }
 
@@ -1215,13 +1225,44 @@
             "name",
             `tab-notification-box-${this._nextNotificationBoxId++}`
           );
-          this.getTabNotificationDeck().append(element);
-          if (browser == this.selectedBrowser) {
-            this._updateVisibleNotificationBox(browser);
-          }
+          this.#insertNotificationBox(browser, element);
         }, this._notificationEnableDelay);
       }
       return browser._notificationBox;
+    }
+
+    /**
+     * Insert a notification box into the correct container.
+     *
+     * In Split View, notifications go into the panel's browserContainer
+     * so they appear only in that panel.
+     *
+     * Otherwise, they go into the shared tab notification deck.
+     *
+     * @param {MozBrowser} browser
+     * @param {Element} box
+     *   The notification box.
+     */
+    #insertNotificationBox(browser, box) {
+      if (this.#isBrowserInActiveSplitView(browser)) {
+        let browserContainer = this.getBrowserContainer(browser);
+        if (box.parentNode === browserContainer) {
+          // Notification box is already in the container.
+          return;
+        }
+        let browserStack = browserContainer.querySelector(".browserStack");
+        browserContainer.insertBefore(box, browserStack);
+        return;
+      }
+      this.getTabNotificationDeck().append(box);
+      if (browser == this.selectedBrowser) {
+        this._updateVisibleNotificationBox(browser);
+      }
+    }
+
+    #isBrowserInActiveSplitView(browser) {
+      let tab = this.getTabForBrowser(browser);
+      return this.#activeSplitView && tab?.splitview === this.#activeSplitView;
     }
 
     readNotificationBox(aBrowser) {
@@ -1235,6 +1276,13 @@
         return;
       }
       let notificationBox = this.readNotificationBox(aBrowser);
+      if (
+        notificationBox?._stack &&
+        notificationBox._stack.parentNode !== this.getTabNotificationDeck()
+      ) {
+        // Notification box is not in the deck (e.g. in a Split View panel).
+        return;
+      }
       this.getTabNotificationDeck().selectedViewName = notificationBox
         ? notificationBox.stack.getAttribute("name")
         : "";
@@ -1745,7 +1793,7 @@
         newTab.updateLastAccessed();
         oldTab.updateLastAccessed();
         // if this is the foreground window, update the last-seen timestamps.
-        if (this.ownerGlobal == BrowserWindowTracker.getTopWindow()) {
+        if (this.documentGlobal == BrowserWindowTracker.getTopWindow()) {
           newTab.updateLastSeenActive();
           oldTab.updateLastSeenActive();
         }
@@ -2366,6 +2414,7 @@
         policyContainer,
         userContextId,
         fromExternal,
+        newWindowLoad,
       } = {}
     ) {
       if (!aURIs.length) {
@@ -2432,6 +2481,9 @@
         }
         if (fromExternal) {
           loadFlags |= LOAD_FLAGS_FROM_EXTERNAL;
+        }
+        if (newWindowLoad) {
+          browser.initiatedFromNonWebControlled = true;
         }
         try {
           browser.fixupAndLoadURIString(aURIs[0], {
@@ -3938,7 +3990,8 @@
       group.removedByAdoption = true;
       group.saveOnWindowClose = false;
 
-      let oldSelectedTab = selectTab && group.ownerGlobal.gBrowser.selectedTab;
+      let oldSelectedTab =
+        selectTab && group.documentGlobal.gBrowser.selectedTab;
       let newTabs = [];
       let adoptedTab;
       let splitview;
@@ -3946,9 +3999,10 @@
       // bug1969925 adopting a tab group will cause the window to close if it
       // is the only thing on the tab strip
       // In this case, the `TabUngrouped` event will not fire, so we have to do it manually
-      let noOtherTabsInWindow = group.ownerGlobal.gBrowser.nonHiddenTabs.every(
-        t => t.group == group
-      );
+      let noOtherTabsInWindow =
+        group.documentGlobal.gBrowser.nonHiddenTabs.every(
+          t => t.group == group
+        );
 
       // We dispatch this event in a separate for loop because the tab extension API
       // expects event.detail to be a tab.
@@ -4007,7 +4061,7 @@
       }
 
       let oldSelectedTab =
-        selectTab && container.ownerGlobal.gBrowser.selectedTab;
+        selectTab && container.documentGlobal.gBrowser.selectedTab;
       let newTabs = [];
 
       // When tabs are adopted across windows, they exit the tab split of the
@@ -6317,14 +6371,14 @@
       // and vice versa.
       if (
         PrivateBrowsingUtils.isWindowPrivate(window) !=
-        PrivateBrowsingUtils.isWindowPrivate(aOtherTab.ownerGlobal)
+        PrivateBrowsingUtils.isWindowPrivate(aOtherTab.documentGlobal)
       ) {
         return false;
       }
 
       // Do not allow transfering a useRemoteSubframes tab to a
       // non-useRemoteSubframes window and vice versa.
-      if (gFissionBrowser != aOtherTab.ownerGlobal.gFissionBrowser) {
+      if (gFissionBrowser != aOtherTab.documentGlobal.gFissionBrowser) {
         return false;
       }
 
@@ -6345,7 +6399,7 @@
       }
 
       // That's gBrowser for the other window, not the tab's browser!
-      var remoteBrowser = aOtherTab.ownerGlobal.gBrowser;
+      var remoteBrowser = aOtherTab.documentGlobal.gBrowser;
       var isPending = aOtherTab.hasAttribute("pending");
 
       let otherTabListener = remoteBrowser._tabListeners.get(aOtherTab);
@@ -6379,7 +6433,7 @@
       // about:blank being painted.
       let [closeWindow] = aOtherTab._endRemoveArgs;
       if (closeWindow) {
-        let win = aOtherTab.ownerGlobal;
+        let win = aOtherTab.documentGlobal;
         win.windowUtils.suppressAnimation(true);
         // Only suppressing window animations isn't enough to avoid
         // an empty content area being painted.
@@ -6512,7 +6566,7 @@
 
       // Finish tearing down the tab that's going away.
       if (closeWindow) {
-        aOtherTab.ownerGlobal.close();
+        aOtherTab.documentGlobal.close();
       } else {
         remoteBrowser._endRemoveTab(aOtherTab);
       }
@@ -6546,7 +6600,7 @@
       this._swapBrowserDocShells(aOurTab, otherBrowser);
 
       // Restore the listeners for the swapped in tab.
-      tabListener = new otherTabBrowser.ownerGlobal.TabProgressListener(
+      tabListener = new otherTabBrowser.documentGlobal.TabProgressListener(
         aOtherTab,
         otherBrowser,
         false,
@@ -6573,7 +6627,7 @@
       // Make sure to unregister any open URIs.
       this._swapRegisteredOpenURIs(ourBrowser, aOtherBrowser);
 
-      let remoteBrowser = aOtherBrowser.ownerGlobal.gBrowser;
+      let remoteBrowser = aOtherBrowser.documentGlobal.gBrowser;
 
       // If switcher is active, it will intercept swap events and
       // react as needed.
@@ -8275,11 +8329,31 @@
 
     on_TabSplitViewActivate(aEvent) {
       this.#activeSplitView = aEvent.detail.splitview;
+      this.#moveSplitViewNotificationBoxes(aEvent.detail.tabs);
     }
 
     on_TabSplitViewDeactivate(aEvent) {
       if (this.#activeSplitView === aEvent.detail.splitview) {
         this.#activeSplitView = null;
+      }
+      this.#moveSplitViewNotificationBoxes(aEvent.detail.tabs);
+    }
+
+    /**
+     * Move existing notification boxes into or out of Split View
+     * panel containers.
+     *
+     * @param {MozTabbrowserTab[]} tabs
+     */
+    #moveSplitViewNotificationBoxes(tabs) {
+      for (const tab of tabs) {
+        let notificationBox = this.readNotificationBox(tab.linkedBrowser);
+        if (notificationBox?._stack) {
+          this.#insertNotificationBox(
+            tab.linkedBrowser,
+            notificationBox._stack
+          );
+        }
       }
     }
 
@@ -9070,13 +9144,13 @@
     }
 
     setSuccessor(aTab, successorTab) {
-      if (aTab.ownerGlobal != window) {
+      if (aTab.documentGlobal != window) {
         throw new Error("Cannot set the successor of another window's tab");
       }
       if (successorTab == aTab) {
         successorTab = null;
       }
-      if (successorTab && successorTab.ownerGlobal != window) {
+      if (successorTab && successorTab.documentGlobal != window) {
         throw new Error("Cannot set the successor to another window's tab");
       }
       if (aTab.successor) {
@@ -9331,16 +9405,17 @@
             // non-web-controlled blank page.
             if (
               this.mBrowser.browsingContext.sessionHistory?.count === 0 &&
-              BrowserUIUtils.checkEmptyPageOrigin(
-                this.mBrowser,
-                originalLocation
-              )
+              (this.mBrowser.initiatedFromNonWebControlled ||
+                BrowserUIUtils.checkEmptyPageOrigin(
+                  this.mBrowser,
+                  originalLocation
+                ))
             ) {
               gBrowser.setInitialTabTitle(this.mTab, originalLocation.spec, {
                 isURL: true,
               });
 
-              this.mBrowser.browsingContext.nonWebControlledBlankURI =
+              this.mBrowser.browsingContext.nonWebControlledLoadingURI =
                 originalLocation;
               if (this.mTab.selected && !gBrowser.userTypedValue) {
                 gURLBar.setURI();
@@ -9348,6 +9423,7 @@
             }
           }
           delete this.mBrowser.initialPageLoadedFromUserAction;
+          delete this.mBrowser.initiatedFromNonWebControlled;
           // If the browser is loading it must not be crashed anymore
           this.mTab.removeAttribute("crashed");
         }
@@ -10493,15 +10569,19 @@ var TabContextMenu = {
     );
 
     // Only one of pin/unpin/multiselect-pin/multiselect-unpin should be visible
+    let hasAboutOpenTabsTab = this.contextTabs.some(
+      t => t.linkedBrowser.currentURI.spec === "about:opentabs"
+    );
     let contextPinTab = document.getElementById("context_pinTab");
-    contextPinTab.hidden = this.contextTab.pinned || this.multiselected;
+    contextPinTab.hidden =
+      this.contextTab.pinned || this.multiselected || hasAboutOpenTabsTab;
     let contextUnpinTab = document.getElementById("context_unpinTab");
     contextUnpinTab.hidden = !this.contextTab.pinned || this.multiselected;
     let contextPinSelectedTabs = document.getElementById(
       "context_pinSelectedTabs"
     );
     contextPinSelectedTabs.hidden =
-      this.contextTab.pinned || !this.multiselected;
+      this.contextTab.pinned || !this.multiselected || hasAboutOpenTabsTab;
     let contextUnpinSelectedTabs = document.getElementById(
       "context_unpinSelectedTabs"
     );
@@ -10660,15 +10740,7 @@ var TabContextMenu = {
     document.getElementById("context_shareSelectedTabsSeparator").hidden =
       hideContentSharing;
     if (!contentSharingShareTabs.hidden) {
-      this.removeNewBadge(contentSharingShareTabs);
-      if (
-        Services.prefs.getBoolPref(
-          "browser.contentsharing.newBadge.enabled",
-          true
-        )
-      ) {
-        this.addNewBadge(contentSharingShareTabs);
-      }
+      this.addNewBadge(contentSharingShareTabs);
     }
 
     let toggleMute = document.getElementById("context_toggleMuteTab");
@@ -10709,7 +10781,7 @@ var TabContextMenu = {
       PrivateBrowsingUtils.isWindowPrivate(window);
     reopenInContainer.disabled = this.contextTab.hidden;
 
-    SharingUtils.updateShareURLMenuItem(
+    SharingUtils.ensureShareMenu(
       this.contextTab.linkedBrowser,
       this.multiselected ? this.contextTabs.map(t => t.linkedBrowser) : null,
       document.getElementById("context_moveTabOptions")
@@ -10744,6 +10816,10 @@ var TabContextMenu = {
     item.style.setProperty(
       "--tab-group-color-pale",
       `var(--tab-group-color-${group.color}-pale)`
+    );
+    item.style.setProperty(
+      "--tab-group-background-color",
+      `var(--tab-group-${group.color})`
     );
 
     return item;
@@ -10945,7 +11021,7 @@ var TabContextMenu = {
         gBrowser.TabMetrics.METRIC_SOURCE.TAB_MENU
       )
     );
-    group.ownerGlobal.focus();
+    group.documentGlobal.focus();
   },
 
   addTabsToSavedGroup(groupId) {

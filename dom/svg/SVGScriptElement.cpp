@@ -138,7 +138,7 @@ void SVGScriptElement::FreezeExecutionAttrs(const Document* aOwnerDoc) {
 
       if (!mUri) {
         AutoTArray<nsString, 2> params = {
-            isHref ? u"href"_ns : u"xlink:href"_ns, src};
+            isHref ? u"href"_ns : u"xlink:href"_ns, std::move(src)};
 
         nsContentUtils::ReportToConsole(nsIScriptError::warningFlag, "SVG"_ns,
                                         OwnerDoc(),

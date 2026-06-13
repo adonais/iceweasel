@@ -458,18 +458,11 @@ macosx1500-64-tests:
 
 macosx1500-aarch64-tests:
     - cppunittest
-    - mochitest-media
-    - web-platform-tests
-
-macosx1470-64-tests:
-    - cppunittest
-    - crashtest
-    - firefox-ui-functional
-    - gtest
-    - jittest
     - jsreftest
     - marionette-integration
     - marionette-unittest
+    - crashtest
+    - jittest
     - mochitest-a11y
     - mochitest-browser-a11y
     - mochitest-browser-media
@@ -490,6 +483,28 @@ macosx1470-64-tests:
     - test-verify
     - test-verify-gpu
     - test-verify-wpt
+    - web-platform-tests
+    - xpcshell
+
+# Test set for ARM64 VMs (VirtualMac2,1). No GPU, no display, no perf hardware.
+# Limited to suites empirically validated on these workers; tests that need
+# a real WindowServer (focus management, accessibility hierarchy, browser
+# windows, fullscreen, compositor hooks) hang or timeout and are intentionally
+# omitted. web-platform-tests is also omitted pending Bug 2038639 (GPU process
+# leak in APZCTreeManager::CheckerboardFlushObservers on headless macOS).
+# Suites can be re-added as headless support improves.
+macosx1500-aarch64-vms-tests:
+    - cppunittest
+    - jittest
+    - jsreftest
+    - telemetry-tests-client
+    - xpcshell
+
+macosx1470-64-tests:
+    - cppunittest
+    - crashtest
+    - firefox-ui-functional
+    - gtest
     - web-platform-tests-canvas
     - web-platform-tests-crashtest
     - web-platform-tests-eme
@@ -497,7 +512,6 @@ macosx1470-64-tests:
     - web-platform-tests-reftest
     - web-platform-tests-wdspec
     - web-platform-tests-webcodecs
-    - xpcshell
 
 macosx1015-64-qr-tests:
     - cppunittest

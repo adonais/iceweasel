@@ -23,6 +23,7 @@ import mozilla.components.compose.base.annotation.FlexibleWindowPreview
 import org.mozilla.fenix.R
 import org.mozilla.fenix.pbmlock.UnlockPrivateTabsTrayScreen
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
+import org.mozilla.fenix.tabstray.controller.TabInteractionHandler
 import org.mozilla.fenix.tabstray.data.TabsTrayItem
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
 import org.mozilla.fenix.theme.FirefoxTheme
@@ -42,7 +43,7 @@ private val EmptyPageWidth = 190.dp
  * @param onTabClose Invoked when the user clicks to close a tab.
  * @param onItemClick Invoked when the user clicks on a tab.
  * @param onItemLongClick Invoked when the user long clicks on a tab.
- * @param onMove Invoked after the drag and drop gesture completed. Swaps position of two tabs.
+ * @param tabInteractionHandler Handlers tab interactions such as moves and drag and drop.
  * @param onUnlockPbmClick Invoked when user clicks on Unlock button.
  */
 @Suppress("LongParameterList")
@@ -56,7 +57,7 @@ internal fun PrivateTabsPage(
     onTabClose: (TabsTrayItem.Tab) -> Unit,
     onItemClick: (TabsTrayItem) -> Unit,
     onItemLongClick: (TabsTrayItem) -> Unit,
-    onMove: (String, String?, Boolean) -> Unit,
+    tabInteractionHandler: TabInteractionHandler,
     onUnlockPbmClick: () -> Unit,
 ) {
     when {
@@ -72,19 +73,18 @@ internal fun PrivateTabsPage(
             TabLayout(
                 tabs = privateTabs,
                 displayTabsInGrid = displayTabsInGrid,
+                tabInteractionHandler = tabInteractionHandler,
                 selectedItemIndex = selectedItemIndex,
                 selectionMode = selectionMode,
                 modifier = Modifier.testTag(TabsTrayTestTag.PRIVATE_TABS_LIST),
                 onTabClose = onTabClose,
                 onItemClick = onItemClick,
                 onItemLongClick = onItemLongClick,
-                onTabDragStart = {
-                    // Because we don't currently support selection mode for private tabs,
-                    // there's no need to exit selection mode when dragging tabs.
-                },
-                onDeleteTabGroup = {},
-                onMove = onMove,
-                editTabGroupClick = {},
+                onDeleteTabGroupClick = {},
+                onEditTabGroupClick = {},
+                onCloseTabGroupClick = {},
+                dragAndDropEnabled = false,
+                focusEnabled = true, // Drag and drop is not possible, so there's no reason to hide the focus state
             )
         }
     }

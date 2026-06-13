@@ -6,15 +6,16 @@
       "matches": ["*://iweather.gov.vn/*"]
     }
   },
+  "css": {
+    "fix_narrow_interface": ".w-mc { width: -moz-available; }"
+  },
   "interventions": [
     {
       "platforms": ["all"],
       "pref_check": {
         "layout.css.webkit-fill-available.enabled": false
       },
-      "content_scripts": {
-        "css": ["bug1973976-iweather.gov.vn-fix-narrow-interface.css"]
-      }
+      "css": ["fix_narrow_interface"]
     }
   ]
 }

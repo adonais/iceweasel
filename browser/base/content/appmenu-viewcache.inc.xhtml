@@ -766,10 +766,30 @@
     </vbox>
   </panelview>
 
+  <panelview id="PanelUI-fxa-menu-sendtab-sign-in" class="PanelUI-subView">
+    <vbox id="PanelUI-fxa-sendtab-sign-in" class="panel-subview-body">
+      <toolbarbutton id="PanelUI-fxa-menu-sendtab-sign-in-button" class="subviewbutton panel-subview-footer-button"
+                     data-l10n-id="fxa-menu-send-to-mobile-sign-in"
+                     />
+    </vbox>
+  </panelview>
+
   <panelview id="PanelUI-fxa-menu-sendtab-enable-sync" class="PanelUI-subView">
     <vbox id="PanelUI-fxa-sendtab-enable-sync" class="panel-subview-body">
       <toolbarbutton id="PanelUI-fxa-menu-sendtab-enable-sync-button" class="subviewbutton panel-subview-footer-button"
-                     data-l10n-id="fxa-menu-send-to-mobile-enable-sync2"
+                     data-l10n-id="fxa-menu-send-to-mobile-turn-on-sync"
+                     />
+    </vbox>
+  </panelview>
+
+  <panelview id="PanelUI-fxa-menu-sendtab-verify-account" class="PanelUI-subView">
+    <vbox id="PanelUI-fxa-sendtab-verify-account" class="panel-subview-body">
+      <toolbarbutton id="PanelUI-fxa-menu-sendtab-unverified-button" disabled="true" class="subviewbutton panel-subview-footer-button"
+                     data-l10n-id="fxviewtabrow-send-to-mobile-not-verified"
+                     />
+      <toolbarseparator id="PanelUI-sendtab-verify-account-separator" />
+      <toolbarbutton id="PanelUI-fxa-menu-sendtab-verify-account-button" class="subviewbutton panel-subview-footer-button"
+                     data-l10n-id="fxviewtabrow-send-to-mobile-verify-account"
                      />
     </vbox>
   </panelview>
@@ -777,7 +797,7 @@
   <panelview id="PanelUI-fxa-menu-sendtab-connect-phone" class="PanelUI-subView">
     <vbox id="PanelUI-fxa-sendtab-connect-phone" class="panel-subview-body">
       <toolbarbutton id="PanelUI-fxa-menu-sendtab-connect-phone-button" class="subviewbutton panel-subview-footer-button"
-                     data-l10n-id="fxa-menu-send-to-mobile-connect-phone2"
+                     data-l10n-id="fxa-menu-send-to-mobile-connect-device"
                      />
       <toolbarseparator id="PanelUI-set-up-connect-phone-separator" />
       <toolbarbutton id="PanelUI-fxa-menu-sendtab-no-phone-button" class="subviewbutton panel-subview-footer-button"
@@ -897,24 +917,52 @@
       <toolbarbutton id="ai-window-switch-classic"
                     class="subviewbutton"
                     type="radio"
-                    data-l10n-id="ai-window-toggleview-switch-classic"
-                    hidden="true"/>
+                    hidden="true"
+                    data-l10n-attrs="label">
+        <image class="toolbarbutton-icon"/>
+        <vbox>
+          <label class="toolbarbutton-text"
+                data-l10n-id="ai-window-toggleview-switch-classic" crop="end"/>
+          <label class="ai-window-switch-description toolbarbutton-text"
+                data-l10n-id="ai-window-toggleview-switch-classic-description" crop="end"/>
+        </vbox>
+      </toolbarbutton>
       <toolbarbutton id="ai-window-switch-ai"
                     class="subviewbutton"
                     type="radio"
                     hidden="true"
+                    data-l10n-attrs="label"
                     aria-describedby="ai-window-switch-ai-badge">
         <image class="toolbarbutton-icon"/>
-        <label class="toolbarbutton-text" crop="end"
-               data-l10n-id="ai-window-toggleview-switch-ai"/>
-        <html:moz-badge id="ai-window-switch-ai-badge"
-                        type="beta"/>
+        <vbox>
+          <hbox>
+            <label class="toolbarbutton-text"
+                  data-l10n-id="ai-window-toggleview-switch-ai" crop="end"/>
+            <html:moz-badge id="ai-window-switch-ai-badge"
+                  type="beta"/>
+          </hbox>
+          <label class="ai-window-switch-description toolbarbutton-text"
+                data-l10n-id="ai-window-toggleview-switch-ai-description" crop="end"/>
+        </vbox>
       </toolbarbutton>
     </vbox>
   </panelview>
 
-  <panelview id="appMenu-tabGroupsListView"
-             class="PanelUI-subView">
+  <panelview id="appMenu-tabGroupsListView" class="PanelUI-subView">
+    <vbox class="panel-subview-body">
+      <html:tab-groups-list/>
+    </vbox>
+  </panelview>
+
+  <panelview id="toolbar-tabGroupsListView"
+             class="PanelUI-subView"
+             mainview-with-header="true">
+    <box class="panel-header">
+      <html:h1>
+        <html:span data-l10n-id="tab-groups-list-title"></html:span>
+      </html:h1>
+    </box>
+    <toolbarseparator />
     <vbox class="panel-subview-body">
       <html:tab-groups-list/>
     </vbox>

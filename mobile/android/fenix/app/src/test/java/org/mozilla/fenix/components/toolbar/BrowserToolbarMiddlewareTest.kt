@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+@file:OptIn(ExperimentalAndroidComponentsApi::class)
+
 package org.mozilla.fenix.components.toolbar
 
 import androidx.navigation.NavController
@@ -18,6 +20,7 @@ import io.mockk.verify
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
+import mozilla.components.ExperimentalAndroidComponentsApi
 import mozilla.components.browser.state.action.BrowserAction
 import mozilla.components.browser.state.action.ContentAction
 import mozilla.components.browser.state.action.ContentAction.UpdateLoadingStateAction
@@ -47,6 +50,7 @@ import mozilla.components.browser.thumbnails.BrowserThumbnails
 import mozilla.components.compose.browser.toolbar.concept.Action
 import mozilla.components.compose.browser.toolbar.concept.Action.ActionButton
 import mozilla.components.compose.browser.toolbar.concept.Action.ActionButtonRes
+import mozilla.components.compose.browser.toolbar.concept.Action.AnimatedPillActionRes
 import mozilla.components.compose.browser.toolbar.concept.Action.TabCounterAction
 import mozilla.components.compose.browser.toolbar.concept.PageOrigin
 import mozilla.components.compose.browser.toolbar.concept.PageOrigin.Companion.ContextualMenuOption
@@ -69,10 +73,16 @@ import mozilla.components.concept.engine.Engine
 import mozilla.components.concept.engine.EngineSession
 import mozilla.components.concept.engine.EngineSession.LoadUrlFlags
 import mozilla.components.concept.engine.cookiehandling.CookieBannersStorage
+import mozilla.components.concept.engine.ipprotection.IPProtectionHandler.StateInfo
+import mozilla.components.concept.engine.ipprotection.ServiceState
 import mozilla.components.concept.engine.permission.SitePermissionsStorage
 import mozilla.components.concept.engine.prompt.ShareData
 import mozilla.components.concept.engine.utils.ABOUT_HOME_URL
 import mozilla.components.concept.storage.BookmarksStorage
+import mozilla.components.feature.ipprotection.store.IPProtectionAction
+import mozilla.components.feature.ipprotection.store.IPProtectionStore
+import mozilla.components.feature.ipprotection.store.state.Authorized
+import mozilla.components.feature.ipprotection.store.state.IPProtectionState
 import mozilla.components.feature.session.SessionUseCases
 import mozilla.components.feature.session.TrackingProtectionUseCases
 import mozilla.components.feature.tabs.TabsUseCases
@@ -82,10 +92,10 @@ import mozilla.components.support.ktx.util.URLStringUtils
 import mozilla.components.support.test.middleware.CaptureActionsMiddleware
 import mozilla.components.support.test.robolectric.testContext
 import mozilla.components.support.utils.ClipboardHandler
+import mozilla.components.support.utils.INTENT_TYPE_PDF
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -128,6 +138,8 @@ import org.mozilla.fenix.components.menu.MenuAccessPoint
 import org.mozilla.fenix.components.search.BOOKMARKS_SEARCH_ENGINE_ID
 import org.mozilla.fenix.components.search.HISTORY_SEARCH_ENGINE_ID
 import org.mozilla.fenix.components.search.TABS_SEARCH_ENGINE_ID
+import org.mozilla.fenix.components.share.ShareSheetLauncher
+import org.mozilla.fenix.components.share.ShareSource
 import org.mozilla.fenix.components.toolbar.BrowserToolbarMiddleware.ToolbarAction
 import org.mozilla.fenix.components.toolbar.DisplayActions.AddBookmarkClicked
 import org.mozilla.fenix.components.toolbar.DisplayActions.EditBookmarkClicked
@@ -149,13 +161,18 @@ import org.mozilla.fenix.components.toolbar.TabCounterInteractions.CloseCurrentT
 import org.mozilla.fenix.components.toolbar.TabCounterInteractions.TabCounterClicked
 import org.mozilla.fenix.components.toolbar.TabCounterInteractions.TabCounterLongClicked
 import org.mozilla.fenix.components.usecases.FenixBrowserUseCases
+import org.mozilla.fenix.components.usecases.ShareUseCases
 import org.mozilla.fenix.ext.directionsEq
 import org.mozilla.fenix.helpers.FenixGleanTestRule
 import org.mozilla.fenix.settings.ShortcutType
 import org.mozilla.fenix.tabstray.redux.state.Page
 import org.mozilla.fenix.tabstray.ui.AccessPoint
 import org.mozilla.fenix.utils.Settings
+import org.mozilla.fenix.utils.Stories.markAsOpenedFromHomeScreen
+import org.mozilla.fenix.utils.Stories.markAsOpenedFromStoriesScreen
 import org.robolectric.annotation.Config
+import kotlin.test.assertIs
+import kotlin.test.assertNotNull
 import mozilla.components.browser.toolbar.R as toolbarR
 import mozilla.components.ui.icons.R as iconsR
 import mozilla.components.ui.tabcounter.R as tabcounterR
@@ -197,6 +214,8 @@ class BrowserToolbarMiddlewareTest {
     private val trackingProtectionUseCases: TrackingProtectionUseCases = mockk()
     private val publicSuffixList = PublicSuffixList(testContext)
     private val bookmarksStorage: BookmarksStorage = mockk()
+    private val ipProtectionStore = IPProtectionStore()
+    private val shareUseCases: ShareUseCases = mockk(relaxed = true)
     private lateinit var appStore: AppStore
 
     @Before
@@ -1285,7 +1304,6 @@ class BrowserToolbarMiddlewareTest {
     fun `GIVEN the current tab shows a content page WHEN the share shortcut is clicked THEN record telemetry and start sharing the local resource`() = runTest(testDispatcher) {
         settings.isTabStripEnabled = true
         settings.shouldUseExpandedToolbar = false
-        settings.shouldShowToolbarCustomization = true
         settings.toolbarSimpleShortcutKey = ShortcutType.SHARE.value
         val browserScreenStore = buildBrowserScreenStore()
         val captureMiddleware = CaptureActionsMiddleware<BrowserState, BrowserAction>()
@@ -1300,6 +1318,7 @@ class BrowserToolbarMiddlewareTest {
         val middleware = buildMiddleware(
             browserScreenStore = browserScreenStore,
             browserStore = browserStore,
+            shareUseCases = ShareUseCases(browserStore, mockk<ShareSheetLauncher>(relaxed = true), settings),
             isWideScreen = { true },
         )
         val toolbarStore = buildStore(middleware)
@@ -1312,7 +1331,52 @@ class BrowserToolbarMiddlewareTest {
         testDispatcher.scheduler.advanceUntilIdle()
         captureMiddleware.assertLastAction(ShareResourceAction.AddShareAction::class) {
             assertEquals(currentTab.id, it.tabId)
-            assertEquals(ShareResourceState.LocalResource(currentTab.content.url), it.resource)
+            assertEquals(ShareResourceState.LocalResource(currentTab.content.url, INTENT_TYPE_PDF), it.resource)
+        }
+    }
+
+    @Test
+    fun `GIVEN the current tab shows a remote PDF WHEN the share shortcut is clicked THEN record telemetry and start sharing the remote resource`() {
+        settings.isTabStripEnabled = true
+        settings.shouldUseExpandedToolbar = false
+        settings.toolbarSimpleShortcutKey = ShortcutType.SHARE.value
+        val browserScreenStore = buildBrowserScreenStore()
+        val captureMiddleware = CaptureActionsMiddleware<BrowserState, BrowserAction>()
+        val currentTab = createTab("https://mozilla.org/document.pdf", private = false).let {
+            it.copy(content = it.content.copy(isPdf = true))
+        }
+        val browserStore = BrowserStore(
+            initialState = BrowserState(
+                tabs = listOf(currentTab),
+                selectedTabId = currentTab.id,
+            ),
+            middleware = listOf(captureMiddleware),
+        )
+        val middleware = buildMiddleware(
+            browserScreenStore = browserScreenStore,
+            browserStore = browserStore,
+            shareUseCases = ShareUseCases(browserStore, mockk<ShareSheetLauncher>(relaxed = true), settings),
+            isWideScreen = { true },
+        )
+        val toolbarStore = buildStore(middleware)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val shareButton = toolbarStore.state.displayState.browserActionsEnd[0] as ActionButtonRes
+        assertEquals(expectedShareButton(), shareButton)
+
+        toolbarStore.dispatch(shareButton.onClick as BrowserToolbarEvent)
+        testDispatcher.scheduler.advanceUntilIdle()
+        captureMiddleware.assertLastAction(ShareResourceAction.AddShareAction::class) {
+            assertEquals(currentTab.id, it.tabId)
+            assertEquals(
+                ShareResourceState.InternetResource(
+                    url = currentTab.content.url,
+                    contentType = INTENT_TYPE_PDF,
+                    private = false,
+                    referrerUrl = currentTab.content.url,
+                ),
+                it.resource,
+            )
         }
     }
 
@@ -1320,7 +1384,6 @@ class BrowserToolbarMiddlewareTest {
     fun `GIVEN the current tab shows a normal webpage WHEN the share shortcut is clicked THEN record telemetry and open the share dialog`() {
         settings.isTabStripEnabled = true
         settings.shouldUseExpandedToolbar = false
-        settings.shouldShowToolbarCustomization = true
         settings.toolbarSimpleShortcutKey = ShortcutType.SHARE.value
         every { navController.currentDestination?.id } returns R.id.browserFragment
         every { navController.navigate(any<NavDirections>(), null) } just Runs
@@ -1335,6 +1398,7 @@ class BrowserToolbarMiddlewareTest {
         val middleware = buildMiddleware(
             browserScreenStore = browserScreenStore,
             browserStore = browserStore,
+            shareUseCases = ShareUseCases(browserStore, mockk<ShareSheetLauncher>(relaxed = true), settings),
             isWideScreen = { true },
         )
         val toolbarStore = buildStore(middleware)
@@ -1359,6 +1423,46 @@ class BrowserToolbarMiddlewareTest {
                     ),
                 ),
                 navOptions = null,
+            )
+        }
+    }
+
+    @Test
+    fun `WHEN the share shortcut is clicked THEN the share use case is invoked with the current tab's details`() {
+        settings.isTabStripEnabled = true
+        settings.shouldUseExpandedToolbar = false
+        settings.toolbarSimpleShortcutKey = ShortcutType.SHARE.value
+
+        every { navController.currentDestination?.id } returns R.id.browserFragment
+
+        val browserScreenStore = buildBrowserScreenStore()
+        val currentTab = createTab(url = "https://www.mozilla.org", title = "Mozilla", private = false)
+        val browserStore = BrowserStore(
+            initialState = BrowserState(
+                tabs = listOf(currentTab),
+                selectedTabId = currentTab.id,
+            ),
+        )
+        val middleware = buildMiddleware(
+            browserScreenStore = browserScreenStore,
+            browserStore = browserStore,
+            isWideScreen = { true },
+        )
+        val toolbarStore = buildStore(middleware)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val shareButton = toolbarStore.state.displayState.browserActionsEnd[0] as ActionButtonRes
+        toolbarStore.dispatch(shareButton.onClick as BrowserToolbarEvent)
+
+        verify {
+            shareUseCases.shareUrl(
+                id = currentTab.id,
+                url = currentTab.content.url,
+                title = currentTab.content.title,
+                source = ShareSource.BROWSER_TOOLBAR,
+                isPrivate = false,
+                isCustomTab = false,
+                navigateToShareFragment = any(),
             )
         }
     }
@@ -1529,6 +1633,134 @@ class BrowserToolbarMiddlewareTest {
         verify {
             navController.navigate(
                 BrowserFragmentDirections.actionGlobalTabHistoryDialogFragment(null),
+                null,
+            )
+        }
+    }
+
+    @Test
+    fun `GIVEN a tab with a home screen story URL WHEN the back button is clicked THEN navigate to home`() = runTest(testDispatcher) {
+        every { navController.currentDestination?.id } returns R.id.browserFragment
+        val currentTab = createTab(
+            url = "https://story.test".markAsOpenedFromHomeScreen(),
+            private = false,
+        )
+        val browserStore = BrowserStore(
+            initialState = BrowserState(
+                tabs = listOf(currentTab),
+                selectedTabId = currentTab.id,
+            ),
+        )
+        val middleware = buildMiddleware(
+            browserStore = browserStore,
+            isWideScreen = { true },
+        )
+        val toolbarStore = buildStore(middleware)
+
+        val backButton = toolbarStore.state.displayState.browserActionsStart[0] as ActionButtonRes
+        toolbarStore.dispatch(backButton.onClick as BrowserToolbarEvent)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        verify {
+            navController.navigate(
+                NavGraphDirections.actionGlobalHome(),
+                null,
+            )
+        }
+    }
+
+    @Test
+    fun `GIVEN a tab with a stories screen story URL WHEN the back button is clicked THEN navigate to stories fragment`() = runTest(testDispatcher) {
+        every { navController.currentDestination?.id } returns R.id.browserFragment
+        val currentTab = createTab(
+            url = "https://story.test".markAsOpenedFromStoriesScreen(),
+            private = false,
+        )
+        val browserStore = BrowserStore(
+            initialState = BrowserState(
+                tabs = listOf(currentTab),
+                selectedTabId = currentTab.id,
+            ),
+        )
+        val middleware = buildMiddleware(
+            browserStore = browserStore,
+            isWideScreen = { true },
+        )
+        val toolbarStore = buildStore(middleware)
+
+        val backButton = toolbarStore.state.displayState.browserActionsStart[0] as ActionButtonRes
+        toolbarStore.dispatch(backButton.onClick as BrowserToolbarEvent)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        verify {
+            navController.navigate(
+                directionsEq(BrowserFragmentDirections.actionBrowserFragmentToStoriesFragment()),
+                null,
+            )
+        }
+    }
+
+    @Test
+    fun `GIVEN a tab with a home screen story URL WHEN the back button is clicked AND home is on the back stack THEN pop back to home`() = runTest(testDispatcher) {
+        every { navController.currentDestination?.id } returns R.id.browserFragment
+        every { navController.popBackStack(R.id.homeFragment, false) } returns true
+        val currentTab = createTab(
+            url = "https://story.test".markAsOpenedFromHomeScreen(),
+            private = false,
+        )
+        val browserStore = BrowserStore(
+            initialState = BrowserState(
+                tabs = listOf(currentTab),
+                selectedTabId = currentTab.id,
+            ),
+        )
+        val middleware = buildMiddleware(
+            browserStore = browserStore,
+            isWideScreen = { true },
+        )
+        val toolbarStore = buildStore(middleware)
+
+        val backButton = toolbarStore.state.displayState.browserActionsStart[0] as ActionButtonRes
+        toolbarStore.dispatch(backButton.onClick as BrowserToolbarEvent)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        verify { navController.popBackStack(R.id.homeFragment, false) }
+        verify(exactly = 0) {
+            navController.navigate(
+                NavGraphDirections.actionGlobalHome(),
+                null,
+            )
+        }
+    }
+
+    @Test
+    fun `GIVEN a tab with a stories screen story URL WHEN the back button is clicked AND stories is on the back stack THEN pop back to stories`() = runTest(testDispatcher) {
+        every { navController.currentDestination?.id } returns R.id.browserFragment
+        every { navController.popBackStack(R.id.storiesFragment, false) } returns true
+        val currentTab = createTab(
+            url = "https://story.test".markAsOpenedFromStoriesScreen(),
+            private = false,
+        )
+        val browserStore = BrowserStore(
+            initialState = BrowserState(
+                tabs = listOf(currentTab),
+                selectedTabId = currentTab.id,
+            ),
+        )
+        val middleware = buildMiddleware(
+            browserStore = browserStore,
+            isWideScreen = { true },
+        )
+        val toolbarStore = buildStore(middleware)
+
+        val backButton = toolbarStore.state.displayState.browserActionsStart[0] as ActionButtonRes
+        toolbarStore.dispatch(backButton.onClick as BrowserToolbarEvent)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        verify { navController.popBackStack(R.id.storiesFragment, false) }
+        verify(exactly = 0) {
+            navController.navigate(
+                directionsEq(BrowserFragmentDirections.actionBrowserFragmentToStoriesFragment()),
                 null,
             )
         }
@@ -2007,6 +2239,246 @@ class BrowserToolbarMiddlewareTest {
         }
 
     @Test
+    fun `GIVEN ip protection is active WHEN initializing the toolbar THEN show animated pill with an overlay icon`() = runTest(testDispatcher) {
+        val ipProtectionStore = IPProtectionStore(
+            initialState = IPProtectionState(proxyStatus = Authorized.Active),
+        )
+        val browserStore = BrowserStore(
+            BrowserState(
+                tabs = listOf(tab),
+                selectedTabId = tab.id,
+            ),
+        )
+        every { tab.content.securityInfo } returns SecurityInfo.Secure()
+        every { tab.trackingProtection.enabled } returns true
+        every { tab.trackingProtection.ignoredOnTrackingProtection } returns false
+        val middleware = buildMiddleware(
+            browserStore = browserStore,
+            ipProtectionStore = ipProtectionStore,
+            useCases = useCases,
+        )
+
+        val toolbarStore = buildStore(middleware)
+
+        val toolbarPageActions = toolbarStore.state.displayState.pageActionsStart
+        assertEquals(1, toolbarPageActions.size)
+        val siteInfo = toolbarPageActions[0] as AnimatedPillActionRes
+        assertEquals(iconsR.drawable.mozac_ic_shield_checkmark_24, siteInfo.iconResId)
+        assertEquals(iconsR.drawable.mozac_ic_globe_24, siteInfo.overlayResId)
+        assertEquals(R.string.ip_protection_toolbar_pill_label, siteInfo.textResId)
+    }
+
+    @Test
+    fun `GIVEN ip protection is active and security is unknown WHEN initializing THEN show animated pill with globe icon`() = runTest(testDispatcher) {
+        val ipProtectionStore = IPProtectionStore(
+            initialState = IPProtectionState(proxyStatus = Authorized.Active),
+        )
+        val browserStore = BrowserStore(
+            BrowserState(
+                tabs = listOf(tab),
+                selectedTabId = tab.id,
+            ),
+        )
+        every { tab.content.securityInfo } returns SecurityInfo.Unknown
+        val middleware = buildMiddleware(
+            browserStore = browserStore,
+            ipProtectionStore = ipProtectionStore,
+            useCases = useCases,
+        )
+
+        val toolbarStore = buildStore(middleware)
+
+        val toolbarPageActions = toolbarStore.state.displayState.pageActionsStart
+        assertEquals(1, toolbarPageActions.size)
+        val siteInfo = toolbarPageActions[0] as AnimatedPillActionRes
+        assertEquals(iconsR.drawable.mozac_ic_globe_24, siteInfo.iconResId)
+    }
+
+    @Test
+    fun `GIVEN ip protection is active and site is insecure WHEN initializing THEN show animated pill with shield slash icon`() = runTest(testDispatcher) {
+        val ipProtectionStore = IPProtectionStore(
+            initialState = IPProtectionState(proxyStatus = Authorized.Active),
+        )
+        val browserStore = BrowserStore(
+            BrowserState(
+                tabs = listOf(tab),
+                selectedTabId = tab.id,
+            ),
+        )
+        every { tab.content.securityInfo } returns SecurityInfo.Insecure()
+        val middleware = buildMiddleware(
+            browserStore = browserStore,
+            ipProtectionStore = ipProtectionStore,
+            useCases = useCases,
+        )
+
+        val toolbarStore = buildStore(middleware)
+
+        val toolbarPageActions = toolbarStore.state.displayState.pageActionsStart
+        assertEquals(1, toolbarPageActions.size)
+        val siteInfo = toolbarPageActions[0] as AnimatedPillActionRes
+        assertEquals(iconsR.drawable.mozac_ic_shield_slash_24, siteInfo.iconResId)
+    }
+
+    @Test
+    fun `GIVEN ip protection is active and url is content WHEN initializing THEN show regular button`() = runTest(testDispatcher) {
+        val ipProtectionStore = IPProtectionStore(
+            initialState = IPProtectionState(proxyStatus = Authorized.Active),
+        )
+        val browserStore = BrowserStore(
+            BrowserState(
+                tabs = listOf(tab),
+                selectedTabId = tab.id,
+            ),
+        )
+        every { tab.content.url } returns "content://test"
+        val middleware = buildMiddleware(
+            browserStore = browserStore,
+            ipProtectionStore = ipProtectionStore,
+            useCases = useCases,
+        )
+
+        val toolbarStore = buildStore(middleware)
+
+        val toolbarPageActions = toolbarStore.state.displayState.pageActionsStart
+        assertEquals(1, toolbarPageActions.size)
+        assertIs<ActionButtonRes>(toolbarPageActions[0])
+    }
+
+    @Test
+    fun `GIVEN ip protection is active WHEN security changes from insecure to secure THEN pill remains with updated icon`() = runTest {
+        val ipProtectionStore = IPProtectionStore(
+            initialState = IPProtectionState(proxyStatus = Authorized.Active),
+        )
+        val tab = createTab(
+            url = "URL",
+            id = tabId,
+            trackingProtection = TrackingProtectionState(
+                enabled = true,
+                ignoredOnTrackingProtection = false,
+            ),
+            securityInfo = SecurityInfo.Insecure(),
+        )
+        val browserStore = BrowserStore(
+            BrowserState(
+                tabs = listOf(tab),
+                selectedTabId = tab.id,
+            ),
+        )
+        val middleware = buildMiddleware(
+            browserStore = browserStore,
+            ipProtectionStore = ipProtectionStore,
+            useCases = useCases,
+        )
+        val toolbarStore = buildStore(middleware)
+
+        var toolbarPageActions = toolbarStore.state.displayState.pageActionsStart
+        assertEquals(1, toolbarPageActions.size)
+        var siteInfo = toolbarPageActions[0] as AnimatedPillActionRes
+        assertEquals(iconsR.drawable.mozac_ic_shield_slash_24, siteInfo.iconResId)
+
+        browserStore.dispatch(UpdateSecurityInfoAction(tab.id, SecurityInfo.Secure()))
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        toolbarPageActions = toolbarStore.state.displayState.pageActionsStart
+        assertEquals(1, toolbarPageActions.size)
+        siteInfo = toolbarPageActions[0] as AnimatedPillActionRes
+        assertEquals(iconsR.drawable.mozac_ic_shield_checkmark_24, siteInfo.iconResId)
+    }
+
+    @OptIn(ExperimentalAndroidComponentsApi::class)
+    @Test
+    fun `GIVEN ip protection is not active WHEN it becomes active THEN update site info to animated pill`() = runTest {
+            val ipProtectionStore = IPProtectionStore()
+            val tab = createTab(
+                url = "URL",
+                id = tabId,
+                trackingProtection = TrackingProtectionState(
+                    enabled = true,
+                    ignoredOnTrackingProtection = false,
+                ),
+                securityInfo = SecurityInfo.Secure(),
+            )
+            val browserStore = BrowserStore(
+                BrowserState(
+                    tabs = listOf(tab),
+                    selectedTabId = tab.id,
+                ),
+            )
+            val middleware = buildMiddleware(
+                browserStore = browserStore,
+                ipProtectionStore = ipProtectionStore,
+                useCases = useCases,
+            )
+            val toolbarStore = buildStore(middleware)
+
+            var toolbarPageActions = toolbarStore.state.displayState.pageActionsStart
+            assertEquals(1, toolbarPageActions.size)
+            assertIs<ActionButtonRes>(toolbarPageActions[0])
+
+            ipProtectionStore.dispatch(
+                IPProtectionAction.EngineStateChanged(
+                    StateInfo(
+                        serviceState = ServiceState.Ready,
+                        proxyState = StateInfo.PROXY_STATE_ACTIVE,
+                    ),
+                ),
+            )
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            toolbarPageActions = toolbarStore.state.displayState.pageActionsStart
+            assertEquals(1, toolbarPageActions.size)
+            assertIs<AnimatedPillActionRes>(toolbarPageActions[0])
+        }
+
+    @OptIn(ExperimentalAndroidComponentsApi::class)
+    @Test
+    fun `GIVEN ip protection is active WHEN it becomes inactive THEN update site info to regular button`() = runTest {
+            val ipProtectionStore = IPProtectionStore(
+                initialState = IPProtectionState(proxyStatus = Authorized.Active),
+            )
+            val tab = createTab(
+                url = "URL",
+                id = tabId,
+                trackingProtection = TrackingProtectionState(
+                    enabled = true,
+                    ignoredOnTrackingProtection = false,
+                ),
+                securityInfo = SecurityInfo.Secure(),
+            )
+            val browserStore = BrowserStore(
+                BrowserState(
+                    tabs = listOf(tab),
+                    selectedTabId = tab.id,
+                ),
+            )
+            val middleware = buildMiddleware(
+                browserStore = browserStore,
+                ipProtectionStore = ipProtectionStore,
+                useCases = useCases,
+            )
+            val toolbarStore = buildStore(middleware)
+
+            var toolbarPageActions = toolbarStore.state.displayState.pageActionsStart
+            assertEquals(1, toolbarPageActions.size)
+            assertIs<AnimatedPillActionRes>(toolbarPageActions[0])
+
+            ipProtectionStore.dispatch(
+                IPProtectionAction.EngineStateChanged(
+                    StateInfo(
+                        serviceState = ServiceState.Ready,
+                        proxyState = StateInfo.PROXY_STATE_READY,
+                    ),
+                ),
+            )
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            toolbarPageActions = toolbarStore.state.displayState.pageActionsStart
+            assertEquals(1, toolbarPageActions.size)
+            assertIs<ActionButtonRes>(toolbarPageActions[0])
+        }
+
+    @Test
     fun `GIVEN reader mode is available WHEN reader mode status updates THEN update appropriate security indicator`() =
         runTest {
             val readerModeStatus: ReaderModeStatus = mockk(relaxed = true) {
@@ -2115,6 +2587,23 @@ class BrowserToolbarMiddlewareTest {
         val result = middleware.buildAction(
             toolbarAction = ToolbarAction.Back,
         ) as ActionButtonRes
+
+        assertEquals(ActionButton.State.DEFAULT, result.state)
+    }
+
+    @Test
+    fun `GIVEN not other websitge in tab history current URL is of an internally opened story WHEN configuring the back action THEN enable it`() {
+        val currentTab = createTab("https://story.test".markAsOpenedFromHomeScreen())
+        val browserState = BrowserState(
+            tabs = listOf(currentTab),
+            selectedTabId = currentTab.id,
+        )
+        val browserStore = BrowserStore(browserState)
+        val middleware = buildMiddleware(
+            browserStore = browserStore,
+        )
+
+        val result = middleware.buildAction(toolbarAction = ToolbarAction.Back) as ActionButtonRes
 
         assertEquals(ActionButton.State.DEFAULT, result.state)
     }
@@ -2667,7 +3156,6 @@ class BrowserToolbarMiddlewareTest {
     @Test
     fun `GIVEN share shortcut is selected THEN update end page actions without share action`() = runTest(testDispatcher) {
         settings.isTabStripEnabled = false
-        settings.shouldShowToolbarCustomization = true
         settings.toolbarSimpleShortcutKey = ShortcutType.SHARE.value
         val browserScreenStore = buildBrowserScreenStore()
         val middleware = buildMiddleware(
@@ -2682,7 +3170,6 @@ class BrowserToolbarMiddlewareTest {
 
     @Test
     fun `GIVEN translate shortcut is selected THEN update end page actions without translate action`() = runTest(testDispatcher) {
-        settings.shouldShowToolbarCustomization = true
         settings.toolbarSimpleShortcutKey = ShortcutType.TRANSLATE.value
         val browserScreenStore = buildBrowserScreenStore()
         val middleware = buildMiddleware(
@@ -2708,7 +3195,6 @@ class BrowserToolbarMiddlewareTest {
 
     @Test
     fun `WHEN clicking the homepage button THEN navigate to application's home screen`() = runTest(testDispatcher) {
-        settings.shouldShowToolbarCustomization = true
         settings.toolbarSimpleShortcutKey = ShortcutType.HOMEPAGE.value
 
         val middleware = buildMiddleware()
@@ -2722,7 +3208,6 @@ class BrowserToolbarMiddlewareTest {
     @Test
     fun `GIVEN homepage as new tab is enabled WHEN clicking the homepage button THEN navigate to homepage`() = runTest(testDispatcher) {
         settings.enableHomepageAsNewTab = true
-        settings.shouldShowToolbarCustomization = true
         settings.toolbarSimpleShortcutKey = ShortcutType.HOMEPAGE.value
 
         val middleware = buildMiddleware()
@@ -2735,7 +3220,6 @@ class BrowserToolbarMiddlewareTest {
 
     @Test
     fun `GIVEN expanded toolbar is used and navbar is hidden WHEN building end browser actions THEN use simple toolbar shortcuts`() = runTest(testDispatcher) {
-        settings.shouldShowToolbarCustomization = true
         settings.shouldUseExpandedToolbar = true
         settings.toolbarSimpleShortcutKey = ShortcutType.HOMEPAGE.value
 
@@ -2752,7 +3236,6 @@ class BrowserToolbarMiddlewareTest {
 
     @Test
     fun `GIVEN simple toolbar use add bookmark shortcut AND the current page is not bookmarked WHEN initializing toolbar THEN show Bookmark in end browser actions`() = runTest(testDispatcher) {
-        settings.shouldShowToolbarCustomization = true
         settings.toolbarSimpleShortcutKey = ShortcutType.BOOKMARK.value
         val toolbarStore = buildStore()
 
@@ -2762,7 +3245,6 @@ class BrowserToolbarMiddlewareTest {
 
     @Test
     fun `GIVEN simple toolbar use add bookmark shortcut AND the current page is bookmarked WHEN initializing toolbar THEN show ACTIVE EditBookmark in end browser actions`() = runTest(testDispatcher) {
-        settings.shouldShowToolbarCustomization = true
         settings.toolbarSimpleShortcutKey = ShortcutType.BOOKMARK.value
 
         val tab = createTab("https://example.com")
@@ -2791,7 +3273,6 @@ class BrowserToolbarMiddlewareTest {
 
     @Test
     fun `GIVEN simple toolbar use translate shortcut AND current page is not translated WHEN initializing toolbar THEN show Translate in end browser actions`() = runTest(testDispatcher) {
-        settings.shouldShowToolbarCustomization = true
         settings.toolbarSimpleShortcutKey = ShortcutType.TRANSLATE.value
 
         val pageTranslationStatus: PageTranslationStatus = mockk(relaxed = true) {
@@ -2810,7 +3291,6 @@ class BrowserToolbarMiddlewareTest {
 
     @Test
     fun `GIVEN simple toolbar use translate shortcut AND current page is translated WHEN initializing toolbar THEN show ACTIVE Translate in end browser actions`() = runTest(testDispatcher) {
-        settings.shouldShowToolbarCustomization = true
         settings.toolbarSimpleShortcutKey = ShortcutType.TRANSLATE.value
 
         val pageTranslationStatus: PageTranslationStatus = mockk(relaxed = true) {
@@ -2829,7 +3309,6 @@ class BrowserToolbarMiddlewareTest {
 
     @Test
     fun `GIVEN simple toolbar use homepage shortcut WHEN initializing toolbar THEN show Homepage in end browser actions`() = runTest(testDispatcher) {
-        settings.shouldShowToolbarCustomization = true
         settings.toolbarSimpleShortcutKey = ShortcutType.HOMEPAGE.value
 
         val toolbarStore = buildStore()
@@ -2840,7 +3319,6 @@ class BrowserToolbarMiddlewareTest {
 
     @Test
     fun `GIVEN simple toolbar use back shortcut AND current page has no history WHEN initializing toolbar THEN show DISABLED Back in end browser actions`() = runTest(testDispatcher) {
-        settings.shouldShowToolbarCustomization = true
         settings.toolbarSimpleShortcutKey = ShortcutType.BACK.value
 
         val toolbarStore = buildStore()
@@ -2851,7 +3329,6 @@ class BrowserToolbarMiddlewareTest {
 
     @Test
     fun `GIVEN simple toolbar use back shortcut AND current page has history WHEN initializing toolbar THEN show ACTIVE Back in end browser actions`() = runTest(testDispatcher) {
-        settings.shouldShowToolbarCustomization = true
         settings.toolbarSimpleShortcutKey = ShortcutType.BACK.value
 
         val tab = createTab(url = "https://example.com").let {
@@ -2875,7 +3352,6 @@ class BrowserToolbarMiddlewareTest {
 
     @Test
     fun `GIVEN simple toolbar use share shortcut AND wide window with tabstrip enabled WHEN initializing toolbar THEN only show one Share in end browser actions`() {
-        settings.shouldShowToolbarCustomization = true
         settings.isTabStripEnabled = true
         settings.toolbarSimpleShortcutKey = ShortcutType.SHARE.value
 
@@ -2898,7 +3374,6 @@ class BrowserToolbarMiddlewareTest {
     @Test
     fun `GIVEN simple toolbar set to use no custom shortcut WHEN initializing toolbar THEN don't show any custom shortcut in end browser actions`() = runTest {
         settings.shouldUseBottomToolbar = true
-        settings.shouldShowToolbarCustomization = true
         settings.toolbarSimpleShortcutKey = ShortcutType.NONE.value
 
         val toolbarStore = buildStore()
@@ -2911,7 +3386,6 @@ class BrowserToolbarMiddlewareTest {
 
     @Test
     fun `GIVEN expanded toolbar use translate shortcut AND current page is not translated WHEN initializing toolbar THEN show Translate in navigation actions`() = runTest(testDispatcher) {
-        settings.shouldShowToolbarCustomization = true
         settings.shouldUseExpandedToolbar = true
         settings.toolbarExpandedShortcutKey = ShortcutType.TRANSLATE.value
 
@@ -2931,7 +3405,6 @@ class BrowserToolbarMiddlewareTest {
 
     @Test
     fun `GIVEN expanded toolbar use translate shortcut AND current page is translated WHEN initializing toolbar THEN show ACTIVE Translate in navigation actions`() = runTest(testDispatcher) {
-        settings.shouldShowToolbarCustomization = true
         settings.shouldUseExpandedToolbar = true
         settings.toolbarExpandedShortcutKey = ShortcutType.TRANSLATE.value
 
@@ -2952,7 +3425,6 @@ class BrowserToolbarMiddlewareTest {
     @Test
     fun `GIVEN expanded toolbar use homepage shortcut WHEN initializing toolbar THEN show Homepage in navigation actions`() = runTest(testDispatcher) {
         settings.shouldUseExpandedToolbar = true
-        settings.shouldShowToolbarCustomization = true
         settings.toolbarExpandedShortcutKey = ShortcutType.HOMEPAGE.value
 
         val toolbarStore = buildStore()
@@ -2964,7 +3436,6 @@ class BrowserToolbarMiddlewareTest {
     @Test
     fun `GIVEN expanded toolbar use back shortcut AND current page has no history WHEN initializing toolbar THEN show DISABLED Back in navigation actions`() = runTest(testDispatcher) {
         settings.shouldUseExpandedToolbar = true
-        settings.shouldShowToolbarCustomization = true
         settings.toolbarExpandedShortcutKey = ShortcutType.BACK.value
 
         val toolbarStore = buildStore()
@@ -2976,7 +3447,6 @@ class BrowserToolbarMiddlewareTest {
     @Test
     fun `GIVEN expanded toolbar use back shortcut AND current page has history WHEN initializing toolbar THEN show ACTIVE Back in navigation actions`() = runTest(testDispatcher) {
         settings.shouldUseExpandedToolbar = true
-        settings.shouldShowToolbarCustomization = true
         settings.toolbarExpandedShortcutKey = ShortcutType.BACK.value
 
         val tab = createTab(url = "https://example.com").let {
@@ -3228,12 +3698,14 @@ class BrowserToolbarMiddlewareTest {
         appStore: AppStore = this.appStore,
         browserScreenStore: BrowserScreenStore = this.browserScreenStore,
         browserStore: BrowserStore = this.browserStore,
+        ipProtectionStore: IPProtectionStore = this.ipProtectionStore,
         permissionsStorage: SitePermissionsStorage = this.permissionsStorage,
         cookieBannersStorage: CookieBannersStorage = this.cookieBannersStorage,
         trackingProtectionUseCases: TrackingProtectionUseCases = this.trackingProtectionUseCases,
         bookmarksStorage: BookmarksStorage = this.bookmarksStorage,
         useCases: UseCases = this.useCases,
         sessionUseCases: SessionUseCases = SessionUseCases(browserStore),
+        shareUseCases: ShareUseCases = this.shareUseCases,
         nimbusComponents: NimbusComponents = this.nimbusComponents,
         clipboard: ClipboardHandler = this.clipboard,
         publicSuffixList: PublicSuffixList = this.publicSuffixList,
@@ -3250,11 +3722,14 @@ class BrowserToolbarMiddlewareTest {
         appStore = appStore,
         browserScreenStore = browserScreenStore,
         browserStore = browserStore,
+        ipProtectionStore = ipProtectionStore,
         permissionsStorage = permissionsStorage,
         cookieBannersStorage = cookieBannersStorage,
         bookmarksStorage = bookmarksStorage,
         trackingProtectionUseCases = trackingProtectionUseCases,
         useCases = useCases,
+        sessionUseCases = sessionUseCases,
+        shareUseCases = shareUseCases,
         nimbusComponents = nimbusComponents,
         clipboard = clipboard,
         publicSuffixList = publicSuffixList,
@@ -3265,7 +3740,6 @@ class BrowserToolbarMiddlewareTest {
         thumbnailsFeature = thumbnailsFeature,
         isWideScreen = isWideScreen,
         isTallScreen = isTallScreen,
-        sessionUseCases = sessionUseCases,
         scope = scope,
         ioDispatcher = testDispatcher,
     )

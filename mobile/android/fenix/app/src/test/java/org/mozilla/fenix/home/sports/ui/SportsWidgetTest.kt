@@ -160,6 +160,7 @@ class SportsWidgetTest {
         errorState = errorState,
         onFollowTeam = {},
         onGetCustomWallpaper = {},
+        onShare = {},
         onRemove = {},
         onRefresh = {},
         onMatchClicked = { _, _, _ -> },

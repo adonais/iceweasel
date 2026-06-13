@@ -528,12 +528,16 @@ ImageTestCase GreenFirstFrameAnimatedWebPTestCase();
 ImageTestCase GreenFirstFrameAnimatedAVIFTestCase();
 #ifdef MOZ_JXL
 ImageTestCase GreenFirstFrameAnimatedJXLTestCase();
+ImageTestCase LongAnimatedJXLTestCase();
 #endif
 
 ImageTestCase BlendAnimatedGIFTestCase();
 ImageTestCase BlendAnimatedPNGTestCase();
 ImageTestCase BlendAnimatedWebPTestCase();
 ImageTestCase BlendAnimatedAVIFTestCase();
+#ifdef MOZ_JXL
+ImageTestCase BlendAnimatedJXLTestCase();
+#endif
 
 ImageTestCase CorruptTestCase();
 ImageTestCase CorruptBMPWithTruncatedHeader();
@@ -590,9 +594,15 @@ ImageTestCase TransparentAVIFTestCase();
 
 #ifdef MOZ_JXL
 ImageTestCase GreenJXLTestCase();
+ImageTestCase ProgressiveJXLTestCase();
 ImageTestCase DownscaledJXLTestCase();
 ImageTestCase LargeJXLTestCase();
 ImageTestCase TransparentJXLTestCase();
+ImageTestCase CorruptJXLTestCase();
+ImageTestCase PerfRgbLosslessJXLTestCase();
+ImageTestCase PerfRgbAlphaLosslessJXLTestCase();
+ImageTestCase PerfRgbLossyJXLTestCase();
+ImageTestCase PerfRgbAlphaLossyJXLTestCase();
 #endif
 
 ImageTestCase ExifResolutionTestCase();

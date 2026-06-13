@@ -416,7 +416,7 @@ nsresult FSMultipartFormData::AddNameBlobPair(const nsAString& aName,
     file->GetRelativePath(relativePath);
     if (StaticPrefs::dom_webkitBlink_dirPicker_enabled() &&
         !relativePath.IsEmpty()) {
-      filename16 = relativePath;
+      filename16 = std::move(relativePath);
     }
 
     if (filename16.IsEmpty()) {
@@ -489,7 +489,7 @@ nsresult FSMultipartFormData::AddNameDirectoryPair(const nsAString& aName,
   if (NS_WARN_IF(error.Failed())) {
     error.SuppressException();
   } else {
-    dirname16 = path;
+    dirname16 = std::move(path);
   }
 
   if (dirname16.IsEmpty()) {

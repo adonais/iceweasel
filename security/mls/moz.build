@@ -3,7 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 with Files("**"):
-    BUG_COMPONENT = ("Core", "Security: MLS")
+    BUG_COMPONENT = ("Core", "Security")
 
 if CONFIG["COMPILE_ENVIRONMENT"]:
     CbindgenHeader("mls_gk_ffi_generated.h", inputs=["/security/mls/mls_gk"])

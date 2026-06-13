@@ -19,6 +19,7 @@
 #include "jit/JitAllocPolicy.h"
 #include "jit/JitCode.h"
 #include "jit/JitContext.h"
+#include "jit/JitSpewer.h"
 #include "jit/Label.h"
 #include "jit/Registers.h"
 #include "jit/RegisterSets.h"
@@ -711,6 +712,12 @@ class AssemblerShared {
   void append(wasm::Trap trap, wasm::TrapMachineInsn insn, uint32_t pcOffset,
               const wasm::TrapSiteDesc& desc) {
     enoughMemory_ &= trapSites_.append(trap, insn, pcOffset, desc);
+#ifdef JS_JITSPEW
+    if (JitSpewEnabled(JitSpew_Codegen)) {
+      JitSpew(jit::JitSpew_Codegen, "%06x  # <-- @ w::TrapSiteDesc, kind = %s",
+              pcOffset, NameOfTrap(trap));
+    }
+#endif
   }
   void append(const wasm::MemoryAccessDesc& access, wasm::TrapMachineInsn insn,
               FaultingCodeOffset pcOffset) {
@@ -779,7 +786,7 @@ class MOZ_RAII AutoCreatedBy {
   inline AutoCreatedBy(AssemblerShared& ash, const char* who) {}
   // A user-defined constructor is necessary to stop some compilers from
   // complaining about unused variables.
-  inline ~AutoCreatedBy() {}
+  inline ~AutoCreatedBy() = default;
 };
 #endif
 

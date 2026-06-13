@@ -14,9 +14,9 @@ configuration file that lists some metadata about how the Web IDL should
 be reflected into Gecko-internal code.
 
 All Web IDL files should be placed in
-[`dom/webidl`](https://searchfox.org/mozilla-central/source/dom/webidl/)
+[`dom/webidl`](https://searchfox.org/firefox-main/source/dom/webidl/)
 and added to the list in the
-[moz.build](https://searchfox.org/mozilla-central/source/dom/webidl/moz.build)
+[moz.build](https://searchfox.org/firefox-main/source/dom/webidl/moz.build)
 file in that directory.
 
 Note that if you're adding new interfaces, then the test at
@@ -24,7 +24,7 @@ Note that if you're adding new interfaces, then the test at
 fail. This is a signal that you need to get a review from a [DOM
 peer](https://wiki.mozilla.org/Modules/All#Document_Object_Model).
 Resist the urge to just add your interfaces to the
-[moz.build](https://searchfox.org/mozilla-central/source/dom/webidl/moz.build) list
+[moz.build](https://searchfox.org/firefox-main/source/dom/webidl/moz.build) list
 without the review; it will just annoy the DOM peers and they'll make
 you get the review anyway.
 
@@ -40,7 +40,7 @@ each interface, a namespace whose name is the name of the interface with
 interface's binding go in that namespace.
 
 There are various helper objects and utility methods in
-[`dom/bindings`](https://searchfox.org/mozilla-central/source/dom/bindings)
+[`dom/bindings`](https://searchfox.org/firefox-main/source/dom/bindings)
 that are also all in the `mozilla::dom` namespace and whose headers
 are all exported into `mozilla/dom` (placed in
 `$OBJDIR/dist/include` by the build process).
@@ -88,10 +88,10 @@ interface, you need to do the following:
    document. The return type of `GetParentObject` doesn't matter other
    than it must either singly-inherit from `nsISupports` or have a
    corresponding
-   [`ToSupports`](https://searchfox.org/mozilla-central/search?q=ToSupports&path=&case=true&regexp=false)
+   [`ToSupports`](https://searchfox.org/firefox-main/search?q=ToSupports&path=&case=true&regexp=false)
    method that can produce an `nsISupports` from it. (This allows the
    return value to be implicitly converted to a
-   [`ParentObject`](https://searchfox.org/mozilla-central/search?q=ParentObject&path=&case=true&regexp=false)
+   [`ParentObject`](https://searchfox.org/firefox-main/search?q=ParentObject&path=&case=true&regexp=false)
    instance by the compiler via one of that class's non-explicit
    constructors.)
    If many instances of `MyInterface` are expected to be created
@@ -924,13 +924,13 @@ enum class MyEnum : uint8_t {
 ```
 
 `mozilla::dom::GetEnumString` is a templated helper function declared in
-[`BindingUtils.h`](https://searchfox.org/mozilla-central/source/dom/bindings/BindingUtils.h)
+[`BindingUtils.h`](https://searchfox.org/firefox-main/source/dom/bindings/BindingUtils.h)
 and exported to `mozilla/dom/BindingUtils.h` that can be used to convert an enum
 value to its corresponding string value. It returns a `const nsCString&`
 containing the string value.
 
 `mozilla::dom::StringToEnum` is a templated helper function in
-[`BindingUtils.h`](https://searchfox.org/mozilla-central/source/dom/bindings/BindingUtils.h)
+[`BindingUtils.h`](https://searchfox.org/firefox-main/source/dom/bindings/BindingUtils.h)
 and exported to `mozilla/dom/BindingUtils.h` that can be used to convert a
 string to the corresponding enum value. It needs to be supplied with the enum
 class as a template argument, and returns a `mozilla::Maybe<Enum>`. If the string
@@ -939,14 +939,14 @@ then it returns `mozilla::Nothing()`, else it returns the right enum value in
 the `mozilla::Maybe`.
 
 `mozilla::dom::WebIDLEnumSerializer` is a templated alias in
-[`BindingIPCUtils.h`](https://searchfox.org/mozilla-central/source/dom/bindings/BindingIPCUtils.h)
+[`BindingIPCUtils.h`](https://searchfox.org/firefox-main/source/dom/bindings/BindingIPCUtils.h)
 exported to `mozilla/dom/BindingIPCUtils.h` to implement an IPC serializer with
 the right validation for WebIDL enums. It uses a
 `mozilla::MaxContinuousEnumValue` that is generated for every WebIDL enum to
 implement the validation.
 
 `mozilla::dom::MakeWebIDLEnumeratedRange` is a templated helper function in
-[`BindingUtils.h`](https://searchfox.org/mozilla-central/source/dom/bindings/BindingUtils.h)
+[`BindingUtils.h`](https://searchfox.org/firefox-main/source/dom/bindings/BindingUtils.h)
 and exported to `mozilla/dom/BindingUtils.h` that can be used to create a
 `mozilla::EnumeratedRange` for a WebIDL enum.
 
@@ -2053,7 +2053,7 @@ The C++ side of the bindings uses a number of helper objects.
 ### `Nullable<T>`
 
 `Nullable<>` is a struct declared in
-[`Nullable.h`](https://searchfox.org/mozilla-central/source/dom/bindings/Nullable.h)
+[`Nullable.h`](https://searchfox.org/firefox-main/source/dom/bindings/Nullable.h)
 and exported to `mozilla/dom/Nullable.h` that is used to represent
 nullable values of types that don't have a natural way to represent
 null.
@@ -2070,7 +2070,7 @@ null and two setters that can be used to set it to a value:
 ### `Optional<T>`
 
 `Optional<>` is a struct declared in
-[`BindingDeclarations.h`](https://searchfox.org/mozilla-central/source/dom/bindings/BindingDeclarations.h)
+[`BindingDeclarations.h`](https://searchfox.org/firefox-main/source/dom/bindings/BindingDeclarations.h)
 and exported to `mozilla/dom/BindingDeclarations.h` that is used to
 represent optional arguments and dictionary members, but only those that
 have no default value.
@@ -2082,14 +2082,14 @@ get a `const T&` for the value.
 ### `NonNull<T>`
 
 `NonNull<T>` is a struct declared in
-[`BindingUtils.h`](https://searchfox.org/mozilla-central/source/dom/bindings/BindingUtils.h)
+[`BindingUtils.h`](https://searchfox.org/firefox-main/source/dom/bindings/BindingUtils.h)
 and exported to `mozilla/dom/BindingUtils.h` that is used to represent
 non-null C++ objects. It has a conversion operator that produces `T&`.
 
 ### `OwningNonNull<T>`
 
 `OwningNonNull<T>` is a struct declared in
-[`OwningNonNull.h`](https://searchfox.org/mozilla-central/source/xpcom/base/OwningNonNull.h)
+[`OwningNonNull.h`](https://searchfox.org/firefox-main/source/xpcom/base/OwningNonNull.h)
 and exported to `mozilla/OwningNonNull.h` that is used to represent
 non-null C++ objects and holds a strong reference to them. It has a
 conversion operator that produces `T&`.
@@ -2113,7 +2113,7 @@ use the [`[AllowLarge]`](#allowlarge) extended attribute.
 ### `Sequence<T>`
 
 `Sequence<>` is a type declared in
-[`BindingDeclarations.h`](https://searchfox.org/mozilla-central/source/dom/bindings/BindingDeclarations.h)
+[`BindingDeclarations.h`](https://searchfox.org/firefox-main/source/dom/bindings/BindingDeclarations.h)
 and exported to `mozilla/dom/BindingDeclarations.h` that is used to
 represent sequence arguments. It's some kind of typed array, but which
 exact kind is opaque to consumers. This allows the binding code to
@@ -2123,7 +2123,7 @@ and so forth) without having to update all the callees.
 ### `CallbackFunction`
 
 `CallbackFunction` is a type declared in
-[CallbackFunction.h](https://searchfox.org/mozilla-central/source/dom/bindings/CallbackFunction.h)
+[CallbackFunction.h](https://searchfox.org/firefox-main/source/dom/bindings/CallbackFunction.h)
 and exported to `mozilla/dom/CallbackFunction.h` that is used as a
 common base class for all the generated callback function
 representations. This class inherits from `nsISupports`, and consumers
@@ -2132,7 +2132,7 @@ must make sure to cycle-collect it, since it keeps JS objects alive.
 ### `CallbackInterface`
 
 `CallbackInterface` is a type declared in
-[CallbackInterface.h](https://searchfox.org/mozilla-central/source/dom/bindings/CallbackInterface.h)
+[CallbackInterface.h](https://searchfox.org/firefox-main/source/dom/bindings/CallbackInterface.h)
 and exported to `mozilla/dom/CallbackInterface.h` that is used as a
 common base class for all the generated callback interface
 representations. This class inherits from `nsISupports`, and consumers
@@ -2141,7 +2141,7 @@ must make sure to cycle-collect it, since it keeps JS objects alive.
 ### `DOMString`
 
 `DOMString` is a class declared in
-[BindingDeclarations.h](https://searchfox.org/mozilla-central/source/dom/bindings/BindingDeclarations.h)
+[BindingDeclarations.h](https://searchfox.org/firefox-main/source/dom/bindings/BindingDeclarations.h)
 and exported to `mozilla/dom/BindingDeclarations.h` that is used for
 Web IDL `DOMString` return values. It has a conversion operator to
 `nsString&` so that it can be passed to methods that take that type or
@@ -2157,7 +2157,7 @@ codepath even if it does end up having to addref the `StringBuffer`.
 ### `GlobalObject`
 
 `GlobalObject` is a class declared in
-[BindingDeclarations.h](https://searchfox.org/mozilla-central/source/dom/bindings/BindingDeclarations.h)
+[BindingDeclarations.h](https://searchfox.org/firefox-main/source/dom/bindings/BindingDeclarations.h)
 and exported to `mozilla/dom/BindingDeclarations.h` that is used to
 represent the global object for static attributes and operations
 (including constructors). It has a `Get()` method that returns the
@@ -2170,7 +2170,7 @@ the `JSContext` may not match the compartment of the global!
 ### `Date`
 
 `Date` is a class declared in
-[BindingDeclarations.h](https://searchfox.org/mozilla-central/source/dom/bindings/BindingDeclarations.h)
+[BindingDeclarations.h](https://searchfox.org/firefox-main/source/dom/bindings/BindingDeclarations.h)
 and exported to `mozilla/dom/BindingDeclarations.h` that is used to
 represent Web IDL Dates. It has a `TimeStamp()` method returning a
 double which represents a number of milliseconds since the epoch, as
@@ -2181,7 +2181,7 @@ with a double timestamp or a JS `Date` object. It also has a
 ### `ErrorResult`
 
 `ErrorResult` is a class declared in
-[ErrorResult.h](https://searchfox.org/mozilla-central/source/dom/bindings/ErrorResult.h)
+[ErrorResult.h](https://searchfox.org/firefox-main/source/dom/bindings/ErrorResult.h)
 and exported to `mozilla/ErrorResult.h` that is used to represent
 exceptions in Web IDL bindings. This has the following methods:
 
@@ -2190,7 +2190,7 @@ exceptions in Web IDL bindings. This has the following methods:
 -  `ThrowTypeError`: allows throwing a `TypeError` with the given
    error message. The list of allowed `TypeError`s and corresponding
    messages is in
-   [`dom/bindings/Errors.msg`](https://searchfox.org/mozilla-central/source/dom/bindings/Errors.msg).
+   [`dom/bindings/Errors.msg`](https://searchfox.org/firefox-main/source/dom/bindings/Errors.msg).
 -  `ThrowJSException`: allows throwing a preexisting JS exception
    value. However, the `MightThrowJSException()` method must be called
    before any such exceptions are thrown (even if no exception is

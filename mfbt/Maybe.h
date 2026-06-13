@@ -363,9 +363,9 @@ constexpr Maybe<U> Some(T&& aValue);
  *     functions |Some()| and |Nothing()|.
  */
 template <class T>
-class MOZ_INHERIT_TYPE_ANNOTATIONS_FROM_TEMPLATE_ARGS MOZ_GSL_OWNER Maybe
-    : private detail::MaybeStorage<T>,
-      public detail::Maybe_CopyMove_Enabler<T> {
+class MOZ_INHERIT_TYPE_ANNOTATIONS_FROM_TEMPLATE_ARGS MOZ_GSL_OWNER
+    MOZ_EMPTY_BASES Maybe : private detail::MaybeStorage<T>,
+                            public detail::Maybe_CopyMove_Enabler<T> {
   template <typename, bool, bool, bool>
   friend class detail::Maybe_CopyMove_Enabler;
 

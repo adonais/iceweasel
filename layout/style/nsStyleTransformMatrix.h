@@ -70,6 +70,11 @@ class MOZ_STACK_CLASS TransformReferenceBox final {
     }
   }
 
+  // We don't really need to prevent copying, but since none of our consumers
+  // currently need to copy, preventing copying may allow us to catch some
+  // cases where we use pass-by-value instead of pass-by-reference.
+  TransformReferenceBox(const TransformReferenceBox&) = delete;
+
   void Init(const nsIFrame* aFrame) {
     MOZ_ASSERT(!mFrame && !mIsCached);
     mFrame = aFrame;
@@ -111,11 +116,6 @@ class MOZ_STACK_CLASS TransformReferenceBox final {
   bool IsEmpty() { return !mFrame; }
 
  private:
-  // We don't really need to prevent copying, but since none of our consumers
-  // currently need to copy, preventing copying may allow us to catch some
-  // cases where we use pass-by-value instead of pass-by-reference.
-  TransformReferenceBox(const TransformReferenceBox&) = delete;
-
   void EnsureDimensionsAreCached();
 
   const nsIFrame* mFrame = nullptr;

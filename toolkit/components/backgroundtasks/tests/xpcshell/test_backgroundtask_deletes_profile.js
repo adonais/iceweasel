@@ -48,7 +48,7 @@ add_task(c, async function test_backgroundtask_cleans_up_stale_profiles() {
   // testing-specific location by setting TMP, per
   // https://docs.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-gettemppathw.
   // On Linux, this works as well: see
-  // [GetSpecialSystemDirectory](https://searchfox.org/mozilla-central/source/xpcom/io/SpecialSystemDirectory.cpp).
+  // [GetSpecialSystemDirectory](https://searchfox.org/firefox-main/source/xpcom/io/SpecialSystemDirectory.cpp).
   // On macOS, we can't set the temporary directory in this manner so we skip
   // this test.
   let tmp = do_get_profile();

@@ -1,3 +1,4 @@
+/* -*- Mode: c; tab-width: 8; c-basic-offset: 4; indent-tabs-mode: t; -*- */
 /* glitter-paths - polygon scan converter
  *
  * Copyright (c) 2008  M Joonas Pihlaja
@@ -1875,7 +1876,7 @@ _cairo_tor_scan_converter_create (int			xmin,
     cairo_tor_scan_converter_t *self;
     cairo_status_t status;
 
-    self = _cairo_malloc (sizeof(struct _cairo_tor_scan_converter));
+    self = _cairo_calloc (sizeof(struct _cairo_tor_scan_converter));
     if (unlikely (self == NULL)) {
 	status = _cairo_error (CAIRO_STATUS_NO_MEMORY);
 	goto bail_nomem;

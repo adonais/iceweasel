@@ -49,6 +49,8 @@ inline AddressType MinAddressType(AddressType a, AddressType b) {
 extern bool ToAddressType(JSContext* cx, HandleValue value,
                           AddressType* addressType);
 
+extern bool ToPageSize(JSContext* cx, HandleValue value, PageSize* pageSize);
+
 extern const char* ToString(AddressType addressType);
 
 static constexpr unsigned PageSizeInBytes(PageSize sz) {

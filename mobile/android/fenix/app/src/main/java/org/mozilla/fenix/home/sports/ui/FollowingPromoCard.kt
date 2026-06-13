@@ -24,9 +24,9 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.font.FontWeight.Companion.W700
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import mozilla.components.compose.base.PromoCard
+import mozilla.components.compose.base.PromoCardColors
 import org.mozilla.fenix.R
-import org.mozilla.fenix.compose.PromoCard
-import org.mozilla.fenix.compose.PromoCardColors
 import org.mozilla.fenix.home.sports.Team
 import org.mozilla.fenix.theme.FirefoxTheme
 

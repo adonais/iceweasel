@@ -121,13 +121,10 @@ addAccessibleTask(
       expected: [[EVENT_HIDE, LOCAL_DROPDOWN_ID]],
     });
 
-    if (
-      AppConstants.platform == "macosx" &&
-      Services.prefs.getBoolPref("widget.macos.native-anchored-menus", false) &&
-      Services.prefs.getBoolPref("widget.macos.allow-native-select", false)
-    ) {
+    const popup = window.document.getElementById(LOCAL_DROPDOWN_ID).menupopup;
+    if (popup.isNativeMenu) {
       // Synthesized events are not available with native menus
-      window.document.getElementById(LOCAL_DROPDOWN_ID).menupopup.hidePopup();
+      popup.hidePopup();
     } else {
       EventUtils.synthesizeKey("VK_ESCAPE");
     }

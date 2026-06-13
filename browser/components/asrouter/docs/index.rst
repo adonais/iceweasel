@@ -122,6 +122,7 @@ Detailed Docs
   :maxdepth: 2
 
   asrouter-newtab-message
+  asrouter-newtab-multistage-message
   building-and-testing
   debugging-docs
   frequency-caps

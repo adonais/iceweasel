@@ -7,6 +7,7 @@ remote.jar:
 
   content/webdriver-bidi/ConsoleMessageFormatter.sys.mjs (ConsoleMessageFormatter.sys.mjs)
   content/webdriver-bidi/DownloadBehaviorManager.sys.mjs (DownloadBehaviorManager.sys.mjs)
+  content/webdriver-bidi/HelperAppDialogHandler.sys.mjs (HelperAppDialogHandler.sys.mjs)
   content/webdriver-bidi/NewSessionHandler.sys.mjs (NewSessionHandler.sys.mjs)
   content/webdriver-bidi/ProxyPerUserContextManager.sys.mjs (ProxyPerUserContextManager.sys.mjs)
   content/webdriver-bidi/RemoteValue.sys.mjs (RemoteValue.sys.mjs)

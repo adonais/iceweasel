@@ -6,7 +6,6 @@
 #define MOZILLA_LAYERS_ANDROID_HARDWARE_BUFFER
 
 #include <android/hardware_buffer.h>
-#include <atomic>
 #include <unordered_map>
 
 #include "mozilla/layers/TextureClient.h"

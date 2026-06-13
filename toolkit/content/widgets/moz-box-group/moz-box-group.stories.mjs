@@ -226,7 +226,7 @@ const getConfig = ({ type, hasHeader, hasFooter }) => ({
             id: "header",
             control: "moz-box-item",
             l10nId: "moz-box-item-header",
-            controlAttrs: { slot: "header " },
+            slot: "header",
           },
         ]
       : []),
@@ -311,7 +311,7 @@ const getConfig = ({ type, hasHeader, hasFooter }) => ({
             id: "footer",
             control: "moz-box-button",
             l10nId: "moz-box-button-footer",
-            controlAttrs: { slot: "footer " },
+            slot: "footer",
           },
         ]
       : []),

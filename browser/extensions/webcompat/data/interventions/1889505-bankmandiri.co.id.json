@@ -14,7 +14,7 @@
     {
       "platforms": ["android"],
       "content_scripts": {
-        "js": ["bug1889505-bankmandiri.co.id-window.chrome.js"]
+        "js": ["define_minimal_window_chrome.js"]
       }
     }
   ]

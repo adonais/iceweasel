@@ -9,6 +9,7 @@
 #include "celldata.h"
 #include "gfxContext.h"
 #include "mozilla/PresShell.h"
+#include "mozilla/ReflowInput.h"
 #include "mozilla/RestyleManager.h"
 #include "mozilla/dom/MathMLElement.h"
 #include "nsCRT.h"

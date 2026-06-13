@@ -125,9 +125,6 @@ class OffThreadPromiseTask : public JS::Dispatchable {
   // Cancellable list, and a dispatch has been attempted.
   bool cancellable_;
 
-  void operator=(const OffThreadPromiseTask&) = delete;
-  OffThreadPromiseTask(const OffThreadPromiseTask&) = delete;
-
   void unregister(OffThreadPromiseRuntimeState& state);
   // Used when we want to reuse a lock for unregistration and deletion.
   void unregister(OffThreadPromiseRuntimeState& state,
@@ -158,6 +155,10 @@ class OffThreadPromiseTask : public JS::Dispatchable {
 
  public:
   ~OffThreadPromiseTask() override;
+
+  void operator=(const OffThreadPromiseTask&) = delete;
+  OffThreadPromiseTask(const OffThreadPromiseTask&) = delete;
+
   static void DestroyUndispatchedTask(OffThreadPromiseTask* task,
                                       OffThreadPromiseRuntimeState& state,
                                       const AutoLockHelperThreadState& lock);
@@ -337,9 +338,6 @@ class OffThreadPromiseRuntimeState {
       void*, js::UniquePtr<JS::Dispatchable>&&, uint32_t);
   bool usingInternalDispatchQueue() const;
 
-  void operator=(const OffThreadPromiseRuntimeState&) = delete;
-  OffThreadPromiseRuntimeState(const OffThreadPromiseRuntimeState&) = delete;
-
   // Used by OffThreadPromiseTask
   void registerTask(JSContext* cx, OffThreadPromiseTask* task);
   void unregisterTask(OffThreadPromiseTask* task);
@@ -347,6 +345,10 @@ class OffThreadPromiseRuntimeState {
  public:
   OffThreadPromiseRuntimeState();
   ~OffThreadPromiseRuntimeState();
+
+  void operator=(const OffThreadPromiseRuntimeState&) = delete;
+  OffThreadPromiseRuntimeState(const OffThreadPromiseRuntimeState&) = delete;
+
   void init(JS::DispatchToEventLoopCallback dispatchCallback,
             JS::DelayedDispatchToEventLoopCallback delayedDispatchCallback,
             JS::AsyncTaskStartedCallback asyncTaskStartedCallback,

@@ -238,8 +238,7 @@ main.newtab-main {
 
 .asrouter-newtab-message-wrapper {
   background-color: var(--background-color-canvas);
-  // @backward-compat { version 150 } D281466/D283723 renamed design tokens; remove once Firefox 150 is on Release.
-  border: 2px solid var(--card-border-color, var(--border-color-card));
+  border: 2px solid var(--card-border-color);
   color: var(--text-color);
   border-radius: var(--border-radius-large);
   margin-block: 0 var(--space-xlarge);
@@ -261,4 +260,8 @@ main.newtab-main {
   color: var(--newtab-text-primary-color);
   min-height: 100vh;
   padding-block-start: var(--space-xlarge);
+}
+
+.asrouter-multistage-message-wrapper {
+  margin-block: var(--space-xlarge);
 }

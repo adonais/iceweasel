@@ -244,12 +244,6 @@ private val iconsLightning20 = listOf(
     iconsR.drawable.mozac_ic_lightning_20,
 )
 
-private val iconsLock20 = listOf(
-    iconsR.drawable.mozac_ic_lock_20,
-    iconsR.drawable.mozac_ic_lock_slash_20,
-    iconsR.drawable.mozac_ic_lock_warning_20,
-)
-
 private val iconsMail20 = listOf(
     iconsR.drawable.mozac_ic_email_mask_20,
     iconsR.drawable.mozac_ic_email_shield_20,
@@ -697,7 +691,6 @@ private val iconSizeSections = listOf(
             IconCategory("Close, Cancel", iconsClose20),
             IconCategory("Globe", iconsGlobe20),
             IconCategory("Lightning", iconsLightning20),
-            IconCategory("Lock", iconsLock20),
             IconCategory("Mail", iconsMail20),
             IconCategory("Private Mode", iconsPrivateMode20),
             IconCategory("Ratings", iconsRatings20),

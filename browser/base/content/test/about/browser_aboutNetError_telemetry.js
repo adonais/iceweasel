@@ -186,9 +186,7 @@ add_task(async function test_trr_only_telemetry() {
   await SpecialPowers.spawn(browser, [], async function () {
     const doc = content.document;
 
-    const netErrorCard = await ContentTaskUtils.waitForCondition(
-      () => doc.querySelector("net-error-card")?.wrappedJSObject
-    );
+    const netErrorCard = doc.querySelector("net-error-card")?.wrappedJSObject;
     if (netErrorCard) {
       await netErrorCard.getUpdateComplete();
       const trrSettingsButton = await ContentTaskUtils.waitForCondition(
@@ -203,7 +201,7 @@ add_task(async function test_trr_only_telemetry() {
       );
       tryAgainButton.click();
     } else {
-      let buttons = ["neterrorTryAgainButton", "trrSettingsButton"];
+      let buttons = ["trrSettingsButton", "neterrorTryAgainButton"];
       for (let buttonId of buttons) {
         let button = await ContentTaskUtils.waitForCondition(
           () => doc.getElementById(buttonId),
@@ -213,7 +211,7 @@ add_task(async function test_trr_only_telemetry() {
       }
     }
   }).catch(e => {
-    if (!e.message.includes("Actor 'SpecialPowers' destroyed")) {
+    if (e.message && !e.message.includes("Actor 'SpecialPowers' destroyed")) {
       throw e;
     }
   });

@@ -222,7 +222,7 @@ class Core(
                     DownloadLocationManager(context).defaultLocation
                 },
             ),
-            useContentBlockingDatabase = context.settings().shouldUseTrackingProtectionDatabase,
+            useContentBlockingDatabase = true,
         )
 
         // Apply fingerprinting protection overrides if the feature is enabled in Nimbus
@@ -447,15 +447,9 @@ class Core(
                 val readJson = { context.assets.readJSONObject("search/search_telemetry_v2.json") }
                 val providerList = withContext(Dispatchers.IO) {
                     SerpTelemetryRepository(
-                        rootStorageDirectory = context.filesDir,
                         readJson = readJson,
                         collectionName = COLLECTION_NAME,
-                        serverUrl = when (context.settings().remoteSettingsServer) {
-                            context.getString(R.string.remote_settings_server_prod) -> REMOTE_PROD_ENDPOINT_URL
-                            context.getString(R.string.remote_settings_server_dev) -> REMOTE_DEV_ENDPOINT_URL
-                            context.getString(R.string.remote_settings_server_stage) -> REMOTE_STAGE_ENDPOINT_URL
-                            else -> REMOTE_PROD_ENDPOINT_URL
-                        },
+                        remoteSettingsService = context.components.remoteSettingsService.value,
                     ).updateProviderList()
                 }
                 // Install the "ads" WebExtension to get the links in an partner page.
@@ -745,7 +739,7 @@ class Core(
 
     /**
      * Shared Preferences that encrypt/decrypt using Android KeyStore and lib-dataprotect for 23+
-     * only on Nightly/Debug for now, otherwise simply stored.
+     * only on Debug builds for now, otherwise simply stored.
      * See https://github.com/mozilla-mobile/fenix/issues/8324
      * Also, this needs revision. See https://github.com/mozilla-mobile/fenix/issues/19155
      */
@@ -753,7 +747,8 @@ class Core(
         SecureAbove22Preferences(
             context = context,
             name = KEY_STORAGE_NAME,
-            forceInsecure = !Config.channel.isNightlyOrDebug,
+            forceInsecure = !Config.channel.isDebug,
+            crashReporting = crashReporter,
         )
 
     // Temporary. See https://github.com/mozilla-mobile/fenix/issues/19155

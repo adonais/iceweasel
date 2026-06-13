@@ -27,6 +27,7 @@ enum class UnicodeExtensionKey : uint8_t {
   Collation /* co */,
   CollationCaseFirst /* kf */,
   CollationNumeric /* kn */,
+  FirstDayOfWeek /* fw */,
   HourCycle /* hc */,
   NumberingSystem /* nu */,
 };
@@ -60,6 +61,18 @@ bool CanonicalizeLocaleList(JSContext* cx, JS::Handle<JS::Value> locales,
  */
 ArrayObject* CanonicalizeLocaleList(JSContext* cx,
                                     JS::Handle<JS::Value> locales);
+
+/**
+ * Parse the BCP-47 locale as a language identifier.
+ */
+mozilla::Maybe<LanguageId> ToLanguageId(JSContext* cx,
+                                        const JSLinearString* locale);
+
+/**
+ * LookupMatchingLocaleByPrefix ( availableLocales, requestedLocales )
+ */
+bool LookupMatcher(JSContext* cx, AvailableLocaleKind availableLocales,
+                   LanguageId locale, mozilla::Maybe<LanguageId>* result);
 
 /**
  * Locale data selection for ResolveLocale.
@@ -187,9 +200,19 @@ bool ResolveLocale(JSContext* cx, AvailableLocaleKind availableLocales,
                    JS::MutableHandle<ResolvedLocale> result);
 
 /**
+ * Return the default locale.
+ */
+bool DefaultLocale(JSContext* cx, LanguageId* result);
+
+/**
  * Return the default calendar of a locale.
  */
 JSLinearString* DefaultCalendar(JSContext* cx, const JSLinearString* locale);
+
+/**
+ * Return the default numbering system of a locale.
+ */
+JSLinearString* DefaultNumberingSystem(JSContext* cx, LanguageId locale);
 
 /**
  * Return the default numbering system of a locale.

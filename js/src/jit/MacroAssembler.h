@@ -2028,6 +2028,8 @@ class MacroAssembler : public MacroAssemblerSpecific {
 
   inline void branchTestMagic(Condition cond, const Address& valaddr,
                               JSWhyMagic why, Label* label) PER_ARCH;
+  inline void branchTestMagic(Condition cond, const BaseIndex& valaddr,
+                              JSWhyMagic why, Label* label) PER_ARCH;
 
   inline void branchTestMagicValue(Condition cond, const ValueOperand& val,
                                    JSWhyMagic why, Label* label);
@@ -2245,12 +2247,10 @@ class MacroAssembler : public MacroAssemblerSpecific {
                                  Register rhsHi, Register output, bool isAdd)
       DEFINED_ON(x64, arm64, riscv64, loong64, mips64);
 
-  // Produces the top 64 bits of the 128-bit value `lhs *widen rhs`.  Only used
-  // on 64-bit targets.  On x64, `lhs` must be RAX, `rhs` must be RDX, and all
-  // 5 registers must be distinct.
-  inline void wasmMulI64WideHI64(Register lhs, Register rhs, Register temp0,
-                                 Register temp1, Register output, bool isSigned)
-      DEFINED_ON(x64);
+  // Produces the top 64 bits of the 128-bit value `RAX *widen rhs`.  The result
+  // will be in RAX.  RDX is trashed.  `rhs` may not be RAX or RDX.  Callers
+  // must preserve live values in RAX and RDX themselves.
+  inline void wasmMulI64WideHI64(Register rhs, bool isSigned) DEFINED_ON(x64);
 
   // The same, but for all other 64-bit targets.  There are no restrictions on
   // what the registers may be.
@@ -4233,10 +4233,10 @@ class MacroAssembler : public MacroAssemblerSpecific {
 
   void emitPreBarrierFastPath(MIRType type, Register temp1, Register temp2,
                               Register temp3, Label* noBarrier);
-  void emitValueReadBarrierFastPath(ValueOperand value, Register cell,
-                                    Register temp1, Register temp2,
-                                    Register temp3, Register temp4,
-                                    Label* barrier);
+  void emitWeapMapBarrierFastPath(ValueOperand value, Register cell,
+                                  Register temp1, Register temp2,
+                                  Register temp3, Register temp4,
+                                  Label* barrier);
 
  private:
   void loadMarkBits(Register cell, Register chunk, Register markWord,
@@ -5902,6 +5902,10 @@ class MacroAssembler : public MacroAssemblerSpecific {
   void dateSecondsFromSecondsIntoYear(ValueOperand secondsIntoYear,
                                       ValueOperand output, Register scratch1,
                                       Register scratch2);
+
+  void timeClip(FloatRegister time, FloatRegister output);
+  void timeClip(FloatRegister time, FloatRegister output, Register scratch,
+                const LiveRegisterSet& liveRegs);
 
   void computeImplicitThis(Register env, ValueOperand output, Label* slowPath);
 

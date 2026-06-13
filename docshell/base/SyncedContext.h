@@ -311,8 +311,9 @@ using FieldSetterType = typename GetFieldSetterType<T>::SetterArg;
    * of the field is equal to size Size will be present. We use SizedField to  \
    * remove fields of the wrong size. */                                       \
   template <size_t Size>                                                       \
-  struct Fields : eachfield(MOZ_DECL_SYNCED_FIELD_INHERIT)                     \
-                      syncedcontext::Empty<SYNCED_FIELD_COUNT, Size>{};        \
+  struct MOZ_EMPTY_BASES Fields                                                \
+      : eachfield(MOZ_DECL_SYNCED_FIELD_INHERIT)                               \
+            syncedcontext::Empty<SYNCED_FIELD_COUNT, Size>{};                  \
                                                                                \
   /* Struct containing the data for all synced fields as members. We filter    \
    * sizes to lay out fields of size 1, then 2, then 4 and last 8 or greater.  \

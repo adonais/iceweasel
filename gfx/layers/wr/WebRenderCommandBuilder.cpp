@@ -1204,9 +1204,8 @@ static ItemActivity IsItemProbablyActive(
       return activity;
     }
     case DisplayItemType::TYPE_OPACITY: {
-      nsDisplayOpacity* opacityItem = static_cast<nsDisplayOpacity*>(aItem);
-      if (opacityItem->NeedsActiveLayer(aDisplayListBuilder,
-                                        opacityItem->Frame())) {
+      auto* opacityItem = static_cast<nsDisplayOpacity*>(aItem);
+      if (opacityItem->NeedsActiveLayer()) {
         return ItemActivity::Must;
       }
       return HasActiveChildren(*opacityItem->GetChildren(), aBuilder,
@@ -2738,8 +2737,8 @@ Maybe<wr::ImageMask> WebRenderCommandBuilder::BuildWrMaskImage(
   // ChooseScaleAndSetTransform but for now we just fake it.
   // We tolerate slight changes in scale so that we don't, for example,
   // rerasterize on MotionMark
-  bool sameScale = FuzzyEqual(scale.xScale, oldScale.xScale, 1e-6f) &&
-                   FuzzyEqual(scale.yScale, oldScale.yScale, 1e-6f);
+  bool sameScale = gfx::FuzzyEqual(scale.xScale, oldScale.xScale, 1e-6f) &&
+                   gfx::FuzzyEqual(scale.yScale, oldScale.yScale, 1e-6f);
 
   LayerIntRect itemRect =
       LayerIntRect::FromUnknownRect(bounds.ScaleToOutsidePixels(

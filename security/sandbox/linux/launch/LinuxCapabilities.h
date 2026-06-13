@@ -75,14 +75,14 @@ class LinuxCapabilities final {
   }
 
   void Normalize() {
-    for (size_t i = 0; i < _LINUX_CAPABILITY_U32S_3; ++i) {
-      mBits[i].permitted |= mBits[i].effective | mBits[i].inheritable;
+    for (auto& mBit : mBits) {
+      mBit.permitted |= mBit.effective | mBit.inheritable;
     }
   }
 
   bool AnyEffective() const {
-    for (size_t i = 0; i < _LINUX_CAPABILITY_U32S_3; ++i) {
-      if (mBits[i].effective != 0) {
+    for (auto mBit : mBits) {
+      if (mBit.effective != 0) {
         return true;
       }
     }

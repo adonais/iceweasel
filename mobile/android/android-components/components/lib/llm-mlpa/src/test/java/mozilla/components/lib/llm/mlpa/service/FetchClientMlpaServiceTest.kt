@@ -11,12 +11,10 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.MissingFieldException
 import mozilla.components.concept.fetch.MutableHeaders
 import mozilla.components.concept.fetch.Response
 import mozilla.components.concept.integrity.IntegrityToken
 import mozilla.components.concept.llm.ErrorCode
-import mozilla.components.concept.llm.Llm
 import mozilla.components.lib.llm.mlpa.fakes.FakeClient
 import mozilla.components.lib.llm.mlpa.fakes.asBody
 import mozilla.components.lib.llm.mlpa.fakes.streamedResponseBody
@@ -24,8 +22,10 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Test
+import kotlin.test.assertIs
 
 class FetchClientMlpaServiceTest {
+
     @Test
     fun `GIVEN a successful response WHEN try to verify an integrity token THEN return a constructed Response`() =
         runTest {
@@ -83,7 +83,26 @@ class FetchClientMlpaServiceTest {
             assertTrue(response.isFailure)
 
             response.onFailure {
-                assertTrue(it is MissingFieldException)
+                assertIs<ChatServiceError.VerificationResponseParseError>(it)
+            }
+        }
+
+    @Test
+    fun `GIVEN a network failure WHEN try to verify THEN return a NetworkError`() =
+        runTest {
+            val mlpaService = FetchClientMlpaService(FakeClient.throwing(), MlpaConfig.prodProd)
+
+            val response = mlpaService.verify(
+                request = AuthenticationService.Request(
+                    userId = UserId("my-user-id"),
+                    integrityToken = IntegrityToken("my-integrity-token"),
+                    packageName = PackageName("my.package.name"),
+                ),
+            )
+
+            assertTrue(response.isFailure)
+            response.onFailure {
+                assertIs<ChatServiceError.VerificationNetworkError>(it)
             }
         }
 
@@ -198,7 +217,7 @@ class FetchClientMlpaServiceTest {
         }
 
     @Test
-    fun `GIVEN a malformed streamed response WHEN try to chat THEN return a StreamEventParseError`() =
+    fun `GIVEN a malformed streamed response WHEN try to chat THEN return a parse error`() =
         runTest {
             val malformedStreamBody = """
                 data: {"id":"chatcm
@@ -219,14 +238,71 @@ class FetchClientMlpaServiceTest {
             response
                 .onEach { fail("Should immediately throw") }
                 .catch {
-                    assertTrue(it is ChatServiceError.StreamEventParseError)
-                    assertEquals(ErrorCode(1015), (it as Llm.Exception).errorCode)
+                    assertIs<ChatServiceError.RateLimitResponseParseError>(it)
                 }
                 .firstOrNull()
         }
 
     @Test
-    fun `GIVEN a midstream error WHEN try to chat THEN return an StreamError`() =
+    fun `GIVEN a malformed error WHEN try to chat THEN return a parse error`() =
+        runTest {
+            val malformedStreamBody = """
+                data: {"errorasdasd": 1}
+
+                data: [DONE]
+            """.trimIndent()
+
+            val mlpaService =
+                FetchClientMlpaService(FakeClient.success(malformedStreamBody.asBody), MlpaConfig.prodProd)
+
+            val response = mlpaService.completion(
+                authorizationToken = AuthorizationToken.Integrity("my-token"),
+                request = ChatService.Request(
+                    model = ChatService.Request.ModelID.mozSummarization,
+                    messages = listOf(ChatService.Request.Message.user("hello")),
+                    stream = true,
+                ),
+            )
+
+            response
+                .onEach { fail("Should immediately throw") }
+                .catch {
+                    assertIs<ChatServiceError.RateLimitResponseParseError>(it)
+                }
+                .firstOrNull()
+        }
+
+    @Test
+    fun `GIVEN a budget limit midstream error WHEN try to chat THEN return an RateLimited error`() =
+        runTest {
+            val malformedStreamBody = """
+                data: {"error": 1}
+
+                data: [DONE]
+            """.trimIndent()
+
+            val mlpaService =
+                FetchClientMlpaService(FakeClient.success(malformedStreamBody.asBody), MlpaConfig.prodProd)
+
+            val response = mlpaService.completion(
+                authorizationToken = AuthorizationToken.Integrity("my-token"),
+                request = ChatService.Request(
+                    model = ChatService.Request.ModelID.mozSummarization,
+                    messages = listOf(ChatService.Request.Message.user("hello")),
+                    stream = true,
+                ),
+            )
+
+            response
+                .onEach { fail("Should immediately throw") }
+                .catch {
+                    assertIs<ChatServiceError.BudgetExceeded>(it)
+                }
+                .firstOrNull()
+        }
+
+    @Test
+    fun `GIVEN a rate limit midstream error WHEN try to chat THEN return an RateLimited error`() =
         runTest {
             val malformedStreamBody = """
                 data: {"error": 2}
@@ -249,8 +325,36 @@ class FetchClientMlpaServiceTest {
             response
                 .onEach { fail("Should immediately throw") }
                 .catch {
-                    assertTrue(it is ChatServiceError.StreamError)
-                    assertEquals(ErrorCode(1016), (it as Llm.Exception).errorCode)
+                    assertIs<ChatServiceError.RateLimited>(it)
+                }
+                .firstOrNull()
+        }
+
+    @Test
+    fun `GIVEN a unknown midstream error WHEN try to chat THEN return a server error`() =
+        runTest {
+            val malformedStreamBody = """
+                data: {"error": 18239}
+
+                data: [DONE]
+            """.trimIndent()
+
+            val mlpaService =
+                FetchClientMlpaService(FakeClient.success(malformedStreamBody.asBody), MlpaConfig.prodProd)
+
+            val response = mlpaService.completion(
+                authorizationToken = AuthorizationToken.Integrity("my-token"),
+                request = ChatService.Request(
+                    model = ChatService.Request.ModelID.mozSummarization,
+                    messages = listOf(ChatService.Request.Message.user("hello")),
+                    stream = true,
+                ),
+            )
+
+            response
+                .onEach { fail("Should immediately throw") }
+                .catch {
+                    assertIs<ChatServiceError.ServerError>(it)
                 }
                 .firstOrNull()
         }
@@ -285,8 +389,8 @@ class FetchClientMlpaServiceTest {
             response
                 .onEach { fail("Should immediately throw") }
                 .catch {
-                    assertTrue(it is ChatServiceError.ResponseParseError)
-                    assertEquals(ErrorCode(1012), (it as Llm.Exception).errorCode)
+                    assertIs<ChatServiceError.ResponseParseError>(it)
+                    assertEquals(ErrorCode(1012), it.errorCode)
                 }
                 .firstOrNull()
         }
@@ -307,8 +411,8 @@ class FetchClientMlpaServiceTest {
             response
                 .onEach { fail("Should immediately throw") }
                 .catch {
-                    assertTrue(it is ChatServiceError.NetworkError)
-                    assertEquals(ErrorCode(1011), (it as Llm.Exception).errorCode)
+                    assertIs<ChatServiceError.ChatNetworkError>(it)
+                    assertEquals(ErrorCode(1011), it.errorCode)
                 }
                 .firstOrNull()
         }
@@ -330,8 +434,8 @@ class FetchClientMlpaServiceTest {
             )
 
             val error = runCatching { response.first() }.exceptionOrNull()
-            assertTrue(error is ChatServiceError.RateLimitResponseParseError)
-            assertEquals(ErrorCode(1013), (error as Llm.Exception).errorCode)
+            assertIs<ChatServiceError.RateLimitResponseParseError>(error)
+            assertEquals(ErrorCode(1013), error.errorCode)
         }
 
     @Test
@@ -351,8 +455,8 @@ class FetchClientMlpaServiceTest {
             )
 
             val error = runCatching { response.first() }.exceptionOrNull()
-            assertTrue(error is ChatServiceError.UpstreamResponseParseError)
-            assertEquals(ErrorCode(1014), (error as Llm.Exception).errorCode)
+            assertIs<ChatServiceError.UpstreamResponseParseError>(error)
+            assertEquals(ErrorCode(1014), error.errorCode)
         }
 
     @Test
@@ -402,8 +506,8 @@ class FetchClientMlpaServiceTest {
                 response
                     .onEach { _ -> fail("We should have thrown an exception") }
                     .catch {
-                        assertTrue("Should be ChatServiceError but got $it", it is ChatServiceError)
-                        assertEquals(case.expectedError.errorCode, (it as Llm.Exception).errorCode)
+                        assertIs<ChatServiceError>(it, "Should be ChatServiceError but got $it")
+                        assertEquals(case.expectedError.errorCode, it.errorCode)
                     }.firstOrNull()
             }
         }

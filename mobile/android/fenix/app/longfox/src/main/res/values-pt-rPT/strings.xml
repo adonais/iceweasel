@@ -26,7 +26,7 @@
   <!-- Back button -->
   <string name="back">voltar</string>
   <!-- Share hiscore action label. hiscore is an abbreviation for "Highest Score" -->
-  <string name="share_hiscore">Partilhar histórico</string>
+  <string name="share_hiscore">Partilhar pontuação máxima</string>
   <!--
     The longest fox is your best game achievement so far (based on your highest score).
     %1$d is a placeholder for the current highest score.

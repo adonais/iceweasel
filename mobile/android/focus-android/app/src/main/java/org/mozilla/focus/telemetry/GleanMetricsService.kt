@@ -137,14 +137,9 @@ class GleanMetricsService(
                 val readJson = { context.assets.readJSONObject("search/search_telemetry_v2.json") }
                 val providerList = withContext(ioDispatcher) {
                     SerpTelemetryRepository(
-                        rootStorageDirectory = context.filesDir,
                         readJson = readJson,
                         collectionName = COLLECTION_NAME,
-                        serverUrl = if (context.settings.useProductionRemoteSettingsServer) {
-                            REMOTE_PROD_ENDPOINT_URL
-                        } else {
-                            REMOTE_STAGE_ENDPOINT_URL
-                        },
+                        remoteSettingsService = context.components.remoteSettingsService,
                     ).updateProviderList()
                 }
                 installSearchTelemetryExtensions(components, providerList)

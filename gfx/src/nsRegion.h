@@ -2220,7 +2220,7 @@ class BaseIntRegion {
   MOZ_IMPLICIT BaseIntRegion(const Rect& aRect) : mImpl(ToRect(aRect)) {}
   explicit BaseIntRegion(mozilla::gfx::ArrayView<pixman_box32_t> aRects)
       : mImpl(aRects) {}
-  BaseIntRegion(const BaseIntRegion& aRegion) : mImpl(aRegion.mImpl) {}
+  BaseIntRegion(const BaseIntRegion& aRegion) = default;
   BaseIntRegion(BaseIntRegion&& aRegion) : mImpl(std::move(aRegion.mImpl)) {}
   Derived& operator=(const Rect& aRect) {
     mImpl = ToRect(aRect);

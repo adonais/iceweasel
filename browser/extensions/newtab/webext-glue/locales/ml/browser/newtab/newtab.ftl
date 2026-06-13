@@ -8,7 +8,10 @@
 newtab-page-title = പുതിയ ടാബ്
 newtab-settings-button =
     .title = നിങ്ങളുടെ പുതിയ ടാബ് താള് ഇഷ്ടാനുസൃതമാക്കുക
+#  (developer note): @nova-cleanup(remove-string): Remove newtab-customize-panel-icon-button-label once Nova lands, will be using newtab-customize-panel-label instead
 newtab-customize-panel-icon-button-label = ഇച്ഛാനുസൃതമാക്കുക
+newtab-customize-panel-label =
+    .label = ഇച്ഛാനുസൃതമാക്കുക
 newtab-personalize-settings-icon-label =
     .title = പുതിയ ടാബ് വ്യക്തിപരമാക്കുക
     .aria-label = ക്രമീകരണങ്ങൾ
@@ -502,6 +505,10 @@ newtab-widget-lists-label-beta =
     .label = ബീറ്റ
 newtab-widget-task-list-menu-copy = പകൎത്തുക
 newtab-widget-lists-menu-learn-more = കൂടുതല്‍ അറിയുക
+newtab-widget-lists-button-add-item = ഇനം ചേർക്കുക
+newtab-widget-lists-input-add-an-item2 =
+    .placeholder = ഇനം ചേർക്കുക
+    .aria-label = ഇനം ചേർക്കുക
 newtab-widget-lists-input-add-an-item =
     .placeholder = ഇനം ചേർക്കുക
 newtab-widget-lists-input-menu-open-link = കണ്ണി തുറക്കുക

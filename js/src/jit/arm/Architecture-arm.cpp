@@ -20,9 +20,9 @@
 #endif
 
 #include "jit/arm/Assembler-arm.h"
-#include "jit/arm/Simulator-arm.h"
 #include "jit/FlushICache.h"  // js::jit::FlushICache
 #include "jit/RegisterSets.h"
+#include "jit/Simulator.h"
 
 #if !defined(__linux__) || defined(ANDROID) || defined(JS_SIMULATOR_ARM)
 // The Android NDK and B2G do not include the hwcap.h kernel header, and it is

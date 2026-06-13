@@ -592,6 +592,7 @@ if (!build_with_chromium) {
       deps += [
         "api:frame_transformer_factory",
         "api/audio:builtin_audio_processing_builder",
+        "api/video:builtin_video_bitrate_allocator_factory",
         "api/environment:environment_factory",
         "api/video:video_frame",
         "api/video:video_rtp_headers",
@@ -752,7 +753,7 @@ if (rtc_include_tests && !build_with_chromium) {
     rtc_executable("benchmarks") {
       testonly = true
       deps = [
-        "rtc_base:base64_benchmark_temp",
+        "rtc_base:base64_benchmark",
         "rtc_base/synchronization:mutex_benchmark",
         "test:benchmark_main",
       ]

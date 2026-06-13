@@ -402,16 +402,17 @@ def auto_detect_channel(ctx, app):
     """Detects the channel of the provided app (nightly, release, etc.)
 
     Reads the CFBundleIdentifier from the provided apps Info.plist and
-    returns the appropriate channel string. Release and Beta builds use
-    org.mozilla.firefox for the CFBundleIdentifier. Nightly channel builds use
-    org.mozilla.nightly or org.mozilla.nightlydebug if it is a local build with
-    debugging enabled.
+    returns the appropriate channel string.
     """
+
     # The bundle IDs for different channels. We use these strings to
     # auto-detect the channel being signed. Different channels use
-    # different entitlement files.
+    # different entitlement files. Release and Beta builds both use
+    # org.mozilla.firefox.
     NIGHTLY_BUNDLEID = "org.mozilla.nightly"
     NIGHTLY_DEBUG_BUNDLEID = "org.mozilla.nightlydebug"
+    NIGHTLY_UNOFFICIAL_BUNDLEID = "org.mozilla.nightlyunofficial"
+    NIGHTLY_UNOFFICIAL_DEBUG_BUNDLEID = "org.mozilla.nightlyunofficialdebug"
     DEVEDITION_BUNDLEID = "org.mozilla.firefoxdeveloperedition"
     # BETA uses the same bundle ID as Release
     RELEASE_BUNDLEID = "org.mozilla.firefox"
@@ -437,7 +438,12 @@ def auto_detect_channel(ctx, app):
         "Found bundle ID {bundleid}",
     )
 
-    if bundleid in {NIGHTLY_BUNDLEID, NIGHTLY_DEBUG_BUNDLEID}:
+    if bundleid in {
+        NIGHTLY_BUNDLEID,
+        NIGHTLY_DEBUG_BUNDLEID,
+        NIGHTLY_UNOFFICIAL_BUNDLEID,
+        NIGHTLY_UNOFFICIAL_DEBUG_BUNDLEID,
+    }:
         return "nightly"
     elif bundleid == DEVEDITION_BUNDLEID:
         return "devedition"
@@ -454,6 +460,7 @@ def auto_detect_channel(ctx, app):
             (
                 "Couldn't read bundle ID from {plist} or bundle ID "
                 f"({bundleid}) not in [{NIGHTLY_BUNDLEID}, {NIGHTLY_DEBUG_BUNDLEID}"
+                f", {NIGHTLY_UNOFFICIAL_BUNDLEID}, {NIGHTLY_UNOFFICIAL_DEBUG_BUNDLEID}"
                 f", {DEVEDITION_BUNDLEID}, {RELEASE_BUNDLEID}]."
                 " You can try to specify the channel"
                 " manually with -c $CHANNEL"

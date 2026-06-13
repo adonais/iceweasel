@@ -19,7 +19,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   AddonRepository: "resource://gre/modules/addons/AddonRepository.sys.mjs",
   AttributionCode:
     "moz-src:///browser/components/attribution/AttributionCode.sys.mjs",
-  AWScreenUtils: "resource:///modules/aboutwelcome/AWScreenUtils.sys.mjs",
+  ASRouterScreenUtils:
+    "resource:///modules/asrouter/ASRouterScreenUtils.sys.mjs",
   BrowserUtils: "resource://gre/modules/BrowserUtils.sys.mjs",
 });
 
@@ -1621,7 +1622,7 @@ async function prepareContentForReact(content) {
   }
 
   if (shouldRemoveLanguageMismatchScreen) {
-    await lazy.AWScreenUtils.removeScreens(
+    await lazy.ASRouterScreenUtils.removeScreens(
       screens,
       screen => screen.id === "AW_LANGUAGE_MISMATCH"
     );

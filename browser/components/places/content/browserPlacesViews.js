@@ -170,7 +170,10 @@ class PlacesViewBase {
     // parent node. We don't want to allow removing a node when the
     // selection is not explicit.
     let popupNode = PlacesUIUtils.lastContextMenuTriggerNode;
-    if (popupNode && (popupNode == "menupopup" || !popupNode._placesNode)) {
+    if (
+      popupNode &&
+      (popupNode.localName == "menupopup" || !popupNode._placesNode)
+    ) {
       return [];
     }
 
@@ -235,6 +238,18 @@ class PlacesViewBase {
   }
 
   buildContextMenu(aPopup) {
+    // When right-clicking on the gutter of a non-empty folder popup, don't
+    // show any context menu.
+    let triggerNode = aPopup.triggerNode;
+    // childCount > 0 distinguishes non-empty folders (suppress menu) from
+    // empty ones (show folder options).
+    if (
+      triggerNode?.localName == "menupopup" &&
+      triggerNode._placesNode?.childCount > 0
+    ) {
+      return false;
+    }
+
     this._contextMenuShown = aPopup;
     window.updateCommands("places");
 
@@ -413,7 +428,7 @@ class PlacesViewBase {
 
         if (!this._nativeView) {
           popup.setAttribute("placespopup", "true");
-          popup.setAttribute("native", "false");
+          popup.toggleAttribute("nonnative", true);
         }
 
         element.appendChild(popup);
@@ -538,6 +553,7 @@ class PlacesViewBase {
       // TODO Bug 517701: This doesn't seem to handle the case of an empty
       // root.
       if (parentElt._startMarker.nextElementSibling == parentElt._endMarker) {
+        this._mayAddCommandsItems(parentElt);
         this._setEmptyPopupStatus(parentElt, true);
       }
     }
@@ -569,6 +585,7 @@ class PlacesViewBase {
       parentElt,
       parentElt.children[index] || parentElt._endMarker
     );
+    this._mayAddCommandsItems(parentElt);
     this._setEmptyPopupStatus(parentElt, false);
   }
 
@@ -751,21 +768,19 @@ class PlacesViewBase {
     ) {
       // Add the "Share Folder" menuitem.
       aPopup._endOptShareFolder = document.createXULElement("menuitem");
-      aPopup._endOptShareFolder.className = "openintabs-menuitem";
+      aPopup._endOptShareFolder.className = "openintabs-menuitem badge-new";
       aPopup._endOptShareFolder.setAttribute(
         "data-l10n-id",
-        "places-share-folder"
+        "places-share-folder2"
       );
+      aPopup._endOptShareFolder.setAttribute("data-l10n-attrs", "badge");
 
       aPopup._endOptShareFolder.addEventListener("command", event => {
-        ContentSharingUtils.createShareableLinkFromBookmarkFolders(
-          [
-            PlacesUtils.getConcreteItemGuid(
-              event.currentTarget.parentNode._placesNode
-            ),
-          ],
-          event.currentTarget.ownerGlobal
-        );
+        ContentSharingUtils.createShareableLinkFromBookmarkFolders([
+          PlacesUtils.getConcreteItemGuid(
+            event.currentTarget.parentNode._placesNode
+          ),
+        ]);
       });
       aPopup.appendChild(aPopup._endOptShareFolder);
     } else if (
@@ -893,6 +908,11 @@ class PlacesViewBase {
  * Toolbar View implementation.
  */
 class PlacesToolbar extends PlacesViewBase {
+  /** Whether we can retry updating nodes visibility. */
+  #pendingVisibilityRetry = false;
+  /** Whether we are currently updating nodes visibility. */
+  #updatingNodesVisibility = false;
+
   constructor(placesUrl, rootElt, viewElt) {
     let timerId = Glean.bookmarksToolbar.init.start();
     super(placesUrl, rootElt, viewElt);
@@ -966,8 +986,6 @@ class PlacesToolbar extends PlacesViewBase {
     this._dragRoot = BookmarkingUI.toolbar.contains(this._viewElt)
       ? BookmarkingUI.toolbar
       : this._viewElt;
-
-    this._updatingNodesVisibility = false;
   }
 
   _cbEvents = [
@@ -1153,7 +1171,7 @@ class PlacesToolbar extends PlacesViewBase {
           is: "places-popup",
         });
         popup.setAttribute("placespopup", "true");
-        popup.setAttribute("native", "false");
+        popup.toggleAttribute("nonnative", true);
         popup.classList.add("toolbar-menupopup");
         button.appendChild(popup);
         popup._placesNode = PlacesUtils.asContainer(aChild);
@@ -1319,35 +1337,53 @@ class PlacesToolbar extends PlacesViewBase {
   }
 
   async _updateNodesVisibilityTimerCallback() {
-    if (this._updatingNodesVisibility || window.closed || !this._isAlive) {
+    if (this.#updatingNodesVisibility || window.closed || !this._isAlive) {
       return;
     }
-    this._updatingNodesVisibility = true;
+    this.#updatingNodesVisibility = true;
 
     let dwu = window.windowUtils;
 
-    let visibleCount = await window.promiseDocumentFlushed(() => {
-      let scrollRect = dwu.getBoundsWithoutFlushing(this._rootElt);
-      let count = 0;
-      for (let child of this._rootElt.children) {
-        let childRect = dwu.getBoundsWithoutFlushing(child);
-        let overflowed = this.isRTL
-          ? childRect.left < scrollRect.left
-          : childRect.right > scrollRect.right;
-        if (overflowed) {
-          // Once a child overflows, all the next ones will.
-          break;
+    let { visibleCount, scrollWidth } = await window.promiseDocumentFlushed(
+      () => {
+        let scrollRect = dwu.getBoundsWithoutFlushing(this._rootElt);
+        let count = 0;
+        for (let child of this._rootElt.children) {
+          let childRect = dwu.getBoundsWithoutFlushing(child);
+          let overflowed = this.isRTL
+            ? childRect.left < scrollRect.left
+            : childRect.right > scrollRect.right;
+          if (overflowed) {
+            // Once a child overflows, all the next ones will.
+            break;
+          }
+          count++;
         }
-        count++;
+        return { visibleCount: count, scrollWidth: scrollRect.width };
       }
-      return count;
-    });
+    );
 
-    this._updatingNodesVisibility = false;
+    this.#updatingNodesVisibility = false;
     if (!this._isAlive) {
       return;
     }
 
+    if (!scrollWidth) {
+      // The element may have no layout frame (display:none ancestor) yet.
+      // Reschedule once to allow layout to complete. If it's still frameless
+      // on the retry, give up to avoid looping indefinitely.
+      if (!this.#pendingVisibilityRetry) {
+        this.#pendingVisibilityRetry = true;
+        window.requestAnimationFrame(() => {
+          if (this._isAlive) {
+            this.updateNodesVisibility();
+          }
+        });
+      }
+      return;
+    }
+
+    this.#pendingVisibilityRetry = false;
     window.requestAnimationFrame(() => {
       if (!this._isAlive) {
         return;

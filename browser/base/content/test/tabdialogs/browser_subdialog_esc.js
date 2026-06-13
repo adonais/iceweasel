@@ -104,14 +104,7 @@ add_task(async function test_subdialog_esc_on_dropdown_does_not_close_dialog() {
       ]);
 
       // Close the dropdown
-      if (
-        AppConstants.platform == "macosx" &&
-        Services.prefs.getBoolPref(
-          "widget.macos.native-anchored-menus",
-          false
-        ) &&
-        Services.prefs.getBoolPref("widget.macos.allow-native-select", false)
-      ) {
+      if (selectPopup.isNativeMenu) {
         info("Hiding menupopup.");
         await selectPopup.hidePopup();
       } else {

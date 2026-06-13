@@ -14,6 +14,8 @@
  * @import { SmartbarAction } from "chrome://browser/content/aiwindow/components/input-cta/input-cta.mjs"
  */
 
+let expectedModel;
+
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [
@@ -21,6 +23,8 @@ add_setup(async function () {
       ["browser.smartwindow.firstrun.modelChoice", "1"],
     ],
   });
+
+  expectedModel = await modelFor("1");
 
   const fakeIntentEngine = {
     run({ args: [[query]] }) {
@@ -85,11 +89,7 @@ add_task(async function test_smartbar_telemetry_navigate_submit_enter() {
     "0",
     "navigate_submit has correct message_seq"
   );
-  Assert.equal(
-    extra.model,
-    "gemini-2.5-flash-lite",
-    "navigate_submit has correct model"
-  );
+  Assert.equal(extra.model, expectedModel, "navigate_submit has correct model");
   Assert.equal(extra.length, "20", "navigate_submit has correct length");
   Assert.equal(
     extra.location,
@@ -161,11 +161,7 @@ add_task(async function test_smartbar_telemetry_search_submit() {
   const extra = events[0].extra;
   Assert.ok(extra.chat_id, "search_submit has chat_id");
   Assert.equal(extra.message_seq, "0", "search_submit has correct message_seq");
-  Assert.equal(
-    extra.model,
-    "gemini-2.5-flash-lite",
-    "search_submit has correct model"
-  );
+  Assert.equal(extra.model, expectedModel, "search_submit has correct model");
   Assert.equal(
     extra.location,
     "fullpage",
@@ -261,11 +257,7 @@ add_task(async function test_smartbar_telemetry_chat_submit_enter() {
   const extra = events[0].extra;
   Assert.ok(extra.chat_id, "chat_submit has chat_id");
   Assert.equal(extra.message_seq, "0", "chat_submit has correct message_seq");
-  Assert.equal(
-    extra.model,
-    "gemini-2.5-flash-lite",
-    "chat_submit has correct model"
-  );
+  Assert.equal(extra.model, expectedModel, "chat_submit has correct model");
   Assert.equal(extra.location, "fullpage", "chat_submit has correct location");
   Assert.equal(
     extra.detected_intent,
@@ -370,11 +362,7 @@ add_task(async function test_smartbar_telemetry_engagement_extra_keys() {
       "engagement has correct window mode"
     );
     Assert.equal(extra.location, "fullpage", "engagement has correct location");
-    Assert.equal(
-      extra.model,
-      "gemini-2.5-flash-lite",
-      "engagement has correct model"
-    );
+    Assert.equal(extra.model, expectedModel, "engagement has correct model");
 
     await BrowserTestUtils.closeWindow(win);
   } finally {
@@ -408,11 +396,7 @@ add_task(async function test_smartbar_telemetry_abandonment_extra_keys() {
     "abandonment has correct window mode"
   );
   Assert.equal(extra.location, "sidebar", "abandonment has correct location");
-  Assert.equal(
-    extra.model,
-    "gemini-2.5-flash-lite",
-    "abandonment has correct model"
-  );
+  Assert.equal(extra.model, expectedModel, "abandonment has correct model");
 
   await BrowserTestUtils.closeWindow(win);
 });

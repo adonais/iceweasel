@@ -7,12 +7,10 @@
 
   &.ds-card.sections-card-ui {
     padding: unset;
-    // @backward-compat { version 150 } D281466/D283723 renamed design tokens; remove once Firefox 150 is on Release.
-    box-shadow: var(--card-box-shadow, var(--box-shadow-card));
+    box-shadow: var(--card-box-shadow);
 
     &:hover {
-      // @backward-compat { version 150 } D281466/D283723 renamed design tokens; remove once Firefox 150 is on Release.
-      box-shadow: var(--card-box-shadow-hover, var(--box-shadow-card-hover));
+      box-shadow: var(--card-box-shadow-hover);
     }
 
     &:not(.placeholder) .img-wrapper>.ds-image.img>img {
@@ -109,12 +107,10 @@
 
   &.ds-card.sections-card-ui {
     height: unset;
-    // @backward-compat { version 150 } D281466/D283723 renamed design tokens; remove once Firefox 150 is on Release.
-    box-shadow: var(--card-box-shadow, var(--box-shadow-card));
+    box-shadow: var(--card-box-shadow);
 
     &:hover {
-      // @backward-compat { version 150 } D281466/D283723 renamed design tokens; remove once Firefox 150 is on Release.
-      box-shadow: var(--card-box-shadow-hover, var(--box-shadow-card-hover));
+      box-shadow: var(--card-box-shadow-hover);
     }
   }
 
@@ -224,8 +220,7 @@
   grid-column: span 2;
 
   &.ds-card.sections-card-ui {
-    // @backward-compat { version 150 } D281466/D283723 renamed design tokens; remove once Firefox 150 is on Release.
-    box-shadow: var(--card-box-shadow, var(--box-shadow-card));
+    box-shadow: var(--card-box-shadow);
 
     @media ($break-point-layout-variant <=width < $break-point-widest),
       (min-width: $break-point-sections-variant) {
@@ -267,8 +262,7 @@
     }
 
     &:hover {
-      // @backward-compat { version 150 } D281466/D283723 renamed design tokens; remove once Firefox 150 is on Release.
-      box-shadow: var(--card-box-shadow-hover, var(--box-shadow-card-hover));
+      box-shadow: var(--card-box-shadow-hover);
     }
   }
 
@@ -306,8 +300,7 @@
         .title {
           -webkit-line-clamp: 3;
           font-size: var(--font-size-large);
-          // @backward-compat { version 150 } D281466/D283723 renamed design tokens; remove once Firefox 150 is on Release.
-          font-weight: var(--font-weight-heading, var(--heading-font-weight));
+          font-weight: var(--font-weight-heading);
           margin-block: 0 var(--space-small);
         }
 
@@ -438,8 +431,7 @@
     .section-title {
       @include wallpaper-contrast-fix;
 
-      // @backward-compat { version 150 } D281466/D283723 renamed design tokens; remove once Firefox 150 is on Release.
-      font-weight: var(--font-weight-heading, var(--heading-font-weight));
+      font-weight: var(--font-weight-heading);
       font-size: var(--font-size-xlarge);
       color: var(--newtab-contextual-text-primary-color);
       margin-block: 0;

@@ -169,6 +169,9 @@ class RenderThread final {
   static void ShutDown();
 
   /// Can be called from any thread.
+  bool HasShutdown() const { return mHasShutdown; }
+
+  /// Can be called from any thread.
   static bool IsInRenderThread();
 
   /// Can be called from any thread.

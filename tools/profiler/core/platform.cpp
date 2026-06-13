@@ -1815,25 +1815,30 @@ class ActivePS {
     return std::move(sInstance->mBaseProfileThreads);
   }
 
-  static void AddExitProfile(PSLockRef aLock, const nsACString& aExitProfile) {
+  static void AddExitProfile(
+      PSLockRef aLock,
+      ProfileAndAdditionalInformation&& aExitProfileAndAdditionalInfo) {
     MOZ_ASSERT(sInstance);
 
     ClearExpiredExitProfiles(aLock);
 
-    MOZ_RELEASE_ASSERT(sInstance->mExitProfiles.append(ExitProfile{
-        nsCString(aExitProfile), sInstance->mProfileBuffer.BufferRangeEnd()}));
+    MOZ_RELEASE_ASSERT(sInstance->mExitProfiles.append(
+        ExitProfile{std::move(aExitProfileAndAdditionalInfo),
+                    sInstance->mProfileBuffer.BufferRangeEnd()}));
   }
 
-  static Vector<nsCString> MoveExitProfiles(PSLockRef aLock) {
+  static Vector<ProfileAndAdditionalInformation> MoveExitProfiles(
+      PSLockRef aLock) {
     MOZ_ASSERT(sInstance);
 
     ClearExpiredExitProfiles(aLock);
 
-    Vector<nsCString> profiles;
+    Vector<ProfileAndAdditionalInformation> profiles;
     MOZ_RELEASE_ASSERT(
         profiles.initCapacity(sInstance->mExitProfiles.length()));
     for (auto& profile : sInstance->mExitProfiles) {
-      MOZ_RELEASE_ASSERT(profiles.append(std::move(profile.mJSON)));
+      MOZ_RELEASE_ASSERT(
+          profiles.append(std::move(profile.mProfileAndAdditionalInformation)));
     }
     sInstance->mExitProfiles.clear();
     return profiles;
@@ -1948,7 +1953,7 @@ class ActivePS {
   ProfileBufferBlockIndex mGeckoIndexWhenBaseProfileAdded;
 
   struct ExitProfile {
-    nsCString mJSON;
+    ProfileAndAdditionalInformation mProfileAndAdditionalInformation;
     uint64_t mBufferPositionAtGatherTime;
   };
   Vector<ExitProfile> mExitProfiles;
@@ -2085,57 +2090,38 @@ static const char* const kMainThreadName = "GeckoMain";
 // The ctor does nothing; users are responsible for filling in the fields.
 class Registers {
  public:
-  Registers()
-      : mPC{nullptr},
-        mSP{nullptr},
-        mFP{nullptr}
-#if defined(UNWINDING_REGS_HAVE_ECX_EDX)
-        ,
-        mEcx{nullptr},
-        mEdx{nullptr}
-#elif defined(UNWINDING_REGS_HAVE_R10_R12)
-        ,
-        mR10{nullptr},
-        mR12{nullptr}
-#elif defined(UNWINDING_REGS_HAVE_LR_R7)
-        ,
-        mLR{nullptr},
-        mR7{nullptr}
-#elif defined(UNWINDING_REGS_HAVE_LR_R11)
-        ,
-        mLR{nullptr},
-        mR11{nullptr}
-#endif
-  {
-  }
+  Registers() = default;
 
   void Clear() { memset(this, 0, sizeof(*this)); }
 
   // These fields are filled in by
   // Sampler::SuspendAndSampleAndResumeThread() for periodic and backtrace
   // samples, and by REGISTERS_SYNC_POPULATE for synchronous samples.
-  Address mPC;  // Instruction pointer.
-  Address mSP;  // Stack pointer.
-  Address mFP;  // Frame pointer.
+  Address mPC{nullptr};  // Instruction pointer.
+  Address mSP{nullptr};  // Stack pointer.
+  Address mFP{nullptr};  // Frame pointer.
 #if defined(UNWINDING_REGS_HAVE_ECX_EDX)
-  Address mEcx;  // Temp for return address.
-  Address mEdx;  // Temp for frame pointer.
+  Address mEcx{nullptr};  // Temp for return address.
+  Address mEdx{nullptr};  // Temp for frame pointer.
 #elif defined(UNWINDING_REGS_HAVE_R10_R12)
-  Address mR10;  // Temp for return address.
-  Address mR12;  // Temp for frame pointer.
+  Address mR10{nullptr};  // Temp for return address.
+  Address mR12{nullptr};  // Temp for frame pointer.
 #elif defined(UNWINDING_REGS_HAVE_LR_R7)
-  Address mLR;  // ARM link register, or temp for return address.
-  Address mR7;  // Temp for frame pointer.
+  Address mLR{nullptr};  // ARM link register, or temp for return address.
+  Address mR7{nullptr};  // Temp for frame pointer.
 #elif defined(UNWINDING_REGS_HAVE_LR_R11)
-  Address mLR;   // ARM link register, or temp for return address.
-  Address mR11;  // Temp for frame pointer.
+  Address mLR{nullptr};   // ARM link register, or temp for return address.
+  Address mR11{nullptr};  // Temp for frame pointer.
 #endif
 
 #if defined(GP_OS_linux) || defined(GP_OS_android) || defined(GP_OS_freebsd)
   // This contains all the registers, which means it duplicates the four fields
   // above. This is ok.
-  ucontext_t* mContext;  // The context from the signal handler or below.
-  ucontext_t mContextSyncStorage;  // Storage for sync stack unwinding.
+
+  // The context from the signal handler or below.
+  ucontext_t* mContext{nullptr};
+  // Storage for sync stack unwinding.
+  ucontext_t mContextSyncStorage;
 #endif
 };
 
@@ -2848,21 +2834,21 @@ static void DoLULBacktrace(
   {
 #  if defined(GP_PLAT_amd64_linux) || defined(GP_PLAT_amd64_android) || \
       defined(GP_PLAT_amd64_freebsd)
-    uintptr_t rEDZONE_SIZE = 128;
-    uintptr_t start = startRegs.xsp.Value() - rEDZONE_SIZE;
+    uintptr_t REDZONE_SIZE = 128;
+    uintptr_t start = startRegs.xsp.Value() - REDZONE_SIZE;
 #  elif defined(GP_PLAT_arm_linux) || defined(GP_PLAT_arm_android)
-    uintptr_t rEDZONE_SIZE = 0;
-    uintptr_t start = startRegs.r13.Value() - rEDZONE_SIZE;
+    uintptr_t REDZONE_SIZE = 0;
+    uintptr_t start = startRegs.r13.Value() - REDZONE_SIZE;
 #  elif defined(GP_PLAT_arm64_linux) || defined(GP_PLAT_arm64_android) || \
       defined(GP_PLAT_arm64_freebsd)
-    uintptr_t rEDZONE_SIZE = 0;
-    uintptr_t start = startRegs.sp.Value() - rEDZONE_SIZE;
+    uintptr_t REDZONE_SIZE = 0;
+    uintptr_t start = startRegs.sp.Value() - REDZONE_SIZE;
 #  elif defined(GP_PLAT_x86_linux) || defined(GP_PLAT_x86_android)
-    uintptr_t rEDZONE_SIZE = 0;
-    uintptr_t start = startRegs.xsp.Value() - rEDZONE_SIZE;
+    uintptr_t REDZONE_SIZE = 0;
+    uintptr_t start = startRegs.xsp.Value() - REDZONE_SIZE;
 #  elif defined(GP_PLAT_mips64_linux)
-    uintptr_t rEDZONE_SIZE = 0;
-    uintptr_t start = startRegs.sp.Value() - rEDZONE_SIZE;
+    uintptr_t REDZONE_SIZE = 0;
+    uintptr_t start = startRegs.sp.Value() - REDZONE_SIZE;
 #  else
 #    error "Unknown plat"
 #  endif
@@ -6532,20 +6518,21 @@ void GetProfilerEnvVarsForChildProcess(
 
 }  // namespace mozilla
 
-void profiler_received_exit_profile(const nsACString& aExitProfile) {
+void profiler_received_exit_profile(
+    ProfileAndAdditionalInformation&& aExitProfileAndAdditionalInfo) {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
   MOZ_RELEASE_ASSERT(CorePS::Exists());
   PSAutoLock lock;
   if (!ActivePS::Exists(lock)) {
     return;
   }
-  ActivePS::AddExitProfile(lock, aExitProfile);
+  ActivePS::AddExitProfile(lock, std::move(aExitProfileAndAdditionalInfo));
 }
 
-Vector<nsCString> profiler_move_exit_profiles() {
+Vector<ProfileAndAdditionalInformation> profiler_move_exit_profiles() {
   MOZ_RELEASE_ASSERT(CorePS::Exists());
   PSAutoLock lock;
-  Vector<nsCString> profiles;
+  Vector<ProfileAndAdditionalInformation> profiles;
   if (ActivePS::Exists(lock)) {
     profiles = ActivePS::MoveExitProfiles(lock);
   }
@@ -6583,10 +6570,11 @@ static void locked_profiler_save_profile_to_file(
           aIsShuttingDown, nullptr, ProgressLogger{});
 
       w.StartArrayProperty("processes");
-      Vector<nsCString> exitProfiles = ActivePS::MoveExitProfiles(aLock);
+      Vector<ProfileAndAdditionalInformation> exitProfiles =
+          ActivePS::MoveExitProfiles(aLock);
       for (auto& exitProfile : exitProfiles) {
-        if (!exitProfile.IsEmpty() && exitProfile[0] != '*') {
-          w.Splice(exitProfile);
+        if (!exitProfile.mProfile.IsEmpty() && exitProfile.mProfile[0] != '*') {
+          w.Splice(exitProfile.mProfile);
         }
       }
       w.EndArray();
@@ -7913,7 +7901,7 @@ bool profiler_backtrace_into_buffer(ProfileChunkedBuffer& aChunkedBuffer,
         ProfileBufferCollector collector(profileBuffer, samplePos,
                                          bufferRangeStart);
 
-        for (int nativeIndex = (int)(aNativeStack.mCount); nativeIndex >= 0;
+        for (int nativeIndex = (int)(aNativeStack.mCount) - 1; nativeIndex >= 0;
              --nativeIndex) {
           collector.CollectNativeLeafAddr(
               (void*)aNativeStack.mPCs[nativeIndex]);

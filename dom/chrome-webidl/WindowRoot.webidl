@@ -3,7 +3,8 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-[ChromeOnly,
- Exposed=Window]
+[ChromeOnly, Exposed=Window]
 interface WindowRoot : EventTarget {
+  [BinaryName="innerWindow"]
+  readonly attribute Window? window;
 };

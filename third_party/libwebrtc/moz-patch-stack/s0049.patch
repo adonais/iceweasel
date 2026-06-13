@@ -12,7 +12,7 @@ Subject: Bug 1766646 - (fix-ae0d117d51) ifdef our Csrc impl vs upstream's
  5 files changed, 20 insertions(+)
 
 diff --git a/modules/rtp_rtcp/source/rtp_header_extensions.cc b/modules/rtp_rtcp/source/rtp_header_extensions.cc
-index 2218492e94..657568ddc7 100644
+index 4dd236f58d..6c30b519f8 100644
 --- a/modules/rtp_rtcp/source/rtp_header_extensions.cc
 +++ b/modules/rtp_rtcp/source/rtp_header_extensions.cc
 @@ -182,6 +182,7 @@ bool AudioLevelExtension::Write(std::span<uint8_t> data,
@@ -39,7 +39,7 @@ index 2218492e94..657568ddc7 100644
  // CSRCAudioLevel
  //  Sample Audio Level Encoding Using the One-Byte Header Format
  //  Note that the range of len is 1 to 15 which is encoded as 0 to 14
-@@ -460,6 +463,7 @@ bool CsrcAudioLevel::Write(ArrayView<uint8_t> data,
+@@ -460,6 +463,7 @@ bool CsrcAudioLevel::Write(std::span<uint8_t> data,
    // This extension if used must have at least one audio level
    return csrcAudioLevels.numAudioLevels;
  }
@@ -48,7 +48,7 @@ index 2218492e94..657568ddc7 100644
  // Video Content Type.
  //
 diff --git a/modules/rtp_rtcp/source/rtp_header_extensions.h b/modules/rtp_rtcp/source/rtp_header_extensions.h
-index b31748b0dc..b48e04119f 100644
+index 12405e1646..b5148dff8c 100644
 --- a/modules/rtp_rtcp/source/rtp_header_extensions.h
 +++ b/modules/rtp_rtcp/source/rtp_header_extensions.h
 @@ -110,6 +110,7 @@ class AudioLevelExtension {
@@ -76,7 +76,7 @@ index b31748b0dc..b48e04119f 100644
   public:
    static constexpr RTPExtensionType kId = kRtpExtensionCsrcAudioLevel;
 @@ -324,6 +327,7 @@ class CsrcAudioLevel {
-   static bool Write(rtc::ArrayView<uint8_t> data,
+   static bool Write(std::span<uint8_t> data,
                      const CsrcAudioLevelList& csrcAudioLevels);
  };
 +#endif
@@ -84,7 +84,7 @@ index b31748b0dc..b48e04119f 100644
  // Base extension class for RTP header extensions which are strings.
  // Subclasses must defined kId and kUri static constexpr members.
 diff --git a/modules/rtp_rtcp/source/rtp_packet.cc b/modules/rtp_rtcp/source/rtp_packet.cc
-index e8c2553bb3..adbf16854e 100644
+index fe2f51a58b..b7e0e14916 100644
 --- a/modules/rtp_rtcp/source/rtp_packet.cc
 +++ b/modules/rtp_rtcp/source/rtp_packet.cc
 @@ -193,7 +193,9 @@ void RtpPacket::ZeroMutableExtensions() {

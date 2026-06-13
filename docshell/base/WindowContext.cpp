@@ -357,6 +357,11 @@ bool WindowContext::CanSet(FieldIndex<IDX_HasActivePeerConnections>, bool,
   return XRE_IsParentProcess() && IsTop();
 }
 
+bool WindowContext::CanSet(FieldIndex<IDX_IsFramebustingAllowed>,
+                           const bool& aValue, ContentParent* aSource) {
+  return CheckOnlyOwningProcessCanSet(aSource);
+}
+
 void WindowContext::ProcessCloseRequest() {
   MOZ_ASSERT(XRE_IsParentProcess(), "Window must be Global Parent");
   BrowsingContext* top = mBrowsingContext->Top();

@@ -760,6 +760,11 @@ bool GLLibraryEGL::Init(nsACString* const out_failureId) {
     const SymLoadStruct symbols[] = {SYMBOL(QueryDevicesEXT), END_OF_SYMBOLS};
     (void)fnLoadSymbols(symbols);
   }
+  {
+    const SymLoadStruct symbols[] = {SYMBOL(QueryDmaBufModifiersEXT),
+                                     END_OF_SYMBOLS};
+    (void)fnLoadSymbols(symbols);
+  }
 
   return true;
 }
@@ -822,8 +827,7 @@ EglDisplay::EglDisplay(const PrivateUseOnly&, GLLibraryEGL& lib,
     : mLib(&lib), mDisplay(disp), mIsWARP(isWarp) {
   const bool shouldDumpExts = GLContext::ShouldDumpExts();
 
-  auto rawExtString =
-      (const char*)mLib->fQueryString(mDisplay, LOCAL_EGL_EXTENSIONS);
+  auto rawExtString = mLib->fQueryString(mDisplay, LOCAL_EGL_EXTENSIONS);
   if (!rawExtString) {
     NS_WARNING("Failed to query EGL display extensions!.");
     rawExtString = "";
@@ -838,8 +842,7 @@ EglDisplay::EglDisplay(const PrivateUseOnly&, GLLibraryEGL& lib,
   }
 
   if (IsExtensionSupported(EGLExtension::KHR_surfaceless_context)) {
-    const auto vendor =
-        (const char*)mLib->fQueryString(mDisplay, LOCAL_EGL_VENDOR);
+    const auto vendor = mLib->fQueryString(mDisplay, LOCAL_EGL_VENDOR);
 
     // Bug 1464610: Mali T720 (Amazon Fire 8 HD) claims to support this
     // extension, but if you actually eglMakeCurrent() with EGL_NO_SURFACE, it
@@ -992,7 +995,7 @@ void GLLibraryEGL::InitLibExtensions() {
   // Ideally we would only blocklist this there, but for now we don't need the
   // client extension list on ANDROID (we mostly need it on ANGLE), and we'd
   // rather not crash.
-  rawExtString = (const char*)fQueryString(nullptr, LOCAL_EGL_EXTENSIONS);
+  rawExtString = fQueryString(nullptr, LOCAL_EGL_EXTENSIONS);
 #endif
 
   if (!rawExtString) {

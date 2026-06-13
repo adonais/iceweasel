@@ -47,11 +47,17 @@ class BlobURLProtocolHandler final : public nsIProtocolHandler,
   static nsresult AddDataEntry(BlobImpl*, nsIPrincipal*,
                                const nsCString& aPartitionKey,
                                nsACString& aUri);
-  // IPC only
-  static void AddDataEntry(
-      const nsACString& aURI, nsIPrincipal* aPrincipal,
-      const nsCString& aPartitionKey, BlobImpl* aBlobImpl,
-      const Maybe<ContentParentId>& aContentParentId = Nothing());
+  // IPC only (parent process)
+  static void AddDataEntryParent(const nsACString& aURI,
+                                 nsIPrincipal* aPrincipal,
+                                 const nsCString& aPartitionKey,
+                                 BlobImpl* aBlobImpl,
+                                 const ContentParentId& aContentParentId);
+
+  // IPC only (content process)
+  static void AddDataEntryChild(const nsACString& aURI,
+                                nsIPrincipal* aPrincipal,
+                                const nsCString& aPartitionKey);
 
   // These methods revoke a list of blobURLs. Because some operations could
   // still be in progress, the revoking consists in marking the blobURL as
@@ -85,19 +91,17 @@ class BlobURLProtocolHandler final : public nsIProtocolHandler,
       std::function<bool(BlobImpl*, nsIPrincipal*, const nsCString&,
                          const nsACString&, bool aRevoked)>&& aCb);
 
-  // This method returns false if aURI is not a known BlobURL. Otherwise it
-  // returns true.
+  // This method extracts principal information from the given Blob URL, and
+  // returns false if the principal cannot be determined.
   //
-  // When true is returned, the aPrincipal out param is meaningful.  It gets
-  // set to the principal that a channel loaded from the blob would get if
-  // the blob is not already revoked and to a NullPrincipal if the blob is
-  // revoked.
+  // NOTE: This function does not confirm that a given Blob URL is valid and/or
+  // non-revoked. This should only be checked by trying to load the Blob URL
+  // using a channel.
   //
-  // This means that for a revoked blob URL this method may either return
-  // false or return true and hand out a NullPrincipal in aPrincipal,
-  // depending on whether the "remove it from the hashtable" timer has
-  // fired.  See RemoveDataEntry().
-  static bool GetBlobURLPrincipal(nsIURI* aURI, nsIPrincipal** aPrincipal);
+  // NOTE: The principal returned by this function may have different
+  // OriginAttributes than the "true" principal of the underlying blob.
+  static bool GetBlobURLPrincipal(nsIURI* aURI, const OriginAttributes& aAttrs,
+                                  nsIPrincipal** aPrincipal);
 
   // Check if metadata about Blob URLs created with this principal should be
   // broadcast into every content process. This is currently the case for
@@ -118,16 +122,5 @@ bool IsBlobURI(nsIURI* aUri);
 
 }  // namespace dom
 }  // namespace mozilla
-
-extern nsresult NS_GetBlobForBlobURI(nsIURI* aURI,
-                                     mozilla::dom::BlobImpl** aBlob);
-
-extern nsresult NS_GetBlobForBlobURISpec(const nsACString& aSpec,
-                                         mozilla::dom::BlobImpl** aBlob,
-                                         bool aAlsoIfRevoked = false);
-
-extern nsresult NS_SetChannelContentRangeForBlobURI(nsIChannel* aChannel,
-                                                    nsIURI* aURI,
-                                                    nsACString& aRangeHeader);
 
 #endif /* mozilla_dom_BlobURLProtocolHandler_h */

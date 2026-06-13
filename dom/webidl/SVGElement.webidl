@@ -23,7 +23,7 @@ interface SVGElement : Element {
 };
 
 SVGElement includes GlobalEventHandlers;
-SVGElement includes HTMLOrForeignElement;
+SVGElement includes HTMLOrSVGOrMathMLElement;
 SVGElement includes ElementCSSInlineStyle;
 SVGElement includes TouchEventHandlers;
 SVGElement includes OnErrorEventHandlerForNodes;

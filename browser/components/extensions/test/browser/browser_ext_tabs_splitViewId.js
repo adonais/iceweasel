@@ -6,7 +6,7 @@ PromiseTestUtils.allowMatchingRejectionsGlobally(
   /Unexpected undefined tabState for onMoveToNewWindow/
 );
 
-function getRealTabByExtensionTabId(tabId) {
+function getNativeTabByExtensionTabId(tabId) {
   const {
     Management: {
       global: { tabTracker },
@@ -30,11 +30,12 @@ function loadExtensionForSplitViewTest({ background }) {
     background: `(${background})(${createSplit})`,
   });
   extension.onMessage("createSplit", tabIds => {
-    const tab1 = getRealTabByExtensionTabId(tabIds[0]);
-    const tab2 = getRealTabByExtensionTabId(tabIds[1]);
-    const splitview = tab1.ownerGlobal.gBrowser.addTabSplitView([tab1, tab2], {
-      insertBefore: tab1,
-    });
+    const tab1 = getNativeTabByExtensionTabId(tabIds[0]);
+    const tab2 = getNativeTabByExtensionTabId(tabIds[1]);
+    const splitview = tab1.documentGlobal.gBrowser.addTabSplitView(
+      [tab1, tab2],
+      { insertBefore: tab1 }
+    );
     extension.sendMessage("createSplit:done", splitview.splitViewId);
   });
   return extension;

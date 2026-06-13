@@ -29,7 +29,8 @@ RenderDXGITextureHost::RenderDXGITextureHost(
     const Maybe<layers::GpuProcessTextureId>& aGpuProcessTextureId,
     const uint32_t aArrayIndex, const gfx::SurfaceFormat aFormat,
     const gfx::ColorSpace2 aColorSpace, const gfx::ColorRange aColorRange,
-    const gfx::TransferFunction aTransferFunction, const gfx::IntSize aSize,
+    const gfx::TransferFunction aTransferFunction,
+    const Maybe<gfx::HDRMetadata>& aHDRMetadata, const gfx::IntSize aSize,
     bool aHasKeyedMutex,
     const Maybe<layers::CompositeProcessFencesHolderId>& aFencesHolderId)
     : mHandle(aHandle),
@@ -42,6 +43,7 @@ RenderDXGITextureHost::RenderDXGITextureHost(
       mColorSpace(aColorSpace),
       mColorRange(aColorRange),
       mTransferFunction(aTransferFunction),
+      mHDRMetadata(aHDRMetadata),
       mSize(aSize),
       mHasKeyedMutex(aHasKeyedMutex),
       mFencesHolderId(aFencesHolderId),

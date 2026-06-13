@@ -38,7 +38,7 @@ function onLoad() {
   });
 
   params = window.arguments[0].QueryInterface(Ci.nsIDialogParamBlock);
-  token = params.objects.GetElementAt(0).QueryInterface(Ci.nsIPK11Token);
+  token = params.objects.GetElementAt(0).QueryInterface(Ci.nsIPKCS11Token);
 
   document.l10n.setAttributes(
     document.getElementById("tokenName"),

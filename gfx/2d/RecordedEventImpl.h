@@ -79,7 +79,7 @@ class RecordedDrawTargetDestruction
 
   ReferencePtr mRefPtr;
 
-  BackendType mBackendType;
+  BackendType mBackendType = BackendType::NONE;
 
  private:
   friend class RecordedEvent;
@@ -1544,11 +1544,11 @@ class RecordedFontDescriptor
 
   void SetFontDescriptor(const uint8_t* aData, uint32_t aSize, uint32_t aIndex);
 
-  bool mHasDesc;
+  bool mHasDesc = false;
 
-  FontType mType;
+  FontType mType = FontType::UNKNOWN;
   RecordedEventArray<uint8_t> mData;
-  uint32_t mIndex;
+  uint32_t mIndex = 0;
   ReferencePtr mRefPtr;
 
   template <class S>

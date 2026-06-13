@@ -660,6 +660,17 @@ struct ParamTraits<mozilla::gfx::ColorSpace2>
           mozilla::gfx::ColorSpace2, mozilla::gfx::ColorSpace2::_First,
           mozilla::gfx::ColorSpace2::_Last> {};
 
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::gfx::Chromaticity, x, y);
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::gfx::Smpte2086Metadata,
+                                  displayPrimaryRed, displayPrimaryGreen,
+                                  displayPrimaryBlue, whitePoint, maxLuminance,
+                                  minLuminance);
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::gfx::ContentLightLevel,
+                                  maxContentLightLevel,
+                                  maxFrameAverageLightLevel);
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::gfx::HDRMetadata, mSmpte2086,
+                                  mContentLightLevel);
+
 template <>
 struct ParamTraits<mozilla::StereoMode>
     : public ContiguousEnumSerializer<mozilla::StereoMode,
@@ -807,6 +818,12 @@ template <>
 struct ParamTraits<FontVisibility>
     : public ContiguousEnumSerializer<FontVisibility, FontVisibility::Unknown,
                                       FontVisibility::Count> {};
+
+template <>
+struct ParamTraits<mozilla::gfx::CrossProcessPaintFlags>
+    : public BitFlagsEnumSerializer<mozilla::gfx::CrossProcessPaintFlags,
+                                    mozilla::gfx::kAllCrossProcessPaintFlags> {
+};
 
 template <>
 struct ParamTraits<mozilla::gfx::PaintFragment> {

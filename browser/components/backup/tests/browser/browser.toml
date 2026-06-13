@@ -27,6 +27,8 @@ skip-if = [
 ["browser_settings_restore_from_backup.js"]
 skip-if = [
   "os == 'win' && os_version == '11.26200'", # Bug 2019745
+  "os == 'mac' && os_version == '15.30' && arch == 'x86_64'", # Bug 2036520
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 2036520
 ]
 
 ["browser_settings_turn_off_scheduled_backups.js"]

@@ -9,10 +9,10 @@ add_task(async function () {
     set: [["layers.acceleration.disabled", false]],
   });
 
-  let prefs = await openPreferencesViaOpenPreferencesAPI("paneGeneral", {
+  let prefs = await openPreferencesViaOpenPreferencesAPI(PERF_PREF_PANE, {
     leaveOpen: true,
   });
-  is(prefs.selectedPane, "paneGeneral", "General pane was selected");
+  is(prefs.selectedPane, PERF_PREF_PANE, `${PERF_PREF_PANE} was selected`);
 
   let doc = gBrowser.contentDocument;
   let checkbox = doc.querySelector("#allowHWAccel");

@@ -193,7 +193,7 @@ class HitTestingTreeNode {
   Maybe<uint64_t> mFixedPositionAnimationId;
 
   ScrollableLayerGuid::ViewID mFixedPosTarget;
-  SideBits mFixedPosSides;
+  SideBits mFixedPosSides = SideBits::eNone;
 
   ScrollableLayerGuid::ViewID mStickyPosTarget;
   LayerRectAbsolute mStickyScrollRangeOuter;

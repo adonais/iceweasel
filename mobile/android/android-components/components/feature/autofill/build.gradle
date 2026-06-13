@@ -30,7 +30,7 @@ dependencies {
     implementation libs.androidx.core.ktx
     implementation libs.androidx.fragment
     implementation libs.androidx.lifecycle.runtime
-    implementation libs.androidx.preferences
+    implementation libs.androidx.preference
     implementation libs.androidx.recyclerview
     implementation libs.kotlinx.coroutines
     implementation libs.google.material
@@ -39,6 +39,7 @@ dependencies {
 
     testImplementation libs.androidx.test.core
     testImplementation libs.androidx.test.junit
+    testImplementation libs.kotlin.test
     testImplementation libs.kotlinx.coroutines.test
     testImplementation libs.robolectric
     testRuntimeOnly libs.okhttp

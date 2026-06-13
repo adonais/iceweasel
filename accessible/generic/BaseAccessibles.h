@@ -38,7 +38,7 @@ class LeafAccessible : public AccessibleWrap {
   virtual bool IsAcceptableChild(nsIContent* aEl) const override;
 
  protected:
-  virtual ~LeafAccessible() {}
+  virtual ~LeafAccessible() = default;
 };
 
 /**
@@ -67,7 +67,7 @@ class LinkableAccessible : public AccessibleWrap {
                                     bool* aIsOnclick = nullptr) const;
 
  protected:
-  virtual ~LinkableAccessible() {}
+  virtual ~LinkableAccessible() = default;
 };
 
 /**
@@ -87,7 +87,7 @@ class EnumRoleAccessible : public AccessibleWrap {
   virtual a11y::role NativeRole() const override { return R; }
 
  protected:
-  virtual ~EnumRoleAccessible() {}
+  virtual ~EnumRoleAccessible() = default;
 };
 
 /**
@@ -103,7 +103,7 @@ class EnumRoleHyperTextAccessible : public HyperTextAccessible {
   virtual a11y::role NativeRole() const override { return R; }
 
  protected:
-  virtual ~EnumRoleHyperTextAccessible() {}
+  virtual ~EnumRoleHyperTextAccessible() = default;
 };
 
 /**
@@ -126,7 +126,7 @@ class DummyAccessible : public AccessibleWrap {
   void ApplyARIAState(uint64_t* aState) const final;
 
  protected:
-  virtual ~DummyAccessible() {}
+  virtual ~DummyAccessible() = default;
 };
 
 }  // namespace a11y

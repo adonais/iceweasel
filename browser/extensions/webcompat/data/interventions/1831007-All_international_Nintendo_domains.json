@@ -41,7 +41,7 @@
     {
       "platforms": ["all"],
       "content_scripts": {
-        "js": ["bug1831007-nintendo-window-OnetrustActiveGroups.js"]
+        "js": ["predefine_OnetrustActiveGroups.js"]
       }
     }
   ]

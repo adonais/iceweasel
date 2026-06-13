@@ -1,5 +1,17 @@
 {
+  "background": {
+    "color": {
+      "comment": "TODO Bug 2030793 - Move card tokens to be used by moz-card rather than globally",
+      "value": "{background.color.box.@base}"
+    }
+  },
   "border": {
+    "@base": {
+      "value": "{card.border.width} solid {card.border.color}"
+    },
+    "width": {
+      "value": "{border.width}"
+    },
     "color": {
       "value": {
         "light": "color-mix(in srgb, currentColor 10%, transparent)",
@@ -20,6 +32,22 @@
       "hover": {
         "value": "{box-shadow.level-4}"
       }
+    }
+  },
+  "focus": {
+    "outline": {
+      "value": "{focus.outline.@base}"
+    }
+  },
+  "padding": {
+    "value": "{space.large}"
+  },
+  "gap": {
+    "@base": {
+      "value": "{card.padding}"
+    },
+    "article": {
+      "value": "{space.small}"
     }
   }
 }

@@ -1,11 +1,11 @@
 package org.mozilla.fenix.ui.efficiency.navigation.pairs
 
 import android.util.Log
-import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.ui.efficiency.helpers.PageContext
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationRegistry
 import org.mozilla.fenix.ui.efficiency.navigation.planning.PageCatalog
+import androidx.compose.ui.test.junit4.v2.AndroidComposeTestRule as AndroidComposeTestRuleV2
 
 object NavigationPairGraphBootstrap {
 
@@ -16,7 +16,7 @@ object NavigationPairGraphBootstrap {
             return
         }
 
-        val composeRule = AndroidComposeTestRule(
+        val composeRule = AndroidComposeTestRuleV2(
             HomeActivityIntentTestRule(
                 skipOnboarding = true,
                 isMenuRedesignCFREnabled = false,

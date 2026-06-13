@@ -6,12 +6,13 @@
       "matches": ["*://prodamus.ru/*"]
     }
   },
+  "css": {
+    "fix_hidden_content": ".tn-atom iframe[src*=pdf] { height: 100vh; }"
+  },
   "interventions": [
     {
       "platforms": ["all"],
-      "content_scripts": {
-        "css": ["bug2016030-prodamus.ru-fix-hidden-content.css"]
-      }
+      "css": ["fix_hidden_content"]
     }
   ]
 }

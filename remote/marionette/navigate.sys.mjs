@@ -161,7 +161,7 @@ navigate.isLoadEventExpected = function (current, options = {}) {
  * @param {string} url
  *     URL to navigate to.
  */
-navigate.navigateTo = async function (browsingContext, url) {
+navigate.navigateTo = function (browsingContext, url) {
   const opts = {
     loadFlags: Ci.nsIWebNavigation.LOAD_FLAGS_IS_LINK,
     // Fake user activation.
@@ -179,12 +179,14 @@ navigate.navigateTo = async function (browsingContext, url) {
  * @param {CanonicalBrowsingContext} browsingContext
  *     Browsing context to refresh.
  */
-navigate.refresh = async function (browsingContext) {
+navigate.refresh = function (browsingContext) {
+  const { sessionHistory } = browsingContext;
   const flags = Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_CACHE;
+
   // Bug 2026546: As workaround use sessionHistory if available to avoid issues
   // with frames.
-  if (browsingContext.sessionHistory) {
-    browsingContext.sessionHistory.reload(flags);
+  if (sessionHistory?.count && sessionHistory?.index >= 0) {
+    sessionHistory.reload(flags);
   } else {
     browsingContext.reload(flags);
   }

@@ -122,83 +122,6 @@ nsMenuBarX* nsMenuUtilsX::GetHiddenWindowMenuBar() {
   return nullptr;
 }
 
-// It would be nice if we could localize these edit menu names.
-NSMenuItem* nsMenuUtilsX::GetStandardEditMenuItem() {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
-
-  // In principle we should be able to allocate this once and then always
-  // return the same object.  But weird interactions happen between native
-  // app-modal dialogs and Gecko-modal dialogs that open above them.  So what
-  // we return here isn't always released before it needs to be added to
-  // another menu.  See bmo bug 468393.
-  NSMenuItem* standardEditMenuItem =
-      [[[GeckoNSMenuItem alloc] initWithTitle:@"Edit"
-                                       action:nil
-                                keyEquivalent:@""] autorelease];
-  NSMenu* standardEditMenu = [[GeckoNSMenu alloc] initWithTitle:@"Edit"];
-  standardEditMenuItem.submenu = standardEditMenu;
-  [standardEditMenu release];
-
-  // Add Undo
-  NSMenuItem* undoItem = [[GeckoNSMenuItem alloc] initWithTitle:@"Undo"
-                                                         action:@selector(undo:)
-                                                  keyEquivalent:@"z"];
-  [standardEditMenu addItem:undoItem];
-  [undoItem release];
-
-  // Add Redo
-  NSMenuItem* redoItem = [[GeckoNSMenuItem alloc] initWithTitle:@"Redo"
-                                                         action:@selector(redo:)
-                                                  keyEquivalent:@"Z"];
-  [standardEditMenu addItem:redoItem];
-  [redoItem release];
-
-  // Add separator
-  [standardEditMenu addItem:[NSMenuItem separatorItem]];
-
-  // Add Cut
-  NSMenuItem* cutItem = [[GeckoNSMenuItem alloc] initWithTitle:@"Cut"
-                                                        action:@selector(cut:)
-                                                 keyEquivalent:@"x"];
-  [standardEditMenu addItem:cutItem];
-  [cutItem release];
-
-  // Add Copy
-  NSMenuItem* copyItem = [[GeckoNSMenuItem alloc] initWithTitle:@"Copy"
-                                                         action:@selector(copy:)
-                                                  keyEquivalent:@"c"];
-  [standardEditMenu addItem:copyItem];
-  [copyItem release];
-
-  // Add Paste
-  NSMenuItem* pasteItem =
-      [[GeckoNSMenuItem alloc] initWithTitle:@"Paste"
-                                      action:@selector(paste:)
-                               keyEquivalent:@"v"];
-  [standardEditMenu addItem:pasteItem];
-  [pasteItem release];
-
-  // Add Delete
-  NSMenuItem* deleteItem =
-      [[GeckoNSMenuItem alloc] initWithTitle:@"Delete"
-                                      action:@selector(delete:)
-                               keyEquivalent:@""];
-  [standardEditMenu addItem:deleteItem];
-  [deleteItem release];
-
-  // Add Select All
-  NSMenuItem* selectAllItem =
-      [[GeckoNSMenuItem alloc] initWithTitle:@"Select All"
-                                      action:@selector(selectAll:)
-                               keyEquivalent:@"a"];
-  [standardEditMenu addItem:selectAllItem];
-  [selectAllItem release];
-
-  return standardEditMenuItem;
-
-  NS_OBJC_END_TRY_ABORT_BLOCK;
-}
-
 bool nsMenuUtilsX::NodeIsHiddenOrCollapsed(nsIContent* aContent) {
   return aContent->IsElement() &&
          (aContent->AsElement()->GetBoolAttr(nsGkAtoms::hidden) ||
@@ -260,6 +183,11 @@ NSAttributedString* nsMenuUtilsX::AttributedStringForContent(
   }
 
   float fontSize = style->StyleFont()->mSize.ToCSSPixels();
+  float zoom = 1.0;
+
+  if (nsIFrame* frame = aContent->AsElement()->GetPrimaryFrame()) {
+    zoom = frame->PresContext()->GetFullZoom();
+  }
 
   if (fontSize == 0.f) {
     // Cocoa uses the default font size when 0 is passed, so let's approximate
@@ -267,7 +195,7 @@ NSAttributedString* nsMenuUtilsX::AttributedStringForContent(
     fontSize = 0.01f;
   }
 
-  NSFont* font = [NSFont menuFontOfSize:fontSize];
+  NSFont* font = [NSFont menuFontOfSize:zoom * fontSize];
   NSDictionary* attrs = @{NSFontAttributeName : font};
 
   return [[[NSAttributedString alloc] initWithString:aLabel

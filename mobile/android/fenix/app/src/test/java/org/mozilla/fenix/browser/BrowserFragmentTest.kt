@@ -5,7 +5,6 @@
 package org.mozilla.fenix.browser
 
 import android.content.Context
-import android.content.res.Configuration
 import android.content.res.Resources
 import android.view.View
 import androidx.lifecycle.Lifecycle
@@ -18,7 +17,6 @@ import io.mockk.just
 import io.mockk.mockk
 import io.mockk.spyk
 import io.mockk.verify
-import io.mockk.verifyOrder
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.test.runTest
 import mozilla.components.browser.state.action.RestoreCompleteAction
@@ -28,10 +26,8 @@ import mozilla.components.browser.state.state.SessionState
 import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.browser.state.state.createTab
 import mozilla.components.browser.state.store.BrowserStore
-import mozilla.components.browser.toolbar.BrowserToolbar
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertTrue
-import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -40,8 +36,7 @@ import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppState
-import org.mozilla.fenix.components.toolbar.BrowserToolbarView
-import org.mozilla.fenix.components.toolbar.ToolbarIntegration
+import org.mozilla.fenix.components.toolbar.BrowserToolbarComposable
 import org.mozilla.fenix.ext.application
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.settings
@@ -90,8 +85,7 @@ class BrowserFragmentTest {
         browserFragment = spyk(BrowserFragment())
         every { browserFragment.view } returns view
         every { browserFragment.isAdded } returns true
-        every { browserFragment.browserToolbarView } returns mockk<BrowserToolbarView>(relaxed = true)
-        every { browserFragment.browserToolbarInteractor } returns mockk(relaxed = true)
+        every { browserFragment.browserToolbar } returns mockk<BrowserToolbarComposable>(relaxed = true)
         every { browserFragment.childFragmentManager } returns mockk(relaxed = true)
         every { browserFragment.activity } returns homeActivity
         every { browserFragment.lifecycle } returns lifecycleOwner.lifecycle
@@ -181,8 +175,8 @@ class BrowserFragmentTest {
             coroutineContext[ContinuationInterceptor] as CoroutineDispatcher,
         )
 
-        val toolbar: BrowserToolbarView = mockk(relaxed = true)
-        every { browserFragment.browserToolbarView } returns toolbar
+        val toolbar: BrowserToolbarComposable = mockk(relaxed = true)
+        every { browserFragment.browserToolbar } returns toolbar
 
         val newSelectedTab = createTab("https://firefox.com")
         addAndSelectTab(newSelectedTab)
@@ -370,149 +364,6 @@ class BrowserFragmentTest {
         assertTrue(!browserFragment.shouldPullToRefreshBeEnabled(true))
     }
 
-    @Test
-    fun `WHEN fragment is not attached THEN toolbar invalidation does nothing`() {
-        val browserToolbarView: BrowserToolbarView = mockk(relaxed = true)
-        val browserToolbar: BrowserToolbar = mockk(relaxed = true)
-        val toolbarIntegration: ToolbarIntegration = mockk(relaxed = true)
-        every { browserToolbarView.toolbar } returns browserToolbar
-        every { browserToolbarView.toolbarIntegration } returns toolbarIntegration
-        every { browserFragment.context } returns null
-        browserFragment._browserToolbarView = browserToolbarView
-        browserFragment.safeInvalidateBrowserToolbarView()
-
-        verify(exactly = 0) { browserToolbar.invalidateActions() }
-        verify(exactly = 0) { toolbarIntegration.invalidateMenu() }
-    }
-
-    @Test
-    @Suppress("TooGenericExceptionCaught")
-    fun `WHEN fragment is attached and toolbar view is null THEN toolbar invalidation is safe`() {
-        every { browserFragment.context } returns mockk(relaxed = true)
-        try {
-            browserFragment.safeInvalidateBrowserToolbarView()
-        } catch (_: Exception) {
-            fail("Exception thrown when invalidating toolbar")
-        }
-    }
-
-    @Test
-    fun `WHEN fragment and view are attached THEN toolbar invalidation is triggered`() {
-        val browserToolbarView: BrowserToolbarView = mockk(relaxed = true)
-        val browserToolbar: BrowserToolbar = mockk(relaxed = true)
-        val toolbarIntegration: ToolbarIntegration = mockk(relaxed = true)
-        every { browserToolbarView.toolbar } returns browserToolbar
-        every { browserToolbarView.toolbarIntegration } returns toolbarIntegration
-        every { browserFragment.context } returns mockk(relaxed = true)
-        browserFragment._browserToolbarView = browserToolbarView
-        browserFragment.safeInvalidateBrowserToolbarView()
-
-        verify(exactly = 1) { browserToolbar.invalidateActions() }
-        verify(exactly = 1) { toolbarIntegration.invalidateMenu() }
-    }
-
-    @Test
-    fun `WHEN toolbar is initialized THEN onConfigurationChanged sets toolbar actions for size in fragment`() {
-        val browserToolbarView: BrowserToolbarView = mockk(relaxed = true)
-        every { browserFragment.reinitializeEngineView() } just Runs
-
-        browserFragment._browserToolbarView = null
-        browserFragment.onConfigurationChanged(mockk(relaxed = true))
-        verify(exactly = 0) { browserFragment.onUpdateToolbarForConfigurationChange(any()) }
-        verify(exactly = 0) { browserFragment.updateTabletToolbarActions(any()) }
-        verify(exactly = 0) { browserFragment.reinitializeEngineView() }
-
-        browserFragment._browserToolbarView = browserToolbarView
-
-        browserFragment.onConfigurationChanged(mockk(relaxed = true))
-        verify(exactly = 1) { browserFragment.onUpdateToolbarForConfigurationChange(any()) }
-        verify(exactly = 1) { browserFragment.updateTabletToolbarActions(any()) }
-        verify(exactly = 1) { browserFragment.reinitializeEngineView() }
-    }
-
-    @Test
-    fun `WHEN fragment configuration changed THEN menu is dismissed`() {
-        val browserToolbarView: BrowserToolbarView = mockk(relaxed = true)
-        every { browserFragment.context } returns null
-        every { browserFragment.reinitializeEngineView() } just Runs
-        browserFragment._browserToolbarView = browserToolbarView
-
-        browserFragment.onConfigurationChanged(mockk(relaxed = true))
-
-        verify(exactly = 1) { browserToolbarView.dismissMenu() }
-    }
-
-    @Test
-    fun `WHEN fragment configuration screen size changes between tablet and mobile size THEN tablet action items added and removed`() {
-        val browserToolbarView: BrowserToolbarView = mockk(relaxed = true)
-        val browserToolbar: BrowserToolbar = mockk(relaxed = true)
-        val leadingAction: BrowserToolbar.Button = mockk(relaxed = true)
-        browserFragment.homeAction = leadingAction
-        browserFragment._browserToolbarView = browserToolbarView
-        every { browserToolbarView.toolbar } returns browserToolbar
-        every { browserToolbarView.updateMenuVisibility(any()) } just Runs
-        every { browserFragment.reinitializeEngineView() } just Runs
-
-        every { resources.configuration } returns Configuration().apply {
-            smallestScreenWidthDp = 900
-        }
-
-        browserFragment.onConfigurationChanged(mockk(relaxed = true))
-        verify(exactly = 3) { browserToolbar.addNavigationAction(any()) }
-
-        every { resources.configuration } returns Configuration().apply {
-            smallestScreenWidthDp = 400
-        }
-
-        browserFragment.onConfigurationChanged(mockk(relaxed = true))
-        verify(exactly = 3) { browserToolbar.removeNavigationAction(any()) }
-    }
-
-    @Test
-    fun `WHEN fragment configuration change enables tablet size twice THEN tablet action items are only added once`() {
-        val browserToolbarView: BrowserToolbarView = mockk(relaxed = true)
-        val browserToolbar: BrowserToolbar = mockk(relaxed = true)
-        val leadingAction: BrowserToolbar.Button = mockk(relaxed = true)
-        browserFragment.homeAction = leadingAction
-        browserFragment._browserToolbarView = browserToolbarView
-        every { browserToolbarView.toolbar } returns browserToolbar
-        every { browserToolbarView.updateMenuVisibility(any()) } just Runs
-        every { browserFragment.reinitializeEngineView() } just Runs
-
-        every { resources.configuration } returns Configuration().apply {
-            smallestScreenWidthDp = 900
-        }
-
-        browserFragment.onConfigurationChanged(mockk(relaxed = true))
-        verify(exactly = 3) { browserToolbar.addNavigationAction(any()) }
-
-        browserFragment.onConfigurationChanged(mockk(relaxed = true))
-        verify(exactly = 3) { browserToolbar.addNavigationAction(any()) }
-    }
-
-    @Test
-    fun `WHEN fragment configuration change sets mobile size twice THEN tablet action items are not added or removed`() {
-        val browserToolbarView: BrowserToolbarView = mockk(relaxed = true)
-        val browserToolbar: BrowserToolbar = mockk(relaxed = true)
-        val leadingAction: BrowserToolbar.Button = mockk(relaxed = true)
-        browserFragment.homeAction = leadingAction
-        browserFragment._browserToolbarView = browserToolbarView
-        every { browserToolbarView.toolbar } returns browserToolbar
-        every { browserToolbarView.updateMenuVisibility(any()) } just Runs
-        every { browserFragment.reinitializeEngineView() } just Runs
-
-        every { resources.configuration } returns Configuration().apply {
-            smallestScreenWidthDp = 300
-        }
-        browserFragment.onConfigurationChanged(mockk(relaxed = true))
-        verify(exactly = 0) { browserToolbar.addNavigationAction(any()) }
-        verify(exactly = 0) { browserToolbar.removeNavigationAction(any()) }
-
-        browserFragment.onConfigurationChanged(mockk(relaxed = true))
-        verify(exactly = 0) { browserToolbar.addNavigationAction(any()) }
-        verify(exactly = 0) { browserToolbar.removeNavigationAction(any()) }
-    }
-
     private fun addAndSelectTab(tab: TabSessionState) {
         store.dispatch(TabListAction.AddTabAction(tab))
         store.dispatch(TabListAction.SelectTabAction(tab.id))
@@ -534,31 +385,5 @@ class BrowserFragmentTest {
         browserFragment.updateLastBrowseActivity()
 
         verify(exactly = 1) { settings.lastBrowseActivity = any() }
-    }
-
-    @Test
-    fun `GIVEN device is not a tablet WHEN updating toolbar actions THEN only leading action is added and no actions are removed`() {
-        browserFragment.updateBrowserToolbarLeadingAndNavigationActions(
-            context = context,
-            isTablet = false,
-        )
-
-        verify(exactly = 1) { browserFragment.addHomeAction(any()) }
-        verify(exactly = 0) { browserFragment.addTabletActions(any()) }
-        verify(exactly = 0) { browserFragment.addNavigationActions(any()) }
-        verify(exactly = 0) { browserFragment.removeNavigationActions() }
-    }
-
-    @Test
-    fun `GIVEN device is a tablet WHEN updating toolbar actions THEN leading and navigation actions are added in order`() {
-        browserFragment.updateBrowserToolbarLeadingAndNavigationActions(
-            context = context,
-            isTablet = true,
-        )
-
-        verifyOrder {
-            browserFragment.addHomeAction(any())
-            browserFragment.addNavigationActions(any())
-        }
     }
 }

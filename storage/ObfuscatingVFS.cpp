@@ -73,7 +73,6 @@
 
 #include <string.h>
 #include <ctype.h>
-#include <stdio.h> /* For debugging only */
 
 #include "mozilla/dom/quota/IPCStreamCipherStrategy.h"
 #include "mozilla/ScopeExit.h"

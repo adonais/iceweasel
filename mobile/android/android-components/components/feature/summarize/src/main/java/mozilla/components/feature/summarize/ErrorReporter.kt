@@ -12,5 +12,5 @@ fun interface ErrorReporter {
     /**
      * Reports the given [throwable].
      */
-    suspend fun report(throwable: Throwable)
+    suspend fun report(tag: String, throwable: Throwable)
 }

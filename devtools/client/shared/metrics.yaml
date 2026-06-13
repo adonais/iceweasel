@@ -2087,6 +2087,10 @@ devtools.main:
         description: >
           The name of the captured error.
         type: string
+      is_destroying:
+        description: >
+          True if toolbox destroy already started when the error occurred.
+        type: boolean
       stack:
         description: >
           The original stacktrace for the error.
@@ -2106,6 +2110,10 @@ devtools.main:
       server_stack:
         description: >
           The server-side stack trace for the error.
+        type: string
+      server_content_process_stack:
+        description: >
+          The server-side content process stack trace for the error.
         type: string
 
 devtools.accessibility:

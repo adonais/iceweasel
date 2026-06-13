@@ -8,6 +8,7 @@
 
 #include "mozilla/Assertions.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/UsingEnum.h"
 
 #include "jspubtd.h"
 #include "NamespaceImports.h"
@@ -17,7 +18,6 @@
 #include "builtin/intl/LocaleNegotiation.h"
 #include "builtin/intl/ParameterNegotiation.h"
 #include "builtin/intl/StringAsciiChars.h"
-#include "builtin/intl/UsingEnum.h"
 #include "gc/AllocKind.h"
 #include "gc/GCContext.h"
 #include "icu4x/GraphemeClusterSegmenter.hpp"
@@ -45,16 +45,7 @@ using namespace js;
 using namespace js::intl;
 
 const JSClassOps SegmenterObject::classOps_ = {
-    nullptr,                    // addProperty
-    nullptr,                    // delProperty
-    nullptr,                    // enumerate
-    nullptr,                    // newEnumerate
-    nullptr,                    // resolve
-    nullptr,                    // mayResolve
-    SegmenterObject::finalize,  // finalize
-    nullptr,                    // call
-    nullptr,                    // construct
-    nullptr,                    // trace
+    .finalize = SegmenterObject::finalize,
 };
 
 const JSClass SegmenterObject::class_ = {
@@ -113,11 +104,7 @@ const ClassSpec SegmenterObject::classSpec_ = {
 
 static constexpr std::string_view GranularityToString(
     SegmenterGranularity granularity) {
-#ifndef USING_ENUM
-  using enum SegmenterGranularity;
-#else
-  USING_ENUM(SegmenterGranularity, Grapheme, Word, Sentence);
-#endif
+  MOZ_USING_ENUM(SegmenterGranularity, Grapheme, Word, Sentence);
   switch (granularity) {
     case Grapheme:
       return "grapheme";
@@ -215,16 +202,7 @@ static bool Segmenter(JSContext* cx, unsigned argc, Value* vp) {
 }
 
 const JSClassOps SegmentsObject::classOps_ = {
-    nullptr,                   // addProperty
-    nullptr,                   // delProperty
-    nullptr,                   // enumerate
-    nullptr,                   // newEnumerate
-    nullptr,                   // resolve
-    nullptr,                   // mayResolve
-    SegmentsObject::finalize,  // finalize
-    nullptr,                   // call
-    nullptr,                   // construct
-    nullptr,                   // trace
+    .finalize = SegmentsObject::finalize,
 };
 
 const JSClass SegmentsObject::class_ = {
@@ -257,16 +235,7 @@ bool GlobalObject::initSegmentsProto(JSContext* cx,
 }
 
 const JSClassOps SegmentIteratorObject::classOps_ = {
-    nullptr,                          // addProperty
-    nullptr,                          // delProperty
-    nullptr,                          // enumerate
-    nullptr,                          // newEnumerate
-    nullptr,                          // resolve
-    nullptr,                          // mayResolve
-    SegmentIteratorObject::finalize,  // finalize
-    nullptr,                          // call
-    nullptr,                          // construct
-    nullptr,                          // trace
+    .finalize = SegmentIteratorObject::finalize,
 };
 
 const JSClass SegmentIteratorObject::class_ = {

@@ -93,11 +93,12 @@ void nsStyledElement::InlineStyleDeclarationWillChange(
 }
 
 nsresult nsStyledElement::SetInlineStyleDeclaration(
-    DeclarationBlock& aDeclaration, MutationClosureData& aData) {
+    StyleLockedDeclarationBlock& aDeclaration, MutationClosureData& aData) {
   MOZ_ASSERT(OwnerDoc()->UpdateNestingLevel(),
              "Should be inside document update!");
 
-  nsAttrValue attrValue(do_AddRef(&aDeclaration), nullptr);
+  nsAttrValue attrValue(
+      MakeAndAddRef<DeclarationBlock>(do_AddRef(&aDeclaration)), nullptr);
   SetMayHaveStyle();
 
   Document* document = GetComposedDoc();

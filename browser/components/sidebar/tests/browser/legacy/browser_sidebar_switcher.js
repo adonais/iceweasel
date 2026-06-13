@@ -126,10 +126,7 @@ async function testSidebarMenuKeyToggle(key, sidebarTitle) {
     "open",
     "Sidebar menu popup is open"
   );
-  if (
-    AppConstants.platform == "macosx" &&
-    Services.prefs.getBoolPref("widget.macos.native-anchored-menus", false)
-  ) {
+  if (SidebarController._switcherPanel.isNativeMenu) {
     // We cannot synthesize key events with native menus, so explicitly
     // activate the desired sidebar
     let sidebarShown = BrowserTestUtils.waitForEvent(window, "SidebarShown");
@@ -258,7 +255,11 @@ add_task(async function markup() {
   );
 
   // Close popup
-  sidebarPopup.hidePopup();
+  if (sidebarPopup.isNativeMenu) {
+    sidebarPopup.hidePopup();
+  } else {
+    EventUtils.synthesizeKey("KEY_Escape", {});
+  }
   await waitForPopupHidden;
 
   Assert.equal(

@@ -123,7 +123,7 @@ class ExtensionBrowser final : public nsISupports, public nsWrapperCache {
 
   nsCOMPtr<nsIGlobalObject> mGlobal;
   JS::Heap<JS::Value> mLastError;
-  bool mCheckedLastError;
+  bool mCheckedLastError = false;
   nsTHashMap<nsStringHashKey, WeakPtr<ExtensionPort>> mPortsLookup;
   // `[APINamespace].[APIName]` => int64 (listeners count)
   ExtensionEventWakeupMap mExpectedEventWakeupMap;

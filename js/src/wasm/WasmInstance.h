@@ -382,6 +382,8 @@ class alignas(16) Instance {
   SharedArrayRawBuffer* sharedMemoryBuffer(
       uint32_t memoryIndex) const;  // never null
   bool memoryAccessInGuardRegion(const uint8_t* addr, unsigned numBytes) const;
+  bool memoryAccessInMappedRegion(const uint8_t* addr, uint32_t* memoryIndex,
+                                  uint64_t* offset) const;
 
   // Methods to set, test and clear the interrupt fields. Both interrupt
   // fields are Relaxed and so no consistency/ordering can be assumed.

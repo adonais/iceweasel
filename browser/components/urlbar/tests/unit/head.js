@@ -1105,11 +1105,17 @@ async function check_results({
 
   for (let i = 0; i < matches.length; i++) {
     let actual = context.results[i];
+
+    let actualJsonable = { payload: actual.payload };
+    for (let key of Object.keys(propertiesToCheck)) {
+      actualJsonable[key] = actual[key];
+    }
+
     let expected = matches[i];
     info(
       `Comparing results at index ${i}:` +
         " actual=" +
-        JSON.stringify(actual) +
+        JSON.stringify(actualJsonable) +
         " expected=" +
         JSON.stringify(expected)
     );

@@ -9,6 +9,9 @@ with Files("**"):
 with Files("*TextInput*"):
     BUG_COMPONENT = ("Core", "DOM: UI Events & Focus Handling")
 
+with Files("nsMacPermissionMonitor*"):
+    BUG_COMPONENT = ("Core", "Permission Manager")
+
 EXPORTS += [
     "DesktopBackgroundImage.h",
     "MediaHardwareKeysEventSourceMac.h",
@@ -49,6 +52,7 @@ UNIFIED_SOURCES += [
     "nsLookAndFeel.mm",
     "nsMacDockSupport.mm",
     "nsMacFinderProgress.mm",
+    "nsMacPermissionMonitor.mm",
     "nsMacSharingService.mm",
     "nsMacUserActivityUpdater.mm",
     "nsMacWebAppUtils.mm",
@@ -126,14 +130,10 @@ RESOURCE_FILES.cursors += [
     "cursors/arrowS@2x.png",
     "cursors/cell.png",
     "cursors/cell@2x.png",
-    "cursors/colResize.png",
-    "cursors/colResize@2x.png",
     "cursors/help.png",
     "cursors/help@2x.png",
     "cursors/move.png",
     "cursors/move@2x.png",
-    "cursors/rowResize.png",
-    "cursors/rowResize@2x.png",
     "cursors/sizeNE.png",
     "cursors/sizeNE@2x.png",
     "cursors/sizeNESW.png",
@@ -174,3 +174,6 @@ OS_LIBS += [
 ]
 
 SPHINX_TREES["/widget/cocoa"] = "docs"
+
+if CONFIG["MOZ_BUILD_APP"] == "browser":
+    DEFINES["MOZ_BUILD_APP_IS_BROWSER"] = True

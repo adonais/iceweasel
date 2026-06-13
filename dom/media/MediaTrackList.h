@@ -55,7 +55,7 @@ class MediaTrackList : public DOMEventTargetHelper {
   // For the case of src of HTMLMediaElement is non-MediaStream, leave the
   // aAudioTrack as default(nullptr).
   static already_AddRefed<AudioTrack> CreateAudioTrack(
-      nsIGlobalObject* aOwnerGlobal, const nsAString& aId,
+      nsIGlobalObject* aRelevantGlobal, const nsAString& aId,
       const nsAString& aKind, const nsAString& aLabel,
       const nsAString& aLanguage, bool aEnabled,
       AudioStreamTrack* aAudioTrack = nullptr);
@@ -63,7 +63,7 @@ class MediaTrackList : public DOMEventTargetHelper {
   // For the case of src of HTMLMediaElement is non-MediaStream, leave the
   // aVideoTrack as default(nullptr).
   static already_AddRefed<VideoTrack> CreateVideoTrack(
-      nsIGlobalObject* aOwnerGlobal, const nsAString& aId,
+      nsIGlobalObject* aRelevantGlobal, const nsAString& aId,
       const nsAString& aKind, const nsAString& aLabel,
       const nsAString& aLanguage, VideoStreamTrack* aVideoTrack = nullptr);
 

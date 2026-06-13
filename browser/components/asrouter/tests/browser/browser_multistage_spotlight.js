@@ -30,7 +30,7 @@ async function showDialog(dialogOptions) {
 
 async function dialogClosed(browser) {
   await TestUtils.waitForCondition(
-    () => !browser.ownerGlobal.gDialogBox?.isOpen,
+    () => !browser.documentGlobal.gDialogBox?.isOpen,
     "Waiting for dialog to close"
   );
 }
@@ -178,17 +178,17 @@ add_task(async function test_disableEscClose() {
   );
 
   Assert.ok(
-    browser?.ownerGlobal.gDialogBox.isOpen,
+    browser?.documentGlobal.gDialogBox.isOpen,
     "Spotlight does not close with ESC key with 'disableEscClose' set to true"
   );
 
   // Test Escape when focus is on dialog frame
   const browserFrame = win.docShell.chromeEventHandler;
-  const parentWindow = browserFrame.ownerGlobal;
+  const parentWindow = browserFrame.documentGlobal;
   browserFrame.focus();
   EventUtils.synthesizeKey("KEY_Escape", {}, parentWindow);
   Assert.ok(
-    browser?.ownerGlobal.gDialogBox.isOpen,
+    browser?.documentGlobal.gDialogBox.isOpen,
     "Spotlight does not close when ESC key is pressed while focus is on dialog frame"
   );
 
@@ -210,7 +210,7 @@ add_task(async function test_spotlight_isOpen_and_close() {
     m => m.id === "MULTISTAGE_SPOTLIGHT_MESSAGE"
   );
   let browser = gBrowser.selectedBrowser;
-  let win = browser.ownerGlobal;
+  let win = browser.documentGlobal;
   const spotlight_url = "chrome://browser/content/spotlight.html";
 
   Assert.ok(!Spotlight.isOpen, "Spotlight should not be open initially");
@@ -265,6 +265,39 @@ add_task(async function test_spotlight_closes_on_WindowIsClosing() {
 
   delete window.skipNextCanClose;
   await BrowserTestUtils.closeWindow(otherWin);
+});
+
+add_task(async function test_showSpotlightDialog_requires_browser_element() {
+  // showSpotlightDialog expects a <browser> XUL element
+  let message = (await PanelTestProvider.getMessages()).find(
+    m => m.id === "MULTISTAGE_SPOTLIGHT_MESSAGE"
+  );
+
+  let win = await Spotlight.showSpotlightDialog(window, message);
+  Assert.strictEqual(
+    win,
+    false,
+    "showSpotlightDialog returns false when passed a chrome window"
+  );
+  Assert.ok(
+    !gBrowser.selectedBrowser.documentGlobal.gDialogBox.isOpen,
+    "No dialog was opened when a chrome Window was passed"
+  );
+
+  let browser = gBrowser.selectedBrowser;
+  let dialogPromise = Spotlight.showSpotlightDialog(browser, message);
+  const [dialogWin] = await TestUtils.topicObserved("subdialog-loaded");
+  Assert.ok(
+    browser.documentGlobal.gDialogBox.isOpen,
+    "Dialog opened when passed a browser element"
+  );
+  dialogWin.close();
+  let dialog = await dialogPromise;
+  Assert.notStrictEqual(
+    dialog,
+    false,
+    "showSpotlightDialog returns for a browser element"
+  );
 });
 
 add_task(async function test_spotlight_modal_fullsize_and_nonzero() {

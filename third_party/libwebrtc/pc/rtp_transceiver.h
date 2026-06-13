@@ -65,6 +65,7 @@ namespace webrtc {
 class DtlsTransport;
 
 class PeerConnectionSdpMethods;
+class ScopedOperationsBatcher;
 
 // Implementation of the public RtpTransceiverInterface.
 //
@@ -377,14 +378,23 @@ class RtpTransceiver : public RtpTransceiverInterface {
   }
 
   bool SetChannelRtpTransport(RtpTransportInternal* rtp_transport);
-  bool SetChannelLocalContent(const MediaContentDescription* content,
+  // Configures the channel with local content description.
+  // Pushes a multi-stage execution task into the provided
+  // `ScopedOperationsBatcher`. See `SetChannelContent` for details on the
+  // execution model.
+  void SetChannelLocalContent(const MediaContentDescription* content,
                               SdpType type,
-                              std::string& error_desc);
-  bool SetChannelRemoteContent(const MediaContentDescription* content,
+                              ScopedOperationsBatcher& batcher);
+  // Configures the channel with remote content description.
+  // Pushes a multi-stage execution task into the provided
+  // `ScopedOperationsBatcher`. See `SetChannelContent` for details on the
+  // execution model.
+  void SetChannelRemoteContent(const MediaContentDescription* content,
                                SdpType type,
-                               std::string& error_desc);
-  bool SetChannelPayloadTypeDemuxingEnabled(bool enabled);
+                               ScopedOperationsBatcher& batcher);
   void EnableChannel(bool enable);
+  void ResetUnsignaledRecvStream();
+
   const std::vector<StreamParams>& channel_local_streams() const;
   const std::vector<StreamParams>& channel_remote_streams() const;
   absl::string_view channel_transport_name() const;
@@ -423,6 +433,9 @@ class RtpTransceiver : public RtpTransceiverInterface {
       RTC_RUN_ON(context()->worker_thread());
   void ClearMediaChannelReferences() RTC_RUN_ON(context()->worker_thread());
 
+  VideoMediaSendChannelInterface::EncoderSwitchRequestCallback
+  GetEncoderSwitchRequestCallback();
+
   RTCError UpdateCodecPreferencesCaches(
       const std::vector<RtpCodecCapability>& codecs);
   // Helper function for handling extensions during O/A
@@ -430,7 +443,38 @@ class RtpTransceiver : public RtpTransceiverInterface {
   GetOfferedAndImplementedHeaderExtensions(
       const MediaContentDescription* content) const;
 
-  bool SetChannelContent(absl::AnyInvocable<bool() &&> set_content);
+  // Configures the channel with the provided content description.
+  // Pushes a multi-stage execution task into the provided
+  // `ScopedOperationsBatcher`.
+  //
+  //  Signaling Thread                   Worker Thread
+  //  +-------------------+              +-------------------+
+  //  | SetChannelContent |              |                   |
+  //  | - Capture SSRC    |              |                   |
+  //  | - Push Outer -----|------------->| [Outer Lambda]    |
+  //  |                   |              | - Run set_content |
+  //  |                   |              | - GetRtpSendParams|
+  //  | [Inner Lambda] <--|--------------| - Return Inner    |
+  //  | - SetCachedParams |              |                   |
+  //  +-------------------+              +-------------------+
+  //
+  // Execution Stages:
+  // 1. **Preparation (Signaling Thread)**: Called when this method is invoked.
+  //    Captures current sender SSRC and cached parameters.
+  //
+  // 2. **Execution (Worker Thread)**: The pushed outer lambda is executed
+  //    by the ScopedOperationsBatcher on the worker thread. Runs
+  //    `set_content()`. If successful, fetches updated `RtpSendParameters`
+  //    from the media channel and returns an inner completion lambda.
+  //
+  // 3. **Completion (Signaling Thread)**: The inner lambda returned by the
+  //    worker thread task is collected by `ScopedOperationsBatcher::Run()`.
+  //    After all batched operations on the worker thread are complete,
+  //    `Run()` executes these inner lambdas on the thread that called
+  //    `Run()` (in this case, the Signaling Thread). This stage updates
+  //    the cached parameters on the senders.
+  void SetChannelContent(absl::AnyInvocable<RTCError() &&> set_content,
+                         ScopedOperationsBatcher& batcher);
 
   const Environment env_;
   // Enforce that this object is created, used and destroyed on one thread.
@@ -438,8 +482,7 @@ class RtpTransceiver : public RtpTransceiverInterface {
   TaskQueueBase* const thread_;
   const bool unified_plan_;
   const MediaType media_type_;
-  scoped_refptr<PendingTaskSafetyFlag> signaling_thread_safety_
-      RTC_GUARDED_BY(thread_);
+  scoped_refptr<PendingTaskSafetyFlag> signaling_thread_safety_;
   scoped_refptr<PendingTaskSafetyFlag> network_thread_safety_;
   std::vector<scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>>>
       senders_;

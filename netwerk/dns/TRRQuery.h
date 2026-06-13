@@ -72,18 +72,17 @@ class TRRQuery : public AHostResolver {
  private:
   ~TRRQuery() = default;
 
-  void MarkSendingTRR(TRR* trr, TrrType rectype, MutexAutoLock&);
+  void MarkSendingTRR(TRR* trr, TrrType rectype) MOZ_REQUIRES(mTrrLock);
   void PrepareQuery(TrrType aRecType, nsTArray<RefPtr<TRR>>& aRequestsToSend);
   bool SendQueries(nsTArray<RefPtr<TRR>>& aRequestsToSend);
 
   RefPtr<nsHostResolver> mHostResolver;
   RefPtr<nsHostRecord> mRecord;
 
-  Mutex mTrrLock
-      MOZ_UNANNOTATED;  // lock when accessing the mTrrA[AAA] pointers
-  RefPtr<mozilla::net::TRR> mTrrA;
-  RefPtr<mozilla::net::TRR> mTrrAAAA;
-  RefPtr<mozilla::net::TRR> mTrrByType;
+  Mutex mTrrLock;  // lock when accessing the mTrrA[AAA] pointers
+  RefPtr<mozilla::net::TRR> mTrrA MOZ_GUARDED_BY(mTrrLock);
+  RefPtr<mozilla::net::TRR> mTrrAAAA MOZ_GUARDED_BY(mTrrLock);
+  RefPtr<mozilla::net::TRR> mTrrByType MOZ_GUARDED_BY(mTrrLock);
   // |mTRRRequestCounter| indicates the number of TRR requests that were
   // dispatched sucessfully. Generally, this counter is increased to 2 after
   // mTrrA and mTrrAAAA are dispatched, and is decreased by 1 when

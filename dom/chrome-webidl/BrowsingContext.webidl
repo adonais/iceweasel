@@ -328,6 +328,9 @@ BrowsingContext includes LoadContextMixin;
 
 [Exposed=Window, ChromeOnly]
 interface CanonicalBrowsingContext : BrowsingContext {
+  // Top-level only download folder override for WebDriver BiDi's.
+  [SetterThrows] attribute DOMString downloadFolderOverride;
+
   sequence<WindowGlobalParent> getWindowGlobals();
 
   readonly attribute WindowGlobalParent? currentWindowGlobal;

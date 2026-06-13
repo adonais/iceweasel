@@ -48,7 +48,5 @@ try_task_config:
   use-artifact-builds: true
 release_type: "nightly"
 release_product: null
-required_signoffs: []
-signoff_urls: {}
 phabricator_diff:
 tasks_for: hg-push

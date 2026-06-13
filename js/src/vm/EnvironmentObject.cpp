@@ -365,16 +365,7 @@ const ObjectOps ModuleEnvironmentObject::objectOps_ = {
 };
 
 const JSClassOps ModuleEnvironmentObject::classOps_ = {
-    nullptr,                                // addProperty
-    nullptr,                                // delProperty
-    nullptr,                                // enumerate
-    ModuleEnvironmentObject::newEnumerate,  // newEnumerate
-    nullptr,                                // resolve
-    nullptr,                                // mayResolve
-    nullptr,                                // finalize
-    nullptr,                                // call
-    nullptr,                                // construct
-    nullptr,                                // trace
+    .newEnumerate = ModuleEnvironmentObject::newEnumerate,
 };
 
 const JSClass ModuleEnvironmentObject::class_ = {
@@ -506,6 +497,41 @@ ModuleEnvironmentObject* ModuleEnvironmentObject::createSynthetic(
 
   return env;
 }
+
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
+/* static */
+ModuleEnvironmentObject* ModuleEnvironmentObject::createForWasmModule(
+    JSContext* cx, Handle<ModuleObject*> module) {
+  // Wasm source-phase modules have no JavaScript bindings, so the environment
+  // has no property slots.
+  Rooted<SharedPropMap*> map(cx);
+  uint32_t mapLength = 0;
+  uint32_t numSlots = JSSLOT_FREE(&class_);
+  uint32_t numFixed = gc::GetGCKindSlots(gc::GetGCObjectKind(numSlots));
+  Rooted<SharedShape*> shape(
+      cx, SharedShape::getInitialOrPropMapShape(cx, &class_, cx->realm(),
+                                                TaggedProto(nullptr), numFixed,
+                                                map, mapLength, OBJECT_FLAGS));
+  if (!shape) {
+    return nullptr;
+  }
+  MOZ_ASSERT(shape->getObjectClass() == &class_);
+
+  ModuleEnvironmentObject* env =
+      CreateEnvironmentObject<ModuleEnvironmentObject>(cx, shape,
+                                                       TenuredObject);
+  if (!env) {
+    return nullptr;
+  }
+
+  env->initReservedSlot(MODULE_SLOT, ObjectValue(*module));
+  env->initEnclosingEnvironment(&cx->global()->lexicalEnvironment());
+  MOZ_ASSERT(env->hasFlag(ObjectFlag::NotExtensible));
+  MOZ_ASSERT(!env->inDictionaryMode());
+
+  return env;
+}
+#endif
 
 ModuleObject& ModuleEnvironmentObject::module() const {
   return getReservedSlot(MODULE_SLOT).toObject().as<ModuleObject>();
@@ -3043,8 +3069,7 @@ void DebugEnvironments::takeFrameSnapshot(
   Rooted<ArrayObject*> snapshot(
       cx, NewDenseCopiedArray(cx, vec.length(), vec.begin()));
   if (!snapshot) {
-    MOZ_ASSERT(cx->isThrowingOutOfMemory() || cx->isThrowingOverRecursed());
-    cx->clearPendingException();
+    cx->recoverFromResourceExhaustion();
     return;
   }
 

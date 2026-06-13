@@ -6,7 +6,6 @@ loader: taskgraph.loader.transform:loader
 
 transforms:
     - taskgraph.transforms.from_deps
-    - gecko_taskgraph.transforms.release:run_on_releases
     - gecko_taskgraph.transforms.update_integrity
     - gecko_taskgraph.transforms.job
     - gecko_taskgraph.transforms.task
@@ -32,7 +31,6 @@ only-for-build-platforms:
 tasks:
     test-update-integrity:
         run-on-repo-type: [hg]
-        run-on-releases: [nightly, beta]
         description: verify update integrity
         worker-type: b-linux
         from-deps:

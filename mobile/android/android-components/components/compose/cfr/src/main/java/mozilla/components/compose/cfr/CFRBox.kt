@@ -20,7 +20,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
@@ -73,6 +72,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.PopupPositionProvider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import mozilla.components.compose.base.button.IconButton
 import mozilla.components.compose.base.theme.AcornTheme
 import mozilla.components.compose.cfr.CFRPopup.IndicatorDirection
 import mozilla.components.ui.icons.R as iconsR
@@ -263,6 +263,9 @@ private fun CFRContentLayout(
             Box(contentAlignment = Alignment.TopEnd) {
                 IconButton(
                     onClick = { onDismiss() },
+                    contentDescription = stringResource(
+                        R.string.mozac_cfr_dismiss_button_content_description,
+                    ),
                     modifier = Modifier
                         .semantics {
                             testTagsAsResourceId = true
@@ -271,9 +274,7 @@ private fun CFRContentLayout(
                 ) {
                     Icon(
                         painter = painterResource(iconsR.drawable.mozac_ic_cross_20),
-                        contentDescription = stringResource(
-                            R.string.mozac_cfr_dismiss_button_content_description,
-                        ),
+                        contentDescription = null,
                         modifier = Modifier.size(24.dp),
                         tint = colors.dismissButtonColor,
                     )

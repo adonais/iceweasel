@@ -32,6 +32,8 @@ browser.jar:
 # included in the newtab resources at build time. Specifically, these are for
 # external UI components maintained by other teams that have the ability to
 # "train-hop" with the rest of newtab.
+  builtin-addons/newtab/data/data/content/external-components/asrouter-newtab-multistage/asrouter-newtab-multistage.bundle.js (../../components/asrouter/content/components/asrouter-newtab-multistage/asrouter-newtab-multistage.bundle.js)
+  builtin-addons/newtab/data/data/content/external-components/asrouter-newtab-multistage/asrouter-newtab-multistage.css (../../components/asrouter/content/components/asrouter-newtab-multistage/asrouter-newtab-multistage.css)
   builtin-addons/newtab/data/data/content/external-components/asrouter-newtab-message/asrouter-newtab-message.mjs (../../components/asrouter/content/components/asrouter-newtab-message/asrouter-newtab-message.mjs)
   builtin-addons/newtab/data/data/content/external-components/asrouter-newtab-message/asrouter-newtab-message.css (../../components/asrouter/content/components/asrouter-newtab-message/asrouter-newtab-message.css)
   builtin-addons/newtab/data/data/content/external-components/asrouter-newtab-message/ASRouterNewTabMessageChild.sys.mjs (../../components/asrouter/content/components/asrouter-newtab-message/ASRouterNewTabMessageChild.sys.mjs)

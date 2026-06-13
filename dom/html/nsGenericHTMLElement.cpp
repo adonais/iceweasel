@@ -32,11 +32,13 @@
 #include "mozilla/dom/BindContext.h"
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/CommandEvent.h"
+#include "mozilla/dom/ContentList.h"
 #include "mozilla/dom/CustomElementRegistry.h"
 #include "mozilla/dom/DirectionalityUtils.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/DocumentOrShadowRoot.h"
+#include "mozilla/dom/EditContext.h"
 #include "mozilla/dom/ElementBinding.h"
 #include "mozilla/dom/ElementInternals.h"
 #include "mozilla/dom/FetchPriority.h"
@@ -152,14 +154,10 @@ nsresult nsGenericHTMLElement::CopyInnerTo(Element* aDst) {
   MOZ_ASSERT(!aDst->GetUncomposedDoc(),
              "Should not CopyInnerTo an Element in a document");
 
-  auto reparse = aDst->OwnerDoc() == OwnerDoc() ? ReparseAttributes::No
-                                                : ReparseAttributes::Yes;
-  nsresult rv = Element::CopyInnerTo(aDst, reparse);
-  NS_ENSURE_SUCCESS(rv, rv);
+  MOZ_TRY(Element::CopyInnerTo(aDst));
 
   // cloning a node must retain its internal nonce slot
-  nsString* nonce = static_cast<nsString*>(GetProperty(nsGkAtoms::nonce));
-  if (nonce) {
+  if (auto* nonce = static_cast<nsString*>(GetProperty(nsGkAtoms::nonce))) {
     static_cast<nsGenericHTMLElement*>(aDst)->SetNonce(*nonce);
   }
   return NS_OK;
@@ -363,12 +361,98 @@ bool nsGenericHTMLElement::Autocorrect() const {
                       eIgnoreCase);
 }
 
+EditContext* nsGenericHTMLElement::GetEditContext() const {
+  return EditContext::GetForElement(*this);
+}
+
+void nsGenericHTMLElement::SetEditContext(mozilla::dom::EditContext* aContext,
+                                          mozilla::ErrorResult& aRv) {
+  // https://w3c.github.io/edit-context/#ref-for-dom-htmlelement-editcontext-4
+  // 1. If this's local name is neither a valid shadow host name nor "canvas",
+  //    then throw a "NotSupportedError" DOMException.
+  nsAtom* name = NodeInfo()->NameAtom();
+  if (name != nsGkAtoms::canvas &&
+      !nsContentUtils::IsValidShadowHostName(name)) {
+    aRv.ThrowNotSupportedError(
+        nsFmtCString(FMT_STRING("EditContext can only be attached to <canvas> "
+                                "and valid shadow hosts, not <{}>."),
+                     NS_ConvertUTF16toUTF8(LocalName())));
+    return;
+  }
+  // 2. If editContext is not null, then:
+  if (aContext) {
+    // 1. If editContext's associated element is equal to this, then terminate
+    //    these steps.
+    if (aContext->GetAssociatedElement() == this) {
+      return;
+    }
+    // 2. If editContext's associated element is not null, then throw a
+    //    "NotSupportedError" DOMException.
+    if (aContext->GetAssociatedElement()) {
+      aRv.ThrowNotSupportedError(
+          "EditContext can only be attached to one element at a time.");
+      return;
+    }
+  }
+  // 3. Let oldEditContext be the value of this's internal [[EditContext]] slot.
+  RefPtr<EditContext> oldEditContext = GetEditContext();
+  if (oldEditContext) {
+    // 4. If oldEditContext is not null and oldEditContext is this's node
+    //    document's active EditContext, then:
+    if (oldEditContext == OwnerDoc()->GetActiveEditContext()) {
+      // 1. Run the steps to deactivate an EditContext with oldEditContext.
+      oldEditContext->Deactivate();
+      // 2. If oldEditContext's associated element is not equal to this, then
+      //    terminate these steps.
+      if (oldEditContext->GetAssociatedElement() != this) {
+        return;
+      }
+      // 3. If editContext is not null, editContext's associated element is not
+      //    null and editContext's associated element is not equal to this, then
+      //    throw a "NotSupportedError" DOMException.
+      if (aContext && aContext->GetAssociatedElement() &&
+          aContext->GetAssociatedElement() != this) {
+        aRv.ThrowNotSupportedError(
+            "EditContext can only be attached to one element at a time.");
+        return;
+      }
+    }
+    // 5. If oldEditContext is not null, set oldEditContext's associated element
+    //    to null.
+    oldEditContext->SetAssociatedElement(nullptr);
+  }
+  // 6. If editContext is not null, then set editContext's associated element to
+  //    this.
+  if (aContext) {
+    aContext->SetAssociatedElement(this);
+  }
+  // 7. Set this's internal [[EditContext]] slot to be editContext.
+  if (aContext) {
+    SetFlags(ELEMENT_HAS_EDIT_CONTEXT);
+  } else {
+    UnsetFlags(ELEMENT_HAS_EDIT_CONTEXT);
+  }
+  EditContext::SetForElement(*this, aContext);
+
+  int32_t delta = (aContext != nullptr) - (oldEditContext != nullptr);
+  if (delta) {
+    ChangeEditableState(delta);
+  }
+  // Update the active EditContext since it might have changed.
+  OwnerDoc()->UpdateTextEditContext();
+}
+
 bool nsGenericHTMLElement::InNavQuirksMode(Document* aDoc) {
   return aDoc && aDoc->GetCompatibilityMode() == eCompatibility_NavQuirks;
 }
 
 void nsGenericHTMLElement::UpdateEditableState(bool aNotify) {
   // XXX Should we do this only when in a document?
+  if (GetEditContext()) {
+    SetEditableFlag(true);
+    UpdateReadOnlyState(aNotify);
+    return;
+  }
   ContentEditableState state = GetContentEditableState();
   if (state != ContentEditableState::Inherit) {
     SetEditableFlag(IsEditableState(state));
@@ -1874,21 +1958,21 @@ bool nsGenericHTMLElement::MatchLabelsElement(Element* aElement,
   return element && element->GetLabeledElementInternal() == aData;
 }
 
-already_AddRefed<nsINodeList> nsGenericHTMLElement::LabelsForBindings() {
+already_AddRefed<NodeList> nsGenericHTMLElement::LabelsForBindings() {
   return LabelsInternal();
 }
 
-already_AddRefed<nsINodeList> nsGenericHTMLElement::LabelsInternal() {
+already_AddRefed<NodeList> nsGenericHTMLElement::LabelsInternal() {
   MOZ_ASSERT(IsLabelable(),
              "Labels() only allow labelable elements to use it.");
   nsExtendedDOMSlots* slots = ExtendedDOMSlots();
 
   if (!slots->mLabelsList) {
     slots->mLabelsList =
-        new nsLabelsNodeList(this, SubtreeRoot(), MatchLabelsElement, nullptr);
+        new LabelsNodeList(this, SubtreeRoot(), MatchLabelsElement, nullptr);
   }
 
-  RefPtr<nsLabelsNodeList> labels = slots->mLabelsList;
+  RefPtr<LabelsNodeList> labels = slots->mLabelsList;
   return labels.forget();
 }
 

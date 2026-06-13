@@ -9,7 +9,6 @@
 #include "ipc/IPCMessageUtils.h"
 #include "mozilla/GfxMessageUtils.h"
 #include "mozilla/dom/GamepadMessageUtils.h"
-#include "mozilla/ParamTraits_IsEnumCase.h"
 #include "mozilla/ParamTraits_STL.h"
 #include "mozilla/ParamTraits_TiedFields.h"
 
@@ -49,16 +48,29 @@ struct ParamTraits<mozilla::gfx::VRPose> final
 
 template <>
 struct ParamTraits<mozilla::gfx::VRControllerType>
-    : ParamTraits_IsEnumCase<mozilla::gfx::VRControllerType> {};
+    : public ContiguousEnumSerializer<mozilla::gfx::VRControllerType,
+                                      mozilla::gfx::VRControllerType::_empty,
+                                      mozilla::gfx::VRControllerType::_end> {};
+
 template <>
 struct ParamTraits<mozilla::gfx::TargetRayMode>
-    : ParamTraits_IsEnumCase<mozilla::gfx::TargetRayMode> {};
+    : public ContiguousEnumSerializerInclusive<
+          mozilla::gfx::TargetRayMode, mozilla::gfx::TargetRayMode::Gaze,
+          mozilla::gfx::TargetRayMode::Screen> {};
+
 template <>
 struct ParamTraits<mozilla::gfx::GamepadMappingType>
-    : ParamTraits_IsEnumCase<mozilla::gfx::GamepadMappingType> {};
+    : public ContiguousEnumSerializerInclusive<
+          mozilla::gfx::GamepadMappingType,
+          mozilla::gfx::GamepadMappingType::_empty,
+          mozilla::gfx::GamepadMappingType::XRStandard> {};
+
 template <>
 struct ParamTraits<mozilla::gfx::VRDisplayBlendMode>
-    : ParamTraits_IsEnumCase<mozilla::gfx::VRDisplayBlendMode> {};
+    : public ContiguousEnumSerializerInclusive<
+          mozilla::gfx::VRDisplayBlendMode,
+          mozilla::gfx::VRDisplayBlendMode::Opaque,
+          mozilla::gfx::VRDisplayBlendMode::AlphaBlend> {};
 
 // -
 

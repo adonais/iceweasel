@@ -71,6 +71,7 @@ namespace dom {
  * "style"           | TYPE_INTERNAL_STYLESHEET,
  *                   | TYPE_INTERNAL_STYLESHEET_PRELOAD,
  *                   | TYPE_STYLESHEET
+ * "text"            | TYPE_TEXT, TYPE_INTERNAL_TEXT_PRELOAD
  * "track"           | TYPE_INTERNAL_TRACK
  * "video"           | TYPE_INTERNAL_VIDEO
  * "worker"          | TYPE_INTERNAL_WORKER, TYPE_INTERNAL_WORKER_STATIC_MODULE
@@ -343,11 +344,9 @@ class InternalRequest final : public AtomicSafeRefCounted<InternalRequest> {
 
   int64_t BodyLength() const { return mBodyLength; }
 
-  void SetBodyBlobURISpec(nsACString& aBlobURISpec) {
-    mBodyBlobURISpec = aBlobURISpec;
-  }
+  void SetBodyBlobImpl(BlobImpl* aBlobImpl) { mBodyBlobImpl = aBlobImpl; }
 
-  const nsACString& BodyBlobURISpec() const { return mBodyBlobURISpec; }
+  BlobImpl* BodyBlobImpl() const { return mBodyBlobImpl; }
 
   void SetBodyLocalPath(nsAString& aLocalPath) { mBodyLocalPath = aLocalPath; }
 
@@ -473,7 +472,7 @@ class InternalRequest final : public AtomicSafeRefCounted<InternalRequest> {
   // mURLList: a list of one or more fetch URLs
   nsTArray<NotNull<RefPtr<nsIURI>>> mURLList;
   RefPtr<InternalHeaders> mHeaders;
-  nsCString mBodyBlobURISpec;
+  RefPtr<BlobImpl> mBodyBlobImpl;
   nsString mBodyLocalPath;
   nsCOMPtr<nsIInputStream> mBodyStream;
 

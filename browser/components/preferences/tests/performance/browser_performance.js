@@ -22,10 +22,10 @@ add_task(async function () {
 });
 
 add_task(async function () {
-  let prefs = await openPreferencesViaOpenPreferencesAPI("paneGeneral", {
+  let prefs = await openPreferencesViaOpenPreferencesAPI(PERF_PREF_PANE, {
     leaveOpen: true,
   });
-  is(prefs.selectedPane, "paneGeneral", "General pane was selected");
+  is(prefs.selectedPane, PERF_PREF_PANE, `${PERF_PREF_PANE} was selected`);
 
   let doc = gBrowser.contentDocument;
   let useRecommendedPerformanceSettings = doc.querySelector(
@@ -115,10 +115,10 @@ add_task(async function () {
 });
 
 add_task(async function () {
-  let prefs = await openPreferencesViaOpenPreferencesAPI("paneGeneral", {
+  let prefs = await openPreferencesViaOpenPreferencesAPI(PERF_PREF_PANE, {
     leaveOpen: true,
   });
-  is(prefs.selectedPane, "paneGeneral", "General pane was selected");
+  is(prefs.selectedPane, PERF_PREF_PANE, `${PERF_PREF_PANE} was selected`);
 
   let doc = gBrowser.contentDocument;
   let useRecommendedPerformanceSettings = doc.querySelector(
@@ -158,10 +158,10 @@ add_task(async function () {
 });
 
 add_task(async function () {
-  let prefs = await openPreferencesViaOpenPreferencesAPI("paneGeneral", {
+  let prefs = await openPreferencesViaOpenPreferencesAPI(PERF_PREF_PANE, {
     leaveOpen: true,
   });
-  is(prefs.selectedPane, "paneGeneral", "General pane was selected");
+  is(prefs.selectedPane, PERF_PREF_PANE, `${PERF_PREF_PANE} was selected`);
 
   let doc = gBrowser.contentDocument;
   let allowHWAccel = doc.querySelector("#allowHWAccel");
@@ -192,10 +192,10 @@ add_task(async function () {
 add_task(async function () {
   Services.prefs.setIntPref("dom.ipc.processCount", 7);
 
-  let prefs = await openPreferencesViaOpenPreferencesAPI("paneGeneral", {
+  let prefs = await openPreferencesViaOpenPreferencesAPI(PERF_PREF_PANE, {
     leaveOpen: true,
   });
-  is(prefs.selectedPane, "paneGeneral", "General pane was selected");
+  is(prefs.selectedPane, PERF_PREF_PANE, `${PERF_PREF_PANE} was selected`);
 
   let doc = gBrowser.contentDocument;
 
@@ -215,10 +215,10 @@ add_task(async function () {
 add_task(async function () {
   Services.prefs.setBoolPref("layers.acceleration.disabled", true);
 
-  let prefs = await openPreferencesViaOpenPreferencesAPI("paneGeneral", {
+  let prefs = await openPreferencesViaOpenPreferencesAPI(PERF_PREF_PANE, {
     leaveOpen: true,
   });
-  is(prefs.selectedPane, "paneGeneral", "General pane was selected");
+  is(prefs.selectedPane, PERF_PREF_PANE, `${PERF_PREF_PANE} was selected`);
 
   let doc = gBrowser.contentDocument;
 

@@ -39,6 +39,7 @@ COMPILE_FLAGS["WARNINGS_CXXFLAGS"] += [
 # Gecko headers aren't warning-free enough for us to enable these warnings.
 CXXFLAGS += [
     "-Wno-unused-parameter",
+    "-Wno-missing-designated-field-initializers",
 ]
 
 include("/ipc/chromium/chromium-config.mozbuild")

@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef SDP_LOG_H_
-#define SDP_LOG_H_
+#ifndef DOM_MEDIA_WEBRTC_SDP_SDPLOG_H_
+#define DOM_MEDIA_WEBRTC_SDP_SDPLOG_H_
 
 #include "mozilla/Logging.h"
 #include "sdp_log.h"

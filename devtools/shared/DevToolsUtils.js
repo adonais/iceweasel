@@ -1010,7 +1010,7 @@ exports.makeDebuggeeIterator = makeDebuggeeIterator;
  * window embedding the DevTools frame.
  */
 function getTopWindow(win) {
-  return win.windowRoot ? win.windowRoot.ownerGlobal : win.top;
+  return win.windowRoot ? win.windowRoot.window : win.top;
 }
 
 exports.getTopWindow = getTopWindow;

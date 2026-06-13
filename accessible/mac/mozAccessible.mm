@@ -5,6 +5,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #import <Accessibility/Accessibility.h>
+#import <ApplicationServices/ApplicationServices.h>
 
 #import "mozAccessible.h"
 #include "MOXAccessibleBase.h"
@@ -33,6 +34,7 @@
 
 #include "nsRect.h"
 #include "nsCocoaUtils.h"
+#include "nsCocoaWindow.h"
 #include "nsCoord.h"
 #include "nsObjCExceptions.h"
 #include "nsWhitespaceTokenizer.h"
@@ -322,6 +324,26 @@ using namespace mozilla::a11y;
       [NSValue valueWithSize:NSMakeSize(frame.size.width, frame.size.height)];
 }
 
+static bool IsNonNativePopover(Accessible* aAccessible) {
+  if (!aAccessible->IsLocal() || aAccessible->TagName() != nsGkAtoms::panel) {
+    return false;
+  }
+
+  NSView* view =
+      static_cast<AccessibleWrap*>(aAccessible->AsLocal())->GetNativeWidget();
+  if (!view) {
+    return false;
+  }
+
+  NSWindow* window = [view window];
+  if ([window isKindOfClass:[PopupWindow class]] &&
+      ![(PopupWindow*)window usePopover]) {
+    return true;
+  }
+
+  return false;
+}
+
 - (NSString*)moxRole {
   if (mRole == roles::ENTRY ||
       (mGeckoAccessible->IsGeneric() && mGeckoAccessible->IsEditableRoot())) {
@@ -332,6 +354,10 @@ using namespace mozilla::a11y;
     }
 
     return NSAccessibilityTextFieldRole;
+  }
+
+  if (IsNonNativePopover(mGeckoAccessible)) {
+    return NSAccessibilityPopoverRole;
   }
 
 #define ROLE(geckoRole, stringRole, ariaRole, atkRole, macRole, macSubrole, \
@@ -664,8 +690,17 @@ static bool ProvidesTitle(const Accessible* aAccessible, nsString& aName) {
 
   if (docAcc) nativeWindow = static_cast<NSWindow*>(docAcc->GetNativeWindow());
 
-  MOZ_ASSERT(nativeWindow || gfxPlatform::IsHeadless(),
-             "Couldn't get native window");
+  // We won't be able to fetch a native window if we're running in a headless
+  // environment, or if the AccService hasn't been started. The latter can
+  // happen in tests that enable a11y in the content but not parent processes,
+  // like devtools.
+  if (NS_WARN_IF(!nativeWindow && !gfxPlatform::IsHeadless() &&
+                 GetAccService())) {
+    // Sometimes we fail to get a native window for other reasons. We should
+    // investigate why this happens.
+    return nil;
+  }
+
   return nativeWindow;
 
   NS_OBJC_END_TRY_BLOCK_RETURN(nil);
@@ -724,25 +759,10 @@ static bool ProvidesTitle(const Accessible* aAccessible, nsString& aName) {
 
 - (NSValue*)moxFrame {
   MOZ_ASSERT(mGeckoAccessible);
-
-  LayoutDeviceIntRect rect = mGeckoAccessible->Bounds();
-  NSScreen* screen = utils::GetNSScreenForAcc(self);
-  CGFloat scaleFactor = nsCocoaUtils::GetBackingScaleFactor(screen);
-
-  // Regardless of screen selected above, VO is only happy if we use the
-  // main screen height for Y coordinate conversion. This is consistent with
-  // moxHitTest and GeckoTextMarkerRange::Bounds().
-  NSScreen* mainScreen = [[NSScreen screens] objectAtIndex:0];
-  CGFloat mainScreenHeight = [mainScreen frame].size.height;
-
-  return [NSValue
-      valueWithRect:NSMakeRect(
-                        static_cast<CGFloat>(rect.x) / scaleFactor,
-                        mainScreenHeight -
-                            static_cast<CGFloat>(rect.y + rect.height) /
-                                scaleFactor,
-                        static_cast<CGFloat>(rect.width) / scaleFactor,
-                        static_cast<CGFloat>(rect.height) / scaleFactor)];
+  auto rect = mGeckoAccessible->Bounds();
+  return
+      [NSValue valueWithRect:utils::GetCocoaScreenRectForAcc(
+                                 self, rect, /*aShouldUseCocoaCoords*/ true)];
 }
 
 - (NSString*)moxARIACurrent {
@@ -1113,16 +1133,81 @@ static bool ProvidesTitle(const Accessible* aAccessible, nsString& aName) {
 
   return relations;
 }
+- (void)maybeFireUAZoomChangeFocusEvent:(int)focusType {
+  if (!mGeckoAccessible) {
+    return;
+  }
+
+  auto bounds = mGeckoAccessible->Bounds();
+  if (bounds.IsEmpty()) {
+    if (auto parent = mGeckoAccessible->Parent()) {
+      auto parentBounds = parent->Bounds();
+      bounds.width = parentBounds.width;
+      bounds.height = parentBounds.height;
+    }
+    // UAZoom drops all events with rects that have height=0 or width=0. Ensure
+    // we don't send something empty by clamping to 1x1.
+    bounds.width = MAX(bounds.width, 1.0);
+    bounds.height = MAX(bounds.height, 1.0);
+  }
+
+  NSRect objectRect = utils::GetCocoaScreenRectForAcc(
+      self, bounds, /*aShouldUseCocoaCoords*/ false);
+
+  NSRect highlightRect = NSZeroRect;
+  if (auto* htb = mGeckoAccessible->AsHyperTextBase()) {
+    auto caretRect = htb->GetCaretRect().first;
+    highlightRect = utils::GetCocoaScreenRectForAcc(
+        self, caretRect, /*aShouldUseCocoaCoords*/ false);
+  }
+
+  NSValue* objValue = [NSValue valueWithRect:objectRect];
+  NSMutableDictionary* info =
+      [[@{@"AXRect" : objValue, @"AXFocusType" : @(focusType)} mutableCopy]
+          autorelease];
+
+  if (focusType == kUAZoomFocusTypeInsertionPoint) {
+    info[@"AXHighlightRect"] = [NSValue valueWithRect:highlightRect];
+  }
+
+  // This sends events via nsIObserverService to be consumed by our mochitests.
+  // We provide the acc to re-use the existing xpc logic and to more easily
+  // verify the event is correct, without diff'ing rects.
+  // Note the UAZoomChangeFocus call below is not associated with a
+  // mozAccessible; it takes raw rects.
+  xpcAccessibleMacEvent::FireEvent(self, @"MozUAZoomChangeFocus", info);
+
+  // Check if our desired AT is enabled before firing the
+  // event. Always fire the event for tests.
+  if (UAZoomEnabled()) {
+    UAZoomChangeFocus(
+        &objectRect,
+        focusType == kUAZoomFocusTypeInsertionPoint ? &highlightRect : NULL,
+        focusType);
+  }
+}
 
 - (void)handleAccessibleEvent:(uint32_t)eventType {
   switch (eventType) {
     case nsIAccessibleEvent::EVENT_ALERT:
       [self maybePostA11yUtilNotification];
       break;
-    case nsIAccessibleEvent::EVENT_FOCUS:
+    case nsIAccessibleEvent::EVENT_FOCUS: {
       [self moxPostNotification:
                 NSAccessibilityFocusedUIElementChangedNotification];
+
+      // Notify macOS zoom/magnifier about focus change, if we're monitoring
+      if (PlatformShouldTrackFocusedAccLocation()) {
+        if (mGeckoAccessible->IsEditableRoot()) {
+          // If this acc is an editable root, use kUAZoomFocusTypeInsertionPoint
+          // to ensure the caret rect is sent, too.
+          [self maybeFireUAZoomChangeFocusEvent:kUAZoomFocusTypeInsertionPoint];
+        } else {
+          [self maybeFireUAZoomChangeFocusEvent:kUAZoomFocusTypeOther];
+        }
+      }
       break;
+    }
     case nsIAccessibleEvent::EVENT_MENUPOPUP_START:
       [self moxPostNotification:@"AXMenuOpened"];
       break;
@@ -1155,6 +1240,11 @@ static bool ProvidesTitle(const Accessible* aAccessible, nsString& aName) {
                  withUserInfo:userInfo];
       [self moxPostNotification:NSAccessibilitySelectedTextChangedNotification
                    withUserInfo:userInfo];
+
+      // Notify macOS zoom/magnifier about caret position, if we're tracking
+      if (PlatformShouldTrackFocusedAccLocation()) {
+        [self maybeFireUAZoomChangeFocusEvent:kUAZoomFocusTypeInsertionPoint];
+      }
       break;
     }
     case nsIAccessibleEvent::EVENT_LIVE_REGION_ADDED:
@@ -1206,6 +1296,12 @@ static bool ProvidesTitle(const Accessible* aAccessible, nsString& aName) {
         [self moxPostNotification:@"AXValidationErrorChanged"];
       }
 
+      break;
+    }
+    case nsIAccessibleEvent::EVENT_SHOW: {
+      if (IsNonNativePopover(mGeckoAccessible)) {
+        [self moxPostNotification:@"AXCreated"];
+      }
       break;
     }
   }

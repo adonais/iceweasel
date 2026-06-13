@@ -261,12 +261,12 @@ class TextComposition final {
     ~CompositionChangeEventHandlingMarker() {
       mComposition->EditorDidHandleCompositionChangeEvent();
     }
+    CompositionChangeEventHandlingMarker() = delete;
+    CompositionChangeEventHandlingMarker(
+        const CompositionChangeEventHandlingMarker& aOther) = delete;
 
    private:
     RefPtr<TextComposition> mComposition;
-    CompositionChangeEventHandlingMarker();
-    CompositionChangeEventHandlingMarker(
-        const CompositionChangeEventHandlingMarker& aOther);
   };
 
   /**
@@ -313,9 +313,8 @@ class TextComposition final {
 
  private:
   // Private destructor, to discourage deletion outside of Release():
-  ~TextComposition() {
-    // WARNING: mPresContext may be destroying, so, be careful if you touch it.
-  }
+  // WARNING: mPresContext may be destroying, so, be careful if you touch it.
+  ~TextComposition() = default;
 
   // sHandlingSelectionEvent is true while TextComposition sends a selection
   // event to ContentEventHandler.

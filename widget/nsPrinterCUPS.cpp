@@ -130,12 +130,7 @@ bool nsPrinterCUPS::SupportsDuplex() const {
   return Supports(CUPS_SIDES, CUPS_SIDES_TWO_SIDED_PORTRAIT);
 }
 
-bool nsPrinterCUPS::SupportsMonochrome() const {
-  if (!SupportsColor()) {
-    return true;
-  }
-  return StaticPrefs::print_cups_monochrome_enabled();
-}
+bool nsPrinterCUPS::SupportsMonochrome() const { return true; }
 
 bool nsPrinterCUPS::SupportsColor() const {
   // CUPS 2.1 (particularly as used in Ubuntu 16) is known to have inaccurate

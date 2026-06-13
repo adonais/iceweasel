@@ -376,7 +376,6 @@ renaming_overrides_prefixing = true
 "nsIURI" = "nsIURI"
 "imgRequestProxy" = "imgRequestProxy"
 "nsCompatibility" = "nsCompatibility"
-"nsSimpleContentList" = "nsSimpleContentList"
 "nsACString" = "nsACString"
 "nsAString" = "nsAString"
 "nsCString" = "nsCString"
@@ -451,31 +450,19 @@ renaming_overrides_prefixing = true
   void ScaleLengthsBy(float);
 """
 
-"LengthPercentageUnion" = """
-  using Self = StyleLengthPercentageUnion;
+"LengthPercentage" = """
+  using Self = StyleLengthPercentage;
 
-  // TODO(emilio): cbindgen should be able to generate these in the body of the
-  // union, but it seems it's only implemented for structs, not unions.
-  static const uint8_t TAG_CALC = StyleLengthPercentageUnion_TAG_CALC;
-  static const uint8_t TAG_LENGTH = StyleLengthPercentageUnion_TAG_LENGTH;
-  static const uint8_t TAG_PERCENTAGE = StyleLengthPercentageUnion_TAG_PERCENTAGE;
-  static const uint8_t TAG_MASK = StyleLengthPercentageUnion_TAG_MASK;
-
- private:
-  uint8_t Tag() const {
-    return tag.tag & TAG_MASK;
-  }
-
- public:
-  // We need to do all this manually because cbingen can't reason about unions.
-  inline StyleLengthPercentageUnion();
-  inline StyleLengthPercentageUnion(const Self&);
-  inline ~StyleLengthPercentageUnion();
+  // We need to do all this manually because cbindgen can't reason about unions.
+  inline StyleLengthPercentage();
+  inline StyleLengthPercentage(const Self&);
+  inline ~StyleLengthPercentage();
   inline Self& operator=(const Self&);
 
   inline bool operator==(const Self& aOther) const;
   inline bool operator!=(const Self& aOther) const;
 
+  inline bool IsLengthOrPercentage() const;
   inline bool IsLength() const;
   inline bool IsPercentage() const;
   inline bool IsCalc() const;

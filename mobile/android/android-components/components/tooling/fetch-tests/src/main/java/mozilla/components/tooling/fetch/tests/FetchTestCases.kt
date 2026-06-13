@@ -20,7 +20,6 @@ import okio.GzipSink
 import okio.buffer
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
@@ -30,6 +29,7 @@ import java.io.IOException
 import java.net.SocketTimeoutException
 import java.util.UUID
 import java.util.concurrent.TimeUnit
+import kotlin.test.assertNotNull
 
 /**
  * Generic test cases for concept-fetch implementations.

@@ -19,6 +19,7 @@ dependencies {
     api libs.mockwebserver
 
     implementation libs.junit4
+    implementation libs.kotlin.test
     implementation libs.kotlinx.coroutines
     implementation libs.okhttp
     implementation libs.okio

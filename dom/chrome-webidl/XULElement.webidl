@@ -51,7 +51,7 @@ interface XULElement : Element {
 
 XULElement includes ElementOffsetAttributes;
 XULElement includes GlobalEventHandlers;
-XULElement includes HTMLOrForeignElement;
+XULElement includes HTMLOrSVGOrMathMLElement;
 XULElement includes ElementCSSInlineStyle;
 XULElement includes TouchEventHandlers;
 XULElement includes OnErrorEventHandlerForNodes;

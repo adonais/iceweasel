@@ -16,10 +16,10 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/bbec1b95ddb5e0096
  5 files changed, 26 insertions(+), 6 deletions(-)
 
 diff --git a/modules/audio_coding/BUILD.gn b/modules/audio_coding/BUILD.gn
-index f8b6a6ab5c..0ec5ef488a 100644
+index 3c45508693..48878feefb 100644
 --- a/modules/audio_coding/BUILD.gn
 +++ b/modules/audio_coding/BUILD.gn
-@@ -364,7 +364,7 @@ rtc_library("webrtc_opus_wrapper") {
+@@ -338,7 +338,7 @@ rtc_library("webrtc_opus_wrapper") {
      deps += [ rtc_opus_dir ]
      public_configs = [ "//third_party/opus:opus_config" ]
    } else if (build_with_mozilla) {
@@ -48,7 +48,7 @@ index e8367393a3..a693604389 100644
      }
    }
 diff --git a/modules/video_capture/BUILD.gn b/modules/video_capture/BUILD.gn
-index b55f37a39d..d452183e65 100644
+index 6feba4a247..8f9c8bb2c9 100644
 --- a/modules/video_capture/BUILD.gn
 +++ b/modules/video_capture/BUILD.gn
 @@ -118,7 +118,7 @@ if (!build_with_chromium || is_linux || is_chromeos) {
@@ -61,7 +61,7 @@ index b55f37a39d..d452183e65 100644
        }
      }
 diff --git a/sdk/BUILD.gn b/sdk/BUILD.gn
-index 137ab195fd..0bdc1046a7 100644
+index 119af02e14..264d00b23c 100644
 --- a/sdk/BUILD.gn
 +++ b/sdk/BUILD.gn
 @@ -616,6 +616,20 @@ if (is_ios || is_mac) {
@@ -86,7 +86,7 @@ index 137ab195fd..0bdc1046a7 100644
  
      if (!build_with_mozilla) {
 diff --git a/test/BUILD.gn b/test/BUILD.gn
-index 65ffb6ec07..e2eb310233 100644
+index 3ca79980ca..1c66e67dfe 100644
 --- a/test/BUILD.gn
 +++ b/test/BUILD.gn
 @@ -479,6 +479,12 @@ rtc_source_set("test_support") {

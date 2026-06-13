@@ -1467,7 +1467,7 @@ already_AddRefed<nsIGlobalObject> DataTransfer::GetGlobal() const {
   nsCOMPtr<nsIGlobalObject> global;
   // This is annoying, but DataTransfer may have various things as parent.
   if (nsCOMPtr<EventTarget> target = do_QueryInterface(mParent)) {
-    global = target->GetOwnerGlobal();
+    global = target->GetRelevantGlobal();
   } else if (RefPtr<Event> event = do_QueryObject(mParent)) {
     global = event->GetParentObject();
   }

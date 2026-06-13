@@ -35,7 +35,7 @@ class nsChromeRegistryContent : public nsChromeRegistry {
  private:
   struct PackageEntry {
     PackageEntry() : flags(0) {}
-    ~PackageEntry() {}
+    ~PackageEntry() = default;
 
     nsCOMPtr<nsIURI> contentBaseURI;
     nsCOMPtr<nsIURI> localeBaseURI;

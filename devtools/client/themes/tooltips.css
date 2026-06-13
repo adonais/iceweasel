@@ -342,12 +342,12 @@ strong {
   -moz-window-shadow: none;
   --panel-border-radius: 0px;
   --panel-padding: 0px;
-  --panel-background: transparent;
+  --panel-background-color: transparent;
   --panel-border-color: transparent;
-  --panel-shadow: none;
+  --panel-box-shadow: none;
 
   /* This is enough room for the shadow of the tooltip-container */
-  --panel-shadow-margin: 10px;
+  --panel-box-shadow-margin: 10px;
 
   &::part(content) {
     border: none;

@@ -58,6 +58,8 @@ NS_INTERFACE_MAP_BEGIN(nsMozIconURI)
   NS_INTERFACE_MAP_ENTRY(nsIURI)
   NS_INTERFACE_MAP_ENTRY_CONDITIONAL(nsINestedURI, mIconURL)
   NS_INTERFACE_MAP_ENTRY(nsISerializable)
+  NS_INTERFACE_MAP_ENTRY(nsIIPCSerializableURI)
+  NS_INTERFACE_MAP_ENTRY(nsIURIWithSizeOf)
   NS_IMPL_QUERY_CLASSINFO(nsMozIconURI)
 NS_INTERFACE_MAP_END
 
@@ -155,7 +157,7 @@ NS_IMPL_NSIURIMUTATOR_ISUPPORTS(nsMozIconURI::Mutator, nsIURISetters,
 
 NS_IMETHODIMP
 nsMozIconURI::Mutate(nsIURIMutator** aMutator) {
-  RefPtr<nsMozIconURI::Mutator> mutator = new nsMozIconURI::Mutator();
+  auto mutator = MakeRefPtr<nsMozIconURI::Mutator>();
   nsresult rv = mutator->InitFromURI(this);
   if (NS_FAILED(rv)) {
     return rv;

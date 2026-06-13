@@ -27,7 +27,6 @@ import mozilla.components.support.test.mock
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -37,6 +36,7 @@ import org.mockito.Mockito.doReturn
 import org.mockito.Mockito.never
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
+import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class ContextMenuFeatureTest {
@@ -256,7 +256,7 @@ class ContextMenuFeatureTest {
             id = "test-id",
             label = "Test Item",
             showFor = { _, _ -> false },
-            action = { _, _ -> Unit },
+            action = { _, _ -> },
         )
 
         val (engineView, view) = mockEngineView()

@@ -14,7 +14,9 @@
 #include "nsStreamUtils.h"
 #include "nsThreadUtils.h"
 
-#ifndef XP_WIN
+#ifdef XP_WIN
+#  include <windows.h>
+#else
 #  include <fcntl.h>
 #  include <unistd.h>
 #endif

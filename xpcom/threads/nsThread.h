@@ -290,7 +290,7 @@ class nsThread : public nsIThreadInternal,
   const bool mIsMainThread;
   bool mUseHangMonitor;
   const bool mIsUiThread;
-  mozilla::Atomic<bool, mozilla::Relaxed>* mIsAPoolThreadFreePtr;
+  mozilla::Atomic<bool, mozilla::Relaxed>* mIsAPoolThreadFreePtr = nullptr;
 
   // Set to true if this thread creates a JSRuntime.
   bool mCanInvokeJS;

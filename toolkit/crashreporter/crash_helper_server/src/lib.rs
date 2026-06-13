@@ -10,16 +10,15 @@ mod crash_generation;
 mod ipc_server;
 mod logging;
 mod phc;
+mod platform;
 
-#[cfg(target_os = "android")]
-use crash_helper_common::RawIPCConnector;
 use crash_helper_common::{BreakpadData, BreakpadRawData, IPCConnector, IPCListener, Pid};
 use std::{
     ffi::{c_char, CStr, OsString},
     fmt::Display,
 };
 
-use crash_generation::CrashGenerator;
+use crash_generation::finalize_breakpad_minidump;
 use ipc_server::{IPCServer, IPCServerState};
 
 /// Runs the crash generator process logic, this includes the IPC used by
@@ -38,6 +37,7 @@ use ipc_server::{IPCServer, IPCServerState};
 #[no_mangle]
 pub unsafe extern "C" fn crash_generator_logic_desktop(
     client_pid: Pid,
+    client_handle: *const c_char,
     breakpad_data: BreakpadRawData,
     minidump_path: *const c_char,
     listener: *const c_char,
@@ -51,9 +51,18 @@ pub unsafe extern "C" fn crash_generator_logic_desktop(
     #[cfg(any(target_os = "ios", target_os = "macos"))]
     const BOOTSTRAP_UNKNOWN_SERVICE: std::ffi::c_int = 1102;
 
-    daemonize();
+    // SAFETY: We have not spawned any other threads at this point.
+    unsafe {
+        platform::daemonize();
+    }
+
     logging::init();
 
+    let client_handle = unsafe { CStr::from_ptr(client_handle) };
+    let client_handle = unwrap_with_message(
+        platform::get_client_handle(client_handle),
+        "Could not deserialize the client process handle",
+    );
     let breakpad_data = BreakpadData::new(breakpad_data);
     let minidump_path = unsafe { CStr::from_ptr(minidump_path) }
         .to_owned()
@@ -85,17 +94,19 @@ pub unsafe extern "C" fn crash_generator_logic_desktop(
         Ok(connector) => connector,
     };
 
-    let crash_generator = unwrap_with_message(
-        CrashGenerator::new(breakpad_data, minidump_path),
-        "Could not create the crash generator",
-    );
-
     let ipc_server = unwrap_with_message(
-        IPCServer::new(client_pid, listener, connector),
+        IPCServer::new(
+            client_pid,
+            client_handle,
+            listener,
+            connector,
+            breakpad_data,
+            minidump_path,
+        ),
         "Could not create the IPC server",
     );
 
-    main_loop(ipc_server, crash_generator)
+    main_loop(ipc_server)
 }
 
 /// Runs the crash generator process logic, this includes the IPC used by
@@ -115,7 +126,7 @@ pub unsafe extern "C" fn crash_generator_logic_android(
     pid: Pid,
     breakpad_data: BreakpadRawData,
     minidump_path: *const c_char,
-    pipe: RawIPCConnector,
+    pipe: crash_helper_common::RawIPCConnector,
 ) {
     logging::init();
 
@@ -129,11 +140,6 @@ pub unsafe extern "C" fn crash_generator_logic_android(
     // On Android the main thread is used to respond to the intents so we
     // can't block it. Run the crash generation loop in a separate thread.
     let _ = std::thread::spawn(move || {
-        let crash_generator = unwrap_with_message(
-            CrashGenerator::new(breakpad_data, minidump_path),
-            "Could not create the crash generator",
-        );
-
         let listener = IPCListener::new(0).unwrap();
         // SAFETY: The `pipe` file descriptor passed in from the caller is
         // guaranteed to be valid.
@@ -142,16 +148,24 @@ pub unsafe extern "C" fn crash_generator_logic_android(
             "Could not use the pipe",
         );
         let ipc_server = unwrap_with_message(
-            IPCServer::new(pid, listener, connector),
+            IPCServer::new(
+                pid,
+                /* client_handle */ None,
+                listener,
+                connector,
+                breakpad_data,
+                minidump_path,
+            ),
             "Could not create the IPC server",
         );
-        main_loop(ipc_server, crash_generator)
+
+        main_loop(ipc_server)
     });
 }
 
-fn main_loop(mut ipc_server: IPCServer, mut crash_generator: CrashGenerator) -> i32 {
+fn main_loop(mut ipc_server: IPCServer) -> i32 {
     loop {
-        match ipc_server.run(&mut crash_generator) {
+        match ipc_server.run() {
             Ok(_result @ IPCServerState::ClientDisconnected) => {
                 return 0;
             }
@@ -160,47 +174,6 @@ fn main_loop(mut ipc_server: IPCServer, mut crash_generator: CrashGenerator) -> 
                 return -1;
             }
             _ => {} // Go on
-        }
-    }
-}
-
-// Daemonize the current process by forking it and then immediately returning
-// in the parent. This should have been done via a double fork() in the
-// crash_helper_client crate, however the first fork() call causes issues to
-// Thunderbird on macOS 10.15 (see bug 1977514). This is a known problem with
-// macOS 10.15 implemenetation, not a flaw in our logic, and the only way to
-// work around it is to use posix_spawn() instead, which forces use to move
-// the step to reparent the crash helper to PID 1 here.
-//
-// Note that if this fails for some reason, the crash helper will still launch,
-// but not as a daemon. Not ideal but still better to have a fallback.
-#[cfg(not(target_os = "android"))]
-fn daemonize() {
-    #[cfg(not(target_os = "windows"))]
-    {
-        use nix::unistd::{fork, setsid, ForkResult};
-
-        // Create a new process group and a new session, this guarantees
-        // that the crash helper process will be disconnected from the
-        // signals of Firefox main process' controlling terminal. Killing
-        // Firefox via the terminal shouldn't kill the crash helper which
-        // has its own lifecycle management.
-        //
-        // We don't check for errors as there's nothing we can do to
-        // handle one in this context.
-        let _ = setsid();
-
-        let res = unsafe { fork() };
-        let Ok(res) = res else {
-            return;
-        };
-
-        match res {
-            ForkResult::Child => {}
-            ForkResult::Parent { child: _ } => unsafe {
-                // We're done, exit cleanly
-                nix::libc::_exit(0);
-            },
         }
     }
 }

@@ -81,7 +81,7 @@
 }
 
 .fake-caret {
-  /* To replicate the default caret blink rate of 567ms (https://searchfox.org/mozilla-central/source/widget/cocoa/nsLookAndFeel.mm#397):
+  /* To replicate the default caret blink rate of 567ms (https://searchfox.org/firefox-main/source/widget/cocoa/nsLookAndFeel.mm#397):
    - Multiply the blink time by 2 to cover both the visible and hidden states.
    - Use steps(2, start) to divide the animation into 2 phases:
      1. First 567ms (Step 1) → Caret is visible

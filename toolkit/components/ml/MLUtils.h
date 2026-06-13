@@ -14,10 +14,10 @@ class MLUtils final : public nsIMLUtils {
   NS_DECL_ISUPPORTS
   NS_DECL_NSIMLUTILS
 
-  MLUtils() {}
+  MLUtils() = default;
 
  private:
-  ~MLUtils() {}
+  ~MLUtils() = default;
 };
 
 }  // namespace mozilla::ml

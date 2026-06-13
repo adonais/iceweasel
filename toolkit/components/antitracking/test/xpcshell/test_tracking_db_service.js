@@ -100,6 +100,15 @@ const LOG = {
       1,
     ],
   ],
+  // A tracker replaced with a shim script, should be treated as blocked
+  // and increment the tracker counter.
+  "https://18.example.com": [
+    [Ci.nsIWebProgressListener.STATE_REPLACED_TRACKING_CONTENT, true, 1],
+  ],
+  // An email tracker blocked, should be aggregated with regular trackers.
+  "https://19.example.com": [
+    [Ci.nsIWebProgressListener.STATE_BLOCKED_EMAILTRACKING_CONTENT, true, 1],
+  ],
 };
 
 do_get_profile();
@@ -167,7 +176,7 @@ add_task(async function test_save_and_delete() {
   });
   equal(rows.length, 1, "Only one day has had tracker entries, length is 1");
   let count = rows[0].getResultByName("count");
-  equal(count, 1, "there is only one tracker entry");
+  equal(count, 3, "there are three tracker entries");
 
   rows = await db.execute(SQL.selectAllEntriesOfType, {
     type: TrackingDBService.TRACKING_COOKIES_ID,
@@ -289,7 +298,7 @@ add_task(async function test_timestamp_aggragation() {
     if (i == 0) {
       equal(count, 4, "Yesterday's count is 4");
     } else if (i == 1) {
-      equal(count, 3, "Today's count is 3, new entries were aggregated");
+      equal(count, 5, "Today's count is 5, new entries were aggregated");
     }
   }
 

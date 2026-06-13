@@ -5,6 +5,7 @@
 package org.mozilla.fenix.home.topsites
 
 import android.content.res.Resources
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -62,7 +63,7 @@ class DefaultTopSitesBindingTest {
                 SearchAction.SetRegionAction(RegionState.Default),
             )
 
-            verify(exactly = 0) {
+            coVerify(exactly = 0) {
                 topSitesStorage.addTopSites(topSites = any(), isDefault = any())
                 settings.defaultTopSitesAdded = any()
             }
@@ -83,7 +84,7 @@ class DefaultTopSitesBindingTest {
             val topSites = binding.getTopSites(region = "XX")
             dispatcher.scheduler.advanceUntilIdle()
 
-            verify {
+            coVerify {
                 topSitesStorage.addTopSites(topSites = topSites, isDefault = true)
                 settings.defaultTopSitesAdded = true
             }
@@ -105,7 +106,7 @@ class DefaultTopSitesBindingTest {
             val topSites = binding.getTopSites(region = region)
             dispatcher.scheduler.advanceUntilIdle()
 
-            verify {
+            coVerify {
                 topSitesStorage.addTopSites(topSites = topSites, isDefault = true)
                 settings.defaultTopSitesAdded = true
             }
@@ -124,7 +125,7 @@ class DefaultTopSitesBindingTest {
                 SearchAction.SetRegionAction(RegionState(home = region, current = region)),
             )
 
-            verify(exactly = 0) {
+            coVerify(exactly = 0) {
                 topSitesStorage.addTopSites(topSites = any(), isDefault = any())
                 settings.defaultTopSitesAdded = any()
             }
@@ -233,7 +234,7 @@ class DefaultTopSitesBindingTest {
                 crashReporter.recordCrashBreadcrumb(any())
                 crashReporter.submitCaughtException(any<SerializationException>())
             }
-            verify(exactly = 0) {
+            coVerify(exactly = 0) {
                 topSitesStorage.addTopSites(topSites = any(), isDefault = any())
                 settings.defaultTopSitesAdded = any()
             }
@@ -255,7 +256,7 @@ class DefaultTopSitesBindingTest {
                 crashReporter.recordCrashBreadcrumb(any())
                 crashReporter.submitCaughtException(any<SerializationException>())
             }
-            verify(exactly = 0) {
+            coVerify(exactly = 0) {
                 topSitesStorage.addTopSites(topSites = any(), isDefault = any())
                 settings.defaultTopSitesAdded = any()
             }

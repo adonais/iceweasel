@@ -116,6 +116,11 @@ void ServiceWorkerRegistrationProxy::MaybeShutdownOnMainThread() {
 void ServiceWorkerRegistrationProxy::StopListeningOnMainThread() {
   AssertIsOnMainThread();
 
+  if (mDelayedUpdate) {
+    mDelayedUpdate->Reject();
+    mDelayedUpdate = nullptr;
+  }
+
   if (!mReg) {
     return;
   }

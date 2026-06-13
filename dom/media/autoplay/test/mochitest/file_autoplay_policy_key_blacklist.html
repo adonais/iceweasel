@@ -129,20 +129,23 @@
           input.blur();
         }
 
-        async function testAutoplayKeyBlacklist() {
+        async function makeVideoElement() {
           let element = document.createElement("video");
           element.preload = "auto";
           element.src = "short.mp4";
           document.body.appendChild(element);
-
           await once(element, "loadedmetadata");
+          return element;
+        }
+
+        async function testAutoplayKeyBlacklist() {
+          let element = await makeVideoElement();
 
           let played = await element.play().then(() => true, () => false);
           is(played, false, "Document should start out not activated, with playback blocked.");
 
           // Try pressing all the keys in the blacklist, then playing.
           // Document should not be activated, so play should fail.
-
           for (let key of blacklistKeyPresses) {
             document.body.focus();
             await synthesizeKeyAndWait("KEY_" + key);
@@ -168,10 +171,26 @@
           removeNodeAndSource(element);
         }
 
+        async function testCtrlF5Activation() {
+          let element = await makeVideoElement();
+          document.body.focus();
+          await synthesizeKeyAndWait("KEY_F5", { accelKey: true });
+          let played = await element.play().then(() => true, () => false);
+          is(played, true, "Ctrl+F5 should activate document and should unblock play");
+          removeNodeAndSource(element);
+        }
+
         nextWindowMessage().then(
           async (event) => {
             try {
-              await testAutoplayKeyBlacklist(event.data, event.source);
+              switch(event.data) {
+                case "testAutoplayKeyBlacklist":
+                  await testAutoplayKeyBlacklist();
+                  break;
+                case "testCtrlF5Activation":
+                  await testCtrlF5Activation();
+                  break;
+              }
             } catch (e) {
               ok(false, "Caught exception " + e + " " + e.message + " " + e.stackTrace);
             }

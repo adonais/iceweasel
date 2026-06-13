@@ -6,7 +6,6 @@ package mozilla.components.browser.engine.gecko.ai
 
 import mozilla.components.concept.engine.ai.AIFeaturesError
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -16,6 +15,8 @@ import org.mockito.MockitoAnnotations
 import org.mozilla.geckoview.GeckoResult
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.shadows.ShadowLooper
+import kotlin.test.assertIs
+import kotlin.test.assertNotNull
 
 @RunWith(RobolectricTestRunner::class)
 class GeckoAIFeaturesAccessorTest {
@@ -74,7 +75,7 @@ class GeckoAIFeaturesAccessorTest {
 
         assertEquals("Initial", successValue)
         assertNotNull(errorValue)
-        assertTrue(errorValue is AIFeaturesError.UnexpectedNull)
+        assertIs<AIFeaturesError.UnexpectedNull>(errorValue)
     }
 
     @Test
@@ -92,7 +93,7 @@ class GeckoAIFeaturesAccessorTest {
         ShadowLooper.idleMainLooper()
 
         assertNull(successValue)
-        assertTrue(errorValue is AIFeaturesError.UnknownError)
+        assertIs<AIFeaturesError.UnknownError>(errorValue)
         assertEquals(exception, (errorValue as AIFeaturesError.UnknownError).cause)
     }
 
@@ -128,6 +129,6 @@ class GeckoAIFeaturesAccessorTest {
         ShadowLooper.idleMainLooper()
 
         assertTrue(!successCalled)
-        assertTrue(errorValue is AIFeaturesError.UnknownError)
+        assertIs<AIFeaturesError.UnknownError>(errorValue)
     }
 }

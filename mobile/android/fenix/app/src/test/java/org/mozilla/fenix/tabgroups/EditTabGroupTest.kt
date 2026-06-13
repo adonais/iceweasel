@@ -7,10 +7,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasText
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextReplacement
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Rule
 import org.junit.Test
@@ -238,6 +239,57 @@ class EditTabGroupTest {
         composeTestRule
             .onNodeWithText("Edit group")
             .assertIsDisplayed()
+    }
+
+    @Test
+    fun `WHEN group name is changed GIVEN name length exceeds MAX_TAB_GROUP_NAME_LENGTH THEN name is truncated`() {
+        val initialName = "Test Group"
+        val store = TabsTrayStore(
+            initialState = TabsTrayState(
+                tabGroupState = TabsTrayState.TabGroupState(
+                    formState = TabGroupFormState(
+                        tabGroupId = "123",
+                        name = initialName,
+                        nextTabGroupNumber = 1,
+                        theme = TabGroupTheme.Yellow,
+                        edited = true,
+                    ),
+                ),
+            ),
+        )
+        composeTestRule.setContent {
+            ComposableUnderTest(store = store)
+        }
+
+        val expectedTruncatedName = "a".repeat(MAX_TAB_GROUP_NAME_LENGTH)
+        val longName = expectedTruncatedName + "extra"
+
+        composeTestRule.onNodeWithTag(GROUP_NAME).performTextReplacement(longName)
+
+        composeTestRule.onNodeWithTag(GROUP_NAME).assert(hasText(expectedTruncatedName))
+
+        composeTestRule.runOnIdle {
+            assertEquals(expectedTruncatedName, store.state.tabGroupState.formState?.name)
+        }
+    }
+
+    @Test
+    fun `WHEN group name is changed GIVEN name length is exactly MAX_TAB_GROUP_NAME_LENGTH THEN name is updated`() {
+        val store = TabsTrayStore(
+            initialState = TabsTrayState(
+                tabGroupState = TabsTrayState.TabGroupState(
+                    formState = fakeFormState(),
+                ),
+            ),
+        )
+        composeTestRule.setContent {
+            ComposableUnderTest(store = store)
+        }
+
+        val maxName = "a".repeat(MAX_TAB_GROUP_NAME_LENGTH)
+        composeTestRule.onNodeWithTag(GROUP_NAME).performTextReplacement(maxName)
+
+        composeTestRule.onNodeWithTag(GROUP_NAME).assert(hasText(maxName))
     }
 
     @OptIn(ExperimentalMaterial3Api::class)

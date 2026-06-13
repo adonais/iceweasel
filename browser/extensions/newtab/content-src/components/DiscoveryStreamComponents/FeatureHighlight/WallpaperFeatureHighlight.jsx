@@ -14,6 +14,8 @@ export function WallpaperFeatureHighlight({
   handleClick,
   handleBlock,
 }) {
+  // @nova-cleanup(remove-pref): Remove the nova.enabled pref check and keep the Nova copy and image path as the default once Nova ships.
+  const isNova = useSelector(state => state.Prefs.values["nova.enabled"]);
   const onDismiss = useCallback(() => {
     handleDismiss();
     handleBlock();
@@ -41,61 +43,84 @@ export function WallpaperFeatureHighlight({
         data-l10n-id="feature-highlight-wallpaper"
         feature={messageData.content.feature}
         dispatch={dispatch}
+        modalClassName="wallpaper-feature-highlight-modal"
         message={
           <div className="wallpaper-feature-highlight-content">
-            <picture className="follow-section-button-highlight-image">
+            <picture
+              className={
+                isNova
+                  ? "wallpaper-feature-highlight-image"
+                  : "follow-section-button-highlight-image"
+              }
+            >
               <source
                 srcSet={
                   messageData.content?.darkModeImageURL ||
-                  "chrome://newtab/content/data/content/assets/highlights/omc-newtab-wallpapers.svg"
+                  (isNova
+                    ? "chrome://newtab/content/data/content/assets/highlights/firefox-mascot-prop-paintbucket-rgb.svg"
+                    : "chrome://newtab/content/data/content/assets/highlights/omc-newtab-wallpapers.svg")
                 }
                 media="(prefers-color-scheme: dark)"
               />
               <source
                 srcSet={
                   messageData.content?.imageURL ||
-                  "chrome://newtab/content/data/content/assets/highlights/omc-newtab-wallpapers.svg"
+                  (isNova
+                    ? "chrome://newtab/content/data/content/assets/highlights/firefox-mascot-prop-paintbucket-rgb.svg"
+                    : "chrome://newtab/content/data/content/assets/highlights/omc-newtab-wallpapers.svg")
                 }
                 media="(prefers-color-scheme: light)"
               />
-              <img width="320" height="195" alt="" />
+              <img
+                width={isNova ? "207" : "320"}
+                height={isNova ? "156" : "195"}
+                alt=""
+              />
             </picture>
-            {messageData.content?.cardTitle ? (
-              <p className="title">{messageData.content.cardTitle}</p>
-            ) : (
-              <p
-                className="title"
-                data-l10n-id={
-                  messageData.content.title ||
-                  "newtab-new-user-custom-wallpaper-title"
-                }
-              />
-            )}
-            {messageData.content?.cardMessage ? (
-              <p className="subtitle">{messageData.content.cardMessage}</p>
-            ) : (
-              <p
-                className="subtitle"
-                data-l10n-id={
-                  messageData.content.subtitle ||
-                  "newtab-new-user-custom-wallpaper-subtitle"
-                }
-              />
-            )}
+            <div className="wallpaper-feature-highlight-copy">
+              {!isNova && messageData.content?.cardTitle ? (
+                <p className="title">{messageData.content.cardTitle}</p>
+              ) : (
+                <p
+                  className="title"
+                  data-l10n-id={
+                    isNova
+                      ? "newtab-wallpaper-feature-highlight-title"
+                      : messageData.content.title ||
+                        "newtab-new-user-custom-wallpaper-title"
+                  }
+                />
+              )}
+              {!isNova && messageData.content?.cardMessage ? (
+                <p className="subtitle">{messageData.content.cardMessage}</p>
+              ) : (
+                <p
+                  className="subtitle"
+                  data-l10n-id={
+                    isNova
+                      ? "newtab-wallpaper-feature-highlight-subtitle"
+                      : messageData.content.subtitle ||
+                        "newtab-new-user-custom-wallpaper-subtitle"
+                  }
+                />
+              )}
+            </div>
             <span className="button-wrapper">
-              {messageData.content?.cardCta ? (
+              {!isNova && messageData.content?.cardCta ? (
                 <moz-button
-                  type="default"
+                  type={isNova ? "primary" : "default"}
                   onClick={() => onToggleClick("open-customize-menu")}
                   label={messageData.content.cardCta}
                 />
               ) : (
                 <moz-button
-                  type="default"
+                  type={isNova ? "primary" : "default"}
                   onClick={() => onToggleClick("open-customize-menu")}
                   data-l10n-id={
-                    messageData.content.cta ||
-                    "newtab-new-user-custom-wallpaper-cta"
+                    isNova
+                      ? "newtab-wallpaper-feature-highlight-cta"
+                      : messageData.content.cta ||
+                        "newtab-new-user-custom-wallpaper-cta"
                   }
                 />
               )}

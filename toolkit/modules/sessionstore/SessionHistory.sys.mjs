@@ -33,8 +33,8 @@ export var SessionHistory = Object.freeze({
     );
   },
 
-  collectNonWebControlledBlankLoadingSession(browsingContext) {
-    return SessionHistoryInternal.collectNonWebControlledBlankLoadingSession(
+  collectNonWebControlledLoadingSession(browsingContext) {
+    return SessionHistoryInternal.collectNonWebControlledLoadingSession(
       browsingContext
     );
   },
@@ -121,10 +121,10 @@ var SessionHistoryInternal = {
     return data;
   },
 
-  collectNonWebControlledBlankLoadingSession(browsingContext) {
+  collectNonWebControlledLoadingSession(browsingContext) {
     if (
       browsingContext.sessionHistory?.count === 0 &&
-      browsingContext.nonWebControlledBlankURI &&
+      browsingContext.nonWebControlledLoadingURI &&
       browsingContext.mostRecentLoadingSessionHistoryEntry
     ) {
       return {

@@ -19,7 +19,7 @@
 #permission-popup,
 #trustpanel-popup,
 #protections-popup {
-  --panel-width: 30.81em;
+  --controlcenter-popup-content-width: 30.81em;
   /* Set default fill for icons in the identity popup.
      Individual icons can override this. */
   fill: currentColor;
@@ -30,7 +30,7 @@
 }
 
 #protections-popup[toast] {
-  --panel-width: 27.12em;
+  --controlcenter-popup-content-width: 27.12em;
 }
 
 #protections-popup[infoMessageShowing] {
@@ -45,7 +45,7 @@
 }
 
 /* Show the right elements for the right connection states. */
-.site-information-popup[customroot=true] [when-customroot=true],
+.site-information-popup[customroot] [when-customroot],
 .site-information-popup[connection=not-secure] [when-connection~=not-secure],
 .site-information-popup[connection=secure-cert-user-overridden] [when-connection~=secure-cert-user-overridden],
 .site-information-popup[connection=secure-ev] [when-connection~=secure-ev],
@@ -76,6 +76,15 @@
   display: revert;
 }
 
+#identity-popup-content-eu-trust-mark {
+  list-style-image: light-dark(url("chrome://global/skin/icons/EU-trust-mark.svg"), url("chrome://global/skin/icons/EU-trust-mark-inverted.svg"));
+  align-self: start;
+  /* The EU trust mark MUST be at least 64px wide (and 85px tall). */
+  width: 64px;
+  margin-top: var(--space-xlarge);
+  margin-inline-end: var(--space-xlarge);
+}
+
 /* Hide 'not secure' message in subview when weak cipher or mixed content messages are shown. */
 #identity-popup-securityView-extended-info:is([mixedcontent],[ciphers]) > description[when-connection=not-secure],
 /* Hide 'passive-loaded (only)' message when there is mixed passive content loaded and active blocked. */
@@ -94,8 +103,8 @@
 #trustpanel-popup-mainView,
 #trustpanel-blockerView,
 #protections-popup-mainView {
-  min-width: var(--panel-width);
-  max-width: var(--panel-width);
+  min-width: var(--controlcenter-popup-content-width);
+  max-width: var(--controlcenter-popup-content-width);
 }
 
 #protections-popup[toast] #protections-popup-mainView > :not(#protections-popup-mainView-panel-header-section),
@@ -147,7 +156,7 @@
 #permission-popup .panel-header > h1 > span,
 #identity-popup .panel-header > h1 > span {
   /* This is needed for the overflow-wrap to work correctly when the domain name is really long. */
-  max-width: calc(var(--panel-width) - 2 * var(--panel-menuitem-margin-inline));
+  max-width: calc(var(--controlcenter-popup-content-width) - 2 * var(--panel-menuitem-margin-inline));
   overflow-wrap: break-word;
 }
 
@@ -156,7 +165,7 @@
    * icon-full-width is included twice to compensate for the margin-inline-start of the text,
    * used to center it even if the header includes a info button. See .panel-header-with-info-button */
   /* prettier-ignore */
-  max-width: calc(var(--panel-width)
+  max-width: calc(var(--controlcenter-popup-content-width)
                   - var(--panel-menuitem-margin-inline) * 2
                   - var(--panel-header-info-icon-full-width) * 2);
 }
@@ -164,7 +173,7 @@
 #identity-popup .panel-header > .subviewbutton-back + h1 > span {
   /* Same idea as above, but in the identity popup when there's a back button. */
   /* prettier-ignore */
-  max-width: calc(var(--panel-width)
+  max-width: calc(var(--controlcenter-popup-content-width)
                   - var(--panel-menuitem-margin-inline) * 2
                   - var(--panel-header-back-icon-full-width) * 2);
 }
@@ -218,8 +227,8 @@
   list-style-image: url(chrome://global/skin/icons/security-broken.svg);
   margin: var(--panel-menuitem-margin);
   padding: var(--panel-menuitem-padding);
+  padding-block: var(--space-large);
   -moz-context-properties: fill;
-  min-height: 24px;
 }
 
 .site-information-popup[connection="chrome"] .identity-popup-security-connection {
@@ -236,6 +245,10 @@
 
 .site-information-popup[connection^="secure"] .identity-popup-security-connection {
   list-style-image: url(chrome://global/skin/icons/security.svg);
+}
+
+.site-information-popup[connection^="secure"][customroot] .identity-popup-security-connection {
+  list-style-image: url(chrome://global/skin/icons/security-custom-root.svg);
 }
 
 /* Use [isbroken] to make sure we don't show a warning lock on an http page. See Bug 1192162. */
@@ -278,31 +291,52 @@
 
 #identity-popup-securityView-extended-info > button,
 #identity-popup-securityView-extended-info > hbox > .text-link,
-#identity-popup-content-verifier,
-#identity-popup-content-verifier ~ description,
-#identity-popup-content-owner-label {
+#identity-popup-content-owner-label,
+#identity-popup-content-verifier-label,
+#identity-popup-content-etsi,
+#identity-popup-content-cert-exception-overridden {
   margin-block: 0.5em;
 }
 
-#identity-popup-securityView-extended-info > .identity-popup-warning-box {
-  font-weight: var(--font-weight-semibold);
+#identity-popup-content-supplemental {
+  margin-block-end: 0.5em;
 }
 
-#identity-popup-securityView-extended-info > .identity-popup-warning-box > label {
-  display: inline-block;
+#identity-popup-content-verifier {
+  margin-block-end: 0.5em;
 }
 
-#identity-popup-securityView-extended-info > button {
-  margin-inline: 0;
-}
+#identity-popup-securityView-extended-info {
+  margin-inline: var(--panel-menuitem-margin-inline);
 
-@media (-moz-platform: macos) {
-  #identity-popup-securityView-extended-info > button {
-    min-height: 30px;
+  @media not (prefers-contrast) {
+    --card-background-color: color-mix(in srgb, currentColor 2%, transparent);
   }
 
-  #identity-popup-securityView-extended-info > button:focus-visible {
-    outline: var(--focus-outline);
+  #trustpanel-popup:is([connection="chrome"], [connection="file"], [connection="associated"], [connection="extension"]) & {
+    display: none;
+  }
+
+  > .identity-popup-warning-box {
+    font-weight: var(--font-weight-semibold);
+  }
+
+  > .identity-popup-warning-box > label {
+    display: inline-block;
+  }
+
+  > button {
+    margin-inline: 0;
+  }
+
+  @media (-moz-platform: macos) {
+    > button {
+      min-height: 30px;
+    }
+
+    > button:focus-visible {
+      outline: var(--focus-outline);
+    }
   }
 }
 
@@ -393,7 +427,7 @@
   }
 
   > tooltip {
-    max-width: var(--panel-width);
+    max-width: var(--controlcenter-popup-content-width);
   }
 }
 
@@ -904,6 +938,10 @@
     list-style-image: url(chrome://global/skin/icons/security.svg);
   }
 
+  #trustpanel-popup[connection^="secure"][customroot] & {
+    list-style-image: url(chrome://global/skin/icons/security-custom-root.svg);
+  }
+
   #trustpanel-popup[connection="net-error-page"] & {
     list-style-image: url(chrome://global/skin/icons/info.svg);
   }
@@ -981,6 +1019,10 @@
 
 #trustpanel-smartblock-toggle-container {
   margin-block-start: var(--space-large);
+}
+
+#trustpanel-securityInformationView > .panel-header + toolbarseparator {
+  padding-bottom: 0;
 }
 
 .moz-button-subviewbutton-nav {

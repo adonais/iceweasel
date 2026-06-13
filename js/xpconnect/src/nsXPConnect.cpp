@@ -32,6 +32,7 @@
 #include "mozilla/dom/DOMException.h"
 #include "mozilla/dom/Exceptions.h"
 #include "mozilla/dom/Promise.h"
+#include "mozilla/dom/WorkerCommon.h"
 #include "mozilla/glean/bindings/Glean.h"
 #include "mozilla/glean/bindings/GleanPings.h"
 #include "mozilla/ScriptPreloader.h"
@@ -1145,6 +1146,17 @@ bool IsNotUAWidget(JSContext* cx, JSObject* /* unused */) {
   JS::Compartment* c = JS::GetCompartmentForRealm(realm);
 
   return !IsUAWidgetCompartment(c);
+}
+
+bool IsChromeOrWorkerDebugger(JSContext* cx, JSObject* /* unused */) {
+  // Replicates ChromeOnly checks
+  if (nsContentUtils::ThreadsafeIsSystemCaller(cx)) {
+    return true;
+  }
+
+  // But also accept WorkerDebugger modules used by DevTools.
+  JS::Rooted<JSObject*> global(cx, JS::CurrentGlobalOrNull(cx));
+  return IsWorkerDebuggerGlobal(global);
 }
 
 extern bool IsCurrentThreadRunningChromeWorker();

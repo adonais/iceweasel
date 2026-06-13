@@ -31,7 +31,8 @@ std::ostream& operator<<(std::ostream& aStream, PseudoStyleType aType) {
 
 /* static */
 Maybe<PseudoStyleRequest> PseudoStyleRequest::Parse(
-    const nsAString& aPseudoElement, bool aIgnoreEnabledState) {
+    const nsAString& aPseudoElement, URLExtraData* aURLExtraData,
+    bool aIgnoreEnabledState) {
   PseudoStyleRequest result;
 
   // Not a pseudo-element, use default PseudoStyleReqeust.
@@ -40,8 +41,8 @@ Maybe<PseudoStyleRequest> PseudoStyleRequest::Parse(
   }
 
   // Parse the pseudo-element string.
-  if (!Servo_ParsePseudoElement(&aPseudoElement, aIgnoreEnabledState,
-                                &result)) {
+  if (!Servo_ParsePseudoElement(&aPseudoElement, aURLExtraData,
+                                aIgnoreEnabledState, &result)) {
     return Nothing();
   }
 

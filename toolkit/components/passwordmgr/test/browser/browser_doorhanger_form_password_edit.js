@@ -395,7 +395,7 @@ async function testPasswordChange(
     },
     async function (browser) {
       info(`Opened tab with url: ${url}, waiting for focus`);
-      await SimpleTest.promiseFocus(browser.ownerGlobal);
+      await SimpleTest.promiseFocus(browser.documentGlobal);
       info("Waiting for form-processed message");
       await formProcessedPromise;
       await initForm(browser, formDefaults, { passwordFieldType });

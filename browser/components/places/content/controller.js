@@ -1665,7 +1665,7 @@ var PlacesControllerDragHelper = {
       } else if (
         XULElement.isInstance(data) &&
         data.localName == "tab" &&
-        data.ownerGlobal.isChromeWindow
+        data.documentGlobal.isChromeWindow
       ) {
         let uri = data.linkedBrowser.currentURI;
         let spec = uri ? uri.spec : "about:blank";
@@ -1677,7 +1677,7 @@ var PlacesControllerDragHelper = {
       } else if (
         XULElement.isInstance(data) &&
         data.localName == "tab-split-view-wrapper" &&
-        data.ownerGlobal.isChromeWindow
+        data.documentGlobal.isChromeWindow
       ) {
         // Splitview tabs are dragged together via tab-split-view-wrapper, so that means
         // mozItemCount/dropCount is 1, which is why we unpack its tabs to bookmark here.

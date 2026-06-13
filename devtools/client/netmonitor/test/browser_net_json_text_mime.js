@@ -76,7 +76,7 @@ add_task(async function () {
   ok(rawResponseToggle.checked, "Raw toggle is checked");
   wait = waitForDOM(document, "#response-panel .data-header");
   rawResponseToggle.focus();
-  EventUtils.synthesizeKey("VK_SPACE", {}, rawResponseToggle.ownerGlobal);
+  EventUtils.synthesizeKey("VK_SPACE", {}, rawResponseToggle.documentGlobal);
   await wait;
   ok(!rawResponseToggle.checked, "Raw toggle is unchecked");
 

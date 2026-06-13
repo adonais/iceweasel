@@ -57,16 +57,9 @@ static bool IID_MayResolve(const JSAtomState& names, jsid id,
                            JSObject* maybeObj);
 
 static const JSClassOps sIID_ClassOps = {
-    nullptr,           // addProperty
-    nullptr,           // delProperty
-    nullptr,           // enumerate
-    IID_NewEnumerate,  // newEnumerate
-    IID_Resolve,       // resolve
-    IID_MayResolve,    // mayResolve
-    nullptr,           // finalize
-    nullptr,           // call
-    nullptr,           // construct
-    nullptr,           // trace
+    .newEnumerate = IID_NewEnumerate,
+    .resolve = IID_Resolve,
+    .mayResolve = IID_MayResolve,
 };
 
 // Interface ID objects use a single reserved slot containing a pointer to the

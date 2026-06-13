@@ -96,7 +96,6 @@
 
 #  if defined(MOZ_OXIDIZED_BREAKPAD)
 #    include "mozilla/toolkit/crashreporter/rust_minidump_writer_linux_ffi_generated.h"
-#    include <mutex>
 #    include <sys/auxv.h>
 #  endif  // defined(MOZ_OXIDIZED_BREAKPAD)
 
@@ -1375,7 +1374,8 @@ static void WriteAnnotationsForMainProcessCrash(PlatformWriter& pw,
   // Add a unique identifier for this crash event.
   {
     NSID_TrimBracketsASCII uuidString(nsID::GenerateUUID());
-    writer.Write(Annotation::CrashID, uuidString.Data(), uuidString.Length());
+    writer.Write(Annotation::CrashEventID, uuidString.Data(),
+                 uuidString.Length());
   }
 
   if (inactiveStateStart) {
@@ -3192,7 +3192,7 @@ static void AddSharedAnnotations(AnnotationTable& aAnnotations) {
 
       if (!value.IsEmpty() && aAnnotations[key].IsEmpty() &&
           ShouldIncludeAnnotation(key, value.get())) {
-        aAnnotations[key] = value;
+        aAnnotations[key] = std::move(value);
       }
     }
   }
@@ -3326,11 +3326,13 @@ void SetCrashHelperPipes(FileHandle breakpadFd, FileHandle crashHelperFd) {
 }
 #endif  // defined(MOZ_WIDGET_ANDROID)
 
-CrashPipeType GetChildNotificationPipe() {
-  if (!GetEnabled()) {
-    return nullptr;
-  }
+#if defined(XP_WIN) || defined(XP_MACOSX) || defined(XP_IOS)
+using CrashPipeType = const char*;
+#else
+using CrashPipeType = mozilla::UniqueFileHandle;
+#endif
 
+static CrashPipeType GetChildNotificationPipe() {
 #if defined(XP_WIN) || defined(XP_MACOSX)
   return childCrashNotifyPipe.get();
 #elif defined(XP_LINUX)
@@ -3338,13 +3340,27 @@ CrashPipeType GetChildNotificationPipe() {
 #endif
 }
 
-bool RegisterChildIPCChannel(mozilla::geckoargs::ChildProcessArgs& aArgs) {
+bool RegisterChildIPCChannel(mozilla::geckoargs::ChildProcessArgs& aArgs,
+                             GeckoChildID aID) {
   StaticMutexAutoLock lock(gCrashHelperClientMutex);
   if (gCrashHelperClient) {
-    RawIPCConnector connector = {};
-    if (!register_child_ipc_channel(gCrashHelperClient, &connector)) {
+    auto childNotificationPipe = CrashReporter::GetChildNotificationPipe();
+#if defined(XP_WIN) || defined(XP_MACOSX) || defined(XP_IOS)
+    geckoargs::sCrashReporter.Put(childNotificationPipe, aArgs);
+#else
+    if (!childNotificationPipe) {
+      NS_WARNING("Could not create the child crash notification pipe");
       return false;
     }
+    geckoargs::sCrashReporter.Put(std::move(childNotificationPipe), aArgs);
+#endif  // defined(XP_MACOSX) || defined(XP_IOS) || defined(XP_WIN)
+
+    RawIPCConnector connector = {};
+    if (!register_child_ipc_channel(gCrashHelperClient, aID, &connector)) {
+      return false;
+    }
+
+    geckoargs::sCrashHelperPid.Put(crash_helper_pid(gCrashHelperClient), aArgs);
 
 #if defined(XP_DARWIN)
     UniqueMachSendRight send_right{connector.send};
@@ -3374,6 +3390,18 @@ bool RegisterChildIPCChannel(mozilla::geckoargs::ChildProcessArgs& aArgs) {
 
   return false;
 }
+
+#if defined(XP_WIN)
+bool ChildProcessProxyRendezvous(GeckoChildID aID, DWORD aPid, HANDLE aHandle) {
+  StaticMutexAutoLock lock(gCrashHelperClientMutex);
+  if (gCrashHelperClient) {
+    return child_process_proxy_rendezvous(gCrashHelperClient, aID, aPid,
+                                          aHandle);
+  }
+
+  return false;
+}
+#endif  // defined(XP_WIN)
 
 bool SetRemoteExceptionHandler(int& aArgc, char** aArgv) {
   MOZ_ASSERT(!gExceptionHandler, "crash client already init'd");
@@ -3409,7 +3437,11 @@ bool SetRemoteExceptionHandler(int& aArgc, char** aArgv) {
 #  endif  // defined(XP_WIN)
 #endif    // defined(XP_DARWIN)
 
-  crash_helper_rendezvous(raw_connector, GetGeckoChildID());
+  auto pid_arg = geckoargs::sCrashHelperPid.Get(aArgc, aArgv);
+  Pid pid = static_cast<Pid>(pid_arg.valueOr(0));
+
+  crash_helper_rendezvous(raw_connector, GetGeckoChildID(),
+                          pid_arg.isSome() ? &pid : nullptr);
   RegisterRuntimeExceptionModule();
   InitializeAppNotes();
   RegisterAnnotations();

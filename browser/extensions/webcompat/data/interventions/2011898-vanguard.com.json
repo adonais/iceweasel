@@ -6,12 +6,13 @@
       "matches": ["*://funds.web.vanguard.com/n/*"]
     }
   },
+  "css": {
+    "fix_obscured_inputs": "button:-moz-focusring, input:-moz-focusring, select:-moz-focusring { color: inherit; }"
+  },
   "interventions": [
     {
       "platforms": ["all"],
-      "content_scripts": {
-        "css": ["bug2011898-vanguard.com-fix-obscured-inputs.css"]
-      }
+      "css": ["fix_obscured_inputs"]
     }
   ]
 }

@@ -312,7 +312,7 @@ class DateTimeInfo {
 
   enum class TimeZoneStatus : uint8_t { Valid, NeedsUpdate, UpdateIfChanged };
 
-  TimeZoneStatus timeZoneStatus_;
+  TimeZoneStatus timeZoneStatus_ = TimeZoneStatus::NeedsUpdate;
 
   /**
    * The offset in seconds from the current UTC time to the current local
@@ -352,7 +352,7 @@ class DateTimeInfo {
    * zone, this field is reused as the time zone cache key. See also
    * |timeZoneCacheKey()| and |updateTimeZoneOverride()|.
    */
-  int32_t utcToLocalStandardOffsetSeconds_;
+  int32_t utcToLocalStandardOffsetSeconds_ = 0;
 
   RangeCache dstRange_;  // UTC-based ranges
 

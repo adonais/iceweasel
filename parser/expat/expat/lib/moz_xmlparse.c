@@ -117,9 +117,9 @@ MOZ_XML_SetParamEntityParsing(XML_Parser parser,
   return XML_SetParamEntityParsing(parser, parsing);
 }
 
-int
-MOZ_XML_SetHashSalt(XML_Parser parser, unsigned long hash_salt) {
-  return XML_SetHashSalt(parser, hash_salt);
+XML_Bool
+MOZ_XML_SetHashSalt16Bytes(XML_Parser parser, const char entropy[16]) {
+  return XML_SetHashSalt16Bytes(parser, (const uint8_t *)entropy);
 }
 
 int

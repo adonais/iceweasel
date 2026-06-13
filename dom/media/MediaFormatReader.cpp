@@ -5,7 +5,6 @@
 #include "MediaFormatReader.h"
 
 #include <algorithm>
-#include <queue>
 
 #include "AOMDecoder.h"
 #include "AllocationPolicy.h"

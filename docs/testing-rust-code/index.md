@@ -16,7 +16,7 @@ crates. Which method should be used depends on the circumstances.
 
 If a Mozilla crate has "normal" Rust tests (i.e. `#[test]` functions that run
 with `cargo test`), you can add the crate's name to `RUST_TESTS` in
-[toolkit/library/rust/moz.build](https://searchfox.org/mozilla-central/source/toolkit/library/rust/moz.build).
+[toolkit/library/rust/moz.build](https://searchfox.org/firefox-main/source/toolkit/library/rust/moz.build).
 (Cargo features can be activated for Rust tests by adding them to
 `RUST_TEST_FEATURES` in the same file.)
 
@@ -44,12 +44,12 @@ call into Rust code. This requires the following steps.
   references the Rust file, and a `moz.build` file that references the C++
   file.
 - Add an entry to the `[dependencies]` section in
-  [toolkit/library/gtest/rust/Cargo.toml](https://searchfox.org/mozilla-central/source/toolkit/library/gtest/rust/Cargo.toml).
+  [toolkit/library/gtest/rust/Cargo.toml](https://searchfox.org/firefox-main/source/toolkit/library/gtest/rust/Cargo.toml).
 - Add an `extern crate` entry to
-  [toolkit/library/gtest/rust/lib.rs](https://searchfox.org/mozilla-central/source/toolkit/library/gtest/rust/lib.rs).
+  [toolkit/library/gtest/rust/lib.rs](https://searchfox.org/firefox-main/source/toolkit/library/gtest/rust/lib.rs).
 
 See
-[xpcom/rust/gtest/nsstring/](https://searchfox.org/mozilla-central/source/xpcom/rust/gtest/nsstring)
+[xpcom/rust/gtest/nsstring/](https://searchfox.org/firefox-main/source/xpcom/rust/gtest/nsstring)
 for a simple example. (Note that the `moz.build` file is in the parent
 directory for that crate.)
 

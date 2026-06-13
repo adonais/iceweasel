@@ -7,13 +7,16 @@ package org.mozilla.geckoview;
 import androidx.annotation.AnyThread;
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import org.mozilla.gecko.EventDispatcher;
 import org.mozilla.gecko.util.GeckoBundle;
+import org.mozilla.gecko.util.ThreadUtils;
 
 /**
  * ContentBlockingController is used to manage and modify the content blocking exception list. This
@@ -239,5 +242,122 @@ public class ContentBlockingController {
         .getEventDispatcher()
         .queryBundle("ContentBlocking:RequestLog")
         .map(this::logFromBundle);
+  }
+
+  /**
+   * An entry from the content blocking aggregate database. The tracker type constants are expected
+   * to match the same from nsITrackingDBService.
+   */
+  @AnyThread
+  public static class TrackingDbEvent {
+    /** Generic cookies. */
+    public static final int OTHER_COOKIES_BLOCKED_ID = 0;
+
+    /** Generic tracking scripts. */
+    public static final int TRACKERS_ID = 1;
+
+    /** Generic tracking cookies. */
+    public static final int TRACKING_COOKIES_ID = 2;
+
+    /** Cryptocurrency miners. */
+    public static final int CRYPTOMINERS_ID = 3;
+
+    /** Fingerprinting trackers. */
+    public static final int FINGERPRINTERS_ID = 4;
+
+    /** Social trackers from the social-track-digest256 list. */
+    public static final int SOCIAL_ID = 5;
+
+    /** Scripts potentially aiding in fingerprinting. */
+    public static final int SUSPICIOUS_FINGERPRINTERS_ID = 6;
+
+    /**
+     * Redirect-based trackers. [Bounce tracking
+     * mitigations](https://developer.mozilla.org/en-US/docs/Web/Privacy/Guides/Bounce_tracking_mitigations)
+     */
+    public static final int BOUNCETRACKERS_ID = 7;
+
+    /** The tracker type for this event. */
+    public final int type;
+
+    /** The aggregated count for this type on the given date. */
+    public final int count;
+
+    /** The date for this event, in "YYYY-MM-DD" format. May be null if this is not known. */
+    public final @Nullable String date;
+
+    /* package */ TrackingDbEvent(final @NonNull GeckoBundle bundle) {
+      type = bundle.getInt("type");
+      count = bundle.getInt("count");
+      date = bundle.getString("date", null);
+    }
+
+    /** Protected constructor for TrackingDBEvent. */
+    protected TrackingDbEvent() {
+      type = 0;
+      count = 0;
+      date = null;
+    }
+  }
+
+  /**
+   * Get content blocking events aggregated by date and type for a given date range.
+   *
+   * @param dateFrom Start of the date range, in milliseconds since epoch.
+   * @param dateTo End of the date range, in milliseconds since epoch.
+   * @return A {@link GeckoResult} that resolves to the list of tracking database events.
+   */
+  @HandlerThread
+  public @NonNull GeckoResult<List<TrackingDbEvent>> getTrackingDbEventsByDateRange(
+      final long dateFrom, final long dateTo) {
+    ThreadUtils.assertOnHandlerThread();
+
+    final GeckoBundle msg = new GeckoBundle(2);
+    msg.putLong("dateFrom", dateFrom);
+    msg.putLong("dateTo", dateTo);
+    return EventDispatcher.getInstance()
+        .queryBundle("GeckoView:TrackingDB:GetEventsByDateRange", msg)
+        .map(this::eventsFromBundle);
+  }
+
+  /**
+   * Get the total count of all content blocking events ever recorded.
+   *
+   * @return A {@link GeckoResult} that resolves to the total event count.
+   */
+  @HandlerThread
+  public @NonNull GeckoResult<Integer> sumAllTrackingDbEvents() {
+    ThreadUtils.assertOnHandlerThread();
+
+    return EventDispatcher.getInstance()
+        .queryBundle("GeckoView:TrackingDB:SumAllEvents")
+        .map(bundle -> bundle.getInt("sum", 0));
+  }
+
+  /**
+   * Get the earliest recorded date in the content blocking database.
+   *
+   * @return A {@link GeckoResult} that resolves to the earliest date as milliseconds since epoch,
+   *     or 0 if no data exists.
+   */
+  @HandlerThread
+  public @NonNull GeckoResult<Long> getTrackingDbEarliestRecordedDate() {
+    ThreadUtils.assertOnHandlerThread();
+
+    return EventDispatcher.getInstance()
+        .queryBundle("GeckoView:TrackingDB:GetEarliestRecordedDate")
+        .map(bundle -> bundle.getLong("date", 0L));
+  }
+
+  private List<TrackingDbEvent> eventsFromBundle(final GeckoBundle value) {
+    final GeckoBundle[] bundles = value.getBundleArray("events");
+    if (bundles == null) {
+      return Collections.emptyList();
+    }
+    final ArrayList<TrackingDbEvent> list = new ArrayList<>(bundles.length);
+    for (final GeckoBundle b : bundles) {
+      list.add(new TrackingDbEvent(b));
+    }
+    return Collections.unmodifiableList(list);
   }
 }

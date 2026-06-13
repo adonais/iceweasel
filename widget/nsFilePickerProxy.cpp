@@ -145,7 +145,7 @@ nsFilePickerProxy::Open(nsIFilePickerShownCallback* aCallback) {
 
 mozilla::ipc::IPCResult nsFilePickerProxy::Recv__delete__(
     const MaybeInputData& aData, const nsIFilePicker::ResultCode& aResult) {
-  auto* global = GetOwnerGlobal();
+  auto* global = GetRelevantGlobal();
   if (NS_WARN_IF(!global)) {
     return IPC_OK();
   }

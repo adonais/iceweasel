@@ -530,7 +530,7 @@ class PermissionPrompt {
       return;
     }
 
-    let chromeWin = this.browser.ownerGlobal;
+    let chromeWin = this.browser.documentGlobal;
     if (!chromeWin.PopupNotifications) {
       this.cancel();
       return;
@@ -606,7 +606,7 @@ class PermissionPrompt {
   postPrompt() {
     let browser = this.browser;
     let principal = this.principal;
-    let chromeWin = browser.ownerGlobal;
+    let chromeWin = browser.documentGlobal;
     if (!chromeWin.PopupNotifications) {
       return;
     }
@@ -666,7 +666,7 @@ class PermissionPrompt {
   }
 
   #showNotification(actions, postPrompt = false) {
-    let chromeWin = this.browser.ownerGlobal;
+    let chromeWin = this.browser.documentGlobal;
     let mainAction = actions.length ? actions[0] : null;
     let secondaryActions = actions.splice(1);
 
@@ -682,7 +682,7 @@ class PermissionPrompt {
       options.hideClose = true;
     }
 
-    options.eventCallback = (topic, nextRemovalReason, isCancel) => {
+    options.eventCallback = (topic, nextRemovalReason, withoutUserResponse) => {
       // When the docshell of the browser is aboout to be swapped to another one,
       // the "swapping" event is called. Returning true causes the notification
       // to be moved to the new browser.
@@ -703,7 +703,7 @@ class PermissionPrompt {
       // You can remove this restriction if you need it, but be
       // mindful of other consumers.
       if (topic == "removed" && !postPrompt) {
-        if (isCancel) {
+        if (withoutUserResponse) {
           this.cancel();
         }
         this.onAfterShow();
@@ -881,7 +881,7 @@ class GeolocationPermissionPrompt extends PermissionPromptForRequest {
     // Don't offer "always remember" action in PB mode
     options.checkbox = {
       show: !lazy.PrivateBrowsingUtils.isWindowPrivate(
-        this.browser.ownerGlobal
+        this.browser.documentGlobal
       ),
     };
 
@@ -968,7 +968,7 @@ class GeolocationPermissionPrompt extends PermissionPromptForRequest {
   }
 
   #updateGeoSharing(state) {
-    let gBrowser = this.browser.ownerGlobal.gBrowser;
+    let gBrowser = this.browser.documentGlobal.gBrowser;
     if (gBrowser == null) {
       return;
     }
@@ -1039,7 +1039,7 @@ class XRPermissionPrompt extends PermissionPromptForRequest {
     // Don't offer "always remember" action in PB mode
     options.checkbox = {
       show: !lazy.PrivateBrowsingUtils.isWindowPrivate(
-        this.browser.ownerGlobal
+        this.browser.documentGlobal
       ),
     };
 
@@ -1085,7 +1085,7 @@ class XRPermissionPrompt extends PermissionPromptForRequest {
   }
 
   #updateXRSharing(state) {
-    let gBrowser = this.browser.ownerGlobal.gBrowser;
+    let gBrowser = this.browser.documentGlobal.gBrowser;
     if (gBrowser == null) {
       return;
     }
@@ -1181,7 +1181,7 @@ class LNAPermissionPromptBase extends PermissionPromptForRequest {
   }
 
   #removePrompt() {
-    let chromeWin = this.browser?.ownerGlobal;
+    let chromeWin = this.browser?.documentGlobal;
     let notification = chromeWin?.PopupNotifications.getNotification(
       this.notificationID,
       this.browser
@@ -1227,7 +1227,7 @@ class LoopbackNetworkPermissionPrompt extends LNAPermissionPromptBase {
     // Don't offer "always remember" action in PB mode
     options.checkbox = {
       show: !lazy.PrivateBrowsingUtils.isWindowPrivate(
-        this.browser.ownerGlobal
+        this.browser.documentGlobal
       ),
     };
 
@@ -1542,7 +1542,7 @@ class LocalNetworkPermissionPrompt extends LNAPermissionPromptBase {
     // Don't offer "always remember" action in PB mode
     options.checkbox = {
       show: !lazy.PrivateBrowsingUtils.isWindowPrivate(
-        this.browser.ownerGlobal
+        this.browser.documentGlobal
       ),
     };
 
@@ -1622,7 +1622,7 @@ class PersistentStoragePermissionPrompt extends PermissionPromptForRequest {
 
     options.checkbox = {
       show: !lazy.PrivateBrowsingUtils.isWindowPrivate(
-        this.browser.ownerGlobal
+        this.browser.documentGlobal
       ),
     };
 
@@ -1713,7 +1713,7 @@ class MIDIPermissionPrompt extends SitePermsAddonInstallRequest {
     // Don't offer "always remember" action in PB mode
     options.checkbox = {
       show: !lazy.PrivateBrowsingUtils.isWindowPrivate(
-        this.browser.ownerGlobal
+        this.browser.documentGlobal
       ),
     };
 
@@ -2004,7 +2004,7 @@ class SerialPermissionPrompt extends SitePermsAddonInstallRequest {
         },
       };
 
-      let chromeWin = this.browser.ownerGlobal;
+      let chromeWin = this.browser.documentGlobal;
       notification = chromeWin.PopupNotifications.show(
         this.browser,
         this.notificationID,

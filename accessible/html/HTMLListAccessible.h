@@ -31,7 +31,7 @@ class HTMLListAccessible : public HyperTextAccessible {
   virtual uint64_t NativeState() const override;
 
  protected:
-  virtual ~HTMLListAccessible() {}
+  virtual ~HTMLListAccessible() = default;
 };
 
 /**
@@ -53,7 +53,7 @@ class HTMLLIAccessible : public HyperTextAccessible {
   LocalAccessible* Bullet() const;
 
  protected:
-  virtual ~HTMLLIAccessible() {}
+  virtual ~HTMLLIAccessible() = default;
 };
 
 /**
@@ -62,7 +62,7 @@ class HTMLLIAccessible : public HyperTextAccessible {
 class HTMLListBulletAccessible : public LeafAccessible {
  public:
   HTMLListBulletAccessible(nsIContent* aContent, DocAccessible* aDoc);
-  virtual ~HTMLListBulletAccessible() {}
+  virtual ~HTMLListBulletAccessible() = default;
 
   // LocalAccessible
   virtual ENameValueFlag DirectName(nsString& aName) const override;

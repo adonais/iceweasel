@@ -44,6 +44,7 @@ import org.mockito.Mockito.doReturn
 import org.mockito.Mockito.spy
 import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
+import kotlin.test.assertIs
 
 @RunWith(AndroidJUnit4::class)
 class AppLinksInterceptorTest {
@@ -679,7 +680,7 @@ class AppLinksInterceptorTest {
         )
 
         var response = appLinksInterceptor.onLoadRequest(mockEngineSession, webUrlWithAppLink, null, true, false, false, false, false)
-        assertTrue(response is RequestInterceptor.InterceptionResponse.AppIntent)
+        assertIs<RequestInterceptor.InterceptionResponse.AppIntent>(response)
 
         response = appLinksInterceptor.onLoadRequest(mockEngineSession, webUrlWithAppLink, null, true, false, false, false, false)
         assertNull(response)
@@ -697,7 +698,7 @@ class AppLinksInterceptorTest {
         assert(response is RequestInterceptor.InterceptionResponse.Url)
 
         response = appLinksInterceptor.onLoadRequest(mockEngineSession, webUrlWithAppLink, null, true, false, false, false, false)
-        assertTrue(response is RequestInterceptor.InterceptionResponse.AppIntent)
+        assertIs<RequestInterceptor.InterceptionResponse.AppIntent>(response)
     }
 
     @Test
@@ -849,7 +850,7 @@ class AppLinksInterceptorTest {
             failedToLaunchAction = any(),
         )
 
-        assertTrue(response is RequestInterceptor.InterceptionResponse.Deny)
+        assertIs<RequestInterceptor.InterceptionResponse.Deny>(response)
     }
 
     @Test
@@ -903,7 +904,7 @@ class AppLinksInterceptorTest {
             failedToLaunchAction = any(),
         )
 
-        assertTrue(response is RequestInterceptor.InterceptionResponse.Deny)
+        assertIs<RequestInterceptor.InterceptionResponse.Deny>(response)
     }
 
     @Test

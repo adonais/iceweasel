@@ -18,7 +18,6 @@
 #include "mozilla/RelativeTo.h"
 #include "mozilla/ScrollSnapInfo.h"
 #include "mozilla/ServoBindings.h"
-#include "mozilla/ParamTraits_IsEnumCase.h"
 #include "mozilla/ParamTraits_TiedFields.h"
 #include "mozilla/ipc/ByteBuf.h"
 #include "mozilla/ipc/ProtocolMessageUtils.h"
@@ -441,9 +440,16 @@ struct ParamTraits<mozilla::StyleScrollSnapStop>
           mozilla::StyleScrollSnapStop, mozilla::StyleScrollSnapStop::Normal,
           mozilla::StyleScrollSnapStop::Always> {};
 
+struct ScrollSnapTargetIdValidator {
+  using IntegralType = std::underlying_type_t<mozilla::ScrollSnapTargetId>;
+
+  static bool IsLegalValue(const IntegralType e) { return true; }
+};
+
 template <>
 struct ParamTraits<mozilla::ScrollSnapTargetId>
-    : public ParamTraits_IsEnumCase<mozilla::ScrollSnapTargetId> {};
+    : public EnumSerializer<mozilla::ScrollSnapTargetId,
+                            ScrollSnapTargetIdValidator> {};
 
 template <>
 struct ParamTraits<mozilla::SnapPoint> {

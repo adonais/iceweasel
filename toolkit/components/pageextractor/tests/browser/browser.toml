@@ -8,16 +8,6 @@ support-files = [
 ]
 
 ["browser_dom_extractor.js"]
-skip-if = [
-  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland' && standalone", # Bug 2013672
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && standalone", # Bug 2013672
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt", # Bug 2013672
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 2013672
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'", # Bug 2013672
-  "os == 'win' && os_version == '11.26200' && arch == 'x86_64'", # Bug 2013672
-  "os == 'win' && os_version == '11.26100' && arch == 'x86'", # Bug 2013672
-  "os == 'win' && os_version == '11.26200' && arch == 'x86'", # Bug 2013672
-]
 
 ["browser_dom_extractor_pdf.js"]
 
@@ -25,6 +15,8 @@ skip-if = [
 skip-if = [
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && opt", # Bug 1996139
 ]
+
+["browser_dom_extractor_search_tool.js"]
 
 ["browser_headless_extractor.js"]
 skip-if = [

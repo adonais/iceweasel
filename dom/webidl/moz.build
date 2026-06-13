@@ -53,6 +53,9 @@ with Files("CSS*"):
 with Files("Canvas*"):
     BUG_COMPONENT = ("Core", "Graphics: Canvas2D")
 
+with Files("CharacterBoundsUpdateEvent.webidl"):
+    BUG_COMPONENT = ("Core", "DOM: Editor")
+
 with Files("Caret*"):
     BUG_COMPONENT = ("Core", "DOM: Editor")
 
@@ -106,6 +109,9 @@ with Files("DelayNode.webidl"):
 
 with Files("DynamicsCompressorNode.webidl"):
     BUG_COMPONENT = ("Core", "Web Audio")
+
+with Files("EditContext.webidl"):
+    BUG_COMPONENT = ("Core", "DOM: Editor")
 
 with Files("FeaturePolicy.webidl"):
     BUG_COMPONENT = ("Core", "DOM: Security")
@@ -326,8 +332,14 @@ with Files("TCP*"):
 with Files("TextEvent.webidl"):
     BUG_COMPONENT = ("Core", "DOM: UI Events & Focus Handling")
 
+with Files("TextFormat*"):
+    BUG_COMPONENT = ("Core", "DOM: Editor")
+
 with Files("TextTrack*"):
     BUG_COMPONENT = ("Core", "Audio/Video")
+
+with Files("TextUpdateEvent.webidl"):
+    BUG_COMPONENT = ("Core", "DOM: Editor")
 
 with Files("TrackEvent.webidl"):
     BUG_COMPONENT = ("Core", "Audio/Video")
@@ -355,6 +367,9 @@ with Files("VRDisplay.webidl"):
 
 with Files("Video*"):
     BUG_COMPONENT = ("Core", "Audio/Video")
+
+with Files("ViewTimeline.webidl"):
+    BUG_COMPONENT = ("Core", "DOM: Animation")
 
 with Files("ViewTransition.webidl"):
     BUG_COMPONENT = ("Core", "CSS Parsing and Computation")
@@ -590,6 +605,7 @@ WEBIDL_FILES = [
     "DOMTokenList.webidl",
     "DragEvent.webidl",
     "DynamicsCompressorNode.webidl",
+    "EditContext.webidl",
     "Element.webidl",
     "ElementInternals.webidl",
     "EncodedAudioChunk.webidl",
@@ -711,6 +727,7 @@ WEBIDL_FILES = [
     "HTMLProgressElement.webidl",
     "HTMLQuoteElement.webidl",
     "HTMLScriptElement.webidl",
+    "HTMLSelectedContentElement.webidl",
     "HTMLSelectElement.webidl",
     "HTMLSlotElement.webidl",
     "HTMLSourceElement.webidl",
@@ -729,6 +746,7 @@ WEBIDL_FILES = [
     "HTMLTrackElement.webidl",
     "HTMLUListElement.webidl",
     "HTMLVideoElement.webidl",
+    "HyperlinkElementUtils.webidl",
     "IDBCursor.webidl",
     "IDBDatabase.webidl",
     "IDBFactory.webidl",
@@ -898,6 +916,7 @@ WEBIDL_FILES = [
     "ScreenOrientation.webidl",
     "ScriptProcessorNode.webidl",
     "ScrollAreaEvent.webidl",
+    "ScrollTimeline.webidl",
     "Selection.webidl",
     "Serial.webidl",
     "SerialPort.webidl",
@@ -1041,6 +1060,8 @@ WEBIDL_FILES = [
     "TextEncoder.webidl",
     "TextEncoderStream.webidl",
     "TextEvent.webidl",
+    "TextFormat.webidl",
+    "TextFormatUpdateEvent.webidl",
     "TextTrack.webidl",
     "TextTrackCue.webidl",
     "TextTrackCueList.webidl",
@@ -1074,6 +1095,7 @@ WEBIDL_FILES = [
     "VideoPlaybackQuality.webidl",
     "VideoTrack.webidl",
     "VideoTrackList.webidl",
+    "ViewTimeline.webidl",
     "ViewTransition.webidl",
     "VisualViewport.webidl",
     "VRDisplay.webidl",
@@ -1228,6 +1250,7 @@ GENERATED_EVENTS_WEBIDL_FILES = [
     "AnimationPlaybackEvent.webidl",
     "BlobEvent.webidl",
     "CaretStateChangedEvent.webidl",
+    "CharacterBoundsUpdateEvent.webidl",
     "CloseEvent.webidl",
     "ContentVisibilityAutoStateChangeEvent.webidl",
     "DeviceLightEvent.webidl",
@@ -1267,6 +1290,7 @@ GENERATED_EVENTS_WEBIDL_FILES = [
     "TCPServerSocketEvent.webidl",
     "TCPSocketErrorEvent.webidl",
     "TCPSocketEvent.webidl",
+    "TextUpdateEvent.webidl",
     "TrackEvent.webidl",
     "UDPMessageEvent.webidl",
     "UserProximityEvent.webidl",

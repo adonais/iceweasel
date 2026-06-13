@@ -392,12 +392,29 @@ NS_IMETHODIMP nsExternalHelperAppService::GetPreferredDownloadsDirectory(
  * set.)
  *
  * Optionally, skip availability of the directory and storage.
+ *
+ * Also optionally, if a CanonicalBrowsingContext is provided and its top-level
+ * context has a DownloadFolderOverride set, that directory is used instead.
  */
 static Result<nsCOMPtr<nsIFile>, nsresult> GetInitialDownloadDirectory(
-    bool aSkipChecks = false) {
+    bool aSkipChecks = false,
+    CanonicalBrowsingContext* aBrowsingContext = nullptr) {
 #if defined(ANDROID)
   return Err(NS_ERROR_FAILURE);
 #else
+
+  if (aBrowsingContext) {
+    nsString folderPath;
+    aBrowsingContext->Top()->GetDownloadFolderOverride(folderPath);
+    if (!folderPath.IsEmpty()) {
+      nsCOMPtr<nsIFile> dir;
+      nsresult rv = NS_NewLocalFile(folderPath, getter_AddRefs(dir));
+      if (NS_SUCCEEDED(rv)) {
+        return dir;
+      }
+    }
+  }
+
   if (StaticPrefs::browser_download_start_downloads_in_tmp_dir()) {
     return GetOsTmpDownloadDirectory();
   }
@@ -1436,7 +1453,8 @@ void nsExternalAppHandler::RetargetLoadNotifications(nsIRequest* request) {
 nsresult nsExternalAppHandler::SetUpTempFile(nsIChannel* aChannel) {
   // First we need to try to get the destination directory for the temporary
   // file.
-  auto res = GetInitialDownloadDirectory();
+  auto res = GetInitialDownloadDirectory(
+      false, mBrowsingContext ? mBrowsingContext->Canonical() : nullptr);
   if (res.isErr()) return res.unwrapErr();
   mTempFile = res.unwrap();
 
@@ -1696,7 +1714,8 @@ NS_IMETHODIMP nsExternalAppHandler::OnStartRequest(nsIRequest* request) {
     mCanceled = true;
     request->Cancel(transferError);
 
-    auto res = GetInitialDownloadDirectory(true);
+    auto res = GetInitialDownloadDirectory(
+        true, mBrowsingContext ? mBrowsingContext->Canonical() : nullptr);
     if (res.isErr()) {
       // Just send the file name as we can't get a download path.
       // TODO: evaluate adding a more specific error here.
@@ -2423,7 +2442,8 @@ nsresult nsExternalAppHandler::CreateFailedTransfer() {
   if (!mFinalFileDestination) {
     // If we don't have a download directory we're kinda screwed but it's OK
     // we'll still report the error via the prompter.
-    auto res = GetInitialDownloadDirectory(true);
+    auto res = GetInitialDownloadDirectory(
+        true, mBrowsingContext ? mBrowsingContext->Canonical() : nullptr);
     if (res.isErr()) return res.unwrapErr();
     nsCOMPtr<nsIFile> pseudoFile = res.unwrap();
 
@@ -2650,7 +2670,8 @@ NS_IMETHODIMP nsExternalAppHandler::SetDownloadToLaunch(
   if (aNewFileLocation) {
     fileToUse = aNewFileLocation;
   } else {
-    auto res = GetInitialDownloadDirectory();
+    auto res = GetInitialDownloadDirectory(
+        false, mBrowsingContext ? mBrowsingContext->Canonical() : nullptr);
     if (res.isErr()) return res.unwrapErr();
     fileToUse = res.unwrap();
 

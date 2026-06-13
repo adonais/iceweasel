@@ -316,10 +316,13 @@ class GameStateTest {
 
     @Test
     fun `food moves to new position after being eaten`() {
-        val food = GridPoint(5, 6)
+        // Placing the food at a position it would never naturally spawn at.
+        // Food is not allowed to spawn right next to a wall because it's a bit annoying if it does.
+        // This ensures that when it is eaten, there is no chance it will respawn in the same place.
+        val food = GridPoint(0, 0)
         val state = state(
-            direction = Direction.DOWN,
-            fox = listOf(GridPoint(5, 5), GridPoint(5, 4)),
+            direction = Direction.UP,
+            fox = listOf(GridPoint(0, 1), GridPoint(0, 2)),
             food = food,
         ).moveFox()
         assertNotEquals(food, state.food)
@@ -403,6 +406,56 @@ class GameStateTest {
             ).onTap(
                 Offset(x = 75f, y = 75f)
             )
+        assertEquals(Direction.DOWN, state.direction)
+    }
+
+    // --- onSwipe ---
+
+    @Test
+    fun `swiping left while moving down turns fox left`() {
+        val state = state(direction = Direction.DOWN).onSwipe(Direction.LEFT)
+        assertEquals(Direction.LEFT, state.direction)
+    }
+
+    @Test
+    fun `swiping right while moving down turns fox right`() {
+        val state = state(direction = Direction.DOWN).onSwipe(Direction.RIGHT)
+        assertEquals(Direction.RIGHT, state.direction)
+    }
+
+    @Test
+    fun `swiping up while moving down is ignored`() {
+        val state = state(direction = Direction.DOWN).onSwipe(Direction.UP)
+        assertEquals(Direction.DOWN, state.direction)
+    }
+
+    @Test
+    fun `swiping down while moving up is ignored`() {
+        val state = state(direction = Direction.UP).onSwipe(Direction.DOWN)
+        assertEquals(Direction.UP, state.direction)
+    }
+
+    @Test
+    fun `swiping left while moving right is ignored`() {
+        val state = state(direction = Direction.RIGHT).onSwipe(Direction.LEFT)
+        assertEquals(Direction.RIGHT, state.direction)
+    }
+
+    @Test
+    fun `swiping right while moving left is ignored`() {
+        val state = state(direction = Direction.LEFT).onSwipe(Direction.RIGHT)
+        assertEquals(Direction.LEFT, state.direction)
+    }
+
+    @Test
+    fun `swiping up while moving left turns fox up`() {
+        val state = state(direction = Direction.LEFT).onSwipe(Direction.UP)
+        assertEquals(Direction.UP, state.direction)
+    }
+
+    @Test
+    fun `swiping down while moving right turns fox down`() {
+        val state = state(direction = Direction.RIGHT).onSwipe(Direction.DOWN)
         assertEquals(Direction.DOWN, state.direction)
     }
 

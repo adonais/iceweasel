@@ -115,7 +115,7 @@ class PermissionManager final : public nsIPermissionManager,
     PermissionKey() = delete;
 
     // Dtor shouldn't be used outside of the class.
-    ~PermissionKey() {};
+    ~PermissionKey() = default;
   };
 
   class PermissionHashKey : public nsRefPtrHashKey<PermissionKey> {

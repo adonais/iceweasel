@@ -7,6 +7,11 @@ const { TelemetryTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/TelemetryTestUtils.sys.mjs"
 );
 
+const telemetryKey = `browser.ui.interaction.preferences_${DEFAULT_PANE}`;
+const defaultPaneMetric = SRD_PREF_VALUE
+  ? Glean.browserUiInteraction.preferencesPaneSync
+  : Glean.browserUiInteraction.preferencesPaneGeneral;
+
 let resetTelemetry = async () => {
   await Services.fog.testFlushAllChildren();
   Services.fog.testResetFOG();
@@ -18,14 +23,11 @@ registerCleanupFunction(async () => {
 
 async function assertSupportLinkInteraction(linkId, expectedCount) {
   await TestUtils.waitForCondition(
-    () =>
-      Glean.browserUiInteraction.preferencesPaneGeneral?.[
-        linkId
-      ]?.testGetValue() == expectedCount,
+    () => defaultPaneMetric?.[linkId]?.testGetValue() == expectedCount,
     "wait for metric to be recorded"
   );
   Assert.equal(
-    Glean.browserUiInteraction.preferencesPaneGeneral[linkId].testGetValue(),
+    defaultPaneMetric[linkId].testGetValue(),
     expectedCount,
     `support link click should have been counted ${expectedCount} time(s)`
   );
@@ -39,10 +41,9 @@ async function createSettingWithSupportLink(doc, win, settingId, config) {
   });
 
   let testGroup = doc.createElement("setting-group");
-  testGroup.setAttribute("data-category", "paneGeneral");
+  testGroup.setAttribute("data-category", DEFAULT_PANE);
   testGroup.config = { items: [config] };
   testGroup.getSetting = win.Preferences.getSetting.bind(win.Preferences);
-  // doc.body.append(testGroup);
   doc.getElementById("mainPrefPane").append(testGroup);
   testGroup.scrollIntoView();
 
@@ -52,54 +53,37 @@ async function createSettingWithSupportLink(doc, win, settingId, config) {
   return doc.getElementById(settingId);
 }
 
-// Finn Note
 async function activateSupportLinkAndVerifyTelemetry(
   supportLink,
   linkId,
   win,
   useKeyboard = false
 ) {
-  console.log("INNER STEP 1");
   let linkClickPromise = BrowserTestUtils.waitForNewTab(gBrowser, null, true);
-  console.log("INNER STEP 2");
 
   if (useKeyboard) {
     supportLink.focus();
     EventUtils.synthesizeKey("KEY_Enter", {}, win);
   } else {
-    // debugger;
     EventUtils.synthesizeMouseAtCenter(supportLink, {}, win);
-    // EventUtils.synthesizeMouse(supportLink, {}, win);
   }
-  console.log("INNER STEP 3");
 
   let tab = await linkClickPromise;
   Assert.ok(tab, "support link should open a new tab");
   BrowserTestUtils.removeTab(tab);
 
-  console.log("INNER STEP 4");
   let snapshot = TelemetryTestUtils.getProcessScalars("parent", true, true);
-  console.log("INNER STEP 5");
-  TelemetryTestUtils.assertKeyedScalar(
-    snapshot,
-    "browser.ui.interaction.preferences_paneGeneral",
-    linkId,
-    1
-  );
+  TelemetryTestUtils.assertKeyedScalar(snapshot, telemetryKey, linkId, 1);
 
   await assertSupportLinkInteraction(linkId, 1);
 }
 
-// Finn Note: This is the culprit
 add_task(async function testSupportLinkTelemetry() {
-  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {
-    leaveOpen: true,
-  });
+  await openPreferencesViaOpenPreferencesAPI(DEFAULT_PANE, { leaveOpen: true });
   await resetTelemetry();
-  console.log("STEP 1");
 
   const doc = gBrowser.contentDocument;
-  const win = doc.ownerGlobal;
+  const win = doc.documentGlobal;
   const SETTING_ID = "testSupportLinkSetting";
   const LINK_ID = `${SETTING_ID}Link`;
 
@@ -113,7 +97,6 @@ add_task(async function testSupportLinkTelemetry() {
       supportPage: "how-generate-secure-password-firefox",
     }
   );
-  console.log("STEP 3");
   Assert.ok(settingControl, "setting control should exist");
 
   let supportLink = settingControl.shadowRoot.querySelector(
@@ -122,30 +105,22 @@ add_task(async function testSupportLinkTelemetry() {
   Assert.ok(supportLink, "support link should exist in shadow DOM");
 
   info("clicking support link");
-  // Finn Note: This is the await where we're failing
   await activateSupportLinkAndVerifyTelemetry(supportLink, LINK_ID, win);
-  console.log("STEP 4");
 
   await resetTelemetry();
 
-  console.log("STEP 5");
-
   info("activating support link with keyboard");
   await activateSupportLinkAndVerifyTelemetry(supportLink, LINK_ID, win, true);
-
-  console.log("STEP 6");
 
   gBrowser.removeCurrentTab();
 });
 
 add_task(async function testSupportLinkWithIdOverride() {
-  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {
-    leaveOpen: true,
-  });
+  await openPreferencesViaOpenPreferencesAPI(DEFAULT_PANE, { leaveOpen: true });
   await resetTelemetry();
 
   const doc = gBrowser.contentDocument;
-  const win = doc.ownerGlobal;
+  const win = doc.documentGlobal;
   const SETTING_ID = "testSupportLinkWithIdSetting";
   const LINK_ID = "customSupportLinkId";
 

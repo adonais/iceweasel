@@ -4,6 +4,10 @@
 
 DEFINES["CDM_IMPLEMENTATION"] = True
 
+LOCAL_INCLUDES += [
+    "/security/nss/lib/nss",
+]
+
 SOURCES += [
     "dllmain.cpp",
     "WMFClearKeyActivate.cpp",
@@ -11,8 +15,7 @@ SOURCES += [
     "WMFClearKeyCDMAccess.cpp",
     "WMFClearKeyCDMFactory.cpp",
     "WMFClearKeyContentEnabler.cpp",
-    # TODO : enable decryptor in bug 1870722.
-    # "WMFClearKeyDecryptor.cpp",
+    "WMFClearKeyDecryptor.cpp",
     "WMFClearKeyInputTrustAuthority.cpp",
     "WMFClearKeyOutputPolicy.cpp",
     "WMFClearKeySession.cpp",

@@ -12,7 +12,7 @@ use crate::gpu_types::ImageBrushPrimitiveData;
 use crate::render_task::{RenderTask, RenderTaskKind};
 use crate::render_task_cache::{RenderTaskCacheKey, RenderTaskCacheKeyKind, RenderTaskParent};
 use crate::render_task_graph::RenderTaskId;
-use crate::renderer::GpuBufferWriterF;
+use crate::renderer::GpuBufferAddress;
 use crate::scene_building::{CreateShadow, IsVisible};
 use crate::frame_builder::{FrameBuildingContext, FrameBuildingState};
 use crate::intern;
@@ -21,13 +21,20 @@ use crate::prim_store::{
     PrimKey, PrimTemplate, PrimTemplateCommonData,
     InternablePrimitive, PrimitiveStore,
 };
-use crate::prim_store::PrimitiveInstanceKind;
-use crate::scratch_buffer::ScratchHandle;
+use crate::prim_store::PrimitiveKind;
 use crate::spatial_tree::SpatialNodeIndex;
 use crate::util::clamp_to_scale_factor;
 
 /// Maximum resolution in device pixels at which line decorations are rasterized.
 pub const MAX_LINE_DECORATION_RESOLUTION: u32 = 4096;
+
+/// Per-frame scratch data for a LineDecoration primitive.
+#[derive(Copy, Clone, Debug)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+pub struct LineDecorationScratch {
+    pub task_id: RenderTaskId,
+    pub gpu_address: GpuBufferAddress,
+}
 
 #[derive(Clone, Debug, Hash, MallocSizeOf, PartialEq, Eq)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
@@ -39,16 +46,18 @@ pub struct LineDecorationCacheKey {
     pub size: LayoutSizeAu,
 }
 
-/// Identifying key for a line decoration.
+/// Identifying key for a line decoration. The mask tile size
+/// (`LineDecorationCacheKey`) is intentionally not part of the intern
+/// key — it is a deterministic function of `style`, `orientation`,
+/// `wavy_line_thickness`, and the prim's per-frame local rect, and is
+/// rebuilt during frame building.
 #[derive(Clone, Debug, Hash, MallocSizeOf, PartialEq, Eq)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct LineDecoration {
-    // If the cache_key is Some(..) it is a line decoration
-    // that relies on a render task (e.g. wavy). If the
-    // cache key is None, it uses a fast path to draw the
-    // line decoration as a solid rect.
-    pub cache_key: Option<LineDecorationCacheKey>,
+    pub style: LineStyle,
+    pub orientation: LineOrientation,
+    pub wavy_line_thickness: Au,
     pub color: ColorU,
 }
 
@@ -72,37 +81,74 @@ impl intern::InternDebug for LineDecorationKey {}
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 #[derive(MallocSizeOf)]
 pub struct LineDecorationData {
-    pub cache_key: Option<LineDecorationCacheKey>,
+    pub style: LineStyle,
+    pub orientation: LineOrientation,
+    pub wavy_line_thickness: Au,
     pub color: ColorF,
 }
 
 impl LineDecorationData {
-    /// Update the GPU cache for a given primitive template. This may be called multiple
-    /// times per frame, by each primitive reference that refers to this interned
-    /// template. The initial request call to the GPU cache ensures that work is only
-    /// done if the cache entry is invalid (due to first use or eviction).
-    pub fn update(
-        &mut self,
-        common: &mut PrimTemplateCommonData,
+    /// Per-frame preparation: derive the mask tile size from the prim's
+    /// current local size, write the GPU block, and (for non-solid styles)
+    /// allocate a cached render task. Returns the task id and the per-
+    /// instance GPU buffer address consumed by `batch.rs`.
+    pub fn prepare(
+        &self,
+        prim_size: LayoutSize,
+        prim_spatial_node_index: SpatialNodeIndex,
+        frame_context: &FrameBuildingContext,
         frame_state: &mut FrameBuildingState,
-    ) {
+    ) -> (RenderTaskId, GpuBufferAddress) {
+        let cache_key = get_line_decoration_size(
+            &prim_size,
+            self.orientation,
+            self.style,
+            self.wavy_line_thickness.to_f32_px(),
+        ).map(|size| LineDecorationCacheKey {
+            style: self.style,
+            orientation: self.orientation,
+            wavy_line_thickness: self.wavy_line_thickness,
+            size: size.to_au(),
+        });
+
         let mut writer = frame_state.frame_gpu_data.f32.write_blocks(3);
-        self.write_prim_gpu_blocks(&mut writer);
-        common.gpu_buffer_address = writer.finish();
+        match cache_key.as_ref() {
+            Some(cache_key) => {
+                writer.push(&ImageBrushPrimitiveData {
+                    color: self.color.premultiplied(),
+                    background_color: PremultipliedColorF::WHITE,
+                    stretch_size: LayoutSize::new(
+                        cache_key.size.width.to_f32_px(),
+                        cache_key.size.height.to_f32_px(),
+                    ),
+                });
+            }
+            None => {
+                writer.push_one(self.color.premultiplied());
+            }
+        }
+        let gpu_address = writer.finish();
+
+        let task_id = match cache_key {
+            Some(cache_key) => self.allocate_render_task(
+                cache_key,
+                prim_spatial_node_index,
+                frame_context,
+                frame_state,
+            ),
+            None => RenderTaskId::INVALID,
+        };
+
+        (task_id, gpu_address)
     }
 
-    pub fn prepare_render_task(
-        &mut self,
+    fn allocate_render_task(
+        &self,
+        cache_key: LineDecorationCacheKey,
         prim_spatial_node_index: SpatialNodeIndex,
         frame_context: &FrameBuildingContext,
         frame_state: &mut FrameBuildingState,
     ) -> RenderTaskId {
-        // If we have a cache key, it's a wavy / dashed / dotted line. Otherwise, it's
-        // a simple solid line.
-        let Some(cache_key) = self.cache_key.as_ref() else {
-            return RenderTaskId::INVALID;
-        };
-
         // TODO(gw): These scale factors don't do a great job if the world transform
         //           contains perspective
         let scale = frame_context
@@ -167,27 +213,6 @@ impl LineDecorationData {
             }
         )
     }
-
-    fn write_prim_gpu_blocks(
-        &self,
-        writer: &mut GpuBufferWriterF
-    ) {
-        match self.cache_key.as_ref() {
-            Some(cache_key) => {
-                writer.push(&ImageBrushPrimitiveData {
-                    color: self.color.premultiplied(),
-                    background_color: PremultipliedColorF::WHITE,
-                    stretch_size: LayoutSize::new(
-                        cache_key.size.width.to_f32_px(),
-                        cache_key.size.height.to_f32_px(),
-                    ),
-                });
-            }
-            None => {
-                writer.push_one(self.color.premultiplied());
-            }
-        }
-    }
 }
 
 pub type LineDecorationTemplate = PrimTemplate<LineDecorationData>;
@@ -198,7 +223,9 @@ impl From<LineDecorationKey> for LineDecorationTemplate {
         LineDecorationTemplate {
             common,
             kind: LineDecorationData {
-                cache_key: line_dec.kind.cache_key,
+                style: line_dec.kind.style,
+                orientation: line_dec.kind.orientation,
+                wavy_line_thickness: line_dec.kind.wavy_line_thickness,
                 color: line_dec.kind.color.into(),
             }
         }
@@ -229,10 +256,9 @@ impl InternablePrimitive for LineDecoration {
         _key: LineDecorationKey,
         data_handle: LineDecorationDataHandle,
         _: &mut PrimitiveStore,
-    ) -> PrimitiveInstanceKind {
-        PrimitiveInstanceKind::LineDecoration {
+    ) -> PrimitiveKind {
+        PrimitiveKind::LineDecoration {
             data_handle,
-            scratch_handle: ScratchHandle::INVALID,
         }
     }
 }
@@ -245,8 +271,10 @@ impl CreateShadow for LineDecoration {
         _: RasterSpace,
     ) -> Self {
         LineDecoration {
+            style: self.style,
+            orientation: self.orientation,
+            wavy_line_thickness: self.wavy_line_thickness,
             color: shadow.color.into(),
-            cache_key: self.cache_key.clone(),
         }
     }
 }
@@ -335,7 +363,7 @@ fn test_struct_sizes() {
     //     test expectations and move on.
     // (b) You made a structure larger. This is not necessarily a problem, but should only
     //     be done with care, and after checking if talos performance regresses badly.
-    assert_eq!(mem::size_of::<LineDecoration>(), 20, "LineDecoration size changed");
-    assert_eq!(mem::size_of::<LineDecorationTemplate>(), 52, "LineDecorationTemplate size changed");
-    assert_eq!(mem::size_of::<LineDecorationKey>(), 32, "LineDecorationKey size changed");
+    assert_eq!(mem::size_of::<LineDecoration>(), 12, "LineDecoration size changed");
+    assert_eq!(mem::size_of::<LineDecorationTemplate>(), 32, "LineDecorationTemplate size changed");
+    assert_eq!(mem::size_of::<LineDecorationKey>(), 16, "LineDecorationKey size changed");
 }

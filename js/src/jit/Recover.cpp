@@ -2154,6 +2154,27 @@ bool RNewIterator::recover(JSContext* cx, SnapshotIterator& iter) const {
   return true;
 }
 
+bool MNewDateObject::writeRecoverData(CompactBufferWriter& writer) const {
+  MOZ_ASSERT(canRecoverOnBailout());
+  writer.writeUnsigned(uint32_t(RInstruction::Recover_NewDateObject));
+  return true;
+}
+
+RNewDateObject::RNewDateObject(CompactBufferReader& reader) {}
+
+bool RNewDateObject::recover(JSContext* cx, SnapshotIterator& iter) const {
+  auto utcTime = iter.read();
+  MOZ_ASSERT(utcTime.isNumber());
+
+  auto* resultObject = jit::NewDateObject(cx, utcTime.toNumber());
+  if (!resultObject) {
+    return false;
+  }
+
+  iter.storeInstructionResult(ObjectValue(*resultObject));
+  return true;
+}
+
 bool MLambda::writeRecoverData(CompactBufferWriter& writer) const {
   MOZ_ASSERT(canRecoverOnBailout());
   writer.writeUnsigned(uint32_t(RInstruction::Recover_Lambda));

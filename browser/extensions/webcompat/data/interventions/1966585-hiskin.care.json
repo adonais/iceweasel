@@ -6,12 +6,13 @@
       "matches": ["*://hiskin.care/*"]
     }
   },
+  "css": {
+    "unhide_missing_content": "body { height: 100%; }"
+  },
   "interventions": [
     {
       "platforms": ["all"],
-      "content_scripts": {
-        "css": ["bug1966585-hiskin.care-reveal-missing-content.css"]
-      }
+      "css": ["unhide_missing_content"]
     }
   ]
 }

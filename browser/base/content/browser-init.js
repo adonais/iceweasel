@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const { CustomKeys } = ChromeUtils.importESModule(
-  "resource:///modules/CustomKeys.sys.mjs"
+  "moz-src:///browser/components/customkeys/CustomKeys.sys.mjs"
 );
 
 var gSerialDeviceObserver = {
@@ -259,19 +259,26 @@ var gBrowserInit = {
       window
     );
 
-    gBrowser = new window.Tabbrowser();
-    gBrowser.init();
+    // This adds gBrowser to the global scope.
+    BrowserUtils.callModulesFromCategory(
+      {
+        categoryName: "browser-window-domcontentloaded-tabbrowser",
+        jsGlobal: globalThis,
+      },
+      window
+    );
     gURLBar.addGBrowserListeners();
     if (Services.prefs.getBoolPref("browser.search.widget.new", false)) {
       document.getElementById("searchbar-new")?.addGBrowserListeners();
     }
 
     BrowserUtils.callModulesFromCategory(
-      { categoryName: "browser-window-domcontentloaded" },
+      {
+        categoryName: "browser-window-domcontentloaded",
+        jsGlobal: globalThis,
+      },
       window
     );
-
-    FirefoxViewHandler.init();
 
     gURLBar.initPlaceHolder();
 
@@ -291,8 +298,6 @@ var gBrowserInit = {
     updateFxaToolbarMenu(gFxaToolbarEnabled, true);
 
     updatePrintCommands(gPrintEnabled);
-
-    gUnifiedExtensions.init();
 
     // Setting the focus will cause a style flush, it's preferable to call anything
     // that will modify the DOM from within this function before this call.
@@ -685,6 +690,9 @@ var gBrowserInit = {
           .getElementById("toolbar-menubar")
           .removeAttribute("toolbarname");
       }
+      if (!Services.policies.isAllowed("profileImport")) {
+        document.documentElement.setAttribute("disableprofileimport", "true");
+      }
       if (!Services.policies.isAllowed("filepickers")) {
         let savePageCommand = document.getElementById("Browser:SavePage");
         let openFileCommand = document.getElementById("Browser:OpenFile");
@@ -759,7 +767,7 @@ var gBrowserInit = {
             PlacesToolbarHelper.populateManagedBookmarks(event.currentTarget)
           );
           managedBookmarksPopup.setAttribute("placespopup", "true");
-          managedBookmarksPopup.setAttribute("native", "false");
+          managedBookmarksPopup.toggleAttribute("nonnative", true);
           managedBookmarksPopup.setAttribute("is", "places-popup");
           managedBookmarksPopup.classList.add("toolbar-menupopup");
           managedBookmarksButton.appendChild(managedBookmarksPopup);
@@ -996,11 +1004,9 @@ var gBrowserInit = {
       } else {
         // Note: loadOneOrMoreURIs *must not* be called if window.arguments.length >= 3.
         // Such callers expect that window.arguments[0] is handled as a single URI.
-        loadOneOrMoreURIs(
-          uriToLoad,
-          Services.scriptSecurityManager.getSystemPrincipal(),
-          null
-        );
+        loadOneOrMoreURIs(uriToLoad, {
+          newWindowLoad: true,
+        });
       }
     });
   },
@@ -1200,7 +1206,6 @@ var gBrowserInit = {
     gSync.uninit();
 
     gExtensionsNotifications.uninit();
-    gUnifiedExtensions.uninit();
 
     try {
       gBrowser.removeProgressListener(window.XULBrowserWindow);
@@ -1229,7 +1234,10 @@ var gBrowserInit = {
       "moz-src:///browser/components/genai/LinkPreview.sys.mjs"
     ).LinkPreview.teardown(window);
 
-    FirefoxViewHandler.uninit();
+    BrowserUtils.callModulesFromCategory(
+      { categoryName: "browser-window-unload", jsGlobal: globalThis },
+      window
+    );
 
     // Now either cancel delayedStartup, or clean up the services initialized from
     // it.
@@ -1300,15 +1308,20 @@ var gBrowserInit = {
       PanelUI.uninit();
     }
 
-    // Final window teardown, do this last.
-    gBrowser.destroy();
+    BrowserUtils.callModulesFromCategory(
+      {
+        categoryName: "browser-window-unload-tabbrowser",
+        jsGlobal: globalThis,
+      },
+      window
+    );
     window.XULBrowserWindow = null;
     window.docShell.treeOwner
       .QueryInterface(Ci.nsIInterfaceRequestor)
       .getInterface(Ci.nsIAppWindow).XULBrowserWindow = null;
 
     BrowserUtils.callModulesFromCategory(
-      { categoryName: "browser-window-unload" },
+      { categoryName: "browser-window-final-unload", jsGlobal: globalThis },
       window
     );
   },

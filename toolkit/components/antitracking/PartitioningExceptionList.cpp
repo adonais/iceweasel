@@ -215,7 +215,7 @@ nsresult PartitioningExceptionList::GetExceptionListPattern(
   }
 
   aPattern.mIsWildCard = false;
-  aPattern.mSuffix = originPatternNoScheme;
+  aPattern.mSuffix = std::move(originPatternNoScheme);
 
   return NS_OK;
 }

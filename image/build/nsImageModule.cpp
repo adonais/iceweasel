@@ -36,7 +36,7 @@ static void UpdateDocumentViewerRegistration(const char* aPref, void* aData) {
 
   static nsLiteralCString kCategory = "Gecko-Content-Viewers"_ns;
   static nsLiteralCString kContractId =
-      "@mozilla.org/content/plugin/document-loader-factory;1"_ns;
+      "@mozilla.org/content/document-loader-factory;1"_ns;
 
   if (cookie->mIsEnabled()) {
     catMan->AddCategoryEntry(kCategory, cookie->mMimeType, kContractId,

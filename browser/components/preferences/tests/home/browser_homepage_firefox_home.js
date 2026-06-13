@@ -16,7 +16,6 @@ const NOVA_SHOW_WEATHER_PREF =
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [
-      ["browser.settings-redesign.enabled", true],
       // Opening preferences initializes FxA code which sets this pref.
       // Track it to avoid test warnings.
       ["identity.fxaccounts.account.device.name", ""],
@@ -36,7 +35,7 @@ add_task(async function test_firefox_home_section_visible() {
 
   await fieldset.updateComplete;
 
-  let heading = fieldset.shadowRoot.querySelector("h2");
+  let heading = fieldset.shadowRoot.querySelector("h3");
   ok(heading, "Firefox Home heading exists in shadow DOM");
   Assert.greater(
     heading.textContent.length,

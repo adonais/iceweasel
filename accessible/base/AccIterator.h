@@ -30,7 +30,7 @@ class DocAccessibleParent;
  */
 class AccIterable {
  public:
-  virtual ~AccIterable() {}
+  virtual ~AccIterable() = default;
   virtual Accessible* Next() = 0;
 
  private:
@@ -47,6 +47,10 @@ class AccIterator : public AccIterable {
   AccIterator(LocalAccessible* aRoot, filters::FilterFuncPtr aFilterFunc);
   virtual ~AccIterator();
 
+  AccIterator() = delete;
+  AccIterator(const AccIterator&) = delete;
+  AccIterator& operator=(const AccIterator&) = delete;
+
   /**
    * Return next accessible complying with filter function. Return the first
    * accessible for the first time.
@@ -54,10 +58,6 @@ class AccIterator : public AccIterable {
   virtual LocalAccessible* Next() override;
 
  private:
-  AccIterator();
-  AccIterator(const AccIterator&);
-  AccIterator& operator=(const AccIterator&);
-
   struct IteratorState {
     explicit IteratorState(LocalAccessible* aParent,
                            IteratorState* mParentState = nullptr);
@@ -92,7 +92,11 @@ class RelatedAccIterator : public AccIterable {
   RelatedAccIterator(DocAccessible* aDocument, nsIContent* aDependentContent,
                      nsAtom* aRelAttr);
 
-  virtual ~RelatedAccIterator() {}
+  virtual ~RelatedAccIterator() = default;
+
+  RelatedAccIterator() = delete;
+  RelatedAccIterator(const RelatedAccIterator&) = delete;
+  RelatedAccIterator& operator=(const RelatedAccIterator&) = delete;
 
   /**
    * Return next related accessible for the given dependent accessible.
@@ -100,10 +104,6 @@ class RelatedAccIterator : public AccIterable {
   virtual LocalAccessible* Next() override;
 
  private:
-  RelatedAccIterator();
-  RelatedAccIterator(const RelatedAccIterator&);
-  RelatedAccIterator& operator=(const RelatedAccIterator&);
-
   DocAccessible::AttrRelProviders* GetIdRelProvidersFor(nsIContent* aContent);
 
   DocAccessible* mDocument;
@@ -125,7 +125,11 @@ class HTMLLabelIterator : public AccIterable {
                     const LocalAccessible* aAccessible,
                     LabelFilter aFilter = eAllLabels);
 
-  virtual ~HTMLLabelIterator() {}
+  virtual ~HTMLLabelIterator() = default;
+
+  HTMLLabelIterator() = delete;
+  HTMLLabelIterator(const HTMLLabelIterator&) = delete;
+  HTMLLabelIterator& operator=(const HTMLLabelIterator&) = delete;
 
   /**
    * Return next label accessible associated with the given element.
@@ -133,10 +137,6 @@ class HTMLLabelIterator : public AccIterable {
   virtual LocalAccessible* Next() override;
 
  private:
-  HTMLLabelIterator();
-  HTMLLabelIterator(const HTMLLabelIterator&);
-  HTMLLabelIterator& operator=(const HTMLLabelIterator&);
-
   void Initialize();
 
   bool IsLabel(LocalAccessible* aLabel);
@@ -160,7 +160,11 @@ class HTMLLabelIterator : public AccIterable {
 class HTMLOutputIterator : public AccIterable {
  public:
   HTMLOutputIterator(DocAccessible* aDocument, nsIContent* aElement);
-  virtual ~HTMLOutputIterator() {}
+  virtual ~HTMLOutputIterator() = default;
+
+  HTMLOutputIterator() = delete;
+  HTMLOutputIterator(const HTMLOutputIterator&) = delete;
+  HTMLOutputIterator& operator=(const HTMLOutputIterator&) = delete;
 
   /**
    * Return next output accessible associated with the given element.
@@ -168,10 +172,6 @@ class HTMLOutputIterator : public AccIterable {
   virtual LocalAccessible* Next() override;
 
  private:
-  HTMLOutputIterator();
-  HTMLOutputIterator(const HTMLOutputIterator&);
-  HTMLOutputIterator& operator=(const HTMLOutputIterator&);
-
   RelatedAccIterator mRelIter;
 };
 
@@ -181,7 +181,11 @@ class HTMLOutputIterator : public AccIterable {
 class XULLabelIterator : public AccIterable {
  public:
   XULLabelIterator(DocAccessible* aDocument, nsIContent* aElement);
-  virtual ~XULLabelIterator() {}
+  virtual ~XULLabelIterator() = default;
+
+  XULLabelIterator() = delete;
+  XULLabelIterator(const XULLabelIterator&) = delete;
+  XULLabelIterator& operator=(const XULLabelIterator&) = delete;
 
   /**
    * Return next label accessible associated with the given element.
@@ -189,10 +193,6 @@ class XULLabelIterator : public AccIterable {
   virtual LocalAccessible* Next() override;
 
  private:
-  XULLabelIterator();
-  XULLabelIterator(const XULLabelIterator&);
-  XULLabelIterator& operator=(const XULLabelIterator&);
-
   RelatedAccIterator mRelIter;
 };
 
@@ -202,7 +202,11 @@ class XULLabelIterator : public AccIterable {
 class XULDescriptionIterator : public AccIterable {
  public:
   XULDescriptionIterator(DocAccessible* aDocument, nsIContent* aElement);
-  virtual ~XULDescriptionIterator() {}
+  virtual ~XULDescriptionIterator() = default;
+
+  XULDescriptionIterator() = delete;
+  XULDescriptionIterator(const XULDescriptionIterator&) = delete;
+  XULDescriptionIterator& operator=(const XULDescriptionIterator&) = delete;
 
   /**
    * Return next description accessible associated with the given element.
@@ -210,10 +214,6 @@ class XULDescriptionIterator : public AccIterable {
   virtual LocalAccessible* Next() override;
 
  private:
-  XULDescriptionIterator();
-  XULDescriptionIterator(const XULDescriptionIterator&);
-  XULDescriptionIterator& operator=(const XULDescriptionIterator&);
-
   RelatedAccIterator mRelIter;
 };
 
@@ -227,7 +227,12 @@ class AssociatedElementsIterator : public AccIterable {
  public:
   AssociatedElementsIterator(DocAccessible* aDoc, nsIContent* aContent,
                              nsAtom* aIDRefsAttr);
-  virtual ~AssociatedElementsIterator() {}
+  virtual ~AssociatedElementsIterator() = default;
+
+  AssociatedElementsIterator() = delete;
+  AssociatedElementsIterator(const AssociatedElementsIterator&) = delete;
+  AssociatedElementsIterator operator=(const AssociatedElementsIterator&) =
+      delete;
 
   /**
    * Return next element.
@@ -238,10 +243,6 @@ class AssociatedElementsIterator : public AccIterable {
   virtual LocalAccessible* Next() override;
 
  private:
-  AssociatedElementsIterator();
-  AssociatedElementsIterator(const AssociatedElementsIterator&);
-  AssociatedElementsIterator operator=(const AssociatedElementsIterator&);
-
   nsIContent* mContent;
   DocAccessible* mDoc;
   nsTArray<RefPtr<dom::Element>> mElements;
@@ -255,15 +256,15 @@ class AssociatedElementsIterator : public AccIterable {
 class SingleAccIterator : public AccIterable {
  public:
   explicit SingleAccIterator(Accessible* aTarget) : mAcc(aTarget) {}
-  virtual ~SingleAccIterator() {}
+  virtual ~SingleAccIterator() = default;
+
+  SingleAccIterator() = delete;
+  SingleAccIterator(const SingleAccIterator&) = delete;
+  SingleAccIterator& operator=(const SingleAccIterator&) = delete;
 
   virtual Accessible* Next() override;
 
  private:
-  SingleAccIterator();
-  SingleAccIterator(const SingleAccIterator&);
-  SingleAccIterator& operator=(const SingleAccIterator&);
-
   Accessible* mAcc;
 };
 
@@ -275,13 +276,13 @@ class ItemIterator : public AccIterable {
   explicit ItemIterator(const Accessible* aItemContainer)
       : mContainer(aItemContainer), mAnchor(nullptr) {}
 
-  virtual Accessible* Next() override;
-
- private:
   ItemIterator() = delete;
   ItemIterator(const ItemIterator&) = delete;
   ItemIterator& operator=(const ItemIterator&) = delete;
 
+  virtual Accessible* Next() override;
+
+ private:
   const Accessible* mContainer;
   Accessible* mAnchor;
 };
@@ -293,15 +294,15 @@ class XULTreeItemIterator : public AccIterable {
  public:
   XULTreeItemIterator(const XULTreeAccessible* aXULTree, nsITreeView* aTreeView,
                       int32_t aRowIdx);
-  virtual ~XULTreeItemIterator() {}
+  virtual ~XULTreeItemIterator() = default;
 
-  virtual LocalAccessible* Next() override;
-
- private:
   XULTreeItemIterator() = delete;
   XULTreeItemIterator(const XULTreeItemIterator&) = delete;
   XULTreeItemIterator& operator=(const XULTreeItemIterator&) = delete;
 
+  virtual LocalAccessible* Next() override;
+
+ private:
   const XULTreeAccessible* mXULTree;
   nsITreeView* mTreeView;
   int32_t mRowCount;

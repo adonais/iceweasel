@@ -47,6 +47,7 @@ class ManualNACPtr final {
   ManualNACPtr(ManualNACPtr&& aOther) : mPtr(std::move(aOther.mPtr)) {}
   ManualNACPtr(ManualNACPtr& aOther) = delete;
   ManualNACPtr& operator=(ManualNACPtr&& aOther) {
+    Reset();
     mPtr = std::move(aOther.mPtr);
     return *this;
   }
@@ -58,9 +59,8 @@ class ManualNACPtr final {
     if (!mPtr) {
       return;
     }
-
-    RefPtr<dom::Element> ptr = std::move(mPtr);
-    RemoveContentFromNACArray(ptr);
+    RemoveContentFromNACArray(mPtr);
+    mPtr = nullptr;
   }
 
   static bool IsManualNAC(nsIContent* aAnonContent) {
@@ -72,8 +72,16 @@ class ManualNACPtr final {
     return nac && nac->Contains(aAnonContent);
   }
 
-  static void RemoveContentFromNACArray(nsIContent* aAnonymousContent) {
-    nsIContent* parentContent = aAnonymousContent->GetParent();
+  template <typename StrongNodePtr>
+  static void RemoveContentFromNACArray(StrongNodePtr& aAnonymousContent) {
+    static_assert(std::is_same_v<StrongNodePtr, RefPtr<dom::Element>> ||
+                  std::is_same_v<StrongNodePtr, nsCOMPtr<nsIContent>>);
+    // aAnonymousContent may be a class member. Let's move the ownership to
+    // the local strong pointer.
+    StrongNodePtr anonymousContent =
+        std::forward<StrongNodePtr>(aAnonymousContent);
+    MOZ_ASSERT(!aAnonymousContent);
+    nsIContent* parentContent = anonymousContent->GetParent();
     if (!parentContent) {
       NS_WARNING("Potentially leaking manual NAC");
       return;
@@ -85,13 +93,13 @@ class ManualNACPtr final {
     // Document::AdoptNode might remove all properties before destroying editor.
     // So we have to consider that NAC could be already removed.
     if (nac) {
-      nac->RemoveElement(aAnonymousContent);
+      nac->RemoveElement(anonymousContent);
       if (nac->IsEmpty()) {
         parentContent->RemoveProperty(nsGkAtoms::manualNACProperty);
       }
     }
 
-    aAnonymousContent->UnbindFromTree();
+    anonymousContent->UnbindFromTree();
   }
 
   dom::Element* get() const { return mPtr.get(); }

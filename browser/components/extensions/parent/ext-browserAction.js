@@ -48,11 +48,10 @@ function actionWidgetId(widgetId) {
 class BrowserAction extends BrowserActionBase {
   constructor(extension, buttonDelegate) {
     let tabContext = new TabContext(target => {
-      let window = target.ownerGlobal;
-      if (target === window) {
+      if (ChromeUtils.getClassName(target) == "Window") {
         return this.getContextData(null);
       }
-      return tabContext.get(window);
+      return tabContext.get(target.documentGlobal);
     });
     super(tabContext, extension);
     this.buttonDelegate = buttonDelegate;
@@ -60,9 +59,10 @@ class BrowserAction extends BrowserActionBase {
 
   updateOnChange(target) {
     if (target) {
-      let window = target.ownerGlobal;
-      if (target === window || target.selected) {
-        this.buttonDelegate.updateWindow(window);
+      if (ChromeUtils.getClassName(target) == "Window") {
+        this.buttonDelegate.updateWindow(target);
+      } else if (target.selected) {
+        this.buttonDelegate.updateWindow(target.documentGlobal);
       }
     } else {
       for (let window of windowTracker.browserWindows()) {
@@ -576,7 +576,7 @@ this.browserAction = class extends ExtensionAPIPersistent {
    * @param {Event} event
    */
   handleMenuButtonEvent(event) {
-    let window = event.target.ownerGlobal;
+    let window = event.target.documentGlobal;
     let { node } = window.gBrowser && this.widget.forWindow(window);
     let messageDeck = node?.querySelector(
       ".unified-extensions-item-message-deck"
@@ -606,7 +606,7 @@ this.browserAction = class extends ExtensionAPIPersistent {
   handleEvent(event) {
     // This button is the action/primary button in the custom widget.
     let button = event.target;
-    let window = button.ownerGlobal;
+    let window = button.documentGlobal;
 
     switch (event.type) {
       case "mousedown":
@@ -852,7 +852,7 @@ this.browserAction = class extends ExtensionAPIPersistent {
     let policy = WebExtensionPolicy.getByID(this.extension.id);
     let messages = OriginControls.getStateMessageIDs({
       policy,
-      tab: node.ownerGlobal.gBrowser.selectedTab,
+      tab: node.documentGlobal.gBrowser.selectedTab,
       isAction: true,
       hasPopup: !!tabData.popup,
     });
@@ -929,7 +929,7 @@ this.browserAction = class extends ExtensionAPIPersistent {
     if (sync) {
       callback();
     } else {
-      node.ownerGlobal.requestAnimationFrame(callback);
+      node.documentGlobal.requestAnimationFrame(callback);
     }
   }
 

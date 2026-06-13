@@ -11,7 +11,8 @@ add_task(async function test_backgroundtask_locked_profile() {
 
   let profile = profileService.createUniqueProfile(
     do_get_profile(),
-    "test_locked_profile"
+    "test_locked_profile",
+    "tests"
   );
   let lock = profile.lock({});
 

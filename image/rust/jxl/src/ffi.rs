@@ -2,9 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use crate::cms::RenderingIntent;
 use crate::decoder::JxlApiDecoder;
-use qcms::Profile;
 use std::slice;
 
 #[repr(C)]
@@ -35,54 +33,11 @@ pub struct JxlFrameInfo {
 }
 
 /// # Safety
-/// - If `output_profile` is non-null, it must point to a valid `qcms::Profile` that outlives the
-///   returned decoder: it must be either gfxPlatform::mCMSOutputProfile or mCMSsRGBProfile.
-/// - If `output_icc_data` is non-null, it must point to a valid byte slice of
-///   length `output_icc_len`.
+/// `has_cms` must be true only when a display color profile is available and CMS is
+/// enabled; when true the decoder requests Gray/GrayAlpha output for grayscale images.
 #[no_mangle]
-pub unsafe extern "C" fn jxl_decoder_new(
-    metadata_only: bool,
-    premultiply: bool,
-    rendering_intent: i32,
-    output_profile: *const std::ffi::c_void,
-    output_icc_data: *const u8,
-    output_icc_len: usize,
-) -> *mut JxlApiDecoder {
-    let rendering_intent = match rendering_intent {
-        0 => RenderingIntent::Intent(qcms::Intent::Perceptual),
-        1 => RenderingIntent::Intent(qcms::Intent::RelativeColorimetric),
-        2 => RenderingIntent::Intent(qcms::Intent::Saturation),
-        3 => RenderingIntent::Intent(qcms::Intent::AbsoluteColorimetric),
-        _ => RenderingIntent::FromImageProfile,
-    };
-
-    // output_profile (a pointer to a qcms profile) being non null turns on CMS
-    // processing. Assuming output_profile is not null, then either:
-    // (1) output_icc_data is not null and is the icc data for output_profile and
-    //     it is not sRGB, or
-    // (2) output_icc_data is null and output_profile is sRGB
-    let output_icc = if output_icc_data.is_null() || output_icc_len == 0 {
-        None
-    } else {
-        // SAFETY: Caller guarantees output_icc_data is non-null and points to a valid byte
-        // slice of length output_icc_len.
-        Some(unsafe { slice::from_raw_parts(output_icc_data, output_icc_len) })
-    };
-    let output_profile: Option<&'static Profile> = if output_profile.is_null() {
-        None
-    } else {
-        // SAFETY: Caller guarantees that when non-null, output_profile points to a valid
-        // qcms::Profile that outlives the returned decoder (gfxPlatform::mCMSOutputProfile
-        // or mCMSsRGBProfile, initialized once and valid for the process lifetime).
-        Some(unsafe { &*(output_profile as *const Profile) })
-    };
-    Box::into_raw(Box::new(JxlApiDecoder::new(
-        metadata_only,
-        premultiply,
-        rendering_intent,
-        output_profile,
-        output_icc,
-    )))
+pub unsafe extern "C" fn jxl_decoder_new(metadata_only: bool, has_cms: bool) -> *mut JxlApiDecoder {
+    Box::into_raw(Box::new(JxlApiDecoder::new(metadata_only, has_cms)))
 }
 
 /// # Safety
@@ -105,6 +60,8 @@ pub unsafe extern "C" fn jxl_decoder_destroy(decoder: *mut JxlApiDecoder) {
 ///   when `*data_len` is 0.
 /// - If `output_buffer` is non-null, it must point to a valid writable buffer
 ///   of at least `output_buffer_len` bytes.
+/// - If `k_buffer` is non-null, it must point to a valid writable buffer of at
+///   least `k_buffer_len` bytes (for CMYK K channel, 1 byte per pixel).
 #[no_mangle]
 pub unsafe extern "C" fn jxl_decoder_process_data(
     decoder: *mut JxlApiDecoder,
@@ -112,6 +69,8 @@ pub unsafe extern "C" fn jxl_decoder_process_data(
     data_len: *mut usize,
     output_buffer: *mut u8,
     output_buffer_len: usize,
+    k_buffer: *mut u8,
+    k_buffer_len: usize,
 ) -> JxlDecoderStatus {
     debug_assert!(!decoder.is_null() && !data.is_null() && !data_len.is_null());
 
@@ -136,7 +95,15 @@ pub unsafe extern "C" fn jxl_decoder_process_data(
         Some(unsafe { slice::from_raw_parts_mut(output_buffer, output_buffer_len) })
     };
 
-    let result = decoder.process_data(&mut data_slice, output_slice);
+    let k_slice = if k_buffer.is_null() {
+        None
+    } else {
+        // SAFETY: Caller guarantees that when `k_buffer` is non-null, it points
+        // to a valid writable buffer of at least `k_buffer_len` bytes.
+        Some(unsafe { slice::from_raw_parts_mut(k_buffer, k_buffer_len) })
+    };
+
+    let result = decoder.process_data(&mut data_slice, output_slice, k_slice);
 
     // SAFETY: Caller guarantees `data` and `data_len` are valid, writable pointers.
     // We update them to reflect how much data was consumed.
@@ -150,6 +117,16 @@ pub unsafe extern "C" fn jxl_decoder_process_data(
         Ok(false) => JxlDecoderStatus::NeedMoreData,
         Err(_) => JxlDecoderStatus::Error,
     }
+}
+
+/// # Safety
+/// `decoder` must be a valid pointer returned by `jxl_decoder_new`.
+#[no_mangle]
+pub unsafe extern "C" fn jxl_decoder_has_black_channel(decoder: *const JxlApiDecoder) -> bool {
+    debug_assert!(!decoder.is_null());
+    // SAFETY: Caller guarantees valid pointer.
+    let decoder = unsafe { &*decoder };
+    decoder.has_black_channel()
 }
 
 /// # Safety
@@ -189,7 +166,6 @@ pub unsafe extern "C" fn jxl_decoder_get_frame_info(decoder: *const JxlApiDecode
         Some(duration) => JxlFrameInfo {
             duration_ms: duration.clamp(0.0, i32::MAX as f64) as i32,
             frame_duration_valid: true,
-            ..JxlFrameInfo::default()
         },
         None => JxlFrameInfo::default(),
     }
@@ -205,6 +181,57 @@ pub unsafe extern "C" fn jxl_decoder_is_frame_ready(decoder: *const JxlApiDecode
     let decoder = unsafe { &*decoder };
 
     decoder.frame_ready
+}
+
+/// # Safety
+/// `decoder` must be a valid pointer returned by `jxl_decoder_new`.
+#[no_mangle]
+pub unsafe extern "C" fn jxl_decoder_is_gray(decoder: *const JxlApiDecoder) -> bool {
+    debug_assert!(!decoder.is_null());
+    // SAFETY: Caller guarantees `decoder` is a valid, non-null pointer from `jxl_decoder_new`.
+    let decoder = unsafe { &*decoder };
+    decoder.is_gray()
+}
+
+/// # Safety
+/// `decoder` must be a valid pointer returned by `jxl_decoder_new`.
+#[no_mangle]
+pub unsafe extern "C" fn jxl_decoder_use_f16(decoder: *const JxlApiDecoder) -> bool {
+    debug_assert!(!decoder.is_null());
+
+    // SAFETY: Caller guarantees `decoder` is a valid, non-null pointer from `jxl_decoder_new`.
+    let decoder = unsafe { &*decoder };
+
+    decoder.use_f16
+}
+
+/// Returns a pointer to the output color profile ICC bytes and sets `*out_len`.
+/// The pointer is valid for the lifetime of the decoder. Returns null with len=0
+/// if the profile is not yet available (pixel format not set / frame header not parsed).
+///
+/// # Safety
+/// - `decoder` must be a valid pointer returned by `jxl_decoder_new`.
+/// - `out_len` must be a valid writable pointer to a `usize`.
+#[no_mangle]
+pub unsafe extern "C" fn jxl_decoder_get_icc_profile(
+    decoder: *mut JxlApiDecoder,
+    out_len: *mut usize,
+) -> *const u8 {
+    debug_assert!(!decoder.is_null() && !out_len.is_null());
+
+    // SAFETY: Caller guarantees `decoder` is a valid, non-null pointer from `jxl_decoder_new`.
+    let decoder = unsafe { &mut *decoder };
+
+    let icc = decoder.get_output_icc_profile();
+
+    // SAFETY: Caller guarantees `out_len` is a valid writable pointer.
+    unsafe { *out_len = icc.len() };
+
+    if icc.is_empty() {
+        std::ptr::null()
+    } else {
+        icc.as_ptr()
+    }
 }
 
 /// # Safety
@@ -257,22 +284,40 @@ pub unsafe extern "C" fn jxl_decoder_get_scanned_frame_info(
     }
 }
 
+/// Flush partially-decoded pixels into `output_buffer`.
+/// `k_buffer` receives the K (Black) channel (1 byte/pixel) for CMYK images; pass null otherwise.
 /// # Safety
 /// - `decoder` must be a valid pointer returned by `jxl_decoder_new`.
-/// - If `output_buffer` is non-null, it must point to a valid writable buffer
-///   of at least `output_buffer_len` bytes.
+/// - `output_buffer` must be non-null and point to a valid writable buffer of
+///   at least `output_buffer_len` bytes.
+/// - If `k_buffer` is non-null, it must point to a valid writable buffer of at
+///   least `k_buffer_len` bytes.
 #[no_mangle]
 pub unsafe extern "C" fn jxl_decoder_flush_pixels(
     decoder: *mut JxlApiDecoder,
     output_buffer: *mut u8,
     output_buffer_len: usize,
+    k_buffer: *mut u8,
+    k_buffer_len: usize,
 ) -> JxlDecoderStatus {
     debug_assert!(!decoder.is_null() && !output_buffer.is_null());
     // SAFETY: Caller guarantees valid pointers.
     let decoder = unsafe { &mut *decoder };
+    // SAFETY: Caller guarantees output_buffer is non-null and valid for output_buffer_len bytes.
     let buf = unsafe { slice::from_raw_parts_mut(output_buffer, output_buffer_len) };
-    match decoder.flush_pixels(buf) {
-        Ok(()) => JxlDecoderStatus::Ok,
+    let k_slice = if k_buffer.is_null() {
+        None
+    } else {
+        // SAFETY: Caller guarantees k_buffer is non-null and valid for k_buffer_len bytes.
+        Some(unsafe { slice::from_raw_parts_mut(k_buffer, k_buffer_len) })
+    };
+    // Ok(true) means new pixels were rendered and written to the buffer since
+    // the last flush_pixels call.
+    // Ok(false) means nothing new was rendered since the last flush_pixels
+    // call.
+    match decoder.flush_pixels(buf, k_slice) {
+        Ok(true) => JxlDecoderStatus::Ok,
+        Ok(false) => JxlDecoderStatus::NeedMoreData,
         Err(_) => JxlDecoderStatus::Error,
     }
 }

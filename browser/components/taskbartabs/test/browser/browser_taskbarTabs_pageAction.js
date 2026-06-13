@@ -92,7 +92,7 @@ async function taskbarTabsPageAction(win, destWin) {
   let tab = (await tabOpenPromise).target;
 
   is(
-    tab.ownerGlobal,
+    tab.documentGlobal,
     destWin,
     "Shoud've reverted back to secondWin, as it is most recently focused"
   );

@@ -56,6 +56,16 @@ void UrlClassifierFeatureFactory::Shutdown() {
 void UrlClassifierFeatureFactory::GetFeaturesFromChannel(
     nsIChannel* aChannel,
     nsTArray<nsCOMPtr<nsIUrlClassifierFeature>>& aFeatures) {
+  UrlClassifierFeatureFactory::GetCancelingFeaturesFromChannel(aChannel,
+                                                               aFeatures);
+  UrlClassifierFeatureFactory::GetNonCancelingFeaturesFromChannel(aChannel,
+                                                                  aFeatures);
+}
+
+/* static */
+void UrlClassifierFeatureFactory::GetCancelingFeaturesFromChannel(
+    nsIChannel* aChannel,
+    nsTArray<nsCOMPtr<nsIUrlClassifierFeature>>& aFeatures) {
   MOZ_ASSERT(XRE_IsParentProcess());
   MOZ_ASSERT(aChannel);
 
@@ -65,6 +75,10 @@ void UrlClassifierFeatureFactory::GetFeaturesFromChannel(
   // 1 feature classifies the channel, we call ::ProcessChannel() following this
   // feature order, and this could produce different results with a different
   // feature ordering.
+
+  // The first three features here do not actually perform the blocking
+  // themselves, but they either must be run before any blocking features or
+  // affect the outcome of other blocking features.
 
   // Email Tracking Data Collection
   // This needs to be run before other features so that other blocking features
@@ -127,6 +141,15 @@ void UrlClassifierFeatureFactory::GetFeaturesFromChannel(
   if (feature) {
     aFeatures.AppendElement(feature);
   }
+}
+
+/* static */
+void UrlClassifierFeatureFactory::GetNonCancelingFeaturesFromChannel(
+    nsIChannel* aChannel,
+    nsTArray<nsCOMPtr<nsIUrlClassifierFeature>>& aFeatures) {
+  MOZ_ASSERT(XRE_IsParentProcess());
+  MOZ_ASSERT(aChannel);
+  nsCOMPtr<nsIUrlClassifierFeature> feature;
 
   // Cryptomining Annotation
   feature = UrlClassifierFeatureCryptominingAnnotation::MaybeCreate(aChannel);

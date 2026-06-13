@@ -10,6 +10,8 @@
 #include "mozilla/DebugOnly.h"
 #include "mozilla/Maybe.h"
 
+#include <algorithm>
+#include <cmath>
 #include <utility>
 
 #include "jspubtd.h"
@@ -108,6 +110,14 @@ static const JSFunctionSpec error_static_methods[] = {
     JS_FS_END,
 };
 
+#ifdef NIGHTLY_BUILD
+static const JSPropertySpec error_static_properties[] = {
+    JS_INT32_PS("stackTraceLimit", int32_t(MAX_REPORTED_STACK_DEPTH),
+                JSPROP_ENUMERATE),
+    JS_PS_END,
+};
+#endif
+
 // Error.prototype and NativeError.prototype have own .message and .name
 // properties.
 #define COMMON_ERROR_PROPERTIES(name) \
@@ -165,7 +175,13 @@ IMPLEMENT_NATIVE_ERROR_PROPERTIES(SuspendError)
 
 const ClassSpec ErrorObject::classSpecs[JSEXN_ERROR_LIMIT] = {
     {ErrorObject::createConstructor, ErrorObject::createProto,
-     error_static_methods, nullptr, error_methods, error_properties},
+     error_static_methods,
+#ifdef NIGHTLY_BUILD
+     error_static_properties,
+#else
+     nullptr,
+#endif
+     error_methods, error_properties},
 
     IMPLEMENT_NATIVE_ERROR_SPEC(InternalError),
     IMPLEMENT_NATIVE_ERROR_SPEC(AggregateError),
@@ -208,16 +224,7 @@ const ClassSpec ErrorObject::classSpecs[JSEXN_ERROR_LIMIT] = {
 static void exn_finalize(JS::GCContext* gcx, JSObject* obj);
 
 static const JSClassOps ErrorObjectClassOps = {
-    nullptr,       // addProperty
-    nullptr,       // delProperty
-    nullptr,       // enumerate
-    nullptr,       // newEnumerate
-    nullptr,       // resolve
-    nullptr,       // mayResolve
-    exn_finalize,  // finalize
-    nullptr,       // call
-    nullptr,       // construct
-    nullptr,       // trace
+    .finalize = exn_finalize,
 };
 
 const JSClass ErrorObject::classes[JSEXN_ERROR_LIMIT] = {
@@ -1011,6 +1018,43 @@ static bool exn_isError(JSContext* cx, unsigned argc, Value* vp) {
 
 // The below is the "documentation" from https://v8.dev/docs/stack-trace-api
 //
+// Setting it to 0 disables stack trace collection. Any finite integer value
+// can be used as the maximum number of frames to collect. Setting it to
+// Infinity means that all frames get collected. This variable only affects
+// the current context; it has to be set explicitly for each context that
+// needs a different value.
+static uint32_t GetStackTraceLimit(JSContext* cx) {
+#ifdef NIGHTLY_BUILD
+  if (!JS::Prefs::experimental_error_stack_trace_limit()) {
+    return MAX_REPORTED_STACK_DEPTH;
+  }
+  JSObject* errorCtor = cx->global()->maybeGetConstructor(JSProto_Error);
+  if (!errorCtor) {
+    return MAX_REPORTED_STACK_DEPTH;
+  }
+  Value limitVal;
+  if (!GetPropertyPure(cx, errorCtor, NameToId(cx->names().stackTraceLimit),
+                       &limitVal)) {
+    return MAX_REPORTED_STACK_DEPTH;
+  }
+  if (limitVal.isUndefined()) {
+    return MAX_REPORTED_STACK_DEPTH;
+  }
+  if (!limitVal.isNumber()) {
+    return 0;
+  }
+  double d = limitVal.toNumber();
+  if (std::isnan(d) || d < 0) {
+    return 0;
+  }
+  return uint32_t(std::min(d, double(MAX_REPORTED_STACK_DEPTH)));
+#else
+  return MAX_REPORTED_STACK_DEPTH;
+#endif
+}
+
+// The below is the "documentation" from https://v8.dev/docs/stack-trace-api
+//
 //  ## Stack trace collection for custom exceptions
 //
 //  The stack trace mechanism used for built-in errors is implemented using a
@@ -1064,10 +1108,12 @@ static bool exn_captureStackTrace(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   RootedObject stack(cx);
-  if (!CaptureCurrentStack(
-          cx, &stack, JS::StackCapture(JS::MaxFrames(MAX_REPORTED_STACK_DEPTH)),
-          caller)) {
-    return false;
+  const uint32_t limit = GetStackTraceLimit(cx);
+  if (limit > 0) {
+    if (!CaptureCurrentStack(cx, &stack, JS::StackCapture(JS::MaxFrames(limit)),
+                             caller)) {
+      return false;
+    }
   }
 
   RootedString stackString(cx);
@@ -1242,8 +1288,11 @@ struct SuppressErrorsGuard {
 };
 
 bool js::CaptureStack(JSContext* cx, MutableHandleObject stack) {
-  return CaptureCurrentStack(
-      cx, stack, JS::StackCapture(JS::MaxFrames(MAX_REPORTED_STACK_DEPTH)));
+  const uint32_t limit = GetStackTraceLimit(cx);
+  if (limit == 0) {
+    return true;
+  }
+  return CaptureCurrentStack(cx, stack, JS::StackCapture(JS::MaxFrames(limit)));
 }
 
 JSString* js::ComputeStackString(JSContext* cx) {

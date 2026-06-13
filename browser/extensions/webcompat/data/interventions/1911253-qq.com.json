@@ -6,12 +6,15 @@
       "matches": ["*://*.qq.com/*"]
     }
   },
+  "css": {
+    "unhide-checkboxes": ".accredit_info_op li input[type=checkbox] { appearance: none; }"
+  },
   "interventions": [
     {
       "platforms": ["desktop"],
-      "content_scripts": {
+      "css": {
         "all_frames": true,
-        "css": ["bug1911253-qq.com-unhide-checkboxes.css"]
+        "which": ["unhide-checkboxes"]
       }
     }
   ]

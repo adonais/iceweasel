@@ -23,7 +23,6 @@ class AssemblerRISCVA : public AssemblerRiscvBase {
   void amominu_w(bool aq, bool rl, Register rd, Register rs1, Register rs2);
   void amomaxu_w(bool aq, bool rl, Register rd, Register rs1, Register rs2);
 
-#ifdef JS_CODEGEN_RISCV64
   // RV64A Standard Extension (in addition to RV32A)
   void lr_d(bool aq, bool rl, Register rd, Register rs1);
   void sc_d(bool aq, bool rl, Register rd, Register rs1, Register rs2);
@@ -36,7 +35,6 @@ class AssemblerRISCVA : public AssemblerRiscvBase {
   void amomax_d(bool aq, bool rl, Register rd, Register rs1, Register rs2);
   void amominu_d(bool aq, bool rl, Register rd, Register rs1, Register rs2);
   void amomaxu_d(bool aq, bool rl, Register rd, Register rs1, Register rs2);
-#endif
 };
 }  // namespace jit
 }  // namespace js

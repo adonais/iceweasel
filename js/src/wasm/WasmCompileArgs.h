@@ -193,6 +193,15 @@ struct ScriptedCaller {
   uint32_t line;
 
   ScriptedCaller() : filenameIsURL(false), line(0) {}
+  ScriptedCaller(UniqueChars&& filename, bool filenameIsURL, uint32_t line)
+      : filename(std::move(filename)),
+        filenameIsURL(filenameIsURL),
+        line(line) {}
+
+  // Use a ScriptedCaller that is 'self-hosted'. Frames from this module will
+  // be treated like JS self-hosted frames and hidden from user facing error
+  // stacks.
+  static ScriptedCaller selfHosted(JSContext* cx);
 };
 
 // Describes the reasons we cannot compute compile args

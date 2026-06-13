@@ -69,7 +69,7 @@ class FrozenImage : public ImageWrapper {
 
  protected:
   explicit FrozenImage(Image* aImage) : ImageWrapper(aImage) {}
-  virtual ~FrozenImage() {}
+  virtual ~FrozenImage() = default;
 
  private:
   friend class ImageOps;

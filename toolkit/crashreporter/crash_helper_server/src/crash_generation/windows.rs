@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use super::{finalize_crash_report, BreakpadProcessId, CrashGenerator};
+use super::{BreakpadProcessId, CrashGenerator};
 
 use crash_helper_common::messages;
 use std::{
@@ -31,11 +31,9 @@ use windows_sys::Win32::{
     },
 };
 
-pub(crate) type PlatformData = ();
-
 impl CrashGenerator {
     pub(crate) fn generate_wer_minidump(
-        &self,
+        &mut self,
         message: messages::WindowsErrorReportingMinidump,
     ) -> Result<(), ()> {
         let (minidump_file, path) = self.create_minidump_file()?;
@@ -76,7 +74,7 @@ impl CrashGenerator {
         if res != FALSE {
             let process_id = BreakpadProcessId { pid, handle };
 
-            finalize_crash_report(
+            self.finalize_crash_report(
                 process_id,
                 None,
                 &path,
@@ -107,13 +105,13 @@ impl CrashGenerator {
 
     fn create_minidump_file(&self) -> Result<(File, PathBuf), ()> {
         // Make sure that the target directory is present
-        create_dir_all(&self._minidump_path).map_err(|_| ())?;
+        create_dir_all(&self.minidump_path).map_err(|_| ())?;
 
         let uuid = Uuid::new_v4()
             .as_hyphenated()
             .encode_lower(&mut Uuid::encode_buffer())
             .to_string();
-        let path = PathBuf::from(self._minidump_path.clone()).join(uuid + ".dmp");
+        let path = PathBuf::from(self.minidump_path.clone()).join(uuid + ".dmp");
         let file = File::create(&path).map_err(|_| ())?;
         Ok((file, path))
     }

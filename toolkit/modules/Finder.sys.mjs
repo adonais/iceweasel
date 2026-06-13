@@ -541,7 +541,7 @@ Finder.prototype = {
     switch (aEvent.keyCode) {
       case aEvent.DOM_VK_RETURN:
         if (this._fastFind.foundLink) {
-          let view = this._fastFind.foundLink.ownerGlobal;
+          let view = this._fastFind.foundLink.documentGlobal;
           this._fastFind.foundLink.dispatchEvent(
             new view.PointerEvent("click", {
               view,

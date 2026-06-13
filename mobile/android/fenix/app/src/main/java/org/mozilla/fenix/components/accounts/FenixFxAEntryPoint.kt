@@ -81,6 +81,21 @@ enum class FenixFxAEntryPoint(override val entryName: String) : FxAEntryPoint, P
     ExternalView("external-view"),
 
     /**
+     * Authenticating with the user journey started at IP protection onboarding bottom sheet.
+     */
+    IPProtectionOnboarding("vpn_integration_android_onboarding"),
+
+    /**
+     * Authenticating with the user journey started from the IP protection main menu item.
+     */
+    IPProtectionMainMenu("vpn_integration_android_menu"),
+
+    /**
+     * Authenticating with the user journey started from the IP protection settings screen.
+     */
+    IPProtectionSettings("vpn_integration_android_settings"),
+
+    /**
      * When serializing the value after navigating, the result is a nullable value. We have this
      * "unknown" as a default value in the odd chance that we receive an [entryName] is not part of this enum.
      *

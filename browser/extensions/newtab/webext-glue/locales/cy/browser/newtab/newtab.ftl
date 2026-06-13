@@ -8,9 +8,13 @@
 newtab-page-title = Tab Newydd
 newtab-settings-button =
     .title = Cyfaddasu eich tudalen Tab Newydd
+#  (developer note): @nova-cleanup(remove-string): Remove newtab-customize-panel-icon-button once Nova lands, will be using newtab-customize-panel-label instead
 newtab-customize-panel-icon-button =
     .title = Cyfaddasu’r dudalen hon
+#  (developer note): @nova-cleanup(remove-string): Remove newtab-customize-panel-icon-button-label once Nova lands, will be using newtab-customize-panel-label instead
 newtab-customize-panel-icon-button-label = Cyfaddasu
+newtab-customize-panel-label =
+    .label = Cyfaddasu
 newtab-personalize-settings-icon-label =
     .title = Personoli Tab Newydd
     .aria-label = Gosodiadau
@@ -372,6 +376,10 @@ newtab-custom-widget-lists-toggle =
     .label = Rhestrau
 newtab-custom-widget-timer-toggle =
     .label = Amserydd
+newtab-custom-widget-sports-toggle =
+    .label = Cwpan y Byd
+newtab-custom-widget-clock-toggle =
+    .label = Cloc
 newtab-custom-widget-section-title = Teclynnau
 newtab-custom-widget-section-toggle =
     .label = Teclynnau
@@ -510,6 +518,9 @@ newtab-weather-menu-change-location = Newid lleoliad
 newtab-weather-change-location-search-input-placeholder =
     .placeholder = Chwilio am leoliad
     .aria-label = Chwilio am leoliad
+# "Current" refers to the user's physical/geographic location detected via geolocation.
+newtab-weather-change-location-search-use-current =
+    .label = Defnyddiwch y lleoliad presennol
 newtab-weather-menu-weather-display = Dangos y tywydd
 newtab-weather-todays-forecast = Rhagolwg heddiw
 newtab-weather-see-full-forecast = Gweld y rhagolwg llawn
@@ -598,8 +609,16 @@ newtab-topic-selection-button-pick-interests = Dewiswch eich diddordebau
 ## e.g. Following the travel section of stories.
 
 newtab-section-follow-button = Dilyn
+# Variables:
+#   $topic (string) - Topic that the user can follow
+newtab-section-follow-button-label =
+    .aria-label = Dilyn { $topic }
 newtab-section-following-button = Yn dilyn
 newtab-section-unfollow-button = Dad-ddilyn
+# Variables:
+#   $topic (string) - Topic that the user is following and can unfollow
+newtab-section-unfollow-button-label =
+    .aria-label = Yn dilyn: Dad-ddilyn { $topic }
 # A modal may appear next to the Follow button, directing users to try out the feature
 newtab-section-follow-highlight-title = Mireinio'ch ffrwd
 newtab-section-follow-highlight-subtitle = Dilynwch eich diddordebau i weld mwy o'r hyn rydych yn ei hoffi.
@@ -611,6 +630,22 @@ newtab-section-follow-highlight-subtitle = Dilynwch eich diddordebau i weld mwy 
 newtab-section-block-button = Rhwystro
 newtab-section-blocked-button = Rhwystrwyd
 newtab-section-unblock-button = Dadrwystro
+# Variables:
+#   $topic (string) - Name of topic that user is following
+newtab-section-follow-topic =
+    .aria-label = Dilyn { $topic }
+# Variables:
+#   $topic (string) - Name of topic that user is unfollowing
+newtab-section-unfollow-topic =
+    .aria-label = Peidio dilyn { $topic }
+# Variables:
+#   $topic (string) - Name of topic that user is blocking
+newtab-section-block-topic =
+    .aria-label = Rhwystro { $topic }
+# Variables:
+#   $topic (string) - Name of topic that user is unblocking
+newtab-section-unblock-topic =
+    .aria-label = Peidio rhwystro { $topic }
 
 ## Confirmation modal for blocking a section
 
@@ -641,6 +676,12 @@ newtab-custom-wallpaper-cta = Rhowch gynnig arni
 newtab-new-user-custom-wallpaper-title = Dewiswch bapur wal i wneud { -brand-product-name } eich un chi
 newtab-new-user-custom-wallpaper-subtitle = Gwnewch i bob tab newydd deimlo fel adref gyda phapurau wal a lliwiau cyfaddas.
 newtab-new-user-custom-wallpaper-cta = Rhowch gynnig arno
+
+## Strings for Nova wallpaper feature highlight
+
+newtab-wallpaper-feature-highlight-title = Mae papurau wal newydd ffres wedi cyrraedd
+newtab-wallpaper-feature-highlight-subtitle = Dewis eich ffefryn a gwneud i bob tab newydd deimlo fel cartref.
+newtab-wallpaper-feature-highlight-cta = Dewis papur wal
 
 ## Strings for download mobile highlight
 
@@ -710,12 +751,20 @@ newtab-widget-lists-label-beta =
 # Variables:
 #   $number (number) - Amount of list items marked complete
 newtab-widget-lists-completed-list = Wedi cwblhau ( { $number })
+newtab-widget-lists-celebration-headline = Gwaith da
+newtab-widget-lists-celebration-subhead = Popeth wedi'i orffen
 newtab-widget-task-list-menu-copy = Copïo
 newtab-widget-lists-menu-edit = Golygu enw'r rhestr
+newtab-widget-lists-menu-edit2 =
+    .aria-label = Golygu enw'r rhestr
 newtab-widget-lists-menu-create = Creu rhestr newydd
 newtab-widget-lists-menu-delete = Dileu'r rhestr hon
 newtab-widget-lists-menu-copy = Copïo'r rhestr i'r clipfwrdd
 newtab-widget-lists-menu-learn-more = Dysgu rhagor
+newtab-widget-lists-button-add-item = Ychwanegu eitem
+newtab-widget-lists-input-add-an-item2 =
+    .placeholder = Ychwanegu eitem
+    .aria-label = Ychwanegu eitem
 newtab-widget-lists-input-add-an-item =
     .placeholder = Ychwanegu eitem
 newtab-widget-lists-input-error = Cynhwyswch destun i ychwanegu eitem.
@@ -724,13 +773,26 @@ newtab-widget-lists-input-menu-move-up = Symud i fyny
 newtab-widget-lists-input-menu-move-down = Symud i lawr
 newtab-widget-lists-input-menu-delete = Dileu
 newtab-widget-lists-input-menu-edit = Golygu
+newtab-widget-lists-input-menu-edit2 =
+    .aria-label = Golygu eitem
 # the + symbol emphasises the functionality of adding a new list
 newtab-widget-lists-dropdown-create =
     .label = + Creu rhestr newydd
 newtab-widget-lists-name-label-default =
     .label = Rhestr tasgau
+newtab-widget-lists-name-label-checklist =
+    .label = Rhestr wirio
 newtab-widget-lists-name-placeholder-default =
     .placeholder = Rhestr tasgau
+newtab-widget-lists-name-placeholder-checklist2 =
+    .placeholder = Rhestr wirio
+    .aria-label = Golygu enw'r rhestr
+# The placeholder value of the name field for a newly created list
+newtab-widget-lists-name-placeholder-new2 =
+    .placeholder = Rhestr newydd
+    .aria-label = Golygu enw'r rhestr
+newtab-widget-lists-name-placeholder-checklist =
+    .placeholder = Rhestr wirio
 # The placeholder value of the name field for a newly created list
 newtab-widget-lists-name-placeholder-new =
     .placeholder = Rhestr newydd
@@ -750,10 +812,16 @@ newtab-widget-section-maximize =
 newtab-widget-section-minimize =
     .title = Lleihau teclynnau
     .aria-label = Lleihau pob teclyn i faint llai
+newtab-widget-section-menu-button =
+    .title = Dewislen teclynnau
+    .aria-label = Agor dewislen teclynnau
+newtab-widget-section-menu-manage = Rheoli teclynnau
+newtab-widget-section-menu-hide-all = Cuddio teclynnau
+newtab-widget-section-menu-learn-more = Dysgu rhagor
 newtab-widget-section-feedback = Dywedwch wrthym beth yw eich barn
+newtab-widget-lists-name-default = Rhestr wirio
 
-## Strings for timer productivity widget
-## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown
+## Strings introduced by the Nova redesign of the Timer widget
 
 newtab-widget-timer-notification-title = Amserydd
 newtab-widget-timer-notification-focus = Mae'r amser canolbwyntio ar ben. Gwaith da. Angen seibiant?
@@ -794,6 +862,130 @@ newtab-promo-card-dismiss-button =
     .title = Cau
     .aria-label = Cau
 
+## Strings introduced by the Nova redesign of the Timer widget
+
+# Variables:
+#   $minutes (number) - The currently selected timer duration in minutes
+newtab-widget-timer-start-aria =
+    .aria-label =
+        { $minutes ->
+            [zero] Cychwyn amserydd { $minutes }-munudau
+            [one] Cychwyn amserydd { $minutes }-munud
+            [two] Cychwyn amserydd { $minutes }-funud
+            [few] Cychwyn amserydd { $minutes }-munud
+            [many] Cychwyn amserydd { $minutes }-munud
+           *[other] Cychwyn amserydd { $minutes }-munud
+        }
+newtab-widget-timer-pause-aria =
+    .aria-label = Oedi amserydd
+# Variables:
+#   $minutes (number) - The currently selected timer duration in minutes
+newtab-widget-timer-spinbutton-name =
+    .aria-label =
+        { $minutes ->
+            [zero] { $minutes } munudau
+            [one] { $minutes } munud
+            [two] { $minutes } funud
+            [few] { $minutes } munud
+            [many] { $minutes } munud
+           *[other] { $minutes } munud
+        }
+newtab-widget-timer-decrease-min =
+    .title = Llai 1 munud
+newtab-widget-timer-increase-min =
+    .title = Mwy 1 munud
+newtab-widget-timer-mode-group =
+    .aria-label = Modd amserydd
+# Small label shown beneath the live time while the focus timer is running or paused.
+newtab-widget-timer-running-focus = Canolbwynt
+# Small label shown beneath the live time while the break timer is running or paused.
+newtab-widget-timer-running-break = Toriad
+# Context-menu item to hide the Timer widget. Replaces the shared "Hide widget"
+# copy with a widget-specific string per the Nova design.
+newtab-widget-timer-menu-hide = Cuddio'r amserydd
+# Heading shown inside the Timer widget after a focus session ends.
+newtab-widget-timer-celebration-heading-focus = Gwaith da
+# Heading shown inside the Timer widget after a break session ends.
+newtab-widget-timer-celebration-heading-break = Mae'ch toriad drosodd
+# Message shown inside the Timer widget after a focus session ends.
+newtab-widget-timer-celebration-message-focus = Angen toriad?
+# Message shown inside the Timer widget after a break session ends.
+newtab-widget-timer-celebration-message-break = Yn barod i ganolbwyntio?
+
+## Sports widget
+
+newtab-sports-widget-menu-follow-teams = Dilyn timau
+newtab-sports-widget-menu-view-upcoming = Gweld yr hyn sydd i ddod
+newtab-sports-widget-menu-view-results = Gweld y canlyniadau
+# Milestone dates (e.g. group stage, semifinals, etc.). Refers to calendar dates.
+newtab-sports-widget-menu-key-dates = Dyddiadau allweddol
+newtab-sports-widget-menu-learn-more = Dysgu rhagor
+# “Keep tabs on” is an informal expression meaning to stay updated on, stay informed on, or regularly follow something (in this case, World Cup matches and updates).
+newtab-sports-widget-keep-tabs = Cadw golwg ar Gwpan y Byd
+newtab-sports-widget-get-updates = Cael diweddariadau gemau byw a mwy.
+newtab-sports-widget-view-schedule =
+    .label = Gweld yr amserlen
+newtab-sports-widget-follow-teams =
+    .label = Dilyn timau
+newtab-sports-widget-view-matches =
+    .label = Gweld gemau
+# Variables:
+#   $number (number) - Maximum number of teams a user can choose to follow in the team selection state
+newtab-sports-widget-follow-teams-title =
+    { $number ->
+        [zero] Dilyn hyd at { $number } timau
+        [one] Dilyn hyd at { $number } tîm
+        [two] Dilyn hyd at { $number } dîm
+        [few] Dilyn hyd at { $number } tîm
+        [many] Dilyn hyd at { $number } thîm
+       *[other] Dilyn hyd at { $number } tîm
+    }
+newtab-sports-widget-choose-wallpaper =
+    .label = Dewis Papur Wal
+newtab-sports-widget-skip = Hepgor
+newtab-sports-widget-search-country =
+    .placeholder = Chwilio gwlad
+    .aria-label = Chwilio gwlad
+newtab-sports-widget-cancel = Na
+newtab-sports-widget-done-button =
+    .label = Gorffen
+newtab-sports-widget-group-stage = Cymal Grŵp
+newtab-sports-widget-round-32 = Rownd o 32
+newtab-sports-widget-round-16 = Rownd o 16
+newtab-sports-widget-quarter-finals = Chwarteri
+# The "LIVE" string is meant to be uppercase in English, but other languages and locales may vary in how they handle this.
+newtab-sports-widget-live = BYW
+newtab-custom-widget-live-refresh =
+    .title = Diweddaru sgoriau
+    .aria-label = Diweddaru sgoriau
+# Milestone dates (e.g. group stage, semifinals, etc.). Refers to calendar dates.
+newtab-sports-widget-key-dates = Dyddiadau allweddol
+newtab-sports-widget-upcoming = I Ddod
+newtab-sports-widget-results = Canlyniadau
+newtab-sports-widget-semi-finals = Cyn-derfynol
+newtab-sports-widget-bronze-finals = Y Ffeinal Efydd
+# Final is the final match for 1st place.
+newtab-sports-widget-final = Y Ffeinal
+# Variables:
+#   $start (Date) - Start date of a tournament stage
+#   $end (Date) - End date of a tournament stage
+newtab-sports-widget-key-date-range = { DATETIME($start, month: "short", day: "numeric") } – { DATETIME($end, month: "short", day: "numeric") }
+# Variables:
+#   $date (Date) - Date of a single tournament event
+newtab-sports-widget-key-date = { DATETIME($date, month: "short", day: "numeric") }
+newtab-sports-widget-delayed = Rhedeg yn Hwyr
+newtab-sports-widget-postponed = Wedi'i Ohirio
+newtab-sports-widget-suspended = Wedi'i Atal
+newtab-sports-widget-cancelled = Wedi'i Ganslo
+newtab-sports-widget-information = Gwybodaeth am y gêm
+newtab-sports-widget-no-live-data = Dyw data gêm fyw ddim yn cael ei ddiweddaru ar hyn o bryd
+newtab-sports-widget-view-results-link = Gweld y canlyniadau
+newtab-sports-widget-third-place = Yn Drydydd
+# Runner-up is the team in 2nd place.
+newtab-sports-widget-runner-up = Yn Ail
+newtab-sports-widget-champions = Pencampwyr
+newtab-sports-widget-world-cup-champions = Pencampwyr Cwpan y Byd 2026
+
 ## Strings for activation window message variants. In certain experiment configurations,
 ## the strings from these variants may be displayed in a message below the search input
 ## for the first 48 hours of a new profile's lifetime. Some messages include buttons with
@@ -815,3 +1007,59 @@ newtab-activation-window-message-customization-focus-primary-button =
 # the existing widgetry that appears on it.
 newtab-activation-window-message-values-focus-header = Mae'r gofod hwn yn chwarae yn ôl eich rheolau chi
 newtab-activation-window-message-values-focus-message = Mae { -brand-product-name } yn gadael i chi bori'r ffordd fyddwch chi'n ei hoffi, gyda dull mwy personol i ddechrau'ch diwrnod ar-lein. Gwnewch { -brand-product-name } yn ddefnyddiol i chi.
+
+## Strings for the Clock widget
+
+# Context menu item: toggle the clock card off.
+newtab-clock-widget-menu-hide = Cuddio cloc
+newtab-clock-widget-menu-learn-more = Dysgu rhagor
+newtab-clock-widget-menu-edit = Golygu clociau
+newtab-clock-widget-menu-switch-to-12h = Newid i fformat 12 awr
+newtab-clock-widget-menu-switch-to-24h = Newid i fformat 24 awr
+newtab-clock-widget-label-your-clocks = Eich clociau
+newtab-clock-widget-search-location-input =
+    .label = Lleoliad
+    .placeholder = Chwilio am ddinas
+    .aria-label = Chwilio am ddinas
+# "Nickname (optional)" refers to a custom, user-defined label for a saved location
+# (e.g., "Home", "Office", or "School") to make it easier to recognize.
+# Not to be translated as a legal name, username, or alias used for identity verification.
+newtab-clock-widget-input-nickname =
+    .label = Llysenw (dewisol)
+    .placeholder = Ychwanegu llysenw
+    .aria-label = Llysenw (dewisol)
+# "Add new clock" is an icon-only button in the widget toolbar — the
+# attributes are consumed as tooltip/screen-reader label only. The button
+# never renders visible text.
+newtab-clock-widget-button-add =
+    .title = Ychwanegu cloc newydd
+    .aria-label = Ychwanegu cloc newydd
+newtab-clock-widget-button-add-clock = Ychwanegu
+newtab-clock-widget-button-cancel = Na
+newtab-clock-widget-button-back =
+    .title = Nôl
+    .aria-label = Nôl
+newtab-clock-widget-button-edit-clock =
+    .title = Golygu cloc
+    .aria-label = Golygu cloc
+newtab-clock-widget-button-save = Cadw
+newtab-clock-widget-button-remove-clock =
+    .title = Tynnu cloc
+    .aria-label = Tynnu cloc
+newtab-clock-widget-add-clock-form =
+    .aria-label = Ychwanegu cloc
+newtab-clock-widget-edit-clock-form =
+    .aria-label = Golygu cloc
+# "Search results" is the accessible label for the listbox dropdown that appears
+# below the location search field, listing matching cities as the user types.
+# It means "results of the search", not "search within the results".
+newtab-clock-widget-search-results =
+    .aria-label = Canlyniadau chwilio
+# "Open menu for clock" is an icon-only button in the widget toolbar — the
+# attributes are consumed as tooltip/screen-reader label only. The button
+# never renders visible text.
+newtab-clock-widget-menu-button =
+    .title = Agor y ddewislen ar gyfer cloc
+    .aria-label = Agor y ddewislen ar gyfer cloc
+# $nickname (String) - The user-defined nickname for a saved clock location (e.g., "Home", "Office").
+newtab-clock-widget-label-nickname-with-value = Llysenw: { $nickname }

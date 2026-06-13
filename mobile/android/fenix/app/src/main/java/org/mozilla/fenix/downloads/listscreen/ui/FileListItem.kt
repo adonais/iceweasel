@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.progressSemantics
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -33,6 +32,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
+import mozilla.components.compose.base.button.IconButton
 import mozilla.components.compose.base.menu.DropdownMenu
 import mozilla.components.compose.base.menu.MenuItem
 import mozilla.components.compose.base.text.Text
@@ -147,10 +147,11 @@ private fun AfterListItemAction(
         is FileItem.Status.Downloading -> {
             IconButton(
                 onClick = { onPauseClick(fileItem.id) },
+                contentDescription = stringResource(R.string.download_pause_action),
             ) {
                 Icon(
                     painter = painterResource(mediaR.drawable.mozac_feature_media_action_pause),
-                    contentDescription = stringResource(R.string.download_pause_action),
+                    contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurface,
                 )
             }
@@ -158,10 +159,11 @@ private fun AfterListItemAction(
         is FileItem.Status.Paused -> {
             IconButton(
                 onClick = { onResumeClick(fileItem.id) },
+                contentDescription = stringResource(R.string.download_resume_action),
             ) {
                 Icon(
                     painter = painterResource(mediaR.drawable.mozac_feature_media_action_play),
-                    contentDescription = stringResource(R.string.download_resume_action),
+                    contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurface,
                 )
             }
@@ -170,10 +172,11 @@ private fun AfterListItemAction(
         FileItem.Status.Failed -> {
             IconButton(
                 onClick = { onRetryClick(fileItem.id) },
+                contentDescription = stringResource(R.string.download_retry_action),
             ) {
                 Icon(
                     painter = painterResource(iconsR.drawable.mozac_ic_arrow_counter_clockwise_24),
-                    contentDescription = stringResource(R.string.download_retry_action),
+                    contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurface,
                 )
             }
@@ -184,13 +187,14 @@ private fun AfterListItemAction(
 
     IconButton(
         onClick = { menuExpanded = true },
+        contentDescription = stringResource(id = R.string.content_description_menu),
         modifier = Modifier
             .size(24.dp)
             .testTag("${DownloadsListTestTag.DOWNLOADS_LIST_ITEM_MENU}.${fileItem.fileName}"),
     ) {
         Icon(
             painter = painterResource(id = iconsR.drawable.mozac_ic_ellipsis_vertical_24),
-            contentDescription = stringResource(id = R.string.content_description_menu),
+            contentDescription = null,
             tint = MaterialTheme.colorScheme.onSurface,
         )
 

@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 package mozilla.components.feature.awesomebar.provider
 
 import kotlinx.coroutines.CancellationException
@@ -10,7 +14,6 @@ import mozilla.components.concept.awesomebar.optimizedsuggestions.FlightSuggesti
 import mozilla.components.feature.session.SessionUseCases.LoadUrlUseCase
 import mozilla.components.support.test.mock
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -18,6 +21,9 @@ import org.junit.Test
 import org.mockito.Mockito.verify
 import java.time.ZoneId
 import java.util.Locale
+import kotlin.test.assertNotNull
+
+private const val ARTIFICIAL_DELAY = 350L
 
 /**
  * Tests for [FlightsOnlineSuggestionProvider].
@@ -27,16 +33,12 @@ import java.util.Locale
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class FlightsOnlineSuggestionProviderTest {
-    private lateinit var fakeDataSource: FakeFlightsSuggestionDataSource
+    private lateinit var fakeDataSource: FakeCombinedOnlineSuggestionDataSource
     private lateinit var provider: FlightsOnlineSuggestionProvider
 
     @Before
     fun setUp() {
-        fakeDataSource = FakeFlightsSuggestionDataSource(
-            results = listOf(
-                sampleFlightItem(),
-            ),
-        )
+        fakeDataSource = FakeCombinedOnlineSuggestionDataSource(flightResults = listOf(sampleFlightItem()))
 
         provider = FlightsOnlineSuggestionProvider(
             loadUrlUseCase = mock(),
@@ -73,10 +75,8 @@ class FlightsOnlineSuggestionProviderTest {
     fun `onSuggestionClicked invokes search use case with query`() = runTest {
         val url = "https://www.flightaware.com/live/flight/AAL123"
         val loadUrlUseCase: LoadUrlUseCase = mock()
-        val localDateSource = FakeFlightsSuggestionDataSource(
-            results = listOf(
-                sampleFlightItem(url = url),
-            ),
+        val localDateSource = FakeCombinedOnlineSuggestionDataSource(
+            flightResults = listOf(sampleFlightItem(url = url)),
         )
         val localProvider = FlightsOnlineSuggestionProvider(
             loadUrlUseCase = loadUrlUseCase,
@@ -104,7 +104,7 @@ class FlightsOnlineSuggestionProviderTest {
             sampleFlightItem(url = "https://www.flightaware.com/live/flight/AAL101", flightNumber = "C"),
         )
 
-        val localDataSource = FakeFlightsSuggestionDataSource(results = manyResults)
+        val localDataSource = FakeCombinedOnlineSuggestionDataSource(flightResults = manyResults)
 
         val limitedProvider = FlightsOnlineSuggestionProvider(
             loadUrlUseCase = mock(),
@@ -220,10 +220,10 @@ class FlightsOnlineSuggestionProviderTest {
         )
 
         assertNotNull(result)
-        assertEquals("LAX", result?.airportCode)
-        assertEquals("Los Angeles", result?.airportCity)
-        assertEquals("3:05 PM", result?.time)
-        assertEquals("Oct 5", result?.date)
+        assertEquals("LAX", result.airportCode)
+        assertEquals("Los Angeles", result.airportCity)
+        assertEquals("3:05 PM", result.time)
+        assertEquals("Oct 5", result.date)
     }
 
     @Test
@@ -242,10 +242,10 @@ class FlightsOnlineSuggestionProviderTest {
         )
 
         assertNotNull(result)
-        assertEquals("JFK", result?.airportCode)
-        assertEquals("New York", result?.airportCity)
-        assertEquals("1:05 PM", result?.time)
-        assertEquals("Oct 5", result?.date)
+        assertEquals("JFK", result.airportCode)
+        assertEquals("New York", result.airportCity)
+        assertEquals("1:05 PM", result.time)
+        assertEquals("Oct 5", result.date)
     }
 
     @Test
@@ -288,8 +288,8 @@ class FlightsOnlineSuggestionProviderTest {
 
         assertNotNull(resultPST)
         assertNotNull(resultEST)
-        assertEquals("1:05 PM", resultPST?.time)
-        assertEquals("4:05 PM", resultEST?.time)
+        assertEquals("1:05 PM", resultPST.time)
+        assertEquals("4:05 PM", resultEST.time)
     }
 
     @Test
@@ -316,23 +316,8 @@ class FlightsOnlineSuggestionProviderTest {
 
         assertNotNull(resultUS)
         assertNotNull(resultFrance)
-        assertEquals("Oct 5", resultUS?.date)
-        assertEquals("oct. 5", resultFrance?.date)
-    }
-}
-
-/**
- * Simple fake data source used for unit tests.
- * Records calls and returns the specified results.
- */
-private class FakeFlightsSuggestionDataSource(
-    private val results: List<AwesomeBar.FlightItem> = emptyList(),
-) : AwesomeBar.FlightsSuggestionDataSource {
-    val calls = mutableListOf<String>()
-
-    override suspend fun fetch(query: String): List<AwesomeBar.FlightItem> {
-        calls += query
-        return results
+        assertEquals("Oct 5", resultUS.date)
+        assertEquals("oct. 5", resultFrance.date)
     }
 }
 

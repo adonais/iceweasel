@@ -46,19 +46,8 @@ unsigned SandboxBrokerCommon::OperationToInt(Operation aOp) {
 // static
 const char* SandboxBrokerCommon::OperationDescription(Operation aOp) {
   static constexpr const char* kNames[] = {
-      "open",
-      "access",
-      "stat",
-      "chmod",
-      "link",
-      "symlink",
-      "mkdir",
-      "rename",
-      "rmdir",
-      "unlink",
-      "readlink",
-      "connect",
-      "connect-abstract",
+      "open",   "access", "stat",   "chmod",    "link",    "mkdir",
+      "rename", "rmdir",  "unlink", "readlink", "connect", "connect-abstract",
   };
 
   static_assert(

@@ -207,6 +207,13 @@ class ResizeObserver final : public nsISupports, public nsWrapperCache {
       Element* aTarget, ResizeObserverBoxOptions aBox,
       bool aForceFragmentHandling = false);
 
+  /**
+   * Returns whether this ResizeObserver is currently observing |aElement|.
+   */
+  bool Observes(Element& aElement) const {
+    return mObservationMap.Contains(&aElement);
+  }
+
  protected:
   ~ResizeObserver() { Disconnect(); }
 

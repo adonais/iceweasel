@@ -276,7 +276,7 @@ add_task(async function testUpdateTriggersRerender() {
 });
 
 async function promiseRecipesUpdated() {
-  await TestUtils.topicObserved("experimental-pane-loaded");
+  await TestUtils.topicObserved("experimental-pane-features-rendered");
 
   info("Experimental Pane Reloaded");
 }

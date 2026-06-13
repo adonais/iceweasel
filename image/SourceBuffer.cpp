@@ -107,6 +107,29 @@ SourceBufferIterator::State SourceBufferIterator::AdvanceOrScheduleResume(
                                                  aConsumer);
 }
 
+void SourceBufferIterator::MarkConsumed(size_t aConsumed) {
+  MOZ_ASSERT(mState == READY);
+  MOZ_ASSERT(aConsumed <= mData.mIterating.mNextReadLength);
+
+  if (mRemainderToRead != SIZE_MAX) [[unlikely]] {
+    MOZ_ASSERT(aConsumed <= mRemainderToRead);
+    mRemainderToRead -= aConsumed;
+  }
+
+  // Update the iterator to reflect partial consumption: advance mOffset by
+  // aConsumed, shrink mAvailableLength, and set mNextReadLength to the
+  // remaining bytes so Data()/Length() immediately expose the unconsumed
+  // portion. When all remaining bytes are eventually consumed and
+  // mNextReadLength reaches zero, the next AdvanceOrScheduleResume() will
+  // advance past zero bytes and fetch the next chunk.
+  mData.mIterating.mOffset += aConsumed;
+  mData.mIterating.mAvailableLength -= aConsumed;
+  mData.mIterating.mNextReadLength =
+      MOZ_LIKELY(mRemainderToRead == SIZE_MAX)
+          ? mData.mIterating.mAvailableLength
+          : std::min(mData.mIterating.mAvailableLength, mRemainderToRead);
+}
+
 bool SourceBufferIterator::RemainingBytesIsNoMoreThan(size_t aBytes) const {
   MOZ_ASSERT(mOwner);
   return mOwner->RemainingBytesIsNoMoreThan(*this, aBytes);

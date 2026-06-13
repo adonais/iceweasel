@@ -745,12 +745,7 @@ class RootExpr : public Expr {
   /**
    * Creates a new RootExpr
    */
-  RootExpr()
-#ifdef TX_TO_STRING
-      : mSerialize(true)
-#endif
-  {
-  }
+  RootExpr() = default;
 
   TX_DECL_EXPR
 
@@ -760,7 +755,7 @@ class RootExpr : public Expr {
 
  private:
   // When a RootExpr is used in a PathExpr it shouldn't be serialized
-  bool mSerialize;
+  bool mSerialize = true;
 #endif
 };  //-- RootExpr
 

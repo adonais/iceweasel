@@ -59,7 +59,7 @@ async function openTabAndWaitForWorker(url) {
   const { panel, commands, tab } = await openNewTabAndApplicationPanel(url);
   const doc = panel.panelWin.document;
 
-  selectPage(panel, "service-workers");
+  await selectPage(panel, "service-workers");
 
   info("Wait until the service worker appears in the application panel");
   await waitUntil(() => getWorkerContainers(doc).length === 1);

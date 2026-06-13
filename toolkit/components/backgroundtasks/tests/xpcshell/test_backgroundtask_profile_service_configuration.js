@@ -45,7 +45,8 @@ add_task(async function test_backgroundtask_profile_service_configuration() {
 
   let profile = profileService.createUniqueProfile(
     do_get_profile(),
-    "test_locked_profile"
+    "test_locked_profile",
+    "tests"
   );
   let path = profile.rootDir.path;
 

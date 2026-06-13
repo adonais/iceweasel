@@ -32,15 +32,15 @@ using namespace mozilla::gfx;
 namespace mozilla::dom {
 
 using namespace SVGPreserveAspectRatio_Binding;
-using namespace SVGSVGElement_Binding;
 
 SVGEnumMapping SVGSVGElement::sZoomAndPanMap[] = {
-    {nsGkAtoms::disable, SVG_ZOOMANDPAN_DISABLE},
-    {nsGkAtoms::magnify, SVG_ZOOMANDPAN_MAGNIFY},
+    {nsGkAtoms::disable, SVGSVGElement_Binding::SVG_ZOOMANDPAN_DISABLE},
+    {nsGkAtoms::magnify, SVGSVGElement_Binding::SVG_ZOOMANDPAN_MAGNIFY},
     {nullptr, 0}};
 
 SVGElement::EnumInfo SVGSVGElement::sEnumInfo[1] = {
-    {nsGkAtoms::zoomAndPan, sZoomAndPanMap, SVG_ZOOMANDPAN_MAGNIFY}};
+    {nsGkAtoms::zoomAndPan, sZoomAndPanMap,
+     SVGSVGElement_Binding::SVG_ZOOMANDPAN_MAGNIFY}};
 
 JSObject* SVGSVGElement::WrapNode(JSContext* aCx,
                                   JS::Handle<JSObject*> aGivenProto) {
@@ -73,7 +73,8 @@ NS_IMPL_ADDREF_INHERITED(SVGSVGElement, SVGSVGElementBase)
 NS_IMPL_RELEASE_INHERITED(SVGSVGElement, SVGSVGElementBase)
 
 SVGView::SVGView() {
-  mZoomAndPan.Init(SVGSVGElement::ZOOMANDPAN, SVG_ZOOMANDPAN_MAGNIFY);
+  mZoomAndPan.Init(SVGSVGElement::ZOOMANDPAN,
+                   SVGSVGElement_Binding::SVG_ZOOMANDPAN_MAGNIFY);
   mViewBox.Init();
   mPreserveAspectRatio.Init();
 }
@@ -232,44 +233,47 @@ void SVGSVGElement::SetCurrentTime(float seconds) {
 }
 
 void SVGSVGElement::DeselectAll() {
-  nsIFrame* frame = GetPrimaryFrame();
-  if (frame) {
-    RefPtr<nsFrameSelection> frameSelection = frame->GetFrameSelection();
-    frameSelection->ClearNormalSelection();
+  if (Document* doc = GetComposedDoc()) {
+    if (RefPtr<PresShell> presShell = doc->GetPresShell()) {
+      if (RefPtr<Selection> docSel =
+              presShell->GetCurrentSelection(SelectionType::eNormal)) {
+        docSel->RemoveAllRanges(IgnoreErrors());
+      }
+    }
   }
 }
 
 already_AddRefed<DOMSVGNumber> SVGSVGElement::CreateSVGNumber() {
-  return do_AddRef(new DOMSVGNumber(this));
+  return MakeAndAddRef<DOMSVGNumber>(this);
 }
 
 already_AddRefed<DOMSVGLength> SVGSVGElement::CreateSVGLength() {
-  return do_AddRef(new DOMSVGLength());
+  return MakeAndAddRef<DOMSVGLength>();
 }
 
 already_AddRefed<DOMSVGAngle> SVGSVGElement::CreateSVGAngle() {
-  return do_AddRef(new DOMSVGAngle(this));
+  return MakeAndAddRef<DOMSVGAngle>(this);
 }
 
 already_AddRefed<DOMSVGPoint> SVGSVGElement::CreateSVGPoint() {
-  return do_AddRef(new DOMSVGPoint(Point(0, 0)));
+  return MakeAndAddRef<DOMSVGPoint>(Point(0, 0));
 }
 
 already_AddRefed<SVGMatrix> SVGSVGElement::CreateSVGMatrix() {
-  return do_AddRef(new SVGMatrix());
+  return MakeAndAddRef<SVGMatrix>();
 }
 
 already_AddRefed<SVGRect> SVGSVGElement::CreateSVGRect() {
-  return do_AddRef(new SVGRect(this));
+  return MakeAndAddRef<SVGRect>(this);
 }
 
 already_AddRefed<DOMSVGTransform> SVGSVGElement::CreateSVGTransform() {
-  return do_AddRef(new DOMSVGTransform());
+  return MakeAndAddRef<DOMSVGTransform>();
 }
 
 already_AddRefed<DOMSVGTransform> SVGSVGElement::CreateSVGTransformFromMatrix(
     const DOMMatrix2DInit& matrix, ErrorResult& rv) {
-  return do_AddRef(new DOMSVGTransform(matrix, rv));
+  return MakeAndAddRef<DOMSVGTransform>(matrix, rv);
 }
 
 void SVGSVGElement::DidChangeTranslate() {
@@ -292,8 +296,8 @@ uint16_t SVGSVGElement::ZoomAndPan() const {
 }
 
 void SVGSVGElement::SetZoomAndPan(uint16_t aZoomAndPan, ErrorResult& rv) {
-  if (aZoomAndPan == SVG_ZOOMANDPAN_DISABLE ||
-      aZoomAndPan == SVG_ZOOMANDPAN_MAGNIFY) {
+  if (aZoomAndPan == SVGSVGElement_Binding::SVG_ZOOMANDPAN_DISABLE ||
+      aZoomAndPan == SVGSVGElement_Binding::SVG_ZOOMANDPAN_MAGNIFY) {
     ErrorResult nestedRv;
     mEnumAttributes[ZOOMANDPAN].SetBaseValue(aZoomAndPan, this, nestedRv);
     MOZ_ASSERT(!nestedRv.Failed(),

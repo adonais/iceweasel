@@ -13,12 +13,12 @@ class nsAboutRedirector : public nsIAboutModule {
 
   NS_DECL_NSIABOUTMODULE
 
-  nsAboutRedirector() {}
+  nsAboutRedirector() = default;
 
   static nsresult Create(REFNSIID aIID, void** aResult);
 
  protected:
-  virtual ~nsAboutRedirector() {}
+  virtual ~nsAboutRedirector() = default;
 };
 
 #endif  // nsAboutRedirector_h_

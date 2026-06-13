@@ -1,3 +1,5 @@
+// |jit-test| skip-if: !wasmJSPromiseIntegrationEnabled()
+
 // Tests stepping through the wasm code with JS PI cont stack.
 
 const g = newGlobal({ newCompartment: true });
@@ -5,7 +7,9 @@ const dbg = new Debugger(g);
 
 // Estimate internal SP range.
 var base = stackPointerInfo();
-var estimatedLimit = base - 300000;
+// stackPointerInfo() returns only the lower 28 bits of the SP.
+function wrapStackInfo(p) { return p & 0xfffffff; }
+var limitOffset = 300000;
 var checkFailed = false;
 var checksPerformed = {};
 
@@ -14,8 +18,9 @@ var checksPerformed = {};
 function checkStack(s) {
   var sp = stackPointerInfo();
   checksPerformed[s] = true;
-  if (sp < estimatedLimit || sp > base) {
-    print(`Check failed: ${sp} not in [${estimatedLimit}, ${base}], at ${s}`);
+  var belowBase = wrapStackInfo(base - sp);
+  if (belowBase > limitOffset) {
+    print(`Check failed: ${sp} not in [${wrapStackInfo(base - limitOffset)}, ${base}], at ${s}`);
     checkFailed = true;
   }
 }

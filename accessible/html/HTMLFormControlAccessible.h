@@ -110,7 +110,7 @@ class HTMLTextFieldAccessible : public HyperTextAccessible {
   virtual LocalAccessible* ContainerWidget() const override;
 
  protected:
-  virtual ~HTMLTextFieldAccessible() {}
+  virtual ~HTMLTextFieldAccessible() = default;
 
   // LocalAccessible
   virtual ENameValueFlag DirectName(nsString& aName) const override;
@@ -295,7 +295,7 @@ class HTMLProgressAccessible : public LeafAccessible {
   virtual bool IsWidget() const override;
 
  protected:
-  virtual ~HTMLProgressAccessible() {}
+  virtual ~HTMLProgressAccessible() = default;
 
   virtual void DOMAttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
                                    AttrModType aModType,
@@ -343,7 +343,7 @@ class HTMLMeterAccessible : public LeafAccessible {
   int32_t ValueRegion() const;
 
  protected:
-  virtual ~HTMLMeterAccessible() {}
+  virtual ~HTMLMeterAccessible() = default;
 
   virtual void DOMAttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
                                    AttrModType aModType,
@@ -385,7 +385,7 @@ class HTMLDateTimeAccessible : public HyperTextAccessible {
   virtual bool IsWidget() const override { return true; }
 
  protected:
-  virtual ~HTMLDateTimeAccessible() {}
+  virtual ~HTMLDateTimeAccessible() = default;
 };
 
 }  // namespace a11y

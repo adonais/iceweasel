@@ -54,6 +54,7 @@ import org.mozilla.fenix.pbmlock.registerForVerification
 import org.mozilla.fenix.pbmlock.verifyUser
 import org.mozilla.fenix.tabstray.redux.state.Page
 import org.mozilla.fenix.utils.allowUndo
+import androidx.appcompat.R as appcompatR
 
 /**
  * Displays a list of history metadata items for a history metadata search group.
@@ -104,6 +105,7 @@ class HistoryMetadataGroupFragment :
                 fenixBrowserUseCases = requireComponents.useCases.fenixBrowserUseCases,
                 navController = findNavController(),
                 settings = requireComponents.settings,
+                shareUseCases = requireComponents.useCases.shareUseCases,
                 scope = CoroutineScope(Dispatchers.IO),
                 searchTerm = args.title,
                 deleteSnackbar = ::deleteSnackbar,
@@ -164,7 +166,7 @@ class HistoryMetadataGroupFragment :
 
             menu.findItem(R.id.delete_history_multi_select)?.let { deleteItem ->
                 deleteItem.title = SpannableString(deleteItem.title).apply {
-                    setTextColor(requireContext(), R.attr.textCritical)
+                    setTextColor(requireContext(), appcompatR.attr.colorError)
                 }
             }
         } else {

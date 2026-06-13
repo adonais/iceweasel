@@ -42,10 +42,9 @@ static DocumentOrShadowRoot* FindTreeToWatch(nsIContent& aContent, nsAtom* aID,
     shadow = shadow->Host()->GetContainingShadow();
   }
 
-  if (shadow) {
+  if (shadow && !aReferenceImage) {
     return shadow;
   }
-
   return aContent.OwnerDoc();
 }
 

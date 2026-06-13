@@ -40,7 +40,7 @@ class WeakAsyncStatementCallback : public mozIStorageStatementCallback {
  */
 class AsyncStatementCallback : public WeakAsyncStatementCallback {
  public:
-  NS_DECL_ISUPPORTS
+  NS_DECL_THREADSAFE_ISUPPORTS
   AsyncStatementCallback() = default;
 
  protected:

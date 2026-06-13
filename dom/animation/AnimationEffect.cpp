@@ -43,9 +43,23 @@ nsISupports* AnimationEffect::GetParentObject() const {
   return ToSupports(mDocument);
 }
 
-// https://drafts.csswg.org/web-animations/#current
+// https://drafts.csswg.org/web-animations-1/#current
 bool AnimationEffect::IsCurrent() const {
-  if (!mAnimation || mAnimation->PlayState() == AnimationPlayState::Finished) {
+  if (!mAnimation) {
+    return false;
+  }
+
+  // An animation effect is current if it is associated with an animation not
+  // in the idle play state with a non-null associated timeline that is not
+  // monotonically increasing.
+  // https://drafts.csswg.org/web-animations-1/#current (fourth bullet)
+  const AnimationTimeline* timeline = mAnimation->GetTimeline();
+  if (timeline && !timeline->IsMonotonicallyIncreasing() &&
+      mAnimation->PlayState() != AnimationPlayState::Idle) {
+    return true;
+  }
+
+  if (mAnimation->PlayState() == AnimationPlayState::Finished) {
     return false;
   }
 
@@ -260,7 +274,10 @@ ComputedTiming AnimationEffect::GetComputedTimingAt(
     progress = fn->At(progress, result.mBeforeFlag);
   }
 
-  MOZ_ASSERT(std::isfinite(progress), "Progress value should be finite");
+  if (!std::isfinite(progress)) {
+    return result;
+  }
+
   result.mProgress.SetValue(progress);
   return result;
 }

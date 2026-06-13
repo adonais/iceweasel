@@ -1,7 +1,6 @@
 [DEFAULT]
 prefs = [
   "extensions.formautofill.creditCards.enabled=true",
-  "toolkit.telemetry.ipcBatchTimeout=0", # lower the interval for event telemetry in the content process to update the parent process
   "extensions.formautofill.skipProgrammaticCheckForTests=true"
 ]
 support-files = [

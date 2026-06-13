@@ -5,7 +5,6 @@
 package org.mozilla.fenix.home.topsites
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -21,6 +20,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
@@ -51,6 +52,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import mozilla.components.compose.base.PagerIndicator
 import mozilla.components.compose.base.annotation.FlexibleWindowPreview
 import mozilla.components.compose.base.modifier.rightClickable
 import mozilla.components.feature.top.sites.TopSite
@@ -73,8 +75,8 @@ import mozilla.components.ui.icons.R as iconsR
  */
 const val TOP_SITES_ITEM_SIZE = 84
 
-private const val TOP_SITES_TO_SHOW = 8
-private const val TOP_SITES_PER_ROW = 4
+internal const val TOP_SITES_TO_SHOW = 8
+internal const val TOP_SITES_PER_ROW = 4
 private const val TOP_SITES_ROW_WIDTH = TOP_SITES_PER_ROW * TOP_SITES_ITEM_SIZE
 internal const val TOP_SITES_FAVICON_CARD_SIZE = 60
 internal const val TOP_SITES_FAVICON_SIZE = 36
@@ -86,6 +88,7 @@ internal const val TOP_SITES_FAVICON_SIZE = 36
  * @param topSiteColors The color set defined by [TopSiteColors] used to style a top site.
  * @param interactor The interactor which handles user actions with the widget.
  * @param onTopSitesItemBound Invoked during the composition of a top site item.
+ * @param isPager Whether the top sites should be rendered as a horizontally pageable pager.
  */
 @Composable
 fun TopSites(
@@ -93,6 +96,7 @@ fun TopSites(
     topSiteColors: TopSiteColors = TopSiteColors.colors(),
     interactor: TopSiteInteractor,
     onTopSitesItemBound: () -> Unit,
+    isPager: Boolean = false,
 ) {
     TopSites(
         topSites = topSites,
@@ -111,6 +115,7 @@ fun TopSites(
         onSettingsClicked = interactor::onSettingsClicked,
         onSponsorPrivacyClicked = interactor::onSponsorPrivacyClicked,
         onTopSitesItemBound = onTopSitesItemBound,
+        isPager = isPager,
     )
 }
 
@@ -130,6 +135,7 @@ fun TopSites(
  * @param onSponsorPrivacyClicked Invoked when the user clicks on the "Our sponsors & your privacy"
  * menu item.
  * @param onTopSitesItemBound Invoked during the composition of a top site item.
+ * @param isPager Whether the top sites should be rendered as a horizontally pageable pager.
  */
 @Composable
 @Suppress("LongParameterList")
@@ -145,9 +151,8 @@ fun TopSites(
     onSettingsClicked: () -> Unit,
     onSponsorPrivacyClicked: () -> Unit,
     onTopSitesItemBound: () -> Unit,
+    isPager: Boolean = false,
 ) {
-    val topSitesToShow = topSites.take(TOP_SITES_TO_SHOW).chunked(TOP_SITES_PER_ROW)
-
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -157,43 +162,140 @@ fun TopSites(
             .testTag(TopSitesTestTag.TOP_SITES),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Box(
-            modifier = Modifier.fillMaxWidth(),
-            contentAlignment = Alignment.Center,
-        ) {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                for (items in topSitesToShow) {
-                    Row(modifier = Modifier.defaultMinSize(minWidth = TOP_SITES_ROW_WIDTH.dp)) {
-                        items.forEachIndexed { position, topSite ->
-                            TopSiteItem(
-                                topSite = topSite,
-                                menuItems = getMenuItems(
-                                    topSite = topSite,
-                                    onOpenInPrivateTabClicked = onOpenInPrivateTabClicked,
-                                    onEditTopSiteClicked = onEditTopSiteClicked,
-                                    onRemoveTopSiteClicked = onRemoveTopSiteClicked,
-                                    onSettingsClicked = onSettingsClicked,
-                                    onSponsorPrivacyClicked = onSponsorPrivacyClicked,
-                                ),
-                                position = position,
-                                topSiteColors = topSiteColors,
-                                onTopSiteClick = { item -> onTopSiteClick(item) },
-                                onTopSiteLongClick = onTopSiteLongClick,
-                                onTopSiteImpression = onTopSiteImpression,
-                                onTopSitesItemBound = onTopSitesItemBound,
-                            )
-                        }
-                    }
+        if (isPager) {
+            TopSitesPager(
+                topSites = topSites,
+                topSiteColors = topSiteColors,
+                onTopSiteClick = onTopSiteClick,
+                onTopSiteLongClick = onTopSiteLongClick,
+                onTopSiteImpression = onTopSiteImpression,
+                onOpenInPrivateTabClicked = onOpenInPrivateTabClicked,
+                onEditTopSiteClicked = onEditTopSiteClicked,
+                onRemoveTopSiteClicked = onRemoveTopSiteClicked,
+                onSettingsClicked = onSettingsClicked,
+                onSponsorPrivacyClicked = onSponsorPrivacyClicked,
+                onTopSitesItemBound = onTopSitesItemBound,
+            )
+        } else {
+            val topSiteRows = topSites.take(TOP_SITES_TO_SHOW).chunked(TOP_SITES_PER_ROW)
 
-                    if (items != topSitesToShow.last()) {
-                        Spacer(modifier = Modifier.height(12.dp))
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center,
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    for (items in topSiteRows) {
+                        Row(modifier = Modifier.defaultMinSize(minWidth = TOP_SITES_ROW_WIDTH.dp)) {
+                            items.forEachIndexed { position, topSite ->
+                                TopSiteItem(
+                                    topSite = topSite,
+                                    menuItems = getMenuItems(
+                                        topSite = topSite,
+                                        onOpenInPrivateTabClicked = onOpenInPrivateTabClicked,
+                                        onEditTopSiteClicked = onEditTopSiteClicked,
+                                        onRemoveTopSiteClicked = onRemoveTopSiteClicked,
+                                        onSettingsClicked = onSettingsClicked,
+                                        onSponsorPrivacyClicked = onSponsorPrivacyClicked,
+                                    ),
+                                    position = position,
+                                    topSiteColors = topSiteColors,
+                                    onTopSiteClick = onTopSiteClick,
+                                    onTopSiteLongClick = onTopSiteLongClick,
+                                    onTopSiteImpression = onTopSiteImpression,
+                                    onTopSitesItemBound = onTopSitesItemBound,
+                                )
+                            }
+                        }
+
+                        if (items != topSiteRows.last()) {
+                            Spacer(modifier = Modifier.height(12.dp))
+                        }
                     }
                 }
             }
         }
+    }
+}
+
+/**
+ * A horizontal pager of top sites.
+ *
+ * @param topSites List of [TopSite] to display.
+ * @param topSiteColors The color set defined by [TopSiteColors] used to style a top site.
+ * @param onTopSiteClick Invoked when the user clicks on a top site.
+ * @param onTopSiteLongClick Invoked when the user long clicks on a top site.
+ * @param onTopSiteImpression Invoked when the user sees a provided top site.
+ * @param onOpenInPrivateTabClicked Invoked when the user clicks on the "Open in private tab"
+ * menu item.
+ * @param onEditTopSiteClicked Invoked when the user clicks on the "Edit" menu item.
+ * @param onRemoveTopSiteClicked Invoked when the user clicks on the "Remove" menu item.
+ * @param onSettingsClicked Invoked when the user clicks on the "Settings" menu item.
+ * @param onSponsorPrivacyClicked Invoked when the user clicks on the "Our sponsors & your privacy"
+ * menu item.
+ * @param onTopSitesItemBound Invoked during the composition of a top site item.
+ */
+@Suppress("LongParameterList")
+@Composable
+private fun TopSitesPager(
+    topSites: List<TopSite>,
+    topSiteColors: TopSiteColors = TopSiteColors.colors(),
+    onTopSiteClick: (TopSite) -> Unit,
+    onTopSiteLongClick: (TopSite) -> Unit,
+    onTopSiteImpression: (TopSite.Provided, Int) -> Unit,
+    onOpenInPrivateTabClicked: (TopSite) -> Unit,
+    onEditTopSiteClicked: (TopSite) -> Unit,
+    onRemoveTopSiteClicked: (TopSite) -> Unit,
+    onSettingsClicked: () -> Unit,
+    onSponsorPrivacyClicked: () -> Unit,
+    onTopSitesItemBound: () -> Unit,
+) {
+    val pages = remember(topSites) {
+        topSites.take(TOP_SITES_TO_SHOW)
+            .chunked(TOP_SITES_PER_ROW)
+    }
+    val pagerState = rememberPagerState(pageCount = { pages.size })
+
+    HorizontalPager(
+        state = pagerState,
+        modifier = Modifier.fillMaxWidth(),
+    ) { pageIndex ->
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+        ) {
+            pages[pageIndex].forEachIndexed { colIndex, topSite ->
+                TopSiteItem(
+                    topSite = topSite,
+                    menuItems = getMenuItems(
+                        topSite = topSite,
+                        onOpenInPrivateTabClicked = onOpenInPrivateTabClicked,
+                        onEditTopSiteClicked = onEditTopSiteClicked,
+                        onRemoveTopSiteClicked = onRemoveTopSiteClicked,
+                        onSettingsClicked = onSettingsClicked,
+                        onSponsorPrivacyClicked = onSponsorPrivacyClicked,
+                    ),
+                    position = topSites.indexOf(topSite),
+                    topSiteColors = topSiteColors,
+                    onTopSiteClick = onTopSiteClick,
+                    onTopSiteLongClick = onTopSiteLongClick,
+                    onTopSiteImpression = onTopSiteImpression,
+                    onTopSitesItemBound = onTopSitesItemBound,
+                )
+            }
+        }
+    }
+
+    if (pages.size > 1) {
+        PagerIndicator(
+            pagerState = pagerState,
+            modifier = Modifier
+                .padding(top = 8.dp)
+                .testTag(TopSitesTestTag.TOP_SITES_PAGER_INDICATOR),
+            spacing = 6.dp,
+        )
     }
 }
 
@@ -313,12 +415,10 @@ fun TopSiteItem(
                 if (topSite is TopSite.Pinned || topSite is TopSite.Default) {
                     Box(
                         modifier = Modifier
-                            .size(16.dp)
-                            .background(color = PhotonColors.LightGrey20, shape = CircleShape),
+                            .size(16.dp),
                         contentAlignment = Alignment.Center,
                     ) {
                         Image(
-                            modifier = Modifier.size(12.dp),
                             painter = painterResource(id = iconsR.drawable.mozac_ic_pin_8),
                             colorFilter = ColorFilter.tint(PhotonColors.LightGrey80),
                             contentDescription = null,

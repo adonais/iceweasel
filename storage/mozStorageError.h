@@ -19,7 +19,7 @@ class Error final : public mozIStorageError {
   Error(int aResult, const char* aMessage);
 
  private:
-  ~Error() {}
+  ~Error() = default;
 
   int mResult;
   nsCString mMessage;

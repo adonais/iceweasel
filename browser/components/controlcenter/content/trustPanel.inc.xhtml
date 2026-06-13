@@ -30,6 +30,9 @@
           </toolbarbutton>
         </hbox>
 
+        <html:script type="module" src="chrome://browser/content/controlcenter/components/breach-alert-panel.mjs"></html:script>
+        <html:breach-alert-panel id="trustpanel-breach-alert-section">
+        </html:breach-alert-panel>
         <vbox id="trustpanel-graphic-section">
           <hbox>
             <image id="trustpanel-graphic-image"></image>
@@ -53,7 +56,7 @@
               <html:moz-button id="trustpanel-blocker-see-all" data-l10n-id="trustpanel-blocker-see-all" default="true" size="small" type="primary"></html:moz-button>
             </html:moz-button-group>
           </vbox>
-          <vbox id="trustpanel-insecure-section" class="trustpanel-graphic-inner">
+          <vbox id="trustpanel-insecure-section" class="trustpanel-graphic-inner" when-connection="not-secure">
             <label data-l10n-id="trustpanel-insecure-section-header" class="trustpanel-header"></label>
             <label data-l10n-id="trustpanel-insecure-description"></label>
           </vbox>
@@ -79,7 +82,6 @@
                class="PanelUI-subView"
                role="document">
 #include securityInformation.inc.xhtml
-      <toolbarseparator></toolbarseparator>
       <html:a id="trustpanel-siteinformation-morelink" data-l10n-id="trustpanel-siteinformation-morelink" role="link" class="trustpanel-section panel-subview-footer-button"></html:a>
     </panelview>
 

@@ -29,6 +29,7 @@
 #include "api/rtp_transceiver_direction.h"
 #include "api/sctp_transport_interface.h"
 #include "api/transport/sctp_transport_factory_interface.h"
+#include "call/payload_type.h"
 #include "media/base/codec.h"
 #include "media/base/media_constants.h"
 #include "media/base/media_engine.h"
@@ -45,7 +46,6 @@
 #include "pc/rtp_media_utils.h"
 #include "pc/session_description.h"
 #include "pc/simulcast_description.h"
-#include "pc/used_ids.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/experiments/field_trial_parser.h"
 #include "rtc_base/logging.h"
@@ -400,8 +400,8 @@ RTCError CreateMediaContentOffer(
   if (!AddStreamParams(media_description_options.sender_options,
                        session_options.rtcp_cname, ssrc_generator,
                        current_streams, offer, field_trials)) {
-    LOG_AND_RETURN_ERROR(RTCErrorType::INTERNAL_ERROR,
-                         "Failed to add stream parameters");
+    return LOG_ERROR(RTCError(RTCErrorType::INTERNAL_ERROR)
+                     << "Failed to add stream parameters");
   }
 
   return CreateContentOffer(media_description_options, session_options,
@@ -420,7 +420,9 @@ void MergeRtpHdrExts(const RtpHeaderExtensions& reference_extensions,
                      bool enable_encrypted_rtp_header_extensions,
                      RtpHeaderExtensions* offered_extensions,
                      RtpHeaderExtensions* all_encountered_extensions,
-                     UsedRtpHeaderExtensionIds* used_ids) {
+                     PayloadTypeSuggester& suggester,
+                     absl::string_view mid,
+                     RtpTransceiverIdDomain id_domain) {
   for (auto reference_extension : reference_extensions) {
     if (!RtpExtension::FindHeaderExtensionByUriAndEncryption(
             *offered_extensions, reference_extension.uri,
@@ -439,7 +441,15 @@ void MergeRtpHdrExts(const RtpHeaderExtensions& reference_extensions,
         // audio and video.
         offered_extensions->push_back(*existing);
       } else {
-        used_ids->FindAndSetIdUsed(&reference_extension);
+        auto suggested_id = suggester.SuggestRtpHeaderExtensionId(
+            mid, reference_extension, id_domain);
+        if (suggested_id.ok()) {
+          reference_extension.id = suggested_id.value();
+        } else {
+          RTC_LOG(LS_ERROR)
+              << "Failed to suggest RTP header extension ID for "
+              << reference_extension.uri << ", error " << suggested_id.error();
+        }
         all_encountered_extensions->push_back(reference_extension);
         offered_extensions->push_back(reference_extension);
       }
@@ -475,10 +485,25 @@ const RtpExtension* FindHeaderExtensionByUriDiscardUnsupported(
 void NegotiateRtpHeaderExtensions(const RtpHeaderExtensions& local_extensions,
                                   const RtpHeaderExtensions& offered_extensions,
                                   RtpExtension::Filter filter,
-                                  RtpHeaderExtensions* negotiated_extensions) {
+                                  RtpHeaderExtensions* negotiated_extensions,
+                                  PayloadTypeSuggester& suggester,
+                                  absl::string_view mid,
+                                  RtpTransceiverIdDomain id_domain) {
   bool frame_descriptor_in_local = false;
   bool dependency_descriptor_in_local = false;
   bool abs_capture_time_in_local = false;
+
+  auto negotiate_extension = [&](const RtpExtension& ours,
+                                 const RtpExtension* theirs) {
+    if (theirs && theirs->encrypt == ours.encrypt) {
+      // We MUST use their ID in the answer, and we should also record it
+      // in our suggester to ensure consistency and persistence.
+      RTCError error =
+          suggester.AddRtpHeaderExtensionMapping(mid, *theirs, /*local=*/false);
+      RTC_DCHECK(error.ok());
+      negotiated_extensions->push_back(*theirs);
+    }
+  };
 
   for (const RtpExtension& ours : local_extensions) {
     if (ours.uri == RtpExtension::kGenericFrameDescriptorUri00)
@@ -490,10 +515,7 @@ void NegotiateRtpHeaderExtensions(const RtpHeaderExtensions& local_extensions,
 
     const RtpExtension* theirs = FindHeaderExtensionByUriDiscardUnsupported(
         offered_extensions, ours.uri, filter);
-    if (theirs && theirs->encrypt == ours.encrypt) {
-      // We respond with their RTP header extension id.
-      negotiated_extensions->push_back(*theirs);
-    }
+    negotiate_extension(ours, theirs);
   }
 
   // Frame descriptors support. If the extension is not present locally, but is
@@ -502,6 +524,9 @@ void NegotiateRtpHeaderExtensions(const RtpHeaderExtensions& local_extensions,
     const RtpExtension* theirs = FindHeaderExtensionByUriDiscardUnsupported(
         offered_extensions, RtpExtension::kDependencyDescriptorUri, filter);
     if (theirs) {
+      RTCError error =
+          suggester.AddRtpHeaderExtensionMapping(mid, *theirs, /*local=*/false);
+      RTC_DCHECK(error.ok());
       negotiated_extensions->push_back(*theirs);
     }
   }
@@ -509,6 +534,9 @@ void NegotiateRtpHeaderExtensions(const RtpHeaderExtensions& local_extensions,
     const RtpExtension* theirs = FindHeaderExtensionByUriDiscardUnsupported(
         offered_extensions, RtpExtension::kGenericFrameDescriptorUri00, filter);
     if (theirs) {
+      RTCError error =
+          suggester.AddRtpHeaderExtensionMapping(mid, *theirs, /*local=*/false);
+      RTC_DCHECK(error.ok());
       negotiated_extensions->push_back(*theirs);
     }
   }
@@ -519,6 +547,9 @@ void NegotiateRtpHeaderExtensions(const RtpHeaderExtensions& local_extensions,
     const RtpExtension* theirs = FindHeaderExtensionByUriDiscardUnsupported(
         offered_extensions, RtpExtension::kAbsoluteCaptureTimeUri, filter);
     if (theirs) {
+      RTCError error =
+          suggester.AddRtpHeaderExtensionMapping(mid, *theirs, /*local=*/false);
+      RTC_DCHECK(error.ok());
       negotiated_extensions->push_back(*theirs);
     }
   }
@@ -560,7 +591,9 @@ bool CreateMediaContentAnswer(
     bool enable_encrypted_rtp_header_extensions,
     StreamParamsVec* current_streams,
     bool bundle_enabled,
-    MediaContentDescription* answer) {
+    MediaContentDescription* answer,
+    PayloadTypeSuggester& suggester,
+    RtpTransceiverIdDomain id_domain) {
   answer->set_extmap_allow_mixed_enum(offer->extmap_allow_mixed_enum());
   const RtpExtension::Filter extensions_filter =
       enable_encrypted_rtp_header_extensions
@@ -585,9 +618,10 @@ bool CreateMediaContentAnswer(
     }
   }
   RtpHeaderExtensions negotiated_rtp_extensions;
-  NegotiateRtpHeaderExtensions(local_rtp_extensions_to_reply_with,
-                               offer->rtp_header_extensions(),
-                               extensions_filter, &negotiated_rtp_extensions);
+  NegotiateRtpHeaderExtensions(
+      local_rtp_extensions_to_reply_with, offer->rtp_header_extensions(),
+      extensions_filter, &negotiated_rtp_extensions, suggester,
+      media_description_options.mid, id_domain);
   answer->set_rtp_header_extensions(negotiated_rtp_extensions);
 
   answer->set_rtcp_mux(session_options.rtcp_mux_enabled && offer->rtcp_mux());
@@ -797,9 +831,9 @@ MediaSessionDescriptionFactory::CreateOfferOrError(
     if (!offer_bundle.content_names().empty()) {
       offer->AddGroup(offer_bundle);
       if (!UpdateTransportInfoForBundle(offer_bundle, offer.get())) {
-        LOG_AND_RETURN_ERROR(
-            RTCErrorType::INTERNAL_ERROR,
-            "CreateOffer failed to UpdateTransportInfoForBundle");
+        return LOG_ERROR(
+            RTCError(RTCErrorType::INTERNAL_ERROR)
+            << "CreateOffer failed to UpdateTransportInfoForBundle");
       }
     }
   }
@@ -830,7 +864,8 @@ MediaSessionDescriptionFactory::CreateAnswerOrError(
     const MediaSessionOptions& session_options,
     const SessionDescription* current_description) const {
   if (!offer) {
-    LOG_AND_RETURN_ERROR(RTCErrorType::INTERNAL_ERROR, "Called without offer.");
+    return LOG_ERROR(RTCError(RTCErrorType::INTERNAL_ERROR)
+                     << "Called without offer.");
   }
 
   // Must have options for exactly as many sections as in the offer.
@@ -989,9 +1024,9 @@ MediaSessionDescriptionFactory::CreateAnswerOrError(
         // Share the same ICE credentials and crypto params across all contents,
         // as BUNDLE requires.
         if (!UpdateTransportInfoForBundle(answer_bundle, answer.get())) {
-          LOG_AND_RETURN_ERROR(
-              RTCErrorType::INTERNAL_ERROR,
-              "CreateAnswer failed to UpdateTransportInfoForBundle.");
+          return LOG_ERROR(
+              RTCError(RTCErrorType::INTERNAL_ERROR)
+              << "CreateAnswer failed to UpdateTransportInfoForBundle.");
         }
       }
     }
@@ -1054,34 +1089,37 @@ MediaSessionDescriptionFactory::GetOfferedRtpHeaderExtensionsWithIds(
   // receiver supports an RTP stream where one- and two-byte RTP header
   // extensions are mixed. For backwards compatibility reasons it's used in
   // WebRTC to signal that two-byte RTP header extensions are supported.
-  UsedRtpHeaderExtensionIds used_ids(
-      extmap_allow_mixed ? UsedRtpHeaderExtensionIds::IdDomain::kTwoByteAllowed
-                         : UsedRtpHeaderExtensionIds::IdDomain::kOneByteOnly);
+  RtpTransceiverIdDomain id_domain =
+      extmap_allow_mixed ? RtpTransceiverIdDomain::kTwoByteAllowed
+                         : RtpTransceiverIdDomain::kOneByteOnly;
 
   RtpHeaderExtensions all_encountered_extensions;
 
   AudioVideoRtpHeaderExtensions offered_extensions;
   // First - get all extensions from the current description if the media type
   // is used.
-  // Add them to `used_ids` so the local ids are not reused if a new media
+  // Add them to the suggester so the local ids are not reused if a new media
   // type is added.
+  RTC_DCHECK(codec_lookup_helper_->PayloadTypeSuggester());
   for (const ContentInfo* content : current_active_contents) {
     if (IsMediaContentOfType(content, MediaType::AUDIO)) {
       MergeRtpHdrExts(content->media_description()->rtp_header_extensions(),
                       enable_encrypted_rtp_header_extensions_,
                       &offered_extensions.audio, &all_encountered_extensions,
-                      &used_ids);
+                      *codec_lookup_helper_->PayloadTypeSuggester(),
+                      content->mid(), id_domain);
     } else if (IsMediaContentOfType(content, MediaType::VIDEO)) {
       MergeRtpHdrExts(content->media_description()->rtp_header_extensions(),
                       enable_encrypted_rtp_header_extensions_,
                       &offered_extensions.video, &all_encountered_extensions,
-                      &used_ids);
+                      *codec_lookup_helper_->PayloadTypeSuggester(),
+                      content->mid(), id_domain);
     }
   }
 
   // Add all encountered header extensions in the media description options that
   // are not in the current description.
-
+  RTC_DCHECK(codec_lookup_helper_->PayloadTypeSuggester());
   for (const auto& entry : media_description_options) {
     RtpHeaderExtensions filtered_extensions =
         filtered_rtp_header_extensions(UnstoppedOrPresentRtpHeaderExtensions(
@@ -1089,11 +1127,13 @@ MediaSessionDescriptionFactory::GetOfferedRtpHeaderExtensionsWithIds(
     if (entry.type == MediaType::AUDIO)
       MergeRtpHdrExts(
           filtered_extensions, enable_encrypted_rtp_header_extensions_,
-          &offered_extensions.audio, &all_encountered_extensions, &used_ids);
+          &offered_extensions.audio, &all_encountered_extensions,
+          *codec_lookup_helper_->PayloadTypeSuggester(), entry.mid, id_domain);
     else if (entry.type == MediaType::VIDEO)
       MergeRtpHdrExts(
           filtered_extensions, enable_encrypted_rtp_header_extensions_,
-          &offered_extensions.video, &all_encountered_extensions, &used_ids);
+          &offered_extensions.video, &all_encountered_extensions,
+          *codec_lookup_helper_->PayloadTypeSuggester(), entry.mid, id_domain);
   }
   return offered_extensions;
 }
@@ -1332,9 +1372,9 @@ RTCError MediaSessionDescriptionFactory::AddRtpContentForAnswer(
       media_description_options.transport_options, current_description,
       !offer_content->rejected && bundle_transport == nullptr, ice_credentials);
   if (!transport) {
-    LOG_AND_RETURN_ERROR(
-        RTCErrorType::INTERNAL_ERROR,
-        "Failed to create transport answer, transport is missing");
+    return LOG_ERROR(
+        RTCError(RTCErrorType::INTERNAL_ERROR)
+        << "Failed to create transport answer, transport is missing");
   }
 
   // Pick codecs based on the requested communications direction in the offer
@@ -1387,16 +1427,21 @@ RTCError MediaSessionDescriptionFactory::AddRtpContentForAnswer(
                          ssrc_generator(), current_streams,
                          answer_content.get(),
                          transport_desc_factory_->trials())) {
-    LOG_AND_RETURN_ERROR(RTCErrorType::INTERNAL_ERROR,
-                         "Failed to set codecs in answer");
+    return LOG_ERROR(RTCError(RTCErrorType::INTERNAL_ERROR)
+                     << "Failed to set codecs in answer");
   }
+  RTC_DCHECK(codec_lookup_helper_->PayloadTypeSuggester());
   if (!CreateMediaContentAnswer(
           offer_content_description, media_description_options, session_options,
           filtered_rtp_header_extensions(header_extensions), ssrc_generator(),
           enable_encrypted_rtp_header_extensions_, current_streams,
-          bundle_enabled, answer_content.get())) {
-    LOG_AND_RETURN_ERROR(RTCErrorType::INTERNAL_ERROR,
-                         "Failed to create answer");
+          bundle_enabled, answer_content.get(),
+          *codec_lookup_helper_->PayloadTypeSuggester(),
+          offer_description->extmap_allow_mixed()
+              ? RtpTransceiverIdDomain::kTwoByteAllowed
+              : RtpTransceiverIdDomain::kOneByteOnly)) {
+    return LOG_ERROR(RTCError(RTCErrorType::INTERNAL_ERROR)
+                     << "Failed to create answer");
   }
 
   bool secure = bundle_transport ? bundle_transport->description.secure()
@@ -1437,9 +1482,9 @@ RTCError MediaSessionDescriptionFactory::AddDataContentForAnswer(
       media_description_options.transport_options, current_description,
       !offer_content->rejected && bundle_transport == nullptr, ice_credentials);
   if (!data_transport) {
-    LOG_AND_RETURN_ERROR(
-        RTCErrorType::INTERNAL_ERROR,
-        "Failed to create transport answer, data transport is missing");
+    return LOG_ERROR(
+        RTCError(RTCErrorType::INTERNAL_ERROR)
+        << "Failed to create transport answer, data transport is missing");
   }
 
   bool bundle_enabled = offer_description->HasGroup(GROUP_TYPE_BUNDLE) &&
@@ -1464,13 +1509,18 @@ RTCError MediaSessionDescriptionFactory::AddDataContentForAnswer(
       data_answer->as_sctp()->set_max_message_size(std::min(
           offer_data_description->max_message_size(), kSctpSendBufferSize));
     }
+    RTC_DCHECK(codec_lookup_helper_->PayloadTypeSuggester());
     if (!CreateMediaContentAnswer(
             offer_data_description, media_description_options, session_options,
             RtpHeaderExtensions(), ssrc_generator(),
             enable_encrypted_rtp_header_extensions_, current_streams,
-            bundle_enabled, data_answer.get())) {
-      LOG_AND_RETURN_ERROR(RTCErrorType::INTERNAL_ERROR,
-                           "Failed to create answer");
+            bundle_enabled, data_answer.get(),
+            *codec_lookup_helper_->PayloadTypeSuggester(),
+            offer_description->extmap_allow_mixed()
+                ? RtpTransceiverIdDomain::kTwoByteAllowed
+                : RtpTransceiverIdDomain::kOneByteOnly)) {
+      return LOG_ERROR(RTCError(RTCErrorType::INTERNAL_ERROR)
+                       << "Failed to create answer");
     }
     // Respond with sctpmap if the offer uses sctpmap.
     bool offer_uses_sctpmap = offer_data_description->use_sctpmap();
@@ -1530,9 +1580,9 @@ RTCError MediaSessionDescriptionFactory::AddUnsupportedContentForAnswer(
           !offer_content->rejected && bundle_transport == nullptr,
           ice_credentials);
   if (!unsupported_transport) {
-    LOG_AND_RETURN_ERROR(
-        RTCErrorType::INTERNAL_ERROR,
-        "Failed to create transport answer, unsupported transport is missing");
+    return LOG_ERROR(RTCError(RTCErrorType::INTERNAL_ERROR)
+                     << "Failed to create transport answer, unsupported "
+                        "transport is missing");
   }
   RTC_CHECK(IsMediaContentOfType(offer_content, MediaType::UNSUPPORTED));
 

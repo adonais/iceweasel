@@ -34,7 +34,7 @@ PermissionStatusSink::PermissionStatusSink(PermissionStatus* aPermissionStatus,
   MOZ_ASSERT(aPermissionStatus);
   MOZ_ASSERT(mSerialEventTarget);
 
-  nsCOMPtr<nsIGlobalObject> global = aPermissionStatus->GetOwnerGlobal();
+  nsCOMPtr<nsIGlobalObject> global = aPermissionStatus->GetRelevantGlobal();
   if (NS_WARN_IF(!global)) {
     return;
   }

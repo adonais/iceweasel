@@ -147,9 +147,13 @@ pref(layout.css.anchor-positioning.enabled,true) pref(image.testing.decode-sync.
 
 # Test case for @supports selector(::-webkit-scrollbar).
 # We do return true for the @supports
-pref(layout.css.fake-webkit-scrollbar.enabled,true) == webkit-scrollbar-in-at-supports.html abount:blank
+pref(layout.css.fake-webkit-scrollbar.enabled,true) == webkit-scrollbar-in-at-supports.html about:blank
+# On Android the HTTP host is not "localhost", it's the IP address of the host machine.
+skip-if(Android) pref(layout.css.fake-webkit-scrollbar.enabled,true) pref(layout.css.fake-webkit-scrollbar.disabled-domains,"localhost") HTTP != webkit-scrollbar-in-at-supports.html about:blank
 # Test case where two containers have ::-webkit-scrollbar has non-zero `width` and `height`, thus overlay scrollbars are disabled on the container, but there's another container has no ::-webkit-scrollbar.
 pref(layout.css.fake-webkit-scrollbar.enabled,true) test-pref(ui.useOverlayScrollbars,1) test-pref(layout.testing.overlay-scrollbars.always-visible,false) test-pref(ui.scrollbarFadeBeginDelay,0) ref-pref(ui.useOverlayScrollbars,0) == webkit-scrollbar.html webkit-scrollbar-ref.html
+# On Android the HTTP host is not "localhost", it's the IP address of the host machine.
+skip-if(Android) pref(layout.css.fake-webkit-scrollbar.enabled,true) pref(layout.css.fake-webkit-scrollbar.disabled-domains,"localhost") test-pref(ui.useOverlayScrollbars,1) test-pref(layout.testing.overlay-scrollbars.always-visible,false) test-pref(ui.scrollbarFadeBeginDelay,0) ref-pref(ui.useOverlayScrollbars,0) HTTP != webkit-scrollbar.html webkit-scrollbar-ref.html
 # Test case where ::-webkit-scrollbar has zero `width`, thus overlay scrollbars are enabled.
 pref(layout.css.fake-webkit-scrollbar.enabled,true) pref(ui.useOverlayScrollbars,1)  == webkit-scrollbar-zero-width.html webkit-scrollbar-overlay-ref.html
 # Test case where ::-webkit-scrollbar has zero `width` and `height`, thus the scrollbars SHOULD NOT be visible.

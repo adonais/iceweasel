@@ -87,12 +87,7 @@ class MOZ_STACK_CLASS MachineState {
     }
     return state_.as<SafepointState>().regs.hasRegisterIndex(reg);
   }
-  bool has(FloatRegister reg) const {
-    if (state_.is<BailoutState>()) {
-      return true;
-    }
-    return state_.as<SafepointState>().floatRegs.hasRegisterIndex(reg);
-  }
+  bool has(FloatRegister reg) const;
 
   uintptr_t read(Register reg) const;
   template <typename T>

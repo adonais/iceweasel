@@ -771,7 +771,8 @@ bool SVGUtils::HitTestRect(const gfx::Matrix& aMatrix, float aRX, float aRY,
 }
 
 gfxRect SVGUtils::GetClipRectForFrame(const nsIFrame* aFrame, float aX,
-                                      float aY, float aWidth, float aHeight) {
+                                      float aY, float aWidth, float aHeight,
+                                      SVGBBoxFlags aFlags) {
   const nsStyleDisplay* disp = aFrame->StyleDisplay();
   const nsStyleEffects* effects = aFrame->StyleEffects();
 
@@ -784,6 +785,9 @@ gfxRect SVGUtils::GetClipRectForFrame(const nsIFrame* aFrame, float aX,
 
   const auto& rect = effects->mClip.AsRect();
   nsRect coordClipRect = rect.ToLayoutRect();
+  if (aFlags.contains(SVGBBoxFlag::DisregardCSSZoom)) {
+    coordClipRect.Scale(1 / aFrame->Style()->EffectiveZoom().ToFloat());
+  }
   nsIntRect clipPxRect = coordClipRect.ToOutsidePixels(AppUnitsPerCSSPixel());
   gfxRect clipRect =
       gfxRect(clipPxRect.x, clipPxRect.y, clipPxRect.width, clipPxRect.height);
@@ -834,9 +838,13 @@ gfxRect SVGUtils::GetBBox(nsIFrame* aFrame, SVGBBoxFlags aFlags,
     MOZ_ASSERT(!hasSVGLayout);
     bool onlyCurrentFrame =
         aFlags.contains(SVGBBoxFlag::IncludeOnlyCurrentFrameForNonSVGElement);
-    return SVGIntegrationUtils::GetSVGBBoxForNonSVGFrame(
+    gfxRect bbox = SVGIntegrationUtils::GetSVGBBoxForNonSVGFrame(
         aFrame,
         /* aUnionContinuations = */ !onlyCurrentFrame);
+    if (aFlags.contains(SVGBBoxFlag::DisregardCSSZoom)) {
+      bbox.Scale(1 / aFrame->Style()->EffectiveZoom().ToFloat());
+    }
+    return bbox;
   }
 
   MOZ_ASSERT(svg);
@@ -878,7 +886,20 @@ gfxRect SVGUtils::GetBBox(nsIFrame* aFrame, SVGBBoxFlags aFlags,
     // also update SVGUtils::FrameSpaceInCSSPxToUserSpaceOffset.
     MOZ_ASSERT(aFrame->GetContent()->IsSVGElement(), "bad cast");
     auto* element = static_cast<SVGElement*>(aFrame->GetContent());
-    matrix = element->ChildToUserSpaceTransform() * matrix;
+    gfxMatrix transform = element->ChildToUserSpaceTransform();
+    if (aFlags.contains(SVGBBoxFlag::DisregardCSSZoom)) {
+      // The outer if statement above ensures this is just a translation so
+      // the simplest unzoom solution here is just to undo that translation
+      // and rescale it.
+      MOZ_ASSERT(!transform.HasNonTranslation(),
+                 "Expecting only a translation here");
+      gfxPoint translation = transform.GetTranslation();
+      // Remove the zoomed translation and replace it by the unzoomed value.
+      transform.PostTranslate(-translation)
+          .PostTranslate(translation /
+                         aFrame->Style()->EffectiveZoom().ToFloat());
+    }
+    matrix.PreMultiply(transform);
   }
   gfxRect bbox =
       svg->GetBBoxContribution(ToMatrix(matrix), aFlags).ToThebesRect();
@@ -886,13 +907,14 @@ gfxRect SVGUtils::GetBBox(nsIFrame* aFrame, SVGBBoxFlags aFlags,
   if (aFlags.contains(SVGBBoxFlag::IncludeClipped)) {
     gfxRect clipRect;
     gfxRect fillBBox =
-        svg->GetBBoxContribution({}, SVGBBoxFlag::IncludeFillGeometry)
+        svg->GetBBoxContribution({}, (aFlags & SVGBBoxFlag::DisregardCSSZoom) +
+                                         SVGBBoxFlag::IncludeFillGeometry)
             .ToThebesRect();
     // XXX Should probably check for overflow: clip too.
     bool hasClip = aFrame->StyleDisplay()->IsScrollableOverflow();
     if (hasClip) {
-      clipRect = SVGUtils::GetClipRectForFrame(aFrame, 0.0f, 0.0f,
-                                               fillBBox.width, fillBBox.height);
+      clipRect = SVGUtils::GetClipRectForFrame(
+          aFrame, 0.0f, 0.0f, fillBBox.width, fillBBox.height, aFlags);
       clipRect.MoveBy(fillBBox.TopLeft());
       if (aFrame->IsSVGForeignObjectFrame() || aFrame->IsSVGUseFrame()) {
         clipRect = matrix.TransformBounds(clipRect);

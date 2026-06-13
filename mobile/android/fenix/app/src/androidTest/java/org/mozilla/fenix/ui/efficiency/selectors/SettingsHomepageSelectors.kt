@@ -22,8 +22,48 @@ object SettingsHomepageSelectors {
         groups = listOf("homepageSettings"),
     )
 
+    val SHORTCUTS_BUTTON = Selector(
+        strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT,
+        value = "Shortcuts",
+        description = "the Shortcuts button",
+        groups = listOf("homepageSettings"),
+    )
+
+    val JUMP_BACK_IN_BUTTON = Selector(
+        strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT,
+        value = "Jump Back In",
+        description = "the Jump Back In button",
+        groups = listOf("homepageSettings"),
+    )
+
+    val RECENT_BOOKMARKS_BUTTON = Selector(
+        strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT,
+        value = "Recent bookmarks",
+        description = "the Recent bookmarks button",
+        groups = listOf("homepageSettings"),
+    )
+
+    val RECENTLY_VISITED_BUTTON = Selector(
+        strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT,
+        value = "Recently visited",
+        description = "the Recently visited button",
+        groups = listOf("homepageSettings"),
+    )
+
+    val POCKET_BUTTON = Selector(
+        strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT,
+        value = "Pocket",
+        description = "the Pocket button",
+        groups = listOf("homepageSettings"),
+    )
+
     val all = listOf(
         SETTINGS_HOMEPAGE_TITLE,
         SHOW_TOP_SITES_TOGGLE,
+        SHORTCUTS_BUTTON,
+        JUMP_BACK_IN_BUTTON,
+        RECENT_BOOKMARKS_BUTTON,
+        RECENTLY_VISITED_BUTTON,
+        POCKET_BUTTON,
     )
 }

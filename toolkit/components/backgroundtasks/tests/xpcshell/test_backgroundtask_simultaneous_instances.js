@@ -10,7 +10,7 @@ let moz_log = "BackgroundTasks:5";
 // by setting TMP, per
 // https://docs.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-gettemppathw.
 // On Linux, this works as well: see
-// [GetSpecialSystemDirectory](https://searchfox.org/mozilla-central/source/xpcom/io/SpecialSystemDirectory.cpp).
+// [GetSpecialSystemDirectory](https://searchfox.org/firefox-main/source/xpcom/io/SpecialSystemDirectory.cpp).
 // On macOS, we can't set the temporary directory in this manner, so we will
 // leak some temporary directories.  It's important to test this functionality
 // on macOS so we accept this.

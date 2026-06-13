@@ -12,92 +12,61 @@
   <script type="application/javascript"
           src="../role.js"></script>
   <script type="application/javascript"
-          src="../events.js"></script>
+          src="../promisified-events.js"></script>
 
   <script type="application/javascript">
 
-    function addOptGroup(aID) {
-      this.selectNode = getNode(aID);
-      this.select = getAccessible(this.selectNode);
-      this.selectList = this.select.firstChild;
-
-      this.invoke = function addOptGroup_invoke() {
-        var optGroup = document.createElement("optgroup");
-        for (let i = 0; i < 2; i++) {
-          var opt = document.createElement("option");
-          opt.value = i;
-          opt.text = "Option: Value " + i;
-
-          optGroup.appendChild(opt);
-        }
-
-        this.selectNode.add(optGroup, null);
-        var option = document.createElement("option");
-        this.selectNode.add(option, null);
-      };
-
-      this.eventSeq = [
-        new invokerChecker(EVENT_REORDER, this.selectList),
-      ];
-
-      this.finalCheck = function addOptGroup_finalCheck() {
-        var tree =
-          { COMBOBOX: [
-            { COMBOBOX_LIST: [
-              { GROUPING: [
-                { COMBOBOX_OPTION: [ ] },
-                { COMBOBOX_OPTION: [ ] },
-              ]},
-              { COMBOBOX_OPTION: [] },
-            ] },
-          ] };
-        testAccessibleTree(this.select, tree);
-      };
-
-      this.getID = function addOptGroup_getID() {
-        return "test optgroup's insertion into a select";
-      };
-    }
-
-    function removeOptGroup(aID) {
-      this.selectNode = getNode(aID);
-      this.select = getAccessible(this.selectNode);
-      this.selectList = this.select.firstChild;
-
-      this.invoke = function removeOptGroup_invoke() {
-        this.option1Node = this.selectNode.firstChild.firstChild;
-        this.selectNode.firstChild.remove();
-      };
-
-      this.eventSeq = [
-        new invokerChecker(EVENT_REORDER, this.selectList),
-      ];
-
-      this.finalCheck = function removeOptGroup_finalCheck() {
-        var tree =
-          { COMBOBOX: [
-            { COMBOBOX_LIST: [
-              { COMBOBOX_OPTION: [] },
-            ] },
-          ] };
-        testAccessibleTree(this.select, tree);
-        is(isAccessible(this.option1Node), false, "removed option shouldn't be accessible anymore!");
-      };
-
-      this.getID = function removeOptGroup_getID() {
-        return "test optgroup's removal from a select";
-      };
-    }
-
     // gA11yEventDumpToConsole = true;
 
-    function doTest() {
-      const gQueue = new eventQueue();
+    async function doTest() {
+      const selectNode = getNode("select");
+      const select = getAccessible(selectNode);
+      const selectList = select.firstChild;
 
-      gQueue.push(new addOptGroup("select"));
-      gQueue.push(new removeOptGroup("select"));
+      let reordered = waitForEvent(EVENT_REORDER, selectList);
+      const optGroup = document.createElement("optgroup");
+      for (let i = 0; i < 2; i++) {
+        const opt = document.createElement("option");
+        opt.value = i;
+        opt.text = "Option: Value " + i;
+        optGroup.appendChild(opt);
+      }
+      selectNode.add(optGroup, null);
+      const option = document.createElement("option");
+      selectNode.add(option, null);
+      await reordered;
 
-      gQueue.invoke(); // Will call SimpleTest.finish();
+      let tree =
+        { COMBOBOX: [
+          { COMBOBOX_LIST: [
+            { GROUPING: [
+              { COMBOBOX_OPTION: [] },
+              { COMBOBOX_OPTION: [] },
+            ] },
+            { COMBOBOX_OPTION: [] },
+          ] },
+        ] };
+      testAccessibleTree(select, tree);
+
+      const option1Node = selectNode.firstChild.firstChild;
+      reordered = waitForEvent(EVENT_REORDER, selectList);
+      selectNode.firstChild.remove();
+      await reordered;
+
+      tree =
+        { COMBOBOX: [
+          { COMBOBOX_LIST: [
+            { COMBOBOX_OPTION: [] },
+          ] },
+        ] };
+      testAccessibleTree(select, tree);
+      is(
+        isAccessible(option1Node),
+        false,
+        "removed option shouldn't be accessible anymore!"
+      );
+
+      SimpleTest.finish();
     }
 
     SimpleTest.waitForExplicitFinish();

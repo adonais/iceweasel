@@ -643,6 +643,28 @@ void Http2Session::CreateStream(nsAHttpTransaction* aHttpTransaction,
   }
 }
 
+void Http2Session::SwapTransaction(nsAHttpTransaction* aOld,
+                                   nsAHttpTransaction* aNew) {
+  MOZ_ASSERT(OnSocketThread(), "not on socket thread");
+  MOZ_ASSERT(aOld && aNew);
+  RefPtr<Http2StreamBase> stream = mStreamTransactionHash.Get(aOld);
+  if (!stream) {
+    LOG3(("Http2Session::SwapTransaction %p aOld=%p not in hash", this, aOld));
+    return;
+  }
+  Http2Stream* http2Stream = stream->GetHttp2Stream();
+  if (!http2Stream) {
+    LOG3(("Http2Session::SwapTransaction %p aOld=%p not a plain Http2Stream",
+          this, aOld));
+    return;
+  }
+  LOG3(("Http2Session::SwapTransaction %p aOld=%p -> aNew=%p stream=%p", this,
+        aOld, aNew, stream.get()));
+  http2Stream->SetTransaction(aNew);
+  mStreamTransactionHash.Remove(aOld);
+  mStreamTransactionHash.InsertOrUpdate(aNew, std::move(stream));
+}
+
 Result<already_AddRefed<nsHttpConnection>, nsresult>
 Http2Session::CreateTunnelStream(nsAHttpTransaction* aHttpTransaction,
                                  nsIInterfaceRequestor* aCallbacks,
@@ -1702,8 +1724,28 @@ nsresult Http2Session::ResponseHeadersComplete() {
   }
 
   // allow more headers in the case of 1xx
-  if (((httpResponseCode / 100) == 1) && didFirstSetAllRecvd) {
-    mInputFrameDataStream->UnsetAllHeadersReceived();
+  if (didFirstSetAllRecvd) {
+    RefPtr<nsAHttpTransaction> trans = mInputFrameDataStream->Transaction();
+    nsHttpTransaction* httpTrans =
+        trans ? trans->QueryHttpTransaction() : nullptr;
+
+    if ((httpResponseCode / 100) == 1) {
+      mInputFrameDataStream->UnsetAllHeadersReceived();
+      if (httpTrans && httpTrans->GetFirstInterimResponseStart().IsNull()) {
+        auto now = TimeStamp::Now();
+        httpTrans->SetFirstInterimResponseStart(now, true);
+        httpTrans->SetResponseStart(now, false);
+      }
+    } else if (httpTrans) {
+      auto now = TimeStamp::Now();
+      httpTrans->SetFinalResponseHeadersStart(now, true);
+      TimeStamp firstInterim = httpTrans->GetFirstInterimResponseStart();
+      if (!firstInterim.IsNull()) {
+        httpTrans->SetResponseStart(firstInterim, false);
+      } else {
+        httpTrans->SetResponseStart(now, false);
+      }
+    }
   }
 
   ChangeDownstreamState(PROCESSING_COMPLETE_HEADERS);

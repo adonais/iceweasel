@@ -23,7 +23,6 @@ import mozilla.components.service.pocket.PocketStory.SponsoredContentCallbacks
 import mozilla.components.service.pocket.PocketStory.SponsoredContentFrequencyCaps
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -43,7 +42,10 @@ import org.mozilla.fenix.home.HomeFragmentDirections
 import org.mozilla.fenix.home.mars.MARSUseCases
 import org.mozilla.fenix.home.pocket.controller.DefaultPocketStoriesController
 import org.mozilla.fenix.utils.Settings
+import org.mozilla.fenix.utils.Stories.markAsOpenedFromHomeScreen
+import org.mozilla.fenix.utils.Stories.markAsOpenedFromStoriesScreen
 import java.lang.ref.WeakReference
+import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class DefaultPocketStoriesControllerTest {
@@ -390,6 +392,7 @@ class DefaultPocketStoriesControllerTest {
         assertNull(Pocket.homeRecsSpocClicked.testGetValue())
 
         controller.handleStoryClicked(sponsoredContent, storyPosition = Triple(2, 3, 4))
+        testScheduler.advanceUntilIdle()
 
         assertEquals(1, Pocket.homeRecsSpocClicked.testGetValue()!!.size)
         val data = Pocket.homeRecsSpocClicked.testGetValue()!!.single().extra
@@ -445,6 +448,44 @@ class DefaultPocketStoriesControllerTest {
     }
 
     @Test
+    fun `GIVEN the user is on the home screen WHEN a story is clicked THEN its link is opened with a home screen UTM marker`() = runTest {
+        every { navController.currentDestination?.id } returns R.id.homeFragment
+        val originalURL = "https://story.test"
+        val story = PocketRecommendedStory("", originalURL, "", "", "", 0, 0)
+        val controller = createController(scope = this)
+
+        controller.handleStoryClicked(story, storyPosition = Triple(1, 2, 3))
+
+        verifyOrder {
+            navController.navigate(R.id.browserFragment)
+            fenixBrowserUseCases.loadUrlOrSearch(
+                searchTermOrURL = originalURL.markAsOpenedFromHomeScreen(),
+                newTab = true,
+                private = false,
+            )
+        }
+    }
+
+    @Test
+    fun `GIVEN the user is on the stories screen WHEN a story is clicked THEN its link is opened with a stories screen UTM marker`() = runTest {
+        every { navController.currentDestination?.id } returns R.id.storiesFragment
+        val originalURL = "https://story.test"
+        val story = PocketRecommendedStory("", originalURL, "", "", "", 0, 0)
+        val controller = createController(scope = this)
+
+        controller.handleStoryClicked(story, storyPosition = Triple(1, 2, 3))
+
+        verifyOrder {
+            navController.navigate(R.id.browserFragment)
+            fenixBrowserUseCases.loadUrlOrSearch(
+                searchTermOrURL = originalURL.markAsOpenedFromStoriesScreen(),
+                newTab = true,
+                private = false,
+            )
+        }
+    }
+
+    @Test
     fun `WHEN the discover more button is clicked THEN navigate to the discover more stories screen`() = runTest {
         val controller = createController(scope = this)
 
@@ -458,6 +499,7 @@ class DefaultPocketStoriesControllerTest {
         }
     }
 
+    @Test
     fun `WHEN screen is shown THEN impression is logged`() = runTest {
         assertNull(StoriesLibrary.viewed.testGetValue())
         val controller = createController(scope = this)

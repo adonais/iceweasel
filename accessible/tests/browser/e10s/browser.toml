@@ -12,7 +12,7 @@ support-files = [
   "fonts/Ahem.sjs",
   "!/accessible/tests/browser/shared-head.js",
   "!/accessible/tests/mochitest/*.js",
-  "!/accessible/tests/mochitest/events/slow_image.sjs",
+  "!/accessible/tests/browser/events/slow_doc.sjs",
   "!/accessible/tests/mochitest/letters.gif",
   "!/accessible/tests/mochitest/moz.png",
 ]

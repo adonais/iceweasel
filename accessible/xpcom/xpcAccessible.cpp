@@ -306,7 +306,7 @@ xpcAccessible::GetAttributes(nsIPersistentProperties** aAttributes) {
     return NS_ERROR_FAILURE;
   }
 
-  RefPtr<nsPersistentProperties> props = new nsPersistentProperties();
+  auto props = MakeRefPtr<nsPersistentProperties>();
 
   RefPtr<AccAttributes> attributes = acc->Attributes();
   nsAccUtils::SetAccGroupAttrs(attributes, acc);
@@ -335,7 +335,7 @@ xpcAccessible::GetCache(nsIPersistentProperties** aCachedFields) {
     return NS_ERROR_FAILURE;
   }
 
-  RefPtr<nsPersistentProperties> props = new nsPersistentProperties();
+  auto props = MakeRefPtr<nsPersistentProperties>();
   if (RemoteAccessible* remoteAcc = IntlGeneric()->AsRemote()) {
     if (RefPtr<AccAttributes> cachedFields = remoteAcc->mCachedFields) {
       nsAutoString unused;

@@ -1464,7 +1464,7 @@ class PropertyView {
       valueDiv.appendChild(
         this.#parseValue(
           selector.selectorInfo.value,
-          selector.selectorInfo.rule.href
+          selector.selectorInfo.rule.href || selector.selectorInfo.rule.nodeHref
         )
       );
 

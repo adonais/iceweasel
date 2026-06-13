@@ -12,7 +12,7 @@
 #include "mozilla/dom/IntegrityViolationReportBody.h"
 #include "mozilla/dom/ReportingUtils.h"
 #include "mozilla/dom/WindowGlobalChild.h"
-#include "mozilla/net/SFVService.h"
+#include "mozilla/net/SFV.h"
 #include "nsCSPParser.h"
 #include "nsContentUtils.h"
 #include "nsIScriptError.h"
@@ -149,18 +149,12 @@ already_AddRefed<IntegrityPolicyWAICT> IntegrityPolicyWAICT::Create(
 }
 
 nsresult IntegrityPolicyWAICT::ParseHeader(const nsACString& aHeader) {
-  nsCOMPtr<nsISFVService> sfv = net::GetSFVService();
-  if (!sfv) {
-    return NS_ERROR_FAILURE;
-  }
-
-  nsCOMPtr<nsISFVDictionary> dict;
-  nsresult rv = sfv->ParseDictionary(aHeader, getter_AddRefs(dict));
-  if (NS_FAILED(rv)) {
+  auto dict = net::SFV::ParseDict(aHeader);
+  if (!dict.IsValid()) {
     nsTArray<nsString> params = {NS_ConvertUTF8toUTF16(aHeader)};
     ReportMessage(nsIScriptError::errorFlag, "WAICT"_ns,
                   "WAICTHeaderParseError", params);
-    return rv;
+    return NS_ERROR_FAILURE;
   }
 
   auto destinationsResult =

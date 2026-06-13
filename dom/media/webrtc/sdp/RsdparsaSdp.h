@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef RSDPARSASDP_H_
-#define RSDPARSASDP_H_
+#ifndef DOM_MEDIA_WEBRTC_SDP_RSDPARSASDP_H_
+#define DOM_MEDIA_WEBRTC_SDP_RSDPARSASDP_H_
 
 #include "mozilla/UniquePtr.h"
 #include "sdp/RsdparsaSdpAttributeList.h"
@@ -44,11 +44,11 @@ class RsdparsaSdp final : public Sdp {
 
   SdpMediaSection& GetMediaSection(size_t level) override;
 
-  SdpMediaSection& AddMediaSection(SdpMediaSection::MediaType media,
-                                   SdpDirectionAttribute::Direction dir,
-                                   uint16_t port,
-                                   SdpMediaSection::Protocol proto,
-                                   sdp::AddrType addrType,
+  SdpMediaSection& AddMediaSection(const SdpMediaSection::MediaType media,
+                                   const SdpDirectionAttribute::Direction dir,
+                                   const uint16_t port,
+                                   const SdpMediaSection::Protocol proto,
+                                   const sdp::AddrType addrType,
                                    const std::string& addr) override;
 
   void Serialize(std::ostream&) const override;

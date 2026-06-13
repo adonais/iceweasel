@@ -11,7 +11,6 @@
 #include "jsfriendapi.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
-#include "mozilla/Likely.h"
 #include "mozilla/OriginTrials.h"
 #include "mozilla/dom/PrototypeList.h"  // auto-generated
 #include "mozilla/dom/WebIDLPrefs.h"    // auto-generated
@@ -164,7 +163,7 @@ template <typename T>
 struct Prefable {
   inline bool isEnabled(JSContext* cx, JS::Handle<JSObject*> obj) const {
     MOZ_ASSERT(!js::IsWrapper(obj));
-    if (MOZ_LIKELY(!disablers)) {
+    if (!disablers) [[likely]] {
       return true;
     }
     return disablers->isEnabled(cx, obj);
@@ -221,7 +220,7 @@ struct PropertyInfo {
 
   static int Compare(const PropertyInfo& aInfo1, const PropertyInfo& aInfo2) {
     // IdToIndexComparator needs to be updated if the order here is changed!
-    if (MOZ_UNLIKELY(aInfo1.mIdBits == aInfo2.mIdBits)) {
+    if (aInfo1.mIdBits == aInfo2.mIdBits) [[unlikely]] {
       MOZ_ASSERT((aInfo1.type == eMethod || aInfo1.type == eStaticMethod) &&
                  (aInfo2.type == eMethod || aInfo2.type == eStaticMethod));
 
@@ -479,9 +478,6 @@ inline bool IsInterfacePrototype(DOMObjectType type) {
   return type == eInterfacePrototype || type == eGlobalInterfacePrototype;
 }
 
-typedef JSObject* (*AssociatedGlobalGetter)(JSContext* aCx,
-                                            JS::Handle<JSObject*> aObj);
-
 typedef JSObject* (*ProtoGetter)(JSContext* aCx);
 
 /**
@@ -531,10 +527,6 @@ struct DOMJSClass {
 
   const NativePropertyHooks* mNativeHooks;
 
-  // A callback to find the associated global for our C++ object.  Note that
-  // this is used in cases when that global is _changing_, so it will not match
-  // the global of the JSObject* passed in to this function!
-  AssociatedGlobalGetter mGetAssociatedGlobal;
   ProtoHandleGetter mGetProto;
 
   // This stores the CC participant for the native, null if this class does not

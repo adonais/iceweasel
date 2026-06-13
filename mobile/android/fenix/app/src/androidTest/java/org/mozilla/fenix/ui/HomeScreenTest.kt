@@ -4,15 +4,12 @@
 
 package org.mozilla.fenix.ui
 
-import androidx.compose.ui.test.junit4.AndroidComposeTestRule
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
-import org.mozilla.fenix.HomeActivity
+import org.mozilla.fenix.customannotations.Converted
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.FenixTestRule
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
-import org.mozilla.fenix.helpers.HomeActivityTestRule
 import org.mozilla.fenix.helpers.RetryTestRule
 import org.mozilla.fenix.helpers.RetryableComposeTestRule
 import org.mozilla.fenix.helpers.TestAssetHelper.getGenericAsset
@@ -20,6 +17,7 @@ import org.mozilla.fenix.helpers.TestHelper.waitUntilSnackbarGone
 import org.mozilla.fenix.helpers.perf.DetectMemoryLeaksRule
 import org.mozilla.fenix.ui.robots.homeScreen
 import org.mozilla.fenix.ui.robots.navigationToolbar
+import androidx.compose.ui.test.junit4.v2.AndroidComposeTestRule as AndroidComposeTestRuleV2
 
 /**
  *  Tests for verifying the presence of home screen and first-run homescreen elements
@@ -30,38 +28,33 @@ import org.mozilla.fenix.ui.robots.navigationToolbar
 
 class HomeScreenTest {
     @get:Rule(order = 0)
-    val retryTestRule = RetryTestRule(3)
-
-    @get:Rule(order = 1)
     val fenixTestRule: FenixTestRule = FenixTestRule()
 
+    private val mockWebServer get() = fenixTestRule.mockWebServer
+
+    @get:Rule(order = 1)
+    val retryTestRule = RetryTestRule(3)
+
     @get:Rule(order = 2)
-    val retryableComposeTestRule = RetryableComposeTestRule<HomeActivity, HomeActivityIntentTestRule> {
-        AndroidComposeTestRule(
+    val retryableComposeTestRule = RetryableComposeTestRule {
+        AndroidComposeTestRuleV2(
             HomeActivityIntentTestRule.withDefaultSettingsOverrides(),
         ) { it.activity }
     }
 
-    @get:Rule(order = 3)
-    val memoryLeaksRule = DetectMemoryLeaksRule()
+    private val composeTestRule get() = retryableComposeTestRule.current
 
-    private val mockWebServer get() = fenixTestRule.mockWebServer
+    @get:Rule(order = 3)
+    val memoryLeaksRule = DetectMemoryLeaksRule(composeTestRule = { composeTestRule })
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/235396
-    @Ignore("Failing, see https://bugzilla.mozilla.org/show_bug.cgi?id=2028550")
     @Test
     fun homeScreenItemsTest() {
-        // Workaround to make sure the Pocket articles are populated before starting the test.
-        homeScreen(retryableComposeTestRule.current) {
-        }.openThreeDotMenu {
-        }.clickSettingsButton {
-        }.goBack(retryableComposeTestRule.current) {
+        homeScreen(composeTestRule) {
             verifyHomeWordmark()
             verifyHomePrivateBrowsingButton()
             verifyExistingTopSitesTabs("Wikipedia")
             verifyExistingTopSitesTabs("Google")
-            verifyCollectionsHeader()
-            verifyNoCollectionsText()
             verifyThoughtProvokingStories(true)
             verifyNavigationToolbar()
             verifyHomeMenuButton()
@@ -72,10 +65,10 @@ class HomeScreenTest {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/244199
     @Test
     fun privateBrowsingHomeScreenItemsTest() {
-        homeScreen(retryableComposeTestRule.current) {
+        homeScreen(composeTestRule) {
         }.togglePrivateBrowsingMode()
 
-        homeScreen(retryableComposeTestRule.current) {
+        homeScreen(composeTestRule) {
             verifyPrivateBrowsingHomeScreenItems()
         }.openPrivateBrowsingModeLearnMoreLink {
             verifyUrl("common-myths-about-private-browsing")
@@ -83,10 +76,15 @@ class HomeScreenTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/1364362
+    @Converted(
+        replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.HomeTest#verifyJumpBackInSectionTest"],
+        bug = 2039207,
+        since = "2026-05",
+    )
     @SmokeTest
     @Test
     fun verifyJumpBackInSectionTest() {
-        retryableComposeTestRule.current.activityRule.applySettingsExceptions {
+        composeTestRule.activityRule.applySettingsExceptions {
             it.isRecentlyVisitedFeatureEnabled = false
             it.isPocketEnabled = false
         }
@@ -94,28 +92,28 @@ class HomeScreenTest {
         val firstWebPage = mockWebServer.getGenericAsset(4)
         val secondWebPage = mockWebServer.getGenericAsset(1)
 
-        navigationToolbar(retryableComposeTestRule.current) {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(firstWebPage.url) {
             verifyPageContent(firstWebPage.content)
             verifyUrl(firstWebPage.url.toString())
         }.goToHomescreen {
             verifyJumpBackInSectionIsDisplayed()
-            verifyJumpBackInItemTitle(retryableComposeTestRule.current, firstWebPage.title)
-            verifyJumpBackInItemWithUrl(retryableComposeTestRule.current, firstWebPage.url.toString())
+            verifyJumpBackInItemTitle(composeTestRule, firstWebPage.title)
+            verifyJumpBackInItemWithUrl(composeTestRule, firstWebPage.url.toString())
             verifyJumpBackInShowAllButton()
         }.clickJumpBackInShowAllButton {
             verifyExistingOpenTabs(firstWebPage.title)
         }.closeTabDrawer {
         }
 
-        navigationToolbar(retryableComposeTestRule.current) {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(secondWebPage.url) {
             verifyPageContent(secondWebPage.content)
             verifyUrl(secondWebPage.url.toString())
         }.goToHomescreen {
             verifyJumpBackInSectionIsDisplayed()
-            verifyJumpBackInItemTitle(retryableComposeTestRule.current, secondWebPage.title)
-            verifyJumpBackInItemWithUrl(retryableComposeTestRule.current, secondWebPage.url.toString())
+            verifyJumpBackInItemTitle(composeTestRule, secondWebPage.title)
+            verifyJumpBackInItemWithUrl(composeTestRule, secondWebPage.url.toString())
         }.openTabDrawer {
             closeTabWithTitle(secondWebPage.title)
             waitUntilSnackbarGone()
@@ -123,15 +121,15 @@ class HomeScreenTest {
         }.closeTabDrawer {
         }
 
-        homeScreen(retryableComposeTestRule.current) {
+        homeScreen(composeTestRule) {
             verifyJumpBackInSectionIsDisplayed()
-            verifyJumpBackInItemTitle(retryableComposeTestRule.current, firstWebPage.title)
-            verifyJumpBackInItemWithUrl(retryableComposeTestRule.current, firstWebPage.url.toString())
+            verifyJumpBackInItemTitle(composeTestRule, firstWebPage.title)
+            verifyJumpBackInItemWithUrl(composeTestRule, firstWebPage.url.toString())
         }.openTabDrawer {
             closeTab()
         }
 
-        homeScreen(retryableComposeTestRule.current) {
+        homeScreen(composeTestRule) {
             verifyJumpBackInSectionIsNotDisplayed()
         }
     }

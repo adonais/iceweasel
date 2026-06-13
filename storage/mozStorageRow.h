@@ -32,7 +32,7 @@ class Row final : public mozIStorageRow {
   nsresult initialize(sqlite3_stmt* aStatement);
 
  private:
-  ~Row() {}
+  ~Row() = default;
 
   /**
    * The number of columns in this tuple.

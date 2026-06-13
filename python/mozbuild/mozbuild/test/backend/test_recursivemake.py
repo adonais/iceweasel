@@ -1083,6 +1083,29 @@ class TestRecursiveMakeBackend(BackendTester):
             any(l == "recurse_compile: code/host code/target" for l in lines)
         )
 
+    def test_host_rust_program_output_category(self):
+        """Test that a host Rust program with output_category is written correctly."""
+        env = self._consume("host-rust-program-output-category", RecursiveMakeBackend)
+
+        backend_path = mozpath.join(env.topobjdir, "backend.mk")
+        lines = [
+            l.strip()
+            for l in open(backend_path).readlines()[2:]
+            if not l.startswith("COMPUTED_")
+        ]
+
+        expected = [
+            f"CARGO_FILE := {env.topsrcdir}/Cargo.toml",
+            f"CARGO_TARGET_DIR := {env.topobjdir}",
+            "HOST_RUST_PROGRAMS += $(DEPTH)/i686-pc-windows-msvc/release/test-host-program-output-category.exe",
+            "HOST_RUST_CARGO_PROGRAMS += test-host-program-output-category",
+            "test-category:: $(DEPTH)/i686-pc-windows-msvc/release/test-host-program-output-category.exe",
+            "MOZBUILD_NON_DEFAULT_TARGETS += $(DEPTH)/i686-pc-windows-msvc/release/test-host-program-output-category.exe",
+            "HOST_RUST_PROGRAM_OUTPUT_CATEGORY := test-category",
+        ]
+
+        self.assertEqual(lines, expected)
+
     def test_final_target(self):
         """Test that FINAL_TARGET is written to backend.mk correctly."""
         env = self._consume("final_target", RecursiveMakeBackend)

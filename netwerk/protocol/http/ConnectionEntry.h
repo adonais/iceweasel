@@ -97,7 +97,10 @@ class ConnectionEntry : public SupportsWeakPtr {
   }
 
   void RemoveConnectionAttempt(ConnectionAttempt* sock, bool abandon);
-  void CloseAllConnectionAttempts(bool aReenqueueTransaction = false);
+  void CloseAllConnectionAttempts();
+  void OnConnectionAttemptConnected() {
+    mConnectionAttemptPool->OnConnectionAttemptConnected();
+  }
 
   HttpRetParams GetConnectionData();
   Http3ConnectionStatsParams GetHttp3ConnectionStatsData();
@@ -151,6 +154,11 @@ class ConnectionEntry : public SupportsWeakPtr {
 
   // True if this connection entry has initiated a socket
   bool mUsedForConnection : 1;
+
+  // True if a ProcessPendingQForEntry runnable is already pending for this
+  // entry on the socket thread event queue. Prevents posting redundant
+  // runnables when many connection events fire in rapid succession.
+  bool mPendingQProcessingScheduled : 1;
 
   // Returns true when the entry has no connections, no pending transactions,
   // and no in-progress connection attempts. Used to determine whether the
@@ -212,6 +220,12 @@ class ConnectionEntry : public SupportsWeakPtr {
   bool HasActiveH3Connection() const;
 
   bool RemoveTransFromPendingQ(nsHttpTransaction* aTrans);
+
+  // Notify that a transaction was removed directly from a per-window pending
+  // array (not from the urgent-start queue).
+  void OnPendingTransactionRemovedFromTable() {
+    mPendingQ.OnPendingTransactionRemovedFromTable();
+  }
 
   void MaybeUpdateEchConfig(nsHttpConnectionInfo* aConnInfo);
 

@@ -41,7 +41,7 @@ JSObject* SpeechSynthesisUtterance::WrapObject(
 }
 
 nsISupports* SpeechSynthesisUtterance::GetParentObject() const {
-  return GetOwnerGlobal();
+  return GetRelevantGlobal();
 }
 
 already_AddRefed<SpeechSynthesisUtterance>

@@ -33,18 +33,17 @@ let $1 = instantiate(`(module
   (import "test" "t3" (tag \$t1 (param i32 f32)))
 )`);
 
-// TODO
-// // ./test/core/exceptions/tag.wast:18
-// assert_invalid(
-//   () => instantiate(`(module (tag (result i32)))`),
-//   `non-empty tag result type`,
-// );
+// ./test/core/exceptions/tag.wast:18
+assert_invalid(
+  () => instantiate(`(module (tag (result i32)))`),
+  `non-empty tag result type`,
+);
 
-// // ./test/core/exceptions/tag.wast:22
-// assert_invalid(
-//   () => instantiate(`(module (import "" "" (tag (result i32))))`),
-//   `non-empty tag result type`,
-// );
+// ./test/core/exceptions/tag.wast:22
+assert_invalid(
+  () => instantiate(`(module (import "" "" (tag (result i32))))`),
+  `non-empty tag result type`,
+);
 
 // ./test/core/exceptions/tag.wast:30
 let $2 = instantiate(`(module

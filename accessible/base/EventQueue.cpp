@@ -84,7 +84,7 @@ bool EventQueue::PushNameOrDescriptionChangeToRelations(
                            : nsIAccessibleEvent::EVENT_DESCRIPTION_CHANGE;
   Relation rel = aAccessible->RelationByType(aType);
   while (LocalAccessible* relTarget = rel.LocalNext()) {
-    RefPtr<AccEvent> nameChangeEvent = new AccEvent(eventType, relTarget);
+    auto nameChangeEvent = MakeRefPtr<AccEvent>(eventType, relTarget);
     pushed |= PushEvent(nameChangeEvent);
   }
 
@@ -155,8 +155,8 @@ bool EventQueue::PushNameOrDescriptionChange(AccEvent* aOrigEvent) {
         }
 
         if (fireNameChange) {
-          RefPtr<AccEvent> nameChangeEvent =
-              new AccEvent(nsIAccessibleEvent::EVENT_NAME_CHANGE, parent);
+          auto nameChangeEvent = MakeRefPtr<AccEvent>(
+              nsIAccessibleEvent::EVENT_NAME_CHANGE, parent);
           pushed |= PushEvent(nameChangeEvent);
         }
         nameCheckAncestor = false;

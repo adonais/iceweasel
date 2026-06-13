@@ -63,6 +63,9 @@ struct WhereToScroll {
   // The percentage of the scroll axis that we're scrolling to.
   // Nothing() represents "scroll to nearest".
   Maybe<int16_t> mPercentage;
+  // True if the caller requested "auto", meaning snap alignment should be used
+  // if the target has one, with a direction-dependent fallback otherwise.
+  bool mIsAuto = false;
 
   // Default is nearest.
   constexpr WhereToScroll() = default;
@@ -78,6 +81,8 @@ struct WhereToScroll {
   MOZ_IMPLICIT constexpr WhereToScroll(decltype(Center)) : WhereToScroll(50) {}
   enum { End };
   MOZ_IMPLICIT constexpr WhereToScroll(decltype(End)) : WhereToScroll(100) {}
+  enum { Auto };
+  MOZ_IMPLICIT constexpr WhereToScroll(decltype(Auto)) : mIsAuto(true) {}
 };
 
 // See the comment for constructor of AxisScrollParams for the detail.

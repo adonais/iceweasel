@@ -133,7 +133,7 @@ class Notification : public DOMEventTargetHelper, public SupportsWeakPtr {
 
   void Close();
 
-  nsIGlobalObject* GetParentObject() const { return GetOwnerGlobal(); }
+  nsIGlobalObject* GetParentObject() const { return GetRelevantGlobal(); }
 
   JSObject* WrapObject(JSContext*, JS::Handle<JSObject*> aGivenProto) override;
 

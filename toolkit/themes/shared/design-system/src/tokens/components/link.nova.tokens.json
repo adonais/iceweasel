@@ -19,7 +19,10 @@
       }
     },
     "visited": {
-      "value": "{link.color.@base}"
+      "value": {
+        "default": "{link.color.@base}",
+        "forcedColors": "VisitedText"
+      }
     }
   }
 }

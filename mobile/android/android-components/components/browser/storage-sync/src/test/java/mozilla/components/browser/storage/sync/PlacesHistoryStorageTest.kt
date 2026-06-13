@@ -12,7 +12,6 @@ import androidx.work.WorkManager
 import androidx.work.testing.WorkManagerTestInitHelper
 import kotlinx.coroutines.test.runTest
 import mozilla.appservices.places.PlacesReaderConnection
-import mozilla.appservices.places.PlacesWriterConnection
 import mozilla.appservices.places.uniffi.PlacesApiException
 import mozilla.appservices.places.uniffi.VisitObservation
 import mozilla.components.concept.storage.DocumentType
@@ -35,10 +34,8 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
-import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Ignore
 import org.junit.Test
@@ -49,6 +46,7 @@ import org.mockito.Mockito.verify
 import org.robolectric.annotation.Config
 import java.io.File
 import java.util.concurrent.TimeUnit
+import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class PlacesHistoryStorageTest {
@@ -672,7 +670,7 @@ class PlacesHistoryStorageTest {
 
         val dbMeta = history.getLatestHistoryMetadataForUrl(metaKey.url)
         assertNotNull(dbMeta)
-        assertHistoryMetadataRecord(metaKey, 5000, DocumentType.Regular, dbMeta!!)
+        assertHistoryMetadataRecord(metaKey, 5000, DocumentType.Regular, dbMeta)
     }
 
     @Test

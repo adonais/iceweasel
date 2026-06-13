@@ -6,12 +6,13 @@
       "matches": ["*://www.bithumb.com/*"]
     }
   },
+  "css": {
+    "hide_browser_notice": ".browser-campaign { display: none !important; }"
+  },
   "interventions": [
     {
       "platforms": ["desktop"],
-      "content_scripts": {
-        "css": ["bug1902385-www.bithumb.com-hide-unsupported.css"]
-      }
+      "css": ["hide_browser_notice"]
     }
   ]
 }

@@ -1,3 +1,4 @@
+/* -*- Mode: c; tab-width: 8; c-basic-offset: 4; indent-tabs-mode: t; -*- */
 /* cairo - a vector graphics library with display and print output
  *
  * Copyright © 2002 University of Southern California
@@ -160,6 +161,10 @@ _cairo_stroker_init (cairo_stroker_t		*stroker,
     stroker->has_current_face = FALSE;
     stroker->has_first_face = FALSE;
     stroker->has_initial_sub_path = FALSE;
+
+    /* Coverity complains these may be unitialized. */
+    memset (&stroker->current_face, 0, sizeof (cairo_stroke_face_t));
+    memset (&stroker->first_face, 0, sizeof (cairo_stroke_face_t));
 
     _cairo_stroker_dash_init (&stroker->dash, stroke_style);
 

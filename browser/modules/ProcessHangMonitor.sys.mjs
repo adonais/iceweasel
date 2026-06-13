@@ -270,7 +270,7 @@ export var ProcessHangMonitor = {
     let maybeStopHang = report => {
       let hungBrowserWindow = null;
       try {
-        hungBrowserWindow = report.scriptBrowser.ownerGlobal;
+        hungBrowserWindow = report.scriptBrowser.documentGlobal;
       } catch (e) {
         // Ignore failures to get the script browser - we'll be
         // conservative, and assume that if we cannot access the
@@ -509,7 +509,9 @@ export var ProcessHangMonitor = {
         ]);
       } else {
         let tab =
-          scriptBrowser?.ownerGlobal.gBrowser?.getTabForBrowser(scriptBrowser);
+          scriptBrowser?.documentGlobal.gBrowser?.getTabForBrowser(
+            scriptBrowser
+          );
         if (!tab) {
           notificationTag = "nonspecific_tab";
           message = bundle.getFormattedString(
@@ -613,7 +615,7 @@ export var ProcessHangMonitor = {
   },
 
   handleEvent(event) {
-    let win = event.target.ownerGlobal;
+    let win = event.target.documentGlobal;
 
     // If a new tab is selected or if a tab changes remoteness, then
     // we may need to show or hide a hang notification.

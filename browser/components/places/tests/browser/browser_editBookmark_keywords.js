@@ -32,7 +32,7 @@ add_task(async function () {
     library.ContentTree.view.focus();
     // Select the bookmark.
     library.ContentTree.view.selectNode(node);
-    synthesizeClickOnSelectedTreeCell(library.ContentTree.view);
+    await synthesizeClickOnSelectedTreeCell(library.ContentTree.view);
 
     is(
       library.document.getElementById("editBMPanel_keywordField").value,

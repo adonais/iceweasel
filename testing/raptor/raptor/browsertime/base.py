@@ -830,6 +830,11 @@ class Browsertime(Perftest, metaclass=ABCMeta):
         # if geckoProfile enabled, give browser more time for profiling
         if self.config["gecko_profile"] is True:
             bt_timeout += 5 * 60
+
+        # if simpleperf enabled, give browser more time for profiling
+        if self.config["simpleperf"] is True:
+            bt_timeout += 5 * 60
+
         return bt_timeout
 
     @staticmethod
@@ -952,6 +957,10 @@ class Browsertime(Perftest, metaclass=ABCMeta):
             self.kill(proc)
 
         self.run_test_setup(test)
+
+        if self.config.get("simpleperf"):
+            self._init_simpleperf_profiling(test)
+
         # timeout is a single page-load timeout value (ms) from the test INI
         # this will be used for btime --timeouts.pageLoad
         cmd = self._compose_cmd(test, timeout)

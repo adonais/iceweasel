@@ -9,7 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.DeviceConfigurationOverride
 import androidx.compose.ui.test.ForcedSize
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -117,7 +117,7 @@ class TabGroupCardTest {
         composeTestRule.setContent {
             FirefoxTheme {
                 ComposableUnderTest(
-                    onDeleteTabGroup = { arg ->
+                    onDeleteTabGroupClick = { arg ->
                         deleteClicked = true
                         argumentReceived = arg
                     },
@@ -203,7 +203,7 @@ class TabGroupCardTest {
             FirefoxTheme {
                 ComposableUnderTest(
                     group = group,
-                    editTabGroupClick = { arg ->
+                    onEditTabGroupClick = { arg ->
                         editClicked = true
                         clickedGroup = arg
                     },
@@ -214,6 +214,30 @@ class TabGroupCardTest {
         composeTestRule.onNodeWithTag(TabsTrayTestTag.EDIT_TAB_GROUP).performClick()
 
         assertTrue(editClicked)
+        assertEquals(group, clickedGroup)
+    }
+
+    @Test
+    fun verifyCloseTabGroupClick() {
+        val group = createTabGroup()
+        var closeClicked = false
+        var clickedGroup: TabsTrayItem.TabGroup? = null
+
+        composeTestRule.setContent {
+            FirefoxTheme {
+                ComposableUnderTest(
+                    group = group,
+                    onCloseTabGroupClick = { arg ->
+                        closeClicked = true
+                        clickedGroup = arg
+                    },
+                )
+            }
+        }
+        composeTestRule.onNodeWithTag(TabsTrayTestTag.TAB_GROUP_THREE_DOT_BUTTON).performClick()
+        composeTestRule.onNodeWithTag(TabsTrayTestTag.CLOSE_TAB_GROUP).performClick()
+
+        assertTrue(closeClicked)
         assertEquals(group, clickedGroup)
     }
 
@@ -311,8 +335,9 @@ class TabGroupCardTest {
         onClick: (String) -> Unit = {},
         onLongClick: (String) -> Unit = {},
         interactionState: TabItemInteractionState = TabItemInteractionState(),
-        onDeleteTabGroup: (String) -> Unit = {},
-        editTabGroupClick: (TabsTrayItem.TabGroup) -> Unit = {},
+        onDeleteTabGroupClick: (String) -> Unit = {},
+        onEditTabGroupClick: (TabsTrayItem.TabGroup) -> Unit = {},
+        onCloseTabGroupClick: (TabsTrayItem.TabGroup) -> Unit = {},
     ) {
         TabGroupCard(
             group = group,
@@ -324,8 +349,9 @@ class TabGroupCardTest {
             ),
             interactionState = interactionState,
             modifier = modifier,
-            onDeleteTabGroup = { onDeleteTabGroup("Test") },
-            editTabGroupClick = { editTabGroupClick(group) },
+            onDeleteTabGroupClick = { onDeleteTabGroupClick("Test") },
+            onEditTabGroupClick = { onEditTabGroupClick(group) },
+            onCloseTabGroupClick = { onCloseTabGroupClick(group) },
         )
     }
 }

@@ -7,45 +7,9 @@ const { MODEL_FEATURES } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs"
 );
 
-const { RemoteSettings } = ChromeUtils.importESModule(
-  "resource://services-settings/remote-settings.sys.mjs"
-);
-
-async function loadRemoteSettingsSnapshot() {
-  const chromeUrl = getRootDirectory(gTestPath);
-  const snapshotUrl = `${chromeUrl}ai-window-prompts-remote-settings-snapshot.json`;
-
-  const response = await fetch(snapshotUrl);
-  if (!response.ok) {
-    throw new Error(`Failed to load snapshot: ${response.statusText}`);
-  }
-  return response.json();
-}
-
-add_setup(async function () {
-  const snapshotData = await loadRemoteSettingsSnapshot();
-
-  // Populate Remote Settings with snapshot data
-  const client = RemoteSettings("ai-window-prompts");
-  await client.db.clear();
-
-  for (const record of snapshotData) {
-    await client.db.create({
-      id: `${record.feature}-${record.model || "default"}-${record.version}`,
-      ...record,
-    });
-  }
-
-  await client.db.importChanges({}, Date.now());
-
-  registerCleanupFunction(async () => {
-    await client.db.clear();
-  });
-});
-
 add_task(async function test_loadConfig_chat_feature() {
   const engine = new openAIEngine();
-  await engine.loadConfig(MODEL_FEATURES.CHAT);
+  await engine.loadConfig(MODEL_FEATURES.CHAT, 2);
   const config = engine.getConfig(engine.feature);
 
   info("Loaded config for 'chat' feature:");
@@ -70,12 +34,7 @@ add_task(async function test_loadConfig_chat_feature() {
     "{}",
     "Config should not be an empty object"
   );
-  Assert.ok(config.version, "Version should be present");
-  Assert.equal(
-    config.prompts,
-    "You are a helpful browser assistant.",
-    "Prompts should be loaded from remote settings"
-  );
+  Assert.ok(config.prompts?.length, "Prompts should exist and not be empty");
   Assert.equal(
     config.parameters.temperature,
     1.0,

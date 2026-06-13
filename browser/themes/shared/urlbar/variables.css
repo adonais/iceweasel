@@ -15,6 +15,12 @@
      as result rows. It makes the gap around them more uniform when they are
      close to the field edges. */
   --urlbar-inner-border-radius: calc(var(--urlbar-border-radius) - 1px);
+
+  /* stylelint-disable-next-line media-query-no-invalid */
+  @media -moz-pref("browser.nova.enabled") {
+    --urlbar-inner-border-radius: calc(var(--urlbarview-border-radius) - var(--urlbarView-padding));
+  }
+
   --urlbar-searchmodeswitcher-margin-inline-end: 0.45em;
 
   /* XXX the uidensity attribute is currently not wired up to the

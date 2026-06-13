@@ -79,7 +79,7 @@ export var ContentDOMReference = {
       );
     }
 
-    let browsingContext = BrowsingContext.getFromWindow(element.ownerGlobal);
+    let browsingContext = BrowsingContext.getFromWindow(element.documentGlobal);
     let mappings = gRegistry.get(browsingContext);
     if (!mappings) {
       mappings = {

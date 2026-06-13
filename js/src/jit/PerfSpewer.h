@@ -187,8 +187,10 @@ class IonPerfSpewer : public PerfSpewer {
 class WasmBaselinePerfSpewer : public PerfSpewer {
   const char* CodeName(uint32_t op) override;
 
+  bool needsToRecordInstruction_;
+
  public:
-  WasmBaselinePerfSpewer() = default;
+  WasmBaselinePerfSpewer();
   WasmBaselinePerfSpewer(WasmBaselinePerfSpewer&&) = default;
   WasmBaselinePerfSpewer& operator=(WasmBaselinePerfSpewer&&) = default;
 

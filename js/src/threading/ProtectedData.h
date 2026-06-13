@@ -100,7 +100,7 @@ class ProtectedData {
 
   template <typename U>
   ThisType& operator=(U&& p) {
-    this->ref() = std::move(p);
+    this->ref() = std::forward<U>(p);
     return *this;
   }
 

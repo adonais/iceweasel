@@ -14,7 +14,7 @@ pypi:psutil==5.9.4
 pypi:py==1.11.0
 pypi:pytz==2022.7.1
 pypi:rstcheck==6.2.5
-pypi:ruff==0.15.0
+pypi:ruff==0.15.12
 pypi:snowballstemmer==2.2.0
 pypi:sphinxcontrib-applehelp==1.0.4
 pypi:sphinxcontrib-htmlhelp==2.0.1
@@ -26,6 +26,7 @@ vendored:third_party/python/aiohappyeyeballs
 vendored:third_party/python/aiohttp
 vendored:third_party/python/aiosignal
 vendored:third_party/python/compare_locales
+vendored:third_party/python/diskarzhan
 vendored:third_party/python/esprima
 vendored:third_party/python/fluent.syntax
 vendored:third_party/python/frozenlist

@@ -10,7 +10,7 @@
     {
       "platforms": ["android"],
       "content_scripts": {
-        "js": ["bug1975651-comic.k-manga.jp-ua-override.js"]
+        "js": ["use_chrome_useragent.js", "use_chrome_appVersion.js"]
       }
     }
   ]

@@ -26,18 +26,6 @@ interface nsIWebNavigationInfo : nsISupports
   const unsigned long IMAGE = 1;
 
   /**
-   * Returned by isTypeSupported to indicate that a type is a special NPAPI
-   * plugin that render as a transparent region (we do not support NPAPI
-   * plugins).
-   */
-  const unsigned long FALLBACK = 2;
-
-  /**
-   * @note Other return types may be added here in the future as they become
-   * relevant.
-   */
-
-  /**
    * Returned by isTypeSupported to indicate that a type is supported via some
    * other means.
    */

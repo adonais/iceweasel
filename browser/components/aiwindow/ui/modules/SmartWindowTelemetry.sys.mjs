@@ -78,7 +78,7 @@ export const SmartWindowTelemetry = {
     Glean.smartWindow.model.set(modelInfo?.model ?? "unset");
   },
 
-  recordUriLoad() {
+  async recordUriLoad() {
     const now = Date.now();
 
     // Throttle to once per hour to capture activity at event time rather than
@@ -89,8 +89,9 @@ export const SmartWindowTelemetry = {
 
     this.lastUriLoadTimestamp = now;
 
+    const modelInfo = await lazy.getModelForChoice(lazy.modelChoice);
     Glean.smartWindow.uriLoad.record({
-      model: lazy.modelChoice === null ? "custom-model" : lazy.modelChoice,
+      model: modelInfo?.model ?? "unset",
     });
 
     return true;

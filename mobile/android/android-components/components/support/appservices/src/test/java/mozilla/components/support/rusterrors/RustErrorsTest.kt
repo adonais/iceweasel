@@ -15,6 +15,7 @@ import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
+import kotlin.test.assertIs
 
 @RunWith(AndroidJUnit4::class)
 class RustErrorsTest {
@@ -46,7 +47,7 @@ class RustErrorsTest {
     fun `AppServicesErrorReport implements RustCrashReport`() {
         val report: Any = AppServicesErrorReport("test-error", RuntimeException("error"))
 
-        assertTrue(report is RustCrashReport)
+        assertIs<RustCrashReport>(report)
     }
 
     @Test
@@ -71,11 +72,10 @@ class RustErrorsTest {
 
         assertEquals(1, crashReporter.exceptions.size)
         val submitted = crashReporter.exceptions[0]
-        assertTrue(submitted is AppServicesErrorReport)
+        assertIs<AppServicesErrorReport>(submitted)
 
-        val report = submitted as AppServicesErrorReport
-        assertEquals("places-internal-error", report.typeName)
-        assertSame(originalException, report.cause)
+        assertEquals("places-internal-error", submitted.typeName)
+        assertSame(originalException, submitted.cause)
     }
 
     private class TestCrashReporter : CrashReporting {

@@ -104,9 +104,9 @@ FontFaceSet::~FontFaceSet() {
 
 /* static */ already_AddRefed<FontFaceSet> FontFaceSet::CreateForDocument(
     dom::Document* aDocument) {
-  RefPtr<FontFaceSet> set = new FontFaceSet(aDocument->GetScopeObject());
-  RefPtr<FontFaceSetDocumentImpl> impl =
-      new FontFaceSetDocumentImpl(set, aDocument);
+  RefPtr<FontFaceSet> set =
+      do_AddRef(new FontFaceSet(aDocument->GetScopeObject()));
+  auto impl = MakeRefPtr<FontFaceSetDocumentImpl>(set, aDocument);
   set->mImpl = impl;
   impl->Initialize();
   return set.forget();
@@ -114,8 +114,8 @@ FontFaceSet::~FontFaceSet() {
 
 /* static */ already_AddRefed<FontFaceSet> FontFaceSet::CreateForWorker(
     nsIGlobalObject* aParent, WorkerPrivate* aWorkerPrivate) {
-  RefPtr<FontFaceSet> set = new FontFaceSet(aParent);
-  RefPtr<FontFaceSetWorkerImpl> impl = new FontFaceSetWorkerImpl(set);
+  RefPtr<FontFaceSet> set = do_AddRef(new FontFaceSet(aParent));
+  auto impl = MakeRefPtr<FontFaceSetWorkerImpl>(set);
   set->mImpl = impl;
   if (NS_WARN_IF(!impl->Initialize(aWorkerPrivate))) {
     return nullptr;
@@ -330,13 +330,11 @@ uint32_t FontFaceSet::SizeIncludingNonAuthorOrigins() {
 }
 
 already_AddRefed<FontFaceSetIterator> FontFaceSet::Entries() {
-  RefPtr<FontFaceSetIterator> it = new FontFaceSetIterator(this, true);
-  return it.forget();
+  return MakeAndAddRef<FontFaceSetIterator>(this, true);
 }
 
 already_AddRefed<FontFaceSetIterator> FontFaceSet::Values() {
-  RefPtr<FontFaceSetIterator> it = new FontFaceSetIterator(this, false);
-  return it.forget();
+  return MakeAndAddRef<FontFaceSetIterator>(this, false);
 }
 
 void FontFaceSet::ForEach(JSContext* aCx, FontFaceSetForEachCallback& aCallback,

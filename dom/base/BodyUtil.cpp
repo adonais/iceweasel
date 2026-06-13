@@ -151,7 +151,7 @@ class MOZ_STACK_CLASS FormDataParser {
         return false;
       }
     } else if (headerName.LowerCaseEqualsLiteral("content-type")) {
-      mContentType = headerValue;
+      mContentType = std::move(headerValue);
     }
 
     return true;

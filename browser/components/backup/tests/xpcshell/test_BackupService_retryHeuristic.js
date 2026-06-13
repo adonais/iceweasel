@@ -266,7 +266,7 @@ add_task(async function test_no_delete_when_archive_matches_old_backup() {
     BACKUP_DEFAULT_LOCATION_PREF_NAME
   );
 
-  let oldBackupFileName = "FirefoxBackup_profile_name_20260311-1400.html";
+  let oldBackupFileName = "FirefoxBackup_profile_name_20260311-140000.000.html";
   let oldBackupPath = PathUtils.join(backupDir, oldBackupFileName);
 
   bs.onUpdateLastBackupFileName(oldBackupFileName);
@@ -306,8 +306,8 @@ add_task(async function test_delete_when_archive_differs_from_old_backup() {
     BACKUP_DEFAULT_LOCATION_PREF_NAME
   );
 
-  let oldBackupFileName = "FirefoxBackup_profile_name_20260311-1400.html";
-  let newBackupFileName = "FirefoxBackup_profile_name_20260311-1500.html";
+  let oldBackupFileName = "FirefoxBackup_profile_name_20260311-140000.000.html";
+  let newBackupFileName = "FirefoxBackup_profile_name_20260311-150000.000.html";
   let oldBackupPath = PathUtils.join(backupDir, oldBackupFileName);
   let newBackupPath = PathUtils.join(backupDir, newBackupFileName);
 

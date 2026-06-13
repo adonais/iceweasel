@@ -35,9 +35,7 @@ class HomeDeepLinkIntentProcessorTest {
     private lateinit var navController: NavController
     private lateinit var out: Intent
     private lateinit var processorHome: HomeDeepLinkIntentProcessor
-    private val settings: Settings = mockk {
-        every { shouldUseComposableToolbar } returns false
-    }
+    private val settings: Settings = mockk(relaxed = true)
 
     @Before
     fun setup() {

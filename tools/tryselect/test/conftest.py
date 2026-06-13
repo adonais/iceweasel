@@ -56,6 +56,7 @@ def mock_push_to_lando_try():
         return_value={
             "lando_instance": "lando-test",
             "lando_job_id": 42,
+            "duration": 1.5,
         },
     )
 

@@ -14,10 +14,7 @@
 // TODO alaskanemily: Ideally it would only be included from there.
 #include "nsCSSProps.h"
 
-namespace mozilla {
-class DeclarationBlock;
-
-namespace dom {
+namespace mozilla::dom {
 class DocGroup;
 class CSSPageRule;
 
@@ -32,9 +29,9 @@ class CSSPageRuleDeclaration final : public nsDOMCSSDeclaration {
   JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) final;
 
  protected:
-  DeclarationBlock* GetOrCreateCSSDeclaration(
-      Operation aOperation, DeclarationBlock** aCreated) final;
-  nsresult SetCSSDeclaration(DeclarationBlock* aDecl,
+  Block* GetOrCreateCSSDeclaration(Operation aOperation,
+                                   Block** aCreated) final;
+  nsresult SetCSSDeclaration(Block* aDecl,
                              MutationClosureData* aClosureData) final;
   nsDOMCSSDeclaration::ParsingEnvironment GetParsingEnvironment(
       nsIPrincipal* aSubjectPrincipal) const final;
@@ -43,16 +40,15 @@ class CSSPageRuleDeclaration final : public nsDOMCSSDeclaration {
   // For accessing the constructor.
   friend class CSSPageRule;
 
-  explicit CSSPageRuleDeclaration(
-      already_AddRefed<StyleLockedDeclarationBlock> aDecls);
-  void SetRawAfterClone(RefPtr<StyleLockedDeclarationBlock>);
+  explicit CSSPageRuleDeclaration(already_AddRefed<Block> aDecls);
+  void SetRawAfterClone(RefPtr<Block>);
 
   ~CSSPageRuleDeclaration();
 
   inline CSSPageRule* Rule();
   inline const CSSPageRule* Rule() const;
 
-  RefPtr<DeclarationBlock> mDecls;
+  RefPtr<Block> mDecls;
 };
 
 class CSSPageRule final : public css::GroupRule {
@@ -107,7 +103,6 @@ const CSSPageRule* CSSPageRuleDeclaration::Rule() const {
       reinterpret_cast<const uint8_t*>(this) - offsetof(CSSPageRule, mDecls));
 }
 
-}  // namespace dom
-}  // namespace mozilla
+}  // namespace mozilla::dom
 
 #endif  // mozilla_dom_CSSPageRule_h

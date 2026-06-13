@@ -52,7 +52,6 @@
 #include "AndroidSurfaceTexture.h"
 #include <android/log.h>
 #include <pthread.h>
-#include <wchar.h>
 
 #ifdef MOZ_GECKOVIEW_HISTORY
 #  include "nsNetUtil.h"

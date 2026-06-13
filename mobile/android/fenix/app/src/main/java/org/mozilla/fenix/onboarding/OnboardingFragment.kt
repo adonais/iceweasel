@@ -17,14 +17,20 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
+import androidx.core.app.NotificationManagerCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.compose.content
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import kotlinx.coroutines.launch
+import mozilla.components.browser.state.action.WebExtensionAction
+import mozilla.components.browser.state.state.extension.WebExtensionPromptRequest
+import mozilla.components.compose.base.LinkTextState
+import mozilla.components.concept.engine.webextension.InstallationMethod
 import mozilla.components.lib.state.helpers.StoreProvider.Companion.fragmentStore
 import mozilla.components.service.nimbus.evalJexlSafe
 import mozilla.components.service.nimbus.messaging.use
+import mozilla.components.support.base.ext.areNotificationsEnabledSafe
 import mozilla.components.support.base.feature.ViewBoundFeatureWrapper
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.utils.Browsers
@@ -35,10 +41,10 @@ import org.mozilla.fenix.components.accounts.FenixFxAEntryPoint
 import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.appstate.SupportedMenuNotifications
 import org.mozilla.fenix.components.initializeGlean
-import org.mozilla.fenix.components.metrics.Event
+import org.mozilla.fenix.components.metrics.InstallReferrerHandlingService
+import org.mozilla.fenix.components.metrics.RtamoAttributionHandler
 import org.mozilla.fenix.components.metrics.installSourcePackage
 import org.mozilla.fenix.components.startMetricsIfEnabled
-import org.mozilla.fenix.compose.LinkTextState
 import org.mozilla.fenix.ext.application
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.hideToolbar
@@ -74,6 +80,10 @@ class OnboardingFragment : Fragment() {
 
     private val removeMarketingFeature = ViewBoundFeatureWrapper<MarketingPageRemovalSupport>()
 
+    private val rtamoAttributionHandler by lazy {
+        RtamoAttributionHandler(requireContext(), requireContext().settings(), requireComponents.addonsProvider)
+    }
+
     private val termsOfServiceEventHandler by lazy {
         DefaultOnboardingTermsOfServiceEventHandler(
             telemetryRecorder = telemetryRecorder,
@@ -88,7 +98,7 @@ class OnboardingFragment : Fragment() {
         with(requireContext()) {
             pagesToDisplay(
                 showDefaultBrowserPage = displayDefaultBrowserPage(this),
-                showNotificationPage = canShowNotificationPage(),
+                showNotificationPage = canShowNotificationPage(this),
                 showAddWidgetPage = AppWidgetManager.getInstance(requireContext())
                     ?.let { canShowAddSearchWidgetPrompt(it) }
                     ?: false,
@@ -276,7 +286,6 @@ class OnboardingFragment : Fragment() {
             },
             onFinish = {
                 onFinish(it)
-                enableSearchBarCFRForNewUser()
             },
             onImpression = {
                 telemetryRecorder.onImpression(
@@ -395,7 +404,6 @@ class OnboardingFragment : Fragment() {
             },
             onFinish = {
                 onFinish(it)
-                enableSearchBarCFRForNewUser()
             },
             onImpression = {
                 telemetryRecorder.onImpression(
@@ -473,6 +481,8 @@ class OnboardingFragment : Fragment() {
             Pings.onboardingOptOut.submit()
         }
 
+        rtamoAttributionHandler.handleReferrer(InstallReferrerHandlingService.response)
+
         // The marketing telemetry may be enabled after finishing onboarding.
         startMetricsIfEnabled(
             logger = logger,
@@ -509,24 +519,37 @@ class OnboardingFragment : Fragment() {
             isDailyUsagePingEnabled = false,
         )
 
-        requireComponents.analytics.metrics.track(Event.GrowthData.ConversionEvent6)
-
         findNavController().nav(
             id = R.id.onboardingFragment,
             directions = OnboardingFragmentDirections.actionHome(),
         )
 
-        maybeAddMenuNotification()
-    }
+        val downloadUrl = settings.rtamoAddonDownloadUrl
+        if (downloadUrl.isNotBlank()) {
+            requireComponents.core.store.dispatch(
+                WebExtensionAction.UpdatePromptRequestWebExtensionAction(
+                    WebExtensionPromptRequest.InstallationRequested(
+                        url = downloadUrl,
+                        name = settings.rtamoAddonName,
+                        iconUrl = settings.rtamoAddonImageUrl,
+                        installationMethod = InstallationMethod.RTAMO,
+                    ),
+                ),
+            )
+        }
+        settings.rtamoAddonDownloadUrl = ""
+        settings.rtamoAddonName = ""
+        settings.rtamoAddonImageUrl = ""
 
-    private fun enableSearchBarCFRForNewUser() {
-        requireContext().settings().shouldShowSearchBarCFR = FxNimbus.features.encourageSearchCfr.value().enabled
+        maybeAddMenuNotification()
     }
 
     private fun isNotDefaultBrowser(context: Context) =
         !Browsers.isDefaultBrowser(context)
 
-    private fun canShowNotificationPage() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+    private fun canShowNotificationPage(context: Context) =
+        !NotificationManagerCompat.from(context.applicationContext)
+            .areNotificationsEnabledSafe() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
 
     private fun pagesToDisplay(
         showDefaultBrowserPage: Boolean,

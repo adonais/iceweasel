@@ -36,16 +36,25 @@ private data class ColorGroup(val swatches: List<ColorSwatch>)
 private val novaColorGroups = listOf(
     ColorGroup(
         listOf(
-            ColorSwatch("Neutral 0", NovaColors.Neutral0),
-            ColorSwatch("Neutral 10", NovaColors.Neutral10),
-            ColorSwatch("Neutral 20", NovaColors.Neutral20),
-            ColorSwatch("Neutral 30", NovaColors.Neutral30),
-            ColorSwatch("Neutral 40", NovaColors.Neutral40),
-            ColorSwatch("Neutral 50", NovaColors.Neutral50),
-            ColorSwatch("Neutral 60", NovaColors.Neutral60),
-            ColorSwatch("Neutral 70", NovaColors.Neutral70),
-            ColorSwatch("Neutral 80", NovaColors.Neutral80),
-            ColorSwatch("Neutral 90", NovaColors.Neutral90),
+            ColorSwatch("Gray 0", NovaColors.Gray0),
+            ColorSwatch("Gray 5", NovaColors.Gray5),
+            ColorSwatch("Gray 10", NovaColors.Gray10),
+            ColorSwatch("Gray 15", NovaColors.Gray15),
+            ColorSwatch("Gray 20", NovaColors.Gray20),
+            ColorSwatch("Gray 25", NovaColors.Gray25),
+            ColorSwatch("Gray 30", NovaColors.Gray30),
+            ColorSwatch("Gray 35", NovaColors.Gray35),
+            ColorSwatch("Gray 40", NovaColors.Gray40),
+            ColorSwatch("Gray 45", NovaColors.Gray45),
+            ColorSwatch("Gray 50", NovaColors.Gray50),
+            ColorSwatch("Gray 55", NovaColors.Gray55),
+            ColorSwatch("Gray 60", NovaColors.Gray60),
+            ColorSwatch("Gray 65", NovaColors.Gray65),
+            ColorSwatch("Gray 70", NovaColors.Gray70),
+            ColorSwatch("Gray 75", NovaColors.Gray75),
+            ColorSwatch("Gray 80", NovaColors.Gray80),
+            ColorSwatch("Gray 85", NovaColors.Gray85),
+            ColorSwatch("Gray 90", NovaColors.Gray90),
         ),
     ),
     ColorGroup(
@@ -60,20 +69,6 @@ private val novaColorGroups = listOf(
             ColorSwatch("Violet Desaturated 70", NovaColors.VioletDesaturated70),
             ColorSwatch("Violet Desaturated 80", NovaColors.VioletDesaturated80),
             ColorSwatch("Violet Desaturated 90", NovaColors.VioletDesaturated90),
-        ),
-    ),
-    ColorGroup(
-        listOf(
-            ColorSwatch("Purple Desaturated 0", NovaColors.PurpleDesaturated0),
-            ColorSwatch("Purple Desaturated 10", NovaColors.PurpleDesaturated10),
-            ColorSwatch("Purple Desaturated 20", NovaColors.PurpleDesaturated20),
-            ColorSwatch("Purple Desaturated 30", NovaColors.PurpleDesaturated30),
-            ColorSwatch("Purple Desaturated 40", NovaColors.PurpleDesaturated40),
-            ColorSwatch("Purple Desaturated 50", NovaColors.PurpleDesaturated50),
-            ColorSwatch("Purple Desaturated 60", NovaColors.PurpleDesaturated60),
-            ColorSwatch("Purple Desaturated 70", NovaColors.PurpleDesaturated70),
-            ColorSwatch("Purple Desaturated 80", NovaColors.PurpleDesaturated80),
-            ColorSwatch("Purple Desaturated 90", NovaColors.PurpleDesaturated90),
         ),
     ),
     ColorGroup(
@@ -271,7 +266,7 @@ private fun ColorRow(group: ColorGroup, modifier: Modifier = Modifier) {
     }
 }
 
-@Preview(showBackground = true, widthDp = 1300, heightDp = 1000)
+@Preview(showBackground = true, widthDp = 2400, heightDp = 1000)
 @Composable
 private fun NovaColorsPalettePreview() {
     Column(

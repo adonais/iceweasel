@@ -42,6 +42,9 @@ enum class SVGBBoxFlag : uint16_t {
   // bounds of the elements children. This flag will cause the
   // element's bounds to be returned instead.
   UseFrameBoundsForOuterSVG,
+  // Normally GetBBox will return values that apply CSS Zoom.
+  // This flag will cause the unzoomed element's bounds to be returned instead.
+  DisregardCSSZoom,
   // https://developer.mozilla.org/en-US/docs/Web/API/Element/getBoundingClientRect
   ForGetClientRects,
   // If the given frame is an HTML element, only include the region of the

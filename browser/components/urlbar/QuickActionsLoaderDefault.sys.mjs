@@ -58,6 +58,16 @@ let currentBrowser = () =>
   lazy.BrowserWindowTracker.getTopWindow({ allowFromInactiveWorkspace: true })
     ?.gBrowser.selectedBrowser;
 
+let unmutedAudioTabs = () =>
+  lazy.BrowserWindowTracker.orderedWindows.flatMap(win =>
+    Array.from(win.gBrowser.tabs).filter(
+      tab =>
+        (tab.soundPlaying ||
+          tab.hasAttribute("soundplaying-scheduledremoval")) &&
+        !tab.muted
+    )
+  );
+
 ChromeUtils.defineLazyGetter(lazy, "gFluentStrings", function () {
   return new Localization(
     [
@@ -162,6 +172,17 @@ const DEFAULT_ACTIONS = {
     l10nCommands: ["quickactions-cmd-logins"],
     label: "quickactions-logins2",
     onPick: openUrlFun("about:logins"),
+  },
+  mute: {
+    l10nCommands: ["quickactions-cmd-mute"],
+    label: "quickactions-mute",
+    icon: "chrome://global/skin/media/audio-muted.svg",
+    isVisible: () => !!unmutedAudioTabs().length,
+    onPick: () => {
+      for (let tab of unmutedAudioTabs()) {
+        tab.toggleMuteAudio();
+      }
+    },
   },
   print: {
     l10nCommands: ["quickactions-cmd-print"],

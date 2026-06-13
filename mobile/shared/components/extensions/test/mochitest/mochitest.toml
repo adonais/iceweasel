@@ -47,7 +47,7 @@ skip-if = [
 
 ["test_ext_tabs_lastAccessed.html"]
 skip-if = [
-  "true", # tab.lastAccessed not implemented
+  "true", # Bug 2032927 - tab.lastAccessed not implemented
 ]
 
 ["test_ext_tabs_onUpdated.html"]

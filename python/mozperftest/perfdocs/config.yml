@@ -98,6 +98,7 @@ suites:
             "browser_addManyNodes.js": ""
             "browser_reflowPseudoelements.js": ""
             "browser_removeManySpellingErrors.js": ""
+            "browser_implicitRoleARIAExpanded.js": ""
 
     toolkit/components/places/tests/browser/performance:
         description: "Performance tests for Toolkit: Places"

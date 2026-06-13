@@ -67,7 +67,7 @@ class RecentlyClosedTabsInView extends ViewPage {
     if (
       topic == SS_NOTIFY_CLOSED_OBJECTS_CHANGED ||
       (topic == SS_NOTIFY_BROWSER_SHUTDOWN_FLUSH &&
-        subject.ownerGlobal == getWindow())
+        subject.documentGlobal == getWindow())
     ) {
       this.updateRecentlyClosedTabs();
     }

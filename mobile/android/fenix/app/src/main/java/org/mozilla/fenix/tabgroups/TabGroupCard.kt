@@ -65,9 +65,10 @@ import org.mozilla.fenix.tabstray.ui.tabitems.TabsTrayItemClickHandler
 import org.mozilla.fenix.tabstray.ui.tabitems.TabsTrayItemSelectionState
 import org.mozilla.fenix.tabstray.ui.tabitems.ThumbnailShape
 import org.mozilla.fenix.tabstray.ui.tabitems.gridItemAspectRatio
+import org.mozilla.fenix.tabstray.ui.tabitems.tabGridItemContainerColor
 import org.mozilla.fenix.tabstray.ui.tabitems.tabItemClickable
 import org.mozilla.fenix.tabstray.ui.tabitems.tabItemConditionalBorder
-import org.mozilla.fenix.tabstray.ui.tabitems.tabItemInteractionAnimation
+import org.mozilla.fenix.tabstray.ui.tabitems.tabItemGridInteractionAnimation
 import org.mozilla.fenix.theme.FirefoxTheme
 
 const val TOP_START_THUMBNAIL_INDEX = 0
@@ -82,8 +83,9 @@ const val BOTTOM_END_THUMBNAIL_INDEX = 3
  * @param clickHandler: Handler for all click-handling inputs (long click, click, etc)
  * @param modifier: The Modifier
  * @param interactionState The tab item's interaction state (hover, drag, etc)
- * @param onDeleteTabGroup Invoked when the user clicks on delete tab group.
- * @param editTabGroupClick Invoked when the user clicks to edit the tab group.
+ * @param onDeleteTabGroupClick Invoked when the user clicks on delete tab group.
+ * @param onEditTabGroupClick Invoked when the user clicks to edit the tab group.
+ * @param onCloseTabGroupClick Invoked when the user clicks to close the tab group.
  */
 @Composable
 fun TabGroupCard(
@@ -92,13 +94,16 @@ fun TabGroupCard(
     clickHandler: TabsTrayItemClickHandler,
     modifier: Modifier = Modifier,
     interactionState: TabItemInteractionState,
-    onDeleteTabGroup: (TabsTrayItem.TabGroup) -> Unit,
-    editTabGroupClick: () -> Unit,
+    onDeleteTabGroupClick: (TabsTrayItem.TabGroup) -> Unit,
+    onEditTabGroupClick: () -> Unit,
+    onCloseTabGroupClick: () -> Unit,
 ) {
+    val containerColor = tabGridItemContainerColor(selectionState)
+
     Box(
         modifier = modifier
             .wrapContentSize()
-            .tabItemInteractionAnimation(interactionState)
+            .tabItemGridInteractionAnimation(interactionState)
             .testTag(TabsTrayTestTag.TAB_ITEM_ROOT),
     ) {
         Card(
@@ -112,7 +117,7 @@ fun TabGroupCard(
             shape = TabContentCardShape,
             border = tabItemConditionalBorder(selectionState),
             colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                containerColor = containerColor,
             ),
         ) {
             Column(modifier = Modifier.aspectRatio(gridItemAspectRatio)) {
@@ -125,10 +130,7 @@ fun TabGroupCard(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     CompositionLocalProvider(LocalContentColor provides group.theme.onPrimary) {
-                        Spacer(
-                            modifier = Modifier
-                                .width(FirefoxTheme.layout.space.static100),
-                        )
+                        Spacer(modifier = Modifier.width(FirefoxTheme.layout.space.static100))
 
                         Text(
                             text = group.title.take(MAX_URI_LENGTH),
@@ -144,16 +146,14 @@ fun TabGroupCard(
 
                         TabGroupOptionButton(
                             selectionState = selectionState,
-                            onDeleteTabGroup = { onDeleteTabGroup(group) },
-                            editTabGroupClick = editTabGroupClick,
+                            onDeleteTabGroupClick = { onDeleteTabGroupClick(group) },
+                            onEditTabGroupClick = onEditTabGroupClick,
+                            onCloseTabGroupClick = onCloseTabGroupClick,
                         )
                     }
                 }
 
-                Spacer(
-                    modifier = Modifier
-                        .height(FirefoxTheme.layout.space.static25),
-                )
+                Spacer(modifier = Modifier.height(FirefoxTheme.layout.space.static25))
 
                 // 4x4 Thumbnail Grid
                 Card(
@@ -167,6 +167,7 @@ fun TabGroupCard(
                 ) {
                     ThumbnailsGridView(
                         thumbnails = group.thumbnails,
+                        containerColor = containerColor,
                     )
                 }
 
@@ -182,8 +183,9 @@ fun TabGroupCard(
 @Composable
 private fun TabGroupOptionButton(
     selectionState: TabsTrayItemSelectionState,
-    onDeleteTabGroup: () -> Unit,
-    editTabGroupClick: () -> Unit,
+    onDeleteTabGroupClick: () -> Unit,
+    onEditTabGroupClick: () -> Unit,
+    onCloseTabGroupClick: () -> Unit,
 ) {
     if (selectionState.multiSelectEnabled) {
         MultiSelectTabButton(
@@ -194,8 +196,9 @@ private fun TabGroupOptionButton(
         TabGroupMenuButton(
             modifier = Modifier.size(TabHeaderIconTouchTargetSize),
             includeCloseOption = true,
-            onDeleteTabGroup = onDeleteTabGroup,
-            editTabGroupClick = editTabGroupClick,
+            onDeleteTabGroupClick = onDeleteTabGroupClick,
+            onEditTabGroupClick = onEditTabGroupClick,
+            onCloseTabGroupClick = onCloseTabGroupClick,
         )
     }
 }
@@ -232,11 +235,13 @@ private val BoxWithConstraintsScope.groupThumbnailSizePx: Int
  * size themselves to fit the available space.
  * @param thumbnails: List of thumbnails.  May be empty, or up to size 4.
  * @param modifier: Modifier parameter
+ * @param containerColor: Background Color of the thumbnails grid.
  */
 @Composable
 fun ThumbnailsGridView(
     thumbnails: List<TabThumbnailImageData>,
     modifier: Modifier = Modifier,
+    containerColor: Color = MaterialTheme.colorScheme.surfaceContainerHighest,
 ) {
     BoxWithConstraints {
         val groupThumbnailDimens = groupThumbnailDimens
@@ -244,7 +249,7 @@ fun ThumbnailsGridView(
         Column(
             modifier = modifier
                 .fillMaxWidth()
-                .background(color = MaterialTheme.colorScheme.surfaceContainerHighest),
+                .background(color = containerColor),
             verticalArrangement = Arrangement.spacedBy(FirefoxTheme.layout.space.static25),
         ) {
             Row(
@@ -431,6 +436,19 @@ private class TabGroupCardPreviewProvider : PreviewParameterProvider<TabGroupCar
                 interactionState = TabItemInteractionState(isDragged = true),
             ),
         ),
+        Pair(
+            "Hovered by item",
+            TabGroupCardPreviewState(
+                selectionState =
+                    TabsTrayItemSelectionState(
+                        isFocused = false,
+                        isSelected = false,
+                        multiSelectEnabled = false,
+                    ),
+                groupSize = 4,
+                interactionState = TabItemInteractionState(isHoveredByItem = true),
+            ),
+        ),
     )
 
     override val values: Sequence<TabGroupCardPreviewState>
@@ -512,14 +530,15 @@ private fun TabGroupCardPreview(
                 selectionState = tabGroupCardState.selectionState,
                 clickHandler = TabsTrayItemClickHandler(
                     enabled = true,
-                    onClick = { item: TabsTrayItem -> {} },
-                    onCloseClick = { item: TabsTrayItem -> {} },
-                    onLongClick = { item: TabsTrayItem -> {} },
+                    onClick = { _: TabsTrayItem -> },
+                    onCloseClick = { _: TabsTrayItem -> },
+                    onLongClick = { _: TabsTrayItem -> },
                 ),
                 modifier = Modifier.weight(1f),
                 interactionState = tabGroupCardState.interactionState,
-                onDeleteTabGroup = {},
-                editTabGroupClick = {},
+                onDeleteTabGroupClick = {},
+                onEditTabGroupClick = {},
+                onCloseTabGroupClick = {},
             )
         }
     }
@@ -562,7 +581,8 @@ private value class Height(val height: Dp)
 
 @JvmInline
 private value class ThumbnailDimensions(private val dimensions: Pair<Width, Height>) {
-    constructor(width: Width, height: Height) : this (width to height)
+    constructor(width: Width, height: Height) : this(width to height)
+
     val width: Dp
         get() = this.dimensions.first.width
 

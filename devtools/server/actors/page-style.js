@@ -154,8 +154,6 @@ class PageStyleActor extends Actor {
         // expected support of font-stretch at CSS Fonts Level 4.
         fontWeightLevel4:
           CSS.supports("font-weight: 1") && CSS.supports("font-stretch: 100%"),
-        // @backward-compat { version 150 } This trait can be removed once 150 hits release
-        hasGetAnchorNames: true,
       },
     };
   }

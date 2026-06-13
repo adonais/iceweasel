@@ -13,7 +13,7 @@ class AudioStreamTrack;
 
 class AudioTrack : public MediaTrack {
  public:
-  AudioTrack(nsIGlobalObject* aOwnerGlobal, const nsAString& aId,
+  AudioTrack(nsIGlobalObject* aRelevantGlobal, const nsAString& aId,
              const nsAString& aKind, const nsAString& aLabel,
              const nsAString& aLanguage, bool aEnabled,
              AudioStreamTrack* aStreamTrack = nullptr);

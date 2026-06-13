@@ -6,11 +6,13 @@ package org.mozilla.fenix.utils
 
 import android.content.Context
 import android.view.View
+import androidx.compose.material3.SnackbarHostState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import mozilla.components.compose.base.snackbar.SnackbarTimeout
+import mozilla.components.compose.base.snackbar.displaySnackbar
 import org.mozilla.fenix.compose.core.Action
 import org.mozilla.fenix.compose.snackbar.Snackbar
 import org.mozilla.fenix.compose.snackbar.SnackbarState
@@ -121,4 +123,33 @@ fun CoroutineScope.allowUndo(
     }
 
     showUndoSnackbar()
+}
+
+/**
+ * Compose variant of [allowUndo] that displays an undo snackbar via [SnackbarHostState].
+ *
+ * @param snackbarHostState The [SnackbarHostState] to display the snackbar in.
+ * @param message A message displayed as part of the snackbar.
+ * @param undoActionTitle Label for the undo action.
+ * @param onCancel A suspend block to execute when the user taps the undo action.
+ * @param operation A suspend block to execute if user doesn't cancel via the displayed [Snackbar].
+ * @param undoDelay The delay before auto-dismissing.
+ */
+fun CoroutineScope.allowUndo(
+    snackbarHostState: SnackbarHostState,
+    message: String,
+    undoActionTitle: String,
+    onCancel: suspend () -> Unit = {},
+    operation: suspend () -> Unit,
+    undoDelay: Long,
+) {
+    launch {
+        snackbarHostState.displaySnackbar(
+            message = message,
+            actionLabel = undoActionTitle,
+            timeout = SnackbarTimeout.Custom(undoDelay),
+            onActionPerformed = onCancel,
+            onDismissPerformed = operation,
+        )
+    }
 }

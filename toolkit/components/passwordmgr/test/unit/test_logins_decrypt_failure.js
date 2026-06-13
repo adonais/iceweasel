@@ -14,9 +14,9 @@
  * primary password when it is not known.
  */
 function resetPrimaryPassword() {
-  let token = Cc["@mozilla.org/security/pk11tokendb;1"]
-    .getService(Ci.nsIPK11TokenDB)
-    .getInternalKeyToken();
+  let token = Cc["@mozilla.org/security/internalkeytoken;1"].createInstance(
+    Ci.nsIPKCS11Token
+  );
   token.reset();
   token.initPassword("");
 }

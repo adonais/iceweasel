@@ -5,6 +5,8 @@
 #ifndef mozilla_SandboxBrokerCommon_h
 #define mozilla_SandboxBrokerCommon_h
 
+#include "mozilla/UsingEnum.h"
+
 #include <sys/types.h>
 #include <stdint.h>
 
@@ -30,7 +32,6 @@ class SandboxBrokerCommon {
     SANDBOX_FILE_STAT,
     SANDBOX_FILE_CHMOD,
     SANDBOX_FILE_LINK,
-    SANDBOX_FILE_SYMLINK,
     SANDBOX_FILE_MKDIR,
     SANDBOX_FILE_RENAME,
     SANDBOX_FILE_RMDIR,
@@ -40,32 +41,27 @@ class SandboxBrokerCommon {
     SANDBOX_SOCKET_CONNECT_ABSTRACT,
     SANDBOX_OP_MAX_VALUE = SANDBOX_SOCKET_CONNECT_ABSTRACT
   };
-#ifdef __cpp_using_enum
-  using enum Operation;
-#else
-  // We can get rid of this once we desupport older compilers like GCC 10
-  // (probably when we move to C++23: bug 1880762).
-#  define USING_OP(NAME) static constexpr auto NAME = Operation::NAME
-  USING_OP(SANDBOX_FILE_OPEN);
-  USING_OP(SANDBOX_FILE_ACCESS);
-  USING_OP(SANDBOX_FILE_STAT);
-  USING_OP(SANDBOX_FILE_CHMOD);
-  USING_OP(SANDBOX_FILE_LINK);
-  USING_OP(SANDBOX_FILE_SYMLINK);
-  USING_OP(SANDBOX_FILE_MKDIR);
-  USING_OP(SANDBOX_FILE_RENAME);
-  USING_OP(SANDBOX_FILE_RMDIR);
-  USING_OP(SANDBOX_FILE_UNLINK);
-  USING_OP(SANDBOX_FILE_READLINK);
-  USING_OP(SANDBOX_SOCKET_CONNECT);
-  USING_OP(SANDBOX_SOCKET_CONNECT_ABSTRACT);
-  USING_OP(SANDBOX_OP_MAX_VALUE);
-#  undef USING_OP
-#endif
+  MOZ_USING_ENUM_STATIC(Operation, SANDBOX_FILE_OPEN, SANDBOX_FILE_ACCESS,
+                        SANDBOX_FILE_STAT, SANDBOX_FILE_CHMOD,
+                        SANDBOX_FILE_LINK, SANDBOX_FILE_MKDIR,
+                        SANDBOX_FILE_RENAME, SANDBOX_FILE_RMDIR,
+                        SANDBOX_FILE_UNLINK, SANDBOX_FILE_READLINK,
+                        SANDBOX_SOCKET_CONNECT, SANDBOX_SOCKET_CONNECT_ABSTRACT,
+                        SANDBOX_OP_MAX_VALUE);
 
   static bool OperationIsValid(Operation aOp) {
     return static_cast<unsigned>(aOp) <=
            static_cast<unsigned>(SANDBOX_OP_MAX_VALUE);
+  }
+
+  static int OperationPaths(Operation aOp) {
+    switch (aOp) {
+      case SANDBOX_FILE_LINK:
+      case SANDBOX_FILE_RENAME:
+        return 2;
+      default:
+        return 1;
+    }
   }
 
   static unsigned OperationToInt(Operation);

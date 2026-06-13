@@ -24,6 +24,8 @@
     <string name="pref_key_enable_ai_controls" translatable="false">pref_key_enable_ai_controls</string>
     <string name="pref_key_enable_import_bookmarks" translatable="false">pref_key_enable_import_bookmarks</string>
     <string name="pref_key_enable_ip_protection" translatable="false">pref_key_enable_ip_protection</string>
+    <string name="pref_key_has_used_ip_protection" translatable="false">pref_key_has_used_vpn</string>
+    <string name="pref_key_has_shown_ip_protection_prompt" translatable="false">pref_key_has_shown_ip_protection_prompt</string>
     <string name="pref_key_ip_protection_settings" translatable="false">pref_key_ip_protection_settings</string>
     <string name="pref_key_data_choices" translatable="false">pref_key_data_choices</string>
     <string name="pref_key_delete_browsing_data" translatable="false">pref_key_delete_browsing_data</string>
@@ -63,6 +65,12 @@
     <string name="pref_key_sync_debug_network_error" translatable="false">pref_key_sync_debug_network_error</string>
     <string name="pref_key_sync_debug_temporary_auth_error" translatable="false">pref_key_sync_debug_temporary_auth_error</string>
     <string name="pref_key_sync_debug_permanent_auth_error" translatable="false">pref_key_sync_debug_permanent_auth_error</string>
+    <string name="pref_key_sync_debug_scope_authorization_scopes" translatable="false">pref_key_sync_debug_scope_authorization_scopes</string>
+    <string name="pref_key_sync_debug_scope_authorization_entrypoint" translatable="false">pref_key_sync_debug_scope_authorization_entrypoint</string>
+    <string name="pref_key_sync_debug_scope_authorization_start" translatable="false">pref_key_sync_debug_scope_authorization_start</string>
+    <string name="pref_key_sync_debug_oauth_token_scopes" translatable="false">pref_key_sync_debug_oauth_token_scopes</string>
+    <string name="pref_key_sync_debug_oauth_token_fetch" translatable="false">pref_key_sync_debug_oauth_token_fetch</string>
+    <string name="pref_key_sync_debug_oauth_token_result" translatable="false">pref_key_sync_debug_oauth_token_result</string>
     <string name="pref_key_customize" translatable="false">pref_key_customize</string>
     <string name="pref_key_private_browsing" translatable="false">pref_key_private_browsing</string>
     <string name="pref_key_leakcanary" translatable="false">pref_key_leakcanary</string>
@@ -110,6 +118,7 @@
     <string name="pref_cfr_popups_enabled" translatable="false">pref_cfr_popups_enabled</string>
     <string name="pref_in_app_messages_enabled" translatable="false">pref_in_app_messages_enabled</string>
     <string name="pref_key_onboarding_completed_timestamp" translatable="false">pref_key_onboarding_completed_timestamp</string>
+    <string name="pref_key_enable_import_passwords" translatable="false">pref_key_enable_import_passwords</string>
 
     <!-- Continuous onboarding -->
     <string name="pref_key_continuous_onboarding_enabled" translatable="false">pref_key_continuous_onboarding_enabled</string>
@@ -165,9 +174,6 @@
     <string name="pref_key_use_remote_search_configuration" translatable="false">pref_key_use_remote_search_configuration</string>
     <string name="pref_key_allow_settings_search" translatable="false">pref_key_allow_settings_search</string>
 
-    <!-- Searchbar Settings -->
-    <string name="pref_key_should_searchbar_cfr">pref_key_should_show_searchbar_cfr</string>
-
     <!-- Site Permissions Settings -->
     <string name="pref_key_show_site_exceptions" translatable="false">pref_key_show_site_exceptions</string>
     <string name="pref_key_browser_feature_autoplay_v2" translatable="false">pref_key_browser_feature_autoplay_v2</string>
@@ -197,13 +203,15 @@
 
     <!-- Cfr -->
     <string name="pref_key_menu_cfr" translatable="false">pref_key_menu_cfr</string>
-    <string name="pref_key_toolbar_cfr" translatable="false">pref_key_toolbar_cfr</string>
 
     <!-- Remote Server Settings -->
     <string name="pref_key_remote_settings_server" translatable="false">pref_key_remote_settings_server</string>
     <string name="pref_key_remote_settings_server_prod" translatable="false">pref_key_remote_settings_server_prod</string>
     <string name="pref_key_remote_settings_server_stage" translatable="false">pref_key_remote_settings_server_stage</string>
     <string name="pref_key_remote_settings_server_dev" translatable="false">pref_key_remote_settings_server_dev</string>
+    <string name="pref_key_remote_settings_server_stage_v2" translatable="false">pref_key_remote_settings_server_stage_v2</string>
+    <string name="pref_key_remote_settings_server_prod_v2" translatable="false">pref_key_remote_settings_server_prod_v2</string>
+    <string name="pref_key_remote_settings_server_dev_v2" translatable="false">pref_key_remote_settings_server_dev_v2</string>
 
     <!-- Theme Settings -->
     <string name="pref_key_light_theme" translatable="false">pref_key_light_theme</string>
@@ -222,7 +230,6 @@
     <string name="pref_key_swipe_toolbar_show_tabs" translatable="false">pref_key_swipe_toolbar_show_tabs</string>
     <string name="pref_key_recent_tabs" translatable="false">pref_key_recent_tabs</string>
     <string name="pref_key_privacy_report" translatable="false">pref_key_privacy_report</string>
-    <string name="pref_key_enable_privacy_report" translatable="false">pref_key_enable_privacy_report</string>
     <string name="pref_key_customization_bookmarks" translatable="false">pref_key_recent_bookmarks</string>
     <string name="pref_key_customization_category_toolbar" translatable="false">pref_key_customization_category_toolbar</string>
     <string name="pref_key_customization_category_toolbar_layout" translatable="false">pref_key_customization_category_toolbar_layout</string>
@@ -271,7 +278,7 @@
     <string name="pref_key_tracking_protection_redirect_trackers" translatable="false">pref_key_tracking_protection_redirect_trackers</string>
     <string name="pref_key_tracking_protection_suspected_fingerprinters" translatable="false">pref_key_tracking_protection_suspected_fingerprinters</string>
     <string name="pref_key_tracking_protection_suspected_fingerprinters_select" translatable="false">pref_key_tracking_protection_suspected_fingerprinters_select</string>
-    <string name="pref_key_tracking_protection_database_status" translatable="false">pref_key_tracking_protection_database_status</string>
+    <string name="pref_key_tracking_protection_dashboard_status" translatable="false">pref_key_tracking_protection_dashboard_status</string>
 
     <!-- Logins Settings -->
     <string name="pref_key_save_logins_settings" translatable="false">pref_key_save_logins_settings</string>
@@ -345,6 +352,12 @@
     <string name="pref_key_is_user_meta_attributed" translatable="false">pref_key_is_user_meta_attributed</string>
     <string name="pref_key_is_user_tiktok_attributed" translatable="false">pref_key_is_user_tiktok_attributed</string>
     <string name="pref_key_is_user_reddit_attributed" translatable="false">pref_key_is_user_reddit_attributed</string>
+    <string name="pref_key_is_user_x_twitter_attributed" translatable="false">pref_key_is_user_x_twitter_attributed</string>
+
+    <!-- Return to AMO - addon to install at the first app launch -->
+    <string name="pref_key_rtamo_addon_download_url" translatable="false">pref_key_rtamo_addon_download_url</string>
+    <string name="pref_key_rtamo_addon_image_url" translatable="false">pref_key_rtamo_addon_image_url</string>
+    <string name="pref_key_rtamo_addon_name" translatable="false">pref_key_rtamo_addon_name</string>
 
     <string name="pref_key_contile_context_id" translatable="false">pref_key_contile_context_id</string>
 
@@ -416,8 +429,6 @@
 
     <string name="pref_key_login_exceptions" translatable="false">pref_key_login_exceptions</string>
 
-    <string name="pref_key_show_collections_placeholder_home" translatable="false">pref_key_show_collections_home</string>
-
     <string name="pref_key_num_font_list_sent"  translatable="false">pref_key_num_font_list_sent</string>
 
     <!-- Adjust Activated User values-->
@@ -459,7 +470,7 @@
     <string name="pref_key_nimbus_use_preview" translatable="false">pref_key_nimbus_use_preview</string>
     <string name="pref_key_history_metadata_feature" translatable="false">pref_key_history_metadata_feature</string>
     <string name="pref_key_custom_glean_server_url" translatable="false">pref_key_custom_glean_server_url</string>
-    <string name="pref_key_enable_homepage_searchbar" translatable="false">pref_key_enable_homepage_searchbar</string>
+    <string name="pref_key_enable_homepage_searchbar2" translatable="false">pref_key_enable_homepage_searchbar2</string>
     <string name="pref_key_should_show_custom_tab_extensions" translatable="false">pref_key_should_show_custom_tab_extensions</string>
     <string name="pref_key_enable_homepage_as_new_tab" translatable="false">pref_key_enable_homepage_as_new_tab</string>
     <string name="pref_key_enable_homepage_sports_widget" translatable="false">pref_key_enable_homepage_sports_widget</string>
@@ -467,15 +478,13 @@
     <string name="pref_key_show_homepage_countdown_widget" translatable="false">pref_key_show_homepage_countdown_widget</string>
     <string name="pref_key_enable_mozilla_ads_client" translatable="false">pref_key_enable_mozilla_ads_client</string>
     <string name="pref_key_enable_firefox_labs" translatable="false">pref_key_enable_firefox_labs</string>
+    <string name="pref_key_top_sites_pager" translatable="false">pref_key_top_sites_pager</string>
     <string name="pref_key_enable_add_shortcuts_improvement" translatable="false">pref_key_enable_add_shortcuts_improvement</string>
     <string name="pref_key_enable_merino_client" translatable="false">pref_key_enable_merino_client</string>
     <string name="pref_key_enable_merino_manifest" translatable="false">pref_key_enable_merino_manifest</string>
     <string name="pref_key_enable_unified_trust_panel" translatable="false">pref_key_enable_unified_trust_panel</string>
-    <string name="pref_key_enable_compose_wallpaper" translatable="false">pref_key_enable_compose_wallpaper</string>
     <string name="pref_key_use_minimal_bottom_toolbar_while_entering_text" translatable="false">pref_key_use_minimal_bottom_toolbar_while_entering_text</string>"
-    <string name="pref_key_enable_toolbar_redesign" translatable="false">pref_key_enable_toolbar_redesign</string>"
     <string name="pref_key_enable_address_sync" translatable="false">pref_key_enable_address_sync</string>"
-    <string name="pref_key_enable_toolbar_customization">pref_key_enable_toolbar_customization</string>
     <string name="pref_key_enable_lna_blocking_enabled" translatable="false">pref_key_enable_lna_blocking_enabled</string>
     <string name="pref_key_enable_lna_tracker_blocking_enabled" translatable="false">pref_key_enable_lna_tracker_blocking_enabled</string>
     <string name="pref_key_enable_lna_feature_enabled" translatable="false">pref_key_enable_lna_feature_enabled</string>
@@ -585,9 +594,6 @@
 
     <!-- Tab Manager-->
     <string name="pref_key_tab_manager_opening_animation" translatable="false">pref_key_tab_manager_opening_animation</string>
-
-    <!-- Tab Search -->
-    <string name="pref_key_tab_search" translatable="false">pref_key_tab_search_feature</string>
 
     <!-- Private Mode and Stories Entry Point -->
     <string name="pref_key_private_mode_and_stories_entry_point" translatable="false">pref_key_private_mode_and_stories_entry_point</string>

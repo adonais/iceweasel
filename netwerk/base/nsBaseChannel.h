@@ -9,7 +9,6 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/UniquePtr.h"
-#include "mozilla/net/ContentRange.h"
 #include "mozilla/net/NeckoTargetHolder.h"
 #include "mozilla/net/PrivateBrowsingChannel.h"
 #include "nsHashPropertyBag.h"
@@ -291,7 +290,6 @@ class nsBaseChannel
   bool mWaitingOnAsyncRedirect{false};
   bool mOpenRedirectChannel{false};
   uint32_t mRedirectFlags{0};
-  RefPtr<mozilla::net::ContentRange> mContentRange;
   RefPtr<CMimeType> mFullMimeType;
 
  protected:

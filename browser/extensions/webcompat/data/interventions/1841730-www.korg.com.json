@@ -13,7 +13,7 @@
         "timer.auto_increase_timer_resolution": false
       },
       "content_scripts": {
-        "js": ["bug1841730-www.korg.com-fix-broken-page-loads.js"]
+        "js": ["disable_PACE_eventLag.js"]
       }
     }
   ]

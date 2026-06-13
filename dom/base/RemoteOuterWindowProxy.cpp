@@ -53,12 +53,9 @@ class RemoteOuterWindowProxy
 
 static const RemoteOuterWindowProxy sSingleton;
 
-// Give RemoteOuterWindowProxy 2 reserved slots, like the other wrappers,
-// so JSObject::swap can swap it with CrossCompartmentWrappers without requiring
-// malloc.
 template <>
-const JSClass RemoteOuterWindowProxy::Base::sClass =
-    PROXY_CLASS_DEF("Proxy", JSCLASS_HAS_RESERVED_SLOTS(2));
+const JSClass RemoteOuterWindowProxy::Base::sClass = PROXY_CLASS_DEF(
+    "Proxy", JSCLASS_HAS_RESERVED_SLOTS(js::SwappableProxyReservedSlots));
 
 bool GetRemoteOuterWindowProxy(JSContext* aCx, BrowsingContext* aContext,
                                JS::Handle<JSObject*> aTransplantTo,

@@ -532,7 +532,7 @@ class AccessibleActor extends Actor {
     }
 
     const { DOMNode: rawNode } = this.rawAccessible;
-    const win = rawNode.ownerGlobal;
+    const win = rawNode.documentGlobal;
 
     // Keep the reference to the walker actor in case the actor gets destroyed
     // during the colour contrast ratio calculation.

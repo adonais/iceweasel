@@ -1,0 +1,265 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+/* stylelint-disable stylelint-plugin-mozilla/use-design-tokens */
+
+.sports {
+  @include newtab-card-style;
+
+  border-radius: var(--border-radius-large);
+  padding: var(--space-medium);
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--box-shadow-level-2);
+  height: 100%;
+
+  &:hover,
+  &:has(:focus-visible) {
+    outline: 1px solid var(--border-color-deemphasized);
+    box-shadow: var(--card-box-shadow-hover);
+  }
+
+  &.medium-widget {
+    .sports-title-wrapper {
+      align-items: center;
+      margin-block-end: 0;
+    }
+
+    .sports-intro-wrapper > .sports-intro-lede {
+      margin: 0;
+    }
+
+    .sports-intro-title {
+      font-size: var(--font-size-root);
+    }
+
+    .sports-buttons-wrapper {
+      margin-block-start: var(--space-medium);
+    }
+  }
+
+  &.large-widget {
+    .sports-intro-wrapper {
+      margin-block-start: var(--space-large);
+    }
+
+    .sports-buttons-wrapper {
+      margin-block-start: var(--space-large);
+    }
+  }
+
+  &.sports-intro {
+    background-image: url('chrome://newtab/content/data/content/assets/foxtail-goal.png');
+    background-repeat: no-repeat;
+    background-size: cover;
+
+    &.medium-widget {
+      background-position-y: 0;
+    }
+  }
+
+  &.sports-follow-state {
+    .sports-title-wrapper {
+      padding: var(--space-small);
+    }
+  }
+
+  &.sports-matches {
+    .sports-title-wrapper {
+      grid-template-columns: auto 1fr auto;
+    }
+  }
+
+  &.sports-key-dates {
+    .sports-title-wrapper {
+      grid-template-columns: auto 1fr auto;
+
+      > h3 {
+        font-size: var(--font-size-small);
+        margin-block: 0;
+        justify-self: start;
+        align-self: center;
+        margin-inline-start: var(--space-small);
+        font-weight: var(--font-weight);
+        color: var(--text-color-deemphasized);
+      }
+    }
+  }
+}
+
+.sports-title-wrapper {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  margin-block-end: var(--space-xsmall);
+
+  .sports-intro-title {
+    margin-block: 0;
+    max-width: 250px;
+  }
+
+  .sports-intro-lede {
+    margin-block-end: var(--space-small);
+  }
+}
+
+.sports-context-menu-wrapper {
+  grid-column: 3;
+  justify-self: end;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.sports:hover,
+.sports:has(:focus-visible) {
+  .sports-context-menu-wrapper {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+// Handles keyboard focus on moz-button, since :has(:focus-visible) doesn't include shadow DOM
+.sports-context-menu-wrapper:focus-within {
+  opacity: 1;
+}
+
+.sports-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-small);
+  overflow-y: auto;
+  scrollbar-width: none;
+  overflow-x: hidden;
+  padding-inline: var(--space-small);
+  padding-block: var(--space-xsmall) var(--space-small);
+}
+
+.sports-live-scores {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xsmall);
+}
+
+.sports-intro-wrapper {
+  text-align: center;
+}
+
+.sports-intro-title {
+  margin-block: 0;
+  font-size: var(--font-size-heading-xlarge);
+  font-weight: var(--font-weight-heading);
+}
+
+.sports-buttons-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  .sports-view-matches {
+    margin-block-end: var(--space-small);
+  }
+}
+
+.sports-follow-teams {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-small);
+  flex: 1;
+}
+
+.sports-country-search {
+  margin-block-end: var(--space-xsmall);
+}
+
+.sports-follow-teams-title {
+  font-size: var(--font-size-small);
+  align-self: center;
+}
+
+.sports-follow-teams-list {
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-xsmall);
+  gap: var(--space-medium);
+  flex: 1;
+  overflow-y: auto;
+}
+
+.sports-back-button {
+  grid-column: 1;
+  justify-self: start;
+}
+
+.sports-matches-tabs {
+  display: flex;
+}
+
+.sports-matches-tab {
+  flex: 1;
+  padding-block: var(--space-small);
+  border: none;
+  border-block-end: 2px solid transparent;
+  font-size: var(--font-size-small);
+
+  &:focus-visible {
+    outline: var(--focus-outline);
+  }
+
+  &.is-active {
+    font-weight: var(--font-weight-semibold);
+    border-block-end-color: var(--color-accent-primary);
+  }
+
+  &.is-disabled {
+    color: var(--text-color-disabled);
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+}
+
+.sports-cancel-button {
+  grid-column: 3;
+  justify-self: end;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--newtab-primary-action-background);
+  font-size: var(--font-size-small);
+  text-decoration: underline;
+}
+
+.sports-done-button {
+  margin-inline-start: auto;
+  position: sticky;
+  inset-inline-end: 0;
+  inset-block-end: var(--space-xxsmall);
+}
+
+// Key dates state
+.sports-key-dates {
+  display: flex;
+  flex-direction: column;
+
+  .sports-key-dates-list {
+    list-style: none;
+    padding-inline-start: var(--space-xsmall);
+    margin-block-start: 0;
+
+    .sports-key-dates-item {
+      display: flex;
+      justify-content: space-between;
+      margin-block-end: var(--space-medium);
+      font-size: var(--font-size-small);
+
+      &:last-of-type {
+        margin-block-end: 0;
+      }
+    }
+  }
+
+  moz-button {
+    align-self: center;
+  }
+}

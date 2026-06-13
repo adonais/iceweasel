@@ -4043,7 +4043,7 @@ if __name__ == "__main__":
 
     def EnsureHttps(v):
         if not v.startswith("https:"):
-            raise argparse.ArgumentTypeError("URL protocol must be https: " % v)
+            raise argparse.ArgumentTypeError(f"URL protocol must be https: {v}")
         return v
 
     parser = argparse.ArgumentParser(description="Update intl data.")

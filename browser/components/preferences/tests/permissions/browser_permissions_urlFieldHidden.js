@@ -4,9 +4,7 @@ const PERMISSIONS_URL =
   "chrome://browser/content/preferences/dialogs/permissions.xhtml";
 
 add_task(async function urlFieldVisibleForPopupPermissions() {
-  await openPreferencesViaOpenPreferencesAPI("panePrivacy", {
-    leaveOpen: true,
-  });
+  await openPermissionsPane({ leaveOpen: true });
   let win = gBrowser.selectedBrowser.contentWindow;
   let doc = win.document;
   let popupAndRedirectPolicyCheckbox = doc.getElementById(

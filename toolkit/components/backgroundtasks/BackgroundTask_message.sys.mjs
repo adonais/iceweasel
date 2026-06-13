@@ -313,6 +313,11 @@ export async function runBackgroundTask(commandLine) {
   // Most of the task is arranging configuration.
   await handleCommandLine(commandLine);
 
+  outputInfo({
+    chromeColorSchemeIsDark: Services.appinfo.chromeColorSchemeIsDark,
+    prefersReducedMotion: Services.appinfo.prefersReducedMotion,
+  });
+
   // Here's where we actually start Nimbus and the Firefox Messaging
   // System.
   await BackgroundTasksUtils.enableNimbus(

@@ -2111,14 +2111,21 @@ void IonIC::attachCacheIRStub(JSContext* cx, const CacheIRWriter& writer,
   // identify this as Ion code.
   if (ionScript->hasProfilingInstrumentation()) {
     uint8_t* addr = rejoinAddr(ionScript);
-    auto entry = MakeJitcodeGlobalEntry<IonICEntry>(cx, code, code->raw(),
-                                                    code->rawEnd(), addr);
+    auto* globalTable = cx->runtime()->jitRuntime()->getJitcodeGlobalTable();
+
+    // Resolve the parent IonEntry once here and hand it to the IonICEntry.
+    // The IonEntry for this IonScript was added to the table when the script
+    // was compiled, so it must still be present in the AVL tree.
+    auto* parent = globalTable->lookup(addr);
+    MOZ_RELEASE_ASSERT(parent && parent->isIon());
+
+    auto entry = MakeJitcodeGlobalEntry<IonICEntry>(
+        cx, code, code->raw(), code->rawEnd(), addr, &parent->asIon());
     if (!entry) {
       cx->recoverFromOutOfMemory();
       return;
     }
 
-    auto* globalTable = cx->runtime()->jitRuntime()->getJitcodeGlobalTable();
     if (!globalTable->addEntry(std::move(entry))) {
       return;
     }

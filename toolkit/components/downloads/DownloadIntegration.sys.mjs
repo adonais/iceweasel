@@ -914,6 +914,14 @@ export var DownloadIntegration = {
       );
     } catch (e) {}
 
+    // An attempt will be made to launch the download, thus clear the
+    // `launchWhenSucceeded` flag, so future opens can go through Firefox, and
+    // not be treated as auto-opens. This is done early to ensure it's cleared
+    // in case of early returns below, but we still need the current value
+    // for this call.
+    let launchWhenSucceeded = aDownload.launchWhenSucceeded;
+    aDownload.launchWhenSucceeded = false;
+
     if (aDownload.launcherPath || aDownload.launcherId) {
       if (!mimeInfo) {
         // This should not happen on normal circumstances because launcherPath
@@ -948,10 +956,6 @@ export var DownloadIntegration = {
       mimeInfo.preferredAction = Ci.nsIMIMEInfo.useHelperApp;
 
       this.launchFile(file, mimeInfo);
-      // After an attempt has been made to launch the download, clear the
-      // launchWhenSucceeded bit so future attempts to open the download can go
-      // through Firefox when possible.
-      aDownload.launchWhenSucceeded = false;
       return;
     }
 
@@ -970,22 +974,18 @@ export var DownloadIntegration = {
               mimeInfo.type
             ) &&
               mimeInfo.preferredAction === Ci.nsIHandlerInfo.saveToDisk)) &&
-          !aDownload.launchWhenSucceeded)
+          !launchWhenSucceeded)
       ) {
         lazy.DownloadUIHelper.loadFileIn(file, {
           browsingContextId: aDownload.source.browsingContextId,
           isPrivate: aDownload.source.isPrivate,
           openWhere,
           userContextId: aDownload.source.userContextId,
+          openInBackgroundIfSwitchedBrowsingContext: launchWhenSucceeded,
         });
         return;
       }
     }
-
-    // An attempt will now be made to launch the download, clear the
-    // launchWhenSucceeded bit so future attempts to open the download can go
-    // through Firefox when possible.
-    aDownload.launchWhenSucceeded = false;
 
     // When a file has no extension, and there's an executable file with the
     // same name in the same folder, Windows shell can get confused.

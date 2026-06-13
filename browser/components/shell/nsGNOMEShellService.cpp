@@ -27,7 +27,6 @@
 #include "mozilla/dom/Element.h"
 #include "nsImageToPixbuf.h"
 #include "nsXULAppAPI.h"
-#include "gfxPlatform.h"
 
 #include <glib.h>
 #include <gdk/gdk.h>
@@ -66,13 +65,6 @@ static const MimeTypeAssociation appTypes[] = {
 
 nsresult nsGNOMEShellService::Init() {
   nsresult rv;
-
-  if (gfxPlatform::IsHeadless()) {
-    return NS_ERROR_NOT_AVAILABLE;
-  }
-
-  // GSettings or GIO _must_ be available, or we do not allow
-  // CreateInstance to succeed.
 
 #ifdef MOZ_ENABLE_DBUS
   if (widget::IsGnomeDesktopEnvironment() &&
@@ -493,5 +485,28 @@ nsGNOMEShellService::SetGSettingsString(const nsACString& aSchema,
 
 NS_IMETHODIMP nsGNOMEShellService::GetArgv0(nsACString& output) {
   output.Assign(gArgc <= 0 ? "" : gArgv[0]);
+  return NS_OK;
+}
+
+NS_IMETHODIMP nsGNOMEShellService::GetGlibPrgname(nsACString& output) {
+  output.Assign(g_get_prgname());
+  return NS_OK;
+}
+
+NS_IMETHODIMP nsGNOMEShellService::GetDesktopEntryStatus(
+    const nsACString& aDesktopId,
+    nsIGNOMEShellService::DesktopEntryStatus* aResult) {
+  NS_ENSURE_ARG_POINTER(aResult);
+
+  RefPtr<GDesktopAppInfo> appinfo =
+      dont_AddRef(g_desktop_app_info_new(PromiseFlatCString(aDesktopId).get()));
+  if (!appinfo) {
+    *aResult = nsIGNOMEShellService::DESKTOP_ENTRY_ABSENT;
+  } else if (g_app_info_should_show(G_APP_INFO(appinfo.get()))) {
+    *aResult = nsIGNOMEShellService::DESKTOP_ENTRY_VISIBLE;
+  } else {
+    *aResult = nsIGNOMEShellService::DESKTOP_ENTRY_INVISIBLE;
+  }
+
   return NS_OK;
 }

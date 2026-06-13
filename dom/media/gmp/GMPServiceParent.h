@@ -290,13 +290,23 @@ class GMPServiceParent final : public PGMPServiceParent {
                                nsTArray<ProcessId>&& aAlreadyBridgedTo,
                                LaunchGMPResolver&& aResolve) override;
 
+  // Releases the profile-before-change shutdown blocker. Called from
+  // GeckoMediaPluginServiceParent::UnloadPlugins(). Must be called with
+  // mService->mMutex held (asserted); safe to null the UniquePtr from any
+  // thread because ~ShutdownBlockingTicketImpl posts RemoveBlocker to the
+  // main thread internally.
+  void BeginShutdown();
+
  private:
   ~GMPServiceParent();
 
   const RefPtr<GeckoMediaPluginServiceParent> mService;
 
-  // Ticket that controls the shutdown blocker.
-  const UniquePtr<media::ShutdownBlockingTicket> mShutdownBlocker;
+  // Ticket that holds a blocker on the profile-before-change barrier.
+  // Released when this actor is destroyed, or proactively from BeginShutdown()
+  // so that profile-before-change isn't blocked waiting for the PGMPService
+  // channel to close at xpcom-shutdown-threads.
+  UniquePtr<media::ShutdownBlockingTicket> mShutdownBlocker;
 };
 
 }  // namespace gmp

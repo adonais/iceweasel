@@ -111,7 +111,7 @@
     connectedCallback() {
       // Set up TabSelect listener, as this gets
       // removed in disconnectedCallback
-      this.ownerGlobal.addEventListener("TabSelect", this);
+      this.documentGlobal.addEventListener("TabSelect", this);
 
       this.#observeTabChanges();
       this.#restorePanelWidths();
@@ -138,7 +138,7 @@
 
     disconnectedCallback() {
       this.#tabChangeObserver?.disconnect();
-      this.ownerGlobal.removeEventListener("TabSelect", this);
+      this.documentGlobal.removeEventListener("TabSelect", this);
       this.#deactivate();
       this.#resetPanelWidths();
       this.container.dispatchEvent(
@@ -257,6 +257,25 @@
     }
 
     /**
+     * Temporarily hide Split View panels when switching to a non-split-view tab,
+     * preserving split-view panel attributes so panels re-enter the flex layout at
+     * their correct size on reactivation, avoiding content reflow inside split-view
+     * browser elements.
+     */
+    #suspend() {
+      gBrowser.tabpanels.suspendSplitViewPanels(
+        this.#tabs.filter(tab => !tab.splitview || tab.splitview === this)
+      );
+      updateUrlbarButton.arm();
+      this.container.dispatchEvent(
+        new CustomEvent("TabSplitViewDeactivate", {
+          detail: { tabs: this.#tabs, splitview: this },
+          bubbles: true,
+        })
+      );
+    }
+
+    /**
      * Remove customized panel widths. Cache width values so that they can be
      * restored if this Split View is later reactivated.
      */
@@ -309,7 +328,7 @@
           return;
         }
         let tabToMove =
-          this.ownerGlobal === tab.ownerGlobal
+          this.documentGlobal === tab.documentGlobal
             ? tab
             : gBrowser.adoptTab(tab, {
                 tabIndex: gBrowser.tabs.at(-1)._tPos + 1,
@@ -454,11 +473,17 @@
      * @param {CustomEvent} event
      */
     on_TabSelect(event) {
+      const wasActive = this.hasActiveTab;
       this.hasActiveTab = event.target.splitview === this;
       if (this.hasActiveTab) {
         this.#activate();
-      } else {
-        this.#deactivate();
+        // This check ensures we don't call suspend for every tab selection
+        // or for a selected tab in a splitview that is being dragged to another window,
+        // as this event fires as part of updateCurrentBrowser; we
+        // utilize this temporary property - removedByAdoption -
+        // that is added in adoptSplitView.
+      } else if (wasActive && !event.detail.previousTab?.removedByAdoption) {
+        this.#suspend();
       }
     }
   }

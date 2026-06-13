@@ -273,9 +273,8 @@ NS_IMPL_ISUPPORTS(ConsumeBodyDoneObserver, nsIStreamLoaderObserver)
 /* static */ already_AddRefed<Promise> BodyConsumer::Create(
     nsIGlobalObject* aGlobal, nsISerialEventTarget* aMainThreadEventTarget,
     nsIInputStream* aBodyStream, AbortSignalImpl* aSignalImpl,
-    ConsumeType aType, const nsACString& aBodyBlobURISpec,
-    const nsAString& aBodyLocalPath, const nsACString& aBodyMimeType,
-    const nsACString& aMixedCaseMimeType,
+    ConsumeType aType, BlobImpl* aBodyBlobImpl, const nsAString& aBodyLocalPath,
+    const nsACString& aBodyMimeType, const nsACString& aMixedCaseMimeType,
     MutableBlobStorage::MutableBlobStorageType aBlobStorageType,
     ErrorResult& aRv) {
   MOZ_ASSERT(aBodyStream);
@@ -288,7 +287,7 @@ NS_IMPL_ISUPPORTS(ConsumeBodyDoneObserver, nsIStreamLoaderObserver)
 
   RefPtr<BodyConsumer> consumer =
       new BodyConsumer(aMainThreadEventTarget, aGlobal, aBodyStream, promise,
-                       aType, aBodyBlobURISpec, aBodyLocalPath, aBodyMimeType,
+                       aType, aBodyBlobImpl, aBodyLocalPath, aBodyMimeType,
                        aMixedCaseMimeType, aBlobStorageType);
 
   RefPtr<ThreadSafeWorkerRef> workerRef;
@@ -311,8 +310,8 @@ NS_IMPL_ISUPPORTS(ConsumeBodyDoneObserver, nsIStreamLoaderObserver)
 
     workerRef = new ThreadSafeWorkerRef(strongWorkerRef);
   } else {
-    consumer->GlobalTeardownObserver::BindToOwner(aGlobal);
-    consumer->GlobalFreezeObserver::BindToOwner(aGlobal);
+    consumer->GlobalTeardownObserver::BindToGlobal(aGlobal);
+    consumer->GlobalFreezeObserver::BindToGlobal(aGlobal);
   }
 
   nsCOMPtr<nsIRunnable> r = new BeginConsumeBodyRunnable(consumer, workerRef);
@@ -344,7 +343,7 @@ void BodyConsumer::ReleaseObject() {
 BodyConsumer::BodyConsumer(
     nsISerialEventTarget* aMainThreadEventTarget,
     nsIGlobalObject* aGlobalObject, nsIInputStream* aBodyStream,
-    Promise* aPromise, ConsumeType aType, const nsACString& aBodyBlobURISpec,
+    Promise* aPromise, ConsumeType aType, BlobImpl* aBodyBlobImpl,
     const nsAString& aBodyLocalPath, const nsACString& aBodyMimeType,
     const nsACString& aMixedCaseMimeType,
     MutableBlobStorage::MutableBlobStorageType aBlobStorageType)
@@ -354,7 +353,7 @@ BodyConsumer::BodyConsumer(
       mBlobStorageType(aBlobStorageType),
       mBodyMimeType(aBodyMimeType),
       mMixedCaseMimeType(aMixedCaseMimeType),
-      mBodyBlobURISpec(aBodyBlobURISpec),
+      mBodyBlobImpl(aBodyBlobImpl),
       mBodyLocalPath(aBodyLocalPath),
       mGlobal(aGlobalObject),
       mConsumeType(aType),
@@ -477,14 +476,9 @@ void BodyConsumer::BeginConsumeBodyMainThread(ThreadSafeWorkerRef* aWorkerRef) {
 
     // If we're trying to consume a blob, and the request was for a blob URI,
     // then just consume that URI's blob instance.
-    if (!mBodyBlobURISpec.IsEmpty()) {
-      RefPtr<BlobImpl> blobImpl;
-      rv = NS_GetBlobForBlobURISpec(mBodyBlobURISpec, getter_AddRefs(blobImpl));
-      if (NS_WARN_IF(NS_FAILED(rv)) || !blobImpl) {
-        return;
-      }
+    if (mBodyBlobImpl) {
       autoReject.DontFail();
-      DispatchContinueConsumeBlobBody(blobImpl, aWorkerRef);
+      DispatchContinueConsumeBlobBody(mBodyBlobImpl, aWorkerRef);
       return;
     }
 

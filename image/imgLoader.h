@@ -52,6 +52,8 @@ class imgCacheEntry {
   imgCacheEntry(imgLoader* loader, imgRequest* request,
                 bool aForcePrincipalCheck);
 
+  imgCacheEntry(const imgCacheEntry&) = delete;
+
   uint32_t GetDataSize() const { return mDataSize; }
   void SetDataSize(uint32_t aDataSize) {
     int32_t oldsize = mDataSize;
@@ -123,9 +125,6 @@ class imgCacheEntry {
   void UpdateCache(int32_t diff = 0);
   void SetEvicted(bool evict) { mEvicted = evict; }
   void SetHasNoProxies(bool hasNoProxies);
-
-  // Private, unimplemented copy constructor.
-  imgCacheEntry(const imgCacheEntry&);
   ~imgCacheEntry();
 
  private:  // data

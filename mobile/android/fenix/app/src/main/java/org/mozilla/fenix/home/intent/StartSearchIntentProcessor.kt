@@ -6,12 +6,10 @@ package org.mozilla.fenix.home.intent
 
 import android.content.Intent
 import androidx.navigation.NavController
-import androidx.navigation.navOptions
 import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.GleanMetrics.SearchWidget
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.NavGraphDirections
-import org.mozilla.fenix.R
 import org.mozilla.fenix.components.metrics.MetricsUtils
 import org.mozilla.fenix.ext.nav
 import org.mozilla.fenix.utils.Settings
@@ -46,24 +44,13 @@ class StartSearchIntentProcessor(private val userHasBeenOnboarded: () -> Boolean
             out.removeExtra(HomeActivity.OPEN_TO_SEARCH)
 
             source?.let {
-                when (settings.shouldUseComposableToolbar) {
-                    true -> navController.nav(
-                        id = null,
-                        directions = NavGraphDirections.actionGlobalHome(
-                            focusOnAddressBar = true,
-                            searchAccessPoint = it,
-                        ),
-                    )
-
-                    false -> navController.nav(
-                        id = null,
-                        directions = NavGraphDirections.actionGlobalSearchDialog(
-                            sessionId = null,
-                            searchAccessPoint = it,
-                        ),
-                        navOptions = navOptions { popUpTo(R.id.homeFragment) },
-                    )
-                }
+                navController.nav(
+                    id = null,
+                    directions = NavGraphDirections.actionGlobalHome(
+                        focusOnAddressBar = true,
+                        searchAccessPoint = it,
+                    ),
+                )
             }
 
             true

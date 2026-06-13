@@ -1145,7 +1145,7 @@ function IteratorZip(iterables, options = undefined) {
         ThrowTypeError(
           JSMSG_ITERATOR_ZIP_INVALID_OPTION_TYPE,
           "padding",
-          padding === null ? "null" : typeof padding
+          paddingOption === null ? "null" : typeof paddingOption
         );
       }
     }
@@ -1307,7 +1307,7 @@ function IteratorZipKeyed(iterables, options = undefined) {
         ThrowTypeError(
           JSMSG_ITERATOR_ZIP_INVALID_OPTION_TYPE,
           "padding",
-          padding === null ? "null" : typeof padding
+          paddingOption === null ? "null" : typeof paddingOption
         );
       }
     }
@@ -2166,6 +2166,142 @@ function* IteratorWindowsGenerator(iterator, nextMethod, windowSize, undersized)
  *  https://tc39.es/proposal-iterator-join/#sec-iterator.prototype.join
  */
 function IteratorJoin(separator) {
-	return false;
+  // Step 1. Let O be the this value.
+  var O = this;
+
+  // Step 2. If O is not an Object, throw a TypeError exception.
+  if (!IsObject(O)) {
+    ThrowTypeError(JSMSG_OBJECT_REQUIRED, O === null ? "null" : typeof O);
+  }
+
+  // Step 3. Let iterated be the Iterator Record
+  //         { [[Iterator]]: O, [[NextMethod]]: undefined, [[Done]]: false }.
+
+  // Step 4. If separator is undefined, then
+  var sep;
+  if (separator === undefined) {
+    // Step 4.a. Let sep be ",".
+    sep = ",";
+  } else {
+    // Step 5. Else,
+    // Step 5.a. Let sep be Completion(ToString(separator)).
+    // Step 5.b. IfAbruptCloseIterator(sep, iterated).
+    try {
+      sep = ToString(separator);
+    } catch (e) {
+      try {
+        IteratorClose(O);
+      } catch {}
+      throw e;
+    }
+  }
+
+  // Step 6. Set iterated to ? GetIteratorDirect(O).
+  // (Inlined call to GetIteratorDirect.)
+  var nextMethod = O.next;
+
+  // Step 7. Let R be the empty String.
+  var R = "";
+
+  // Step 8. Let first be true.
+  var first = true;
+
+  // Step 9. Repeat,
+  // Step 9.a. Let value be ? IteratorStepValue(iterated).
+  for (var value of allowContentIterWithNext(O, nextMethod)) {
+    // Step 9.c. If first is true, then
+    if (first) {
+      // Step 9.c.i. Set first to false.
+      first = false;
+    } else {
+      // Step 9.d. Else,
+      // Step 9.d.i. Set R to the string-concatenation of R and sep.
+      R += sep;
+    }
+
+    // Step 9.e. If value is neither undefined nor null, then
+    if (value !== undefined && value !== null) {
+      // Step 9.e.i. Let S be Completion(ToString(value)).
+      // Step 9.e.ii. IfAbruptCloseIterator(S, iterated).
+      // Step 9.e.iii. Set R to the string-concatenation of R and S.
+      R += ToString(value);
+    }
+  }
+
+  // Step 9.b. If value is done, return R.
+  return R;
 }
+
+/**
+ *  Iterator.prototype.includes ( searchElement [ , skippedElements ] )
+ *
+ *  https://tc39.es/proposal-iterator-includes
+ */
+function IteratorIncludes(searchElement, skippedElements = undefined) {
+  // Step 1. Let O be the this value.
+  var O = this;
+
+  // Step 2. If O is not an Object, throw a TypeError exception.
+  if (!IsObject(O)) {
+    ThrowTypeError(JSMSG_OBJECT_REQUIRED, O === null ? "null" : typeof O);
+  }
+
+  // Step 3. Let iterated be the Iterator Record
+  //         { [[Iterator]]: O, [[NextMethod]]: undefined, [[Done]]: false }.
+
+  // Step 4. If skippedElements is undefined, then
+  // Step 4.a. Let toSkip be 0.
+  var toSkip = 0;
+  // Step 5. Else, (skippedElements is not undefined)
+  if (skippedElements !== undefined) {
+    // Step 5.a. If skippedElements is not one of +∞𝔽, -∞𝔽, or an integral Number, then
+    if (!(Number_isInteger(skippedElements) ||
+          (typeof skippedElements === "number" &&
+           !Number_isFinite(skippedElements) &&
+           !Number_isNaN(skippedElements)))) {
+      // Step 5.a.i-ii. Let error be ThrowCompletion(...). Return ? IteratorClose(iterated, error).
+      try {
+        IteratorClose(O);
+      } catch {}
+      ThrowTypeError(JSMSG_INVALID_SKIP_COUNT);
+    }
+    // Step 5.b. Let toSkip be the extended mathematical value of skippedElements.
+    toSkip = skippedElements;
+  }
+
+  // Step 6. If toSkip < 0, then
+  // Step 6.a. Let error be ThrowCompletion(a newly created RangeError object).
+  // Step 6.b. Return ? IteratorClose(iterated, error).
+  if (toSkip < 0) {
+    try {
+      IteratorClose(O);
+    } catch {}
+    ThrowRangeError(JSMSG_NEGATIVE_LIMIT);
+  }
+
+  // Step 7. Let skipped be 0.
+  var skipped = 0;
+
+  // Step 8. Set iterated to ? GetIteratorDirect(O).
+  // (Inlined call to GetIteratorDirect.)
+  var nextMethod = O.next;
+
+  // Step 9. Repeat,
+  // Step 9.a. Let value be ? IteratorStepValue(iterated).
+  for (var value of allowContentIterWithNext(O, nextMethod)) {
+    // Step 9.c. If skipped < toSkip, then
+    if (skipped < toSkip) {
+      // Step 9.c.i. Set skipped to skipped + 1.
+      skipped++;
+    // Step 9.d. Else if SameValueZero(value, searchElement) is true, then
+    } else if (value === searchElement || (Number_isNaN(value) && Number_isNaN(searchElement))) {
+      // Step 9.d.i. Return ? IteratorClose(iterated, NormalCompletion(true)).
+      return true;
+    }
+  }
+
+  // Step 9.b. If value is done, return false.
+  return false;
+}
+
 #endif

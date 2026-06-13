@@ -23,6 +23,7 @@
 #include "mozilla/PresShell.h"
 #include "mozilla/PresShellInlines.h"
 #include "mozilla/ProfilerLabels.h"
+#include "mozilla/ReflowInput.h"
 #include "mozilla/SVGIntegrationUtils.h"
 #include "mozilla/SVGObserverUtils.h"
 #include "mozilla/SVGTextFrame.h"
@@ -3527,13 +3528,45 @@ static inline bool NeedToRecordAttrChange(
   return aStyleSet.MightHaveAttributeDependency(aElement, aAttribute);
 }
 
+void RestyleManager::MaybeRecascadeForAttrFunction(Element* aElement,
+                                                   nsAtom* aAttribute) {
+  // TODO(Bug 2037724): this method covers a limited number of
+  // pseudos (i.e. ::selection is not handled).
+  if (Servo_Element_ReferencesAttribute(aElement, aAttribute)) {
+    PostRestyleEvent(aElement, RestyleHint::RECASCADE_SELF, nsChangeHint(0));
+  }
+
+  AutoTArray<nsIContent*, 4> pseudos;
+  nsLayoutUtils::AppendGeneratedContentPseudos(aElement, pseudos);
+  for (nsIContent* pseudo : pseudos) {
+    Element* pseudoElement = Element::FromNode(pseudo);
+    if (Servo_Element_ReferencesAttribute(pseudoElement, aAttribute)) {
+      PostRestyleEvent(pseudoElement, RestyleHint::RECASCADE_SELF,
+                       nsChangeHint(0));
+    }
+  }
+
+  auto* shadow = aElement->GetShadowRoot();
+  if (shadow && shadow->IsUAWidget()) {
+    for (nsIContent* node = shadow->GetFirstChild(); node;
+         node = node->GetNextNode(shadow)) {
+      if (!node->IsElement() || node->AsElement()->GetPseudoElementType() ==
+                                    PseudoStyleType::NotPseudo) {
+        continue;
+      }
+      if (Servo_Element_ReferencesAttribute(node->AsElement(), aAttribute)) {
+        PostRestyleEvent(node->AsElement(), RestyleHint::RECASCADE_SELF,
+                         nsChangeHint(0));
+      }
+    }
+  }
+}
+
 void RestyleManager::AttributeWillChange(Element* aElement,
                                          int32_t aNameSpaceID,
                                          nsAtom* aAttribute,
                                          AttrModType aModType) {
-  if (Servo_Element_ReferencesAttribute(aElement, aAttribute)) {
-    PostRestyleEvent(aElement, RestyleHint::RECASCADE_SELF, nsChangeHint(0));
-  }
+  MaybeRecascadeForAttrFunction(aElement, aAttribute);
   TakeSnapshotForAttributeChange(*aElement, aNameSpaceID, aAttribute);
 }
 

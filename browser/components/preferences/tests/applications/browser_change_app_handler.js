@@ -27,19 +27,15 @@ function setupFakeHandler() {
 }
 
 add_task(async function () {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.settings-redesign.enabled", true]],
-  });
-
   setupFakeHandler();
 
   let appHandlerInitialized = TestUtils.topicObserved("app-handler-loaded");
 
-  let prefs = await openPreferencesViaOpenPreferencesAPI("paneGeneral", {
+  let prefs = await openPreferencesViaOpenPreferencesAPI("downloads", {
     leaveOpen: true,
   });
 
-  is(prefs.selectedPane, "paneGeneral", "General pane was selected");
+  is(prefs.selectedPane, "paneDownloads", "Downloads pane was selected");
   let win = gBrowser.selectedBrowser.contentWindow;
 
   await appHandlerInitialized;
@@ -135,6 +131,49 @@ add_task(async function () {
   const selectedItem = list.querySelector(`moz-option[value="${list.value}"]`);
 
   ok(!selectedItem.handlerApp, "No app should be visible as preferred item.");
+
+  BrowserTestUtils.removeTab(gBrowser.selectedTab);
+});
+
+/**
+ * Regression test for bug 2032690: to ensure the default application shows
+ * the real default app's icon ({@link HandlerInfoWrapper.iconURLForSystemDefault}) rather than
+ * the hard-coded generic placeholder. Test uses PDF application for use-case.
+ */
+add_task(async function systemDefaultIconUsesHandlerIconURL() {
+  let appHandlerInitialized = TestUtils.topicObserved("app-handler-loaded");
+  await openPreferencesViaOpenPreferencesAPI("downloads", { leaveOpen: true });
+  await appHandlerInitialized;
+
+  let win = gBrowser.selectedBrowser.contentWindow;
+  let pdfItem = win.document.querySelector(
+    "moz-box-item[type='application/pdf']"
+  );
+  let actionsMenu = pdfItem.querySelector(".actionsMenu");
+  let useDefaultOption = actionsMenu.querySelector(
+    `moz-option[action="${Ci.nsIHandlerInfo.useSystemDefault}"]`
+  );
+
+  if (!useDefaultOption) {
+    info(
+      "PDF has no OS default handler in this environment, so skipping icon assertion."
+    );
+    BrowserTestUtils.removeTab(gBrowser.selectedTab);
+    return;
+  }
+
+  ok(
+    actionsMenu.querySelector(
+      `moz-option[action="${Ci.nsIHandlerInfo.handleInternally}"]`
+    ),
+    "PDF has the internal 'Open in Firefox' option alongside the OS default"
+  );
+
+  let iconsrc = useDefaultOption.getAttribute("iconsrc");
+  ok(
+    iconsrc?.startsWith("moz-icon:"),
+    `iconsrc should resolve to an OS icon (moz-icon:), got '${iconsrc}'`
+  );
 
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });

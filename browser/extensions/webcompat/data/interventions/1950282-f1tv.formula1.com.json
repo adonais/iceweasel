@@ -14,14 +14,19 @@
     {
       "platforms": ["all"],
       "content_scripts": {
-        "js": ["bug1950282-f1tv.formula1.com-unblock-firefox.js"]
+        "js": [
+          "define_userAgentData.js",
+          "define_window_chrome.js",
+          "use_chrome_vendor.js",
+          "undefine_firefox_properties.js"
+        ]
       },
       "ua_string": ["Chrome"]
     },
     {
       "platforms": ["linux"],
       "content_scripts": {
-        "js": ["bug1950282-formula1.com-platform-linux-fix.js"]
+        "js": ["use_win64_platform.js"]
       }
     }
   ]

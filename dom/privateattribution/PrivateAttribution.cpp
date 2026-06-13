@@ -16,10 +16,10 @@
 
 namespace mozilla::dom {
 
-NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(PrivateAttribution, mOwner)
+NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(PrivateAttribution, mGlobal)
 
 PrivateAttribution::PrivateAttribution(nsIGlobalObject* aGlobal)
-    : mOwner(aGlobal) {
+    : mGlobal(aGlobal) {
   MOZ_ASSERT(aGlobal);
 }
 
@@ -41,8 +41,8 @@ bool PrivateAttribution::ShouldRecord() {
 
 bool PrivateAttribution::GetSourceHostIfNonPrivate(nsACString& aSourceHost,
                                                    ErrorResult& aRv) {
-  MOZ_ASSERT(mOwner);
-  nsIPrincipal* prin = mOwner->PrincipalOrNull();
+  MOZ_ASSERT(mGlobal);
+  nsIPrincipal* prin = mGlobal->PrincipalOrNull();
   if (!prin || NS_FAILED(prin->GetHost(aSourceHost))) {
     aRv.ThrowInvalidStateError("Couldn't get source host");
     return false;

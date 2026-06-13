@@ -41,6 +41,7 @@ const {
   generateInitialMemoriesList,
   deduplicateMemories,
   filterSensitiveMemories,
+  applyQualityFilter,
 } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/models/memories/Memories.sys.mjs"
 );
@@ -187,6 +188,9 @@ add_task(async function test_buildRecentHistoryCSV_only_browsing_history() {
   ];
   await PlacesUtils.history.clear();
   await PlacesUtils.history.insertMany(seeded);
+  for (const { url, visits } of seeded) {
+    await insertPlacesMetadata(url, visits[0].date.getTime());
+  }
 
   const [domainItems, titleItems, searchItems] =
     await getBrowserHistoryAggregates();
@@ -1393,6 +1397,115 @@ add_task(
     }
   }
 );
+
+/**
+ * Tests successful memories quality filtering
+ */
+add_task(async function test_applyQualityFilter_happy_path() {
+  const sb = sinon.createSandbox();
+  try {
+    /**
+     * Fake engine that returns three of the four NEW_MEMORIES as good memories.
+     * `applyQualityFilter` should return those three verbatim.
+     */
+    const fakeEngine = {
+      loadPrompt() {
+        return "fake prompt";
+      },
+      run() {
+        return {
+          finalOutput: `{
+  "good_memories": [
+    "Loves hiking and camping",
+    "Reads science fiction novels",
+    "Likes both dogs and cats"
+  ]
+}`,
+        };
+      },
+    };
+
+    const stub = sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
+    const engine = await openAIEngine.build(
+      MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
+      DEFAULT_ENGINE_ID,
+      SERVICE_TYPES.MEMORIES,
+      PURPOSES.MEMORY_GENERATION
+    );
+    Assert.ok(stub.calledOnce, "_createEngine should be called once");
+
+    const goodMemoriesList = await applyQualityFilter(engine, NEW_MEMORIES);
+
+    Assert.equal(
+      goodMemoriesList.length,
+      3,
+      "Good memories list should contain 3 memories"
+    );
+    Assert.ok(
+      goodMemoriesList.includes("Loves hiking and camping"),
+      "Good memories should include 'Loves hiking and camping'"
+    );
+    Assert.ok(
+      goodMemoriesList.includes("Reads science fiction novels"),
+      "Good memories should include 'Reads science fiction novels'"
+    );
+    Assert.ok(
+      goodMemoriesList.includes("Likes both dogs and cats"),
+      "Good memories should include 'Likes both dogs and cats'"
+    );
+  } finally {
+    sb.restore();
+  }
+});
+
+/**
+ * Tests that reworded memories are dropped (must be verbatim members of the input list)
+ */
+add_task(async function test_applyQualityFilter_drops_reworded_memories() {
+  const sb = sinon.createSandbox();
+  try {
+    // LLM reworded one memory and returned a verbatim-correct one
+    const fakeEngine = {
+      loadPrompt() {
+        return "fake prompt";
+      },
+      run() {
+        return {
+          finalOutput: `{
+  "good_memories": [
+    "Loves hiking and camping",
+    "Reads sci-fi novels"
+  ]
+}`,
+        };
+      },
+    };
+
+    const stub = sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
+    const engine = await openAIEngine.build(
+      MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
+      DEFAULT_ENGINE_ID,
+      SERVICE_TYPES.MEMORIES,
+      PURPOSES.MEMORY_GENERATION
+    );
+    Assert.ok(stub.calledOnce, "_createEngine should be called once");
+
+    const goodMemoriesList = await applyQualityFilter(engine, NEW_MEMORIES);
+
+    Assert.equal(
+      goodMemoriesList.length,
+      1,
+      "Only the verbatim memory should be kept"
+    );
+    Assert.equal(
+      goodMemoriesList[0],
+      "Loves hiking and camping",
+      "Reworded memory should be dropped"
+    );
+  } finally {
+    sb.restore();
+  }
+});
 
 /**
  * Tests mapping filtered memories back to full memory objects

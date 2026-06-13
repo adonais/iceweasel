@@ -31,7 +31,6 @@
 #include <limits>
 
 #include "jit/arm64/Assembler-arm64.h"
-#include "jit/arm64/vixl/Debugger-vixl.h"
 #include "jit/arm64/vixl/Globals-vixl.h"
 #include "jit/arm64/vixl/Instrument-vixl.h"
 #include "jit/arm64/vixl/Simulator-Constants-vixl.h"

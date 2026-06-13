@@ -533,26 +533,25 @@ add_task(function test_noBrowsing_ChatConversation_getMostRecentPageVisited() {
   Assert.equal(mostRecentPageVisited, null);
 });
 
-add_task(function test_ChatConversation_renderState() {
+add_task(function test_renderState_includes_tool_messages() {
   const conversation = new ChatConversation({});
-
-  const content = "user to assistant msg";
-
-  conversation.addUserMessage(content, "about:aiwindow");
-  conversation.addToolCallMessage("some content");
-  conversation.addAssistantMessage("text", "a response");
-  conversation.addUserMessage(content, "about:aiwindow");
+  conversation.addUserMessage("get open tab", "about:aiwindow");
+  conversation.addAssistantMessage("text", "Checking");
+  conversation.addToolCallMessage({
+    tool_call_id: "tc_1",
+    body: [{ url: "https://example.com/", title: "Example" }],
+    name: "get_open_tabs",
+  });
   conversation.addSystemMessage("text", "some system message");
-  conversation.addAssistantMessage("text", "a response");
+  conversation.addAssistantMessage("text", "You have one tab open.");
 
   const renderState = conversation.renderState();
 
-  Assert.deepEqual(renderState, [
-    conversation.messages[0],
-    conversation.messages[2],
-    conversation.messages[3],
-    conversation.messages[5],
-  ]);
+  Assert.equal(renderState[0].role, MESSAGE_ROLE.USER);
+  Assert.equal(renderState[1].role, MESSAGE_ROLE.ASSISTANT);
+  Assert.equal(renderState[2].role, MESSAGE_ROLE.TOOL);
+  Assert.equal(renderState[2].content.name, "get_open_tabs");
+  Assert.equal(renderState[3].role, MESSAGE_ROLE.ASSISTANT);
 });
 
 add_task(function test_ChatConversation_currentTurnIndex() {
@@ -1438,7 +1437,6 @@ add_task(async function test_convertUrlToToken_tokenGeneration() {
       expected: "GITHUB_COM_SKIP_LONG_PATH_1",
     },
   ];
-
   // Re-use the chat conversation.
   const conversation = new ChatConversation({});
 
@@ -1446,4 +1444,342 @@ add_task(async function test_convertUrlToToken_tokenGeneration() {
     const token = conversation.convertUrlToToken(url);
     Assert.equal(token, expected, message);
   }
+});
+
+add_task(async function test_generatePrompt_tableInstructions_pref_enabled() {
+  Services.prefs.setBoolPref("browser.smartwindow.allowTables", false);
+  registerCleanupFunction(() =>
+    Services.prefs.clearUserPref("browser.smartwindow.allowTables")
+  );
+
+  const mockEngineInstance = {
+    loadPrompt: lazy.sinon
+      .stub()
+      .onFirstCall()
+      .resolves("system prompt {tableInstructions}")
+      .onSecondCall()
+      .resolves("table instructions content"),
+  };
+  const conversation = new ChatConversation({});
+  const getRealTimeInfoStub = lazy.sinon
+    .stub(ChatConversation, "getRealTimeInfo")
+    .resolves(null);
+  lazy.sinon.stub(conversation, "getMemoriesContext").resolves(null);
+
+  await conversation.generatePrompt("hello", null, mockEngineInstance);
+
+  getRealTimeInfoStub.restore();
+
+  const systemMessage = conversation.messages.find(
+    m => m.role === MESSAGE_ROLE.SYSTEM
+  );
+  Assert.ok(
+    systemMessage.content.body.includes("table instructions content"),
+    "system prompt should include table instructions when pref is true"
+  );
+});
+
+add_task(async function test_generatePrompt_tableInstructions_pref_disabled() {
+  Services.prefs.setBoolPref("browser.smartwindow.allowTables", true);
+  registerCleanupFunction(() =>
+    Services.prefs.clearUserPref("browser.smartwindow.allowTables")
+  );
+
+  const mockEngineInstance = {
+    loadPrompt: lazy.sinon
+      .stub()
+      .onFirstCall()
+      .resolves("system prompt {tableInstructions}")
+      .onSecondCall()
+      .resolves("do tables"),
+  };
+  const conversation = new ChatConversation({});
+  const getRealTimeInfoStub = lazy.sinon
+    .stub(ChatConversation, "getRealTimeInfo")
+    .resolves(null);
+  lazy.sinon.stub(conversation, "getMemoriesContext").resolves(null);
+
+  await conversation.generatePrompt("hello", null, mockEngineInstance);
+
+  getRealTimeInfoStub.restore();
+
+  Assert.equal(
+    mockEngineInstance.loadPrompt.callCount,
+    2,
+    "loadPrompt should be called twice"
+  );
+  const systemMessage = conversation.messages.find(
+    m => m.role === MESSAGE_ROLE.SYSTEM
+  );
+  Assert.ok(
+    !systemMessage.content.body.includes("table instructions"),
+    "system prompt should not include table instructions when pref is false"
+  );
+});
+
+add_task(
+  function test_addUIToolToCurrentMessage_attaches_to_existing_message() {
+    const conversation = new ChatConversation({});
+
+    // Add a user message and assistant message
+    conversation.addUserMessage("Test prompt", null);
+    conversation.addAssistantMessage("text", "Here's a response");
+
+    const uiData = {
+      uiType: "website-confirmation",
+      title: "Test Title",
+      description: "Test Description",
+      properties: { tabs: [] },
+    };
+
+    const result = conversation.addUIToolToCurrentMessage(
+      "tool-call-123",
+      uiData
+    );
+
+    Assert.ok(result.success, "Should return success");
+    Assert.equal(
+      result.message,
+      "Tool UI data added to existing assistant message",
+      "Should indicate data was added"
+    );
+
+    const lastMessage = conversation.messages.at(-1);
+    Assert.ok(lastMessage.toolUIData, "Message should have toolUIData");
+    Assert.equal(
+      lastMessage.toolUIData.toolCallId,
+      "tool-call-123",
+      "Tool call ID should match"
+    );
+    Assert.equal(
+      lastMessage.toolUIData.uiType,
+      "website-confirmation",
+      "UI type should match"
+    );
+    Assert.equal(
+      lastMessage.toolUIData.title,
+      "Test Title",
+      "Title should match"
+    );
+  }
+);
+
+add_task(function test_addUIToolToCurrentMessage_creates_synthetic_message() {
+  const conversation = new ChatConversation({});
+
+  // Only add a user message, no assistant message
+  conversation.addUserMessage("Test prompt", null);
+
+  const uiData = {
+    uiType: "test-ui",
+    title: "Test",
+  };
+
+  const result = conversation.addUIToolToCurrentMessage(
+    "tool-call-456",
+    uiData
+  );
+
+  Assert.ok(result.success, "Should return success");
+
+  // Verify synthetic message was created
+  const assistantMessages = conversation.messages.filter(
+    m => m.role === MESSAGE_ROLE.ASSISTANT && m.content?.type === "text"
+  );
+  Assert.equal(
+    assistantMessages.length,
+    1,
+    "Should have created one assistant message"
+  );
+  Assert.equal(
+    assistantMessages[0].content.body,
+    "",
+    "Synthetic message should have empty body"
+  );
+  Assert.ok(
+    assistantMessages[0].toolUIData,
+    "Synthetic message should have toolUIData"
+  );
+});
+
+add_task(function test_addUIToolToCurrentMessage_progressive_updates() {
+  const conversation = new ChatConversation({});
+  conversation.addUserMessage("Test prompt", null);
+  conversation.addAssistantMessage("text", "Response");
+
+  // First call
+  const result1 = conversation.addUIToolToCurrentMessage("tool-call-789", {
+    uiType: "test-ui",
+    title: "Initial",
+    properties: { value: 1 },
+  });
+
+  Assert.ok(result1.success, "First call should succeed");
+  Assert.ok(!result1.isUpdate, "First call should not be an update");
+
+  const message = conversation.messages.at(-1);
+  Assert.equal(
+    message.toolUIData.title,
+    "Initial",
+    "Initial title should be set"
+  );
+  Assert.equal(message.toolUIData.updateCount, 0, "Update count should be 0");
+
+  // Update call with same toolCallId
+  const result2 = conversation.addUIToolToCurrentMessage("tool-call-789", {
+    title: "Updated",
+    properties: { value: 2, extra: true },
+  });
+
+  Assert.ok(result2.success, "Update call should succeed");
+  Assert.ok(result2.isUpdate, "Second call should be an update");
+  Assert.equal(message.toolUIData.title, "Updated", "Title should be updated");
+  Assert.equal(
+    message.toolUIData.updateCount,
+    1,
+    "Update count should increment"
+  );
+  Assert.equal(
+    message.toolUIData.properties.value,
+    2,
+    "Properties should be merged"
+  );
+  Assert.ok(
+    message.toolUIData.properties.extra,
+    "New properties should be added"
+  );
+});
+
+add_task(
+  function test_addUIToolToCurrentMessage_different_toolcallid_replaces() {
+    const conversation = new ChatConversation({});
+    conversation.addUserMessage("Test prompt", null);
+    conversation.addAssistantMessage("text", "Response");
+
+    // Add first UI tool
+    conversation.addUIToolToCurrentMessage("tool-call-1", {
+      uiType: "test-ui",
+      title: "First",
+    });
+
+    let lastMessage = conversation.messages.at(-1);
+    Assert.equal(
+      lastMessage.toolUIData.title,
+      "First",
+      "First UI data should be present"
+    );
+    Assert.equal(
+      lastMessage.toolUIData.toolCallId,
+      "tool-call-1",
+      "First tool call ID should be present"
+    );
+
+    // Add second UI tool with different ID - should replace
+    conversation.addUIToolToCurrentMessage("tool-call-2", {
+      uiType: "test-ui",
+      title: "Second",
+    });
+
+    lastMessage = conversation.messages.at(-1);
+    Assert.equal(
+      lastMessage.toolUIData.title,
+      "Second",
+      "Second UI data should replace the first"
+    );
+    Assert.equal(
+      lastMessage.toolUIData.toolCallId,
+      "tool-call-2",
+      "Second tool call ID should replace the first"
+    );
+  }
+);
+
+add_task(function test_addUIToolToCurrentMessage_emits_events() {
+  const conversation = new ChatConversation({});
+  conversation.addUserMessage("Test prompt", null);
+  conversation.addAssistantMessage("text", "Response");
+
+  let updateEventFired = false;
+  let completeEventFired = false;
+
+  conversation.on("chat-conversation:message-update", () => {
+    updateEventFired = true;
+  });
+  conversation.on("chat-conversation:message-complete", () => {
+    completeEventFired = true;
+  });
+
+  conversation.addUIToolToCurrentMessage("tool-call-event", {
+    uiType: "test-ui",
+  });
+
+  Assert.ok(updateEventFired, "Update event should be emitted");
+  Assert.ok(completeEventFired, "Complete event should be re-emitted");
+});
+
+add_task(function test_addToolCallMessage_emits_message_update() {
+  const conversation = new ChatConversation({});
+  conversation.addUserMessage("Get opened tabs", null);
+
+  let received = null;
+  let calls = 0;
+  conversation.on("chat-conversation:message-update", (_event, msg) => {
+    if (msg?.role === MESSAGE_ROLE.TOOL) {
+      received = msg;
+      calls++;
+    }
+  });
+
+  const toolMessage = conversation.addToolCallMessage({
+    tool_call_id: "tc_abc",
+    body: [{ url: "https://example.com/", title: "Example" }],
+    name: "get_open_tabs",
+  });
+
+  Assert.withSoftAssertions(function (soft) {
+    soft.equal(
+      calls,
+      1,
+      "Update event fires exactly once for the tool message"
+    );
+    soft.strictEqual(
+      received,
+      toolMessage,
+      "Event payload is the newly added tool message"
+    );
+    soft.equal(
+      received?.content?.name,
+      "get_open_tabs",
+      "tool message carries the tool name"
+    );
+    soft.equal(
+      received?.content?.tool_call_id,
+      "tc_abc",
+      "tool message carries the tool_call_id"
+    );
+  });
+});
+
+add_task(function test_addToolCallMessage_emits_for_error_payload() {
+  const conversation = new ChatConversation({});
+  conversation.addUserMessage("Anything", null);
+
+  let received = null;
+  conversation.on("chat-conversation:message-update", (_event, msg) => {
+    if (msg?.role === MESSAGE_ROLE.TOOL) {
+      received = msg;
+    }
+  });
+
+  conversation.addToolCallMessage({
+    tool_call_id: "tc_err",
+    body: { error: "Invalid JSON arguments" },
+  });
+
+  Assert.ok(received, "Error-path TOOL message still emits the event");
+  Assert.equal(
+    received.content.name,
+    undefined,
+    "Error-path TOOL message has no name field"
+  );
 });

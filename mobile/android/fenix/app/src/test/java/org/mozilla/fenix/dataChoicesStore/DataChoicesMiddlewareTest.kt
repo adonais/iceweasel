@@ -42,7 +42,6 @@ class DataChoicesMiddlewareTest {
     private lateinit var engine: Engine
     private lateinit var metrics: MetricController
     private lateinit var nav: NavController
-    private lateinit var learnMore: (SupportUtils.SumoTopic) -> Unit
     private lateinit var crashReportCache: SettingsCrashReportCache
     private lateinit var crashReporter: CrashReporter
 
@@ -53,7 +52,6 @@ class DataChoicesMiddlewareTest {
         engine = mockk(relaxUnitFun = true)
         metrics = mockk(relaxUnitFun = true)
         nav = mockk(relaxUnitFun = true)
-        learnMore = mockk()
         crashReportCache = mockk(relaxed = true)
         crashReporter = mockk(relaxed = true)
     }

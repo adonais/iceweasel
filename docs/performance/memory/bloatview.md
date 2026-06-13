@@ -52,7 +52,7 @@ type of process.
 
 Here's how you interpret the columns.
 
--   The first, numerical column [is the index](https://searchfox.org/mozilla-central/source/xpcom/base/nsTraceRefcnt.cpp#365)
+-   The first, numerical column [is the index](https://searchfox.org/firefox-main/source/xpcom/base/nsTraceRefcnt.cpp#365)
     of the leaking class.
 -   **Class** - The name of the class in question (truncated to 20
     characters).

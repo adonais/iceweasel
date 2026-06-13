@@ -246,6 +246,8 @@ class MOZ_STACK_CLASS ModuleGenerator {
   // Data that is used for partial tiering
   SharedCode partialTieringCode_;
 
+  const CodeTailMetadata* existingCodeTailMeta_;
+
   // Data that is used for compiling a complete tier
   mozilla::TimeStamp completeTierStartTime_;
 
@@ -346,7 +348,8 @@ class MOZ_STACK_CLASS ModuleGenerator {
                   UniqueCharsVector* warnings);
   ~ModuleGenerator();
   [[nodiscard]] bool initializeCompleteTier(
-      CodeMetadataForAsmJS* codeMetaForAsmJS = nullptr);
+      CodeMetadataForAsmJS* codeMetaForAsmJS = nullptr,
+      const CodeTailMetadata* existingCodeTailMeta = nullptr);
   [[nodiscard]] bool initializePartialTier(const Code& code,
                                            uint32_t maybeFuncIndex);
 

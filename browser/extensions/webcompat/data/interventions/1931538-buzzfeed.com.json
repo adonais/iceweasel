@@ -8,13 +8,14 @@
       ]
     }
   },
+  "css": {
+    "card_game_fix": "[class*=isFlipped] [class*=cardFace][class*=cardBack] { pointer-events: none; }"
+  },
   "interventions": [
     {
       "platforms": ["all"],
       "max_version": 140,
-      "content_scripts": {
-        "css": ["bug1931538-buzzfeed.com-card-game-fix.css"]
-      }
+      "css": ["card_game_fix"]
     }
   ]
 }

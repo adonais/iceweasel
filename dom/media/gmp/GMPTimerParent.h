@@ -13,12 +13,12 @@
 
 namespace mozilla::gmp {
 
-class GMPTimerParent : public PGMPTimerParent {
+class GMPTimerParent final : public PGMPTimerParent {
   friend class PGMPTimerParent;
 
  public:
-  NS_INLINE_DECL_REFCOUNTING(GMPTimerParent)
-  explicit GMPTimerParent(nsISerialEventTarget* aGMPEventTarget);
+  NS_INLINE_DECL_REFCOUNTING(GMPTimerParent, final)
+  explicit GMPTimerParent(nsCOMPtr<nsISerialEventTarget>&& aGMPEventTarget);
 
   void Shutdown();
 

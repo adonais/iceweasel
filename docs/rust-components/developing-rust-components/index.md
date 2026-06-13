@@ -23,7 +23,7 @@ generation.
 * More work than creating a single implementation.
 * Requires engineers to write and understand Rust.
 * Still requires some application glue code to integrate the component.
-  Often it's trivial like [TabsStore](https://searchfox.org/mozilla-central/source/services/sync/modules/TabsStore.sys.mjs), but sometimes it's larger.
+  Often it's trivial like [TabsStore](https://searchfox.org/firefox-main/source/services/sync/modules/TabsStore.sys.mjs), but sometimes it's larger.
 
 ### Neutral
 

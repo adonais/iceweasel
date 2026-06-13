@@ -10,6 +10,7 @@
 #include "mozilla/Logging.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/PrintedSheetFrame.h"
+#include "mozilla/ReflowInput.h"
 #include "mozilla/StaticPresData.h"
 #include "mozilla/dom/HTMLCanvasElement.h"
 #include "mozilla/gfx/Point.h"
@@ -77,12 +78,6 @@ inline void SanityCheckPagesPerSheetInfo() {
     prevInfoPPS = info.mNumPages;
   }
 #endif
-}
-
-static void MarkPrincipalChildrenDirty(nsIFrame* aFrame) {
-  for (nsIFrame* childFrame : aFrame->PrincipalChildList()) {
-    childFrame->MarkSubtreeDirty();
-  }
 }
 
 const nsPagesPerSheetInfo& nsPagesPerSheetInfo::LookupInfo(int32_t aPPS) {
@@ -322,7 +317,7 @@ void nsPageSequenceFrame::Reflow(nsPresContext* aPresContext,
   if (shouldDoMeasuringReflow) {
     if (!HasAnyStateBits(NS_FRAME_FIRST_REFLOW)) {
       // Mark sheets dirty for an incremental measuring reflow.
-      MarkPrincipalChildrenDirty(this);
+      MarkPrincipalChildrenDirty();
     }
 
     for (nsIFrame* kidFrame : mFrames) {
@@ -349,7 +344,7 @@ void nsPageSequenceFrame::Reflow(nsPresContext* aPresContext,
       // Given the kid is reflowed under an unconstrained available block-size,
       // BreakType::Page doesn't really have any effect, but we keep it for
       // consistency with the normal reflow below.
-      kidReflowInput.mBreakType = ReflowInput::BreakType::Page;
+      kidReflowInput.mBreakType = BreakType::Page;
       kidReflowInput.mFlags.mIsInFragmentainerMeasuringReflow = true;
 
       ReflowOutput kidReflowOutput(kidReflowInput);
@@ -366,7 +361,7 @@ void nsPageSequenceFrame::Reflow(nsPresContext* aPresContext,
     }
 
     // Mark sheets dirty for normal reflow below.
-    MarkPrincipalChildrenDirty(this);
+    MarkPrincipalChildrenDirty();
   }
 
   nsIntMargin unwriteableTwips =
@@ -413,7 +408,7 @@ void nsPageSequenceFrame::Reflow(nsPresContext* aPresContext,
     ReflowInput kidReflowInput(
         aPresContext, aReflowInput, kidFrame,
         LogicalSize(kidFrame->GetWritingMode(), sheetSize));
-    kidReflowInput.mBreakType = ReflowInput::BreakType::Page;
+    kidReflowInput.mBreakType = BreakType::Page;
 
     ReflowOutput kidReflowOutput(kidReflowInput);
     nsReflowStatus status;

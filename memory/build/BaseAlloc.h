@@ -21,7 +21,7 @@
 // mozjemalloc for its own structures.
 class BaseAlloc {
  public:
-  constexpr BaseAlloc() {};
+  constexpr BaseAlloc() = default;
 
   void Init() MOZ_REQUIRES(gInitLock);
 

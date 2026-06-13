@@ -785,7 +785,8 @@ var SelectTranslationsPanel = new (class {
 
     this.close();
     const window =
-      gBrowser.selectedBrowser.browsingContext.top.embedderElement.ownerGlobal;
+      gBrowser.selectedBrowser.browsingContext.top.embedderElement
+        .documentGlobal;
     window.openTrustedLinkIn(
       "https://support.mozilla.org/kb/website-translation",
       "tab",
@@ -807,7 +808,8 @@ var SelectTranslationsPanel = new (class {
 
     this.close();
     const window =
-      gBrowser.selectedBrowser.browsingContext.top.embedderElement.ownerGlobal;
+      gBrowser.selectedBrowser.browsingContext.top.embedderElement
+        .documentGlobal;
     window.openTrustedLinkIn("about:preferences#general-translations", "tab");
   }
 
@@ -1063,7 +1065,8 @@ var SelectTranslationsPanel = new (class {
         panel.getOuterScreenRect();
 
     const window =
-      gBrowser.selectedBrowser.browsingContext.top.embedderElement.ownerGlobal;
+      gBrowser.selectedBrowser.browsingContext.top.embedderElement
+        .documentGlobal;
 
     if (isWayland) {
       if (panelTop < 0) {
@@ -1890,7 +1893,8 @@ var SelectTranslationsPanel = new (class {
     this.#maybeEnableTextAreaResizer();
 
     const window =
-      gBrowser.selectedBrowser.browsingContext.top.embedderElement.ownerGlobal;
+      gBrowser.selectedBrowser.browsingContext.top.embedderElement
+        .documentGlobal;
     window.A11yUtils.announce({
       id: "select-translations-panel-translation-complete-announcement",
     });

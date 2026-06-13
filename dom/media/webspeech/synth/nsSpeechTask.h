@@ -18,6 +18,7 @@ namespace dom {
 
 class SpeechSynthesisUtterance;
 class SpeechSynthesis;
+class MediaSharedKeysListener;
 
 class nsSpeechTask : public nsISpeechTask,
                      public nsIAudioChannelAgentCallback,
@@ -110,6 +111,11 @@ class nsSpeechTask : public nsISpeechTask,
   nsCOMPtr<nsISpeechTaskCallback> mCallback;
 
   RefPtr<mozilla::dom::AudioChannelAgent> mAudioChannelAgent;
+
+  // Started in DispatchStartImpl, stopped in DispatchEndImpl/
+  // DispatchErrorImpl. Reports the task's audibility while it is speaking and
+  // routes media control keys (e.g. Stop on audio focus loss) into Pause.
+  RefPtr<MediaSharedKeysListener> mSharedKeysListener;
 
   RefPtr<SpeechSynthesis> mSpeechSynthesis;
 

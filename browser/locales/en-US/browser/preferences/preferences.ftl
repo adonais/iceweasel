@@ -56,40 +56,62 @@ category-list =
     .aria-label = Categories
 
 pane-general-title = General
-category-general =
-    .tooltiptext = { pane-general-title }
 
 pane-home-title = Home
-category-home =
-    .tooltiptext = { pane-home-title }
 
-pane-search-title = Search
-category-search =
-    .tooltiptext = { pane-search-title }
+pane-home-startup-title2 = Home and startup
+  .title = Home and startup
 
-pane-privacy-title2 = Privacy and security
+pane-search-title2 = Search
+  .title = Search
+
+pane-privacy-title3 = Privacy and security
+  .title = Privacy and security
+
 pane-privacy-section =
     .heading = Privacy and security
 
 pane-sync-title3 = Sync
-category-sync3 =
-    .tooltiptext = { pane-sync-title3 }
 
-pane-ai-controls-title = AI controls
-category-ai-controls =
-    .tooltiptext = { pane-ai-controls-title }
+pane-ai-controls-title2 = AI controls
+  .title = AI controls
 
-settings-pane-labs-title = { -firefoxlabs-brand-name }
-settings-category-labs =
-    .tooltiptext = { -firefoxlabs-brand-name }
+pane-about-firefox-title = About { -brand-short-name }
+  .title = { pane-about-firefox-title }
+
+pane-appearance-title = Appearance
+  .title = { pane-appearance-title }
+
+pane-downloads-title2 = Downloads
+  .title = Downloads
+
+pane-downloads2 =
+    .heading = { pane-downloads-title2 }
+
+pane-accessibility-title = Accessibility
+  .title = { pane-accessibility-title }
+
+pane-languages-title2 = Languages
+  .title = Languages
+
+preferences-languages-header2 =
+    .heading = { pane-languages-title2 }
+
+settings-pane-labs-title2 = { -firefoxlabs-brand-name }
+  .title = { -firefoxlabs-brand-name }
+
+settings-pane-labs-header =
+    .heading = { -firefoxlabs-brand-name }
 pane-experimental-description4 = Give our experimental features a try! They’re in development and evolving, which could impact how { -brand-short-name } works. We only receive data about your use of these features if you have <a data-l10n-name="data-collection">technical and interaction data</a> turned on.
 
 pane-experimental-reset =
   .label = Restore Defaults
   .accesskey = R
 
-help-button-label = { -brand-short-name } support
-addons-button-label = Extensions and themes
+help-button-label2 = { -brand-short-name } support
+  .title = { -brand-short-name } support
+addons-button-label2 = Extensions and themes
+  .title = Extensions and themes
 
 focus-search =
     .key = f
@@ -150,7 +172,7 @@ extension-controlling-homepage = { $name } controls some of your homepage settin
 
 ## Preferences UI Search Results
 
-search-results-header = Search Results
+search-results-header = Search results
 
 # `<span data-l10n-name="query"></span>` will be replaced by the search term.
 search-results-empty-message2 =
@@ -214,6 +236,12 @@ preferences-profile-to-copy =
 preferences-copy-profile-select = Select profile
 preferences-copy-profile-button = Copy
 
+tabs-browsing-section =
+  .heading = Tabs and browsing
+
+pane-tabs-browsing-title2 = Tabs and browsing
+  .title = Tabs and browsing
+
 tabs-group-header2 =
   .label = Tabs
 
@@ -257,22 +285,22 @@ warn-on-open-many-tabs =
     .label = Warn you when opening multiple tabs might slow down { -brand-short-name }
     .accesskey = d
 
-switch-to-new-tabs =
-    .label = When you open a link, image or media in a new tab, switch to it immediately
+switch-to-new-tabs-2 =
+    .label = When opening links or media in a new tab, switch to it immediately
     .accesskey = h
 
 show-tabs-in-taskbar =
     .label = Show tab previews in the Windows taskbar
     .accesskey = k
 
-browser-containers-enabled =
-    .label = Enable Container Tabs
+browser-containers-enabled-2 =
+    .label = Use Container Tabs
     .accesskey = n
 
 browser-containers-learn-more = Learn more
 
-browser-containers-settings =
-    .label = Settings…
+browser-containers-settings-2 =
+    .label = Manage settings
     .accesskey = i
 
 containers-disable-alert-title = Close All Container Tabs?
@@ -317,7 +345,7 @@ settings-tabs-drag-to-create-tab-groups =
     .label = Drag tabs together to create tab groups
 
 browser-layout-header2 =
-    .label = Browser Layout
+    .label = Browser layout
 
 browser-layout-horizontal-tabs2 =
     .label = Horizontal tabs
@@ -333,16 +361,19 @@ browser-layout-show-sidebar2 =
     .label = Show sidebar
     .description = Quickly access bookmarks, tabs from your phone, AI chatbots, and more without leaving your main view.
 
+page-navigation-group =
+    .label = Page navigation
+
 ## General Section - Language & Appearance
 
 language-and-appearance-header = Language and Appearance
 
-appearance-group =
+appearance-group2 =
   .label = Website appearance
-  .description = Some websites adapt their color scheme based on your preferences. Choose which color scheme you’d like to use for those sites.
+  .description = Some websites change their colors to match your preferences. Choose your color scheme.
 
-preferences-web-appearance-choice-auto2 =
-  .label = Automatic
+preferences-web-appearance-choice-auto3 =
+  .label = System
   .title = Automatically change website backgrounds and content based on your system settings and { -brand-short-name } theme.
 preferences-web-appearance-choice-light2 =
   .label = Light
@@ -387,21 +418,6 @@ preferences-colors-manage-button =
 preferences-fonts-header2 =
   .label = Fonts
 
-default-font-2 =
-  .label = Default font
-  .accesskey = D
-default-font-size-2 =
-  .label = Size
-  .accesskey = S
-
-advanced-fonts =
-    .label = Advanced…
-    .accesskey = A
-
-# Zoom is a noun, and the message is used as header for a group of options
-preferences-zoom-header2 =
-  .label = Zoom
-
 preferences-default-zoom-label =
     .label = Default zoom
     .accesskey = z
@@ -415,8 +431,8 @@ preferences-zoom-text-only =
     .label = Zoom text only
     .accesskey = t
 
-preferences-text-zoom-override-warning =
-    .message = Warning: If you select “Zoom text only” and your default zoom is not set to 100%, it may cause some sites or content to break.
+preferences-text-zoom-override-warning2 =
+    .message = If “Zoom text only” is on and your default zoom isn’t 100%, some sites might not display content correctly.
 
 language-header = Language
 
@@ -459,6 +475,17 @@ manage-browser-languages-button =
   .accesskey = l
 confirm-browser-language-change-description = Restart { -brand-short-name } to apply these changes
 confirm-browser-language-change-button = Apply and Restart
+
+browser-language-heading =
+  .label = Browser language
+  .description = Choose the language used to display menus, messages, and notifications from { -brand-short-name }.
+browser-language-preferred-label =
+  .label = Preferred language
+browser-language-fallback-label =
+  .label = Fallback language
+  .description = Used when preferred language localization is incomplete.
+browser-language-install-error =
+  .message = { -brand-short-name } can’t update your languages right now. Check that you are connected to the internet or try again.
 
 fx-translate-web-pages = { -translations-brand-name }
 
@@ -577,27 +604,26 @@ spellcheck-promo =
 
 files-and-applications-title = Files and Applications
 
-downloads-header-2 =
-    .label = Downloads
-
-download-save-where-2 =
+download-save-files-header =
     .label = Save files to
-    .accesskey = v
 
-download-always-ask-where =
-    .label = Always ask you where to save files
+download-save-where-3 =
+    .aria-label = Save files to
+
+download-always-ask-where2 =
+    .label = Ask where to save files before downloading
     .accesskey = A
-download-private-browsing-delete =
-    .label = Delete files downloaded in private browsing when all private windows are closed
+download-private-browsing-delete2 =
+    .label = Delete private window downloads on close
     .accesskey = D
 
 applications-header = Applications
 
 applications-description = Choose how { -brand-short-name } handles the files you download from the web or the applications you use while browsing.
 
-applications-setting =
-    .label = Applications
-    .description = Choose how { -brand-short-name } handles the files you download from the web or the applications you use while browsing.
+applications-setting2 =
+    .label = Files and applications
+    .description = Choose how { -brand-short-name } handles downloaded files and content.
 
 applications-filter =
     .placeholder = Search file types or applications
@@ -695,9 +721,15 @@ applications-setting-new-file-types =
 applications-save-for-new-types =
     .label = Save files
     .accesskey = S
+applications-save-for-new-types2 =
+    .label = Automatically save files
+    .accesskey = S
 
 applications-ask-before-handling =
     .label = Ask whether to open or save files
+    .accesskey = A
+applications-ask-before-handling2 =
+    .label = Ask to open or save files
     .accesskey = A
 
 drm-group =
@@ -709,36 +741,51 @@ play-drm-content =
 
 play-drm-content-learn-more = Learn more
 
-update-application-title = { -brand-short-name } Updates
+## About Firefox
 
-update-application-description = Keep { -brand-short-name } up to date for the best performance, stability, and security.
+about-firefox-header =
+    .heading = About { -brand-short-name }
+
+## Firefox updates
+
+update-application-heading =
+    .label = { -brand-short-name } updates
+    .description = Updates improve { -brand-short-name }’s speed, stability, and security.
+
+update-application-suppress-prompts-heading =
+    .label = Notifications
+
+update-application-updates-managed-by-os =
+    .message = Updates are managed by your operating system
 
 # Variables:
 # $version (string) - Firefox version
 update-application-version = Version { $version } <a data-l10n-name="learn-more">What’s new</a>
 
-update-history =
-    .label = Show Update History…
+update-history-2 =
+    .label = Show update history
     .accesskey = p
 
-update-application-allow-description = Allow { -brand-short-name } to
+update-application-installation =
+    .label = Installation
 
-update-application-auto =
+update-application-auto-2 =
     .label = Automatically install updates (recommended)
     .accesskey = A
 
-update-application-check-choose =
-    .label = Check for updates but let you choose to install them
+update-application-check-choose-2 =
+    .label = Check for updates, but choose when to install
     .accesskey = C
 
 update-application-background-enabled =
     .label = When { -brand-short-name } is not running
     .accesskey = W
 
-update-application-warning-cross-user-setting = This setting will apply to all Windows accounts and { -brand-short-name } profiles using this installation of { -brand-short-name }.
+update-application-warning-cross-user-setting-2 =
+    .message = This setting will apply to all Windows accounts and { -brand-short-name } profiles using this installation of { -brand-short-name }.
 
-update-application-suppress-prompts =
-    .label = Show fewer update notification prompts
+update-application-suppress-prompts-2 =
+    .label = Show fewer update reminders
     .accesskey = n
 
 update-setting-write-failure-title2 = Error saving Update settings
@@ -778,11 +825,10 @@ support-share-ideas =
 performance-group =
   .label = Performance
 
-performance-use-recommended-settings-checkbox =
+performance-use-recommended-settings-checkbox-2 =
     .label = Use recommended performance settings
+    .description = These settings are tailored to your hardware and operating system.
     .accesskey = U
-
-performance-use-recommended-settings-desc = These settings are tailored to your computer’s hardware and operating system.
 
 performance-settings-learn-more = Learn more
 
@@ -805,10 +851,6 @@ performance-default-content-process-count =
 
 browsing-group =
   .label = Browsing
-
-browsing-use-autoscroll =
-    .label = Use autoscrolling
-    .accesskey = a
 
 browsing-use-smooth-scrolling =
     .label = Use smooth scrolling
@@ -838,9 +880,12 @@ browsing-search-on-start-typing =
     .label = Search for text when you start typing
     .accesskey = x
 
-browsing-picture-in-picture-toggle-enabled =
-    .label = Enable Picture-in-Picture video controls
-    .accesskey = E
+settings-media-group =
+    .label = Media
+
+browsing-picture-in-picture-toggle-enabled-2 =
+    .label = Use Picture-in-Picture
+    .accesskey = e
 
 browsing-picture-in-picture-enable-when-switching-tabs =
     .label = Keep playing videos in Picture-in-Picture when switching tabs
@@ -849,6 +894,9 @@ browsing-picture-in-picture-enable-when-switching-tabs =
 browsing-media-control =
     .label = Control media via keyboard, headset, or virtual interface
     .accesskey = v
+
+recommendations-group =
+    .label = Recommendations
 
 browsing-cfr-recommendations =
     .label = Recommend extensions as you browse
@@ -991,6 +1039,9 @@ home-prefs-content-header =
 home-prefs-content-header2 = { -firefox-home-brand-name } Content
 home-prefs-content-description2 = Choose what content you want on your { -firefox-home-brand-name } screen.
 
+home-prefs-firefox-logo-header =
+    .label = { -brand-short-name } logo
+
 home-prefs-search-header =
     .label = Web Search
 home-prefs-search-header2 =
@@ -998,6 +1049,8 @@ home-prefs-search-header2 =
 home-prefs-shortcuts-header =
     .label = Shortcuts
 home-prefs-shortcuts-description = Sites you save or visit
+home-prefs-shortcuts-select =
+    .aria-label = Shortcuts
 home-prefs-shortcuts-by-option-sponsored =
     .label = Sponsored shortcuts
 
@@ -1029,6 +1082,8 @@ home-prefs-highlights-option-most-recent-download =
 home-prefs-recent-activity-header =
     .label = Recent activity
 home-prefs-recent-activity-description = A selection of recent sites and content
+home-prefs-recent-activity-select =
+    .aria-label = Recent activity
 home-prefs-weather-header =
   .label = Weather
 home-prefs-weather-description = Today’s forecast at a glance
@@ -1044,6 +1099,14 @@ home-prefs-lists-header =
 # Timer is a widget on New Tab, similar to the Pomodoro timer.
 home-prefs-timer-header =
     .label = Timer
+
+# Sports is a widget on New Tab showing sports scores and schedules.
+home-prefs-sports-widget-header =
+    .label = Sports
+
+# Clock is a widget on New Tab that displays time zones around the world.
+home-prefs-clocks-header =
+    .label = Clock
 
 # "Support" here means to help sustain or contribute to something, especially through funding or sponsorship.
 home-prefs-support-firefox-header =
@@ -1064,6 +1127,18 @@ home-prefs-choose-wallpaper-link = Choose a wallpaper
 
 home-prefs-choose-wallpaper-link2 =
     .label = Choose a wallpaper
+
+# Informational message bar that appears in the Firefox Home section when the options are disabled.
+# The user must select Firefox Home as their homepage for either new tabs or new windows to enable
+# the features in settings.
+home-prefs-firefox-home-disabled-notice =
+    .message = To use these features, set new tabs or new windows to { -firefox-home-brand-name }.
+
+# Dropdown option shown when an extension replaces the contents of new windows or tabs.
+# Variables:
+#   $extension (string) - Name of the extension
+home-prefs-homepage-extension-option =
+    .label = Extension ({ $extension })
 
 # Variables:
 #   $num (number) - Number of rows displayed
@@ -1272,6 +1347,9 @@ containers-remove-button =
 
 account-sync-section =
     .heading = Account and sync
+
+pane-account-sync-title2 = Account and sync
+    .title = Account and sync
 
 sync-group-label =
     .label = Sync
@@ -1557,6 +1635,17 @@ forms-breach-alerts =
     .label = Show alerts about passwords for breached websites
     .accesskey = b
 forms-breach-alerts-learn-more-link = Learn more
+
+## Privacy Panel Settings
+
+privacy-panel-settings-header =
+    .label = Privacy panel settings
+    .description = Get help protecting your info online in { -brand-short-name }.
+# By “breach message” we mean the UI messaging shown when Firefox detects that a
+# site the user has interacted with has been involved in a known data breach
+privacy-panel-breach-alerts =
+    .label = Show breach messages
+    .accesskey = s
 preferences-relay-integration-checkbox2 =
     .label = Suggest { -relay-brand-name } email masks to protect your email address
     .accesskey = r
@@ -1720,6 +1809,11 @@ addresses-no-addresses-stored-message =
 address-moz-box-item =
   .label = { $name }
   .description = { $address }
+
+pane-passwords-autofill-title2 = Passwords and autofill
+  .title = Passwords and autofill
+preferences-passwords-autofill-header =
+   .heading = Passwords and autofill
 
 ## Privacy Section - History
 
@@ -1989,6 +2083,12 @@ tracking-manage-exceptions =
     .accesskey = x
 
 ## Privacy Section - Permissions
+
+permissions-data-section =
+    .heading = Permissions and data
+
+pane-permissions-data-title2 = Permissions and data
+  .title = Permissions and data
 
 permissions-header3 =
     .label = Permissions
@@ -2362,10 +2462,64 @@ preferences-connection-link-button =
 desktop-folder-name = Desktop
 downloads-folder-name = Downloads
 
+## Appearance page
+
+preferences-appearance-header =
+    .heading = Appearance
+
+browser-theme-group =
+    .label = Browser theme
+    .description = Style { -brand-short-name } your way. Theme colors apply to toolbars, menus, and messages.
+
+browser-theme-manage-link =
+    .label = Manage { -brand-short-name } themes
+
+related-settings-group =
+    .label = Related settings
+
+related-settings-accessibility-link =
+    .label = Customize zoom and font settings in Accessibility
+
+related-settings-home-link =
+    .label = Customize { -firefox-home-brand-name }
+
+related-settings-tabs-browsing-link =
+    .label = Customize browser layout
+
+## Accessibility page
+
+preferences-accessibility-header =
+    .heading = Accessibility
+
+preferences-default-zoom-select =
+    .aria-label = Default zoom
+
+preferences-fonts-family =
+    .label = Font family
+    .accesskey = D
+
+preferences-fonts-size =
+    .label = Font size
+    .accesskey = s
+
+preferences-fonts-advanced-settings =
+    .label = Advanced settings
+    .accesskey = A
+
+browsing-use-autoscroll =
+    .label = Use autoscrolling
+    .accesskey = a
+
+keyboard-and-scrolling-group =
+  .label = Keyboard navigation and scrolling
+
+motion-and-link-group =
+  .label = Motion and link styling
+
 ## AI controls page
 
-preferences-ai-controls-header =
-    .heading = { pane-ai-controls-title }
+preferences-ai-controls-header2 =
+    .heading = { pane-ai-controls-title2 }
 
 preferences-ai-controls-description = You always have a choice in { -brand-short-name }, including whether to use features enhanced with AI. More controls coming soon.
 
@@ -2553,8 +2707,18 @@ preferences-etp-custom-cookies-enabled =
 preferences-etp-custom-cookie-behavior =
     .aria-label = Cookies
 
-preferences-etpc-custom-cookie-behavior-accept-all =
+preferences-etp-custom-cookie-behavior-accept-all =
     .label = Allow all cookies
+preferences-etp-custom-cookie-behavior-block-cross-site-cookies =
+    .label = Block cross-site cookies
+preferences-etp-custom-cookie-behavior-isolate-cross-site-cookies =
+    .label = Isolate cross-site cookies
+preferences-etp-custom-cookie-behavior-block-unvisited =
+    .label = Block cookies from unvisited websites
+preferences-etp-custom-cookie-behavior-block-all-cross-site-cookies =
+    .label = Block all cross-site cookies (may cause websites to break)
+preferences-etp-custom-cookie-behavior-block-all =
+    .label = Block all cookies (will cause websites to break)
 
 preferences-etp-custom-tracking-protection-enabled =
     .label = Tracking content

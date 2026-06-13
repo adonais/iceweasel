@@ -364,6 +364,8 @@ add_task(async function test_device_header_context_menu() {
     verifyContexMenuItemsByL10nIds(
       contextMenu,
       [
+        "sidebar-context-menu-open-in-tab",
+        "sidebar-context-menu-open-in-container-tab",
         "sidebar-context-menu-open-in-window",
         "sidebar-context-menu-open-in-private-window",
         "---",
@@ -383,6 +385,9 @@ add_task(async function test_device_header_context_menu() {
     verifyContexMenuItemsByL10nIds(
       contextMenu,
       [
+        "sidebar-context-menu-open-in-tab",
+        "sidebar-context-menu-open-in-container-tab",
+        "---",
         "synced-tabs-context-open-all-in-tabs",
         "synced-tabs-context-connect-another-device",
         "synced-tabs-context-manage-this-device",
@@ -512,12 +517,10 @@ add_task(async function test_tabs_click_auxclick() {
   await content.promiseDocumentFlushed(() => {});
 
   {
-    const tabPromise = BrowserTestUtils.waitForNewTab(
-      gBrowser,
-      row.url,
-      false,
-      true
-    );
+    const selectedTabAtStart = gBrowser.selectedTab;
+    const tabsLengthAtStart = gBrowser.tabs.length;
+    const browser = gBrowser.selectedBrowser;
+    const loaded = BrowserTestUtils.browserLoaded(browser, false, row.url);
 
     // See the comment in test_history_hover_buttons in
     // browser_history_sidebar.js
@@ -530,11 +533,18 @@ add_task(async function test_tabs_click_auxclick() {
       content
     );
     AccessibilityUtils.resetEnv();
-    const tab = await tabPromise;
+    await loaded;
 
-    is(gBrowser.selectedTab, tab, "The opened tab should be selected");
-
-    BrowserTestUtils.removeTab(tab);
+    is(
+      gBrowser.selectedTab,
+      selectedTabAtStart,
+      "The link is loaded in the current tab"
+    );
+    is(
+      gBrowser.tabs.length,
+      tabsLengthAtStart,
+      "No new tab is opened on left-click"
+    );
   }
 
   {
@@ -601,5 +611,188 @@ add_task(async function test_tabs_click_auxclick() {
   }
 
   SidebarController.hide({ dismissPanel: true });
+  sandbox.restore();
+});
+
+add_task(async function test_open_in_new_tab_context_menu() {
+  // Test synced tabs context menu functionality for "Open in new Tab"
+  const sandbox = sinon.createSandbox();
+  sandbox.stub(lazy.SyncedTabsErrorHandler, "getErrorType").returns(null);
+  sandbox.stub(lazy.TabsSetupFlowManager, "uiStateIndex").value(4);
+  sandbox.stub(lazy.SyncedTabs, "getTabClients").resolves(tabClients);
+  sandbox
+    .stub(lazy.SyncedTabs, "createRecentTabsList")
+    .resolves(tabClients.flatMap(client => client.tabs));
+
+  await SidebarController.show("viewTabsSidebar");
+  const { contentDocument } = SidebarController.browser;
+  const component = contentDocument.querySelector("sidebar-syncedtabs");
+  Assert.ok(component, "Synced tabs panel is shown.");
+  const contextMenu = SidebarController.currentContextMenu;
+
+  // Verify that the context menu is available
+  info("Check if the context menu is present in the DOM.");
+  Assert.ok(contextMenu, "Context menu is present.");
+
+  // Verify "Open in new Tab" context menu item
+  info("Verify 'Open in new Tab' context menu item.");
+  let secondTab;
+  await BrowserTestUtils.waitForMutationCondition(
+    component.shadowRoot,
+    { childList: true, subtree: true },
+    () => {
+      const { lists } = component;
+      if (lists.length && lists[0]?.rowEls?.length > 1) {
+        secondTab = lists[0].rowEls[1];
+        return true;
+      }
+      return false;
+    }
+  );
+
+  // Wait for new tab to open when activating menu item
+  // Use the URL from the second tab in our test data
+  const promiseTabOpened = BrowserTestUtils.waitForNewTab(
+    gBrowser,
+    "https://example.org/",
+    true
+  );
+
+  await openAndWaitForContextMenu(contextMenu, secondTab.mainEl, () => {
+    const openInNewTabMenuItem = contextMenu.querySelector(
+      "#sidebar-synced-tabs-context-open-in-tab"
+    );
+    Assert.ok(openInNewTabMenuItem, "'Open in new Tab' menu item is present.");
+    Assert.ok(
+      !openInNewTabMenuItem.disabled,
+      "'Open in new Tab' menu item is enabled."
+    );
+
+    // click the menu item to test functionality
+    contextMenu.activateItem(openInNewTabMenuItem);
+  });
+
+  // Wait for the new tab to be created
+  const newTab = await promiseTabOpened;
+
+  // Verify the newly opened tab has the correct URL
+  is(
+    newTab.linkedBrowser.currentURI.spec,
+    "https://example.org/",
+    "The opened tab should have the correct URL"
+  );
+
+  // Clean up: close the newly opened tab
+  BrowserTestUtils.removeTab(newTab);
+
+  SidebarController.hide();
+  sandbox.restore();
+});
+
+add_task(async function test_open_in_new_container_tab_context_menu() {
+  // Test synced tabs context menu functionality for "Open in new container Tab"
+  const sandbox = sinon.createSandbox();
+  sandbox.stub(lazy.SyncedTabsErrorHandler, "getErrorType").returns(null);
+  sandbox.stub(lazy.TabsSetupFlowManager, "uiStateIndex").value(4);
+  sandbox.stub(lazy.SyncedTabs, "getTabClients").resolves(tabClients);
+  sandbox
+    .stub(lazy.SyncedTabs, "createRecentTabsList")
+    .resolves(tabClients.flatMap(client => client.tabs));
+
+  await SidebarController.show("viewTabsSidebar");
+  const { contentDocument } = SidebarController.browser;
+  const component = contentDocument.querySelector("sidebar-syncedtabs");
+  Assert.ok(component, "Synced tabs panel is shown.");
+  const contextMenu = SidebarController.currentContextMenu;
+
+  // Verify that the context menu is available
+  info("Check if the context menu is present in the DOM.");
+  Assert.ok(contextMenu, "Context menu is present.");
+
+  // Verify "Open in new container Tab" context menu item
+  info("Verify 'Open in new container Tab' context menu item.");
+  let secondTab;
+  await BrowserTestUtils.waitForMutationCondition(
+    component.shadowRoot,
+    { childList: true, subtree: true },
+    () => {
+      const { lists } = component;
+      if (lists.length && lists[0]?.rowEls?.length > 1) {
+        secondTab = lists[0].rowEls[1];
+        return true;
+      }
+      return false;
+    }
+  );
+
+  // Wait for new tab to open when activating menu item
+  const promiseTabOpened = BrowserTestUtils.waitForNewTab(
+    gBrowser,
+    "https://example.org/",
+    true
+  );
+
+  await openAndWaitForContextMenu(contextMenu, secondTab.mainEl, () => {
+    const containerTabMenuItem = contextMenu.querySelector(
+      "#sidebar-synced-tabs-context-menu-container-tab"
+    );
+    Assert.ok(
+      containerTabMenuItem,
+      "'Open in new container Tab' menu item is present."
+    );
+    Assert.ok(
+      !containerTabMenuItem.disabled,
+      "'Open in new container Tab' menu item is enabled."
+    );
+
+    // Open the container submenu
+    info("Open container submenu");
+    const menuPopup = containerTabMenuItem.menupopup;
+    const menuPopupPromise = BrowserTestUtils.waitForEvent(
+      menuPopup,
+      "popupshown"
+    );
+    containerTabMenuItem.openMenu(true);
+    menuPopupPromise.then(() => {
+      info("Container submenu opened, inspecting available containers");
+
+      Assert.ok(menuPopup, "Container submenu is present");
+
+      Assert.greater(
+        menuPopup.childNodes.length,
+        0,
+        "Should have one or more container options"
+      );
+      // Check the first container is usable
+      const firstContainer = menuPopup.childNodes[0];
+      ok(firstContainer, "First container option should exist");
+      ok(!firstContainer.disabled, "First container should be enabled");
+
+      // Click the first container option to open the tab
+      contextMenu.activateItem(firstContainer);
+    });
+  });
+
+  // Wait for the new tab to be created
+  const newTab = await promiseTabOpened;
+
+  // Verify the newly opened tab has the correct URL
+  is(
+    newTab.linkedBrowser.currentURI.spec,
+    "https://example.org/",
+    "The opened container tab should have the correct URL"
+  );
+
+  // Verify if it is a container tab
+  Assert.greater(
+    newTab.userContextId,
+    0,
+    "Container tab should have a userContextId greater than 0"
+  );
+
+  // Clean up - close the newly opened tab
+  BrowserTestUtils.removeTab(newTab);
+
+  SidebarController.hide();
   sandbox.restore();
 });

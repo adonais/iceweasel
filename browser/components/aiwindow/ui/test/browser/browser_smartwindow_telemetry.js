@@ -627,8 +627,6 @@ add_task(async function test_link_click_telemetry() {
 });
 
 add_task(async function test_memory_removed_panel_telemetry() {
-  Services.fog.testResetFOG();
-
   const win = await openAIWindow();
   let MemoryStore;
   try {
@@ -641,6 +639,7 @@ add_task(async function test_memory_removed_panel_telemetry() {
     for (const memory of preExistingMemories) {
       await MemoryStore.hardDeleteMemory(memory.id, "other");
     }
+    Services.fog.testResetFOG();
     const seededMemories = [
       {
         id: "memory-1",
@@ -712,6 +711,94 @@ add_task(async function test_memory_removed_panel_telemetry() {
       events[0].extra.memories,
       "1",
       "memory removed panel event includes memories count"
+    );
+    Assert.equal(
+      events[0].extra.in_use,
+      "1",
+      "in_use reflects remaining applied memories count for the message"
+    );
+  } finally {
+    if (MemoryStore) {
+      const postTestMemories = await MemoryStore.getMemories({
+        includeSoftDeleted: true,
+      });
+      for (const memory of postTestMemories) {
+        await MemoryStore.hardDeleteMemory(memory.id, "other");
+      }
+    }
+    await BrowserTestUtils.closeWindow(win);
+  }
+});
+
+add_task(async function test_memory_removed_panel_telemetry_last_memory() {
+  const win = await openAIWindow();
+  let MemoryStore;
+  try {
+    ({ MemoryStore } = ChromeUtils.importESModule(
+      "moz-src:///browser/components/aiwindow/services/MemoryStore.sys.mjs"
+    ));
+    const preExistingMemories = await MemoryStore.getMemories({
+      includeSoftDeleted: true,
+    });
+    for (const memory of preExistingMemories) {
+      await MemoryStore.hardDeleteMemory(memory.id, "other");
+    }
+    Services.fog.testResetFOG();
+
+    const seededMemory = {
+      id: "memory-1",
+      memory_summary: "User is vegan",
+      category: "preference",
+      intent: "profile",
+      reasoning: "Test memory",
+      score: 0.5,
+      updated_at: Date.now(),
+      is_deleted: false,
+    };
+    await MemoryStore.addMemory(seededMemory);
+
+    const browser = win.gBrowser.selectedBrowser;
+    const aiWindow = await TestUtils.waitForCondition(
+      () => browser.contentDocument?.querySelector("ai-window"),
+      "Wait for ai-window element"
+    );
+
+    const { AssistantRoleOpts } = ChromeUtils.importESModule(
+      "moz-src:///browser/components/aiwindow/ui/modules/ChatMessage.sys.mjs"
+    );
+
+    const conversation = new ChatConversation({});
+    conversation.addUserMessage("Hello");
+    const memories = [{ id: "memory-1", memory_summary: "User is vegan" }];
+    const assistantOpts = new AssistantRoleOpts(
+      null,
+      null,
+      null,
+      true,
+      null,
+      memories,
+      []
+    );
+    conversation.addAssistantMessage("text", "Hi", assistantOpts);
+    aiWindow.openConversation(conversation);
+    const assistantMessageId = conversation.messages.at(-1).id;
+    aiWindow.handleFooterAction({
+      action: "remove-applied-memory",
+      messageId: assistantMessageId,
+      memory: memories[0],
+    });
+
+    await TestUtils.waitForCondition(
+      () => Glean.smartWindow.memoryRemovedPanel.testGetValue()?.length,
+      "memory removed panel telemetry should be recorded"
+    );
+
+    const events = Glean.smartWindow.memoryRemovedPanel.testGetValue();
+    Assert.equal(events?.length, 1, "One memory removed panel event recorded");
+    Assert.equal(
+      events[0].extra.in_use,
+      "0",
+      "in_use is 0 when the last applied memory for the message is removed"
     );
   } finally {
     if (MemoryStore) {

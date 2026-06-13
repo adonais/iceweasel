@@ -10,6 +10,7 @@
 #include "mozilla/StaticPtr.h"
 #include "mozilla/net/UrlClassifierCommon.h"
 #include "nsIChannel.h"
+#include "nsILoadInfo.h"
 #include "nsIClassifiedChannel.h"
 #include "nsIWebProgressListener.h"
 #include "nsContentUtils.h"
@@ -97,6 +98,12 @@ UrlClassifierFeatureAntiFraudAnnotation::MaybeCreate(nsIChannel* aChannel) {
   // We also don't need to annotate the channel if we are not blocking
   // fingerprinters
   if (!StaticPrefs::privacy_trackingprotection_fingerprinting_enabled()) {
+    return nullptr;
+  }
+
+  RefPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
+  bool isThirdParty = loadInfo->GetIsThirdPartyContextToTopWindow();
+  if (!isThirdParty) {
     return nullptr;
   }
 

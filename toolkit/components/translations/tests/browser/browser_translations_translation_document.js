@@ -413,7 +413,7 @@ add_task(async function test_translation_inline_styling() {
   info("Setting a span as display: block.");
   const span = document.getElementById("spanAsBlock");
   span.style.display = "block";
-  is(span.ownerGlobal.getComputedStyle(span).display, "block");
+  is(span.documentGlobal.getComputedStyle(span).display, "block");
 
   translate();
 

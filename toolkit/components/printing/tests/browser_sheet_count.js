@@ -307,7 +307,7 @@ add_task(async function testPagesPerSheetCount() {
 
     let numberMove = [...pagesPerSheet.options].map(o => o.value).indexOf("16");
 
-    if (!nativeSelectEnabled()) {
+    if (!selectPopup.isNativeMenu) {
       numberMove -= pagesPerSheet.selectedIndex;
 
       for (let i = 0; i < numberMove; i++) {
@@ -319,7 +319,7 @@ add_task(async function testPagesPerSheetCount() {
     }
 
     await helper.waitForPreview(() => {
-      if (nativeSelectEnabled()) {
+      if (selectPopup.isNativeMenu) {
         selectPopup.activateItem(selectPopup.childNodes[numberMove]);
       } else {
         EventUtils.sendKey("return", window);

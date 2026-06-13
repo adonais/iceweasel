@@ -50,7 +50,7 @@ nsresult CaptureTask::TaskComplete(already_AddRefed<dom::BlobImpl> aBlobImpl,
   // one.
   RefPtr<dom::Blob> blob;
   if (blobImpl) {
-    blob = dom::Blob::Create(mImageCapture->GetOwnerGlobal(), blobImpl);
+    blob = dom::Blob::Create(mImageCapture->GetRelevantGlobal(), blobImpl);
     if (NS_WARN_IF(!blob)) {
       return NS_ERROR_FAILURE;
     }

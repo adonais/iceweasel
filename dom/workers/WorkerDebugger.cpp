@@ -122,14 +122,14 @@ class CompileDebuggerScriptRunnable final : public WorkerDebuggerRunnable {
 }  // namespace
 
 class WorkerDebugger::PostDebuggerMessageRunnable final : public Runnable {
-  WorkerDebugger* mDebugger;
+  nsMainThreadPtrHandle<WorkerDebugger> mDebugger;
   nsString mMessage;
 
  public:
-  PostDebuggerMessageRunnable(WorkerDebugger* aDebugger,
+  PostDebuggerMessageRunnable(nsMainThreadPtrHandle<WorkerDebugger> aDebugger,
                               const nsAString& aMessage)
       : mozilla::Runnable("PostDebuggerMessageRunnable"),
-        mDebugger(aDebugger),
+        mDebugger(std::move(aDebugger)),
         mMessage(aMessage) {}
 
  private:
@@ -144,17 +144,17 @@ class WorkerDebugger::PostDebuggerMessageRunnable final : public Runnable {
 };
 
 class WorkerDebugger::ReportDebuggerErrorRunnable final : public Runnable {
-  WorkerDebugger* mDebugger;
+  nsMainThreadPtrHandle<WorkerDebugger> mDebugger;
   nsCString mFilename;
   uint32_t mLineno;
   nsString mMessage;
 
  public:
-  ReportDebuggerErrorRunnable(WorkerDebugger* aDebugger,
+  ReportDebuggerErrorRunnable(nsMainThreadPtrHandle<WorkerDebugger> aDebugger,
                               const nsACString& aFilename, uint32_t aLineno,
                               const nsAString& aMessage)
       : Runnable("ReportDebuggerErrorRunnable"),
-        mDebugger(aDebugger),
+        mDebugger(std::move(aDebugger)),
         mFilename(aFilename),
         mLineno(aLineno),
         mMessage(aMessage) {}
@@ -173,6 +173,17 @@ class WorkerDebugger::ReportDebuggerErrorRunnable final : public Runnable {
 WorkerDebugger::WorkerDebugger(WorkerPrivate* aWorkerPrivate)
     : mWorkerPrivate(aWorkerPrivate), mIsInitialized(false) {
   AssertIsOnMainThread();
+}
+
+/* static */
+already_AddRefed<WorkerDebugger> WorkerDebugger::Create(
+    WorkerPrivate* aWorkerPrivate) {
+  AssertIsOnMainThread();
+  RefPtr<WorkerDebugger> debugger = new WorkerDebugger(aWorkerPrivate);
+  debugger->mSelfHandle = nsMainThreadPtrHandle<WorkerDebugger>(
+      new nsMainThreadPtrHolder<WorkerDebugger>("WorkerDebugger::mSelfHandle",
+                                                debugger));
+  return debugger.forget();
 }
 
 WorkerDebugger::~WorkerDebugger() {
@@ -300,8 +311,11 @@ WorkerDebugger::GetWindowIDs(nsTArray<uint64_t>& aResult) {
   } else if (mWorkerPrivate->IsSharedWorker()) {
     const RemoteWorkerChild* const controller =
         mWorkerPrivate->GetRemoteWorkerController();
-    MOZ_ASSERT(controller);
-    aResult = controller->WindowIDs().Clone();
+    // In case this is called during the WorkerDebugger registration, the
+    // controller is not set yet, and it will be set after the registration done
+    if (controller) {
+      aResult = controller->WindowIDs().Clone();
+    }
   }
 
   return NS_OK;
@@ -452,8 +466,10 @@ WorkerDebugger::SetDebuggerReady(bool aReady) {
 }
 
 void WorkerDebugger::Close() {
+  AssertIsOnMainThread();
   MOZ_ASSERT(mWorkerPrivate);
   mWorkerPrivate = nullptr;
+  mSelfHandle = nullptr;
 
   for (const auto& listener : mListeners.Clone()) {
     listener->OnClose();
@@ -462,9 +478,10 @@ void WorkerDebugger::Close() {
 
 void WorkerDebugger::PostMessageToDebugger(const nsAString& aMessage) {
   mWorkerPrivate->AssertIsOnWorkerThread();
+  MOZ_ASSERT(mSelfHandle);
 
   RefPtr<PostDebuggerMessageRunnable> runnable =
-      new PostDebuggerMessageRunnable(this, aMessage);
+      new PostDebuggerMessageRunnable(mSelfHandle, aMessage);
   if (NS_FAILED(mWorkerPrivate->DispatchToMainThreadForMessaging(
           runnable.forget()))) {
     NS_WARNING("Failed to post message to debugger on main thread!");
@@ -484,9 +501,11 @@ void WorkerDebugger::ReportErrorToDebugger(const nsACString& aFilename,
                                            uint32_t aLineno,
                                            const nsAString& aMessage) {
   mWorkerPrivate->AssertIsOnWorkerThread();
+  MOZ_ASSERT(mSelfHandle);
 
   RefPtr<ReportDebuggerErrorRunnable> runnable =
-      new ReportDebuggerErrorRunnable(this, aFilename, aLineno, aMessage);
+      new ReportDebuggerErrorRunnable(mSelfHandle, aFilename, aLineno,
+                                      aMessage);
   if (NS_FAILED(mWorkerPrivate->DispatchToMainThreadForMessaging(
           runnable.forget()))) {
     NS_WARNING("Failed to report error to debugger on main thread!");

@@ -1,5 +1,3 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim:set ts=2 sw=2 sts=2 et cindent: */
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -68,7 +66,8 @@ already_AddRefed<Promise> SerialPortWriteAlgorithms::CloseOrAbortImpl(
     CloseOutputWithStatus(NS_ERROR_ABORT);
   }
 
-  RefPtr<Promise> promise = Promise::CreateInfallible(mPort->GetOwnerGlobal());
+  RefPtr<Promise> promise =
+      Promise::CreateInfallible(mPort->GetRelevantGlobal());
 
   nsCOMPtr<nsISerialEventTarget> owningThread = GetCurrentSerialEventTarget();
   nsISerialEventTarget* actorTarget = child->GetActorEventTarget();
@@ -181,7 +180,8 @@ already_AddRefed<Promise> SerialPortReadAlgorithms::CancelCallbackImpl(
     mInputStream->CloseWithStatus(NS_ERROR_ABORT);
   }
 
-  RefPtr<Promise> promise = Promise::CreateInfallible(mPort->GetOwnerGlobal());
+  RefPtr<Promise> promise =
+      Promise::CreateInfallible(mPort->GetRelevantGlobal());
 
   nsCOMPtr<nsISerialEventTarget> owningThread = GetCurrentSerialEventTarget();
   nsISerialEventTarget* actorTarget = child->GetActorEventTarget();

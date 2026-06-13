@@ -1730,8 +1730,6 @@ class SitePermissionsFeatureTest {
             assertNull(prompt)
             assertFalse(grantWasCalled)
         }
-
-        Unit
     }
 
     private fun mockFragmentManager(): FragmentManager {

@@ -4,6 +4,10 @@
 
 import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
 import { html, nothing } from "chrome://global/content/vendor/lit.all.mjs";
+// eslint-disable-next-line import/no-unassigned-import
+import "chrome://global/content/elements/moz-box-group.mjs";
+// eslint-disable-next-line import/no-unassigned-import
+import "chrome://global/content/elements/moz-box-item.mjs";
 
 /**
  * AppliedMemoriesButton
@@ -316,7 +320,7 @@ export class AppliedMemoriesButton extends MozLitElement {
       >
         ${this.#showCalloutState ? this.renderCallout() : nothing}
 
-        <ul
+        <moz-box-group
           class="memories-list"
           role="list"
           data-l10n-id="aiwindow-applied-memories-list"
@@ -326,23 +330,25 @@ export class AppliedMemoriesButton extends MozLitElement {
             // @todo Bug 2010069
             // Localize aria-label
             return html`
-              <li class="memories-list-item" role="listitem">
-                <span class="memories-list-label"
-                  >${memory.memory_summary}</span
-                >
+              <moz-box-item
+                class="memories-list-item"
+                role="listitem"
+                .label=${memory.memory_summary}
+              >
                 <moz-button
                   class="memories-remove-button"
                   tabindex="-1"
                   type="ghost"
                   size="small"
-                  iconsrc="chrome://global/skin/icons/close.svg"
+                  iconsrc="chrome://global/skin/icons/delete.svg"
                   aria-label="Delete ${memory.memory_summary}"
                   @click=${event => this._onRemoveMemory(event, memory)}
+                  slot="actions"
                 ></moz-button>
-              </li>
+              </moz-box-item>
             `;
           })}
-        </ul>
+        </moz-box-group>
 
         <div id="manage-memories-row" class="popover-action-row">
           <moz-button

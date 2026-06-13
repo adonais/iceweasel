@@ -6,12 +6,13 @@
       "matches": ["*://www.pge.com/*"]
     }
   },
+  "css": {
+    "hide_browser_notice": "#targetModal:has(#browsers) { display: none !important; pointer-events: none !important; }"
+  },
   "interventions": [
     {
       "platforms": ["all"],
-      "content_scripts": {
-        "css": ["bug2008115-pge.com-hide-unsupported-message.css"]
-      }
+      "css": ["hide_browser_notice"]
     }
   ]
 }

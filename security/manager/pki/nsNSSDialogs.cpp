@@ -17,7 +17,6 @@
 #include "nsIDialogParamBlock.h"
 #include "nsIInterfaceRequestor.h"
 #include "nsIInterfaceRequestorUtils.h"
-#include "nsIPK11Token.h"
 #include "nsIPromptService.h"
 #include "nsIWindowWatcher.h"
 #include "nsIX509CertDB.h"

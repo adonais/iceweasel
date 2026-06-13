@@ -311,12 +311,10 @@ class SharedSubResourceCache {
     return NS_OK;
   }
 
- private:
-  void ClearInProcessForMemoryPressure() {
+  virtual void ClearInProcessForMemoryPressure() {
     ClearInProcess(Nothing(), Nothing(), Nothing(), Nothing(), Nothing());
   }
 
- protected:
   void CancelPendingLoadsForLoader(Loader&);
 
   void WillStartPendingLoad(LoadingValue&);
@@ -336,7 +334,6 @@ class SharedSubResourceCache {
   // eviction as described in RegisterLoader / UnregisterLoader.
   nsTHashMap<PrincipalHashKey, uint32_t> mLoaderPrincipalRefCnt;
 
- protected:
   // Lazily created in the first Get() call.
   // The singleton should be deleted by DeleteSingleton() during shutdown.
   inline static MOZ_GLOBINIT StaticRefPtr<Derived> sSingleton;

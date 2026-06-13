@@ -15,10 +15,13 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -27,12 +30,14 @@ import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
@@ -47,12 +52,15 @@ import mozilla.components.compose.base.menu.MenuItem.FixedItem.Level
 import mozilla.components.compose.base.modifier.thenConditional
 import mozilla.components.compose.base.text.Text
 import mozilla.components.compose.base.text.value
+import mozilla.components.compose.base.theme.AcornCorners
 import mozilla.components.compose.base.theme.AcornTheme
 import androidx.compose.material3.DropdownMenu as MaterialDropdownMenu
 import androidx.compose.material3.DropdownMenuItem as MaterialDropdownMenuItem
 import mozilla.components.ui.icons.R as iconsR
 
 private val MenuItemHeight = 48.dp
+private val MenuMinWidth = 112.dp
+private val MenuMaxWidth = 280.dp
 
 /**
  * A dropdown menu that displays a list of [MenuItem]s. The menu can be expanded or collapsed and
@@ -78,16 +86,19 @@ fun DropdownMenu(
     MaterialDropdownMenu(
         expanded = expanded,
         onDismissRequest = onDismissRequest,
-        modifier = modifier,
+        modifier = modifier
+            .widthIn(MenuMinWidth, MenuMaxWidth),
         offset = offset,
         scrollState = scrollState,
         containerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
+        shape = RoundedCornerShape(size = AcornCorners.extraLarge),
     ) {
+        Spacer(modifier = Modifier.height(height = AcornTheme.layout.space.static100))
         DropdownMenuContent(
             menuItems = menuItems,
             onDismissRequest = onDismissRequest,
         )
-
+        Spacer(modifier = Modifier.height(height = AcornTheme.layout.space.static100))
         val density = LocalDensity.current
 
         LaunchedEffect(Unit) {
@@ -100,6 +111,21 @@ fun DropdownMenu(
                 }
             }
         }
+    }
+}
+
+/**
+ * Supporting text should differ from the primary text
+ * only in the case of an enabled, default item.
+ * For 'Disabled' and 'Critical' menu items, the text should match.
+ */
+@Composable
+@ReadOnlyComposable
+private fun MenuItem.FixedItem.supportingTextColor(): Color {
+    return if (this.enabled && this.level == Level.Default) {
+        MaterialTheme.colorScheme.onSurfaceVariant
+    } else {
+        Color.Unspecified
     }
 }
 
@@ -180,6 +206,7 @@ private fun TextMenuItemContent(
     MenuItemText(
         text = item.text,
         supportingText = item.supportingText,
+        supportingTextColor = item.supportingTextColor(),
     )
 }
 
@@ -199,6 +226,7 @@ private fun CheckableMenuItemContent(
     MenuItemText(
         text = item.text,
         supportingText = item.supportingText,
+        supportingTextColor = item.supportingTextColor(),
     )
 }
 
@@ -214,6 +242,7 @@ private fun IconMenuItemContent(
     MenuItemText(
         text = item.text,
         supportingText = item.supportingText,
+        supportingTextColor = item.supportingTextColor(),
     )
 }
 
@@ -250,7 +279,11 @@ private fun FlexibleDropdownMenuItem(
 }
 
 @Composable
-private fun MenuItemText(text: Text, supportingText: Text? = null) {
+private fun MenuItemText(
+    text: Text,
+    supportingText: Text? = null,
+    supportingTextColor: Color,
+) {
     Column(
         verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
@@ -262,8 +295,8 @@ private fun MenuItemText(text: Text, supportingText: Text? = null) {
         supportingText?.let {
             Text(
                 text = it.value,
-                style = AcornTheme.typography.body1,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = supportingTextColor,
+                style = AcornTheme.typography.body2,
             )
         }
     }
@@ -321,6 +354,7 @@ private val menuPreviewParameters by lazy {
                     drawableRes = iconsR.drawable.mozac_ic_delete_24,
                     level = Level.Critical,
                     onClick = {},
+                    supportingText = Text.String("Supporting text"),
                 ),
                 MenuItem.IconItem(
                     text = Text.String("Have a cookie!"),
@@ -399,7 +433,7 @@ private fun DropdownMenuPreview() {
                     mutableStateOf(menuPreviewParameters.map { it.menuItems.first() })
                 }
 
-                DropdownMenuContent(menuItems) { }
+                DropdownMenuContent(menuItems, onDismissRequest = {})
             }
 
             Text(
@@ -420,7 +454,7 @@ private fun DropdownMenuPreview() {
                     dividerList
                 }
 
-                DropdownMenuContent(menuItems) { }
+                DropdownMenuContent(menuItems, onDismissRequest = {})
             }
 
             Text(
@@ -437,19 +471,23 @@ private fun DropdownMenuPreview() {
                         when (item) {
                             is MenuItem.TextItem ->
                                 item.copy(enabled = false)
+
                             is MenuItem.IconItem ->
                                 item.copy(enabled = false)
+
                             is MenuItem.CheckableItem ->
                                 item.copy(enabled = false)
+
                             is MenuItem.CustomMenuItem ->
                                 item
+
                             is MenuItem.Divider ->
                                 item
                         }
                     }
                 }
 
-                DropdownMenuContent(disabledMenuItems) { }
+                DropdownMenuContent(disabledMenuItems, onDismissRequest = {})
             }
 
             Text(

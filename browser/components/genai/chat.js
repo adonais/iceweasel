@@ -132,6 +132,7 @@ function renderChat() {
   const browserContainer = document.getElementById("browser-container");
   browser.setAttribute("disableglobalhistory", "true");
   browser.setAttribute("maychangeremoteness", "true");
+  browser.setAttribute("messagemanagergroup", "chatbot-browser");
   browser.setAttribute("nodefaultsrc", "true");
   browser.setAttribute("remote", "true");
   browser.setAttribute("type", "content");

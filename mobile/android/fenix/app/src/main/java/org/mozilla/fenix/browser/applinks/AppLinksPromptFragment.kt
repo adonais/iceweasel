@@ -5,6 +5,7 @@
 package org.mozilla.fenix.browser.applinks
 
 import android.app.Dialog
+import android.content.DialogInterface
 import android.content.pm.PackageManager
 import android.graphics.drawable.Drawable
 import android.os.Bundle
@@ -131,6 +132,11 @@ class AppLinksPromptFragment : RedirectDialogFragment() {
                 behavior.state = BottomSheetBehavior.STATE_EXPANDED
             }
         }
+
+    override fun onCancel(dialog: DialogInterface) {
+        onDismissRedirect()
+        super.onCancel(dialog)
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,

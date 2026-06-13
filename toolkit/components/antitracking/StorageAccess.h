@@ -38,9 +38,9 @@ enum class StorageAccess {
   // private browsing context.
   ePrivateBrowsing = 1,
   // Allow access to the storage
-  eAllow = 3,
+  eAllow = 2,
   // Keep this at the end.  Used for serialization, but not a valid value.
-  eNumValues = 4,
+  eNumValues = 3,
 };
 
 /*

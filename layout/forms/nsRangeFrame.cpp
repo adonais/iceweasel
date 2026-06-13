@@ -8,6 +8,7 @@
 #include "gfxContext.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/PresShell.h"
+#include "mozilla/ReflowInput.h"
 #include "mozilla/ServoStyleSet.h"
 #include "mozilla/TouchEvents.h"
 #include "mozilla/dom/Document.h"

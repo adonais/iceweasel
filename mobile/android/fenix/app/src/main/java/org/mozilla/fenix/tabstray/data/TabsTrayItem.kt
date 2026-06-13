@@ -8,11 +8,15 @@ import android.graphics.Bitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.browser.state.state.isActive
+import mozilla.components.compose.base.theme.layout.AcornWindowSize
 import mozilla.components.concept.engine.utils.ABOUT_HOME_URL
 import org.mozilla.fenix.compose.TabThumbnailImageData
 import org.mozilla.fenix.ext.maxActiveTime
 import org.mozilla.fenix.tabstray.ext.toDisplayTitle
 import java.util.UUID
+
+private const val SMALL_WINDOW_FULL_EXPAND_TAB_COUNT = 4
+private const val MEDIUM_LARGE_WINDOW_FULL_EXPAND_TAB_COUNT = 8
 
 /**
  * Data entity representing items in the Tabs Tray.
@@ -36,7 +40,7 @@ sealed class TabsTrayItem(
      * @property private Whether the tab is private.
      * @property icon The bitmap of the tab's favicon.
      * @property lastAccess The last time this tab was accessed.
-     * @property isFocused Whether the tab is focused.
+     * @property isFocused Whether the tab is focused. This is only set when the tab data model is generated.
      */
     data class Tab(
         override val id: String,
@@ -85,7 +89,10 @@ sealed class TabsTrayItem(
      * @property theme The group's [TabGroupTheme].
      * @property tabs The set of [Tab]s within the group.
      * @property closed Whether the group is closed and does not appear in the main tab item list.
-     * @property isFocused Whether the tab is focused.
+     * @property lastModified Timestamp indicating the last time this group was updated.
+     * @property isFocused Whether the tab is focused. This is only set when the tab data model is generated.
+     * @property initialScrollIndex The index to open the tab group to when first expanded. This is only set when the
+     * tab data model is generated.
      */
     data class TabGroup(
         override val id: String = UUID.randomUUID().toString(),
@@ -93,7 +100,9 @@ sealed class TabsTrayItem(
         val theme: TabGroupTheme,
         val tabs: MutableList<Tab>,
         val closed: Boolean = false,
+        val lastModified: Long = 0L,
         override var isFocused: Boolean = false,
+        var initialScrollIndex: Int = 0,
     ) : TabsTrayItem(
         id = id,
         isHomepageItem = false,
@@ -105,6 +114,15 @@ sealed class TabsTrayItem(
         val thumbnails by lazy {
             tabs.take(4).map { it.toThumbnailImageData() }
         }
+
+        /**
+         * Helper function to determine whether to fully expand a tab group.
+         *
+         * @param windowSize The [AcornWindowSize] of the app window.
+         */
+        fun shouldFullyExpandOnFirstOpen(windowSize: AcornWindowSize): Boolean =
+            (windowSize == AcornWindowSize.Small && tabs.size >= SMALL_WINDOW_FULL_EXPAND_TAB_COUNT) ||
+                (windowSize.isNotSmall() && tabs.size >= MEDIUM_LARGE_WINDOW_FULL_EXPAND_TAB_COUNT)
     }
 
     /**
@@ -148,12 +166,16 @@ internal fun createTabGroup(
     theme: TabGroupTheme = TabGroupTheme.default,
     tabs: MutableList<TabsTrayItem.Tab> = mutableListOf(),
     closed: Boolean = false,
+    lastModified: Long = 0L,
     isFocused: Boolean = false,
+    initialScrollIndex: Int = 0,
 ): TabsTrayItem.TabGroup = TabsTrayItem.TabGroup(
     id = id,
     title = title,
     theme = theme,
     tabs = tabs,
     closed = closed,
+    lastModified = lastModified,
     isFocused = isFocused,
+    initialScrollIndex = initialScrollIndex,
 )

@@ -1169,10 +1169,8 @@ static bool CanAttachDOMCall(JSContext* cx, JSJitInfo::OpType type,
   }
 
   // Ion codegen expects DOM_OBJECT_SLOT to be a fixed slot in LoadDOMPrivate.
-  // It can be a dynamic slot if we transplanted this reflector object with a
-  // proxy.
-  if (obj->is<NativeObject>() && obj->as<NativeObject>().numFixedSlots() == 0) {
-    return false;
+  if (obj->is<NativeObject>()) {
+    MOZ_RELEASE_ASSERT(obj->as<NativeObject>().numFixedSlots() > 0);
   }
 
   // Tell the analysis the |DOMInstanceClassHasProtoAtDepth| hook can't GC.
@@ -6127,7 +6125,7 @@ AttachDecision OptimizeSpreadCallIRGenerator::tryAttachArguments() {
 
   Rooted<Shape*> shape(cx_, GlobalObject::getArrayShapeWithDefaultProto(cx_));
   if (!shape) {
-    cx_->clearPendingException();
+    cx_->recoverFromResourceExhaustion();
     return AttachDecision::NoAction;
   }
 
@@ -7585,7 +7583,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachCanOptimizeArraySpecies() {
 
   SharedShape* shape = GlobalObject::getArrayShapeWithDefaultProto(cx_);
   if (!shape) {
-    cx_->recoverFromOutOfMemory();
+    cx_->recoverFromResourceExhaustion();
     return AttachDecision::NoAction;
   }
 
@@ -7822,8 +7820,7 @@ static JitCode* GetOrCreateRegExpStub(JSContext* cx, InlinableNative native) {
   // shape.
   if (!GlobalObject::getRegExpStatics(cx, cx->global()) ||
       !cx->global()->regExpRealm().getOrCreateMatchResultShape(cx)) {
-    MOZ_ASSERT(cx->isThrowingOutOfMemory() || cx->isThrowingOverRecursed());
-    cx->clearPendingException();
+    cx->recoverFromResourceExhaustion();
     return nullptr;
   }
   JitZone::StubKind kind;
@@ -7847,8 +7844,7 @@ static JitCode* GetOrCreateRegExpStub(JSContext* cx, InlinableNative native) {
   }
   JitCode* code = cx->zone()->jitZone()->ensureStubExists(cx, kind);
   if (!code) {
-    MOZ_ASSERT(cx->isThrowingOutOfMemory() || cx->isThrowingOverRecursed());
-    cx->clearPendingException();
+    cx->recoverFromResourceExhaustion();
     return nullptr;
   }
   return code;
@@ -10473,7 +10469,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachObjectKeys() {
   Shape* expectedObjKeysShape =
       GlobalObject::getArrayShapeWithDefaultProto(cx_);
   if (!expectedObjKeysShape) {
-    cx_->recoverFromOutOfMemory();
+    cx_->recoverFromResourceExhaustion();
     return AttachDecision::NoAction;
   }
 
@@ -11287,6 +11283,106 @@ AttachDecision InlinableNativeIRGenerator::tryAttachDateGet(
       trackAttached("DateGetSeconds");
       break;
   }
+  return AttachDecision::Attach;
+}
+
+AttachDecision InlinableNativeIRGenerator::tryAttachDateNow() {
+  // Expecting no arguments.
+  if (argsLength() != 0) {
+    return AttachDecision::NoAction;
+  }
+
+  // Initialize the input operand.
+  Int32OperandId argcId = initializeInputOperand();
+
+  // Guard callee is the 'now' native function.
+  emitNativeCalleeGuard(argcId);
+
+  NumberOperandId nowId = writer.dateNow();
+  writer.loadDoubleResult(nowId);
+
+  writer.returnFromIC();
+
+  trackAttached("DateNow");
+  return AttachDecision::Attach;
+}
+
+AttachDecision InlinableNativeIRGenerator::tryAttachDateParse() {
+  // Need one String argument.
+  if (argsLength() != 1 || !arg(0).isString()) {
+    return AttachDecision::NoAction;
+  }
+
+  // Initialize the input operand.
+  Int32OperandId argcId = initializeInputOperand();
+
+  // Guard callee is the 'parse' native function.
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
+
+  // Guard string argument.
+  ValOperandId argId = loadArgument(calleeId, ArgumentKind::Arg0);
+  StringOperandId strId = writer.guardToString(argId);
+  StringOperandId linearStrId = writer.linearizeString(strId);
+
+  NumberOperandId timeId = writer.dateParse(linearStrId);
+  writer.loadDoubleResult(timeId);
+
+  writer.returnFromIC();
+
+  trackAttached("DateParse");
+  return AttachDecision::Attach;
+}
+
+AttachDecision InlinableNativeIRGenerator::tryAttachDateConstructor() {
+  // Expecting no arguments or a single number or string argument.
+  if (argsLength() > 1) {
+    return AttachDecision::NoAction;
+  }
+  if (argsLength() == 1 && !arg(0).isNumber() && !arg(0).isString()) {
+    return AttachDecision::NoAction;
+  }
+
+  auto* templateObj = DateObject::createTemplateObject(cx_);
+  if (!templateObj) {
+    cx_->recoverFromOutOfMemory();
+    return AttachDecision::NoAction;
+  }
+
+  // Initialize the input operand.
+  Int32OperandId argcId = initializeInputOperand();
+
+  // Guard callee is the 'Date' function.
+  ObjOperandId calleeId = emitNativeCalleeGuard(argcId);
+
+  NumberOperandId utcTimeId;
+  if (argsLength() == 0) {
+    // Current time when no arguments are present.
+    utcTimeId = writer.dateNow();
+  } else {
+    ValOperandId argId = loadArgument(calleeId, ArgumentKind::Arg0);
+
+    if (arg(0).isNumber()) {
+      // Guard number argument.
+      NumberOperandId numId = writer.guardIsNumber(argId);
+
+      // Clip number to time.
+      utcTimeId = writer.timeClip(numId);
+    } else {
+      MOZ_ASSERT(arg(0).isString());
+
+      // Guard string argument.
+      StringOperandId strId = writer.guardToString(argId);
+      StringOperandId linearStrId = writer.linearizeString(strId);
+
+      // Parse string as date.
+      utcTimeId = writer.dateParse(linearStrId);
+    }
+  }
+
+  writer.newDateObjectResult(templateObj, utcTimeId);
+  writer.returnFromIC();
+
+  trackAttached("DateConstructor");
   return AttachDecision::Attach;
 }
 
@@ -13127,6 +13223,8 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStub() {
         return tryAttachStringConstructor();
       case InlinableNative::Object:
         return tryAttachObjectConstructor();
+      case InlinableNative::Date:
+        return tryAttachDateConstructor();
       default:
         break;
     }
@@ -13595,6 +13693,9 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStub() {
       return tryAttachMapSize();
 
     // Date natives and intrinsics.
+    case InlinableNative::Date:
+      return AttachDecision::NoAction;  // Not inlined when called as a
+                                        // function.
     case InlinableNative::DateGetTime:
       return tryAttachDateGetTime();
     case InlinableNative::DateGetFullYear:
@@ -13611,6 +13712,10 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStub() {
       return tryAttachDateGet(DateComponent::Minutes);
     case InlinableNative::DateGetSeconds:
       return tryAttachDateGet(DateComponent::Seconds);
+    case InlinableNative::DateNow:
+      return tryAttachDateNow();
+    case InlinableNative::DateParse:
+      return tryAttachDateParse();
 
     // WeakMap/WeakSet natives.
     case InlinableNative::WeakMapGet:
@@ -14658,10 +14763,8 @@ static JSObject* NewWrapperWithObjectShape(JSContext* cx,
 
 void jit::LoadShapeWrapperContents(MacroAssembler& masm, Register obj,
                                    Register dst, Label* failure) {
-  masm.loadPtr(Address(obj, ProxyObject::offsetOfReservedSlots()), dst);
-  Address privateAddr(dst,
-                      js::detail::ProxyReservedSlots::offsetOfPrivateSlot());
-  masm.fallibleUnboxObject(privateAddr, dst, failure);
+  masm.fallibleUnboxObject(Address(obj, ProxyObject::offsetOfPrivateSlot()),
+                           dst, failure);
   masm.unboxNonDouble(
       Address(dst, NativeObject::getFixedSlotOffset(SHAPE_CONTAINER_SLOT)), dst,
       JSVAL_TYPE_PRIVATE_GCTHING);
@@ -15735,7 +15838,6 @@ AttachDecision UnaryArithIRGenerator::tryAttachDateToNumber() {
   if (!val_.isObject() || !val_.toObject().is<DateObject>()) {
     return AttachDecision::NoAction;
   }
-  MOZ_ASSERT(res_.isNumber());
 
   DateObject* obj = &val_.toObject().as<DateObject>();
 
@@ -15743,6 +15845,7 @@ AttachDecision UnaryArithIRGenerator::tryAttachDateToNumber() {
   if (!canOptimizeDateObjectToNumber(obj, &info)) {
     return AttachDecision::NoAction;
   }
+  MOZ_ASSERT(res_.isNumber());
 
   ValOperandId valId(writer.setInputOperandId(0));
   NumberOperandId numId = emitGuardDateObjectToNumber(obj, valId, info);

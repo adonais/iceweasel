@@ -703,9 +703,8 @@ nsresult IMEContentObserver::HandleQueryContentEvent(
   // value.  Note that don't update selection cache here since if you update
   // selection cache here, IMENotificationSender won't notify IME of selection
   // change because it looks like that the selection isn't actually changed.
-  const bool isSelectionCacheAvailable = aEvent->mUseNativeLineBreak &&
-                                         mSelectionData.IsInitialized() &&
-                                         !mNeedsToNotifyIMEOfSelectionChange;
+  const bool isSelectionCacheAvailable =
+      mSelectionData.IsInitialized() && !mNeedsToNotifyIMEOfSelectionChange;
   if (isSelectionCacheAvailable && aEvent->mMessage == eQuerySelectedText &&
       aEvent->mInput.mSelectionType == SelectionType::eNormal) {
     aEvent->EmplaceReply();
@@ -791,15 +790,14 @@ nsresult IMEContentObserver::MaybeHandleSelectionEvent(
   NS_ASSERTION(!mNeedsToNotifyIMEOfSelectionChange,
                "Selection cache has not been updated yet");
 
-  MOZ_LOG(
-      sIMECOLog, LogLevel::Debug,
-      ("0x%p MaybeHandleSelectionEvent(aEvent={ "
-       "mMessage=%s, mOffset=%u, mLength=%u, mReversed=%s, "
-       "mExpandToClusterBoundary=%s, mUseNativeLineBreak=%s }), "
-       "mSelectionData=%s",
-       this, ToChar(aEvent->mMessage), aEvent->mOffset, aEvent->mLength,
-       ToChar(aEvent->mReversed), ToChar(aEvent->mExpandToClusterBoundary),
-       ToChar(aEvent->mUseNativeLineBreak), ToString(mSelectionData).c_str()));
+  MOZ_LOG(sIMECOLog, LogLevel::Debug,
+          ("0x%p MaybeHandleSelectionEvent(aEvent={ "
+           "mMessage=%s, mOffset=%u, mLength=%u, mReversed=%s, "
+           "mExpandToClusterBoundary=%s }), "
+           "mSelectionData=%s",
+           this, ToChar(aEvent->mMessage), aEvent->mOffset, aEvent->mLength,
+           ToChar(aEvent->mReversed), ToChar(aEvent->mExpandToClusterBoundary),
+           ToString(mSelectionData).c_str()));
 
   // When we have Selection cache, and the caller wants to set same selection
   // range, we shouldn't try to compute same range because it may be impossible
@@ -807,12 +805,8 @@ nsresult IMEContentObserver::MaybeHandleSelectionEvent(
   // serialized with line breaks like close tags of inline elements.  In that
   // case, inserting new text at different point may be different from intention
   // of users or web apps which set current selection.
-  // FIXME: We cache only selection data computed with native line breaker
-  // lengths.  Perhaps, we should improve the struct to have both data of
-  // offset and length.  E.g., adding line break counts for both offset and
-  // length.
-  if (!mNeedsToNotifyIMEOfSelectionChange && aEvent->mUseNativeLineBreak &&
-      mSelectionData.IsInitialized() && mSelectionData.HasRange() &&
+  if (!mNeedsToNotifyIMEOfSelectionChange && mSelectionData.IsInitialized() &&
+      mSelectionData.HasRange() &&
       mSelectionData.StartOffset() == aEvent->mOffset &&
       mSelectionData.Length() == aEvent->mLength) {
     if (RefPtr<Selection> selection = GetSelection()) {
@@ -986,8 +980,7 @@ void IMEContentObserver::CharacterDataChanged(
   } else {
     nsresult rv = ContentEventHandler::GetFlatTextLengthInRange(
         RawNodePosition::BeforeFirstContentOf(*mRootElement),
-        RawNodePosition(aContent, aInfo.mChangeStart), mRootElement, &offset,
-        LINE_BREAK_TYPE_NATIVE);
+        RawNodePosition(aContent, aInfo.mChangeStart), mRootElement, &offset);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return;
     }
@@ -2344,8 +2337,7 @@ nsresult IMEContentObserver::FlatTextCache::
   uint32_t length = 0;
   nsresult rv = ContentEventHandler::GetFlatTextLengthInRange(
       RawNodePosition::BeforeFirstContentOf(*aRootElement),
-      RawNodePosition::After(aContent), aRootElement, &length,
-      LineBreakType::LINE_BREAK_TYPE_NATIVE);
+      RawNodePosition::After(aContent), aRootElement, &length);
   if (NS_FAILED(rv)) {
     Clear(aCallerName);
     return rv;
@@ -2540,7 +2532,7 @@ IMEContentObserver::FlatTextCache::ComputeTextLengthOfContent(
     start.mAfterOpenTag = false;
     nsresult rv = ContentEventHandler::GetFlatTextLengthInRange(
         start, RawNodePosition::AtEndOf(aContent), aRootElement, &textLength,
-        LineBreakType::LINE_BREAK_TYPE_NATIVE, /* aIsRemovingNode = */ true);
+        /* aIsRemovingNode = */ true);
     if (NS_FAILED(rv)) {
       return Err(rv);
     }
@@ -2558,8 +2550,8 @@ IMEContentObserver::FlatTextCache::ComputeTextLengthBeforeContent(
   uint32_t textLengthBeforeContent = 0;
   nsresult rv = ContentEventHandler::GetFlatTextLengthInRange(
       RawNodePosition::BeforeFirstContentOf(*aRootElement),
-      RawNodePosition::Before(aContent), aRootElement, &textLengthBeforeContent,
-      LineBreakType::LINE_BREAK_TYPE_NATIVE);
+      RawNodePosition::Before(aContent), aRootElement,
+      &textLengthBeforeContent);
   if (NS_FAILED(rv)) {
     return Err(rv);
   }
@@ -2574,8 +2566,7 @@ Result<uint32_t, nsresult> IMEContentObserver::FlatTextCache::
   uint32_t textLength = 0;
   nsresult rv = ContentEventHandler::GetFlatTextLengthInRange(
       RawNodePosition::Before(aStartContent),
-      RawNodePosition::After(aEndContent), aRootElement, &textLength,
-      LineBreakType::LINE_BREAK_TYPE_NATIVE);
+      RawNodePosition::After(aEndContent), aRootElement, &textLength);
   if (NS_FAILED(rv)) {
     return Err(rv);
   }
@@ -2592,8 +2583,7 @@ IMEContentObserver::FlatTextCache::ComputeTextLengthBeforeFirstContentOf(
       // Include the line break caused by open tag of aContainer if it's an
       // element when we cache text length before first content of aContainer.
       RawNodePosition(const_cast<nsINode*>(&aContainer), nullptr), aRootElement,
-      &lengthIncludingLineBreakCausedByOpenTagOfContent,
-      LineBreakType::LINE_BREAK_TYPE_NATIVE);
+      &lengthIncludingLineBreakCausedByOpenTagOfContent);
   if (NS_FAILED(rv)) {
     return Err(rv);
   }

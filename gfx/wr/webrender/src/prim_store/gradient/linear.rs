@@ -9,7 +9,7 @@
 //! Linear gradients are rendered via cached render tasks and composited with the image brush.
 
 use euclid::approxeq::ApproxEq;
-use euclid::{point2, vec2};
+use euclid::point2;
 use api::{ExtendMode, GradientStop};
 use api::units::*;
 use crate::pattern::gradient::linear_gradient_pattern;
@@ -18,16 +18,13 @@ use crate::scene_building::IsVisible;
 use crate::intern::{Internable, InternDebug, Handle as InternHandle};
 use crate::internal_types::LayoutPrimitiveInfo;
 use crate::image_tiling::simplify_repeated_primitive;
-use crate::prim_store::BrushSegment;
-use crate::prim_store::{PrimitiveInstanceKind, PrimitiveOpacity};
+use crate::prim_store::{PrimitiveKind, PrimitiveOpacity};
 use crate::prim_store::{PrimKeyCommonData, PrimTemplateCommonData, PrimitiveStore};
 use crate::prim_store::{NinePatchDescriptor, PointKey, SizeKey, InternablePrimitive};
 use crate::segment::EdgeMask;
 use super::{stops_and_min_alpha, GradientStopKey, apply_gradient_local_clip};
 use std::ops::{Deref, DerefMut};
 use std::mem::swap;
-
-pub const MAX_CACHED_SIZE: f32 = 1024.0;
 
 /// Identifying key for a linear gradient.
 #[cfg_attr(feature = "capture", derive(Serialize))]
@@ -38,7 +35,9 @@ pub struct LinearGradientKey {
     pub extend_mode: ExtendMode,
     pub start_point: PointKey,
     pub end_point: PointKey,
-    pub stretch_size: SizeKey,
+    /// Per-axis tile size encoded as a fraction of `common.prim_size`. The
+    /// runtime `stretch_size` is `stretch_ratio * common.prim_size`.
+    pub stretch_ratio: SizeKey,
     pub tile_spacing: SizeKey,
     pub stops: Vec<GradientStopKey>,
     pub reverse_stops: bool,
@@ -56,7 +55,7 @@ impl LinearGradientKey {
             extend_mode: linear_grad.extend_mode,
             start_point: linear_grad.start_point,
             end_point: linear_grad.end_point,
-            stretch_size: linear_grad.stretch_size,
+            stretch_ratio: linear_grad.stretch_ratio,
             tile_spacing: linear_grad.tile_spacing,
             stops: linear_grad.stops,
             reverse_stops: linear_grad.reverse_stops,
@@ -76,13 +75,13 @@ pub struct LinearGradientTemplate {
     pub extend_mode: ExtendMode,
     pub start_point: LayoutPoint,
     pub end_point: LayoutPoint,
-    pub task_size: DeviceIntSize,
-    pub scale: DeviceVector2D,
-    pub stretch_size: LayoutSize,
+    /// Per-axis fraction of `common.prim_size` covered by one tile of the
+    /// gradient pattern. Multiply by `common.prim_size` at use to recover the
+    /// absolute stretch_size.
+    pub stretch_ratio: LayoutSize,
     pub tile_spacing: LayoutSize,
     pub stops_opacity: PrimitiveOpacity,
     pub stops: Vec<GradientStop>,
-    pub brush_segments: Vec<BrushSegment>,
     pub border_nine_patch: Option<Box<NinePatchDescriptor>>,
     pub reverse_stops: bool,
 }
@@ -364,12 +363,6 @@ impl From<LinearGradientKey> for LinearGradientTemplate {
 
         let (stops, min_alpha) = stops_and_min_alpha(&item.stops);
 
-        let mut brush_segments = Vec::new();
-
-        if let Some(ref nine_patch) = item.nine_patch {
-            brush_segments = nine_patch.create_brush_segments(common.prim_size);
-        }
-
         // Save opacity of the stops for use in
         // selecting which pass this gradient
         // should be drawn in.
@@ -378,52 +371,17 @@ impl From<LinearGradientKey> for LinearGradientTemplate {
         let start_point = LayoutPoint::new(item.start_point.x, item.start_point.y);
         let end_point = LayoutPoint::new(item.end_point.x, item.end_point.y);
         let tile_spacing: LayoutSize = item.tile_spacing.into();
-        let stretch_size: LayoutSize = item.stretch_size.into();
-        let mut task_size: DeviceSize = stretch_size.cast_unit();
-
-        let horizontal = !item.enable_dithering &&
-            start_point.y.approx_eq(&end_point.y);
-        let vertical = !item.enable_dithering &&
-            start_point.x.approx_eq(&end_point.x);
-
-        if horizontal {
-            // Completely horizontal, we can stretch the gradient vertically.
-            task_size.height = 1.0;
-        }
-
-        if vertical {
-            // Completely vertical, we can stretch the gradient horizontally.
-            task_size.width = 1.0;
-        }
-
-        // Avoid rendering enormous gradients. Linear gradients are mostly made of soft transitions,
-        // so it is unlikely that rendering at a higher resolution than 1024 would produce noticeable
-        // differences, especially with 8 bits per channel.
-
-        let mut scale = vec2(1.0, 1.0);
-
-        if task_size.width > MAX_CACHED_SIZE {
-            scale.x = task_size.width / MAX_CACHED_SIZE;
-            task_size.width = MAX_CACHED_SIZE;
-        }
-
-        if task_size.height > MAX_CACHED_SIZE {
-            scale.y = task_size.height / MAX_CACHED_SIZE;
-            task_size.height = MAX_CACHED_SIZE;
-        }
+        let stretch_ratio: LayoutSize = item.stretch_ratio.into();
 
         LinearGradientTemplate {
             common,
             extend_mode: item.extend_mode,
             start_point,
             end_point,
-            task_size: task_size.ceil().to_i32(),
-            scale,
-            stretch_size,
+            stretch_ratio,
             tile_spacing,
             stops_opacity,
             stops,
-            brush_segments,
             border_nine_patch: item.nine_patch,
             reverse_stops: item.reverse_stops,
         }
@@ -439,7 +397,9 @@ pub struct LinearGradient {
     pub extend_mode: ExtendMode,
     pub start_point: PointKey,
     pub end_point: PointKey,
-    pub stretch_size: SizeKey,
+    /// Per-axis tile size encoded as a fraction of the prim's size. See
+    /// [`LinearGradientKey::stretch_ratio`].
+    pub stretch_ratio: SizeKey,
     pub tile_spacing: SizeKey,
     pub stops: Vec<GradientStopKey>,
     pub reverse_stops: bool,
@@ -467,8 +427,8 @@ impl InternablePrimitive for LinearGradient {
         _key: LinearGradientKey,
         data_handle: LinearGradientDataHandle,
         _prim_store: &mut PrimitiveStore,
-    ) -> PrimitiveInstanceKind {
-        PrimitiveInstanceKind::LinearGradient {
+    ) -> PrimitiveKind {
+        PrimitiveKind::LinearGradient {
             data_handle,
         }
     }

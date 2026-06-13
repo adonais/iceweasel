@@ -42,8 +42,8 @@ class nsNotifyAddrListener : public nsINetworkLinkService,
                                    mozilla::SHA1Sum& sha1);
 
  protected:
-  bool mLinkUp{true};  // assume true by default
-  bool mStatusKnown{false};
+  mozilla::Atomic<bool, mozilla::Relaxed> mLinkUp{true};
+  mozilla::Atomic<bool, mozilla::Relaxed> mStatusKnown{false};
   bool mCheckAttempted{false};
 
   nsresult Shutdown(void);
@@ -66,10 +66,10 @@ class nsNotifyAddrListener : public nsINetworkLinkService,
   void calculateNetworkId(void);
   bool findMac(char* gateway);
 
-  mozilla::Mutex mMutex MOZ_UNANNOTATED{"nsNotifyAddrListener::mMutex"};
-  nsCString mNetworkId;
-  nsTArray<nsCString> mDnsSuffixList;
-  nsTArray<mozilla::net::NetAddr> mDNSResolvers;
+  mozilla::Mutex mMutex{"nsNotifyAddrListener::mMutex"};
+  nsCString mNetworkId MOZ_GUARDED_BY(mMutex);
+  nsTArray<nsCString> mDnsSuffixList MOZ_GUARDED_BY(mMutex);
+  nsTArray<mozilla::net::NetAddr> mDNSResolvers MOZ_GUARDED_BY(mMutex);
 
   HANDLE mCheckEvent{nullptr};
 

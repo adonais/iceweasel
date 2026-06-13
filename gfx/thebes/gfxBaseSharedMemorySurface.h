@@ -38,6 +38,11 @@ class gfxBaseSharedMemorySurface : public Base {
   }
 
  public:
+  // Calling these is very bad, disallow it
+  gfxBaseSharedMemorySurface(const gfxBaseSharedMemorySurface&) = delete;
+  gfxBaseSharedMemorySurface& operator=(const gfxBaseSharedMemorySurface&) =
+      delete;
+
   /**
    * Return a new gfxSharedImageSurface around a shmem segment newly
    * allocated by this function.  |aAllocator| is the object used to
@@ -152,10 +157,6 @@ class gfxBaseSharedMemorySurface : public Base {
   }
 
   Shmem mShmem;
-
-  // Calling these is very bad, disallow it
-  gfxBaseSharedMemorySurface(const gfxBaseSharedMemorySurface&);
-  gfxBaseSharedMemorySurface& operator=(const gfxBaseSharedMemorySurface&);
 };
 
 #endif /* GFX_SHARED_MEMORYSURFACE_H */

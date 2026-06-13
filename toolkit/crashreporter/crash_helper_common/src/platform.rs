@@ -6,7 +6,7 @@
 pub use windows::{server_addr, PlatformError, ProcessHandle};
 
 #[cfg(target_os = "windows")]
-pub(crate) use windows::CHILD_RENDEZVOUS_ANCILLARY_DATA_LEN;
+pub(crate) use windows::PROCESS_RENDEZVOUS_ANCILLARY_DATA_LEN;
 
 #[cfg(target_os = "windows")]
 pub(crate) mod windows;
@@ -15,7 +15,7 @@ pub(crate) mod windows;
 pub use linux::{PlatformError, ProcessHandle};
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
-pub(crate) use linux::CHILD_RENDEZVOUS_ANCILLARY_DATA_LEN;
+pub(crate) use linux::PROCESS_RENDEZVOUS_ANCILLARY_DATA_LEN;
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
 pub(crate) mod linux;
@@ -27,7 +27,7 @@ pub use mach::{
 };
 
 #[cfg(any(target_os = "macos", target_os = "ios"))]
-pub(crate) use mach::CHILD_RENDEZVOUS_ANCILLARY_DATA_LEN;
+pub(crate) use mach::PROCESS_RENDEZVOUS_ANCILLARY_DATA_LEN;
 
 #[cfg(any(target_os = "macos", target_os = "ios"))]
 pub(crate) mod mach;

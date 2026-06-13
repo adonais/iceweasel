@@ -200,8 +200,14 @@ class nsWindow final : public nsIWidget {
   bool IsVisible() const override;
   void ConstrainPosition(DesktopIntPoint&) override;
   void SetSizeConstraints(const SizeConstraints& aConstraints) override;
+  struct DeviceSizeConstraints {
+    int32_t mMinWidth;
+    int32_t mMinHeight;
+    int32_t mMaxWidth;
+    int32_t mMaxHeight;
+  };
+  DeviceSizeConstraints GetDeviceSizeConstraints() const;
   void LockAspectRatio(bool aShouldLock) override;
-  const SizeConstraints GetSizeConstraints() override;
   void SetInputRegion(const InputRegion&) override;
   void Move(const DesktopPoint&) override;
   void Resize(const DesktopSize&, bool aRepaint) override;
@@ -292,11 +298,12 @@ class nsWindow final : public nsIWidget {
    * Event helpers
    */
   enum class IsNonclient : bool { No = false, Yes = true };
-  bool DispatchMouseEvent(mozilla::EventMessage aEventMessage, WPARAM wParam,
-                          LPARAM lParam, bool aIsContextMenuKey,
-                          int16_t aButton, uint16_t aInputSource,
-                          WinPointerInfo* aPointerInfo = nullptr,
-                          IsNonclient aIgnoreAPZ = IsNonclient::No);
+  bool DispatchMouseEvent(
+      mozilla::EventMessage aEventMessage, WPARAM wParam, LPARAM lParam,
+      bool aIsContextMenuKey, int16_t aButton, uint16_t aInputSource,
+      WinPointerInfo* aPointerInfo = nullptr,
+      IsNonclient aIgnoreAPZ = IsNonclient::No,
+      mozilla::Maybe<LayoutDeviceIntPoint> aMovement = mozilla::Nothing());
   void DispatchPendingEvents();
   void DispatchCustomEvent(const nsString& eventName);
 
@@ -419,6 +426,21 @@ class nsWindow final : public nsIWidget {
   bool HandleAppCommandMsg(const MSG& aAppCommandMsg, LRESULT* aRetValue);
 
   const InputContext& InputContextRef() const { return mInputContext; }
+
+  /*
+   * Pointer lock handler.
+   */
+  void LockNativePointer(NativePointerLockMode aNativePointerLockMode) override;
+  void UnlockNativePointer() override;
+  void SetNativePointerLockMode(
+      NativePointerLockMode aNativePointerLockMode) override;
+  bool SupportsUnadjustedMovement() override { return true; }
+
+  static bool IsNativePointerLocked() { return sIsNativePointLocked; }
+  static bool IsUsingRawInputForMouseMove() {
+    MOZ_ASSERT_IF(sIsUsingRawInputForMouseMove, sIsNativePointLocked);
+    return sIsUsingRawInputForMouseMove;
+  }
 
  private:
   using TimeStamp = mozilla::TimeStamp;
@@ -544,7 +566,6 @@ class nsWindow final : public nsIWidget {
    */
   HWND GetTopLevelForFocus(HWND aCurWnd);
   void DispatchFocusToTopLevelWindow(bool aIsActivate);
-  bool DispatchStandardEvent(mozilla::EventMessage aMsg);
   void RelayMouseEvent(UINT aMsg, WPARAM wParam, LPARAM lParam);
   bool ProcessMessage(UINT msg, WPARAM& wParam, LPARAM& lParam,
                       LRESULT* aRetValue);
@@ -693,6 +714,8 @@ class nsWindow final : public nsIWidget {
   static bool sJustGotActivate;
   static bool sIsInMouseCapture;
   static bool sIsRestoringSession;
+  static bool sIsNativePointLocked;
+  static bool sIsUsingRawInputForMouseMove;
 
   // Message postponement hack. See the definition-site of
   // WndProcUrgentInvocation::sDepth for details.
@@ -865,8 +888,6 @@ class nsWindow final : public nsIWidget {
   TimeStamp mCachedHitTestTime;
 
   RefPtr<mozilla::widget::InProcessWinCompositorWidget> mBasicLayersSurface;
-
-  double mSizeConstraintsScale;  // scale in effect when setting constraints
 
   // Will be calculated when layer manager is created.
   int32_t mMaxTextureSize = -1;

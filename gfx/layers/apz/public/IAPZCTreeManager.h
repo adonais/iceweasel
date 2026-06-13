@@ -45,7 +45,7 @@ class AsyncDragMetrics;
 struct APZHandledResult;
 
 class IAPZCTreeManager {
-  NS_INLINE_DECL_THREADSAFE_VIRTUAL_REFCOUNTING(IAPZCTreeManager)
+  NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
 
  public:
   /**

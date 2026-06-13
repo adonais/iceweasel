@@ -620,7 +620,7 @@ class HTMLMediaElement::MediaControlKeyListener final
   RefPtr<ContentMediaAgent> mControlAgent;
   bool mIsPictureInPictureEnabled = false;
   bool mIsOwnerAudible = false;
-  MOZ_INIT_OUTSIDE_CTOR uint64_t mOwnerBrowsingContextId;
+  MOZ_INIT_OUTSIDE_CTOR uint64_t mOwnerBrowsingContextId = 0;
   const nsID mElementId;
 };
 
@@ -1524,7 +1524,7 @@ HTMLMediaElement::MediaLoadListener::OnStartRequest(nsIRequest* aRequest) {
     code.AppendInt(responseStatus);
     nsAutoString src;
     element->GetCurrentSrc(src);
-    AutoTArray<nsString, 2> params = {code, src};
+    AutoTArray<nsString, 2> params = {std::move(code), std::move(src)};
     element->ReportLoadError("MediaLoadHttpError", params);
     return NS_BINDING_ABORTED;
   }
@@ -1534,7 +1534,8 @@ HTMLMediaElement::MediaLoadListener::OnStartRequest(nsIRequest* aRequest) {
       NS_SUCCEEDED(rv = element->InitializeDecoderForChannel(
                        channel, getter_AddRefs(mNextListener))) &&
       mNextListener) {
-    rv = mNextListener->OnStartRequest(aRequest);
+    nsCOMPtr<nsIStreamListener> nextListener = mNextListener;
+    rv = nextListener->OnStartRequest(aRequest);
   } else {
     // If InitializeDecoderForChannel() returned an error, fire a network error.
     if (NS_FAILED(rv) && !mNextListener) {
@@ -1554,8 +1555,8 @@ HTMLMediaElement::MediaLoadListener::OnStartRequest(nsIRequest* aRequest) {
 NS_IMETHODIMP
 HTMLMediaElement::MediaLoadListener::OnStopRequest(nsIRequest* aRequest,
                                                    nsresult aStatus) {
-  if (mNextListener) {
-    return mNextListener->OnStopRequest(aRequest, aStatus);
+  if (nsCOMPtr<nsIStreamListener> nextListener = mNextListener) {
+    return nextListener->OnStopRequest(aRequest, aStatus);
   }
   return NS_OK;
 }
@@ -1571,7 +1572,8 @@ HTMLMediaElement::MediaLoadListener::OnDataAvailable(nsIRequest* aRequest,
         "canceled this request");
     return NS_BINDING_ABORTED;
   }
-  return mNextListener->OnDataAvailable(aRequest, aStream, aOffset, aCount);
+  nsCOMPtr<nsIStreamListener> nextListener = mNextListener;
+  return nextListener->OnDataAvailable(aRequest, aStream, aOffset, aCount);
 }
 
 NS_IMETHODIMP
@@ -2895,7 +2897,7 @@ void HTMLMediaElement::SelectResource(
         return;
       }
     } else {
-      AutoTArray<nsString, 1> params = {src};
+      AutoTArray<nsString, 1> params = {std::move(src)};
       ReportLoadError("MediaLoadInvalidURI", params);
       rv = MediaResult(rv.Code(), "MediaLoadInvalidURI");
     }
@@ -3100,7 +3102,7 @@ void HTMLMediaElement::LoadFromSourceChildren(
         // Check that at least one other source child exists and report that
         // we will try to load that one next.
         nsIContent* nextChild = mSourcePointer->GetNextSibling();
-        AutoTArray<nsString, 2> params = {type, src};
+        AutoTArray<nsString, 2> params = {std::move(type), std::move(src)};
 
         while (nextChild) {
           if (nextChild && nextChild->IsHTMLElement(nsGkAtoms::source)) {
@@ -3149,7 +3151,7 @@ void HTMLMediaElement::LoadFromSourceChildren(
     nsCOMPtr<nsIURI> uri;
     NewURIFromString(src, getter_AddRefs(uri));
     if (!uri) {
-      AutoTArray<nsString, 1> params = {src};
+      AutoTArray<nsString, 1> params = {std::move(src)};
       ReportLoadError("MediaLoadInvalidURI", params);
       DealWithFailedElement(child);
       return;
@@ -5913,25 +5915,25 @@ void HTMLMediaElement::EndSrcMediaStreamPlayback() {
 }
 
 static already_AddRefed<AudioTrack> CreateAudioTrack(
-    AudioStreamTrack* aStreamTrack, nsIGlobalObject* aOwnerGlobal) {
+    AudioStreamTrack* aStreamTrack, nsIGlobalObject* aRelevantGlobal) {
   nsAutoString id;
   nsAutoString label;
   aStreamTrack->GetId(id);
   aStreamTrack->GetLabel(label, CallerType::System);
 
-  return MediaTrackList::CreateAudioTrack(aOwnerGlobal, id, u"main"_ns, label,
-                                          u""_ns, true, aStreamTrack);
+  return MediaTrackList::CreateAudioTrack(aRelevantGlobal, id, u"main"_ns,
+                                          label, u""_ns, true, aStreamTrack);
 }
 
 static already_AddRefed<VideoTrack> CreateVideoTrack(
-    VideoStreamTrack* aStreamTrack, nsIGlobalObject* aOwnerGlobal) {
+    VideoStreamTrack* aStreamTrack, nsIGlobalObject* aRelevantGlobal) {
   nsAutoString id;
   nsAutoString label;
   aStreamTrack->GetId(id);
   aStreamTrack->GetLabel(label, CallerType::System);
 
-  return MediaTrackList::CreateVideoTrack(aOwnerGlobal, id, u"main"_ns, label,
-                                          u""_ns, aStreamTrack);
+  return MediaTrackList::CreateVideoTrack(aRelevantGlobal, id, u"main"_ns,
+                                          label, u""_ns, aStreamTrack);
 }
 
 void HTMLMediaElement::NotifyMediaStreamTrackAdded(
@@ -5954,7 +5956,7 @@ void HTMLMediaElement::NotifyMediaStreamTrackAdded(
   if (AudioStreamTrack* t = aTrack->AsAudioStreamTrack()) {
     MOZ_DIAGNOSTIC_ASSERT(AudioTracks(), "Element can't have been unlinked");
     RefPtr<AudioTrack> audioTrack =
-        CreateAudioTrack(t, AudioTracks()->GetOwnerGlobal());
+        CreateAudioTrack(t, AudioTracks()->GetRelevantGlobal());
     AudioTracks()->AddTrack(audioTrack);
   } else if (VideoStreamTrack* t = aTrack->AsVideoStreamTrack()) {
     // TODO: Fix this per the spec on bug 1273443.
@@ -5963,7 +5965,7 @@ void HTMLMediaElement::NotifyMediaStreamTrackAdded(
     }
     MOZ_DIAGNOSTIC_ASSERT(VideoTracks(), "Element can't have been unlinked");
     RefPtr<VideoTrack> videoTrack =
-        CreateVideoTrack(t, VideoTracks()->GetOwnerGlobal());
+        CreateVideoTrack(t, VideoTracks()->GetRelevantGlobal());
     VideoTracks()->AddTrack(videoTrack);
     // New MediaStreamTrack added, set the new added video track as selected
     // video track when there is no selected track.
@@ -6537,7 +6539,13 @@ void HTMLMediaElement::UpdateReadyStateInternal() {
 
   if (IsVideo() && VideoTracks() && !VideoTracks()->IsEmpty() &&
       !IsPlaybackEnded() && GetImageContainer() &&
-      !GetImageContainer()->HasCurrentImage()) {
+      !GetImageContainer()->HasCurrentImage()
+#ifdef MOZ_WMF_CDM
+      // WMFClearKey frame-server mode renders video internally without exposing
+      // frames through the image container.
+      && !(mDecoder && mDecoder->IsUsingWMFClearKey())
+#endif
+  ) {
     // Don't advance if we are playing video, but don't have a video frame.
     // Also, if video became available after advancing to HAVE_CURRENT_DATA
     // while we are still playing, we need to revert to HAVE_METADATA until
@@ -8241,7 +8249,7 @@ void HTMLMediaElement::ConstructMediaTracks(const MediaInfo* aInfo) {
     LOG(LogLevel::Debug, ("%p ConstructMediaTracks, add an audio track", this));
     const TrackInfo& info = aInfo->mAudio;
     RefPtr<AudioTrack> track = MediaTrackList::CreateAudioTrack(
-        audioList->GetOwnerGlobal(), info.mId, info.mKind, info.mLabel,
+        audioList->GetRelevantGlobal(), info.mId, info.mKind, info.mLabel,
         info.mLanguage, info.mEnabled);
 
     audioList->AddTrack(track);
@@ -8252,7 +8260,7 @@ void HTMLMediaElement::ConstructMediaTracks(const MediaInfo* aInfo) {
     LOG(LogLevel::Debug, ("%p ConstructMediaTracks, add a video track", this));
     const TrackInfo& info = aInfo->mVideo;
     RefPtr<VideoTrack> track = MediaTrackList::CreateVideoTrack(
-        videoList->GetOwnerGlobal(), info.mId, info.mKind, info.mLabel,
+        videoList->GetRelevantGlobal(), info.mId, info.mKind, info.mLabel,
         info.mLanguage);
 
     videoList->AddTrack(track);

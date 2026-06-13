@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const browser = window.docShell.chromeEventHandler;
-const { document: gDoc, XPCOMUtils } = browser.ownerGlobal;
+const { document: gDoc, XPCOMUtils } = browser.documentGlobal;
 
 ChromeUtils.defineESModuleGetters(this, {
   AboutWelcomeParent: "resource:///actors/AboutWelcomeParent.sys.mjs",
@@ -40,10 +40,28 @@ function renderMultistage(ready) {
   window.AWGetSelectedTheme = receive("GET_SELECTED_THEME");
   window.AWGetInstalledAddons = receive("GET_INSTALLED_ADDONS");
   window.AWSelectTheme = data => receive("SELECT_THEME")(data?.toUpperCase());
-  // Do not send telemetry if message (e.g. spotlight in PBM) config sets metrics as 'block'.
-  if (CONFIG?.metrics !== "block") {
-    window.AWSendEventTelemetry = receive("TELEMETRY_EVENT");
-  }
+  // Allow disabling telemetry with `metrics: 'block'`
+  const telemetryMessageHandler = receive("TELEMETRY_EVENT");
+  window.AWSendEventTelemetry = data => {
+    if (CONFIG?.metrics === "block") {
+      return null;
+    }
+    if (CONFIG?.write_in_microsurvey) {
+      if (!data.event_context) {
+        data.event_context = {};
+      }
+      data.event_context.write_in_microsurvey = true;
+      if (
+        CONFIG?.feedbackData &&
+        data.event === "CLICK_BUTTON" &&
+        data.event_context.source === "primary_button"
+      ) {
+        data.event_context.smart_window_user_feedback_data =
+          CONFIG.feedbackData;
+      }
+    }
+    return telemetryMessageHandler(data);
+  };
   window.AWSendToDeviceEmailsSupported = receive(
     "SEND_TO_DEVICE_EMAILS_SUPPORTED"
   );
@@ -110,13 +128,13 @@ function renderMultistage(ready) {
         event.stopPropagation();
       }
     };
-    browser.ownerGlobal.addEventListener("keydown", preventEscape, {
+    browser.documentGlobal.addEventListener("keydown", preventEscape, {
       capture: true,
       mozSystemGroup: true,
     });
 
     addEventListener("pagehide", () => {
-      browser.ownerGlobal.removeEventListener("keydown", preventEscape, {
+      browser.documentGlobal.removeEventListener("keydown", preventEscape, {
         capture: true,
         mozSystemGroup: true,
       });

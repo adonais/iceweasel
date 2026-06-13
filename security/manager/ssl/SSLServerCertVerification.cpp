@@ -1077,7 +1077,9 @@ SSLServerCertVerificationResult::SSLServerCertVerificationResult(
       mFinalError(0),
       mOverridableErrorCategory(
           nsITransportSecurityInfo::OverridableErrorCategory::ERROR_UNSET),
-      mProviderFlags(0) {}
+      mIsBuiltCertChainRootBuiltInRoot(false),
+      mProviderFlags(0),
+      mMadeOCSPRequests(false) {}
 
 nsresult SSLServerCertVerificationResult::Dispatch(
     nsTArray<nsTArray<uint8_t>>&& aBuiltChain,

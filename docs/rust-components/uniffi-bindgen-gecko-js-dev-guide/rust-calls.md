@@ -8,7 +8,7 @@
 
 ## Sync Rust calls
 
-* The generated JavaScript code calls [UniffiScaffolding.callSync()](https://searchfox.org/mozilla-central/source/dom/chrome-webidl/UniFFI.webidl).
+* The generated JavaScript code calls [UniffiScaffolding.callSync()](https://searchfox.org/firefox-main/source/dom/chrome-webidl/UniFFI.webidl).
     * The first argument to `callSync()` is a numeric identifier for the FFI call, known to both the JavaScript and C++ code generators.
     * That is followed by lowered argument from the JavaScript call.
 * The generated C++ code then performs the second phase of argument lowering and makes the Rust call.

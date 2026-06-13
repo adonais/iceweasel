@@ -449,7 +449,7 @@ class MOZ_TRIVIAL_CTOR_DTOR MMPolicyBase {
   }
 };
 
-class MOZ_TRIVIAL_CTOR_DTOR MMPolicyInProcess
+class MOZ_EMPTY_BASES MOZ_TRIVIAL_CTOR_DTOR MMPolicyInProcess
     : public MMPolicyInProcessPrimitive,
       public MMPolicyBase {
  public:

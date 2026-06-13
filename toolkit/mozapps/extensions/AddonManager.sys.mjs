@@ -1304,7 +1304,7 @@ var AddonManagerInternal = {
       return Promise.resolve();
     }
 
-    if (info.existingAddon.isInstalledByEnterprisePolicy) {
+    if (Services.policies?.isAddonRequiredByPolicy(info.existingAddon.id)) {
       return Promise.resolve();
     }
 
@@ -5976,11 +5976,15 @@ AMTelemetry = {
   /**
    * @param {object} opts
    * @param {nsIURI} opts.displayURI
+   * @param {string} permissionType The requested permission
    */
-  recordSuspiciousSiteEvent({ displayURI }) {
+  recordSuspiciousSiteEvent({ displayURI, permissionType }) {
     let site = displayURI?.displayHost ?? "(unknown)";
     Glean.addonsManager.reportSuspiciousSite.record(
-      this.formatExtraVars({ suspicious_site: site })
+      this.formatExtraVars({
+        suspicious_site: site,
+        permission_type: permissionType,
+      })
     );
   },
 

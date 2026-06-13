@@ -977,7 +977,7 @@ add_task(async function moveBetweenTabGroupsTests() {
   const group1 = gBrowser.addTabGroup([tab1]);
   group1.collapsed = true;
 
-  const tab2 = await addTabTo(gBrowser, "about:logo");
+  const tab2 = await addTabTo(gBrowser, "about:blank");
   const group2 = gBrowser.addTabGroup([tab2]);
   group2.collapsed = true;
 

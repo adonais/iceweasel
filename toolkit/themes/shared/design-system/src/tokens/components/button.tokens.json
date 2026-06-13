@@ -284,21 +284,19 @@
       "value": "{button.icon.fill}"
     }
   },
-  "min": {
-    "height": {
-      "@base": {
-        "value": "{size.item.large}"
-      },
-      "small": {
-        "value": "{size.item.medium}"
-      }
+  "min-height": {
+    "@base": {
+      "value": "{size.item.large}"
+    },
+    "small": {
+      "value": "{size.item.medium}"
     }
   },
   "opacity": {
     "disabled": {
       "value": {
-        "default": 0.5,
-        "forcedColors": 1
+        "default": "0.5",
+        "forcedColors": "1"
       }
     }
   },
@@ -313,10 +311,10 @@
   "size": {
     "icon": {
       "@base": {
-        "value": "{button.min.height.@base}"
+        "value": "{button.min-height.@base}"
       },
       "small": {
-        "value": "{button.min.height.small}"
+        "value": "{button.min-height.small}"
       }
     }
   },

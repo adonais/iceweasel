@@ -208,7 +208,7 @@ class GeckoChildProcessHost : public SupportsWeakPtr,
   GeckoProcessType mProcessType;
   GeckoChildID mChildID;
   bool mIsFileContent;
-  Monitor mMonitor;
+  mutable Monitor mMonitor;
   FilePath mProcessPath;
 #ifdef ALLOW_GECKO_CHILD_PROCESS_ARCH
   // Used on platforms where we may launch a child process with a different
@@ -295,6 +295,8 @@ class GeckoChildProcessHost : public SupportsWeakPtr,
   // the child event loop is up.
   virtual bool AppendMacSandboxParams(StringVector& aArgs);
 #endif
+
+  virtual void OnProcessLaunchError(const LaunchError aError);
 
  private:
   DISALLOW_EVIL_CONSTRUCTORS(GeckoChildProcessHost);

@@ -120,7 +120,7 @@ extern bool IsValidAsmJSHeapLength(size_t length);
 struct CodeMetadataForAsmJSImpl;
 
 struct CodeMetadataForAsmJS : public wasm::ShareableBase<CodeMetadataForAsmJS> {
-  CodeMetadataForAsmJS() {};
+  CodeMetadataForAsmJS() = default;
   virtual ~CodeMetadataForAsmJS() = default;
 
   virtual const CodeMetadataForAsmJSImpl& asAsmJS() const = 0;

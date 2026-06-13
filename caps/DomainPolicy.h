@@ -37,7 +37,7 @@ class DomainSet final : public nsIDomainSet {
   void CloneSet(nsTArray<RefPtr<nsIURI>>* aDomains);
 
  protected:
-  virtual ~DomainSet() {}
+  virtual ~DomainSet() = default;
   nsTHashSet<nsURIHashKey> mHashTable;
   DomainSetType mType;
 };

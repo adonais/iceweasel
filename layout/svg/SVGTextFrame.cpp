@@ -27,6 +27,7 @@
 #include "mozilla/DisplaySVGItem.h"
 #include "mozilla/Likely.h"
 #include "mozilla/PresShell.h"
+#include "mozilla/ReflowInput.h"
 #include "mozilla/SVGObserverUtils.h"
 #include "mozilla/SVGOuterSVGFrame.h"
 #include "mozilla/SVGUtils.h"
@@ -35,6 +36,7 @@
 #include "mozilla/dom/SVGRect.h"
 #include "mozilla/dom/SVGTextContentElementBinding.h"
 #include "mozilla/dom/SVGTextPathElement.h"
+#include "mozilla/dom/SVGTextPathElementBinding.h"
 #include "mozilla/dom/Selection.h"
 #include "mozilla/dom/Text.h"
 #include "mozilla/gfx/2D.h"
@@ -48,6 +50,7 @@
 #include "nsLayoutUtils.h"
 #include "nsStyleStructInlines.h"
 #include "nsTArray.h"
+#include "nsTHashSet.h"
 #include "nsTextFrame.h"
 
 using namespace mozilla::dom;
@@ -1471,12 +1474,8 @@ class MOZ_STACK_CLASS TextFrameIterator {
    */
   explicit TextFrameIterator(SVGTextFrame* aRoot,
                              const nsIFrame* aSubtree = nullptr)
-      : mRootFrame(aRoot),
-        mSubtree(aSubtree),
-        mCurrentFrame(aRoot),
-        mSubtreePosition(mSubtree ? SubtreePosition::Before
-                                  : SubtreePosition::Within) {
-    Init();
+      : mRootFrame(aRoot), mCurrentFrame(aRoot) {
+    Init(aSubtree);
   }
 
   /**
@@ -1484,14 +1483,10 @@ class MOZ_STACK_CLASS TextFrameIterator {
    * with an optional frame content subtree to restrict iterated text frames to.
    */
   TextFrameIterator(SVGTextFrame* aRoot, nsIContent* aSubtree)
-      : mRootFrame(aRoot),
-        mSubtree(aRoot && aSubtree && aSubtree != aRoot->GetContent()
-                     ? aSubtree->GetPrimaryFrame()
-                     : nullptr),
-        mCurrentFrame(aRoot),
-        mSubtreePosition(mSubtree ? SubtreePosition::Before
-                                  : SubtreePosition::Within) {
-    Init();
+      : mRootFrame(aRoot), mCurrentFrame(aRoot) {
+    Init(aRoot && aSubtree && aSubtree != aRoot->GetContent()
+             ? aSubtree->GetPrimaryFrame()
+             : nullptr);
   }
 
   /**
@@ -1561,7 +1556,12 @@ class MOZ_STACK_CLASS TextFrameIterator {
   /**
    * Initializes the iterator and advances to the first item.
    */
-  void Init() {
+  void Init(const nsIFrame* aSubtree) {
+    for (const nsIFrame* f = aSubtree; f; f = f->GetNextContinuation()) {
+      mSubtreeRoot.Insert(f);
+    }
+    mSubtreePosition =
+        aSubtree ? SubtreePosition::Before : SubtreePosition::Within;
     if (!mRootFrame) {
       return;
     }
@@ -1588,9 +1588,10 @@ class MOZ_STACK_CLASS TextFrameIterator {
   SVGTextFrame* const mRootFrame;
 
   /**
-   * The frame for the subtree we are also interested in tracking.
+   * The root frame of any subtree we are interested in tracking
+   * and its following continuations, if any.
    */
-  const nsIFrame* const mSubtree;
+  nsTHashSet<const nsIFrame*> mSubtreeRoot;
 
   /**
    * The current value of the iterator.
@@ -1615,7 +1616,7 @@ class MOZ_STACK_CLASS TextFrameIterator {
   AutoTArray<StyleDominantBaseline, 8> mBaselines;
 
   /**
-   * The iterator's current position relative to mSubtree.
+   * The iterator's current position relative to the subtree.
    */
   SubtreePosition mSubtreePosition;
 };
@@ -1636,7 +1637,7 @@ uint32_t TextFrameIterator::UndisplayedCharacters() const {
 nsTextFrame* TextFrameIterator::GetNext() {
   // Starting from mCurrentFrame, we do a non-recursive traversal to the next
   // nsTextFrame beneath mRoot, updating mSubtreePosition appropriately if we
-  // encounter mSubtree.
+  // encounter mSubtreeRoot.
   if (mCurrentFrame) {
     do {
       nsIFrame* next = IsTextContentElement(mCurrentFrame->GetContent())
@@ -1652,8 +1653,9 @@ nsTextFrame* TextFrameIterator::GetNext() {
         // Record the frame's baseline.
         PushBaseline(next);
         mCurrentFrame = next;
-        if (mCurrentFrame == mSubtree) {
-          // If the current frame is mSubtree, we have now moved into it.
+        if (mSubtreeRoot.Contains(mCurrentFrame)) {
+          // If the current frame within mSubtreeRoot, we have now moved into
+          // it.
           mSubtreePosition = SubtreePosition::Within;
         }
       } else {
@@ -1672,8 +1674,8 @@ nsTextFrame* TextFrameIterator::GetNext() {
           }
           // Pop off the current baseline.
           PopBaseline();
-          if (mCurrentFrame == mSubtree) {
-            // If this was mSubtree, we have now moved past it.
+          if (mSubtreeRoot.Contains(mCurrentFrame)) {
+            // If this was within mSubtreeRoot, we have now moved past it.
             mSubtreePosition = SubtreePosition::After;
           }
           next = mCurrentFrame->GetNextSibling();
@@ -1687,15 +1689,16 @@ nsTextFrame* TextFrameIterator::GetNext() {
             // Record the frame's baseline.
             PushBaseline(next);
             mCurrentFrame = next;
-            if (mCurrentFrame == mSubtree) {
-              // If the current frame is mSubtree, we have now moved into it.
+            if (mSubtreeRoot.Contains(mCurrentFrame)) {
+              // If the current frame is within mSubtreeRoot, we have now moved
+              // into it.
               mSubtreePosition = SubtreePosition::Within;
             }
             break;
           }
-          if (mCurrentFrame == mSubtree) {
+          if (mSubtreeRoot.Contains(mCurrentFrame)) {
             // If there is no next sibling frame, and the current frame is
-            // mSubtree, we have now moved past it.
+            // within mSubtreeRoot, we have now moved past it.
             mSubtreePosition = SubtreePosition::After;
           }
           // Ascend out of this frame.
@@ -3209,7 +3212,7 @@ void SVGTextFrame::PaintSVG(gfxContext& aContext, const gfxMatrix& aTransform,
   aContext.Multiply(canvasTMForChildren);
   gfxMatrix currentMatrix = aContext.CurrentMatrixDouble();
 
-  RefPtr<nsCaret> caret = presContext->PresShell()->GetCaret();
+  RefPtr<nsCaret> caret = presContext->PresShell()->GetActiveCaret();
   nsIFrame* caretFrame = caret->GetPaintGeometry();
 
   gfxContextAutoSaveRestore ctxSR;
@@ -3481,6 +3484,10 @@ SVGBBox SVGTextFrame::GetBBoxContribution(const Matrix& aToBBoxUserspace,
         TextRenderedRunFlagsForBBoxContribution(run, aFlags);
     gfxMatrix m = ThebesMatrix(aToBBoxUserspace);
     SVGBBox bboxForRun = run.GetUserSpaceRect(presContext, flags, &m);
+    if (aFlags.contains(SVGBBoxFlag::DisregardCSSZoom)) {
+      bboxForRun.Scale(1 / run.mFrame->Style()->EffectiveZoom().ToFloat());
+    }
+
     bbox.UnionEdges(bboxForRun);
   }
 
@@ -3894,7 +3901,7 @@ already_AddRefed<DOMSVGPoint> SVGTextFrame::GetStartPositionOfChar(
   UpdateGlyphPositioning();
 
   CharIterator it(this, CharIterator::CharacterFilter::Addressable, aContent);
-  if (!it.AdvanceToSubtree() || !it.Next(aCharNum)) {
+  if (!it.AdvanceToSubtree() || !it.Next(aCharNum) || it.IsAfterSubtree()) {
     aRv.ThrowIndexSizeError("Character index out of range");
     return nullptr;
   }
@@ -3902,7 +3909,7 @@ already_AddRefed<DOMSVGPoint> SVGTextFrame::GetStartPositionOfChar(
   // We need to return the start position of the whole glyph.
   uint32_t startIndex = it.GlyphStartTextElementCharIndex();
 
-  return do_AddRef(new DOMSVGPoint(ToPoint(mPositions[startIndex].mPosition)));
+  return MakeAndAddRef<DOMSVGPoint>(ToPoint(mPositions[startIndex].mPosition));
 }
 
 /**
@@ -3978,7 +3985,7 @@ already_AddRefed<DOMSVGPoint> SVGTextFrame::GetEndPositionOfChar(
   UpdateGlyphPositioning();
 
   CharIterator it(this, CharIterator::CharacterFilter::Addressable, aContent);
-  if (!it.AdvanceToSubtree() || !it.Next(aCharNum)) {
+  if (!it.AdvanceToSubtree() || !it.Next(aCharNum) || it.IsAfterSubtree()) {
     aRv.ThrowIndexSizeError("Character index out of range");
     return nullptr;
   }
@@ -4002,7 +4009,7 @@ already_AddRefed<DOMSVGPoint> SVGTextFrame::GetEndPositionOfChar(
   Matrix m = Matrix::Rotation(mPositions[startIndex].mAngle) *
              Matrix::Translation(ToPoint(mPositions[startIndex].mPosition));
 
-  return do_AddRef(new DOMSVGPoint(m.TransformPoint(p)));
+  return MakeAndAddRef<DOMSVGPoint>(m.TransformPoint(p));
 }
 
 /**
@@ -4024,7 +4031,7 @@ already_AddRefed<SVGRect> SVGTextFrame::GetExtentOfChar(nsIContent* aContent,
 
   // Search for the character whose addressable index is aCharNum.
   CharIterator it(this, CharIterator::CharacterFilter::Addressable, aContent);
-  if (!it.AdvanceToSubtree() || !it.Next(aCharNum)) {
+  if (!it.AdvanceToSubtree() || !it.Next(aCharNum) || it.IsAfterSubtree()) {
     aRv.ThrowIndexSizeError("Character index out of range");
     return nullptr;
   }
@@ -4072,7 +4079,7 @@ already_AddRefed<SVGRect> SVGTextFrame::GetExtentOfChar(nsIContent* aContent,
   // Transform the glyph's rect into user space.
   gfxRect r = m.TransformBounds(glyphRect);
 
-  return do_AddRef(new SVGRect(aContent, ToRect(r)));
+  return MakeAndAddRef<SVGRect>(aContent, ToRect(r));
 }
 
 /**
@@ -4092,7 +4099,7 @@ float SVGTextFrame::GetRotationOfChar(nsIContent* aContent, uint32_t aCharNum,
   UpdateGlyphPositioning();
 
   CharIterator it(this, CharIterator::CharacterFilter::Addressable, aContent);
-  if (!it.AdvanceToSubtree() || !it.Next(aCharNum)) {
+  if (!it.AdvanceToSubtree() || !it.Next(aCharNum) || it.IsAfterSubtree()) {
     aRv.ThrowIndexSizeError("Character index out of range");
     return 0;
   }
@@ -4806,7 +4813,7 @@ void SVGTextFrame::DoTextPathLayout() {
       // Position the character on the path at the right angle.
       Point tangent;  // Unit vector tangent to the point we find.
       Point pt;
-      if (side == TEXTPATH_SIDETYPE_RIGHT) {
+      if (side == dom::SVGTextPathElement_Binding::TEXTPATH_SIDETYPE_RIGHT) {
         pt = path->ComputePointAtLength(Float(pathLength - midx), &tangent);
         tangent = -tangent;
       } else {

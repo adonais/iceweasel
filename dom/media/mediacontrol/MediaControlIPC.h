@@ -6,6 +6,7 @@
 #define ipc_MediaControlIPC_h
 
 #include "ipc/EnumSerializer.h"
+#include "mozilla/dom/BindingIPCUtils.h"
 #include "mozilla/dom/MediaControlKeySource.h"
 #include "mozilla/dom/MediaControllerBinding.h"
 #include "mozilla/dom/MediaPlaybackStatus.h"
@@ -13,9 +14,8 @@
 namespace IPC {
 template <>
 struct ParamTraits<mozilla::dom::MediaControlKey>
-    : public ContiguousEnumSerializerInclusive<
-          mozilla::dom::MediaControlKey, mozilla::dom::MediaControlKey::Focus,
-          mozilla::dom::MediaControlKey::Setvolume> {};
+    : public mozilla::dom::WebIDLEnumSerializer<mozilla::dom::MediaControlKey> {
+};
 
 template <>
 struct ParamTraits<mozilla::dom::MediaPlaybackState>
@@ -30,6 +30,12 @@ struct ParamTraits<mozilla::dom::MediaAudibleState>
           mozilla::dom::MediaAudibleState,
           mozilla::dom::MediaAudibleState::eInaudible,
           mozilla::dom::MediaAudibleState::eAudible> {};
+
+template <>
+struct ParamTraits<mozilla::dom::ControlType>
+    : public ContiguousEnumSerializerInclusive<
+          mozilla::dom::ControlType, mozilla::dom::ControlType::eControllable,
+          mozilla::dom::ControlType::eUncontrollable> {};
 
 template <>
 struct ParamTraits<mozilla::dom::AbsoluteSeek> {

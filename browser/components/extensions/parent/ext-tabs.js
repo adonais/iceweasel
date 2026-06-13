@@ -59,7 +59,7 @@ function showHiddenTabs(id) {
     for (let tab of win.gBrowser.tabs) {
       if (
         tab.hidden &&
-        tab.ownerGlobal &&
+        tab.documentGlobal &&
         SessionStore.getCustomTabValue(tab, "hiddenBy") === id
       ) {
         win.gBrowser.showTab(tab);
@@ -86,7 +86,7 @@ let tabListener = {
 
   onLocationChange(browser, webProgress) {
     if (webProgress.isTopLevel) {
-      let { gBrowser } = browser.ownerGlobal;
+      let { gBrowser } = browser.documentGlobal;
       let nativeTab = gBrowser.getTabForBrowser(browser);
 
       // Now we are certain that the first page in the tab was loaded.
@@ -273,7 +273,7 @@ this.tabs = class extends ExtensionAPIPersistent {
         // event if the position actually moved.
         if (fromIndex !== toIndex && tabManager.canAccessTab(nativeTab)) {
           fire.async(tabTracker.getId(nativeTab), {
-            windowId: windowTracker.getId(nativeTab.ownerGlobal),
+            windowId: windowTracker.getId(nativeTab.documentGlobal),
             fromIndex,
             toIndex,
           });
@@ -424,11 +424,11 @@ this.tabs = class extends ExtensionAPIPersistent {
         // and events that are triggered while tabs are swapped between windows.
         if (
           updatedTab.initializingTab ||
-          updatedTab.ownerGlobal.gBrowserInit?.isAdoptingTab()
+          updatedTab.documentGlobal.gBrowserInit?.isAdoptingTab()
         ) {
           return;
         }
-        if (!extension.canAccessWindow(event.originalTarget.ownerGlobal)) {
+        if (!extension.canAccessWindow(event.originalTarget.documentGlobal)) {
           return;
         }
         let needed = [];
@@ -524,10 +524,10 @@ this.tabs = class extends ExtensionAPIPersistent {
       };
 
       let statusListener = ({ browser, status, url }) => {
-        let { gBrowser } = browser.ownerGlobal;
+        let { gBrowser } = browser.documentGlobal;
         let tabElem = gBrowser.getTabForBrowser(browser);
         if (tabElem) {
-          if (!extension.canAccessWindow(tabElem.ownerGlobal)) {
+          if (!extension.canAccessWindow(tabElem.documentGlobal)) {
             return;
           }
 
@@ -544,10 +544,10 @@ this.tabs = class extends ExtensionAPIPersistent {
       };
 
       let isArticleChangeListener = (messageName, message) => {
-        let { gBrowser } = message.target.ownerGlobal;
+        let { gBrowser } = message.target.documentGlobal;
         let nativeTab = gBrowser.getTabForBrowser(message.target);
 
-        if (nativeTab && extension.canAccessWindow(nativeTab.ownerGlobal)) {
+        if (nativeTab && extension.canAccessWindow(nativeTab.documentGlobal)) {
           let tab = tabManager.getWrapper(nativeTab);
           fireForTab(tab, { isArticle: message.data.isArticle }, nativeTab);
         }
@@ -839,7 +839,7 @@ this.tabs = class extends ExtensionAPIPersistent {
                 createProperties.openerTabId
               );
               options.openerBrowser = options.ownerTab.linkedBrowser;
-              if (options.ownerTab.ownerGlobal !== window) {
+              if (options.ownerTab.documentGlobal !== window) {
                 return Promise.reject({
                   message:
                     "Opener tab must be in the same window as the tab being created",
@@ -922,14 +922,14 @@ this.tabs = class extends ExtensionAPIPersistent {
           let nativeTabs = getNativeTabsFromIDArray(tabIds);
 
           if (nativeTabs.length === 1) {
-            nativeTabs[0].ownerGlobal.gBrowser.removeTab(nativeTabs[0]);
+            nativeTabs[0].documentGlobal.gBrowser.removeTab(nativeTabs[0]);
             return;
           }
 
           // Or for multiple tabs, first group them by window
           let windowTabMap = new DefaultMap(() => []);
           for (let nativeTab of nativeTabs) {
-            windowTabMap.get(nativeTab.ownerGlobal).push(nativeTab);
+            windowTabMap.get(nativeTab.documentGlobal).push(nativeTab);
           }
 
           // Then make one call to removeTabs() for each window, to keep the
@@ -949,18 +949,18 @@ this.tabs = class extends ExtensionAPIPersistent {
           let nativeTabs = getNativeTabsFromIDArray(tabIds);
           await Promise.all(
             nativeTabs.map(nativeTab =>
-              nativeTab.ownerGlobal.gBrowser.prepareDiscardBrowser(nativeTab)
+              nativeTab.documentGlobal.gBrowser.prepareDiscardBrowser(nativeTab)
             )
           );
           for (let nativeTab of nativeTabs) {
-            nativeTab.ownerGlobal.gBrowser.discardBrowser(nativeTab);
+            nativeTab.documentGlobal.gBrowser.discardBrowser(nativeTab);
           }
         },
 
         async update(tabId, updateProperties) {
           let nativeTab = getTabOrActive(tabId);
 
-          let tabbrowser = nativeTab.ownerGlobal.gBrowser;
+          let tabbrowser = nativeTab.documentGlobal.gBrowser;
 
           if (updateProperties.url !== null) {
             let url = context.uri.resolve(updateProperties.url);
@@ -1070,7 +1070,7 @@ this.tabs = class extends ExtensionAPIPersistent {
           if (!tabManager.canAccessTab(nativeTab)) {
             throw new ExtensionError(`Invalid tab ID: ${tabId}`);
           }
-          let tabbrowser = nativeTab.ownerGlobal.gBrowser;
+          let tabbrowser = nativeTab.documentGlobal.gBrowser;
           tabbrowser.warmupTab(nativeTab);
         },
 
@@ -1097,7 +1097,7 @@ this.tabs = class extends ExtensionAPIPersistent {
           await tabListener.awaitTabReady(nativeTab);
 
           let browser = nativeTab.linkedBrowser;
-          let window = browser.ownerGlobal;
+          let window = browser.documentGlobal;
           let zoom = window.ZoomManager.getZoomForBrowser(browser);
 
           let tab = tabManager.wrapTab(nativeTab);
@@ -1179,8 +1179,8 @@ this.tabs = class extends ExtensionAPIPersistent {
           while (tabsToMove.length) {
             let nativeTab = tabsToMove.shift();
             // If the window is not specified, use the window from the tab.
-            let window = destinationWindow || nativeTab.ownerGlobal;
-            let isSameWindow = nativeTab.ownerGlobal == window;
+            let window = destinationWindow || nativeTab.documentGlobal;
+            let isSameWindow = nativeTab.documentGlobal == window;
             let gBrowser = window.gBrowser;
 
             // If we are not moving the tab to a different window, and the window
@@ -1195,7 +1195,7 @@ this.tabs = class extends ExtensionAPIPersistent {
               !isSameWindow &&
               PrivateBrowsingUtils.isBrowserPrivate(gBrowser) !=
                 PrivateBrowsingUtils.isBrowserPrivate(
-                  nativeTab.ownerGlobal.gBrowser
+                  nativeTab.documentGlobal.gBrowser
                 )
             ) {
               continue;
@@ -1324,7 +1324,7 @@ this.tabs = class extends ExtensionAPIPersistent {
           // Schema requires tab id.
           let nativeTab = getTabOrActive(tabId);
 
-          let gBrowser = nativeTab.ownerGlobal.gBrowser;
+          let gBrowser = nativeTab.documentGlobal.gBrowser;
           let newTab = gBrowser.duplicateTab(nativeTab, true, {
             inBackground,
             tabIndex,
@@ -1345,7 +1345,7 @@ this.tabs = class extends ExtensionAPIPersistent {
         getZoom(tabId) {
           let nativeTab = getTabOrActive(tabId);
 
-          let { ZoomManager } = nativeTab.ownerGlobal;
+          let { ZoomManager } = nativeTab.documentGlobal;
           let zoom = ZoomManager.getZoomForBrowser(nativeTab.linkedBrowser);
 
           return Promise.resolve(zoom);
@@ -1354,7 +1354,7 @@ this.tabs = class extends ExtensionAPIPersistent {
         setZoom(tabId, zoom) {
           let nativeTab = getTabOrActive(tabId);
 
-          let { FullZoom, ZoomManager } = nativeTab.ownerGlobal;
+          let { FullZoom, ZoomManager } = nativeTab.documentGlobal;
 
           if (zoom === 0) {
             // A value of zero means use the default zoom factor.
@@ -1373,7 +1373,7 @@ this.tabs = class extends ExtensionAPIPersistent {
         async getZoomSettings(tabId) {
           let nativeTab = getTabOrActive(tabId);
 
-          let { FullZoom, ZoomUI } = nativeTab.ownerGlobal;
+          let { FullZoom, ZoomUI } = nativeTab.documentGlobal;
 
           return {
             mode: "automatic",
@@ -1405,7 +1405,7 @@ this.tabs = class extends ExtensionAPIPersistent {
           name: "tabs.onZoomChange",
           register: fire => {
             let getZoomLevel = browser => {
-              let { ZoomManager } = browser.ownerGlobal;
+              let { ZoomManager } = browser.documentGlobal;
 
               return ZoomManager.getZoomForBrowser(browser);
             };
@@ -1441,11 +1441,11 @@ this.tabs = class extends ExtensionAPIPersistent {
                 browser = browser.docShell.chromeEventHandler;
               }
 
-              if (!context.canAccessWindow(browser.ownerGlobal)) {
+              if (!context.canAccessWindow(browser.documentGlobal)) {
                 return;
               }
 
-              let { gBrowser } = browser.ownerGlobal;
+              let { gBrowser } = browser.documentGlobal;
               let nativeTab = gBrowser.getTabForBrowser(browser);
               if (!nativeTab) {
                 // We only care about zoom events in the top-level browser of a tab.
@@ -1485,7 +1485,7 @@ this.tabs = class extends ExtensionAPIPersistent {
 
         print() {
           let activeTab = getTabOrActive(null);
-          let { PrintUtils } = activeTab.ownerGlobal;
+          let { PrintUtils } = activeTab.documentGlobal;
           PrintUtils.startPrintWindow(activeTab.linkedBrowser.browsingContext);
         },
 
@@ -1522,7 +1522,7 @@ this.tabs = class extends ExtensionAPIPersistent {
           filename = DownloadPaths.sanitize(filename);
 
           picker.init(
-            activeTab.ownerGlobal.browsingContext,
+            activeTab.documentGlobal.browsingContext,
             title,
             Ci.nsIFilePicker.modeSave
           );
@@ -1680,7 +1680,7 @@ this.tabs = class extends ExtensionAPIPersistent {
           }
 
           const referenceTab = tabTracker.getTab(tabId, null);
-          let referenceWindow = referenceTab && referenceTab.ownerGlobal;
+          let referenceWindow = referenceTab && referenceTab.documentGlobal;
           if (referenceWindow && !context.canAccessWindow(referenceWindow)) {
             throw new ExtensionError(`Invalid tab ID: ${tabId}`);
           }
@@ -1703,8 +1703,8 @@ this.tabs = class extends ExtensionAPIPersistent {
               throw new ExtensionError(`Invalid tab ID: ${tabId}`);
             }
             if (referenceWindow === null) {
-              referenceWindow = tab.ownerGlobal;
-            } else if (tab.ownerGlobal !== referenceWindow) {
+              referenceWindow = tab.documentGlobal;
+            } else if (tab.documentGlobal !== referenceWindow) {
               continue;
             }
             referenceWindow.gBrowser.replaceInSuccession(tab, tab.successor);
@@ -1732,8 +1732,8 @@ this.tabs = class extends ExtensionAPIPersistent {
 
         show(tabIds) {
           for (let tab of getNativeTabsFromIDArray(tabIds)) {
-            if (tab.ownerGlobal) {
-              tab.ownerGlobal.gBrowser.showTab(tab);
+            if (tab.documentGlobal) {
+              tab.documentGlobal.gBrowser.showTab(tab);
             }
           }
         },
@@ -1741,8 +1741,8 @@ this.tabs = class extends ExtensionAPIPersistent {
         hide(tabIds) {
           let hidden = [];
           for (let tab of getNativeTabsFromIDArray(tabIds)) {
-            if (tab.ownerGlobal && !tab.hidden) {
-              tab.ownerGlobal.gBrowser.hideTab(tab, extension.id);
+            if (tab.documentGlobal && !tab.hidden) {
+              tab.documentGlobal.gBrowser.hideTab(tab, extension.id);
               if (tab.hidden) {
                 hidden.push(tabTracker.getId(tab));
               }
@@ -1810,7 +1810,7 @@ this.tabs = class extends ExtensionAPIPersistent {
           const windowIsPrivate = PrivateBrowsingUtils.isWindowPrivate(window);
           for (const nativeTab of nativeTabs) {
             if (
-              PrivateBrowsingUtils.isWindowPrivate(nativeTab.ownerGlobal) !==
+              PrivateBrowsingUtils.isWindowPrivate(nativeTab.documentGlobal) !==
               windowIsPrivate
             ) {
               if (windowIsPrivate) {
@@ -1825,7 +1825,7 @@ this.tabs = class extends ExtensionAPIPersistent {
           }
           function unpinTabsBeforeGrouping() {
             for (const nativeTab of nativeTabs) {
-              nativeTab.ownerGlobal.gBrowser.unpinTab(nativeTab);
+              nativeTab.documentGlobal.gBrowser.unpinTab(nativeTab);
             }
           }
           let group;
@@ -1835,7 +1835,7 @@ this.tabs = class extends ExtensionAPIPersistent {
             // tabs should just be grouped without moving positions.
             // TODO bug 1939214: when addTabGroup inserts tabs at the front as
             // needed (instead of always appending), simplify this logic.
-            const tabInWin = nativeTabs.find(t => t.ownerGlobal === window);
+            const tabInWin = nativeTabs.find(t => t.documentGlobal === window);
             let insertBefore = tabInWin;
             if (tabInWin?.group) {
               // When any of the tabs in a split view are grouped, the whole
@@ -1872,7 +1872,7 @@ this.tabs = class extends ExtensionAPIPersistent {
             const firstTabInGroup = group.tabs[0];
             for (const nativeTab of nativeTabs) {
               if (
-                nativeTab.ownerGlobal === window &&
+                nativeTab.documentGlobal === window &&
                 nativeTab._tPos < firstTabInGroup._tPos
               ) {
                 tabsBefore.push(nativeTab);
@@ -1909,15 +1909,15 @@ this.tabs = class extends ExtensionAPIPersistent {
             tabs.sort((a, b) => a._tPos - b._tPos);
             tabs = getNativeTabsOrSplitViews(tabs);
             let firstTab = tabs[0];
-            if (group.ownerGlobal.gBrowser.isSplitViewWrapper(firstTab)) {
+            if (group.documentGlobal.gBrowser.isSplitViewWrapper(firstTab)) {
               firstTab = firstTab.tabs[0];
             }
             if (firstTab === group.tabs[0]) {
               // The tab is the front of the tab group, so insert before
               // current tab group to preserve order.
-              group.ownerGlobal.gBrowser.moveTabsBefore(tabs, group);
+              group.documentGlobal.gBrowser.moveTabsBefore(tabs, group);
             } else {
-              group.ownerGlobal.gBrowser.moveTabsAfter(tabs, group);
+              group.documentGlobal.gBrowser.moveTabsAfter(tabs, group);
             }
           }
         },

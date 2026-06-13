@@ -101,16 +101,7 @@ BEGIN_TEST(testNewObject_1) {
 
   // With JSClass.construct.
   static const JSClassOps clsOps = {
-      nullptr,        // addProperty
-      nullptr,        // delProperty
-      nullptr,        // enumerate
-      nullptr,        // newEnumerate
-      nullptr,        // resolve
-      nullptr,        // mayResolve
-      nullptr,        // finalize
-      nullptr,        // call
-      constructHook,  // construct
-      nullptr,        // trace
+      .construct = constructHook,
   };
   static const JSClass cls = {
       "testNewObject_1",

@@ -333,7 +333,7 @@ export const BackgroundPageThumbs = {
         Components.isSuccessCode(status) ||
         status === Cr.NS_BINDING_ABORTED
       ) {
-        this._thumbBrowser.ownerGlobal.requestIdleCallback(() => {
+        this._thumbBrowser.documentGlobal.requestIdleCallback(() => {
           currentCapture.pageLoaded(this._thumbBrowser);
         });
       } else {
@@ -654,7 +654,7 @@ Capture.prototype = {
     let pageLoadTime = new Date() - this._pageLoadStartTime;
     let canvasDrawStartTime = new Date();
 
-    let canvas = PageThumbs.createCanvas(aBrowser.ownerGlobal, 1, 1);
+    let canvas = PageThumbs.createCanvas(aBrowser.documentGlobal, 1, 1);
     try {
       await PageThumbs.captureToCanvas(
         aBrowser,

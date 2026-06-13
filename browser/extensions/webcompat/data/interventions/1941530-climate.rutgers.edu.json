@@ -6,12 +6,13 @@
       "matches": ["*://climate.rutgers.edu/snowcover/*"]
     }
   },
+  "css": {
+    "fix-broken-images": ".u--svg-inside object { width: revert-layer; }"
+  },
   "interventions": [
     {
       "platforms": ["all"],
-      "content_scripts": {
-        "css": ["bug1941530-climate.rutgers.edu-fix-broken-images.css"]
-      }
+      "css": ["fix-broken-images"]
     }
   ]
 }

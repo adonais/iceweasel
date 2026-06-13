@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef SDPENUM_H_
-#define SDPENUM_H_
+#ifndef DOM_MEDIA_WEBRTC_SDP_SDPENUM_H_
+#define DOM_MEDIA_WEBRTC_SDP_SDPENUM_H_
 
 #include <ostream>
 
@@ -14,7 +14,7 @@ namespace mozilla::sdp {
 
 enum NetType { kNetTypeNone, kInternet };
 
-inline std::ostream& operator<<(std::ostream& os, sdp::NetType t) {
+inline std::ostream& operator<<(std::ostream& os, const sdp::NetType t) {
   switch (t) {
     case sdp::kNetTypeNone:
       MOZ_ASSERT(false);
@@ -27,7 +27,7 @@ inline std::ostream& operator<<(std::ostream& os, sdp::NetType t) {
 
 enum AddrType { kAddrTypeNone, kIPv4, kIPv6 };
 
-inline std::ostream& operator<<(std::ostream& os, sdp::AddrType t) {
+inline std::ostream& operator<<(std::ostream& os, const sdp::AddrType t) {
   switch (t) {
     case sdp::kAddrTypeNone:
       MOZ_ASSERT(false);
@@ -48,7 +48,7 @@ enum Direction {
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(Direction);
 
-inline std::ostream& operator<<(std::ostream& os, sdp::Direction d) {
+inline std::ostream& operator<<(std::ostream& os, const sdp::Direction d) {
   switch (d) {
     case sdp::kSend:
       return os << "send";

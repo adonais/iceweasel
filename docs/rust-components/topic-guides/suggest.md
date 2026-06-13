@@ -13,7 +13,7 @@ thread.  To deal with this, all current consumers wrap the API in order to make 
 details on this wrapping, see the consumer code itself.
 
 On JS, this wrapping is handled automatically by UniFFI.  See
-https://searchfox.org/mozilla-central/source/toolkit/components/uniffi-bindgen-gecko-js/config.toml
+https://searchfox.org/firefox-main/source/toolkit/components/uniffi-bindgen-gecko-js/config.toml
 for details on which functions/methods are wrapped to be async.
 
 ## Setting up the store

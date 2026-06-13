@@ -28,10 +28,10 @@ SAMPLY_DEPENDENCY = {
     "extract": True,
     "task": "<toolchain-linux64-samply>",
 }
-SYMBOLICATOR_DEPENDENCY = {
-    "artifact": "public/build/symbolicator-cli.tar.zst",
+PROFILER_NODE_TOOLS_DEPENDENCY = {
+    "artifact": "public/build/profiler-node-tools.tar.zst",
     "extract": True,
-    "task": "<toolchain-symbolicator-cli>",
+    "task": "<toolchain-profiler-node-tools>",
 }
 SYMBOLS_DEPENDENCY = {
     "artifact": "public/build/target.crashreporter-symbols.zip",
@@ -42,12 +42,12 @@ SYMBOLS_DEPENDENCY = {
 DEPENDANCY_TO_ADD_FOR_TASK_REFERENCE = [
     SIMPLEPERF_DEPENDENCY,
     SAMPLY_DEPENDENCY,
-    SYMBOLICATOR_DEPENDENCY,
+    PROFILER_NODE_TOOLS_DEPENDENCY,
     SYMBOLS_DEPENDENCY,
 ]
 dependencies_to_add_dict = {
     "build-android-aarch64-shippable/opt": "build-android-aarch64-shippable/opt",
-    "toolchain-symbolicator-cli": "toolchain-symbolicator-cli",
+    "toolchain-profiler-node-tools": "toolchain-profiler-node-tools",
     "toolchain-linux64-android-simpleperf-linux-repack": "toolchain-linux64-android-simpleperf-linux-repack",
     "toolchain-linux64-samply": "toolchain-linux64-samply",
 }

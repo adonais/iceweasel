@@ -27,6 +27,7 @@ add_task(async function test_removingCreditCardsViaKeyboardDelete() {
     },
     TEST_CREDIT_CARD_1
   );
+  Services.fog.testResetFOG();
 
   let win = window.openDialog(
     MANAGE_CREDIT_CARDS_DIALOG_URL,
@@ -46,10 +47,8 @@ add_task(async function test_removingCreditCardsViaKeyboardDelete() {
 
   win.close();
 
-  await assertTelemetry(undefined, [
-    ["creditcard", "show", "manage"],
-    ["creditcard", "delete", "manage"],
-  ]);
+  Assert.equal(1, Glean.creditcard.showManage.testGetValue().length);
+  Assert.equal(1, Glean.creditcard.deleteManage.testGetValue().length);
 
   await cleanupFunc();
 });
@@ -58,6 +57,7 @@ add_task(async function test_saveCreditCard() {
   const cleanupFunc = await setupTask({
     set: [[ENABLED_AUTOFILL_CREDITCARDS_PREF, true]],
   });
+  Services.fog.testResetFOG();
 
   await testDialog(EDIT_CREDIT_CARD_DIALOG_URL, win => {
     EventUtils.synthesizeKey("VK_TAB", {}, win);
@@ -82,7 +82,7 @@ add_task(async function test_saveCreditCard() {
     EventUtils.synthesizeKey("VK_RETURN", {}, win);
   });
 
-  await assertTelemetry(undefined, [["creditcard", "add", "manage"]]);
+  Assert.equal(1, Glean.creditcard.addManage.testGetValue().length);
 
   await cleanupFunc();
 });
@@ -95,6 +95,7 @@ add_task(async function test_editCreditCard() {
     },
     TEST_CREDIT_CARD_1
   );
+  Services.fog.testResetFOG();
 
   let creditCards = await getCreditCards();
   Assert.equal(creditCards.length, 1, "only one credit card is in storage");
@@ -113,10 +114,8 @@ add_task(async function test_editCreditCard() {
     }
   );
 
-  await assertTelemetry(undefined, [
-    ["creditcard", "show_entry", "manage"],
-    ["creditcard", "edit", "manage"],
-  ]);
+  Assert.equal(1, Glean.creditcard.showEntryManage.testGetValue().length);
+  Assert.equal(1, Glean.creditcard.editManage.testGetValue().length);
 
   await cleanupFunc();
 });
@@ -129,6 +128,7 @@ add_task(async function test_histogram() {
     );
     return;
   }
+  Services.fog.testResetFOG();
 
   const cleanupFunc = await setupTask(
     {

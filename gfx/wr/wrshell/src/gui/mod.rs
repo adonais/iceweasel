@@ -472,13 +472,16 @@ impl Gui {
                         let first = frame_log.first_frame_index();
                         let last = frame_log.last_frame_index();
 
-                        if self.data_model.timeline.current_frame < first  {
-                            self.data_model.timeline.current_frame = first;
+                        let mut current = self.data_model.timeline.current_frame;
+                        current = current.clamp(first, last);
+
+                        // Make the current frame 'stick' to the last frame (that is, we were
+                        // already viewing the last frame, and a new frame was just pushed)
+                        if last == current + 1 {
+                            current = last
                         }
 
-                        if self.data_model.timeline.current_frame >= last - 1  {
-                            self.data_model.timeline.current_frame = last;
-                        }
+                        self.data_model.timeline.current_frame = current;
                     }
                 }
             }

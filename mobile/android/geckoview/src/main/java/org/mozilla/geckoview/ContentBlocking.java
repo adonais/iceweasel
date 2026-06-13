@@ -429,6 +429,91 @@ public class ContentBlocking {
         getSettings().setContentBlockingDatabaseStatus(enabled);
         return this;
       }
+
+      /**
+       * When set to true, the SafeBrowsing Global Cache is enabled.
+       *
+       * @param enabled A boolean indicating whether to enable the global cache.
+       * @return The Builder instance.
+       */
+      public @NonNull Builder safeBrowsingGlobalCacheEnabled(final boolean enabled) {
+        getSettings().setSafeBrowsingGlobalCacheEnabled(enabled);
+        return this;
+      }
+
+      /**
+       * When set to true, the SafeBrowsing real-time mode is enabled.
+       *
+       * @param enabled A boolean indicating whether to enable the real-time mode.
+       * @return The Builder instance.
+       */
+      public @NonNull Builder safeBrowsingRealTimeEnabled(final boolean enabled) {
+        getSettings().setSafeBrowsingRealTimeEnabled(enabled);
+        return this;
+      }
+
+      /**
+       * When set to true, the SafeBrowsing real-time simulation is enabled.
+       *
+       * @param enabled A boolean indicating whether to enable the real-time simulation.
+       * @return The Builder instance.
+       */
+      @ExperimentalGeckoViewApi
+      public @NonNull Builder safeBrowsingRealTimeSimulationEnabled(final boolean enabled) {
+        getSettings().setSafeBrowsingRealTimeSimulationEnabled(enabled);
+        return this;
+      }
+
+      /**
+       * Set the hit probability for SafeBrowsing real-time simulation.
+       *
+       * @param hitProbability The hit probability value.
+       * @return The Builder instance.
+       */
+      @ExperimentalGeckoViewApi
+      public @NonNull Builder safeBrowsingRealTimeSimulationHitProbability(
+          final int hitProbability) {
+        getSettings().setSafeBrowsingRealTimeSimulationHitProbability(hitProbability);
+        return this;
+      }
+
+      /**
+       * Set the cache TTL in seconds for SafeBrowsing real-time simulation.
+       *
+       * @param cacheTTLSec The cache TTL in seconds.
+       * @return The Builder instance.
+       */
+      @ExperimentalGeckoViewApi
+      public @NonNull Builder safeBrowsingRealTimeSimulationCacheTTLSec(final int cacheTTLSec) {
+        getSettings().setSafeBrowsingRealTimeSimulationCacheTTLSec(cacheTTLSec);
+        return this;
+      }
+
+      /**
+       * When set to true, the negative cache for SafeBrowsing real-time simulation is enabled.
+       *
+       * @param enabled A boolean indicating whether to enable the negative cache.
+       * @return The Builder instance.
+       */
+      @ExperimentalGeckoViewApi
+      public @NonNull Builder safeBrowsingRealTimeSimulationNegativeCacheEnabled(
+          final boolean enabled) {
+        getSettings().setSafeBrowsingRealTimeSimulationNegativeCacheEnabled(enabled);
+        return this;
+      }
+
+      /**
+       * Set the negative cache TTL in seconds for SafeBrowsing real-time simulation.
+       *
+       * @param negativeCacheTTLSec The negative cache TTL in seconds.
+       * @return The Builder instance.
+       */
+      @ExperimentalGeckoViewApi
+      public @NonNull Builder safeBrowsingRealTimeSimulationNegativeCacheTTLSec(
+          final int negativeCacheTTLSec) {
+        getSettings().setSafeBrowsingRealTimeSimulationNegativeCacheTTLSec(negativeCacheTTLSec);
+        return this;
+      }
     }
 
     /* package */ final Pref<String> mAt =

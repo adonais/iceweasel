@@ -31,7 +31,7 @@ with Files("rb/**"):
     BUG_COMPONENT = ("Core", "XPCOM")
 
 with Files("rewriting/**"):
-    BUG_COMPONENT = ("Firefox Build System", "Source Code Analysis")
+    BUG_COMPONENT = ("Developer Infrastructure", "Source Code Analysis")
 
 with Files("tryselect/**"):
     BUG_COMPONENT = ("Developer Infrastructure", "Try")

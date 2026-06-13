@@ -9,7 +9,7 @@
  * ======================
  *
  * See also GC scheduling from Firefox's perspective here:
- * https://searchfox.org/mozilla-central/source/dom/base/CCGCScheduler.cpp
+ * https://searchfox.org/firefox-main/source/dom/base/CCGCScheduler.cpp
  *
  * Scheduling GC's in SpiderMonkey/Firefox is tremendously complicated because
  * of the large number of subtle, cross-cutting, and widely dispersed factors

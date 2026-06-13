@@ -24,6 +24,7 @@
 struct SelectionDetails;
 class nsBlockFrame;
 class nsTextPaintStyle;
+class nsLineLayout;
 
 namespace mozilla {
 class SVGContextPaint;

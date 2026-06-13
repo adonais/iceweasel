@@ -81,7 +81,11 @@ fxviewtabrow-mute-tab-button-no-context =
 fxviewtabrow-unmute-tab-button-no-context =
   .title = Unmute tab
 
-# The following strings are for displaying elements in Firefox View to prompt users to sign in, enable sync, or pair a device
-fxviewtabrow-send-to-mobile-enable-sync2 = Enable sync to send a tab
-fxviewtabrow-send-to-mobile-connect-phone2 = Connect your phone
-fxviewtabrow-send-to-mobile-device-missing2 = Don’t see your device?
+## The following strings are for displaying elements in Firefox View to prompt users to sign in, enable sync, pair a device, or troubleshoot device issues.
+
+fxviewtabrow-send-to-mobile-sign-in = Sign in to Send Tabs
+fxviewtabrow-send-to-mobile-turn-on-sync = Turn on Sync to Send Tabs
+fxviewtabrow-send-to-mobile-connect-device = Connect a Device to Send Tabs
+fxviewtabrow-send-to-mobile-device-missing2 = Don’t See Your Device?
+fxviewtabrow-send-to-mobile-not-verified = Account Not Verified
+fxviewtabrow-send-to-mobile-verify-account = Verify Your Account

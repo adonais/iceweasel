@@ -8,10 +8,10 @@ import mozilla.components.browser.state.search.RegionState
 import mozilla.components.browser.state.search.SearchEngine
 import mozilla.components.support.test.mock
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
 import org.junit.Test
+import kotlin.test.assertNotNull
 
 class SearchStateTest {
     @Test
@@ -46,7 +46,7 @@ class SearchStateTest {
         )
 
         val searchEngine = state.selectedOrDefaultSearchEngine
-        assertNotNull(searchEngine!!)
+        assertNotNull(searchEngine)
         assertEquals("engine-e", searchEngine.id)
         assertEquals("Engine E", searchEngine.name)
     }
@@ -83,7 +83,7 @@ class SearchStateTest {
         )
 
         val searchEngine = state.selectedOrDefaultSearchEngine
-        assertNotNull(searchEngine!!)
+        assertNotNull(searchEngine)
         assertEquals("engine-d", searchEngine.id)
         assertEquals("Engine D", searchEngine.name)
     }
@@ -120,7 +120,7 @@ class SearchStateTest {
         )
 
         val searchEngine = state.selectedOrDefaultSearchEngine
-        assertNotNull(searchEngine!!)
+        assertNotNull(searchEngine)
         assertEquals("engine-b", searchEngine.id)
         assertEquals("Engine B", searchEngine.name)
     }
@@ -157,7 +157,7 @@ class SearchStateTest {
         )
 
         val searchEngine = state.selectedOrDefaultSearchEngine
-        assertNotNull(searchEngine!!)
+        assertNotNull(searchEngine)
         assertEquals("engine-a", searchEngine.id)
         assertEquals("Engine A", searchEngine.name)
     }
@@ -261,7 +261,7 @@ class SearchStateTest {
 
         val searchEngine = state.selectedOrDefaultPrivateSearchEngine
         assertNotNull(searchEngine)
-        assertEquals("engine-b", searchEngine?.id)
+        assertEquals("engine-b", searchEngine.id)
     }
 
     @Test
@@ -279,7 +279,7 @@ class SearchStateTest {
 
         val searchEngine = state.selectedOrDefaultPrivateSearchEngine
         assertNotNull(searchEngine)
-        assertEquals("engine-b", searchEngine?.id)
+        assertEquals("engine-b", searchEngine.id)
     }
 
     @Test

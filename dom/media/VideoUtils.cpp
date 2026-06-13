@@ -1049,7 +1049,8 @@ void LogToBrowserConsole(const nsAString& aMsg) {
   if (!NS_IsMainThread()) {
     nsString msg(aMsg);
     nsCOMPtr<nsIRunnable> task = NS_NewRunnableFunction(
-        "LogToBrowserConsole", [msg]() { LogToBrowserConsole(msg); });
+        "LogToBrowserConsole",
+        [msg = std::move(msg)]() { LogToBrowserConsole(msg); });
     SchedulerGroup::Dispatch(task.forget());
     return;
   }

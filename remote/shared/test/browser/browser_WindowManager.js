@@ -641,7 +641,7 @@ add_task(async function test_windows() {
   const win2 = await BrowserTestUtils.openNewBrowserWindow();
   const win3 = await BrowserTestUtils.openNewBrowserWindow();
 
-  const expectedWindows = [gBrowser.ownerGlobal, win1, win2, win3];
+  const expectedWindows = [gBrowser.documentGlobal, win1, win2, win3];
 
   try {
     is(
@@ -784,7 +784,7 @@ add_task(async function test_waitForChromeWindowLoaded_alreadyLoadedWindow() {
 add_task(
   async function test_waitForChromeWindowLoaded_nonBrowserChromeWindow() {
     const win = Services.ww.openWindow(
-      gBrowser.ownerGlobal,
+      gBrowser.documentGlobal,
       "chrome://browser/content/pageinfo/pageInfo.xhtml",
       "_blank",
       "chrome,dialog=no,all",

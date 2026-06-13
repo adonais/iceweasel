@@ -12,6 +12,7 @@
 namespace mozilla::dom {
 
 class RTCRtpScriptTransformer;
+class RTCStatsTimestampMaker;
 class StructuredCloneHolder;
 struct RTCEncodedVideoFrameOptions;
 
@@ -33,10 +34,17 @@ class RTCEncodedVideoFrame final : public RTCEncodedVideoFrameData,
   explicit RTCEncodedVideoFrame(
       nsIGlobalObject* aGlobal,
       std::unique_ptr<webrtc::TransformableFrameInterface> aFrame,
-      uint64_t aCounter, RTCRtpScriptTransformer* aOwner);
+      uint64_t aCounter, RTCRtpScriptTransformer* aOwner,
+      const Maybe<RTCStatsTimestampMaker>& aTimestampMaker);
 
   explicit RTCEncodedVideoFrame(nsIGlobalObject* aGlobal,
                                 RTCEncodedVideoFrameData&& aData);
+
+  // forbid copy/move to keep mState member in base valid
+  RTCEncodedVideoFrame(const RTCEncodedVideoFrame&) = delete;
+  RTCEncodedVideoFrame& operator=(const RTCEncodedVideoFrame&) = delete;
+  RTCEncodedVideoFrame(RTCEncodedVideoFrame&&) = delete;
+  RTCEncodedVideoFrame& operator=(RTCEncodedVideoFrame&&) = delete;
 
   // webidl (timestamp and data accessors live in base class)
   JSObject* WrapObject(JSContext* aCx,
@@ -68,12 +76,6 @@ class RTCEncodedVideoFrame final : public RTCEncodedVideoFrameData,
 
  private:
   virtual ~RTCEncodedVideoFrame() = default;
-
-  // forbid copy/move to keep mState member in base valid
-  RTCEncodedVideoFrame(const RTCEncodedVideoFrame&) = delete;
-  RTCEncodedVideoFrame& operator=(const RTCEncodedVideoFrame&) = delete;
-  RTCEncodedVideoFrame(RTCEncodedVideoFrame&&) = delete;
-  RTCEncodedVideoFrame& operator=(RTCEncodedVideoFrame&&) = delete;
 
   // RTCEncodedVideoFrame can run on either main thread or worker thread.
   void AssertIsOnOwningThread() const {

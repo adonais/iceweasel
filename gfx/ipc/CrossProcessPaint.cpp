@@ -413,8 +413,7 @@ void CrossProcessPaint::QueuePaint(dom::WindowGlobalParent* aWGP,
 
   CPP_LOG("Queueing paint for WindowGlobalParent(%p).\n", aWGP);
 
-  aWGP->DrawSnapshotInternal(this, aRect, mScale, aBackgroundColor,
-                             (uint32_t)aFlags);
+  aWGP->DrawSnapshotInternal(this, aRect, mScale, aBackgroundColor, aFlags);
   mPendingFragments += 1;
 }
 
@@ -452,7 +451,7 @@ void CrossProcessPaint::QueuePaint(dom::CanonicalBrowsingContext* aBc) {
         // 1562720)
         wgp->DrawSnapshotInternal(self, Nothing(), self->mScale,
                                   NS_RGBA(0, 0, 0, 0),
-                                  (uint32_t)self->GetFlagsForDependencies());
+                                  self->GetFlagsForDependencies());
       },
       [self = RefPtr{this}]() {
         CPP_LOG(

@@ -31,11 +31,11 @@ class nsFontInflationData {
 
   nscoord UsableISize() const { return mUsableISize; }
 
- private:
-  explicit nsFontInflationData(nsIFrame* aBFCFrame);
-
   nsFontInflationData(const nsFontInflationData&) = delete;
   void operator=(const nsFontInflationData&) = delete;
+
+ private:
+  explicit nsFontInflationData(nsIFrame* aBFCFrame);
 
   void UpdateISize(const ReflowInput& aReflowInput);
   enum SearchDirection { eFromStart, eFromEnd };

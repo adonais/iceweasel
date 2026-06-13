@@ -95,21 +95,21 @@
   --button-min-height: 24px;
 
   @at-root panel#{&} {
-    --panel-shadow: none;
+    --panel-box-shadow: none;
     // Extra space around the panel for the shadow to be drawn in. The panel
     // content can't overflow the XUL popup frame, so the frame must be extended.
-    --panel-shadow-margin: 6px;
+    --panel-box-shadow-margin: 6px;
     // The panel needs more extra space on the side that the arrow is on, since
     // the arrow is absolute positioned. This adds the visible height of the
     // arrow to the margin and subtracts 1 since the arrow is inset by 1.5px
     // (see --arrow-offset).
-    --panel-arrow-space: calc(var(--panel-shadow-margin) + var(--arrow-visible-height) - 1.5px);
+    --panel-arrow-space: calc(var(--panel-box-shadow-margin) + var(--arrow-visible-height) - 1.5px);
     // The callout starts with its edge aligned with the edge of the anchor. But
     // we want the arrow to align to the anchor, not the callout edge. So we need
     // to offset the callout by the arrow size and margin, as well as the margin
     // of the entire callout (it has margins on all sides to make room for the
     // shadow when displayed in a panel, which would normally cut off the shadow).
-    --panel-margin-offset: calc(-1 * (var(--panel-shadow-margin) + var(--arrow-corner-distance) + (var(--arrow-width) / 2)));
+    --panel-margin-offset: calc(-1 * (var(--panel-box-shadow-margin) + var(--arrow-corner-distance) + (var(--arrow-width) / 2)));
   }
 
   @at-root panel#{&}::part(content) {
@@ -117,7 +117,7 @@
     border: 0;
     border-radius: 0;
     padding: 0;
-    margin: var(--panel-shadow-margin);
+    margin: var(--panel-box-shadow-margin);
     background: none;
     color: inherit;
     // stylelint-disable-next-line declaration-no-important
@@ -144,6 +144,9 @@
     // use a different approach to flipping to avoid the fuzzy aliasing that
     // transform causes.
     transform: none;
+
+    // Override the background for sharp arrow corners
+    background: none;
   }
 
   .screen {
@@ -908,7 +911,7 @@
   }
 
   @at-root panel#{&}[arrow-position='top'] {
-    margin-top: calc(-1 * (var(--panel-shadow-margin) + var(--arrow-overlap-magnitude)));
+    margin-top: calc(-1 * (var(--panel-box-shadow-margin) + var(--arrow-overlap-magnitude)));
   }
 
   // bottom (center) arrow positioning
@@ -923,7 +926,7 @@
   }
 
   @at-root panel#{&}[arrow-position='bottom'] {
-    margin-bottom: calc(-1 * (var(--panel-shadow-margin) + var(--arrow-overlap-magnitude)));
+    margin-bottom: calc(-1 * (var(--panel-box-shadow-margin) + var(--arrow-overlap-magnitude)));
   }
 
   // end (center) arrow positioning
@@ -938,7 +941,7 @@
   }
 
   @at-root panel#{&}[arrow-position='inline-end'] {
-    margin-inline-end: calc(-1 * (var(--panel-shadow-margin) + var(--arrow-overlap-magnitude)));
+    margin-inline-end: calc(-1 * (var(--panel-box-shadow-margin) + var(--arrow-overlap-magnitude)));
   }
 
   // start (center) arrow positioning
@@ -953,7 +956,7 @@
   }
 
   @at-root panel#{&}[arrow-position='inline-start'] {
-    margin-inline-start: calc(-1 * (var(--panel-shadow-margin) + var(--arrow-overlap-magnitude)));
+    margin-inline-start: calc(-1 * (var(--panel-box-shadow-margin) + var(--arrow-overlap-magnitude)));
   }
 
   // top-end arrow positioning
@@ -968,7 +971,7 @@
   }
 
   @at-root panel#{&}[arrow-position='top-end'] {
-    margin-top: calc(-1 * (var(--panel-shadow-margin) + var(--arrow-overlap-magnitude)));
+    margin-top: calc(-1 * (var(--panel-box-shadow-margin) + var(--arrow-overlap-magnitude)));
   }
 
   // top-start arrow positioning
@@ -983,7 +986,7 @@
   }
 
   @at-root panel#{&}[arrow-position='top-start'] {
-    margin-top: calc(-1 * (var(--panel-shadow-margin) + var(--arrow-overlap-magnitude)));
+    margin-top: calc(-1 * (var(--panel-box-shadow-margin) + var(--arrow-overlap-magnitude)));
   }
 
   // bottom-end arrow positioning
@@ -998,7 +1001,7 @@
   }
 
   @at-root panel#{&}[arrow-position='bottom-end'] {
-    margin-bottom: calc(-1 * (var(--panel-shadow-margin) + var(--arrow-overlap-magnitude)));
+    margin-bottom: calc(-1 * (var(--panel-box-shadow-margin) + var(--arrow-overlap-magnitude)));
   }
 
   // bottom-start arrow positioning
@@ -1013,7 +1016,7 @@
   }
 
   @at-root panel#{&}[arrow-position='bottom-start'] {
-    margin-bottom: calc(-1 * (var(--panel-shadow-margin) + var(--arrow-overlap-magnitude)));
+    margin-bottom: calc(-1 * (var(--panel-box-shadow-margin) + var(--arrow-overlap-magnitude)));
   }
 
   // inline-end-top arrow positioning
@@ -1028,7 +1031,7 @@
   }
 
   @at-root panel#{&}[arrow-position='inline-end-top'] {
-    margin-inline-end: calc(-1 * (var(--panel-shadow-margin) + var(--arrow-overlap-magnitude)));
+    margin-inline-end: calc(-1 * (var(--panel-box-shadow-margin) + var(--arrow-overlap-magnitude)));
   }
 
   // inline-end-bottom arrow positioning
@@ -1043,7 +1046,7 @@
   }
 
   @at-root panel#{&}[arrow-position='inline-end-bottom'] {
-    margin-inline-end: calc(-1 * (var(--panel-shadow-margin) + var(--arrow-overlap-magnitude)));
+    margin-inline-end: calc(-1 * (var(--panel-box-shadow-margin) + var(--arrow-overlap-magnitude)));
   }
 
   // inline-start-top arrow positioning
@@ -1058,7 +1061,7 @@
   }
 
   @at-root panel#{&}[arrow-position='inline-start-top'] {
-    margin-inline-start: calc(-1 * (var(--panel-shadow-margin) + var(--arrow-overlap-magnitude)));
+    margin-inline-start: calc(-1 * (var(--panel-box-shadow-margin) + var(--arrow-overlap-magnitude)));
   }
 
   // inline-start-bottom arrow positioning
@@ -1073,7 +1076,7 @@
   }
 
   @at-root panel#{&}[arrow-position='inline-start-bottom'] {
-    margin-inline-start: calc(-1 * (var(--panel-shadow-margin) + var(--arrow-overlap-magnitude)));
+    margin-inline-start: calc(-1 * (var(--panel-box-shadow-margin) + var(--arrow-overlap-magnitude)));
   }
 
   /* Smart window feature callout custom styles */

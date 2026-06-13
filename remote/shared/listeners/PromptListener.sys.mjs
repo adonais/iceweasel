@@ -85,9 +85,12 @@ export class PromptListener {
    * Handles `DOMModalDialogClosed` events.
    */
   handleEvent(event) {
-    const chromeWin = event.target.opener
-      ? event.target.opener
-      : event.target.documentGlobal || event.target.ownerGlobal;
+    const chromeWin = (() => {
+      if (ChromeUtils.getClassName(event.target) === "Window") {
+        return event.target.opener || event.target;
+      }
+      return event.target.documentGlobal;
+    })();
     const curBrowser = this.#curBrowserFn && this.#curBrowserFn();
 
     // For Marionette (WebDriver classic) we only care about events which come

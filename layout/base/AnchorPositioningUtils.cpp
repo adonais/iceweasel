@@ -34,75 +34,24 @@ bool IsScrolled(const nsIFrame* aFrame) {
          PseudoStyleType::MozScrolledContent;
 }
 
-dom::ShadowRoot* GetTreeForCascadeLevel(const nsIContent& aContent,
-                                        int8_t aCascadeOrder) {
-  if (aCascadeOrder < 0) {
-    // First, walk through the slot chain for ::slotted() rules
-    auto* slot = aContent.GetAssignedSlot();
-    while (slot) {
-      ++aCascadeOrder;
-      if (aCascadeOrder == 0) {
-        return slot->GetContainingShadow();
-      }
-      slot = slot->GetAssignedSlot();
-    }
-    // If cascadeOrder is still -1 after processing all slots, this is a :host
-    // rule The element receiving the style is the shadow host, and we need to
-    // return the shadow root attached to this element (where the :host rule is
-    // defined)
-    const int8_t for_outermost_shadow_tree = -1;
-    if (aCascadeOrder != for_outermost_shadow_tree) {
-      return nullptr;
-    }
-
-    // For tree-like pseudo-elements (::before, ::after, ::marker), aContent
-    // is a generated content node. We need to get the parent (the originating
-    // element) to find the shadow root where the :host rule is defined.
-    if (aContent.IsGeneratedContentContainerForAfter() ||
-        aContent.IsGeneratedContentContainerForBefore() ||
-        aContent.IsGeneratedContentContainerForMarker()) {
-      if (const auto* parent = aContent.GetParent()) {
-        return parent->GetShadowRoot();
-      }
-    }
-
-    return aContent.GetShadowRoot();
-  }
-
-  auto* containingShadow = aContent.GetContainingShadow();
-  while (containingShadow) {
-    if (aCascadeOrder == 0) {
-      return containingShadow;
-    }
-    --aCascadeOrder;
-    // Walk up through the shadow host to get to the containing tree
-    const auto* host = containingShadow->GetHost();
-    if (!host) {
-      break;
-    }
-    containingShadow = host->GetContainingShadow();
-  }
-
-  return containingShadow;
-}
-
 bool DoTreeScopedPropertiesOfElementApplyToContent(
     const ScopedNameRef& aAnchorName, const nsIFrame* aReferencingFrame,
     const nsIFrame* aMaybeReferencedFrame) {
-  const auto* referencingContent = aReferencingFrame->GetContent();
+  const auto* referencingElement = aReferencingFrame->GetContent()->AsElement();
 
   const auto& referencingTreeScope =
       aReferencingFrame->StyleDisplay()->mAnchorName.scope;
 
   const auto* referencingShadowRoot =
-      AnchorPositioningUtils::GetShadowRootForTreeScope(*referencingContent,
+      AnchorPositioningUtils::GetShadowRootForTreeScope(*referencingElement,
                                                         referencingTreeScope);
 
-  const auto* maybeReferencedContent = aMaybeReferencedFrame->GetContent();
+  const auto* maybeReferencedElement =
+      aMaybeReferencedFrame->GetContent()->AsElement();
   const auto& maybeReferencedScope = aAnchorName.mTreeScope;
 
   const auto* maybeReferencedShadowRoot =
-      AnchorPositioningUtils::GetShadowRootForTreeScope(*maybeReferencedContent,
+      AnchorPositioningUtils::GetShadowRootForTreeScope(*maybeReferencedElement,
                                                         maybeReferencedScope);
   const auto* currentShadowRoot = maybeReferencedShadowRoot;
   while (currentShadowRoot) {
@@ -135,12 +84,12 @@ bool IsAnchorInScopeForPositionedElement(const ScopedNameRef& aName,
   const auto* positionedContainingBlockContent =
       aPositionedFrame->GetParent()->GetContent();
 
-  const nsIContent* positionedContent = aPositionedFrame->GetContent();
+  const auto* positionedElement = aPositionedFrame->GetContent()->AsElement();
 
   const auto& positionAnchorScope = aName.mTreeScope;
 
   const dom::ShadowRoot* positionAnchorShadowRoot =
-      AnchorPositioningUtils::GetShadowRootForTreeScope(*positionedContent,
+      AnchorPositioningUtils::GetShadowRootForTreeScope(*positionedElement,
                                                         positionAnchorScope);
 
   auto getAnchorPosNearestScope =
@@ -173,8 +122,8 @@ bool IsAnchorInScopeForPositionedElement(const ScopedNameRef& aName,
 
       for (const StyleAtom& ident : anchorScope->value.AsSpan()) {
         if (aName == ident.AsAtom() || ident.AsAtom() == nsGkAtoms::all) {
-          const dom::ShadowRoot* shadowRoot = GetTreeForCascadeLevel(
-              *cp, anchorScope->scope.ShadowCascadeOrder());
+          const dom::ShadowRoot* shadowRoot =
+              Servo_GetShadowRootForScoped(cp->AsElement(), anchorScope->scope);
           if (shadowRoot == aShadowRoot) {
             return cp;
           }
@@ -188,7 +137,8 @@ bool IsAnchorInScopeForPositionedElement(const ScopedNameRef& aName,
       aPossibleAnchorFrame->StyleDisplay()->mAnchorName;
   const dom::ShadowRoot* possibleAnchorShadowRoot =
       AnchorPositioningUtils::GetShadowRootForTreeScope(
-          *aPossibleAnchorFrame->GetContent(), possibleAnchorName.scope);
+          *aPossibleAnchorFrame->GetContent()->AsElement(),
+          possibleAnchorName.scope);
   const auto* nearestScopeForAnchor = getAnchorPosNearestScope(
       aName.mName, aPossibleAnchorFrame, possibleAnchorShadowRoot);
 
@@ -566,12 +516,7 @@ Maybe<nsRect> AnchorPositioningUtils::GetAnchorPosRect(
     bool aCBRectIsvalid) {
   auto rect = [&]() -> Maybe<nsRect> {
     if (aCBRectIsvalid) {
-      const nsRect result =
-          nsLayoutUtils::GetCombinedFragmentRects(aAnchor).mRect;
-      const auto offset =
-          aAnchor->GetOffsetToIgnoringScrolling(aAbsoluteContainingBlock);
-      // Easy, just use the existing function.
-      return Some(result + offset);
+      return Some(ReassembleAnchorRect(aAnchor, aAbsoluteContainingBlock));
     }
 
     // Ok, containing block doesn't have its rect fully resolved. Figure out
@@ -1196,7 +1141,7 @@ static bool TriggerFallbackReflow(PresShell* aPresShell, nsIFrame* aPositioned,
                                   AnchorPosReferenceData& aReferencedAnchors,
                                   bool aEvaluateAllFallbacksIfNeeded) {
   auto totalFallbacks =
-      aPositioned->StylePosition()->mPositionTryFallbacks._0.Length();
+      aPositioned->StylePosition()->mPositionTryFallbacks.value._0.Length();
   if (!totalFallbacks) {
     // No fallbacks specified.
     return false;
@@ -1204,19 +1149,34 @@ static bool TriggerFallbackReflow(PresShell* aPresShell, nsIFrame* aPositioned,
 
   const bool positionedFitsInCB = AnchorPositioningUtils::FitsInContainingBlock(
       aPositioned, aReferencedAnchors);
-  if (positionedFitsInCB) {
-    return false;
-  }
-
-  // TODO(bug 1987964): Try to only do this when the scroll offset changes?
   auto* lastSuccessfulPosition =
       aPositioned->GetProperty(nsIFrame::LastSuccessfulPositionFallback());
-  const bool needsRetry =
-      aEvaluateAllFallbacksIfNeeded ||
-      (lastSuccessfulPosition && !lastSuccessfulPosition->mTriedAllFallbacks);
+
+  const bool needsRetry = [&] {
+    if (positionedFitsInCB) {
+      return false;
+    }
+    // TODO(bug 1987964): Try to only do this when the scroll offset changes?
+    if (aEvaluateAllFallbacksIfNeeded) {
+      return true;
+    }
+    return lastSuccessfulPosition && lastSuccessfulPosition->mLastIndex &&
+           !lastSuccessfulPosition->mTriedAllFallbacks;
+  }();
+
   if (!needsRetry) {
+    // Record our last successful fallback.
+    if (lastSuccessfulPosition) {
+      if (lastSuccessfulPosition->mLastIndex) {
+        lastSuccessfulPosition->mRecordedIndex =
+            lastSuccessfulPosition->mLastIndex;
+      } else {
+        aPositioned->RemoveProperty(nsIFrame::LastSuccessfulPositionFallback());
+      }
+    }
     return false;
   }
+  // We'll be back, no need to record the last fallback.
   aPresShell->MarkPositionedFrameForReflow(aPositioned);
   return true;
 }
@@ -1500,9 +1460,9 @@ nsRect AnchorPositioningUtils::ReassembleAnchorRect(
       cbwm, relevantCbSize.GetPhysicalSize(cbwm));
 }
 
-dom::ShadowRoot* AnchorPositioningUtils::GetShadowRootForTreeScope(
-    const nsIContent& aContent, const StyleCascadeLevel& aTreeScope) {
-  return GetTreeForCascadeLevel(aContent, aTreeScope.ShadowCascadeOrder());
+const dom::ShadowRoot* AnchorPositioningUtils::GetShadowRootForTreeScope(
+    const dom::Element& aElement, const StyleCascadeLevel& aTreeScope) {
+  return Servo_GetShadowRootForScoped(&aElement, aTreeScope);
 }
 
 }  // namespace mozilla

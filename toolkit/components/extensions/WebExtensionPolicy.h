@@ -53,9 +53,7 @@ class WebAccessibleResource final {
            (IsHostMatch(aURI) || IsExtensionMatch(aURI));
   }
 
-  bool IsHostMatch(const URLInfo& aURI) {
-    return mMatches && mMatches->Matches(aURI);
-  }
+  bool IsHostMatch(const URLInfo& aURI);
 
   bool IsExtensionMatch(const URLInfo& aURI);
 
@@ -144,6 +142,9 @@ class WebExtensionPolicyCore final {
   bool QuarantinedFromDoc(const DocInfo& aDoc) const;
   bool QuarantinedFromURI(const URLInfo& aURI) const MOZ_EXCLUDES(mLock);
 
+  Maybe<dom::ExtensionGuardSource> CheckGuarded(const URLInfo& aURI) const
+      MOZ_EXCLUDES(mLock);
+
   bool HasRecommendedState() const MOZ_EXCLUDES(mLock) {
     AutoReadLock lock(mLock);
     return mHasRecommendedState;
@@ -208,6 +209,7 @@ class WebExtensionPolicyCore final {
   bool mHasRecommendedState MOZ_GUARDED_BY(mLock);
   RefPtr<AtomSet> mPermissions MOZ_GUARDED_BY(mLock);
   RefPtr<MatchPatternSetCore> mHostPermissions MOZ_GUARDED_BY(mLock);
+  nsTArray<RefPtr<ExtensionGuardSetCore>> mGuardSets MOZ_GUARDED_BY(mLock);
 };
 
 class WebExtensionPolicy final : public nsISupports, public nsWrapperCache {
@@ -320,6 +322,18 @@ class WebExtensionPolicy final : public nsISupports, public nsWrapperCache {
   }
   void SetAllowedOrigins(MatchPatternSet& aAllowedOrigins);
 
+  void GetGuardSets(nsTArray<RefPtr<ExtensionGuardSet>>& aResult) const;
+  void SetGuardSets(const nsTArray<OwningNonNull<ExtensionGuardSet>>& aLists);
+
+  dom::Nullable<dom::ExtensionGuardSource> CheckGuarded(
+      const URLInfo& aURI) const {
+    const auto result = mCore->CheckGuarded(aURI);
+    if (result.isSome()) {
+      return dom::Nullable<dom::ExtensionGuardSource>(result.ref());
+    }
+    return {};
+  }
+
   void GetPermissions(nsTArray<nsString>& aResult) const {
     mCore->GetPermissions(aResult);
   }
@@ -425,6 +439,9 @@ class WebExtensionPolicy final : public nsISupports, public nsWrapperCache {
   // NOTE: This is a mirror of the object in `mCore`, except with the
   // non-threadsafe wrapper.
   RefPtr<MatchPatternSet> mHostPermissions;
+
+  // NOTE: mirrors mCore->mGuardSets with non-threadsafe wrappers.
+  nsTArray<RefPtr<ExtensionGuardSet>> mGuardSets;
 
   dom::Nullable<nsTArray<nsString>> mBackgroundScripts;
 

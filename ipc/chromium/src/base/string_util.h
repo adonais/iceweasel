@@ -8,7 +8,6 @@
 #define BASE_STRING_UTIL_H_
 
 #include <stdarg.h>  // va_list
-#include <ctype.h>
 
 #include <string>
 #include <vector>

@@ -4,8 +4,6 @@
 
 #include "nsStyleUtil.h"
 
-#include <cctype>
-
 #include "mozilla/ExpandedPrincipal.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/PolicyContainer.h"

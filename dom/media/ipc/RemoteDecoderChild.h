@@ -60,6 +60,8 @@ class RemoteDecoderChild : public ShmemRecycleAllocator<RemoteDecoderChild>,
   virtual ~RemoteDecoderChild();
   void AssertOnManagerThread() const;
 
+  nsresult GetCrashedErrorCode() const;
+
   virtual MediaResult ProcessOutput(DecodedOutputIPDL&& aDecodedData) = 0;
   virtual void RecordShutdownTelemetry(bool aForAbnormalShutdown) {}
 

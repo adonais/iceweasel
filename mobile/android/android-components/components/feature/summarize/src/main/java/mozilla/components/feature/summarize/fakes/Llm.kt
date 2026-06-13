@@ -21,16 +21,16 @@ import kotlin.time.Duration.Companion.seconds
  *
  * @property state The mutable state flow representing the current provider state.
  * Defaults to [CloudLlmProvider.State.Available].
- * @property llm The [Llm] instance to transition to when [prepare] is called.
+ * @property preparedState The state to transition to while preparing
  */
 data class FakeCloudProvider(
     override val state: MutableStateFlow<CloudLlmProvider.State> = MutableStateFlow(CloudLlmProvider.State.Available),
-    val llm: Llm,
+    val preparedState: CloudLlmProvider.State,
 ) : CloudLlmProvider {
     override val info = LlmProvider.Info(nameRes = R.string.mozac_summarize_fake_llm_name)
 
     override suspend fun prepare() {
-        state.value = CloudLlmProvider.State.Ready(llm)
+        state.value = preparedState
     }
 }
 

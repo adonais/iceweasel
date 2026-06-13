@@ -550,7 +550,7 @@ nsresult CSSEditUtils::GetSpecifiedCSSInlinePropertyBase(nsIContent& aContent,
     return NS_ERROR_INVALID_ARG;
   }
 
-  RefPtr<DeclarationBlock> decl = element->GetInlineStyleDeclaration();
+  RefPtr decl = element->GetInlineStyleDeclaration();
   if (!decl) {
     return NS_OK;
   }
@@ -561,7 +561,7 @@ nsresult CSSEditUtils::GetSpecifiedCSSInlinePropertyBase(nsIContent& aContent,
   MOZ_ASSERT(prop != eCSSProperty_UNKNOWN);
 
   nsAutoCString value;
-  decl->GetPropertyValueById(prop, value);
+  Servo_DeclarationBlock_GetPropertyValueByNonCustomId(decl, prop, &value);
   CopyUTF8toUTF16(value, aValue);
   return NS_OK;
 }

@@ -170,6 +170,10 @@ struct MemoryInstanceData {
 
   // Whether this memory is shared or not.
   bool isShared;
+
+  // Total mapped size of the memory buffer, including guard pages. Stored
+  // here to avoid touching GC objects from signal handlers.
+  size_t mappedSize;
 };
 
 // TableInstanceData describes the region of wasm global memory allocated in the

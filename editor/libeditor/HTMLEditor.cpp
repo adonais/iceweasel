@@ -55,6 +55,7 @@
 #include "mozilla/dom/CharacterDataBuffer.h"
 #include "mozilla/dom/DocumentFragment.h"
 #include "mozilla/dom/DocumentInlines.h"
+#include "mozilla/dom/EditContext.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/ElementInlines.h"
 #include "mozilla/dom/Event.h"
@@ -67,7 +68,7 @@
 #include "mozilla/dom/NameSpaceConstants.h"
 #include "mozilla/dom/Selection.h"
 
-#include "nsContentList.h"
+#include "mozilla/dom/ContentList.h"
 #include "nsContentUtils.h"
 #include "nsCRT.h"
 #include "nsDebug.h"
@@ -530,7 +531,7 @@ NS_IMETHODIMP HTMLEditor::SetDocumentCharacterSet(
     return NS_OK;
   }
 
-  RefPtr<nsContentList> headElementList =
+  RefPtr<ContentList> headElementList =
       document->GetElementsByTagName(u"head"_ns);
   if (NS_WARN_IF(!headElementList)) {
     return NS_OK;
@@ -582,14 +583,14 @@ NS_IMETHODIMP HTMLEditor::SetDocumentCharacterSet(
 bool HTMLEditor::UpdateMetaCharsetWithTransaction(
     Document& aDocument, const nsACString& aCharacterSet) {
   // get a list of META tags
-  RefPtr<nsContentList> metaElementList =
+  RefPtr<ContentList> metaElementList =
       aDocument.GetElementsByTagName(u"meta"_ns);
   if (NS_WARN_IF(!metaElementList)) {
     return false;
   }
 
   for (uint32_t i = 0; i < metaElementList->Length(true); ++i) {
-    RefPtr<Element> metaElement = metaElementList->Item(i)->AsElement();
+    RefPtr<Element> metaElement = metaElementList->Item(i);
     MOZ_ASSERT(metaElement);
 
     nsAutoString currentValue;
@@ -797,6 +798,11 @@ nsresult HTMLEditor::OnFocus(const nsINode& aOriginalEventTargetNode) {
   }
   mHasFocus = true;
   mIsInDesignMode = aOriginalEventTargetNode.IsInDesignMode();
+  if (StaticPrefs::dom_editcontext_enabled() && EditContext::IsAnyAttached()) {
+    // Active EditContext may have changed
+    aOriginalEventTargetNode.OwnerDoc()->UpdateTextEditContext();
+  }
+
   return NS_OK;
 }
 
@@ -829,6 +835,12 @@ nsresult HTMLEditor::FocusedElementOrDocumentBecomesNotEditable(
                          "HTMLEditor::FinalizeSelection() failed");
     aHTMLEditor->mHasFocus = false;
     aHTMLEditor->mIsInDesignMode = false;
+
+    if (StaticPrefs::dom_editcontext_enabled() &&
+        EditContext::IsAnyAttached()) {
+      // Active EditContext may have changed
+      aDocument.UpdateTextEditContext();
+    }
 
     RefPtr<Element> focusedElement = nsFocusManager::GetFocusedElementStatic();
     if (focusedElement && !focusedElement->IsInComposedDoc()) {
@@ -919,6 +931,12 @@ nsresult HTMLEditor::OnBlur(const EventTarget* aEventTarget) {
                        "EditorBase::FinalizeSelection() failed");
   mIsInDesignMode = false;
   mHasFocus = false;
+  if (StaticPrefs::dom_editcontext_enabled() && EditContext::IsAnyAttached() &&
+      eventTargetAsElement) {
+    // Active EditContext may have changed
+    eventTargetAsElement->OwnerDoc()->UpdateTextEditContext();
+  }
+
   return rv;
 }
 
@@ -1514,7 +1532,7 @@ NS_IMETHODIMP HTMLEditor::UpdateBaseURL() {
   }
 
   // Look for an HTML <base> tag
-  RefPtr<nsContentList> baseElementList =
+  RefPtr<ContentList> baseElementList =
       document->GetElementsByTagName(u"base"_ns);
 
   // If no base tag, then set baseURL to the document's URL.  This is very
@@ -3466,7 +3484,8 @@ nsresult HTMLEditor::CopyAttributes(WithTransaction aWithTransaction,
       nsString attrValue;
       attrInfo.mValue->ToString(attrValue);
       srcAttrs.AppendElement(AttrCache{attrInfo.mName->NamespaceID(),
-                                       *attrName->LocalName(), attrValue});
+                                       *attrName->LocalName(),
+                                       std::move(attrValue)});
     }
   }
   if (aWithTransaction == WithTransaction::No) {

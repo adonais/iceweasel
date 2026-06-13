@@ -72,6 +72,7 @@ toolkit.jar:
    content/global/resetProfileProgress.xhtml
    content/global/TopLevelVideoDocument.js
    content/global/datetimepicker.xhtml
+   content/global/ScrollOffsets.mjs                (ScrollOffsets.mjs)
    content/global/treeUtils.js
 #ifndef MOZ_GECKOVIEW
    content/global/viewZoomOverlay.js
@@ -103,11 +104,13 @@ toolkit.jar:
    content/global/elements/moz-badge.tokens.css    (widgets/moz-badge/moz-badge.tokens.css)
    content/global/elements/moz-badge.css    (widgets/moz-badge/moz-badge.css)
    content/global/elements/moz-badge.mjs    (widgets/moz-badge/moz-badge.mjs)
+   content/global/elements/moz-box.tokens.css    (widgets/moz-box.tokens.css)
    content/global/elements/moz-box-common.css    (widgets/moz-box-common.css)
    content/global/elements/moz-box-button.css    (widgets/moz-box-button/moz-box-button.css)
    content/global/elements/moz-box-button.mjs    (widgets/moz-box-button/moz-box-button.mjs)
    content/global/elements/moz-box-group.css    (widgets/moz-box-group/moz-box-group.css)
    content/global/elements/moz-box-group.mjs    (widgets/moz-box-group/moz-box-group.mjs)
+   content/global/elements/moz-breadcrumb.tokens.css    (widgets/moz-breadcrumb-group/moz-breadcrumb.tokens.css)
    content/global/elements/moz-breadcrumb.css    (widgets/moz-breadcrumb-group/moz-breadcrumb.css)
    content/global/elements/moz-breadcrumb-group.css    (widgets/moz-breadcrumb-group/moz-breadcrumb-group.css)
    content/global/elements/moz-breadcrumb-group.mjs    (widgets/moz-breadcrumb-group/moz-breadcrumb-group.mjs)
@@ -139,6 +142,7 @@ toolkit.jar:
    content/global/elements/moz-input-url.mjs    (widgets/moz-input-url/moz-input-url.mjs)
    content/global/elements/moz-page-header.css    (widgets/moz-page-header/moz-page-header.css)
    content/global/elements/moz-page-header.mjs    (widgets/moz-page-header/moz-page-header.mjs)
+   content/global/elements/moz-page-nav.tokens.css    (widgets/moz-page-nav/moz-page-nav.tokens.css)
    content/global/elements/moz-page-nav.css    (widgets/moz-page-nav/moz-page-nav.css)
    content/global/elements/moz-page-nav-button.css    (widgets/moz-page-nav/moz-page-nav-button.css)
    content/global/elements/moz-page-nav.mjs    (widgets/moz-page-nav/moz-page-nav.mjs)
@@ -150,17 +154,21 @@ toolkit.jar:
    content/global/elements/moz-message-bar.tokens.css    (widgets/moz-message-bar/moz-message-bar.tokens.css)
    content/global/elements/moz-message-bar.css    (widgets/moz-message-bar/moz-message-bar.css)
    content/global/elements/moz-message-bar.mjs    (widgets/moz-message-bar/moz-message-bar.mjs)
+   content/global/elements/moz-promo.tokens.css    (widgets/moz-promo/moz-promo.tokens.css)
    content/global/elements/moz-promo.css    (widgets/moz-promo/moz-promo.css)
    content/global/elements/moz-promo.mjs    (widgets/moz-promo/moz-promo.mjs)
    content/global/elements/moz-radio-group.mjs    (widgets/moz-radio-group/moz-radio-group.mjs)
+   content/global/elements/moz-reorderable-list.tokens.css    (widgets/moz-reorderable-list/moz-reorderable-list.tokens.css)
    content/global/elements/moz-reorderable-list.css    (widgets/moz-reorderable-list/moz-reorderable-list.css)
    content/global/elements/moz-reorderable-list.mjs    (widgets/moz-reorderable-list/moz-reorderable-list.mjs)
+   content/global/elements/moz-select.tokens.css    (widgets/moz-select/moz-select.tokens.css)
    content/global/elements/moz-select.css    (widgets/moz-select/moz-select.css)
    content/global/elements/moz-select.mjs    (widgets/moz-select/moz-select.mjs)
    content/global/elements/moz-support-link.mjs    (widgets/moz-support-link/moz-support-link.mjs)
    content/global/elements/moz-toggle.tokens.css      (widgets/moz-toggle/moz-toggle.tokens.css)
    content/global/elements/moz-toggle.css      (widgets/moz-toggle/moz-toggle.css)
    content/global/elements/moz-toggle.mjs      (widgets/moz-toggle/moz-toggle.mjs)
+   content/global/elements/moz-visual-picker-item.tokens.css    (widgets/moz-visual-picker/moz-visual-picker-item.tokens.css)
    content/global/elements/moz-visual-picker-item.css    (widgets/moz-visual-picker/moz-visual-picker-item.css)
    content/global/elements/moz-visual-picker.mjs    (widgets/moz-visual-picker/moz-visual-picker.mjs)
    content/global/elements/named-deck.js       (widgets/named-deck.js)

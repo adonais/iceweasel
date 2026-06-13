@@ -13,7 +13,7 @@ WebExtension Page-Load Tests
 
 Page-load tests involve loading a specific web page and measuring the load performance (i.e. `time-to-first-non-blank-paint <https://wiki.mozilla.org/TestEngineering/Performance/Glossary#First_Non-Blank_Paint_.28fnbpaint.29>`_, first-contentful-paint, `dom-content-flushed <https://wiki.mozilla.org/TestEngineering/Performance/Glossary#DOM_Content_Flushed_.28dcf.29>`_).
 
-For page-load tests by default, instead of using live web pages for performance testing, Raptor uses a tool called `Mitmproxy <https://wiki.mozilla.org/TestEngineering/Performance/Raptor/Mitmproxy>`_. Mitmproxy allows us to record and playback test pages via a local Firefox proxy. The Mitmproxy recordings are stored on `tooltool <https://github.com/mozilla/build-tooltool>`_ and are automatically downloaded by Raptor when they are required for a test. Raptor uses mitmproxy via the `mozproxy <https://searchfox.org/mozilla-central/source/testing/mozbase/mozproxy>`_ package.
+For page-load tests by default, instead of using live web pages for performance testing, Raptor uses a tool called `Mitmproxy <https://wiki.mozilla.org/TestEngineering/Performance/Raptor/Mitmproxy>`_. Mitmproxy allows us to record and playback test pages via a local Firefox proxy. The Mitmproxy recordings are stored on `tooltool <https://github.com/mozilla/build-tooltool>`_ and are automatically downloaded by Raptor when they are required for a test. Raptor uses mitmproxy via the :searchfox:`mozproxy <testing/mozbase/mozproxy>` package.
 
 There are two different types of Raptor page-load tests: warm page-load and cold page-load.
 
@@ -76,9 +76,9 @@ It is possible to use live web pages for the page-load tests instead of using th
 
 Disabling Alerts
 ================
-It is possible to disable alerting for all our performance tests. Open the target test manifest such as the raptor-tp6*.ini file (`Raptor tests folder <https://searchfox.org/mozilla-central/source/testing/raptor/raptor/tests>`_), and make sure there are no ``alert_on`` specifications.
+It is possible to disable alerting for all our performance tests. Open the target test manifest such as the raptor-tp6*.ini file (:searchfox:`Raptor tests folder <testing/raptor/raptor/tests>`), and make sure there are no ``alert_on`` specifications.
 
-When it's removed there will no longer be a ``shouldAlert`` field in the output Perfherder data (you can find the `schema here <https://searchfox.org/mozilla-central/source/testing/mozharness/external_tools/performance-artifact-schema.json#68,165>`_). As long as ``shouldAlert`` is not in the data, no alerts will be generated. If you need to also disable code sheriffing for the test, then you need to change the tier of the task to 3.
+When it's removed there will no longer be a ``shouldAlert`` field in the output Perfherder data (you can find the :searchfox:`schema here <testing/mozharness/external_tools/performance-artifact-schema.json#68,165>`). As long as ``shouldAlert`` is not in the data, no alerts will be generated. If you need to also disable code sheriffing for the test, then you need to change the tier of the task to 3.
 
 High value tests
 ================
@@ -389,7 +389,7 @@ You can override the default page-cycles by using the --page-cycles command-line
 
 Running Page-Load Tests on Live Sites
 =====================================
-To use live pages instead of page recordings, just edit the `Raptor tp6* test INI <https://searchfox.org/mozilla-central/source/testing/raptor/raptor/tests>`_ file and add the following attribute either at the top (for all pages in the suite) or under an individual page/subtest heading:
+To use live pages instead of page recordings, just edit the :searchfox:`Raptor tp6* test INI <testing/raptor/raptor/tests>` file and add the following attribute either at the top (for all pages in the suite) or under an individual page/subtest heading:
 
   use_live_pages = true
 
@@ -522,4 +522,4 @@ Device specific:
 * gpu governor
 * gpu minimum frequency
 
-For a detailed list of current tweaks, please refer to `this <https://searchfox.org/mozilla-central/source/testing/raptor/raptor/raptor.py#676>`_ Searchfox page.
+For a detailed list of current tweaks, please refer to :searchfox:`this <testing/raptor/raptor/raptor.py#676>` Searchfox page.

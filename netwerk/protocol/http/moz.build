@@ -69,6 +69,7 @@ EXPORTS.mozilla.net += [
     "HttpConnectionMgrParent.h",
     "HttpConnectionMgrShell.h",
     "HttpInfo.h",
+    "HttpTrafficAnalyzer.h",
     "HttpTransactionChild.h",
     "HttpTransactionParent.h",
     "HttpTransactionShell.h",
@@ -187,6 +188,7 @@ UNIFIED_SOURCES += [
     "WebTransportFlowControl.cpp",
     "WebTransportSessionBase.cpp",
     "WebTransportStreamBase.cpp",
+    "ZeroRttHandle.cpp",
 ]
 
 if CONFIG["MOZ_WIDGET_TOOLKIT"] == "windows":

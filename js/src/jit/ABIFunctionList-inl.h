@@ -141,7 +141,13 @@ namespace jit {
   _(js::jit::NumberBigIntCompare<js::jit::ComparisonKind::LessThan>)           \
   _(js::jit::NumberBigIntCompare<js::jit::ComparisonKind::GreaterThanOrEqual>) \
   _(js::jit::BigIntNumberCompare<js::jit::ComparisonKind::GreaterThanOrEqual>) \
+  _(js::jit::DateDateFromTime)                                                 \
   _(js::jit::DateFillLocalTimeSlots)                                           \
+  _(js::jit::DateLocalTimeToUTC)                                               \
+  _(js::jit::DateMonthFromTime)                                                \
+  _(js::jit::DateNow)                                                          \
+  _(js::jit::DateParse)                                                        \
+  _(js::jit::DateYearFromTime)                                                 \
   _(js::jit::EqualStringsHelperPure)                                           \
   _(js::jit::FinishBailoutToBaseline)                                          \
   _(js::jit::Float16ToFloat32)                                                 \

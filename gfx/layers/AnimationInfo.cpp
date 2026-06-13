@@ -957,7 +957,7 @@ void AnimationInfo::AddAnimationsForDisplayItem(
   // If the frame is not prerendered, bail out.
   // Do this check only during layer construction; during updating the
   // caller is required to check it appropriately.
-  if (aItem && !aItem->CanUseAsyncAnimations(aBuilder)) {
+  if (aItem && !aItem->CanUseAsyncAnimations()) {
     // EffectCompositor needs to know that we refused to run this animation
     // asynchronously so that it will not throttle the main thread
     // animation.

@@ -57,6 +57,8 @@ class BeaconOnPagehideShutdownTestCase(MarionetteTestCase):
     def setUp(self):
         super().setUp()
 
+        self.marionette.set_pref("network.dns.disableIPv6", True)
+
         # Find a free port for our test server
         sock = socket.socket()
         sock.bind(("", 0))

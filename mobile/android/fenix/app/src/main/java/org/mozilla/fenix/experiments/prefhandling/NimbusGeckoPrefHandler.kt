@@ -217,12 +217,24 @@ class NimbusGeckoPrefHandler(
     @OptIn(ExperimentalAndroidComponentsApi::class)
     override fun setGeckoPrefsOriginalValues(originalGeckoPrefs: List<OriginalGeckoPref>) {
         geckoScope.launch {
+            // Clear the geckoValue in the shared records.
+            originalGeckoPrefs.forEach { pref ->
+                getPreferenceState(pref.pref)?.let { it.geckoValue = null }
+            }
+
             // We need type information to correctly revert
             if (preferenceTypes.isEmpty() || originalGeckoPrefs.any { it.pref !in preferenceTypes }) {
                 fetchPrefTypeInfo(originalGeckoPrefs.map { it.pref }).await()
             }
 
             val (prefsWithValues, prefsToReset) = originalGeckoPrefs.partition { it.value != null }
+
+            // Stop observing the preference we are about to restore.
+            browserPrefObserverIntegration.unregisterPrefsForObservation(
+                prefs = originalGeckoPrefs.map { it.pref },
+                onSuccess = {},
+                onError = { logger.error("Error unregistering preferences from observation", it) },
+            )
 
             // Set elements that we have values we can restore back to
             val setters = createSettersFromOriginalGeckoPrefs(prefsWithValues, preferenceTypes)
@@ -315,6 +327,15 @@ class NimbusGeckoPrefHandler(
             prefs = setters,
             onSuccess = { resultMap ->
 
+                // Determine new Nimbus enrollments from re-evaluations.
+                val newEnrollment = newPrefsState
+                    .filter {
+                        getPreferenceState(it.prefString())?.enrollmentValue?.experimentSlug !=
+                            it.enrollmentValue?.experimentSlug
+                    }
+                    .map { it.prefString() }
+                    .toSet()
+
                 // Ensures state and processes errors
                 val succeededPrefs = processSetResults(resultMap, newPrefsState)
 
@@ -330,10 +351,19 @@ class NimbusGeckoPrefHandler(
                         },
                     )
 
+                    // Exclude re-evaluations — their originals are already stored in Nimbus.
+                    // This prevents errantly writing prior experiment/rollout values
+                    // that modified the preference in-between.
+                    val statesToRegister = succeededPrefs
+                        .filter { it in newEnrollment }
+                        .mapNotNull { getPreferenceState(it) }
+
                     // Reports back the value for Nimbus to store
-                    nimbusApi.value.registerPreviousGeckoPrefStates(
-                        geckoPrefStates = succeededPrefs.mapNotNull { getPreferenceState(it) },
-                    )
+                    if (statesToRegister.isNotEmpty()) {
+                        nimbusApi.value.registerPreviousGeckoPrefStates(
+                            geckoPrefStates = statesToRegister,
+                        )
+                    }
                 }
 
                 handleErrors()

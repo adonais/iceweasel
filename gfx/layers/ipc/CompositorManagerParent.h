@@ -68,7 +68,7 @@ class CompositorManagerParent final : public PCompositorManagerParent {
   void ActorDestroy(ActorDestroyReason aReason) override;
 
   already_AddRefed<PCompositorBridgeParent> AllocPCompositorBridgeParent(
-      const CompositorBridgeOptions& aOpt);
+      const CompositorBridgeOptions& aOpt, const uint32_t& aNamespace);
 
   static void NotifyWebRenderError(wr::WebRenderError aError);
 
@@ -77,6 +77,8 @@ class CompositorManagerParent final : public PCompositorManagerParent {
   bool OwnsExternalImageId(const wr::ExternalImageId& aId) const {
     return mNamespace == static_cast<uint32_t>(wr::AsUint64(aId) >> 32);
   }
+
+  uint32_t GetNamespace() const { return mNamespace; }
 
  private:
   static StaticMonitor sMonitor;

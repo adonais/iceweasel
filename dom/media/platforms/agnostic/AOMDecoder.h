@@ -238,6 +238,13 @@ class AOMDecoder final : public MediaDataDecoder,
   //    Other errors will indicate that the data was corrupt.
   static MediaResult ReadSequenceHeaderInfo(const Span<const uint8_t>& aSample,
                                             AV1SequenceInfo& aDestInfo);
+
+  // Parse SMPTE ST 2086 mastering display and CTA-861.3 content light level
+  // from an AV1 sample's Metadata OBUs.
+  // Returns Nothing if neither metadata type is present.
+  static mozilla::Maybe<mozilla::gfx::HDRMetadata> ReadMetadataOBUHDR(
+      const Span<const uint8_t>& aSample);
+
   // Writes a sequence header OBU to the buffer.
   static already_AddRefed<MediaByteBuffer> CreateSequenceHeader(
       const AV1SequenceInfo& aInfo, nsresult& aResult);

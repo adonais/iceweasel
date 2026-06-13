@@ -34,12 +34,12 @@ struct nsTransformedCharStyle final {
   bool mExplicitLanguage;
   bool mForceNonFullWidth = false;
   bool mMaskPassword = false;
-
- private:
-  ~nsTransformedCharStyle() = default;
   nsTransformedCharStyle(const nsTransformedCharStyle& aOther) = delete;
   nsTransformedCharStyle& operator=(const nsTransformedCharStyle& aOther) =
       delete;
+
+ private:
+  ~nsTransformedCharStyle() = default;
 };
 
 class nsTransformingTextRunFactory {

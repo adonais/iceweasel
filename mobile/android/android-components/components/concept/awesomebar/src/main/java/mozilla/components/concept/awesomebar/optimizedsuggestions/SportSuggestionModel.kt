@@ -4,6 +4,8 @@
 
 package mozilla.components.concept.awesomebar.optimizedsuggestions
 
+import android.graphics.Bitmap
+
 /**
  * Represents the sports status type used by the Sports Suggestion.
  */
@@ -39,8 +41,13 @@ sealed class SportSuggestionDate {
  *
  * @param name The name of the team.
  * @param score The score of the team.
+ * @param icon The icon of the team.
  */
-data class SportSuggestionTeam(val name: String, val score: Int?)
+data class SportSuggestionTeam(
+    val name: String,
+    val score: Int?,
+    val icon: Bitmap?,
+)
 
 /**
  * Represents the various statuses a sport's game can have.

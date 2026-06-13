@@ -83,6 +83,7 @@ import org.mozilla.focus.GleanMetrics.TrackingProtection
 import org.mozilla.focus.R
 import org.mozilla.focus.activity.FirefoxInstallationHelper
 import org.mozilla.focus.activity.MainActivity
+import org.mozilla.focus.browser.integration.BrowserMenuCallbacks
 import org.mozilla.focus.browser.integration.BrowserMenuController
 import org.mozilla.focus.browser.integration.BrowserToolbarIntegration
 import org.mozilla.focus.browser.integration.FindInPageIntegration
@@ -613,8 +614,8 @@ class BrowserFragment :
         }
     }
 
-    override fun onPictureInPictureModeChanged(enabled: Boolean) {
-        pictureInPictureFeature?.onPictureInPictureModeChanged(enabled)
+    override fun onPictureInPictureModeChanged(isInPipMode: Boolean) {
+        pictureInPictureFeature?.onPictureInPictureModeChanged(isInPipMode)
         if (lifecycle.currentState == Lifecycle.State.CREATED) {
             onBackPressed()
         }
@@ -637,13 +638,15 @@ class BrowserFragment :
             requireComponents.store,
             requireComponents.topSitesUseCases,
             tabId,
-            ::shareCurrentUrl,
-            ::toggleDesktopSite,
-            ::showAddToHomescreenDialog,
-            ::showFindInPageBar,
-            ::openSelectBrowser,
-            ::openInBrowser,
-            ::showShortcutAddedSnackBar,
+            BrowserMenuCallbacks(
+                shareCallback = ::shareCurrentUrl,
+                requestDesktopCallback = ::toggleDesktopSite,
+                addToHomeScreenCallback = ::showAddToHomescreenDialog,
+                showFindInPageCallback = ::showFindInPageBar,
+                openInCallback = ::openSelectBrowser,
+                openInBrowser = ::openInBrowser,
+                showShortcutAddedSnackBar = ::showShortcutAddedSnackBar,
+            ),
         )
 
         val customTabSessionState = tab.ifCustomTab()

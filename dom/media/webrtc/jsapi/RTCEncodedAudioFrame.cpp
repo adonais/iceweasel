@@ -14,6 +14,7 @@
 #include "js/RootingAPI.h"
 #include "jsapi/RTCEncodedFrameBase.h"
 #include "jsapi/RTCRtpScriptTransform.h"
+#include "jsapi/RTCStatsReport.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/dom/RTCEncodedAudioFrameBinding.h"
 #include "mozilla/dom/RTCRtpScriptTransformer.h"
@@ -22,15 +23,14 @@
 #include "mozilla/fallible.h"
 #include "nsContentUtils.h"
 #include "nsIGlobalObject.h"
-#include "nsISupports.h"
-#include "nsWrapperCache.h"
 
 namespace mozilla::dom {
 
 RTCEncodedAudioFrame::RTCEncodedAudioFrame(
     nsIGlobalObject* aGlobal,
     std::unique_ptr<webrtc::TransformableFrameInterface> aFrame,
-    uint64_t aCounter, RTCRtpScriptTransformer* aOwner)
+    uint64_t aCounter, RTCRtpScriptTransformer* aOwner,
+    const Maybe<RTCStatsTimestampMaker>& aTimestampMaker)
     : RTCEncodedAudioFrameData{RTCEncodedFrameState{std::move(aFrame), aCounter,
                                                     /*timestamp*/ 0}},
       RTCEncodedFrameBase(aGlobal, static_cast<RTCEncodedFrameState&>(*this),
@@ -39,6 +39,18 @@ RTCEncodedAudioFrame::RTCEncodedAudioFrame(
   mMetadata.mPayloadType.Construct(mFrame->GetPayloadType());
   mMetadata.mMimeType.Construct(NS_ConvertASCIItoUTF16(mFrame->GetMimeType()));
   mMetadata.mRtpTimestamp.Construct(mFrame->GetTimestamp());
+  const DebugOnly<bool> isReceived =
+      mFrame->GetDirection() ==
+      webrtc::TransformableFrameInterface::Direction::kReceiver;
+  MOZ_ASSERT_IF(isReceived, aTimestampMaker);
+  MOZ_ASSERT_IF(isReceived, mFrame->ReceiveTime());
+  if (aTimestampMaker) {
+    if (const auto receiveTime = mFrame->ReceiveTime()) {
+      mMetadata.mReceiveTime.Construct(
+          RTCStatsTimestamp::FromRealtime(*aTimestampMaker, *receiveTime)
+              .ToDomNoTimeOrigin());
+    }
+  }
   const auto& audioFrame(
       static_cast<webrtc::TransformableAudioFrameInterface&>(*mFrame));
   mMetadata.mContributingSources.Construct();
@@ -98,6 +110,7 @@ already_AddRefed<RTCEncodedAudioFrame> RTCEncodedAudioFrame::Constructor(
     set_if(dst.mPayloadType, src.mPayloadType);
     set_if(dst.mMimeType, src.mMimeType);
     set_if(dst.mRtpTimestamp, src.mRtpTimestamp);
+    set_if(dst.mReceiveTime, src.mReceiveTime);
     set_if(dst.mContributingSources, src.mContributingSources);
     set_if(dst.mSequenceNumber, src.mSequenceNumber);
     set_if(dst.mAudioLevel, src.mAudioLevel);

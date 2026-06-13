@@ -23,14 +23,10 @@ const CSSPositionTryRule* CSSPositionTryRuleDeclaration::Rule() const {
 }
 
 CSSPositionTryRuleDeclaration::CSSPositionTryRuleDeclaration(
-    already_AddRefed<StyleLockedDeclarationBlock> aDecls)
-    : mDecls(new DeclarationBlock(std::move(aDecls))) {
-  mDecls->SetOwningRule(Rule());
-}
+    already_AddRefed<Block> aDecls)
+    : mDecls(aDecls) {}
 
-CSSPositionTryRuleDeclaration::~CSSPositionTryRuleDeclaration() {
-  mDecls->SetOwningRule(nullptr);
-}
+CSSPositionTryRuleDeclaration::~CSSPositionTryRuleDeclaration() = default;
 
 NS_INTERFACE_MAP_BEGIN(CSSPositionTryRuleDeclaration)
   NS_WRAPPERCACHE_INTERFACE_TABLE_ENTRY
@@ -60,8 +56,9 @@ JSObject* CSSPositionTryRuleDeclaration::WrapObject(
   return CSSPositionTryDescriptors_Binding::Wrap(aCx, this, aGivenProto);
 }
 
-DeclarationBlock* CSSPositionTryRuleDeclaration::GetOrCreateCSSDeclaration(
-    Operation aOperation, DeclarationBlock** aCreated) {
+StyleLockedDeclarationBlock*
+CSSPositionTryRuleDeclaration::GetOrCreateCSSDeclaration(Operation aOperation,
+                                                         Block** aCreated) {
   if (aOperation != Operation::Read) {
     if (StyleSheet* sheet = Rule()->GetStyleSheet()) {
       sheet->WillDirty();
@@ -71,22 +68,19 @@ DeclarationBlock* CSSPositionTryRuleDeclaration::GetOrCreateCSSDeclaration(
 }
 
 void CSSPositionTryRuleDeclaration::SetRawAfterClone(
-    RefPtr<StyleLockedDeclarationBlock> aDeclarationBlock) {
-  mDecls->SetOwningRule(nullptr);
-  mDecls = new DeclarationBlock(aDeclarationBlock.forget());
-  mDecls->SetOwningRule(Rule());
+    RefPtr<Block> aDeclarationBlock) {
+  mDecls = std::move(aDeclarationBlock);
 }
 
 nsresult CSSPositionTryRuleDeclaration::SetCSSDeclaration(
-    DeclarationBlock* aDecl, MutationClosureData* aClosureData) {
+    Block* aDecl, MutationClosureData* aClosureData) {
   MOZ_ASSERT(aDecl, "must be non-null");
   CSSPositionTryRule* rule = Rule();
-  RefPtr<DeclarationBlock> oldDecls;
+  RefPtr<Block> oldDecls;
   if (aDecl != mDecls) {
-    mDecls->SetOwningRule(nullptr);
-    Servo_PositionTryRule_SetStyle(rule->Raw(), aDecl->Raw());
+    oldDecls = std::move(mDecls);
+    Servo_PositionTryRule_SetStyle(rule->Raw(), aDecl);
     mDecls = aDecl;
-    mDecls->SetOwningRule(rule);
   }
 
   if (StyleSheet* sheet = rule->GetStyleSheet()) {
@@ -134,7 +128,6 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(CSSPositionTryRule)
   //
   // Note that this has to happen before unlinking css::Rule.
   tmp->UnlinkDeclarationWrapper(tmp->mDecls);
-  tmp->mDecls.mDecls->SetOwningRule(nullptr);
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END_INHERITED(css::Rule)
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(CSSPositionTryRule, css::Rule)
@@ -191,7 +184,7 @@ JSObject* CSSPositionTryRule::WrapObject(JSContext* aCx,
 }
 
 const StyleLockedDeclarationBlock* CSSPositionTryRule::RawStyle() const {
-  return mDecls.mDecls->Raw();
+  return mDecls.mDecls.get();
 }
 
 }  // namespace mozilla::dom

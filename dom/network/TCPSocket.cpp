@@ -240,7 +240,7 @@ nsresult TCPSocket::Init(nsIProxyInfo* aProxyInfo) {
     mReadyState = TCPReadyState::Connecting;
 
     nsCOMPtr<nsISerialEventTarget> target;
-    if (nsCOMPtr<nsIGlobalObject> global = GetOwnerGlobal()) {
+    if (nsCOMPtr<nsIGlobalObject> global = GetRelevantGlobal()) {
       target = global->SerialEventTarget();
     }
     mSocketBridgeChild = new TCPSocketChild(mHost, mPort, target);
@@ -521,7 +521,7 @@ TCPSocket::FireEvent(const nsAString& aType) {
   }
 
   AutoJSAPI api;
-  if (NS_WARN_IF(!api.Init(GetOwnerGlobal()))) {
+  if (NS_WARN_IF(!api.Init(GetRelevantGlobal()))) {
     return NS_ERROR_FAILURE;
   }
   JS::Rooted<JS::Value> val(api.cx());
@@ -532,7 +532,7 @@ NS_IMETHODIMP
 TCPSocket::FireDataArrayEvent(const nsAString& aType,
                               const nsTArray<uint8_t>& buffer) {
   AutoJSAPI api;
-  if (NS_WARN_IF(!api.Init(GetOwnerGlobal()))) {
+  if (NS_WARN_IF(!api.Init(GetRelevantGlobal()))) {
     return NS_ERROR_FAILURE;
   }
   JSContext* cx = api.cx();
@@ -549,7 +549,7 @@ NS_IMETHODIMP
 TCPSocket::FireDataStringEvent(const nsAString& aType,
                                const nsACString& aString) {
   AutoJSAPI api;
-  if (NS_WARN_IF(!api.Init(GetOwnerGlobal()))) {
+  if (NS_WARN_IF(!api.Init(GetRelevantGlobal()))) {
     return NS_ERROR_FAILURE;
   }
   JSContext* cx = api.cx();
@@ -1055,7 +1055,7 @@ TCPSocket::OnDataAvailable(nsIRequest* aRequest, nsIInputStream* aStream,
     }
 
     AutoJSAPI api;
-    if (!api.Init(GetOwnerGlobal())) {
+    if (!api.Init(GetRelevantGlobal())) {
       return NS_ERROR_FAILURE;
     }
     JSContext* cx = api.cx();
@@ -1078,7 +1078,7 @@ TCPSocket::OnDataAvailable(nsIRequest* aRequest, nsIInputStream* aStream,
   }
 
   AutoJSAPI api;
-  if (!api.Init(GetOwnerGlobal())) {
+  if (!api.Init(GetRelevantGlobal())) {
     return NS_ERROR_FAILURE;
   }
   JSContext* cx = api.cx();

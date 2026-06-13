@@ -8,6 +8,7 @@
 
 #include "mozilla/Assertions.h"
 #include "mozilla/intl/RelativeTimeFormat.h"
+#include "mozilla/UsingEnum.h"
 
 #include "builtin/intl/CommonFunctions.h"
 #include "builtin/intl/FormatBuffer.h"
@@ -16,7 +17,6 @@
 #include "builtin/intl/NumberFormat.h"
 #include "builtin/intl/Packed.h"
 #include "builtin/intl/ParameterNegotiation.h"
-#include "builtin/intl/UsingEnum.h"
 #include "gc/GCContext.h"
 #include "js/friend/ErrorMessages.h"  // js::GetErrorMessage, JSMSG_*
 #include "js/Printer.h"
@@ -34,16 +34,7 @@ using namespace js::intl;
 /**************** RelativeTimeFormat *****************/
 
 const JSClassOps RelativeTimeFormatObject::classOps_ = {
-    nullptr,                             // addProperty
-    nullptr,                             // delProperty
-    nullptr,                             // enumerate
-    nullptr,                             // newEnumerate
-    nullptr,                             // resolve
-    nullptr,                             // mayResolve
-    RelativeTimeFormatObject::finalize,  // finalize
-    nullptr,                             // call
-    nullptr,                             // construct
-    nullptr,                             // trace
+    .finalize = RelativeTimeFormatObject::finalize,
 };
 
 const JSClass RelativeTimeFormatObject::class_ = {
@@ -158,11 +149,7 @@ void js::intl::RelativeTimeFormatObject::setOptions(
 
 static constexpr std::string_view RelativeTimeStyleToString(
     RelativeTimeFormatOptions::Style style) {
-#ifndef USING_ENUM
-  using enum RelativeTimeFormatOptions::Style;
-#else
-  USING_ENUM(RelativeTimeFormatOptions::Style, Long, Short, Narrow);
-#endif
+  MOZ_USING_ENUM(RelativeTimeFormatOptions::Style, Long, Short, Narrow);
   switch (style) {
     case Long:
       return "long";
@@ -176,11 +163,7 @@ static constexpr std::string_view RelativeTimeStyleToString(
 
 static constexpr std::string_view NumericToString(
     RelativeTimeFormatOptions::Numeric numeric) {
-#ifndef USING_ENUM
-  using enum RelativeTimeFormatOptions::Numeric;
-#else
-  USING_ENUM(RelativeTimeFormatOptions::Numeric, Always, Auto);
-#endif
+  MOZ_USING_ENUM(RelativeTimeFormatOptions::Numeric, Always, Auto);
   switch (numeric) {
     case Always:
       return "always";
@@ -492,13 +475,8 @@ static bool SingularRelativeTimeUnit(
 
 static auto ToNumberFormatUnit(
     mozilla::intl::RelativeTimeFormat::FormatUnit unit) {
-#ifndef USING_ENUM
-  using enum mozilla::intl::RelativeTimeFormat::FormatUnit;
-#else
-  USING_ENUM(mozilla::intl::RelativeTimeFormat::FormatUnit, Second, Minute,
-             Hour, Day, Week, Month, Quarter, Year);
-#endif
-
+  MOZ_USING_ENUM(mozilla::intl::RelativeTimeFormat::FormatUnit, Second, Minute,
+                 Hour, Day, Week, Month, Quarter, Year);
   switch (unit) {
     case Second:
       return NumberFormatUnit::Second;

@@ -10,7 +10,7 @@
 # ApplicationID
 #   http://nsis.sourceforge.net/ApplicationID_plug-in
 # CityHash
-#   http://searchfox.org/mozilla-central/source/other-licenses/nsis/Contrib/CityHash
+#   http://searchfox.org/firefox-main/source/other-licenses/nsis/Contrib/CityHash
 # nsJSON
 #   http://nsis.sourceforge.net/NsJSON_plug-in
 # ShellLink

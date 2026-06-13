@@ -357,10 +357,11 @@ inline NativeObject* NewObjectWithGivenTaggedProtoAndAllocSite(
 namespace detail {
 
 template <typename T, NewObjectKind NewKind>
-inline T* NewObjectWithGivenTaggedProtoForKind(JSContext* cx,
-                                               Handle<TaggedProto> proto) {
-  JSObject* obj = NewObjectWithGivenTaggedProto<NewKind>(cx, &T::class_, proto,
-                                                         ObjectFlags());
+inline T* NewObjectWithGivenTaggedProtoForKind(
+    JSContext* cx, Handle<TaggedProto> proto,
+    ObjectFlags objFlags = ObjectFlags()) {
+  JSObject* obj =
+      NewObjectWithGivenTaggedProto<NewKind>(cx, &T::class_, proto, objFlags);
   return obj ? &obj->as<T>() : nullptr;
 }
 
@@ -395,15 +396,17 @@ inline NativeObject* NewTenuredObjectWithGivenProto(
 }
 
 template <typename T>
-inline T* NewObjectWithGivenProto(JSContext* cx, HandleObject proto) {
+inline T* NewObjectWithGivenProto(JSContext* cx, HandleObject proto,
+                                  ObjectFlags objFlags = ObjectFlags()) {
   return detail::NewObjectWithGivenTaggedProtoForKind<T, GenericObject>(
-      cx, AsTaggedProto(proto));
+      cx, AsTaggedProto(proto), objFlags);
 }
 
 template <typename T>
-inline T* NewTenuredObjectWithGivenProto(JSContext* cx, HandleObject proto) {
+inline T* NewTenuredObjectWithGivenProto(JSContext* cx, HandleObject proto,
+                                         ObjectFlags objFlags = ObjectFlags()) {
   return detail::NewObjectWithGivenTaggedProtoForKind<T, TenuredObject>(
-      cx, AsTaggedProto(proto));
+      cx, AsTaggedProto(proto), objFlags);
 }
 
 template <typename T>

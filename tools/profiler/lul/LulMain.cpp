@@ -1684,7 +1684,7 @@ static __attribute__((noinline)) bool GetAndCheckStackTrace(
   memset(&startRegs, 0, sizeof(startRegs));
 #if defined(GP_ARCH_amd64)
   volatile uintptr_t block[3];
-  MOZ_ASSERT(sizeof(block) == 24);
+  static_assert(sizeof(block) == 24);
   __asm__ __volatile__(
       "leaq 0(%%rip), %%r15"
       "\n\t"
@@ -1704,7 +1704,7 @@ static __attribute__((noinline)) bool GetAndCheckStackTrace(
   uintptr_t start = block[1] - REDZONE_SIZE;
 #elif defined(GP_PLAT_x86_linux) || defined(GP_PLAT_x86_android)
   volatile uintptr_t block[3];
-  MOZ_ASSERT(sizeof(block) == 12);
+  static_assert(sizeof(block) == 12);
   __asm__ __volatile__(
       ".byte 0xE8,0x00,0x00,0x00,0x00" /*call next insn*/
       "\n\t"
@@ -1726,7 +1726,7 @@ static __attribute__((noinline)) bool GetAndCheckStackTrace(
   uintptr_t start = block[1] - REDZONE_SIZE;
 #elif defined(GP_PLAT_arm_linux) || defined(GP_PLAT_arm_android)
   volatile uintptr_t block[6];
-  MOZ_ASSERT(sizeof(block) == 24);
+  static_assert(sizeof(block) == 24);
   __asm__ __volatile__(
       "mov r0, r15"
       "\n\t"
@@ -1755,7 +1755,7 @@ static __attribute__((noinline)) bool GetAndCheckStackTrace(
   uintptr_t start = block[1] - REDZONE_SIZE;
 #elif defined(GP_ARCH_arm64)
   volatile uintptr_t block[4];
-  MOZ_ASSERT(sizeof(block) == 32);
+  static_assert(sizeof(block) == 32);
   __asm__ __volatile__(
       "adr x0, . \n\t"
       "str x0, [%0, #0] \n\t"
@@ -1774,7 +1774,7 @@ static __attribute__((noinline)) bool GetAndCheckStackTrace(
   uintptr_t start = block[1] - REDZONE_SIZE;
 #elif defined(GP_ARCH_mips64)
   volatile uintptr_t block[3];
-  MOZ_ASSERT(sizeof(block) == 24);
+  static_assert(sizeof(block) == 24);
   __asm__ __volatile__(
       "sd $29, 8(%0)     \n"
       "sd $30, 16(%0)    \n"

@@ -30,6 +30,10 @@ var CustomizationHandler = {
       childNode.setAttribute("disabled", true);
     }
 
+    if (!Services.policies.isAllowed("profileImport")) {
+      document.documentElement.setAttribute("disableprofileimport", "true");
+    }
+
     UpdateUrlbarSearchSplitterState();
 
     PlacesToolbarHelper.customizeStart();

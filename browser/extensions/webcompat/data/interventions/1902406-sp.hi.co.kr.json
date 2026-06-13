@@ -10,7 +10,7 @@
     {
       "platforms": ["all"],
       "content_scripts": {
-        "js": ["bug1902406-sp.hi.co.kr-window-chrome-shim.js"]
+        "js": ["define_minimal_window_chrome.js"]
       }
     }
   ]

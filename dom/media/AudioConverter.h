@@ -97,10 +97,7 @@ class AudioDataBuffer {
     mBuffer = std::move(aOther.mBuffer);
     return *this;
   }
-  AudioDataBuffer& operator=(const AudioDataBuffer& aOther) {
-    mBuffer = aOther.mBuffer;
-    return *this;
-  }
+  AudioDataBuffer& operator=(const AudioDataBuffer& aOther) = default;
 
   Value* Data() const { return mBuffer.Data(); }
   size_t Length() const { return mBuffer.Length(); }

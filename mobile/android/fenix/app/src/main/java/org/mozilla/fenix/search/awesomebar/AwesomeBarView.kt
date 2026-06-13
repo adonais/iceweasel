@@ -5,6 +5,8 @@
 package org.mozilla.fenix.search.awesomebar
 
 import android.content.Context
+import androidx.lifecycle.ProcessLifecycleOwner
+import androidx.lifecycle.lifecycleScope
 import mozilla.components.browser.state.search.DefaultSearchEngineProvider
 import org.mozilla.fenix.browser.browsingmode.BrowsingModeManager
 import org.mozilla.fenix.ext.components
@@ -30,6 +32,7 @@ class AwesomeBarView(
     private val suggestionsProvidersBuilder by lazy(LazyThreadSafetyMode.NONE) {
         SearchSuggestionsProvidersBuilder(
             components = context.components,
+            scope = ProcessLifecycleOwner.get().lifecycleScope,
             includeSelectedTab = includeSelectedTab,
             loadUrlUseCase = AwesomeBarLoadUrlUseCase(interactor),
             searchUseCase = AwesomeBarSearchUseCase(interactor),

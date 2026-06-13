@@ -54,6 +54,7 @@ import org.mockito.Mockito.atLeastOnce
 import org.mockito.Mockito.never
 import org.mockito.Mockito.verify
 import java.util.Locale
+import kotlin.test.assertIs
 
 class TranslationsMiddlewareTest {
     private val testDispatcher = StandardTestDispatcher()
@@ -199,7 +200,7 @@ class TranslationsMiddlewareTest {
         captureActionsMiddleware.assertFirstAction(TranslationsAction.TranslateExceptionAction::class) { action ->
             assertEquals(tab.id, action.tabId)
             assertEquals(TranslationOperation.FETCH_SUPPORTED_LANGUAGES, action.operation)
-            assertTrue(action.translationError is TranslationError.CouldNotLoadLanguagesError)
+            assertIs<TranslationError.CouldNotLoadLanguagesError>(action.translationError)
         }
     }
 
@@ -395,7 +396,7 @@ class TranslationsMiddlewareTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         captureActionsMiddleware.assertFirstAction(TranslationsAction.EngineExceptionAction::class) { action ->
-            assertTrue(action.error is TranslationError.CouldNotLoadLanguageSettingsError)
+            assertIs<TranslationError.CouldNotLoadLanguageSettingsError>(action.error)
         }
     }
 
@@ -468,7 +469,7 @@ class TranslationsMiddlewareTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         captureActionsMiddleware.assertFirstAction(TranslationsAction.EngineExceptionAction::class) { action ->
-            assertTrue(action.error is TranslationError.UnknownEngineSupportError)
+            assertIs<TranslationError.UnknownEngineSupportError>(action.error)
         }
     }
 
@@ -615,7 +616,7 @@ class TranslationsMiddlewareTest {
         captureActionsMiddleware.assertFirstAction(TranslationsAction.TranslateExceptionAction::class) { action ->
             assertEquals(tab.id, action.tabId)
             assertEquals(TranslationOperation.FETCH_PAGE_SETTINGS, action.operation)
-            assertTrue(action.translationError is TranslationError.CouldNotLoadPageSettingsError)
+            assertIs<TranslationError.CouldNotLoadPageSettingsError>(action.translationError)
         }
     }
 
@@ -746,11 +747,11 @@ class TranslationsMiddlewareTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         captureActionsMiddleware.assertFirstAction(TranslationsAction.EngineExceptionAction::class) { action ->
-            assertTrue(action.error is TranslationError.CouldNotLoadLanguageSettingsError)
+            assertIs<TranslationError.CouldNotLoadLanguageSettingsError>(action.error)
         }
 
         captureActionsMiddleware.assertFirstAction(TranslationsAction.TranslateExceptionAction::class) { action ->
-            assertTrue(action.translationError is TranslationError.CouldNotLoadLanguageSettingsError)
+            assertIs<TranslationError.CouldNotLoadLanguageSettingsError>(action.translationError)
             assertEquals(tab.id, action.tabId)
             assertEquals(TranslationOperation.FETCH_AUTOMATIC_LANGUAGE_SETTINGS, action.operation)
         }
@@ -852,7 +853,7 @@ class TranslationsMiddlewareTest {
         errorCallback.value.invoke(Exception())
 
         captureActionsMiddleware.assertFirstAction(TranslationsAction.TranslateExceptionAction::class) { action ->
-            assertTrue(action.translationError is TranslationError.CouldNotLoadNeverTranslateSites)
+            assertIs<TranslationError.CouldNotLoadNeverTranslateSites>(action.translationError)
             assertEquals(tab.id, action.tabId)
             assertEquals(TranslationOperation.FETCH_NEVER_TRANSLATE_SITES, action.operation)
         }
@@ -990,13 +991,13 @@ class TranslationsMiddlewareTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         captureActionsMiddleware.assertFirstAction(TranslationsAction.EngineExceptionAction::class) { action ->
-            assertTrue(action.error is TranslationError.ModelCouldNotRetrieveError)
+            assertIs<TranslationError.ModelCouldNotRetrieveError>(action.error)
         }
 
         captureActionsMiddleware.assertFirstAction(TranslationsAction.TranslateExceptionAction::class) { action ->
             assertEquals(tab.id, action.tabId)
             assertEquals(TranslationOperation.FETCH_LANGUAGE_MODELS, action.operation)
-            assertTrue(action.translationError is TranslationError.ModelCouldNotRetrieveError)
+            assertIs<TranslationError.ModelCouldNotRetrieveError>(action.translationError)
         }
     }
 
@@ -1279,7 +1280,7 @@ class TranslationsMiddlewareTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         captureActionsMiddleware.assertFirstAction(TranslationsAction.EngineExceptionAction::class) { action ->
-            assertTrue(action.error is TranslationError.CouldNotSetBrowserEnabledError)
+            assertIs<TranslationError.CouldNotSetBrowserEnabledError>(action.error)
         }
     }
 }

@@ -16,7 +16,7 @@ use crate::{
     parser::{Parse, ParserContext},
     values::{
         generics::{calc::CalcUnits, Optional},
-        specified::{angle::Angle as SpecifiedAngle, calc::Leaf, color::Color as SpecifiedColor},
+        specified::{angle::NoCalcAngle, calc::Leaf, color::Color as SpecifiedColor},
     },
 };
 use cssparser::{
@@ -146,7 +146,9 @@ fn parse_color_function<'i, 't>(
         // Validate the channels and calc expressions by trying to resolve them against
         // transparent.
         // FIXME(emilio, bug 1925572): This could avoid cloning, or be done earlier.
-        let abs = color.map_origin_color(|_| Some(AbsoluteColor::TRANSPARENT_BLACK));
+        let abs = color
+            .map_origin_color(|_| Ok(AbsoluteColor::TRANSPARENT_BLACK))
+            .unwrap();
         if abs.resolve_to_absolute().is_err() {
             return Err(arguments.new_custom_error(StyleParseErrorKind::UnspecifiedError));
         }
@@ -404,8 +406,8 @@ impl ColorComponentType for NumberOrPercentageComponent {
 
     fn try_from_leaf(leaf: &Leaf) -> Result<Self, ()> {
         Ok(match *leaf {
-            Leaf::Percentage(unit_value) => Self::Percentage(unit_value),
-            Leaf::Number(value) => Self::Number(value),
+            Leaf::Percentage(p) => Self::Percentage(p.get()),
+            Leaf::Number(n) => Self::Number(n.value()),
             _ => return Err(()),
         })
     }
@@ -448,10 +450,7 @@ impl ColorComponentType for NumberOrAngleComponent {
             Token::Dimension {
                 value, ref unit, ..
             } => {
-                let degrees =
-                    SpecifiedAngle::parse_dimension(value, unit, /* from_calc = */ false)
-                        .map(|angle| angle.degrees())?;
-
+                let degrees = NoCalcAngle::parse_dimension(value, unit)?.degrees();
                 NumberOrAngleComponent::Angle(degrees)
             },
             _ => {
@@ -463,7 +462,7 @@ impl ColorComponentType for NumberOrAngleComponent {
     fn try_from_leaf(leaf: &Leaf) -> Result<Self, ()> {
         Ok(match *leaf {
             Leaf::Angle(angle) => Self::Angle(angle.degrees()),
-            Leaf::Number(value) => Self::Number(value),
+            Leaf::Number(n) => Self::Number(n.value()),
             _ => return Err(()),
         })
     }
@@ -488,8 +487,8 @@ impl ColorComponentType for f32 {
     }
 
     fn try_from_leaf(leaf: &Leaf) -> Result<Self, ()> {
-        if let Leaf::Number(value) = *leaf {
-            Ok(value)
+        if let Leaf::Number(n) = *leaf {
+            Ok(n.value())
         } else {
             Err(())
         }

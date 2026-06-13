@@ -568,7 +568,7 @@ Windows and the Web Platform:
 
 
     Firefox does not appear to have ever used these APIs to allow tablet pen
-    input, with the exception of `one piece of code <https://searchfox.org/mozilla-central/rev/e6cb503ac22402421186e7488d4250cc1c5fecab/widget/windows/InkCollector.cpp>`__
+    input, with the exception of :searchfox:`one piece of code <mozilla-central/rev/e6cb503ac22402421186e7488d4250cc1c5fecab:widget/windows/InkCollector.cpp>`
     to detect when the pen leaves the Firefox window to solve
     `Bug 1016232 <https://bugzilla.mozilla.org/show_bug.cgi?id=1016232>`__.
 

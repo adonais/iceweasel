@@ -6,6 +6,8 @@ import { html, classMap } from "../vendor/lit.all.mjs";
 import { MozBoxBase } from "../lit-utils.mjs";
 import { GROUP_TYPES } from "chrome://global/content/elements/moz-box-group.mjs";
 
+window.MozXULElement?.insertFTLIfNeeded("toolkit/global/mozBoxBase.ftl");
+
 const DIRECTION_RIGHT = "Right";
 const DIRECTION_LEFT = "Left";
 const NAVIGATION_DIRECTIONS = {
@@ -90,12 +92,8 @@ export default class MozBoxItem extends MozBoxBase {
   }
 
   handleKeydown(event) {
-    let isHandleEvent = event.originalTarget === this.handleEl;
-
     // Find which action element the event came from
-    let target = isHandleEvent
-      ? this.handleEl
-      : this.#actionEls.find(el => el.contains(event.target));
+    let target = this.#actionEls.find(el => el.contains(event.target));
     if (!target) {
       return;
     }
@@ -111,6 +109,14 @@ export default class MozBoxItem extends MozBoxBase {
       case `Arrow${directions.BACKWARD}`: {
         this.navigate(target, NAVIGATION_BACKWARD);
         break;
+      }
+      case "ArrowUp":
+      case "Up":
+      case "ArrowDown":
+      case "Down": {
+        if (this.isFocusable) {
+          event.stopPropagation();
+        }
       }
     }
   }
@@ -164,17 +170,37 @@ export default class MozBoxItem extends MozBoxBase {
     );
   }
 
+  /**
+   * Whether the item itself can receive focus, rather than delegating
+   * focus to one of its action elements.
+   *
+   * @returns {boolean}
+   */
+  get isFocusable() {
+    return this.hasAttribute("tabindex");
+  }
+
+  /**
+   * Focuses the item, or delegates to an action element when the item
+   * isn't directly focusable.
+   *
+   * @param {KeyboardEvent} [event]
+   */
   focus(event) {
+    if (this.isFocusable) {
+      super.focus();
+      return;
+    }
+
     if (event?.key == "Up" || event?.key == "ArrowUp") {
       let actionEls = this.actionsSlotEl.assignedElements();
       let lastActions = actionEls.length
         ? actionEls
         : this.actionsStartSlotEl?.assignedElements();
-      let lastAction = lastActions?.[lastActions.length - 1] ?? this.handleEl;
+      let lastAction = lastActions?.[lastActions.length - 1];
       lastAction?.focus();
     } else {
       let firstAction =
-        this.handleEl ??
         this.actionsStartSlotEl?.assignedElements()?.[0] ??
         this.actionsSlotEl.assignedElements()?.[0];
       firstAction?.focus();
@@ -182,10 +208,9 @@ export default class MozBoxItem extends MozBoxBase {
   }
 
   getActionEls() {
-    let handleEl = this.handleEl ? [this.handleEl] : [];
     let startActions = this.actionsStartSlotEl?.assignedElements() ?? [];
     let endActions = this.actionsSlotEl.assignedElements();
-    this.#actionEls = [...handleEl, ...startActions, ...endActions];
+    this.#actionEls = [...startActions, ...endActions];
   }
 
   stylesTemplate() {
@@ -264,14 +289,26 @@ export default class MozBoxItem extends MozBoxBase {
     ></slot>`;
   }
 
+  handleTemplate() {
+    if (!this.isDraggable) {
+      return "";
+    }
+    return html`<span
+      class="handle"
+      data-l10n-id=${this.label
+        ? "moz-box-item-reorder-handle-named"
+        : "moz-box-item-reorder-handle"}
+      data-l10n-args=${this.label
+        ? JSON.stringify({ item: this.label })
+        : undefined}
+    ></span>`;
+  }
+
   render() {
     return html`
       ${this.stylesTemplate()}
       <div class="box-container">
-        ${this.isDraggable
-          ? html`<span tabindex="0" class="handle"></span>`
-          : ""}
-        ${this.slotTemplate("actions-start")}
+        ${this.handleTemplate()} ${this.slotTemplate("actions-start")}
         <div class="box-content">
           ${this.label ? this.textTemplate() : html`<slot></slot>`}
         </div>

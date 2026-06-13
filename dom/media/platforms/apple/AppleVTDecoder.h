@@ -122,6 +122,7 @@ class AppleVTDecoder final : public MediaDataDecoder,
   const gfx::TransferFunction mTransferFunction;
   const gfx::ColorRange mColorRange;
   const gfx::ColorDepth mColorDepth;
+  const Maybe<gfx::HDRMetadata> mHDRMetadata;
 
   // Method to set up the decompression session.
   MediaResult InitializeSession();

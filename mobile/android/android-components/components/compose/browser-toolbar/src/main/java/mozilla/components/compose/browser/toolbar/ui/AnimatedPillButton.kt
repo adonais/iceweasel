@@ -9,7 +9,6 @@ import android.view.SoundEffectConstants
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -19,7 +18,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -32,8 +33,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -41,11 +43,12 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.google.accompanist.drawablepainter.rememberDrawablePainter
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import mozilla.components.compose.base.badge.BadgedIcon
 import mozilla.components.compose.base.theme.AcornTheme
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarInteraction
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarInteraction.BrowserToolbarEvent
@@ -59,17 +62,23 @@ const val ANIMATION_DELAY_MILLIS = 400L
  * animates away automatically: after [ANIMATION_DELAY_MILLIS] the label and pill fade out while
  * the pill shrinks to a circle, causing the parent to reflow its children.
  *
- * @param icon The icon to display inside the pill.
+ * @param icon The main icon to display.
+ * @param overlayIcon A smaller optional icon overlaid at the bottom-end of [icon].
  * @param text The label text shown initially beside the icon.
  * @param contentDescription Accessibility content description for the button.
+ * @param animated Whether to animate the collapsing transition or present in 'post-animation' state.
+ * @param highlighted Whether a highlight badge should be drawn on top of [icon].
  * @param onClick Interaction dispatched when the button is tapped.
  * @param onInteraction Callback for dispatching [BrowserToolbarEvent]s to the store.
  */
 @Composable
 internal fun AnimatedPillButton(
     icon: Drawable,
+    overlayIcon: Drawable? = null,
     text: String,
     contentDescription: String,
+    animated: Boolean = true,
+    highlighted: Boolean = false,
     onClick: BrowserToolbarInteraction,
     onInteraction: (BrowserToolbarEvent) -> Unit,
 ) {
@@ -77,25 +86,22 @@ internal fun AnimatedPillButton(
     val view = LocalView.current
     val density = LocalDensity.current
     var fullWidthPx by remember { mutableIntStateOf(0) }
-    val widthFraction = remember { Animatable(1f) }
-    val textAlpha = remember { Animatable(1f) }
-    val containerAlpha = remember { Animatable(1f) }
+    val contractionProgress = remember { Animatable(if (animated) 1f else 0f) }
+
+    // We use a single background color for both the pill and overlay background so that they match.
+    val containerColor = lerp(
+        MaterialTheme.colorScheme.surfaceDim,
+        MaterialTheme.colorScheme.surfaceBright,
+        contractionProgress.value,
+    )
 
     LaunchedEffect(fullWidthPx) {
         if (fullWidthPx == 0) return@LaunchedEffect
         delay(ANIMATION_DELAY_MILLIS)
-        launch { textAlpha.animateTo(0f, tween(durationMillis = FADE_OUT_DURATION_MILLIS)) }
-        launch { containerAlpha.animateTo(0f, tween(durationMillis = FADE_OUT_DURATION_MILLIS)) }
-        widthFraction.animateTo(0f, tween(durationMillis = FADE_OUT_DURATION_MILLIS))
+        contractionProgress.animateTo(0f, tween(durationMillis = FADE_OUT_DURATION_MILLIS))
     }
 
-    val collapsedWidthDp = 40.dp
-    val animatedWidthDp = if (fullWidthPx > 0) {
-        val collapsedPx = with(density) { collapsedWidthDp.toPx() }
-        with(density) { (collapsedPx + (fullWidthPx - collapsedPx) * widthFraction.value).toDp() }
-    } else {
-        Dp.Unspecified
-    }
+    val animatedWidthDp = animatedWidth(fullWidthPx, COLLAPSED_WIDTH, contractionProgress.value, density)
 
     Box(
         contentAlignment = Alignment.Center,
@@ -109,7 +115,7 @@ internal fun AnimatedPillButton(
                 if (fullWidthPx == 0 && size.width > 0) fullWidthPx = size.width
             }
             .clip(RoundedCornerShape(90.dp))
-            .background(MaterialTheme.colorScheme.surfaceBright.copy(alpha = containerAlpha.value))
+            .background(containerColor)
             .clickable {
                 view.playSoundEffect(SoundEffectConstants.CLICK)
                 if (onClick is BrowserToolbarEvent) {
@@ -124,24 +130,79 @@ internal fun AnimatedPillButton(
             modifier = Modifier.padding(horizontal = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Image(
+            LayeredIcon(
                 painter = rememberDrawablePainter(icon),
-                contentDescription = null,
-                modifier = Modifier
-                    .size(24.dp)
-                    .clip(RoundedCornerShape(2.dp)),
-                contentScale = ContentScale.Crop,
-                colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onSurface),
+                overlayPainter = overlayIcon?.let { rememberDrawablePainter(it) },
+                overlayBackground = containerColor,
+                isHighlighted = highlighted,
             )
 
             Spacer(modifier = Modifier.width(4.dp))
+
             Text(
                 text = text,
-                modifier = Modifier.alpha(textAlpha.value),
+                modifier = Modifier.alpha(contractionProgress.value),
                 style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurface,
+                color = MaterialTheme.colorScheme.tertiary,
                 maxLines = 1,
                 softWrap = false,
+            )
+        }
+    }
+}
+
+private val COLLAPSED_WIDTH = 40.dp
+
+private fun animatedWidth(
+    fullWidthPx: Int,
+    collapsedWidthDp: Dp,
+    contractionProgress: Float,
+    density: Density,
+) = if (fullWidthPx > 0) {
+    val collapsedPx = with(density) { collapsedWidthDp.toPx() }
+    with(density) { (collapsedPx + (fullWidthPx - collapsedPx) * contractionProgress).toDp() }
+} else {
+    Dp.Unspecified
+}
+
+/**
+ * Renders an icon with an optional [overlayPainter] icon layered at the bottom-end corner.
+ *
+ * @param painter The main icon.
+ * @param overlayPainter The optional overlay icon layered at the bottom-end corner.
+ * @param tint Tint applied to [painter].
+ * @param overlayTint Tint applied to [overlayPainter].
+ * @param overlayBackground Solid fill drawn behind [overlayPainter] as a circle, used to
+ * occlude the base icon.
+ * @param isHighlighted Whether to render a highlight badge.
+ */
+@Composable
+private fun LayeredIcon(
+    painter: Painter,
+    overlayPainter: Painter?,
+    tint: Color = MaterialTheme.colorScheme.onSurface,
+    overlayTint: Color = MaterialTheme.colorScheme.tertiary,
+    overlayBackground: Color = Color.Unspecified,
+    isHighlighted: Boolean = false,
+) {
+    Box {
+        BadgedIcon(
+            painter = painter,
+            isHighlighted = isHighlighted,
+            tint = tint,
+        )
+
+        if (overlayPainter != null) {
+            Icon(
+                painter = overlayPainter,
+                contentDescription = null,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(end = 1.dp)
+                    .size(11.dp)
+                    .clip(CircleShape)
+                    .background(overlayBackground),
+                tint = overlayTint,
             )
         }
     }
@@ -154,10 +215,36 @@ private fun AnimatedPillButtonPreview() {
         AnimatedPillButton(
             icon = AppCompatResources.getDrawable(
                 LocalContext.current,
-                iconsR.drawable.mozac_ic_search_24,
+                iconsR.drawable.mozac_ic_shield_checkmark_24,
             )!!,
-            text = "VPN on",
-            contentDescription = "VPN on",
+            overlayIcon = AppCompatResources.getDrawable(
+                LocalContext.current,
+                iconsR.drawable.mozac_ic_globe_24,
+            )!!,
+            text = "VPN On",
+            contentDescription = "VPN On",
+            onClick = object : BrowserToolbarEvent {},
+            onInteraction = {},
+        )
+    }
+}
+
+@PreviewLightDark
+@Composable
+private fun AnimatedPillButtonHighlightedPreview() {
+    AcornTheme {
+        AnimatedPillButton(
+            icon = AppCompatResources.getDrawable(
+                LocalContext.current,
+                iconsR.drawable.mozac_ic_shield_checkmark_24,
+            )!!,
+            overlayIcon = AppCompatResources.getDrawable(
+                LocalContext.current,
+                iconsR.drawable.mozac_ic_globe_24,
+            )!!,
+            text = "VPN On",
+            contentDescription = "VPN On",
+            highlighted = true,
             onClick = object : BrowserToolbarEvent {},
             onInteraction = {},
         )

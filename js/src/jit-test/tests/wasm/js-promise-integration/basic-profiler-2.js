@@ -1,4 +1,4 @@
-// |jit-test| skip-if: !WasmHelpers.isSingleStepProfilingEnabled
+// |jit-test| skip-if: !wasmJSPromiseIntegrationEnabled() || !WasmHelpers.isSingleStepProfilingEnabled
 
 // Test profiling of JS PI non-suspending import call.
 

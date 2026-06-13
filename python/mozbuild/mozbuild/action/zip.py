@@ -45,11 +45,17 @@ def main(args):
         "--dep-target",
         help="Make target to use in the dependencies file",
     )
+    parser.add_argument(
+        "--error-if-empty",
+        action="store_true",
+        help="Exit with an error if no files are added",
+    )
     args = parser.parse_args(args)
 
     jarrer = Jarrer()
 
     deps = []
+    file_count = 0
     with errors.accumulate():
         finder = FileFinder(args.C, find_executables=args.strip)
         for path in args.input:
@@ -57,6 +63,9 @@ def main(args):
                 if not any([match(p, exclude) for exclude in args.x]):
                     jarrer.add(p, f)
                     deps.append(f.path)
+                    file_count += 1
+        if args.error_if_empty and file_count == 0:
+            errors.fatal(f"No files added to {args.zip}")
         jarrer.copy(mozpath.join(args.C, args.zip))
 
     if args.dep_target and args.dep_file:

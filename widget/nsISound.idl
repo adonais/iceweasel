@@ -5,12 +5,9 @@
 
 #include "nsISupports.idl"
 
-interface nsIURL;
-
-[scriptable, uuid(C3C28D92-A17F-43DF-976D-4EEAE6F995FC)]
+[scriptable, uuid(9EF7D210-267C-4972-B9D6-88AEAB955441)]
 interface nsISound : nsISupports
 {
-  void play(in nsIURL aURL);
   void beep();
 
   /**

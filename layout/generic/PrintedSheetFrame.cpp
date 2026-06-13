@@ -7,6 +7,7 @@
 #include "mozilla/PrintedSheetFrame.h"
 
 #include "mozilla/PresShell.h"
+#include "mozilla/ReflowInput.h"
 #include "mozilla/StaticPrefs_print.h"
 #include "nsCSSFrameConstructor.h"
 #include "nsPageContentFrame.h"

@@ -135,6 +135,12 @@ void WMFDecoderModule::Init() {
                                      "%s failed with code 0x%lx",
                                      EnumValueToString(type), hr);
         if (hr == WINCODEC_ERR_COMPONENTNOTFOUND) {
+          // Only AV1 and HEVC have a LackOfExtension entry in
+          // MediaCodecsSupport; any other codec hitting this arm has lost
+          // a built-in MFT and is plainly unsupported, and would also
+          // trip the corresponding assertion in
+          // MCSInfo::GetDecodeMediaCodecsSupported.
+          MOZ_ASSERT(type == WMFStreamType::AV1 || type == WMFStreamType::HEVC);
           if (type == WMFStreamType::AV1) {
             WmfDecoderModuleMarkerAndLog("No AV1 extension",
                                          "Lacking of AV1 extension");

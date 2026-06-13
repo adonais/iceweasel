@@ -332,7 +332,7 @@ void DragDataProducer::CreateLinkText(const nsAString& inURL,
   nsAutoString linkText(u"<a href=\""_ns + inURL + u"\">"_ns + inText +
                         u"</a>"_ns);
 
-  outLinkText = linkText;
+  outLinkText = std::move(linkText);
 }
 
 nsresult DragDataProducer::GetImageData(imgIContainer* aImage,

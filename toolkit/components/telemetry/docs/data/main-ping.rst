@@ -131,7 +131,7 @@ This format was adopted in Firefox 51 via bug 1218576.
 
 scalars and keyedScalars
 ~~~~~~~~~~~~~~~~~~~~~~~~
-This section contains the Scalars that are valid for the current platform. Scalars are only submitted if data was added to them, and are only reported with subsession pings. The recorded scalars are described in the `Scalars.yaml <https://searchfox.org/mozilla-central/source/toolkit/components/telemetry/Scalars.yaml>`_ file. The ``info.revision`` field indicates the revision of the file that describes the reported scalars.
+This section contains the Scalars that are valid for the current platform. Scalars are only submitted if data was added to them, and are only reported with subsession pings. The recorded scalars are described in the :searchfox:`Scalars.yaml <toolkit/components/telemetry/Scalars.yaml>` file. The ``info.revision`` field indicates the revision of the file that describes the reported scalars.
 
 simpleMeasurements
 ------------------
@@ -181,13 +181,13 @@ The number of times the system failed to lock the user profile.
 
 activeTicks
 ~~~~~~~~~~~
-Integer count of the number of five-second intervals ('ticks') the user was considered 'active' (sending UI events to the window). An extra event is fired immediately when the user becomes active after being inactive. This is for some mouse and gamepad events, and all touch, keyboard, wheel, and pointer events (see `EventStateManager.cpp <https://searchfox.org/mozilla-central/source/dom/events/EventStateManager.cpp#504>`__).
+Integer count of the number of five-second intervals ('ticks') the user was considered 'active' (sending UI events to the window). An extra event is fired immediately when the user becomes active after being inactive. This is for some mouse and gamepad events, and all touch, keyboard, wheel, and pointer events (see :searchfox:`EventStateManager.cpp <dom/events/EventStateManager.cpp#504>`).
 This measure might be useful to give a trend of how much a user actually interacts with the browser when compared to overall session duration. It does not take into account whether or not the window has focus or is in the foreground. Just if it is receiving these interaction events.
 Note that in ``main`` pings, this measure is reset on subsession splits, while in ``saved-session`` pings it covers the whole browser session.
 
 histograms
 ----------
-This section contains the histograms that are valid for the current platform. ``Flag`` histograms are always created and submitted with a default value of ``false`` if a value of ``true`` is not recorded during the time period. Other histogram types (see :ref:`choosing-histogram-type`) are not created nor submitted if no data was added to them. The type and format of the reported histograms is described by the ``Histograms.json`` file. Its most recent version is available `here <https://searchfox.org/mozilla-central/source/toolkit/components/telemetry/Histograms.json>`__. The ``info.revision`` field indicates the revision of the file that describes the reported histograms.
+This section contains the histograms that are valid for the current platform. ``Flag`` histograms are always created and submitted with a default value of ``false`` if a value of ``true`` is not recorded during the time period. Other histogram types (see :ref:`choosing-histogram-type`) are not created nor submitted if no data was added to them. The type and format of the reported histograms is described by the ``Histograms.json`` file. Its most recent version is available :searchfox:`here <toolkit/components/telemetry/Histograms.json>`. The ``info.revision`` field indicates the revision of the file that describes the reported histograms.
 
 keyedHistograms
 ---------------

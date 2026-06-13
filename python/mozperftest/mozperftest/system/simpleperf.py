@@ -150,10 +150,10 @@ class SimpleperfProfiler(Layer):
             "default": None,
             "help": "Path to breakpad symbols directory (e.g. target.crashreporter-symbols).",
         },
-        "symbolicator-path": {
+        "profiler-node-tools-path": {
             "type": str,
             "default": None,
-            "help": "Path to directory containing symbolicator-cli build.",
+            "help": "Path to directory containing profiler-node-tools build.",
         },
     }
 
@@ -230,13 +230,15 @@ class SimpleperfProfiler(Layer):
         self.device.shell("chmod a+x /data/local/tmp/simpleperf")
         os.environ["MOZPERFTEST_SIMPLEPERF"] = "1"
 
-    def _validate_symbolication_paths(self, symbol_dir_arg, symbolicator_dir_arg):
-        """Check if the breakpad directory path and the symbolicator-cli paths
+    def _validate_symbolication_paths(
+        self, symbol_dir_arg, profiler_node_tools_dir_arg
+    ):
+        """Check if the breakpad directory path and the profiler-node-tools paths
         for symbolication are valid.
 
         :param symbol_dir_arg str: Path to the Breakpad symbol directory
-        :param symbolicator_dir_arg str: Path to the symbolicator-cli directory
-        :return tuple[pathlib.Path, pathlib.Path]: Returns a tuple containing validated (breakpad_symbol_dir, symbolicator_dir).
+        :param profiler_node_tools_dir_arg str: Path to the profiler-node-tools directory
+        :return tuple[pathlib.Path, pathlib.Path]: Returns a tuple containing validated (breakpad_symbol_dir, profiler_node_tools_dir).
         :raises SimpleperfSymbolicationError: If validation fails
         """
 
@@ -251,16 +253,18 @@ class SimpleperfProfiler(Layer):
                 f"Breakpad Symbol Directory not found at {breakpad_symbol_dir}."
             )
 
-        if not symbolicator_dir_arg:
-            raise SimpleperfSymbolicationError("Symbolicator Directory not provided.")
-
-        symbolicator_dir = Path(symbolicator_dir_arg)
-        if not symbolicator_dir.exists():
+        if not profiler_node_tools_dir_arg:
             raise SimpleperfSymbolicationError(
-                f"Symbolicator Directory not found at {symbolicator_dir}."
+                "Profiler-node-tools directory not provided."
             )
 
-        return breakpad_symbol_dir, symbolicator_dir
+        profiler_node_tools_dir = Path(profiler_node_tools_dir_arg)
+        if not profiler_node_tools_dir.exists():
+            raise SimpleperfSymbolicationError(
+                f"Profiler-node-tools directory not found at {profiler_node_tools_dir}."
+            )
+
+        return breakpad_symbol_dir, profiler_node_tools_dir
 
     def _prepare_symbolication_environment(self):
         """Set up variables needed by symbolication helper functions.
@@ -275,7 +279,7 @@ class SimpleperfProfiler(Layer):
             self.breakpad_symbol_dir = Path(moz_fetch, "target.crashreporter-symbols")
             self.samply_path = Path(moz_fetch, "samply", "samply")
             self.node_path = Path(moz_fetch, "node", "bin", "node")
-            self.symbolicator_dir = Path(moz_fetch, "symbolicator-cli")
+            self.profiler_node_tools_dir = Path(moz_fetch, "profiler-node-tools")
 
             # Extracting crashreporter symbols
             zip_path = f"{self.breakpad_symbol_dir}.zip"
@@ -284,10 +288,10 @@ class SimpleperfProfiler(Layer):
         else:
             self.samply_path = "samply"  # Assumed to be available via PATH
             self.node_path = Path(find_node_executable()[0]).resolve()
-            self.breakpad_symbol_dir, self.symbolicator_dir = (
+            self.breakpad_symbol_dir, self.profiler_node_tools_dir = (
                 self._validate_symbolication_paths(
                     self.get_arg("symbol-path", None),
-                    self.get_arg("symbolicator-path", None),
+                    self.get_arg("profiler-node-tools-path", None),
                 )
             )
 
@@ -394,22 +398,22 @@ class SimpleperfProfiler(Layer):
             with subprocess.Popen(
                 [
                     str(self.node_path),
-                    str(Path(self.symbolicator_dir, "symbolicator-cli.js")),
-                    "--input",
+                    str(Path(self.profiler_node_tools_dir, "profiler-edit.js")),
+                    "-i",
                     str(input_profile_path),
-                    "--output",
+                    "-o",
                     str(output_profile_path),
-                    "--server",
+                    "--symbolicate-with-server",
                     server_url,
                 ],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True,
                 bufsize=1,
-            ) as symbolicator_process:
+            ) as profiler_edit_process:
                 # Stream and forward to self.info()
-                for line in symbolicator_process.stdout:
-                    self.info(f"symbolicator-cli {line.strip()}")
+                for line in profiler_edit_process.stdout:
+                    self.info(f"profiler-edit {line.strip()}")
 
             symbolicated_profiles.append(output_profile_path)
 
@@ -443,7 +447,7 @@ class SimpleperfProfiler(Layer):
         locally, it assumes that samply is already
         installed on the system. Additionally, local paths to
         the directories containing Breakpad symbols and a build of
-        symbolicator-cli must be provided via command-line arguments for
+        profiler-node-tools must be provided via command-line arguments for
         local symbolication.
         """
         work_dir = None

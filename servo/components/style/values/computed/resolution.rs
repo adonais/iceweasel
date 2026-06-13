@@ -7,8 +7,6 @@
 //! https://drafts.csswg.org/css-values/#resolution
 
 use crate::derives::*;
-use crate::values::computed::{Context, ToComputedValue};
-use crate::values::specified;
 use crate::values::CSSFloat;
 use std::fmt::{self, Write};
 use style_traits::{CssWriter, ToCss};
@@ -29,20 +27,6 @@ impl Resolution {
     #[inline]
     pub fn from_dppx(dppx: CSSFloat) -> Self {
         Resolution(dppx)
-    }
-}
-
-impl ToComputedValue for specified::Resolution {
-    type ComputedValue = Resolution;
-
-    #[inline]
-    fn to_computed_value(&self, _: &Context) -> Self::ComputedValue {
-        Resolution(crate::values::normalize(self.dppx().max(0.0)))
-    }
-
-    #[inline]
-    fn from_computed_value(computed: &Self::ComputedValue) -> Self {
-        specified::Resolution::from_dppx(computed.dppx())
     }
 }
 

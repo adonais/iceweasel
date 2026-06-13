@@ -235,8 +235,7 @@
   }
 
   &:hover {
-    // @backward-compat { version 150 } D281466/D283723 renamed design tokens; remove once Firefox 150 is on Release.
-    box-shadow: var(--card-box-shadow, var(--box-shadow-card));
+    box-shadow: var(--card-box-shadow);
   }
 
   a {
@@ -267,11 +266,9 @@
 
   dialog {
     background: var(--newtab-background-color-secondary);
-    // @backward-compat { version 150 } D281466/D283723 renamed design tokens; remove once Firefox 150 is on Release.
-    border: 1px solid var(--card-border-color, var(--border-color-card));
+    border: 1px solid var(--card-border-color);
     border-radius: var(--border-radius-medium);
-    // @backward-compat { version 150 } D281466/D283723 renamed design tokens; remove once Firefox 150 is on Release.
-    box-shadow: var(--card-box-shadow, var(--box-shadow-card));
+    box-shadow: var(--card-box-shadow);
     display: flex;
     width: 332px;
 
@@ -302,8 +299,7 @@
 
     h3 {
       font-size: var(--button-font-size);
-      // @backward-compat { version 150 } D281466/D283723 renamed design tokens; remove once Firefox 150 is on Release.
-      font-weight: var(--font-weight-heading, var(--heading-font-weight));
+      font-weight: var(--font-weight-heading);
       margin-block: 0 var(--space-medium);
     }
 
@@ -333,19 +329,14 @@ dialog {
     height: 16px;
     width: 16px;
     background: var(--newtab-background-color-secondary);
-    // @backward-compat { version 150 } D281466/D283723 renamed design tokens; remove once Firefox 150 is on Release.
-    box-shadow: 4px 4px 6px -2px var(--card-box-shadow, var(--box-shadow-card));
-    // @backward-compat { version 150 } D281466/D283723 renamed design tokens; remove once Firefox 150 is on Release.
-    border-inline-end: 1px solid var(--card-border-color, var(--border-color-card));
-    // @backward-compat { version 150 } D281466/D283723 renamed design tokens; remove once Firefox 150 is on Release.
-    border-block-end: 1px solid var(--card-border-color, var(--border-color-card));
+    box-shadow: 4px 4px 6px -2px var(--card-box-shadow);
+    border-inline-end: 1px solid var(--card-border-color);
+    border-block-end: 1px solid var(--card-border-color);
   }
 
   &:dir(rtl)::after {
-    // @backward-compat { version 150 } D281466/D283723 renamed design tokens; remove once Firefox 150 is on Release.
-    border-inline-start: 1px solid var(--card-border-color, var(--border-color-card));
-    // @backward-compat { version 150 } D281466/D283723 renamed design tokens; remove once Firefox 150 is on Release.
-    border-block-end: 1px solid var(--card-border-color, var(--border-color-card));
+    border-inline-start: 1px solid var(--card-border-color);
+    border-block-end: 1px solid var(--card-border-color);
     border-inline-end: none;
     inset-inline-end: 10%;
   }

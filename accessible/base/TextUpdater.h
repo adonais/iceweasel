@@ -23,6 +23,10 @@ class TextUpdater {
   static void Run(DocAccessible* aDocument, TextLeafAccessible* aTextLeaf,
                   const nsAString& aNewText);
 
+  TextUpdater() = delete;
+  TextUpdater(const TextUpdater&) = delete;
+  TextUpdater& operator=(const TextUpdater&) = delete;
+
  private:
   TextUpdater(DocAccessible* aDocument, TextLeafAccessible* aTextLeaf)
       : mDocument(aDocument),
@@ -43,11 +47,6 @@ class TextUpdater {
   void DoUpdate(const nsAString& aNewText, const nsAString& aOldText,
                 uint32_t aSkipStart);
 
- private:
-  TextUpdater();
-  TextUpdater(const TextUpdater&);
-  TextUpdater& operator=(const TextUpdater&);
-
   /**
    * Fire text change events based on difference between strings.
    */
@@ -60,7 +59,7 @@ class TextUpdater {
    */
   inline void FireInsertEvent(const nsAString& aText, uint32_t aAddlOffset,
                               nsTArray<RefPtr<AccEvent> >& aEvents) {
-    RefPtr<AccEvent> event = new AccTextChangeEvent(
+    auto event = MakeRefPtr<AccTextChangeEvent>(
         mHyperText, mTextOffset + aAddlOffset, aText, true);
     aEvents.AppendElement(event);
   }
@@ -70,7 +69,7 @@ class TextUpdater {
    */
   inline void FireDeleteEvent(const nsAString& aText, uint32_t aAddlOffset,
                               nsTArray<RefPtr<AccEvent> >& aEvents) {
-    RefPtr<AccEvent> event = new AccTextChangeEvent(
+    auto event = MakeRefPtr<AccTextChangeEvent>(
         mHyperText, mTextOffset + aAddlOffset, aText, false);
     aEvents.AppendElement(event);
   }

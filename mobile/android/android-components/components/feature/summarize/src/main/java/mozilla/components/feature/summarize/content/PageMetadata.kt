@@ -19,7 +19,8 @@ fun interface PageMetadataExtractor {
     /**
      * An exception that occurs in page metadata extraction.
      */
-    class Exception : Llm.Exception("Could not extract content metadata", errorCode)
+    data class Exception(val originalCause: Throwable) :
+        Llm.Exception("Could not extract content metadata: ${originalCause::javaClass.name}", errorCode)
 }
 
 /**

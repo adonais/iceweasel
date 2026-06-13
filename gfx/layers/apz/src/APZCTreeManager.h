@@ -132,6 +132,8 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   struct TreeBuildingState;
 
  public:
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(APZCTreeManager, final);
+
   static mozilla::LazyLogModule sLog;
 
   static already_AddRefed<APZCTreeManager> Create(

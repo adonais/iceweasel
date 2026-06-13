@@ -268,11 +268,9 @@ std::pair<ImgDrawResult, RefPtr<SourceSurface>> ClippedImage::GetFrameInternal(
     gfxContext ctx(target);
 
     // Create our callback.
-    RefPtr<DrawSingleTileCallback> drawTileCallback =
-        new DrawSingleTileCallback(this, aSize, aSVGContext, aWhichFrame,
-                                   aFlags, aOpacity);
-    RefPtr<gfxDrawable> drawable =
-        new gfxCallbackDrawable(drawTileCallback, aSize);
+    auto drawTileCallback = MakeRefPtr<DrawSingleTileCallback>(
+        this, aSize, aSVGContext, aWhichFrame, aFlags, aOpacity);
+    auto drawable = MakeRefPtr<gfxCallbackDrawable>(drawTileCallback, aSize);
 
     // Actually draw. The callback will end up invoking DrawSingleTile.
     gfxUtils::DrawPixelSnapped(&ctx, drawable, SizeDouble(aSize),
@@ -356,8 +354,7 @@ ClippedImage::Draw(gfxContext* aContext, const nsIntSize& aSize,
     }
 
     // Create a drawable from that surface.
-    RefPtr<gfxSurfaceDrawable> drawable =
-        new gfxSurfaceDrawable(surface, aSize);
+    auto drawable = MakeRefPtr<gfxSurfaceDrawable>(surface, aSize);
 
     // Draw.
     gfxUtils::DrawPixelSnapped(aContext, drawable, SizeDouble(aSize), aRegion,

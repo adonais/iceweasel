@@ -37,6 +37,15 @@ class GradlewSchema(Schema, kw_only=True):
     dummy_secrets: Optional[list[DummySecretSchema]] = None
 
 
+class MachGradleSchema(Schema, kw_only=True):
+    using: Literal["mach-gradle"]
+    gradle_project: str
+    gradle_args: list[str]
+    mach_build_exports: Optional[bool] = None
+    workdir: Optional[str] = None
+    use_caches: Optional[Union[bool, list[str]]] = None
+
+
 class RunCommandsSchema(Schema, kw_only=True):
     using: Literal["run-commands"]
     pre_commands: Optional[list[list[str]]] = None
@@ -107,6 +116,39 @@ def configure_gradlew(config, job, taskdesc):
         "/builds/worker/checkouts/gecko/taskcluster/scripts/builder/build-android.sh"
     )
     _inject_secrets_scopes(run, taskdesc)
+    _set_run_task_attributes(job)
+    configure_taskdesc_for_run(config, job, taskdesc, job["worker"]["implementation"])
+
+
+@run_job_using("docker-worker", "mach-gradle", schema=MachGradleSchema)
+def configure_mach_gradle(config, job, taskdesc):
+    run = job["run"]
+    worker = taskdesc["worker"] = job["worker"]
+
+    fetches_dir = "/builds/worker/fetches"
+    topsrc_dir = "/builds/worker/checkouts/gecko"
+    worker.setdefault("env", {}).update({
+        "ANDROID_SDK_ROOT": path.join(fetches_dir, "android-sdk-linux"),
+        "GRADLE_USER_HOME": path.join(
+            topsrc_dir, "mobile/android/gradle/dotgradle-offline"
+        ),
+        "MOZ_BUILD_DATE": config.params["moz_build_date"],
+    })
+    worker["env"].setdefault(
+        "MOZCONFIG",
+        path.join(
+            topsrc_dir,
+            "mobile/android/config/mozconfigs/android-arm/nightly-android-lints",
+        ),
+    )
+
+    worker["env"].update({
+        "GRADLE_PROJECT": run.pop("gradle-project"),
+        "GRADLE_ARGS": " ".join(run.pop("gradle-args")),
+    })
+    if run.pop("mach-build-exports", False):
+        worker["env"]["MACH_BUILD_EXPORTS"] = "1"
+    run["command"] = path.join(topsrc_dir, "taskcluster/scripts/builder/mach-gradle.sh")
     _set_run_task_attributes(job)
     configure_taskdesc_for_run(config, job, taskdesc, job["worker"]["implementation"])
 

@@ -82,7 +82,7 @@ add_task(async function testRecentUpdatesList() {
 
   // Load the recent updates view.
   let loaded = waitForViewLoad(win);
-  doc.querySelector('#page-options [action="view-recent-updates"]').click();
+  await triggerPageOptionsAction(win, "view-recent-updates");
   await loaded;
 
   is(
@@ -130,7 +130,7 @@ add_task(async function testRecentUpdatesList() {
 
   info("Go back to the recent updates view");
   loaded = waitForViewLoad(win);
-  doc.querySelector('#page-options [action="view-recent-updates"]').click();
+  await triggerPageOptionsAction(win, "view-recent-updates");
   await loaded;
 
   // Find the list again.

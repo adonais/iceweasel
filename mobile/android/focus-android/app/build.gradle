@@ -29,7 +29,6 @@ def generatedLocaleListDir = new File(generatedLocaleListBaseDir, "org/mozilla/f
 def generatedLocaleListFilename = "LocalesList.kt"
 
 import com.android.build.api.variant.FilterConfiguration
-import com.google.android.gms.oss.licenses.plugin.DependencyTask
 
 android {
     if (project.hasProperty("testBuildType")) {
@@ -260,6 +259,7 @@ dependencies {
     implementation project(':components:browser-state')
     implementation project(':components:browser-toolbar')
     implementation project(':components:compose-awesomebar')
+    implementation project(':components:compose-base')
     implementation project(':components:compose-cfr')
     implementation project(':components:concept-awesomebar')
     implementation project(':components:concept-engine')
@@ -325,7 +325,7 @@ dependencies {
     implementation libs.androidx.lifecycle.process
     implementation libs.androidx.lifecycle.viewmodel
     implementation libs.androidx.palette
-    implementation libs.androidx.preferences
+    implementation libs.androidx.preference
     implementation libs.androidx.recyclerview
     implementation libs.androidx.savedstate
     implementation libs.androidx.transition
@@ -351,6 +351,7 @@ dependencies {
     testImplementation platform(libs.junit.bom)
     testImplementation libs.junit.jupiter
     testRuntimeOnly libs.junit.platform.launcher
+    testImplementation libs.kotlin.test
     testImplementation libs.kotlinx.coroutines.test
     testImplementation libs.mockito
     testImplementation libs.mockwebserver
@@ -373,6 +374,7 @@ dependencies {
     androidTestImplementation libs.androidx.test.monitor
     androidTestImplementation libs.androidx.test.runner
     androidTestImplementation libs.androidx.test.uiautomator
+    androidTestImplementation libs.kotlin.test
     androidTestImplementation libs.mockwebserver
     androidTestImplementation libs.okhttp
     androidTestRuntimeOnly libs.okio
@@ -570,10 +572,10 @@ def enabledLocales = project.provider { getEnabledLocales() }
 
 tasks.register('generateLocaleList') {
     def localeList = file(new File(generatedLocaleListDir, generatedLocaleListFilename))
-    
+
     inputs.property("enabledLocales", enabledLocales)
     outputs.file(localeList)
-    
+
     doLast {
         generatedLocaleListDir.mkdir()
         localeList.delete()
@@ -652,15 +654,6 @@ if (project.hasProperty("coverage")) {
             }
         }
     }
-}
-
-// Fix for Gradle 9 strictness: Ensure CleanUp runs before DependencyTask
-tasks.withType(DependencyTask).configureEach { task ->
-    // The OSS plugin creates a "LicensesCleanUp" task for every "DependencyTask"
-    // e.g., nightlyOssDependencyTask -> nightlyOssLicensesCleanUp
-    def cleanUpTaskName = task.name.replace("DependencyTask", "LicensesCleanUp")
-    // make the dependency task depend on its cleanup task.
-    task.dependsOn(tasks.named(cleanUpTaskName))
 }
 
 mozilla {

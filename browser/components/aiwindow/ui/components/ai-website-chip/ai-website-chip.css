@@ -54,6 +54,9 @@
     /* TODO: replace with token when available - Bug 2033070 */
     /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     --chip-border-radius: 12px;
+    --chip-border-color: transparent;
+    --chip-hover-border-color: transparent;
+    --chip-hover-background-color: transparent;
 
     --chip-remove-border-radius: var(--border-radius-circle);
     --chip-remove-size: var(--icon-size-medium);
@@ -175,8 +178,7 @@ button.chip {
   --border-color: var(--chip-border-color);
 
   align-items: baseline;
-  border: 1px solid;
-  border-color: var(--border-color);
+  border: 1px solid var(--border-color);
   gap: var(--space-xsmall);
   padding: var(--space-xxsmall) var(--space-xsmall);
 

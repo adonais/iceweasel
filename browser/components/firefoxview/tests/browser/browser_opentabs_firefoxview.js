@@ -150,10 +150,7 @@ add_task(async function test_close_open_tab() {
 
     ok(tertiaryButtonEl, "Dismiss button exists");
 
-    await clearAllParentTelemetryEvents();
-    let closeTabEvent = [
-      ["firefoxview_next", "close_open_tab", "tabs", undefined],
-    ];
+    Services.fog.testResetFOG();
 
     let tabsUpdated = BrowserTestUtils.waitForEvent(
       NonPrivateTabs,
@@ -167,7 +164,8 @@ add_task(async function test_close_open_tab() {
       "First tab successfully removed"
     );
 
-    await telemetryEvent(closeTabEvent);
+    const closeEvents = Glean.firefoxviewNext.closeOpenTabTabs.testGetValue();
+    Assert.equal(1, closeEvents.length, "Expected one close tab event.");
 
     const openTabs = cards[0].ownerDocument.querySelector(
       "view-opentabs[name=opentabs]"
@@ -182,7 +180,7 @@ add_task(async function test_close_open_tab() {
 
 add_task(async function test_more_menus() {
   await withFirefoxView({}, async browser => {
-    let win = browser.ownerGlobal;
+    let win = browser.documentGlobal;
     let shown, menuHidden;
 
     gBrowser.selectedTab = gBrowser.visibleTabs[0];
@@ -235,16 +233,7 @@ add_task(async function test_more_menus() {
     EventUtils.synthesizeKey("KEY_ArrowRight", {});
     await shown;
 
-    await clearAllParentTelemetryEvents();
-    let contextMenuEvent = [
-      [
-        "firefoxview_next",
-        "context_menu",
-        "tabs",
-        null,
-        { menu_action: "move-tab-end", data_type: "opentabs" },
-      ],
-    ];
+    Services.fog.testResetFOG();
 
     // click on the first option, which should be "Move to the end" since
     // this is the first tab
@@ -255,7 +244,12 @@ add_task(async function test_more_menus() {
     );
     EventUtils.synthesizeKey("KEY_Enter", {});
     info("Waiting for result of moving a tab via the menu");
-    await telemetryEvent(contextMenuEvent);
+    let contextEvents = Glean.firefoxviewNext.contextMenuTabs.testGetValue();
+    Assert.equal(1, contextEvents.length, "Expected one close tab event.");
+    Assert.deepEqual(
+      { menu_action: "move-tab-end", data_type: "opentabs" },
+      contextEvents[0].extra
+    );
     await menuHidden;
     await tabChangeRaised;
 
@@ -286,23 +280,18 @@ add_task(async function test_more_menus() {
       "Copy link panel item button with role=menuitem exists"
     );
 
-    await clearAllParentTelemetryEvents();
-    contextMenuEvent = [
-      [
-        "firefoxview_next",
-        "context_menu",
-        "tabs",
-        null,
-        { menu_action: "copy-link", data_type: "opentabs" },
-      ],
-    ];
+    Services.fog.testResetFOG();
 
     menuHidden = BrowserTestUtils.waitForEvent(panelList, "hidden");
     panelItemButton.click();
     info("Waiting for menuHidden");
     await menuHidden;
-    info("Waiting for telemetryEvent");
-    await telemetryEvent(contextMenuEvent);
+    contextEvents = Glean.firefoxviewNext.contextMenuTabs.testGetValue();
+    Assert.equal(1, contextEvents.length, "Expected one close tab event.");
+    Assert.deepEqual(
+      { menu_action: "copy-link", data_type: "opentabs" },
+      contextEvents[0].extra
+    );
 
     let copiedText = SpecialPowers.getClipboardData(
       "text/plain",
@@ -381,23 +370,19 @@ add_task(async function test_send_device_submenu() {
       )
       .returns(true);
 
-    await clearAllParentTelemetryEvents();
-    let contextMenuEvent = [
-      [
-        "firefoxview_next",
-        "context_menu",
-        "tabs",
-        null,
-        { menu_action: "send-tab-device", data_type: "opentabs" },
-      ],
-    ];
+    Services.fog.testResetFOG();
 
     // click on the first device and verify it was "sent"
     let menuHidden = BrowserTestUtils.waitForEvent(panelList, "hidden");
     EventUtils.synthesizeKey("KEY_Enter", {});
 
     expectation.verify();
-    await telemetryEvent(contextMenuEvent);
+    const contextEvents = Glean.firefoxviewNext.contextMenuTabs.testGetValue();
+    Assert.equal(1, contextEvents.length, "Expected one close tab event.");
+    Assert.deepEqual(
+      { menu_action: "send-tab-device", data_type: "opentabs" },
+      contextEvents[0].extra
+    );
     await menuHidden;
 
     sandbox.restore();
@@ -562,6 +547,17 @@ add_task(async function test_send_mobile_signed_out_submenu_text() {
 
     ok(sendTabPanelItem, "Send tabs to mobile submenu panel item exists");
 
+    let sendTabSubmenuList = sendTabPanelItem.shadowRoot.querySelector(
+      "panel-list[id=send-tab-menu3]"
+    );
+    ok(sendTabSubmenuList, "Send tabs to mobile submenu panel list exists");
+
+    let signInPanelItem = sendTabSubmenuList.querySelector(
+      "panel-item[data-l10n-id=fxviewtabrow-send-to-mobile-sign-in]"
+    );
+
+    ok(signInPanelItem, "Send tabs to mobile sign in panel item exists");
+
     sandbox.restore();
     TabsSetupFlowManager.resetInternalState();
     while (gBrowser.tabs.length > 1) {
@@ -613,7 +609,7 @@ add_task(
       ok(sendTabSubmenuList, "Send tabs to mobile submenu panel list exists");
 
       let enableSyncPanelItem = sendTabSubmenuList.querySelector(
-        "panel-item[data-l10n-id=fxviewtabrow-send-to-mobile-enable-sync2]"
+        "panel-item[data-l10n-id=fxviewtabrow-send-to-mobile-turn-on-sync]"
       );
 
       ok(
@@ -672,7 +668,7 @@ add_task(async function test_send_mobile_single_device_submenu_text() {
     ok(sendTabSubmenuList, "Send tabs to mobile submenu panel list exists");
 
     let connectPhonePanelItem = sendTabSubmenuList.querySelector(
-      "panel-item[data-l10n-id=fxviewtabrow-send-to-mobile-connect-phone2]"
+      "panel-item[data-l10n-id=fxviewtabrow-send-to-mobile-connect-device]"
     );
 
     ok(
@@ -687,6 +683,70 @@ add_task(async function test_send_mobile_single_device_submenu_text() {
     ok(
       deviceMissingPanelItem,
       "Send tabs to mobile device missing panel item exists"
+    );
+
+    sandbox.restore();
+    TabsSetupFlowManager.resetInternalState();
+    while (gBrowser.tabs.length > 1) {
+      BrowserTestUtils.removeTab(gBrowser.tabs[0]);
+    }
+  });
+});
+
+add_task(async function test_send_mobile_unverified_account_text() {
+  const sandbox = setupSyncFxAMocks({
+    state: UIState.STATUS_NOT_VERIFIED,
+    fxaDevices: [],
+  });
+  sandbox.stub(gSync, "getSendTabTargets").callsFake(() => []);
+  sandbox.stub(gSync, "isUnverified").get(() => true);
+
+  await withFirefoxView({}, async () => {
+    // TEST_URL2 is our only tab, left over from previous test
+    Assert.deepEqual(
+      getVisibleTabURLs(),
+      [TEST_URL2],
+      `We initially have a single ${TEST_URL2} tab`
+    );
+
+    Services.obs.notifyObservers(null, UIState.ON_UPDATE);
+    let [cards, rows] = await moreMenuSetup([TEST_URL3]);
+
+    let firstTab = rows[0];
+    let panelList = await openContextMenuForItem(firstTab, cards[0]);
+
+    let sendTabPanelItem = panelList.querySelector(
+      "panel-item[data-l10n-id=fxviewtabrow-send-to-mobile]"
+    );
+
+    ok(sendTabPanelItem, "Send tabs to mobile panel item exists");
+
+    let sendTabSubmenuList = sendTabPanelItem.shadowRoot.querySelector(
+      "panel-list[id=send-tab-menu4]"
+    );
+    ok(sendTabSubmenuList, "Send tabs to mobile submenu panel list exists");
+
+    let unverifiedPanelItem = sendTabSubmenuList.querySelector(
+      "panel-item[data-l10n-id=fxviewtabrow-send-to-mobile-not-verified]"
+    );
+
+    ok(
+      unverifiedPanelItem,
+      "Send tabs to mobile unverified account panel item exists"
+    );
+    Assert.equal(
+      unverifiedPanelItem.getAttribute("disabled"),
+      "true",
+      "Send tabs to mobile unverified account panel item is disabled"
+    );
+
+    let verifyAccountPanelItem = sendTabSubmenuList.querySelector(
+      "panel-item[data-l10n-id=fxviewtabrow-send-to-mobile-verify-account]"
+    );
+
+    ok(
+      verifyAccountPanelItem,
+      "Send tabs to mobile verify account panel item exists"
     );
 
     sandbox.restore();

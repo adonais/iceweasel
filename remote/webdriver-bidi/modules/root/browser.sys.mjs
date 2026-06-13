@@ -14,18 +14,26 @@ ChromeUtils.defineESModuleGetters(lazy, {
   error: "chrome://remote/content/shared/webdriver/Errors.sys.mjs",
   getWebDriverSessionById:
     "chrome://remote/content/shared/webdriver/Session.sys.mjs",
+  Log: "chrome://remote/content/shared/Log.sys.mjs",
+  NavigableManager: "chrome://remote/content/shared/NavigableManager.sys.mjs",
   pprint: "chrome://remote/content/shared/Format.sys.mjs",
   ProxyConfiguration:
     "chrome://remote/content/shared/webdriver/Capabilities.sys.mjs",
   ProxyPerUserContextManager:
     "chrome://remote/content/webdriver-bidi/ProxyPerUserContextManager.sys.mjs",
   ProxyTypes: "chrome://remote/content/shared/webdriver/Capabilities.sys.mjs",
+  RootMessageHandler:
+    "chrome://remote/content/shared/messagehandler/RootMessageHandler.sys.mjs",
   TabManager: "chrome://remote/content/shared/TabManager.sys.mjs",
   UserContextManager:
     "chrome://remote/content/shared/UserContextManager.sys.mjs",
   windowManager: "chrome://remote/content/shared/WindowManager.sys.mjs",
   WindowState: "chrome://remote/content/shared/WindowManager.sys.mjs",
 });
+
+ChromeUtils.defineLazyGetter(lazy, "logger", () =>
+  lazy.Log.get(lazy.Log.TYPES.WEBDRIVER_BIDI)
+);
 
 /**
  * An object that holds information about the client window
@@ -320,7 +328,7 @@ class BrowserModule extends RootBiDiModule {
 
       behavior = { allowed: type === "allowed" };
 
-      if ("destinationFolder" in downloadBehavior) {
+      if (behavior.allowed && "destinationFolder" in downloadBehavior) {
         const destinationFolder = downloadBehavior.destinationFolder;
         lazy.assert.string(
           destinationFolder,
@@ -366,6 +374,22 @@ class BrowserModule extends RootBiDiModule {
     } else {
       this.#downloadBehaviorManager.setDefaultBehavior(behavior);
     }
+
+    // Apply configuration to set the download folder override to a BrowsingContext instance.
+    await this.messageHandler.handleCommand({
+      moduleName: "_configuration",
+      commandName: "_applyConfigurationParameters",
+      destination: { type: lazy.RootMessageHandler.type },
+      params: {
+        async: false,
+        category: "download-behavior-override",
+        resetValue: null,
+        supportsGlobalConfiguration: true,
+        userContextIds,
+        // Store the whole "behavior" object to ensure that reset logic works correctly.
+        value: behavior,
+      },
+    });
   }
 
   /**
@@ -553,6 +577,21 @@ class BrowserModule extends RootBiDiModule {
     return null;
   }
 }
+
+export const setDownloadFolderOverrideForBrowsingContext = options => {
+  const { context, value } = options;
+  const destinationFolder =
+    value && "destinationFolder" in value ? value.destinationFolder : "";
+
+  context.downloadFolderOverride = destinationFolder;
+
+  const contextId = lazy.NavigableManager.getIdForBrowsingContext(context);
+  lazy.logger.trace(
+    `[${contextId}] ` + destinationFolder === ""
+      ? "Reset download folder to default"
+      : `Updated download folder override to: ${destinationFolder}`
+  );
+};
 
 // To export the class as lower-case
 export const browser = BrowserModule;

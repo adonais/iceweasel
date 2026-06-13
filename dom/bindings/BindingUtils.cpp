@@ -1638,11 +1638,13 @@ struct IdToIndexComparator {
 static const PropertyInfo* XrayFindOwnPropertyInfo(
     JSContext* cx, DOMObjectType type, JS::Handle<jsid> id,
     const NativeProperties* nativeProperties) {
-  if ((type == eInterfacePrototype || type == eGlobalInstance) &&
-      MOZ_UNLIKELY(nativeProperties->iteratorAliasMethodIndex >= 0) &&
-      id.isWellKnownSymbol(JS::SymbolCode::iterator)) {
-    return nativeProperties->MethodPropertyInfos() +
-           nativeProperties->iteratorAliasMethodIndex;
+  if (type == eInterfacePrototype || type == eGlobalInstance) {
+    if (nativeProperties->iteratorAliasMethodIndex >= 0) [[unlikely]] {
+      if (id.isWellKnownSymbol(JS::SymbolCode::iterator)) {
+        return nativeProperties->MethodPropertyInfos() +
+               nativeProperties->iteratorAliasMethodIndex;
+      }
+    }
   }
 
   size_t idx;
@@ -2404,180 +2406,6 @@ bool DictionaryBase::StringifyToJSON(JSContext* aCx, JS::Handle<JSObject*> aObj,
   return CopyUTF16toUTF8(json, aJSON, fallible);
 }
 
-void UpdateReflectorGlobal(JSContext* aCx, JS::Handle<JSObject*> aObjArg,
-                           ErrorResult& aError) {
-  js::AssertSameCompartment(aCx, aObjArg);
-
-  aError.MightThrowJSException();
-
-  // Check if we're anywhere near the stack limit before we reach the
-  // transplanting code, since it has no good way to handle errors. This uses
-  // the untrusted script limit, which is not strictly necessary since no
-  // actual script should run.
-  js::AutoCheckRecursionLimit recursion(aCx);
-  if (!recursion.checkConservative(aCx)) {
-    aError.StealExceptionFromJSContext(aCx);
-    return;
-  }
-
-  JS::Rooted<JSObject*> aObj(aCx, aObjArg);
-  MOZ_ASSERT(IsDOMObject(aObj));
-
-  const DOMJSClass* domClass = GetDOMClass(aObj);
-
-  JS::Rooted<JSObject*> oldGlobal(aCx, JS::GetNonCCWObjectGlobal(aObj));
-  MOZ_ASSERT(JS_IsGlobalObject(oldGlobal));
-
-  JS::Rooted<JSObject*> newGlobal(aCx,
-                                  domClass->mGetAssociatedGlobal(aCx, aObj));
-  MOZ_ASSERT(JS_IsGlobalObject(newGlobal));
-
-  JSAutoRealm oldAr(aCx, oldGlobal);
-
-  if (oldGlobal == newGlobal) {
-    return;
-  }
-
-  nsISupports* native = UnwrapDOMObjectToISupports(aObj);
-  if (!native) {
-    return;
-  }
-
-  bool isProxy = js::IsProxy(aObj);
-  JS::Rooted<JSObject*> expandoObject(aCx);
-  JS::Rooted<JS::Value> expandoRollbackToken(aCx);
-  if (isProxy) {
-    expandoObject =
-        DOMProxyHandler::GetAndClearExpandoObject(aObj, &expandoRollbackToken);
-  }
-
-  JSAutoRealm newAr(aCx, newGlobal);
-
-  // First we clone the reflector. We get a copy of its properties and clone its
-  // expando chain.
-
-  JS::Handle<JSObject*> proto = (domClass->mGetProto)(aCx);
-  if (!proto) {
-    aError.StealExceptionFromJSContext(aCx);
-    return;
-  }
-
-  JS::Rooted<JSObject*> newobj(aCx, JS_CloneObject(aCx, aObj, proto));
-  if (!newobj) {
-    aError.StealExceptionFromJSContext(aCx);
-    return;
-  }
-
-  // JS_CloneObject copies all reserved slots over for proxies, and no slots for
-  // non-proxies. That means that for both, the DOM_OBJECT_SLOT value needs to
-  // be transferred from aObj to newobj, and that slots need to be cleared from
-  // newobj on an error, and from aObj on success.
-  auto clearSlots = [=](JSObject* obj) {
-    JS::SetReservedSlot(obj, DOM_OBJECT_SLOT, JS::PrivateValue(nullptr));
-    MOZ_ASSERT(isProxy == js::IsProxy(obj), "Cloning preserves proxy-ness");
-    if (isProxy) {
-      size_t nslots = JSCLASS_RESERVED_SLOTS(JS::GetClass(obj));
-      for (size_t slot = DOM_INSTANCE_RESERVED_SLOTS; slot < nslots; ++slot) {
-        JS::SetReservedSlot(obj, slot, JS::UndefinedValue());
-      }
-    }
-  };
-
-  auto resetOnError = MakeScopeExit([&]() {
-    if (isProxy) {
-      // Also, the expando will have been pulled off of aObj in the proxy case.
-      // Put it back on an error.
-      DOMProxyHandler::RestoreExpando(aObj, expandoRollbackToken);
-      clearSlots(newobj);
-    }
-  });
-
-  // Assert it's possible to create wrappers when |aObj| and |newobj| are in
-  // different compartments.
-  MOZ_ASSERT_IF(JS::GetCompartment(aObj) != JS::GetCompartment(newobj),
-                js::AllowNewWrapper(JS::GetCompartment(aObj), newobj));
-
-  JS::Rooted<JSObject*> propertyHolder(aCx);
-  JS::Rooted<JSObject*> copyFrom(aCx, isProxy ? expandoObject : aObj);
-  if (copyFrom) {
-    propertyHolder = JS_NewObjectWithGivenProto(aCx, nullptr, nullptr);
-    if (!propertyHolder) {
-      aError.StealExceptionFromJSContext(aCx);
-      return;
-    }
-
-    if (!JS_CopyOwnPropertiesAndPrivateFields(aCx, propertyHolder, copyFrom)) {
-      aError.StealExceptionFromJSContext(aCx);
-      return;
-    }
-  } else {
-    propertyHolder = nullptr;
-  }
-
-  // We've made it far enough to be able to mutate the source. Cleared slots
-  // will not be observed even if a failure occurs after this point.
-  resetOnError.release();
-
-  // We've set up |newobj|, so we make it own the native by setting its reserved
-  // slot and nulling out the reserved slot of |obj|.
-  //
-  // NB: It's important to do this _after_ copying the properties to
-  // propertyHolder. Otherwise, an object with |foo.x === foo| will
-  // crash when JS_CopyOwnPropertiesAndPrivateFields tries to call wrap() on
-  // foo.x.
-  static_assert(DOM_OBJECT_SLOT == JS_OBJECT_WRAPPER_SLOT);
-  JS::SetReservedSlot(newobj, DOM_OBJECT_SLOT,
-                      JS::GetReservedSlot(aObj, DOM_OBJECT_SLOT));
-  size_t nslots = JSCLASS_RESERVED_SLOTS(JS::GetClass(aObj));
-  for (size_t slot = DOM_INSTANCE_RESERVED_SLOTS; slot < nslots; ++slot) {
-    JS::Value slotValue = JS::GetReservedSlot(aObj, slot);
-    if (slotValue.isObject()) {
-      JSObject* slotObj = &slotValue.toObject();
-      if (IsObservableArrayProxy(slotObj)) {
-        JS::SetReservedSlot(newobj, slot, slotValue);
-      }
-    }
-  }
-  clearSlots(aObj);
-
-  nsWrapperCache* cache = nullptr;
-  CallQueryInterface(native, &cache);
-
-  // For preserved wrappers the store buffer keeps mWrapper consistent across
-  // the transplant. For non-preserved wrappers clear mWrapper so that
-  // JSObjectsTenured doesn't follow a stale pointer if nursery GC fires.
-  bool preserving = cache->PreservingWrapper();
-  if (preserving) {
-    cache->UpdateWrapperForNewGlobal(native, newobj);
-  } else {
-    cache->ClearWrapper();
-  }
-
-  aObj = xpc::TransplantObjectRetainingXrayExpandos(aCx, aObj, newobj);
-  if (!aObj) {
-    MOZ_CRASH();
-  }
-
-  if (!preserving || aObj != newobj) {
-    MOZ_ASSERT(UnwrapDOMObjectToISupports(aObj) == native);
-    cache->UpdateWrapperForNewGlobal(native, aObj);
-  }
-
-  if (propertyHolder) {
-    JS::Rooted<JSObject*> copyTo(aCx);
-    if (isProxy) {
-      copyTo = DOMProxyHandler::EnsureExpandoObject(aCx, aObj);
-    } else {
-      copyTo = aObj;
-    }
-
-    if (!copyTo ||
-        !JS_CopyOwnPropertiesAndPrivateFields(aCx, copyTo, propertyHolder)) {
-      MOZ_CRASH();
-    }
-  }
-}
-
 GlobalObject::GlobalObject(JSContext* aCx, JSObject* aObject)
     : mGlobalJSObject(aCx), mCx(aCx), mGlobalObject(nullptr) {
   MOZ_ASSERT(mCx);
@@ -2586,12 +2414,10 @@ GlobalObject::GlobalObject(JSContext* aCx, JSObject* aObject)
     // aCx correctly represents the current global here.
     obj = js::CheckedUnwrapDynamic(obj, aCx, /* stopAtWindowProxy = */ false);
     if (!obj) {
-      // We should never end up here on a worker thread, since there shouldn't
-      // be any security wrappers to worry about.
-      if (!MOZ_LIKELY(NS_IsMainThread())) {
-        MOZ_CRASH();
-      }
-
+      MOZ_RELEASE_ASSERT(
+          NS_IsMainThread(),
+          "We should never end up here on a worker thread, since there "
+          "shouldn't be any security wrappers to worry about.");
       Throw(aCx, NS_ERROR_XPC_SECURITY_MANAGER_VETO);
       return;
     }
@@ -3068,8 +2894,8 @@ struct LenientThisPolicyMixin {
 
 // There are some LenientThis things on globals, so we inherit from
 // MaybeGlobalThisPolicy.
-struct LenientThisPolicy : public MaybeGlobalThisPolicy,
-                           public LenientThisPolicyMixin {
+struct MOZ_EMPTY_BASES LenientThisPolicy : public MaybeGlobalThisPolicy,
+                                           public LenientThisPolicyMixin {
   // We want the HasValidThisValue of MaybeGlobalThisPolicy.
 
   // We want the ExtractThisObject of MaybeGlobalThisPolicy.
@@ -3185,7 +3011,7 @@ struct MaybeCrossOriginObjectThisPolicy : public MaybeGlobalThisPolicy {
 
 // And in some cases we are dealing with a maybe-cross-origin object _and_ need
 // [LenientThis] behavior.
-struct MaybeCrossOriginObjectLenientThisPolicy
+struct MOZ_EMPTY_BASES MaybeCrossOriginObjectLenientThisPolicy
     : public MaybeCrossOriginObjectThisPolicy,
       public LenientThisPolicyMixin {
   // We want to get all of our behavior from
@@ -3660,8 +3486,10 @@ static inline JSObject* NewObservableArrayProxyObject(
   }
 
   JS::Rooted<JS::Value> targetValue(aCx, JS::ObjectValue(*target));
+  js::ProxyOptions options;
+  options.setLazyProto(true);
   JS::Rooted<JSObject*> proxy(
-      aCx, js::NewProxyObject(aCx, aHandler, targetValue, nullptr));
+      aCx, js::NewProxyObject(aCx, aHandler, targetValue, nullptr, options));
   if (!proxy) {
     return nullptr;
   }

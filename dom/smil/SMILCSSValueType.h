@@ -13,7 +13,7 @@
 
 namespace mozilla {
 struct AnimationValue;
-class DeclarationBlock;
+struct StyleLockedDeclarationBlock;
 namespace dom {
 class Element;
 }  // namespace dom
@@ -94,7 +94,7 @@ class SMILCSSValueType : public SMILType {
    * Returns whether the declaration changed.
    */
   static bool SetPropertyValues(NonCustomCSSPropertyId, const SMILValue&,
-                                mozilla::DeclarationBlock&);
+                                mozilla::StyleLockedDeclarationBlock&);
 
   /**
    * Return the CSS property animated by the specified value.

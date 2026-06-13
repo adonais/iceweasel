@@ -10,7 +10,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.compose.ui.platform.ComposeView
+import androidx.fragment.compose.content
 import androidx.navigation.fragment.navArgs
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import mozilla.components.lib.state.helpers.StoreProvider.Companion.fragmentStore
@@ -64,14 +64,15 @@ class TermsOfUseBottomSheetFragment : BottomSheetDialogFragment() {
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?,
-    ): View = ComposeView(requireContext()).apply {
+    ): View {
+        val context = requireContext()
         isAlreadyShowing = savedInstanceState?.getBoolean(IS_ALREADY_SHOW_KEY) ?: false
         termsOfUsePromptStore.dispatch(TermsOfUsePromptAction.OnPromptCreated)
-        setContent {
+        return content {
             FirefoxTheme {
                 val termsOfUsePromptContent = getTermsOfUsePromptContent(
                     context = requireActivity().applicationContext,
-                    id = settings().termsOfUsePromptContentOptionId,
+                    id = context.settings().termsOfUsePromptContentOptionId,
                     onLearnMoreClicked = {
                         termsOfUsePromptStore.dispatch(
                             TermsOfUsePromptAction.OnLearnMoreClicked(args.surface),
@@ -88,7 +89,7 @@ class TermsOfUseBottomSheetFragment : BottomSheetDialogFragment() {
                 )
 
                 TermsOfUseBottomSheet(
-                    showDragHandle = settings().shouldShowTermsOfUsePromptDragHandle,
+                    showDragHandle = context.settings().shouldShowTermsOfUsePromptDragHandle,
                     termsOfUsePromptContent = termsOfUsePromptContent,
                     onDismiss = { dismiss() },
                     onDismissRequest = {

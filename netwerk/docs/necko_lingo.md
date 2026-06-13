@@ -68,7 +68,7 @@ It usually means nsHttpChannel.
 
 ## Child Process
 Usually a firefox forked process - not the main process.\
-See [GeckoProcessTypes.h](https://searchfox.org/mozilla-central/source/__GENERATED__/xpcom/build/GeckoProcessTypes.h) for all process types in gecko.
+See [GeckoProcessTypes.h](https://searchfox.org/firefox-main/source/__GENERATED__/xpcom/build/GeckoProcessTypes.h) for all process types in gecko.
 
 ## Content Process
 Usually a firefox forked process running untrusted web content.
@@ -120,7 +120,7 @@ HSTS preload - a list of websites that will be upgraded to HTTPS without first n
 
 ## LoadInfo
 Object containing information about about the load (who triggered the load, in which context, etc).
-Refer [nsILoadContext](https://searchfox.org/mozilla-central/source/netwerk/base/nsILoadContextInfo.idl) for more details.
+Refer [nsILoadContext](https://searchfox.org/firefox-main/source/netwerk/base/nsILoadContextInfo.idl) for more details.
 
 
 ## Listener
@@ -157,8 +157,8 @@ Necko’s scope?
 ## Observer
 Terminology used for referring the classes implementing the Observer design pattern. \
 Refer the following interfaces for more details:
-- [nsIObserver](https://searchfox.org/mozilla-central/source/xpcom/ds/nsIObserver.idl)
-- [nsIObserverService](https://searchfox.org/mozilla-central/source/xpcom/ds/nsIObserverService.idl)
+- [nsIObserver](https://searchfox.org/firefox-main/source/xpcom/ds/nsIObserver.idl)
+- [nsIObserverService](https://searchfox.org/firefox-main/source/xpcom/ds/nsIObserverService.idl)
 
 ## PSM
 The PSM acronym may also be described as "Platform Security Module". \
@@ -176,7 +176,7 @@ Before e10s, all code ran in the Parent Process.
 Abstraction encapsulating security details of a web page.
 Refer the following links for more details:
 - [sec-necko-components](https://firefox-source-docs.mozilla.org/networking/sec-necko-components.html)
-- [nsIPrincipal](https://searchfox.org/mozilla-central/source/caps/nsIPrincipal.idl)
+- [nsIPrincipal](https://searchfox.org/firefox-main/source/caps/nsIPrincipal.idl)
 
 ## OMT
 Abbreviation for Off Main Thread. OMT refers to processing data in non-main thread.
@@ -188,8 +188,8 @@ There has been efforts in the past to move the processing of data to non-main th
 - OnDataAvailable is a listener notification sent when necko has received the the data/body.
 - OnStopRequest is a listener notification sent when necko has received the complete response.
 - Refer to the following interface documentation for more details:
-  - [nsIRequestObserver](https://searchfox.org/mozilla-central/source/netwerk/base/nsIRequestObserver.idl)
-  - [nsIStreamListener.idl](https://searchfox.org/mozilla-central/source/netwerk/base/nsIStreamListener.idl)
+  - [nsIRequestObserver](https://searchfox.org/firefox-main/source/netwerk/base/nsIRequestObserver.idl)
+  - [nsIStreamListener.idl](https://searchfox.org/firefox-main/source/netwerk/base/nsIStreamListener.idl)
 
 ## QUIC
 An IETF transport protocol [RFC9000](https://datatracker.ietf.org/doc/html/rfc9000) primarily designed to carry HTTP/3, but now also used as a general-purpose Internet transport protocol for other workloads.

@@ -718,7 +718,7 @@ int nr_turn_client_deallocate(nr_turn_client_ctx *ctx)
     ABORT(r);
 
   // We are only sending a single request here because we are in the process of
-  // shutting everything down. Theoretically we should probably start a seperate
+  // shutting everything down. Theoretically we should probably start a separate
   // STUN transaction which outlives the TURN context.
   if ((r=nr_turn_client_send_stun_request(ctx, aloc, 0)))
     ABORT(r);

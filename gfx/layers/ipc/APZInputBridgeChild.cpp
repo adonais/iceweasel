@@ -114,7 +114,7 @@ APZEventResult APZInputBridgeChild::ReceiveInputEvent(
       SendReceiveMultiTouchInputEvent(event, !!aCallback, &res,
                                       &processedEvent);
 
-      event = processedEvent;
+      event = std::move(processedEvent);
       break;
     }
     case MOUSE_INPUT: {
@@ -123,7 +123,7 @@ APZEventResult APZInputBridgeChild::ReceiveInputEvent(
 
       SendReceiveMouseInputEvent(event, !!aCallback, &res, &processedEvent);
 
-      event = processedEvent;
+      event = std::move(processedEvent);
       break;
     }
     case PANGESTURE_INPUT: {
@@ -133,7 +133,7 @@ APZEventResult APZInputBridgeChild::ReceiveInputEvent(
       SendReceivePanGestureInputEvent(event, !!aCallback, &res,
                                       &processedEvent);
 
-      event = processedEvent;
+      event = std::move(processedEvent);
       break;
     }
     case PINCHGESTURE_INPUT: {
@@ -143,7 +143,7 @@ APZEventResult APZInputBridgeChild::ReceiveInputEvent(
       SendReceivePinchGestureInputEvent(event, !!aCallback, &res,
                                         &processedEvent);
 
-      event = processedEvent;
+      event = std::move(processedEvent);
       break;
     }
     case TAPGESTURE_INPUT: {
@@ -153,7 +153,7 @@ APZEventResult APZInputBridgeChild::ReceiveInputEvent(
       SendReceiveTapGestureInputEvent(event, !!aCallback, &res,
                                       &processedEvent);
 
-      event = processedEvent;
+      event = std::move(processedEvent);
       break;
     }
     case SCROLLWHEEL_INPUT: {
@@ -163,7 +163,7 @@ APZEventResult APZInputBridgeChild::ReceiveInputEvent(
       SendReceiveScrollWheelInputEvent(event, !!aCallback, &res,
                                        &processedEvent);
 
-      event = processedEvent;
+      event = std::move(processedEvent);
       break;
     }
     case KEYBOARD_INPUT: {
@@ -172,7 +172,7 @@ APZEventResult APZInputBridgeChild::ReceiveInputEvent(
 
       SendReceiveKeyboardInputEvent(event, !!aCallback, &res, &processedEvent);
 
-      event = processedEvent;
+      event = std::move(processedEvent);
       break;
     }
     default: {

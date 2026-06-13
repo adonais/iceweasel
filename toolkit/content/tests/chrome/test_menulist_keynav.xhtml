@@ -10,7 +10,7 @@
 
 <button id="button1" label="One"/>
 <menulist id="list">
-  <menupopup id="popup" onpopupshowing="return gShowPopup;" native="false">
+  <menupopup id="popup" onpopupshowing="return gShowPopup;" nonnative="">
     <menuitem id="i1" label="One"/>
     <menuitem id="i2" label="Two"/>
     <menuitem id="i2b" disabled="true" label="Two and a Half"/>
@@ -20,7 +20,7 @@
 </menulist>
 <button id="button2" label="Two"/>
 <menulist id="list2">
-  <menupopup id="popup" onpopupshown="checkCursorNavigation();" native="false">
+  <menupopup id="popup" onpopupshown="checkCursorNavigation();" nonnative="">
     <menuitem id="b1" label="One"/>
     <menuitem id="b2" label="Two" selected="true"/>
     <menuitem id="b3" label="Three"/>
@@ -28,7 +28,7 @@
   </menupopup>
 </menulist>
 <menulist id="list3" sizetopopup="none">
-  <menupopup native="false">
+  <menupopup nonnative="">
     <menuitem id="s1" label="One"/>
     <menuitem id="s2" label="Two"/>
     <menuitem id="s3" label="Three"/>

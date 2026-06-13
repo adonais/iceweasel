@@ -546,7 +546,7 @@ nsUrlClassifierUtils::MakeUpdateRequestV4(
                                 Base64URLEncodePaddingPolicy::Include, out);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  aRequest = out;
+  aRequest = std::move(out);
 
   return NS_OK;
 }
@@ -573,7 +573,7 @@ nsUrlClassifierUtils::MakeUpdateRequestV5(
       continue;
     }
 
-    serverListNames.AppendElement(serverListName);
+    serverListNames.AppendElement(std::move(serverListName));
   }
 
   // We omit the size_constraints to indicates that there is no size constraints
@@ -592,7 +592,7 @@ nsUrlClassifierUtils::MakeUpdateRequestV5(
     query.Append(stateBase64);
   }
 
-  aRequest = query;
+  aRequest = std::move(query);
 
   return NS_OK;
 }
@@ -673,7 +673,7 @@ nsUrlClassifierUtils::MakeFindFullHashRequestV4(
                        Base64URLEncodePaddingPolicy::Include, out);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  aRequest = out;
+  aRequest = std::move(out);
 
   return NS_OK;
 }
@@ -916,7 +916,7 @@ nsUrlClassifierUtils::MakeThreatHitReport(nsIChannel* aChannel,
                        Base64URLEncodePaddingPolicy::Include, out);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  aRequest = out;
+  aRequest = std::move(out);
 
   return NS_OK;
 }

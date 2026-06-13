@@ -24,7 +24,7 @@ High‑level transitions
 - During startup, if initialization isn’t complete, use cached state from ``IPPStartupCache``.
 - Not signed in → ``UNAVAILABLE`` if not eligible, otherwise ``UNAUTHENTICATED``.
 - If an entitlement is cached/valid → ``READY``.
-- Otherwise, check enrollment with Guardian (via ``IPPEnrollAndEntitleManager``):
+- Otherwise, check enrollment with Guardian (via ``IPPFxaAuthProvider.updateEntitlement()``):
   - Not enrolled → ``UNAVAILABLE`` (not eligible).
   - Enrolled → fetch entitlement; if successful → ``READY``, else ``UNAVAILABLE`` when not eligible.
 

@@ -6,6 +6,11 @@
 
 #include <string>
 
+#if !defined(_WIN32) && defined(__LP64__)
+#include <cstring>
+#include <sys/mman.h>
+#endif
+
 #include "gtest/gtest.h"
 
 #include "scoped_ptrs_smime.h"
@@ -133,5 +138,106 @@ TEST_F(SMimeTest, SlightlyTruncatedCmsSignature) {
 TEST_F(SMimeTest, IsSignedNull) {
   ASSERT_FALSE(NSS_CMSMessage_IsSigned(nullptr));
 }
+
+// Verify that the CMS streaming decoder rejects content large enough to
+// trigger integer truncation in the buffer-growth path of work_data.
+// This bug only manifests on LP64 where unsigned long is 64-bit and the
+// 64-bit product is truncated when assigned to int.
+#if !defined(_WIN32) && defined(__LP64__)
+TEST_F(SMimeTest, CmsDecoderRejectsOversizeContent) {
+  const size_t kLenA = 0x3F800000;
+  const size_t kLenB = 0x42000000;
+
+  // CMS SignedData with a constructed indefinite-length OCTET STRING
+  // containing two large primitive substrings.
+  static const uint8_t kHeader[] = {
+      0x30,
+      0x80,
+      0x06,
+      0x09,
+      0x2A,
+      0x86,
+      0x48,
+      0x86,
+      0xF7,
+      0x0D,
+      0x01,
+      0x07,
+      0x02,
+      0xA0,
+      0x80,
+      0x30,
+      0x80,
+      0x02,
+      0x01,
+      0x01,
+      0x31,
+      0x00,
+      0x30,
+      0x80,
+      0x06,
+      0x09,
+      0x2A,
+      0x86,
+      0x48,
+      0x86,
+      0xF7,
+      0x0D,
+      0x01,
+      0x07,
+      0x01,
+      0xA0,
+      0x80,
+      0x24,
+      0x80,
+      0x04,
+      0x84,
+      (uint8_t)(kLenA >> 24),
+      (uint8_t)(kLenA >> 16),
+      (uint8_t)(kLenA >> 8),
+      (uint8_t)(kLenA),
+  };
+  static const uint8_t kMid[] = {
+      0x04,
+      0x84,
+      (uint8_t)(kLenB >> 24),
+      (uint8_t)(kLenB >> 16),
+      (uint8_t)(kLenB >> 8),
+      (uint8_t)(kLenB),
+  };
+  static const uint8_t kFooter[] = {
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x31,
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  };
+
+  const size_t total =
+      sizeof(kHeader) + kLenA + sizeof(kMid) + kLenB + sizeof(kFooter);
+
+  void* m = mmap(nullptr, total, PROT_READ | PROT_WRITE,
+                 MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+  ASSERT_NE(MAP_FAILED, m) << "mmap of " << total << " bytes failed";
+
+  uint8_t* p = static_cast<uint8_t*>(m);
+  memcpy(p, kHeader, sizeof(kHeader));
+  memcpy(p + sizeof(kHeader) + kLenA, kMid, sizeof(kMid));
+  memcpy(p + sizeof(kHeader) + kLenA + sizeof(kMid) + kLenB, kFooter,
+         sizeof(kFooter));
+
+  NSSCMSDecoderContext* dcx = NSS_CMSDecoder_Start(
+      nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
+  ASSERT_NE(nullptr, dcx);
+
+  SECStatus rv =
+      NSS_CMSDecoder_Update(dcx, reinterpret_cast<const char*>(p), total);
+
+  NSSCMSMessage* msg = NSS_CMSDecoder_Finish(dcx);
+  munmap(m, total);
+
+  EXPECT_NE(SECSuccess, rv);
+  if (msg) {
+    NSS_CMSMessage_Destroy(msg);
+  }
+}
+#endif  // !defined(_WIN32) && defined(__LP64__)
 
 }  // namespace nss_test

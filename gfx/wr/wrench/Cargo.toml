@@ -70,8 +70,8 @@ opengles_version_minor = 0
 
 [package.metadata.android.sdk]
 # keep it in sync with android-sdk-version in android-sdk.configure
-target_sdk_version = 36
-min_sdk_version = 18
+target_sdk_version = 37
+min_sdk_version = 26
 
 [package.metadata.android.application]
 label = "Wrench"

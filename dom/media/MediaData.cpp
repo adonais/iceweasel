@@ -328,6 +328,7 @@ PlanarYCbCrData ConstructPlanarYCbCrData(const VideoInfo& aInfo,
   if (aInfo.mTransferFunction) {
     data.mTransferFunction = *aInfo.mTransferFunction;
   }
+  data.mHDRMetadata = aInfo.mHDRMetadata;
   data.mColorRange = aBuffer.mColorRange;
   data.mChromaSubsampling = aBuffer.mChromaSubsampling;
   return data;

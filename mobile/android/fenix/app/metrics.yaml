@@ -4087,6 +4087,22 @@ metrics:
     metadata:
       tags:
         - Experiments
+  tab_group_creation_mode:
+    type: labeled_counter
+    description: |
+      Tracks how users initiated group creation
+    labels:
+      - drag_and_drop
+      - menu
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2029221
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2029221
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
 
 customize_home:
   most_visited_sites:
@@ -4243,7 +4259,7 @@ customize_home:
           toggled.
 
           We currently track: most_visited_sites, jump_back_in,
-          recently_visited, bookmarks, pocket, contile, and world_cup.
+          recently_visited, bookmarks, pocket, contile, privacy_report, and world_cup.
           We previously tracked bookmarks as recently_saved.
       enabled:
         type: boolean
@@ -5553,7 +5569,74 @@ bookmarks_management:
     metadata:
       tags:
         - Bookmarks
-
+  import_from_file_button_click:
+    type: event
+    description: |
+      The user clicks the button entry point to import bookmarks from a file
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037185
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D299395
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+    metadata:
+      tags:
+        - Bookmarks
+  import_from_file_menu_click:
+    type: event
+    description: |
+      The user clicks the menu entry point to import bookmarks from a file
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037185
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D299395
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+    metadata:
+      tags:
+        - Bookmarks
+  import_successful:
+    type: event
+    description: |
+      The user successfully imports bookmarks from a file
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037185
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D299395
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+    extra_keys:
+      bookmarks_count:
+        description: The number of bookmarks imported.
+        type: quantity
+    metadata:
+      tags:
+        - Bookmarks
+  import_failed:
+    type: event
+    description: |
+      The user fails to import bookmarks from a file
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037185
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D299395
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+    metadata:
+      tags:
+        - Bookmarks
 activation:
   identifier:
     type: string
@@ -6861,9 +6944,9 @@ tabs_tray:
     description: |
       A user switched to tab group mode
     bugs:
-      - todocathy
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2026038
     data_reviews:
-      - todocathy
+      - https://phabricator.services.mozilla.com/D292785
     data_sensitivity:
       - interaction
     notification_emails:
@@ -7014,6 +7097,113 @@ tabs_tray:
     metadata:
       tags:
         - Tabs
+  tab_group_created:
+    type: event
+    description: |
+      Fired when a user saves a newly created tab group. Does NOT fire when
+      a user edits and saves an existing tab group.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2029221
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2029221
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+
+  tab_group_deleted:
+    type: event
+    description: |
+      Fired when a tab group is deleted.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2029221
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2029221
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+
+  tab_group_closed:
+    type: event
+    description: |
+      Fired when a user closes or collapses a tab group in the tabs tray.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2029226
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2029226
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+
+  tab_added_to_group:
+    type: event
+    description: |
+      Fired when a tab is added to an existing tab group.
+    extra_keys:
+      tab_count:
+        description: The number of tabs added to the group.
+        type: quantity
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2029221
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2029221
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+
+  tab_group_opened:
+    type: event
+    description: |
+      Fired when user opens/expands a tab group
+    extra_keys:
+      source:
+        description: The screen where the group was opened from (tab screen or group screen).
+        type: string
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2029221
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2029221
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+
+  tab_group_create_cancel:
+    type: event
+    description: |
+      Fired when user cancels out of group creation flow
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2029221
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2029221
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+
+  tab_group_screen_opened:
+    type: event
+    description: |
+      Fired when the user navigates to the Tab Groups screen within the tabs tray.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2029226
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2029226
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+
   inactive_tabs_expanded:
     type: event
     description: |
@@ -7331,6 +7521,60 @@ tabs_tray:
     data_sensitivity:
       - interaction
     expires: never
+  tab_long_press:
+    type: event
+    description: |
+      A user long-pressed on a tab in the tabs tray.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2038021
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D301419
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+    metadata:
+      tags:
+        - Tabs
+  tab_long_press_drag:
+    type: event
+    description: |
+      A user dragged a tab in the tabs tray after long-pressing it.
+    extra_keys:
+      item_type:
+        description: |
+          The type of item dragged. One of "tab", "tab_group", or "unknown".
+        type: string
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2038021
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D301419
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+    metadata:
+      tags:
+        - Tabs
+  tab_long_press_drag_rearranged_position:
+    type: event
+    description: |
+      A user rearranged the position of a tab in the tabs tray by dragging
+      and dropping it after long-pressing it.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2038021
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D301419
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+    metadata:
+      tags:
+        - Tabs
 
 tab_search:
   tab_search_icon_clicked:
@@ -10248,6 +10492,53 @@ addons:
     metadata:
       tags:
         - WebExtensions
+  rtamo_identified:
+    type: event
+    description: |
+      The download URL of the RTAMO addon has been successfully identified.
+    extra_keys:
+      addon_download_url:
+        type: string
+        description: The download URL of the addon attempted to install.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2030692
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D293161
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+    metadata:
+      tags:
+        - WebExtensions
+    send_in_pings:
+      - events
+  rtamo_failed:
+    type: event
+    description: |
+      Could not identify the download URL of the RTAMO addon.
+    extra_keys:
+      reason:
+        type: string
+        description: |
+          Reason for why this operation failed.
+          Can be one of: invalid_id, unknown_url, cancelled.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2030692
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D293161
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+    metadata:
+      tags:
+        - WebExtensions
+    send_in_pings:
+      - events
+
 perf.startup:
   cold_main_app_to_first_frame:
     type: timing_distribution
@@ -11173,8 +11464,25 @@ engine_tab:
     type: event
     description: |
       A tab was reloaded by the engine.
+    extra_keys:
+      duration_since_last_visible_seconds:
+        description: |
+          Seconds since the tab was last visible to the user at the time the engine
+          session was recreated. Stamped when the tab's engine view is released
+          (tab switched away or app backgrounded). -1 if unavailable (tab was never
+          rendered, or is not a regular tab).
+        type: quantity
+      reason:
+        description: |
+          Why the tab was reloaded. Either "content_process_kill" (the content
+          process was killed mid-session) or "app_session_restore" (the
+          entire app was killed and the tab was restored from a persisted
+          session on the next launch).
+        type: string
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1938133
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1966918
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2008773
     data_reviews:
       - https://phabricator.services.mozilla.com/D240795
     notification_emails:
@@ -11185,7 +11493,8 @@ app_exit_info:
   process_exited:
     type: event
     description: |
-      A process has exited.
+      A process has exited. See https://developer.android.com/reference/android/app/ApplicationExitInfo
+      for additional support.
     extra_keys:
       date:
         type: string
@@ -11609,6 +11918,10 @@ awesomebar:
         description: |
           The type of suggestion card shown. One of: stocks, flights, sports
         type: string
+      extra:
+        description: |
+          Any extra information about the card displayed.
+        type: string
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2014705
     data_reviews:
@@ -11628,6 +11941,10 @@ awesomebar:
       card_type:
         description: |
           The type of suggestion card clicked. One of: stocks, flights, sports
+        type: string
+      extra:
+        description: |
+          Any extra information about the card clicked.
         type: string
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2014705
@@ -11976,6 +12293,22 @@ homepage:
     metadata:
       tags:
         - Tabs
+  privacy_report_tapped:
+    type: event
+    description: |
+      A user tapped the privacy report / trackers blocked card on the homepage.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2025368
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D289791
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+    metadata:
+      tags:
+        - TrackingProtection
 
 start_on_home:
   enter_home_screen:
@@ -15080,32 +15413,6 @@ client_association:
       - fx-accounts
 
 toolbar:
-  cfr_shown:
-    type: event
-    description: |
-      Toolbar cfr was shown to the user.
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=2000490
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=2000490
-    data_sensitivity:
-      - interaction
-    notification_emails:
-      - android-probes@mozilla.com
-    expires: never
-  cfr_dismissed:
-    type: event
-    description: |
-      Toolbar cfr was dismissed by the user.
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=2000490
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=2000490
-    data_sensitivity:
-      - interaction
-    notification_emails:
-      - android-probes@mozilla.com
-    expires: never
   button_tapped:
     type: event
     description: |
@@ -15175,10 +15482,15 @@ ai_summarize:
       model:
         description: The name of the model used for summarization.
         type: string
+      engine_available:
+        description: Whether the engine was available while ending this summarization.
+        type: boolean
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2025523
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2039112
     data_reviews:
       - https://phabricator.services.mozilla.com/D289882
+      - https://phabricator.services.mozilla.com/D300181
     data_sensitivity:
       - interaction
     notification_emails:
@@ -15588,6 +15900,20 @@ world_cup:
     notification_emails:
       - android-probes@mozilla.com
     expires: never
+  sports_widget_shared:
+    type: event
+    description: |
+      A user has tapped the "Share" menu item to share the World Cup schedule
+      from the sports widget menu.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2044743
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D305179
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
   refresh_clicked:
     type: event
     description: |
@@ -15658,10 +15984,18 @@ vpn:
     type: event
     description:
       Triggered when the VPN feature onboarding card is shown to the user.
+    extra_keys:
+      entrypoint:
+        description: >
+          The surface from which the user started the flow.
+          Possible values: Homepage, Browser.
+        type: string
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2031198
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2036176
     data_reviews:
       - https://phabricator.services.mozilla.com/D293774
+      - https://phabricator.services.mozilla.com/D297821
     data_sensitivity:
       - interaction
     notification_emails:
@@ -15671,10 +16005,18 @@ vpn:
     type: event
     description:
       Triggered when the user taps "Not Now" on the VPN onboarding card.
+    extra_keys:
+      entrypoint:
+        description: >
+          The surface from which the user started the flow.
+          Possible values: Homepage, Browser.
+        type: string
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2031198
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2036176
     data_reviews:
       - https://phabricator.services.mozilla.com/D293774
+      - https://phabricator.services.mozilla.com/D297821
     data_sensitivity:
       - interaction
     notification_emails:
@@ -15684,10 +16026,18 @@ vpn:
     type: event
     description:
       Triggered when the user dismisses the VPN onboarding card.
+    extra_keys:
+      entrypoint:
+        description: >
+          The surface from which the user started the flow.
+          Possible values: Homepage, Browser.
+        type: string
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2031198
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2036176
     data_reviews:
       - https://phabricator.services.mozilla.com/D293774
+      - https://phabricator.services.mozilla.com/D297821
     data_sensitivity:
       - interaction
     notification_emails:
@@ -15697,10 +16047,18 @@ vpn:
     type: event
     description:
       Triggered when the user taps "Browse with extra protection" on the VPN onboarding page.
+    extra_keys:
+      entrypoint:
+        description: >
+          The surface from which the user started the flow.
+          Possible values: Homepage, Browser.
+        type: string
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2031198
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2036176
     data_reviews:
       - https://phabricator.services.mozilla.com/D293774
+      - https://phabricator.services.mozilla.com/D297821
     data_sensitivity:
       - interaction
     notification_emails:
@@ -15748,12 +16106,14 @@ vpn:
       entrypoint:
         description: >
           The surface from which the user started the flow.
-          Possible values: "onboarding", "settings".
+          Possible values: Homepage, Browser.
         type: string
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2031198
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2036176
     data_reviews:
       - https://phabricator.services.mozilla.com/D293774
+      - https://phabricator.services.mozilla.com/D297821
     data_sensitivity:
       - interaction
     notification_emails:
@@ -15896,3 +16256,45 @@ vpn:
     notification_emails:
       - android-probes@mozilla.com
     expires: never
+
+native_share_sheet:
+  shown:
+    type: event
+    description: |
+      A user opened the native Android share sheet.
+    extra_keys:
+      source:
+        type: string
+        description: |
+          The surface from which the native share sheet was opened.
+          Current values: browser_menu, custom_tab_menu, browser_toolbar,
+          tabs_tray, home, bookmarks, history, history_metadata_group,
+          recently_closed.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2010859
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2010859
+    notification_emails:
+      - android-probes@mozilla.com
+    data_sensitivity:
+      - interaction
+    expires: never
+    metadata:
+      tags:
+        - Sharing
+  qr_code_tapped:
+    type: event
+    description: |
+      A user tapped the QR code action in the native share sheet and the QR code was displayed.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2010858
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2010858
+    notification_emails:
+      - android-probes@mozilla.com
+    data_sensitivity:
+      - interaction
+    expires: never
+    metadata:
+      tags:
+        - Sharing

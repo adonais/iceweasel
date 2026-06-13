@@ -4050,7 +4050,7 @@ void Debugger::traceObject(JSTracer* trc, JSObject* obj) {
 void Debugger::trace(JSTracer* trc) {
   TraceEdge(trc, &object, "Debugger Object");
 
-  TraceNullableEdge(trc, &uncaughtExceptionHook, "hooks");
+  TraceEdge(trc, &uncaughtExceptionHook, "hooks");
 
   // Mark Debugger.Frame objects. Since the Debugger is reachable, JS could call
   // getNewestFrame and then walk the stack, so these are all reachable from JS.
@@ -4188,16 +4188,7 @@ bool DebuggerWeakMap<UnbarrieredKey, Wrapper,
 }
 
 const JSClassOps DebuggerInstanceObject::classOps_ = {
-    nullptr,                // addProperty
-    nullptr,                // delProperty
-    nullptr,                // enumerate
-    nullptr,                // newEnumerate
-    nullptr,                // resolve
-    nullptr,                // mayResolve
-    nullptr,                // finalize
-    nullptr,                // call
-    nullptr,                // construct
-    Debugger::traceObject,  // trace
+    .trace = Debugger::traceObject,
 };
 
 const JSClass DebuggerInstanceObject::class_ = {

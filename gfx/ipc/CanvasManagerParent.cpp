@@ -134,11 +134,7 @@ already_AddRefed<dom::PWebGLParent> CanvasManagerParent::AllocPWebGLParent() {
     MOZ_ASSERT_UNREACHABLE("AllocPWebGLParent without WebGL");
     return nullptr;
   }
-  if (NS_WARN_IF(!gfxVars::AllowWebglOop() &&
-                 !StaticPrefs::webgl_out_of_process_force())) {
-    MOZ_ASSERT_UNREACHABLE("AllocPWebGLParent without remote WebGL");
-    return nullptr;
-  }
+
   return MakeAndAddRef<dom::WebGLParent>(mSharedSurfacesHolder, mContentId);
 }
 

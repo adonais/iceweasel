@@ -89,7 +89,7 @@ add_task(async function aria_attributes() {
 
 add_task(async function load_opens_new_tab() {
   await withFirefoxView({ openNewWindow: true }, async browser => {
-    let win = browser.ownerGlobal;
+    let win = browser.documentGlobal;
     ok(win.FirefoxViewHandler.tab.selected, "Firefox View tab is selected");
     win.gURLBar.focus();
     win.gURLBar.value = "https://example.com";
@@ -112,7 +112,7 @@ add_task(async function load_opens_new_tab() {
 
 add_task(async function homepage_new_tab() {
   await withFirefoxView({ openNewWindow: true }, async browser => {
-    let win = browser.ownerGlobal;
+    let win = browser.documentGlobal;
     ok(win.FirefoxViewHandler.tab.selected, "Firefox View tab is selected");
     let newTabOpened = BrowserTestUtils.waitForEvent(
       win.gBrowser.tabContainer,
@@ -131,7 +131,7 @@ add_task(async function homepage_new_tab() {
 
 add_task(async function number_tab_select_shortcut() {
   await withFirefoxView({}, async browser => {
-    let win = browser.ownerGlobal;
+    let win = browser.documentGlobal;
     EventUtils.synthesizeKey(
       "1",
       AppConstants.MOZ_WIDGET_GTK ? { altKey: true } : { accelKey: true },
@@ -269,7 +269,7 @@ add_task(async function test_add_ons_cant_unhide_fx_view() {
 // Firefox View button is present and active.
 add_task(async function testFirstTabFocusableWhenFxViewOpen() {
   await withFirefoxView({}, async browser => {
-    let win = browser.ownerGlobal;
+    let win = browser.documentGlobal;
     ok(win.FirefoxViewHandler.tab.selected, "Firefox View tab is selected");
     let fxViewBtn = win.document.getElementById("firefox-view-button");
     forceFocus(fxViewBtn);
@@ -289,7 +289,7 @@ add_task(async function testFirstTabFocusableWhenFxViewOpen() {
 // Test that Firefox View tab is not multiselectable
 add_task(async function testFxViewNotMultiselect() {
   await withFirefoxView({}, async browser => {
-    let win = browser.ownerGlobal;
+    let win = browser.documentGlobal;
     Assert.ok(
       win.FirefoxViewHandler.tab.selected,
       "Firefox View tab is selected"

@@ -43,7 +43,7 @@ export class AboutPrivateBrowsingParent extends JSWindowActorParent {
       return undefined;
     }
 
-    let win = browser.ownerGlobal;
+    let win = browser.documentGlobal;
 
     switch (aMessage.name) {
       case "OpenPrivateWindow": {

@@ -10,13 +10,14 @@ import android.net.Uri
 import android.util.Log
 import android.view.KeyEvent
 import androidx.compose.ui.test.ExperimentalTestApi
-import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertAny
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotDisplayed
+import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.ComposeTestRule
+import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -24,18 +25,17 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performImeAction
+import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.performTouchInput
 import androidx.test.espresso.AppNotIdleException
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.action.ViewActions
 import androidx.test.espresso.action.ViewActions.pressImeActionButton
 import androidx.test.espresso.assertion.PositionAssertions.isCompletelyAbove
-import androidx.test.espresso.assertion.PositionAssertions.isCompletelyBelow
 import androidx.test.espresso.assertion.PositionAssertions.isPartiallyBelow
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.matcher.ViewMatchers.Visibility
 import androidx.test.espresso.matcher.ViewMatchers.hasDescendant
-import androidx.test.espresso.matcher.ViewMatchers.isCompletelyDisplayed
 import androidx.test.espresso.matcher.ViewMatchers.isRoot
 import androidx.test.espresso.matcher.ViewMatchers.withEffectiveVisibility
 import androidx.test.espresso.matcher.ViewMatchers.withId
@@ -46,9 +46,11 @@ import androidx.test.uiautomator.UiSelector
 import androidx.test.uiautomator.Until
 import mozilla.components.compose.browser.toolbar.concept.BrowserToolbarTestTags.ADDRESSBAR_SEARCH_BOX
 import mozilla.components.compose.browser.toolbar.concept.BrowserToolbarTestTags.ADDRESSBAR_URL_BOX
+import mozilla.components.compose.browser.toolbar.concept.BrowserToolbarTestTags.NAVIGATION_BAR
 import mozilla.components.compose.browser.toolbar.concept.BrowserToolbarTestTags.SEARCH_SELECTOR
 import mozilla.components.compose.browser.toolbar.concept.BrowserToolbarTestTags.TABS_COUNTER
 import org.hamcrest.CoreMatchers.allOf
+import org.junit.Assert.assertTrue
 import org.mozilla.fenix.R
 import org.mozilla.fenix.helpers.Constants.LONG_CLICK_DURATION
 import org.mozilla.fenix.helpers.Constants.RETRY_COUNT
@@ -248,12 +250,13 @@ class NavigationToolbarRobot(private val composeTestRule: ComposeTestRule) {
         Log.i(TAG, "longTapNavButton: Waiting to find the nav bar $buttonDescription button.")
         mDevice.findObject(UiSelector().description("Back")).waitForExists(waitingTime)
         Log.i(TAG, "longTapNavButton: Trying to long click the nav bar $buttonDescription button.")
-        mDevice.findObject(
-            By.desc(buttonDescription)
-                .enabled(true)
-                .hasAncestor(By.res("$packageName:id/navigation_bar")),
-        )
-            .click(LONG_CLICK_DURATION)
+        composeTestRule.onNode(
+            hasContentDescription(buttonDescription)
+                .and(hasAnyAncestor(hasTestTag(NAVIGATION_BAR))),
+            useUnmergedTree = true,
+        ).performTouchInput {
+            longClick(durationMillis = LONG_CLICK_DURATION)
+        }
         Log.i(TAG, "longTapNavButton: Long clicked the nav bar $buttonDescription button.")
     }
 
@@ -274,13 +277,16 @@ class NavigationToolbarRobot(private val composeTestRule: ComposeTestRule) {
     // Verifies that the address bar is displayed separately, or merged with the navbar in landscape mode.
     fun verifyAddressBarIsDisplayedSeparately(isSeparate: Boolean, isAtTop: Boolean) {
         val addressBar = "$packageName:id/toolbar"
-        val navBar = "$packageName:id/navigation_bar"
 
         if (isSeparate) {
-            assertUIObjectExists(itemWithResId(addressBar), itemWithResId(navBar))
+            assertUIObjectExists(itemWithResId(addressBar))
+            composeTestRule.onNodeWithTag(NAVIGATION_BAR).assertIsDisplayed()
+        } else if (isAtTop) {
+            assertUIObjectExists(itemWithResId(addressBar))
+            composeTestRule.onNodeWithTag(NAVIGATION_BAR).assertIsNotDisplayed()
         } else {
-            assertUIObjectIsGone(itemWithResId(if (isAtTop) navBar else addressBar))
-            assertUIObjectExists(itemWithResId(if (isAtTop) addressBar else navBar))
+            assertUIObjectIsGone(itemWithResId(addressBar))
+            composeTestRule.onNodeWithTag(NAVIGATION_BAR).assertIsDisplayed()
         }
     }
 
@@ -298,26 +304,39 @@ class NavigationToolbarRobot(private val composeTestRule: ComposeTestRule) {
 
     fun verifyNavBarBarPosition(isAtBottom: Boolean) {
         Log.i(TAG, "verifyNavBarBarPosition: Trying to verify the toolbar navbar position is at the bottom: $isAtBottom.")
-        onView(allOf(withId(R.id.navigation_bar), isCompletelyDisplayed())).check(
-            if (isAtBottom) {
-                isPartiallyBelow(withId(R.id.engineView))
-            } else {
-                isCompletelyAbove(withId(R.id.engineView))
-            },
-        )
+        assertNavBarIsPositioned(referenceResourceId = "$packageName:id/engineView")
         Log.i(TAG, "verifyNavBarBarPosition: Verified the toolbar navbar position is at the bottom: $isAtBottom.")
     }
 
-    fun verifyNavBarPositionWithTabStripEnabled(isAtBottom: Boolean) {
-        Log.i(TAG, "verifyNavBarPositionWithTabStripEnabled: Trying to verify the toolbar navbar position is at the bottom: $isAtBottom.")
-        onView(allOf(withId(R.id.navigation_bar), isCompletelyDisplayed())).check(
-            if (isAtBottom) {
-                isCompletelyBelow(withId(R.id.composable_toolbar))
-            } else {
-                isCompletelyAbove(withId(R.id.composable_toolbar))
-            },
+    fun verifyNavBarPosition() {
+        Log.i(TAG, "verifyNavBarPosition: Trying to verify the toolbar navbar position is at the bottom.")
+        assertNavBarIsPositioned(
+            referenceResourceId = "$packageName:id/composable_toolbar",
         )
-        Log.i(TAG, "verifyNavBarPositionWithTabStripEnabled: Verified the toolbar navbar position is at the bottom: $isAtBottom.")
+        Log.i(TAG, "verifyNavBarPosition: Verified the toolbar navbar position is at the bottom.")
+    }
+
+    /**
+     * Asserts that the navigation bar compose node is positioned below the view
+     * identified by [referenceResourceId].
+     */
+    private fun assertNavBarIsPositioned(referenceResourceId: String) {
+        val navBarBounds = composeTestRule.onNodeWithTag(NAVIGATION_BAR)
+            .fetchSemanticsNode()
+            .boundsInWindow
+        val reference = mDevice.findObject(UiSelector().resourceId(referenceResourceId))
+
+        assertTrue(
+            "Reference view ($referenceResourceId) must be present in the view hierarchy",
+            reference.waitForExists(waitingTime),
+        )
+
+        val referenceBounds = reference.visibleBounds
+
+        assertTrue(
+            "Navigation bar is below the reference view",
+            navBarBounds.top >= referenceBounds.bottom,
+        )
     }
 
     fun verifyTheTabCounter(numberOfOpenTabs: String, isPrivateBrowsingEnabled: Boolean = false) {
@@ -411,23 +430,40 @@ class NavigationToolbarRobot(private val composeTestRule: ComposeTestRule) {
         Log.i(TAG, "verifyTheNavigationBarHomepageButton: Verified that the homepage button is displayed in the navigation bar")
     }
 
+    fun clickTheNavigationBarEditBookmarkButton() {
+        Log.i(TAG, "clickTheNavigationBarEditBookmarkButton: Trying to click the \"Edit bookmark\" button in the navigation bar.")
+        composeTestRule.onNodeWithContentDescription("Edit bookmark").performClick()
+        Log.i(TAG, "clickTheNavigationBarEditBookmarkButton: Clicked the \"Edit bookmark\" button in the navigation bar.")
+    }
+
+    fun clickTheNavigationBarRefreshButton() {
+        Log.i(TAG, "clickTheNavigationBarRefreshButton: Trying to click the \"Refresh\" button in the navigation bar.")
+        composeTestRule.onNodeWithContentDescription("Refresh").performClick()
+        Log.i(TAG, "clickTheNavigationBarRefreshButton: Clicked the \"Refresh\" button in the navigation bar.")
+    }
+
     class Transition(private val composeTestRule: ComposeTestRule) {
         private lateinit var sessionLoadedIdlingResource: SessionLoadedIdlingResource
 
+        @OptIn(ExperimentalTestApi::class)
         fun enterURLAndEnterToBrowser(
             url: Uri,
             interact: BrowserRobot.() -> Unit,
         ): BrowserRobot.Transition {
+            composeTestRule.waitForIdle()
+            Log.i(TAG, "enterURLAndEnterToBrowser: Waiting for $waitingTime until the URL bar exists")
+            composeTestRule.waitUntilAtLeastOneExists(hasTestTag(ADDRESSBAR_URL_BOX), waitingTime)
+            Log.i(TAG, "enterURLAndEnterToBrowser: Waited for $waitingTime until the URL bar exists")
             Log.i(TAG, "enterURLAndEnterToBrowser: Trying to click navigation toolbar")
-            itemWithResId("ADDRESSBAR_URL_BOX").click()
+            itemWithResId(ADDRESSBAR_URL_BOX).click()
             Log.i(TAG, "enterURLAndEnterToBrowser: Clicked navigation toolbar")
 
-            Log.i(TAG, "enterURLAndEnterToBrowser: Waiting for compose rule to be idle")
-            composeTestRule.waitForIdle()
-            Log.i(TAG, "enterURLAndEnterToBrowser: Waited for compose rule to be idle")
+            Log.i(TAG, "enterURLAndEnterToBrowser: Waiting for search box to appear")
+            composeTestRule.waitUntilAtLeastOneExists(hasTestTag(ADDRESSBAR_SEARCH_BOX), waitingTime)
+            Log.i(TAG, "enterURLAndEnterToBrowser: Search box appeared")
 
             Log.i(TAG, "enterURLAndEnterToBrowser: Trying to set toolbar text to: $url")
-            itemWithResId("ADDRESSBAR_SEARCH_BOX").setText(url.toString())
+            composeTestRule.onNodeWithTag(ADDRESSBAR_SEARCH_BOX).performTextReplacement(url.toString())
             Log.i(TAG, "enterURLAndEnterToBrowser: Toolbar text was set to: $url")
 
             Log.i(TAG, "enterURLAndEnterToBrowser: Waiting for compose rule to be idle")
@@ -435,7 +471,7 @@ class NavigationToolbarRobot(private val composeTestRule: ComposeTestRule) {
             Log.i(TAG, "enterURLAndEnterToBrowser: Waited for compose rule to be idle")
 
             runCatching {
-                Log.i(TAG, "enterURLAndEnterToBrowser: Trying to perform Compose IME action perform on the toolbar")
+                Log.i(TAG, "enterURLAndEnterToBrowser: Trying to perform Compose IME action on the toolbar")
                 composeTestRule.onNodeWithTag(ADDRESSBAR_SEARCH_BOX).performImeAction()
                 Log.i(TAG, "enterURLAndEnterToBrowser: Compose IME action performed on the toolbar")
             }.onFailure { throwable ->
@@ -572,21 +608,27 @@ class NavigationToolbarRobot(private val composeTestRule: ComposeTestRule) {
             return SearchRobot.Transition(composeTestRule)
         }
 
+        @OptIn(ExperimentalTestApi::class)
         fun clickTranslateButton(
             isPageTranslated: Boolean = false,
             originalLanguage: String = "",
             translatedLanguage: String = "",
             interact: TranslationsRobot.() -> Unit,
         ): TranslationsRobot.Transition {
-            if (isPageTranslated) {
-                Log.i(TAG, "clickTranslateButton: Trying to click the translate button")
-                itemWithDescription("Page translated from $originalLanguage to $translatedLanguage.").click()
-                Log.i(TAG, "clickTranslateButton: Clicked the translate button")
+            val buttonDescription = if (isPageTranslated) {
+                "Page translated from $originalLanguage to $translatedLanguage."
             } else {
-                Log.i(TAG, "clickTranslateButton: Trying to click the translate button")
-                itemWithDescription(getStringResource(R.string.browser_toolbar_translate)).click()
-                Log.i(TAG, "clickTranslateButton: Clicked the translate button")
+                getStringResource(R.string.browser_toolbar_translate)
             }
+            Log.i(TAG, "clickTranslateButton: Waiting for $waitingTime until the translate button exists")
+            composeTestRule.waitUntilAtLeastOneExists(
+                hasContentDescription(buttonDescription, substring = true),
+                waitingTime,
+            )
+            Log.i(TAG, "clickTranslateButton: Waited for $waitingTime until the translate button exists")
+            Log.i(TAG, "clickTranslateButton: Trying to click the translate button")
+            composeTestRule.onNodeWithContentDescription(buttonDescription, substring = true).performClick()
+            Log.i(TAG, "clickTranslateButton: Clicked the translate button")
 
             TranslationsRobot(composeTestRule).interact()
             return TranslationsRobot.Transition(composeTestRule)
@@ -710,17 +752,12 @@ private fun pressImeActionOnAwesomeBar() {
     }
 }
 private fun threeDotButton() = onView(withId(toolbarR.id.mozac_browser_toolbar_menu))
-private fun tabTrayButton() = onView(withId(R.id.tab_button))
 private fun tabsCounter() = onView(
     allOf(
         withId(tabcounterR.id.counter_root),
         withEffectiveVisibility(Visibility.VISIBLE),
     ),
 )
-private fun fillLinkButton() = onView(withId(R.id.fill_link_from_clipboard))
 private fun clearAddressBarButton() = itemWithResId("$packageName:id/mozac_browser_toolbar_clear_view")
 private fun readerViewToggle() =
     itemWithDescription(getStringResource(R.string.browser_menu_read))
-
-private fun searchSelectorButton() =
-    mDevice.findObject(UiSelector().resourceId("$packageName:id/search_selector"))

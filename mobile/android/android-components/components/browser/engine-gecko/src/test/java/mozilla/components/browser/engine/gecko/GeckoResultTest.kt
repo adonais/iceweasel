@@ -18,6 +18,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.geckoview.GeckoResult
 import org.robolectric.Shadows.shadowOf
+import kotlin.test.assertIs
 
 @RunWith(AndroidJUnit4::class)
 class GeckoResultTest {
@@ -78,7 +79,7 @@ class GeckoResultTest {
                 GeckoResult.fromValue(null)
             },
             {
-                assertTrue(it is IllegalStateException)
+                assertIs<IllegalStateException>(it)
                 GeckoResult.fromValue(null)
             },
         ).withHandler(mainHandler)

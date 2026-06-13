@@ -235,10 +235,10 @@ struct MOZ_STACK_CLASS SavedFrame::Lookup {
 
   void trace(JSTracer* trc) {
     TraceRoot(trc, &source, "SavedFrame::Lookup::source");
-    TraceNullableRoot(trc, &functionDisplayName,
-                      "SavedFrame::Lookup::functionDisplayName");
-    TraceNullableRoot(trc, &asyncCause, "SavedFrame::Lookup::asyncCause");
-    TraceNullableRoot(trc, &parent, "SavedFrame::Lookup::parent");
+    TraceRoot(trc, &functionDisplayName,
+              "SavedFrame::Lookup::functionDisplayName");
+    TraceRoot(trc, &asyncCause, "SavedFrame::Lookup::asyncCause");
+    TraceRoot(trc, &parent, "SavedFrame::Lookup::parent");
   }
 };
 
@@ -361,7 +361,7 @@ bool SavedFrame::HashPolicy::match(SavedFrame* existing, const Lookup& lookup) {
 }
 
 /* static */
-void SavedFrame::HashPolicy::rekey(Key& key, const Key& newKey) {
+void SavedFrame::HashPolicy::rekey(Key& key, SavedFrame* newKey) {
   key = newKey;
 }
 
@@ -372,16 +372,7 @@ bool SavedFrame::finishSavedFrameInit(JSContext* cx, HandleObject ctor,
 }
 
 static const JSClassOps SavedFrameClassOps = {
-    nullptr,               // addProperty
-    nullptr,               // delProperty
-    nullptr,               // enumerate
-    nullptr,               // newEnumerate
-    nullptr,               // resolve
-    nullptr,               // mayResolve
-    SavedFrame::finalize,  // finalize
-    nullptr,               // call
-    nullptr,               // construct
-    nullptr,               // trace
+    .finalize = SavedFrame::finalize,
 };
 
 const ClassSpec SavedFrame::classSpec_ = {
@@ -1482,6 +1473,7 @@ bool SavedStacks::insertFrames(JSContext* cx, MutableHandle<SavedFrame*> frame,
                                        ? &startAtObj->as<JSFunction>()
                                        : nullptr);
   bool seenStartAt = !startAt;
+  bool framePushed = false;
   RootedField<LocationValue, 1> location(roots);
   RootedField<JSAtom*, 2> displayAtom(roots);
   RootedField<JSAtom*, 3> causeAtom(roots);
@@ -1490,7 +1482,7 @@ bool SavedStacks::insertFrames(JSContext* cx, MutableHandle<SavedFrame*> frame,
   while (!iter.done()) {
     Activation& activation = *iter.activation();
     Maybe<LiveSavedFrameCache::FramePtr> framePtr =
-        LiveSavedFrameCache::FramePtr::create(iter);
+        LiveSavedFrameCache::FramePtr::create(cx, iter);
 
     if (capture.is<JS::AllFrames>() && iter.hasUsableAbstractFramePtr()) {
       unreachedEvalTargets.eraseIfEqual(iter.abstractFramePtr());
@@ -1565,6 +1557,7 @@ bool SavedStacks::insertFrames(JSContext* cx, MutableHandle<SavedFrame*> frame,
     // If we haven't yet seen the start, then don't add anything to the stack
     // chain.
     if (seenStartAt) {
+      framePushed = true;
       if (!stackChain.emplaceBack(location.source(), location.sourceId(),
                                   location.line(), location.column(),
                                   displayAtom,
@@ -1586,7 +1579,7 @@ bool SavedStacks::insertFrames(JSContext* cx, MutableHandle<SavedFrame*> frame,
     }
 
     ++iter;
-    framePtr = LiveSavedFrameCache::FramePtr::create(iter);
+    framePtr = LiveSavedFrameCache::FramePtr::create(cx, iter);
 
     if (iter.activation() != &activation && capture.is<JS::AllFrames>()) {
       // If there were no cache hits in the entire activation, clear its
@@ -1667,7 +1660,7 @@ bool SavedStacks::insertFrames(JSContext* cx, MutableHandle<SavedFrame*> frame,
       seenCached = false;
     }
 
-    if (capture.is<JS::MaxFrames>()) {
+    if (framePushed && capture.is<JS::MaxFrames>()) {
       capture.as<JS::MaxFrames>().maxFrames--;
     }
   }
@@ -1807,7 +1800,7 @@ bool SavedStacks::checkForEvalInFramePrev(
   }
 
   Maybe<LiveSavedFrameCache::FramePtr> maybeTarget =
-      LiveSavedFrameCache::FramePtr::create(iter);
+      LiveSavedFrameCache::FramePtr::create(cx, iter);
   MOZ_ASSERT(maybeTarget);
 
   LiveSavedFrameCache::FramePtr target = *maybeTarget;

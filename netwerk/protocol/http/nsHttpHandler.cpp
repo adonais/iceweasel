@@ -131,6 +131,7 @@
 
 #define ACCEPT_HEADER_STYLE "text/css,*/*;q=0.1"
 #define ACCEPT_HEADER_JSON "application/json,*/*;q=0.5"
+#define ACCEPT_HEADER_TEXT "text/plain,*/*;q=0.5"
 #define ACCEPT_HEADER_ALL "*/*"
 
 #define UA_PREF(_pref) UA_PREF_PREFIX _pref
@@ -275,7 +276,6 @@ nsHttpHandler::nsHttpHandler()
       mPrivateBrowsingIdempotencyKeySeed(mozilla::RandomUint64OrDie()),
       mDebugObservations(false),
       mEnableAltSvc(false),
-      mEnableAltSvcOE(false),
       mSpdyPingThreshold(PR_SecondsToInterval(
           StaticPrefs::network_http_http2_ping_threshold())),
       mSpdyPingTimeout(PR_SecondsToInterval(
@@ -765,6 +765,8 @@ nsresult nsHttpHandler::AddStandardRequestHeaders(
     accept.Assign(ACCEPT_HEADER_STYLE);
   } else if (aContentPolicyType == ExtContentPolicy::TYPE_JSON) {
     accept.Assign(ACCEPT_HEADER_JSON);
+  } else if (aContentPolicyType == ExtContentPolicy::TYPE_TEXT) {
+    accept.Assign(ACCEPT_HEADER_TEXT);
   } else {
     accept.Assign(ACCEPT_HEADER_ALL);
   }
@@ -1622,11 +1624,6 @@ void nsHttpHandler::PrefsChanged(const char* pref) {
   if (PREF_CHANGED(HTTP_PREF("altsvc.enabled"))) {
     rv = Preferences::GetBool(HTTP_PREF("altsvc.enabled"), &cVar);
     if (NS_SUCCEEDED(rv)) mEnableAltSvc = cVar;
-  }
-
-  if (PREF_CHANGED(HTTP_PREF("altsvc.oe"))) {
-    rv = Preferences::GetBool(HTTP_PREF("altsvc.oe"), &cVar);
-    if (NS_SUCCEEDED(rv)) mEnableAltSvcOE = cVar;
   }
 
   if (PREF_CHANGED(HTTP_PREF("http2.push-allowance"))) {

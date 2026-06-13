@@ -397,7 +397,7 @@ async function openTabGroupContextMenu(tabGroup) {
   EventUtils.synthesizeMouseAtCenter(
     tabGroup.querySelector(".tab-group-label"),
     { type: "contextmenu", button: 2 },
-    tabGroup.ownerGlobal
+    tabGroup.documentGlobal
   );
   await panelShown;
 
@@ -497,7 +497,7 @@ async function saveAndCloseGroup(group) {
   let closedObjectsChanged = TestUtils.topicObserved(
     "sessionstore-closed-objects-changed"
   );
-  group.ownerGlobal.SessionStore.addSavedTabGroup(group);
+  group.documentGlobal.SessionStore.addSavedTabGroup(group);
   await removeTabGroup(group);
   await closedObjectsChanged;
   return group.id;

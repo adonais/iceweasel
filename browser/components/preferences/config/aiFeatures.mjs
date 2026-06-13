@@ -28,7 +28,7 @@ const lazy = XPCOMUtils.declareLazy({
   GenAI: "resource:///modules/GenAI.sys.mjs",
   MemoryStore:
     "moz-src:///browser/components/aiwindow/services/MemoryStore.sys.mjs",
-  MODELS:
+  getCachedModelsData:
     "moz-src:///browser/components/aiwindow/ui/modules/AIWindowConstants.sys.mjs",
 });
 
@@ -303,6 +303,11 @@ const AI_CONTROL_OPTIONS = [
   },
 ];
 
+const modelL10nArgs = key => ({
+  model: lazy.getCachedModelsData()[key].model,
+  ownerName: lazy.getCachedModelsData()[key].ownerName,
+});
+
 /**
  * Validates that a URL is trustworthy (HTTPS or localhost).
  *
@@ -361,7 +366,6 @@ Preferences.addSetting({
  * @param {string} options.id Setting id to create
  * @param {string} options.pref Pref id for the state
  * @param {OnDeviceModelFeaturesEnum} options.feature Feature id for removing models
- * @param {boolean} [options.supportsEnabled] If the feature supports the "enabled" state
  * @param {SettingConfig['getControlConfig']} [options.getControlConfig] A getControlConfig implementation.
  * @param {() => Promise<boolean>} [options.onBeforeBlock] Optional async callback to show a modal before blocking
  */
@@ -369,7 +373,6 @@ function makeAiControlSetting({
   id,
   pref,
   feature,
-  supportsEnabled = true,
   getControlConfig,
   onBeforeBlock,
 }) {
@@ -400,21 +403,25 @@ function makeAiControlSetting({
         );
     },
     get(prefVal, deps) {
+      const aiControlState = OnDeviceModelManager.getAiControlState(feature);
+
       if (
         prefVal == AiControlStates.blocked ||
         (prefVal == AiControlStates.default &&
           deps.aiControlDefault.value == AiControlGlobalStates.blocked) ||
-        OnDeviceModelManager.isBlocked(feature)
+        aiControlState == AiControlStates.blocked
       ) {
         return AiControlStates.blocked;
       }
+
       if (
-        supportsEnabled &&
+        OnDeviceModelManager.hasDistinctEnabledState(feature) &&
         (prefVal == AiControlStates.enabled ||
-          OnDeviceModelManager.isEnabled(feature))
+          aiControlState == AiControlStates.enabled)
       ) {
         return AiControlStates.enabled;
       }
+
       return AiControlStates.available;
     },
     set(prefVal, _, setting) {
@@ -455,14 +462,23 @@ function makeAiControlSetting({
         recordTelemetry(selection);
       }
     },
-    getControlConfig,
+    getControlConfig(config, deps, setting) {
+      if (!OnDeviceModelManager.hasDistinctEnabledState(feature)) {
+        config.options = config.options.filter(
+          option => option.value != AiControlStates.enabled
+        );
+      }
+
+      return getControlConfig
+        ? getControlConfig(config, deps, setting)
+        : config;
+    },
   });
 }
 makeAiControlSetting({
   id: "aiControlTranslationsSelect",
   pref: "browser.ai.control.translations",
   feature: OnDeviceModelManager.features.Translations,
-  supportsEnabled: false,
   getControlConfig(config, _, setting) {
     let isBlocked = setting.value == AiControlStates.blocked;
     let moreSettingsLink = config.options.at(-1);
@@ -519,15 +535,22 @@ Preferences.addSetting(
         );
     },
     get(prefVal, deps) {
+      const aiControlState = OnDeviceModelManager.getAiControlState(
+        this.feature
+      );
+
       if (
         prefVal == AiControlStates.blocked ||
         (prefVal == AiControlStates.default &&
           deps.aiControlDefault.value == AiControlGlobalStates.blocked) ||
-        OnDeviceModelManager.isBlocked(this.feature)
+        aiControlState == AiControlStates.blocked
       ) {
         return AiControlStates.blocked;
       }
-      return deps.chatbotProvider.value || AiControlStates.available;
+
+      return aiControlState == AiControlStates.enabled
+        ? deps.chatbotProvider.value
+        : aiControlState;
     },
     set(inputVal, deps) {
       if (inputVal == AiControlStates.blocked) {
@@ -743,10 +766,20 @@ Preferences.addSetting({
     },
     set(value, deps, setting) {
       const prev = deps.smartWindowFirstRunModelChoice.value;
-      previousAssistantModel = prev ? lazy.MODELS[prev].modelName : "No model";
+      previousAssistantModel = prev
+        ? lazy.getCachedModelsData()[String(prev)].model
+        : "No model";
 
       customRadioSelected = value === "0";
       if (customRadioSelected) {
+        // If the user has previously saved a custom model, switching back to
+        // the custom radio re-activates that saved configuration so the form
+        // reflects the active state and Save stays disabled until edited.
+        const savedEndpoint = deps.smartWindowPreferencesEndpoint.value;
+        if (savedEndpoint && prev !== "0") {
+          deps.smartWindowEndpoint.value = savedEndpoint;
+          deps.smartWindowFirstRunModelChoice.value = "0";
+        }
         setting.onChange();
         return;
       }
@@ -763,15 +796,105 @@ Preferences.addSetting({
       // sending telemetry only for the preset models
       // custom model telemetry is sent after user hits the save button
       if (value !== "0") {
-        const new_model = lazy.MODELS[value].modelName;
+        const new_model = lazy.getCachedModelsData()[String(value)].model;
         Glean.smartWindow.settingsModel.record({
           previous_model: previousAssistantModel,
           new_model,
         });
-        previousAssistantModel = value;
+        previousAssistantModel = new_model;
       }
     },
   });
+}
+
+const CUSTOM_MODEL_FIELD_IDS = new Set([
+  "customModelName",
+  "customModelEndpoint",
+  "customModelAuthToken",
+]);
+
+// Tracks which fields the user has actually edited. An input may show a
+// fallback value that doesn't match what's saved, so without this the form
+// would look unsaved before anyone has typed anything.
+const editedCustomModelFields = new WeakSet();
+
+function getCustomModelFieldValue(id, fallback = "") {
+  const field = document.getElementById(id);
+  if (!field || !editedCustomModelFields.has(field)) {
+    return fallback;
+  }
+  return field.value?.trim() ?? "";
+}
+
+function getCustomModelEndpointValue(deps) {
+  const defaultEndpoint = Services.prefs
+    .getDefaultBranch("")
+    .getStringPref("browser.smartwindow.endpoint", "");
+
+  if (
+    deps.smartWindowEndpoint.value &&
+    deps.smartWindowEndpoint.value !== defaultEndpoint
+  ) {
+    return deps.smartWindowEndpoint.value;
+  }
+
+  if (deps.smartWindowPreferencesEndpoint.value) {
+    return deps.smartWindowPreferencesEndpoint.value;
+  }
+  return "";
+}
+
+function getCustomModelFormValues(deps) {
+  return {
+    modelName: getCustomModelFieldValue(
+      "customModelName",
+      deps.smartWindowModel.value || ""
+    ),
+    endpoint: getCustomModelFieldValue(
+      "customModelEndpoint",
+      getCustomModelEndpointValue(deps)
+    ),
+    authToken: getCustomModelFieldValue(
+      "customModelAuthToken",
+      deps.smartWindowApiKey.value || ""
+    ),
+  };
+}
+
+function hasUnsavedCustomModelChanges(deps) {
+  // Compare each form value to what is actually saved. The endpoint reference
+  // uses getCustomModelEndpointValue because smartWindowEndpoint is cleared
+  // when the user temporarily switches to a preset radio - in that state, the
+  // last saved custom endpoint lives in smartWindowPreferencesEndpoint.
+  const { modelName, endpoint, authToken } = getCustomModelFormValues(deps);
+  return (
+    modelName !== (deps.smartWindowModel.value || "") ||
+    endpoint !== getCustomModelEndpointValue(deps) ||
+    authToken !== (deps.smartWindowApiKey.value || "")
+  );
+}
+
+function isCustomModelSaveButtonDisabled(deps) {
+  const { endpoint } = getCustomModelFormValues(deps);
+  return !validateEndpointUrl(endpoint) || !hasUnsavedCustomModelChanges(deps);
+}
+
+// Any edit to a custom-model field re-emits change on the form-row setting;
+// the Save button and confirmation depend on it and re-evaluate their
+// enabled/disabled states from the live form values.
+function setupCustomModelFormChangeListener(emitChange) {
+  const handler = e => {
+    if (CUSTOM_MODEL_FIELD_IDS.has(e.target?.id)) {
+      editedCustomModelFields.add(e.target);
+      emitChange();
+    }
+  };
+  document.addEventListener("input", handler);
+  document.addEventListener("change", handler);
+  return () => {
+    document.removeEventListener("input", handler);
+    document.removeEventListener("change", handler);
+  };
 }
 
 Preferences.addSetting({
@@ -792,29 +915,7 @@ Preferences.addSetting({
   ],
   visible: deps => deps.modelSelection.value === "0",
   get(_, deps) {
-    const defaultEndpoint = Services.prefs
-      .getDefaultBranch("")
-      .getStringPref("browser.smartwindow.endpoint", "");
-
-    // Show saved endpoint if user has set a custom value if its different from default
-    if (
-      deps.smartWindowEndpoint.value &&
-      deps.smartWindowEndpoint.value !== defaultEndpoint
-    ) {
-      return deps.smartWindowEndpoint.value;
-    }
-
-    // Show backup endpoint when switching back to custom
-    if (deps.smartWindowPreferencesEndpoint.value) {
-      return deps.smartWindowPreferencesEndpoint.value;
-    }
-    return "";
-  },
-  onUserChange(value) {
-    const saveButton = document.getElementById("customModelSaveButton");
-    if (saveButton) {
-      saveButton.disabled = !validateEndpointUrl(value?.trim());
-    }
+    return getCustomModelEndpointValue(deps);
   },
 });
 
@@ -837,6 +938,30 @@ Preferences.addSetting({
 });
 
 Preferences.addSetting({
+  id: "customModelSaveRow",
+  deps: ["modelSelection"],
+  visible: deps => deps.modelSelection.value === "0",
+  setup: setupCustomModelFormChangeListener,
+});
+
+Preferences.addSetting({
+  id: "customModelSaveConfirmation",
+  deps: [
+    "smartWindowFirstRunModelChoice",
+    "smartWindowModel",
+    "smartWindowEndpoint",
+    "smartWindowApiKey",
+    "smartWindowPreferencesEndpoint",
+    "modelSelection",
+    "customModelSaveRow",
+  ],
+  visible: deps =>
+    deps.smartWindowFirstRunModelChoice.value === "0" &&
+    deps.modelSelection.value === "0" &&
+    !hasUnsavedCustomModelChanges(deps),
+});
+
+Preferences.addSetting({
   id: "customModelSaveButton",
   deps: [
     "smartWindowFirstRunModelChoice",
@@ -845,15 +970,10 @@ Preferences.addSetting({
     "smartWindowApiKey",
     "smartWindowPreferencesEndpoint",
     "modelSelection",
+    "customModelSaveRow",
   ],
   visible: deps => deps.modelSelection.value === "0",
-  disabled() {
-    // Read from input element since setting only updates on Save button
-    const endpoint = document
-      .getElementById("customModelEndpoint")
-      ?.value?.trim();
-    return !validateEndpointUrl(endpoint);
-  },
+  disabled: isCustomModelSaveButtonDisabled,
   onUserClick(e, deps) {
     const doc = e.target.ownerDocument;
     // TODO: (bug 2014287) Utilize ways of handling the input changes instead of using document.getElementById()
@@ -865,12 +985,10 @@ Preferences.addSetting({
       doc.getElementById("customModelAuthToken")?.value?.trim() || "";
 
     if (!validateEndpointUrl(modelEndpoint)) {
-      console.warn("For custom setting URL must be HTTPS or localhost");
-      e.target.disabled = true;
       return;
     }
 
-    const new_model = lazy.MODELS["0"].modelName;
+    const new_model = lazy.getCachedModelsData()["0"].model;
     Glean.smartWindow.settingsModel.record({
       previous_model: previousAssistantModel,
       new_model,
@@ -1178,7 +1296,7 @@ SettingGroupManager.registerGroups({
             l10nId: "preferences-ai-controls-block-ai",
             control: "moz-toggle",
             controlAttrs: {
-              headinglevel: 2,
+              headinglevel: 3,
               inputlayout: "inline-end",
             },
             options: [
@@ -1203,6 +1321,9 @@ SettingGroupManager.registerGroups({
             id: "aiBlockedMessage",
             control: "moz-message-bar",
             l10nId: "preferences-ai-controls-blocked-message",
+            controlAttrs: {
+              role: "status",
+            },
           },
         ],
       },
@@ -1334,6 +1455,7 @@ SettingGroupManager.registerGroups({
               },
               {
                 id: "personalizeSmartWindowButton",
+                loadPane: "personalizeSmartWindow",
                 l10nId: "ai-window-personalize-button",
                 control: "moz-box-button",
               },
@@ -1409,21 +1531,21 @@ SettingGroupManager.registerGroups({
             value: "1",
             l10nId: "smart-window-model-fast",
             get l10nArgs() {
-              return lazy.MODELS["1"];
+              return modelL10nArgs("1");
             },
           },
           {
             value: "2",
             l10nId: "smart-window-model-flexible",
             get l10nArgs() {
-              return lazy.MODELS["2"];
+              return modelL10nArgs("2");
             },
           },
           {
             value: "3",
             l10nId: "smart-window-model-personal",
             get l10nArgs() {
-              return lazy.MODELS["3"];
+              return modelL10nArgs("3");
             },
           },
           {
@@ -1448,9 +1570,10 @@ SettingGroupManager.registerGroups({
               {
                 id: "customModelHelpLink",
                 control: "moz-message-bar",
-                l10nId: "smart-window-model-custom-help",
+                l10nId: "smart-window-model-custom-info",
                 controlAttrs: {
                   type: "info",
+                  role: "status",
                 },
                 options: [
                   {
@@ -1465,12 +1588,43 @@ SettingGroupManager.registerGroups({
                 ],
               },
               {
-                id: "customModelSaveButton",
-                control: "moz-button",
-                l10nId: "smart-window-model-custom-save",
+                id: "customModelSaveRow",
+                control: "div",
                 controlAttrs: {
-                  type: "primary",
+                  class: "custom-model-save-row",
                 },
+                items: [
+                  {
+                    id: "customModelSaveButton",
+                    control: "moz-button",
+                    l10nId: "smart-window-model-custom-save",
+                    controlAttrs: {
+                      type: "primary",
+                    },
+                  },
+                  {
+                    id: "customModelSaveConfirmation",
+                    control: "span",
+                    controlAttrs: {
+                      class: "custom-model-save-confirmation",
+                      role: "status",
+                    },
+                    options: [
+                      {
+                        control: "img",
+                        controlAttrs: {
+                          class: "custom-model-save-confirmation-icon",
+                          src: "chrome://global/skin/icons/check-filled.svg",
+                          alt: "",
+                        },
+                      },
+                      {
+                        control: "span",
+                        l10nId: "smart-window-model-custom-save-confirmation",
+                      },
+                    ],
+                  },
+                ],
               },
             ],
           },
@@ -1511,6 +1665,7 @@ SettingGroupManager.registerGroups({
           },
           {
             id: "manageMemoriesButton",
+            loadPane: "manageMemories",
             l10nId: "ai-window-manage-memories-button",
             control: "moz-box-button",
           },

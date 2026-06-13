@@ -144,7 +144,7 @@ enum class CookieBannerUIMode(
      */
     ENABLE(
         R.string.reduce_cookie_banner_on_for_site,
-        R.drawable.ic_cookies_enabled,
+        iconsR.drawable.mozac_ic_cookies_24,
     ),
 
     /**
@@ -153,7 +153,7 @@ enum class CookieBannerUIMode(
      */
     DISABLE(
         R.string.reduce_cookie_banner_off_for_site,
-        R.drawable.ic_cookies_disabled,
+        iconsR.drawable.mozac_ic_cookies_slash_24,
     ),
 
     /**
@@ -161,7 +161,7 @@ enum class CookieBannerUIMode(
      */
     SITE_NOT_SUPPORTED(
         R.string.reduce_cookie_banner_unsupported_site,
-        R.drawable.ic_cookies_disabled,
+        iconsR.drawable.mozac_ic_cookies_slash_24,
     ),
 
     /**
@@ -170,7 +170,7 @@ enum class CookieBannerUIMode(
      */
     REQUEST_UNSUPPORTED_SITE_SUBMITTED(
         R.string.reduce_cookie_banner_unsupported_site_request_submitted_2,
-        R.drawable.ic_cookies_disabled,
+        iconsR.drawable.mozac_ic_cookies_slash_24,
     ),
 
     /**

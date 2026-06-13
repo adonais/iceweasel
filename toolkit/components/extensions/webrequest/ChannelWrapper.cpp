@@ -892,6 +892,7 @@ MozContentPolicyType GetContentPolicyType(ExtContentPolicyType aType) {
       return MozContentPolicyType::Speculative;
     case ExtContentPolicy::TYPE_JSON:
       return MozContentPolicyType::Json;
+    case ExtContentPolicy::TYPE_TEXT:
     case ExtContentPolicy::TYPE_PROXIED_WEBRTC_MEDIA:
     case ExtContentPolicy::TYPE_INVALID:
     case ExtContentPolicy::TYPE_OTHER:
@@ -1203,7 +1204,8 @@ ChannelWrapper::RequestListener::OnStartRequest(nsIRequest* request) {
   mChannelWrapper->ErrorCheck();
   mChannelWrapper->FireEvent(u"start"_ns);
 
-  return mOrigStreamListener->OnStartRequest(request);
+  nsCOMPtr<nsIStreamListener> origStreamListener = mOrigStreamListener;
+  return origStreamListener->OnStartRequest(request);
 }
 
 NS_IMETHODIMP
@@ -1216,7 +1218,8 @@ ChannelWrapper::RequestListener::OnStopRequest(nsIRequest* request,
   mChannelWrapper->ActivityErrorFallbackCheck();
   mChannelWrapper->FireEvent(u"stop"_ns);
 
-  return mOrigStreamListener->OnStopRequest(request, aStatus);
+  nsCOMPtr<nsIStreamListener> origStreamListener = mOrigStreamListener;
+  return origStreamListener->OnStopRequest(request, aStatus);
 }
 
 NS_IMETHODIMP
@@ -1225,8 +1228,9 @@ ChannelWrapper::RequestListener::OnDataAvailable(nsIRequest* request,
                                                  uint64_t sourceOffset,
                                                  uint32_t count) {
   MOZ_ASSERT(mOrigStreamListener, "Should have mOrigStreamListener");
-  return mOrigStreamListener->OnDataAvailable(request, inStr, sourceOffset,
-                                              count);
+  nsCOMPtr<nsIStreamListener> origStreamListener = mOrigStreamListener;
+  return origStreamListener->OnDataAvailable(request, inStr, sourceOffset,
+                                             count);
 }
 
 NS_IMETHODIMP

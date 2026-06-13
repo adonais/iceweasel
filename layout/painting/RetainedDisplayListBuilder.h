@@ -21,7 +21,7 @@ class nsDisplayList;
  * Currently this is implemented as a map of frame pointers to flags.
  */
 struct RetainedDisplayListData {
-  enum class FrameFlag : uint8_t { Modified, HasProps, HadWillChange };
+  enum class FrameFlag : uint8_t { Modified, HasProps };
   using FrameFlags = mozilla::EnumSet<FrameFlag, uint8_t>;
 
   RetainedDisplayListData();

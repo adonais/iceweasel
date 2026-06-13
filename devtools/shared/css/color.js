@@ -82,6 +82,10 @@ class CssColor {
   // A lower-cased copy of |authored|.
   #lowerCased = null;
 
+  get authored() {
+    return this.#authored;
+  }
+
   get hasAlpha() {
     if (!this.valid) {
       return false;

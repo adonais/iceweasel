@@ -1223,6 +1223,12 @@ class RecursiveMakeBackend(MakeBackend):
         backend_file.write("%s += %s\n" % (target_cargo_variable, obj.name))
         if obj.features:
             backend_file.write(f"{obj.FEATURES_VAR} := {','.join(obj.features)}\n")
+        if obj.output_category:
+            program_target = f"$(DEPTH)/{obj.location}"
+            self._process_non_default_target(obj, program_target, backend_file)
+            backend_file.write_once(
+                f"{obj.OUTPUT_CATEGORY_VAR} := {obj.output_category}\n"
+            )
 
     def _process_rust_program(self, obj, backend_file):
         self._process_rust_program_base(

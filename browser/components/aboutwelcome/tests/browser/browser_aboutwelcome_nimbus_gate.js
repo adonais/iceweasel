@@ -7,6 +7,9 @@
 const { ExperimentAPI } = ChromeUtils.importESModule(
   "resource://nimbus/ExperimentAPI.sys.mjs"
 );
+const { RemoteSettingsExperimentLoader } = ChromeUtils.importESModule(
+  "resource://nimbus/lib/RemoteSettingsExperimentLoader.sys.mjs"
+);
 const { TelemetryReportingPolicy } = ChromeUtils.importESModule(
   "resource://gre/modules/TelemetryReportingPolicy.sys.mjs"
 );
@@ -205,6 +208,74 @@ add_task(async function test_aboutwelcome_loads_after_nimbus_error() {
   await BrowserTestUtils.waitForCondition(
     () => tab.linkedBrowser.currentURI.spec === "about:welcome",
     "about:welcome should load after Nimbus error"
+  );
+
+  BrowserTestUtils.removeTab(tab);
+  sandbox.restore();
+  await SpecialPowers.popPrefEnv();
+});
+
+// When `ExperimentAPI.init()` is already in flight (e.g., kicked off by
+// Normandy early in startup) and about:welcome opens, the gate should
+// await the actual completion of that in-flight init
+// See Bug 2042553
+add_task(async function test_gate_awaits_in_flight_init() {
+  const sandbox = sinon.createSandbox();
+
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.aboutwelcome.enabled", true],
+      ["browser.aboutwelcome.experimentsGate.enabled", true],
+      ["trailhead.firstrun.didSeeAboutWelcome", false],
+    ],
+  });
+
+  // ExperimentAPI has already been initialized by Firefox startup,
+  // so reset for a fresh state
+  resetNimbusReadyPromiseForTesting();
+  ExperimentAPI._resetForTests();
+
+  // Hold _rsLoader.enable() so the first init() stays in flight while
+  // the about:welcome gate runs.
+  const enableGate = Promise.withResolvers();
+  sandbox.stub(ExperimentAPI._rsLoader, "enable").callsFake(async (...args) => {
+    await enableGate.promise;
+    return RemoteSettingsExperimentLoader.prototype.enable.call(
+      ExperimentAPI._rsLoader,
+      ...args
+    );
+  });
+
+  // Capture _hasUpdatedOnce at the first finishedUpdating() call.
+  // init() awaits real completion first, so by the time anything calls
+  // finishedUpdating() rsLoader has already finished updating
+  let hasUpdatedOnceAtFirstCall = null;
+  sandbox.stub(ExperimentAPI._rsLoader, "finishedUpdating").callsFake(() => {
+    if (hasUpdatedOnceAtFirstCall === null) {
+      hasUpdatedOnceAtFirstCall = ExperimentAPI._rsLoader._hasUpdatedOnce;
+    }
+    return RemoteSettingsExperimentLoader.prototype.finishedUpdating.call(
+      ExperimentAPI._rsLoader
+    );
+  });
+
+  // First caller (normandy stand-in)
+  const firstInit = ExperimentAPI.init();
+
+  // Open about:welcome so its gate calls init() as the second caller.
+  const { tab } = await openAboutWelcome();
+
+  enableGate.resolve();
+  await firstInit;
+  await BrowserTestUtils.waitForCondition(
+    () => hasUpdatedOnceAtFirstCall !== null,
+    "finishedUpdating() was called"
+  );
+
+  Assert.strictEqual(
+    hasUpdatedOnceAtFirstCall,
+    true,
+    "Gate did not call finishedUpdating() until init genuinely finished"
   );
 
   BrowserTestUtils.removeTab(tab);

@@ -36,11 +36,10 @@ class CounterStyle {
  protected:
   explicit constexpr CounterStyle(ListStyle aStyle) : mStyle(aStyle) {}
 
- private:
+ public:
   CounterStyle(const CounterStyle& aOther) = delete;
   void operator=(const CounterStyle& other) = delete;
 
- public:
   constexpr ListStyle GetStyle() const { return mStyle; }
   bool IsNone() const { return mStyle == ListStyle::None; }
   bool IsCustomStyle() const { return mStyle == ListStyle::Custom; }

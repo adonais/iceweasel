@@ -176,18 +176,14 @@ void FileBlockCache::Close() {
     mFD = nullptr;
   }
 
-  // Let the thread close the FD, and then trigger its own shutdown.
-  // Note that mBackgroundET is now empty, so no other task will be posted
-  // there. Also mBackgroundET and mFD are empty and therefore can be reused
-  // immediately.
+  // Let the thread close the FD. Note that mBackgroundET is now empty, so no
+  // other task will be posted there. Also mBackgroundET and mFD are empty and
+  // therefore can be reused immediately.
   nsresult rv = thread->Dispatch(NS_NewRunnableFunction("FileBlockCache::Close",
-                                                        [thread, fd] {
+                                                        [fd] {
                                                           if (fd) {
                                                             CloseFD(fd);
                                                           }
-                                                          // No need to shutdown
-                                                          // background task
-                                                          // queues.
                                                         }),
                                  NS_DISPATCH_EVENT_MAY_BLOCK);
   NS_ENSURE_SUCCESS_VOID(rv);

@@ -83,6 +83,10 @@ addAccessibleTask(
   I <a href="#" style="user-select: none;" id="unselectable_link">love</a>
   <button id="button">you</button></p>`,
   async browser => {
+    // Selection only moves to focused <a> if caret browsing is enabled
+    await SpecialPowers.pushPrefEnv({
+      set: [["accessibility.browsewithcaret", true]],
+    });
     // Set up an AXSelectedTextChanged listener here. It will get resolved
     // on the first non-root event it encounters, so if we test its data at the end
     // of this test it will show us the first text-selectable object that was focused,

@@ -108,7 +108,7 @@ async function createFavicon(aFileName) {
 
   return {
     file: faviconFile,
-    uri: uri(faviconFile),
+    uri: Services.io.newFileURI(faviconFile),
     data: readFileData(faviconFile),
     mimeType: "image/png",
   };

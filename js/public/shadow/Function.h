@@ -22,7 +22,7 @@ namespace JS {
 
 namespace shadow {
 
-struct Function : shadow::Object {
+struct Function : shadow::NativeObject {
   enum {
     FlagsAndArgCountSlot,
     NativeFuncOrInterpretedEnvSlot,

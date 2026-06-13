@@ -629,15 +629,17 @@ export class NimbusEnrollments {
   /**
    * Whether or not reading from the NimbusEnrollments table is enabled.
    *
-   * This is true by default in Nightly, except in xpcshell tests.
+   * This is true by default except in xpcshell tests.
    */
   static get readFromDatabaseEnabled() {
-    // TODO(bug 1972426): Enable this behaviour by default and remove this pref.
+    // TODO(bug 1967779): require the ProfilesDatastoreService to be initialized
+    // and remove this.
     return DATABASE_ENABLED && READ_FROM_DATABASE_ENABLED;
   }
 
   static get syncEnrollmentsEnabled() {
-    // TODO(bug 1956087): Enable this behaviour by default and remove this pref.
+    // TODO(bug 1967779): require the ProfilesDatastoreService to be initialized
+    // and remove this.
     return (
       DATABASE_ENABLED && READ_FROM_DATABASE_ENABLED && SYNC_ENROLLMENTS_ENABLED
     );

@@ -70,13 +70,13 @@ class nsConsoleService final : public nsIConsoleService, public nsIObserver {
 
     ~MessageElement();
 
-   private:
-    nsCOMPtr<nsIConsoleMessage> mMessage;
-
     MessageElement(const MessageElement&) = delete;
     MessageElement& operator=(const MessageElement&) = delete;
     MessageElement(MessageElement&&) = delete;
     MessageElement& operator=(MessageElement&&) = delete;
+
+   private:
+    nsCOMPtr<nsIConsoleMessage> mMessage;
   };
 
   ~nsConsoleService();

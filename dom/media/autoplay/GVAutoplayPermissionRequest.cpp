@@ -51,7 +51,7 @@ enum class TestRequest : uint32_t {
 };
 
 NS_IMPL_CYCLE_COLLECTION_INHERITED(GVAutoplayPermissionRequest,
-                                   ContentPermissionRequestBase)
+                                   ContentPermissionRequestBase, mContext)
 
 NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED_0(GVAutoplayPermissionRequest,
                                                ContentPermissionRequestBase)

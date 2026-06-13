@@ -392,6 +392,21 @@ class CanonicalBrowsingContext final : public BrowsingContext {
     mPriorityActive = aIsActive;
   }
 
+  void GetDownloadFolderOverride(nsString& aOut) const {
+    if (IsTop()) {
+      aOut = mDownloadFolderOverride;
+    }
+  }
+  void SetDownloadFolderOverride(const nsAString& aValue, ErrorResult& aRv) {
+    if (!IsTop()) {
+      aRv.ThrowInvalidStateError(
+          "downloadFolderOverride can only be set on the top "
+          "BrowsingContext");
+      return;
+    }
+    mDownloadFolderOverride = aValue;
+  }
+
   void SetIsActive(bool aIsActive, ErrorResult& aRv);
 
   void SetIsActiveInternal(bool aIsActive, ErrorResult& aRv) {
@@ -688,6 +703,10 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   // If this is a top level context, this is true if our browser ID is marked as
   // active in the process priority manager.
   bool mPriorityActive = false;
+
+  // If this is a top level context, an override for the default downloads
+  // directory, set via WebDriver BiDi's.
+  nsString mDownloadFolderOverride;
 
   // See CanonicalBrowsingContext.forceAppWindowActive.
   bool mForceAppWindowActive = false;

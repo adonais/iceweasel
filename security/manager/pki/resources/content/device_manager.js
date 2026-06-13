@@ -449,10 +449,9 @@ async function toggleFIPS() {
     // In FIPS mode the password must be non-empty.
     // This is different from what we allow in NON-Fips mode.
 
-    var tokendb = Cc["@mozilla.org/security/pk11tokendb;1"].getService(
-      Ci.nsIPK11TokenDB
-    );
-    var internal_token = tokendb.getInternalKeyToken(); // nsIPK11Token
+    var internal_token = Cc[
+      "@mozilla.org/security/internalkeytoken;1"
+    ].createInstance(Ci.nsIPKCS11Token);
     if (!internal_token.hasPassword) {
       // Token has either no or an empty password.
       doPrompt("fips-nonempty-primary-password-required");

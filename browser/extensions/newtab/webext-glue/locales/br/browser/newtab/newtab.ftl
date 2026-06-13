@@ -8,9 +8,13 @@
 newtab-page-title = Ivinell nevez
 newtab-settings-button =
     .title = Personelait ho pajenn Ivinell Nevez
+#  (developer note): @nova-cleanup(remove-string): Remove newtab-customize-panel-icon-button once Nova lands, will be using newtab-customize-panel-label instead
 newtab-customize-panel-icon-button =
     .title = Personelaat ar bejenn-mañ
+#  (developer note): @nova-cleanup(remove-string): Remove newtab-customize-panel-icon-button-label once Nova lands, will be using newtab-customize-panel-label instead
 newtab-customize-panel-icon-button-label = Personelaat
+newtab-customize-panel-label =
+    .label = Personelaat
 newtab-personalize-settings-icon-label =
     .title = Personelaat an ivinell nevez
     .aria-label = Arventennoù

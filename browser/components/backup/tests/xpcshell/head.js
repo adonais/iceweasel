@@ -485,3 +485,18 @@ function assertSingleTimeMeasurement(timerTestValue) {
   );
   Assert.greater(timerTestValue.sum, 0, "Timer measurement should be non-zero");
 }
+
+/**
+ * Creates an empty stub backup file for testing purposes.
+ *
+ * @param {string} dirPath - Directory to create the file in.
+ * @param {string} filename - Name of the backup file.
+ * @returns {Promise<string>} Full path to the created file.
+ */
+async function createStubBackupFile(dirPath, filename) {
+  const filePath = PathUtils.join(dirPath, filename);
+  await IOUtils.writeUTF8(filePath, "<!-- stub backup -->", {
+    tmpPath: filePath + ".tmp",
+  });
+  return filePath;
+}

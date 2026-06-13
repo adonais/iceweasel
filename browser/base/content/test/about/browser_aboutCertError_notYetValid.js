@@ -52,6 +52,8 @@ add_task(async function testNotYetValidCert() {
       content.document.querySelector("net-error-card").wrappedJSObject;
     const info = Cu.cloneInto(mockErrorInfo, netErrorCard);
     netErrorCard.errorInfo = info;
+    netErrorCard.resolvedErrorId =
+      "MOZILLA_PKIX_ERROR_NOT_YET_VALID_CERTIFICATE";
     netErrorCard.errorConfig = netErrorCard.getErrorConfig();
     await netErrorCard.getUpdateComplete();
 

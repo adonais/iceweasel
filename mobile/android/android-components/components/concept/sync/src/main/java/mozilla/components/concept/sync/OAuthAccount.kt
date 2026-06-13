@@ -81,11 +81,18 @@ interface OAuthAccount : AutoCloseable {
     fun getCurrentDeviceId(): String?
 
     /**
-     * Returns session token for an authenticated account.
-     *
-     * @return Current account's session token, if available. `null` otherwise.
+     * Stores whatever is necessary given the JSON payload from a webchannel login.
+     * browser layer. The [jsonPayload] is the `data` object from the `fxaccounts:login`
+     * WebChannel command.
      */
-    fun getSessionToken(): String?
+    suspend fun handleWebChannelLogin(jsonPayload: String)
+
+    /**
+     * Returns a complete `signedInUser` JSON object for a WebChannel `fxaccounts:fxa_status`
+     * response, embedding the session token privately. Email and uid come from the cached profile
+     * in internal state. Returns `null` if no session token is available.
+     */
+    fun getSignedInUserForWebChannel(): String?
 
     /**
      * Fetches the profile object for the current client either from the existing cached state
@@ -95,14 +102,6 @@ interface OAuthAccount : AutoCloseable {
      * @return Profile (optional, if successfully retrieved) representing the user's basic profile info
      */
     suspend fun getProfile(ignoreCache: Boolean = false): Profile?
-
-    /**
-     * Sets the user data given by the web content finishing the OAuth flow.
-     * This should only be used by user agents that need the session token
-     *
-     * @param userData: The user data provided by the web content, including the session token
-     */
-    suspend fun setUserData(userData: UserData)
 
     /**
      * Authenticates the current account using the [code] and [state] parameters obtained via the

@@ -4227,6 +4227,7 @@
 
   &::-moz-color-swatch{
     border-radius:100%;
+    margin:0;
   }
 
 }
@@ -5895,16 +5896,6 @@ button.hasPopupMenu{
 }
 [data-main-rotation="270"]{
   transform:rotate(270deg) translateX(-100%);
-}
-
-#hiddenCopyElement,
-.hiddenCanvasElement{
-  position:absolute;
-  top:0;
-  left:0;
-  width:0;
-  height:0;
-  display:none;
 }
 
 .pdfViewer{

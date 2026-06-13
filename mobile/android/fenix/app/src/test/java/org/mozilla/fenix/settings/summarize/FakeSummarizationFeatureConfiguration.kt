@@ -15,6 +15,7 @@ import org.mozilla.fenix.summarization.onboarding.SummarizeDiscoveryEvent
 class FakeSummarizationFeatureConfiguration(
     var expectedToolbarMenuButtonHighlight: Boolean = false,
     override var shouldToolbarShowCfr: Boolean = false,
+    override var isFeatureAvailable: Boolean = true,
 ) : SummarizationFeatureDiscoveryConfiguration {
 
     var menuItemExposureCount: Int = 0

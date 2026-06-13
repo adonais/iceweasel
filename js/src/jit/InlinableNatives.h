@@ -82,6 +82,7 @@
   _(DataViewByteLength)                            \
   _(DataViewByteOffset)                            \
                                                    \
+  _(Date)                                          \
   _(DateGetTime)                                   \
   _(DateGetFullYear)                               \
   _(DateGetMonth)                                  \
@@ -90,6 +91,8 @@
   _(DateGetHours)                                  \
   _(DateGetMinutes)                                \
   _(DateGetSeconds)                                \
+  _(DateNow)                                       \
+  _(DateParse)                                     \
                                                    \
   _(FunctionBind)                                  \
                                                    \

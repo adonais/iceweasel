@@ -48,7 +48,7 @@ We will also want to bump the Android Component's [changelog.md](https://hg.mozi
     - Update the [changelog.md](https://hg.mozilla.org/mozilla-central/file/default/mobile/android/android-components/docs/changelog.md)
     - Search and remove all strings marked `moz:removedIn="[EXPIRED_STRING_VERSION]"` across Fenix, Focus and Android Components, limit changes only to `values/strings.xml` (the localized `strings.xml` should not be changed).
     - Create a commit using the BUG_ID you provided, and describing all the changes that were applied.
-    - Add SERP telemetry json to the [search-telemetry-v2.json](https://hg.mozilla.org/mozilla-central/file/default/mobile/android/android-components/components/feature/search/src/main/assets/search/search_telemetry_v2.json), copying the content from the desktop telemetry dump located at [desktop-search-telemetry-v2.json](https://searchfox.org/mozilla-central/source/services/settings/dumps/main/search-telemetry-v2.json)
+    - Add SERP telemetry json to the [search-telemetry-v2.json](https://hg.mozilla.org/mozilla-central/file/default/mobile/android/android-components/components/feature/search/src/main/assets/search/search_telemetry_v2.json), copying the content from the desktop telemetry dump located at [desktop-search-telemetry-v2.json](https://searchfox.org/firefox-main/source/services/settings/dumps/main/search-telemetry-v2.json)
 
 Please read carefully the output of the script and follow the instructions it provides.
 More specifically, you will need to:

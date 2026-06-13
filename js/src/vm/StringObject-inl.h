@@ -36,7 +36,10 @@ namespace js {
   Rooted<StringObject*> obj(
       cx, NewObjectWithClassProtoAndKind<StringObject>(
               cx, proto, newKind,
-              ObjectFlags({ObjectFlag::NeedsProxyGetSetResultValidation})));
+              ObjectFlags({
+                  ObjectFlag::NeedsProxyGetSetResultValidation,
+                  ObjectFlag::HasNonWritableOrAccessorPropExclProto,
+              })));
   if (!obj) {
     return nullptr;
   }

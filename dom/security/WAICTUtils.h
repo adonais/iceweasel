@@ -9,21 +9,20 @@
 
 #include "mozilla/Logging.h"
 #include "mozilla/Result.h"
+#include "mozilla/net/SFV.h"
 #include "nsString.h"
-
-class nsISFVDictionary;
 
 namespace mozilla::waict {
 
 extern LazyLogModule gWaictLog;
 
-Result<nsCString, nsresult> ParseManifest(nsISFVDictionary* aDict);
+Result<nsCString, nsresult> ParseManifest(const net::SFV::DictResult& aDict);
 
-Result<uint64_t, nsresult> ParseMaxAge(nsISFVDictionary* aDict);
+Result<uint64_t, nsresult> ParseMaxAge(const net::SFV::DictResult& aDict);
 
 enum class WaictMode { Enforce, Report };
 
-Result<WaictMode, nsresult> ParseMode(nsISFVDictionary* aDict);
+Result<WaictMode, nsresult> ParseMode(const net::SFV::DictResult& aDict);
 
 }  // namespace mozilla::waict
 

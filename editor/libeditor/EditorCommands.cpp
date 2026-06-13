@@ -702,6 +702,9 @@ static const struct MoveCommand {
      Command::SelectWordNext, &nsISelectionController::WordMove},
     {Command::BeginLine, Command::EndLine, Command::SelectBeginLine,
      Command::SelectEndLine, &nsISelectionController::IntraLineMove},
+    {Command::BeginParagraph, Command::EndParagraph,
+     Command::SelectBeginParagraph, Command::SelectEndParagraph,
+     &nsISelectionController::ParagraphMove},
     {Command::MovePageUp, Command::MovePageDown, Command::SelectPageUp,
      Command::SelectPageDown, &nsISelectionController::PageMove},
     {Command::MoveTop, Command::MoveBottom, Command::SelectTop,
@@ -726,7 +729,11 @@ static const struct PhysicalCommand {
      nsISelectionController::MOVE_RIGHT, 1},
     {Command::MoveUp2, Command::SelectUp2, nsISelectionController::MOVE_UP, 1},
     {Command::MoveDown2, Command::SelectDown2,
-     nsISelectionController::MOVE_DOWN, 1}};
+     nsISelectionController::MOVE_DOWN, 1},
+    {Command::MoveLeft3, Command::SelectLeft3,
+     nsISelectionController::MOVE_LEFT, 2},
+    {Command::MoveRight3, Command::SelectRight3,
+     nsISelectionController::MOVE_RIGHT, 2}};
 
 nsresult SelectionMoveCommands::DoCommand(Command aCommand,
                                           EditorBase& aEditorBase,

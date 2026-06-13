@@ -180,7 +180,7 @@ class HyperTextAccessible : public AccessibleWrap,
   dom::Selection* DOMSelection() const;
 
  protected:
-  virtual ~HyperTextAccessible() {}
+  virtual ~HyperTextAccessible() = default;
 
   // LocalAccessible
   virtual ENameValueFlag NativeName(nsString& aName) const override;

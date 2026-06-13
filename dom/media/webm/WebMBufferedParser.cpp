@@ -393,6 +393,16 @@ MediaResult WebMBufferedParser::Append(const unsigned char* aBuffer,
         }
         if (!mSkipBytes) {
           mBlockEndOffset = mCurrentOffset + (p - aBuffer);
+          // Per the WebM byte-stream spec the init segment runs up to (but
+          // not including) the first Cluster, so any non-Cluster top-level
+          // element (Cues, Tags, Chapters, SeekHead, Void, ...) that
+          // appears between Tracks and the first Cluster is part of the
+          // init segment. Extend mInitEndOffset over this just-skipped
+          // element if we're past Tracks (mInitEndOffset >= 0) but haven't
+          // yet seen a Cluster (mClusterOffset < 0).
+          if (mInitEndOffset >= 0 && mClusterOffset < 0) {
+            mInitEndOffset = mBlockEndOffset;
+          }
           mState = mNextState;
         }
         break;

@@ -656,13 +656,6 @@ nsFocusManager::MoveCaretToFocus(mozIDOMWindowProxy* aWindow) {
       nsCOMPtr<nsIDocShell> docShell = do_QueryInterface(dsti);
       NS_ENSURE_TRUE(docShell, NS_ERROR_FAILURE);
 
-      // don't move the caret for editable documents
-      bool isEditable;
-      docShell->GetEditable(&isEditable);
-      if (isEditable) {
-        return NS_OK;
-      }
-
       RefPtr<PresShell> presShell = docShell->GetPresShell();
       NS_ENSURE_TRUE(presShell, NS_ERROR_FAILURE);
 
@@ -907,10 +900,12 @@ void nsFocusManager::FocusedElementMayHaveMoved(nsIContent* aContent,
     NotifyFocusStateChange(aOldParent->AsElement(), nullptr, 0, false, false);
   }
   // XXX This is not very optimal.
+  bool showFocusRing =
+      focusedElement->State().HasState(ElementState::FOCUSRING);
   // Clear the ancestor chain of focused element.
   NotifyFocusStateChange(focusedElement, nullptr, 0, false, false);
   // And set the correct states.
-  NotifyFocusStateChange(focusedElement, nullptr, 0, true, false);
+  NotifyFocusStateChange(focusedElement, nullptr, 0, true, showFocusRing);
 }
 
 void nsFocusManager::ContentInserted(nsIContent* aChild,
@@ -988,6 +983,25 @@ nsresult nsFocusManager::ContentRemoved(Document* aDocument,
   MOZ_ASSERT(aDocument);
   MOZ_ASSERT(aContent);
 
+  if (auto* startingPoint = aDocument->GetFocusNavigationStartingPoint()) {
+    bool isFlatTreeAncestor = false;
+    for (nsIContent* ancestor :
+         startingPoint->InclusiveFlatTreeAncestorsOfType<nsIContent>()) {
+      if (ancestor == aContent) {
+        isFlatTreeAncestor = true;
+        break;
+      }
+    }
+    // Fix up sequential focus navigation starting point when its ancestor is
+    // removed. But if we are moving aContent with moveBefore and the focus
+    // navigation starting point is inside it, then we don't need to do
+    // anything.
+    if (isFlatTreeAncestor &&
+        (!aInfo.mNewParent || aDocument->WasFocusedElementRemoved())) {
+      aDocument->SetFocusNavigationStartingPoint(aContent, true);
+    }
+  }
+
   if (aInfo.mNewParent) {
     // Handled upon insertion in ContentAppended/Inserted.
     return NS_OK;
@@ -1047,16 +1061,18 @@ nsresult nsFocusManager::ContentRemoved(Document* aDocument,
       // inside, we don't need to do anything.
       return NS_OK;
     }
-    if (!nsContentUtils::ContentIsFlattenedTreeDescendantOf(
-            previousFocusedElementPtr, focusWithinElement)) {
-      return NS_OK;
-    }
     // Even if there's no :focus state on the node, we need to clear focus,
     // previousFocusedElementPtr could be an <iframe> for example.
   }
 
+  if (!nsContentUtils::ContentIsHostIncludingDescendantOf(
+          previousFocusedElementPtr, focusWithinElement)) {
+    return NS_OK;
+  }
+
   RefPtr previousFocusedElement = previousFocusedElementPtr;
   RefPtr window = windowPtr;
+
   RefPtr<Element> newFocusedElement =
       detachingShadow && focusWithinElement->IsHTMLElement(nsGkAtoms::input)
           ? focusWithinElement
@@ -1125,6 +1141,9 @@ nsresult nsFocusManager::ContentRemoved(Document* aDocument,
   }
 
   if (!newFocusedElement) {
+    // Set sequential focus navigation starting point so that focus navigation
+    // continues from the location of the previously focused element.
+    aDocument->SetFocusNavigationStartingPoint(aContent, true);
     NotifyFocusStateChange(previousFocusedElement, nullptr, 0,
                            /* aGettingFocus = */ false, false);
   } else {
@@ -2503,6 +2522,9 @@ bool nsFocusManager::BlurImpl(BrowsingContext* aBrowsingContextToClear,
   bool sendBlurEvent =
       element && element->IsInComposedDoc() && !IsNonFocusableRoot(element);
   if (element) {
+    // Set focus navigation starting point, so that focus navigation still
+    // continues from element.
+    element->OwnerDoc()->SetFocusNavigationStartingPoint(element);
     if (sendBlurEvent) {
       NotifyFocusStateChange(element, aElementToFocus, 0, false, false);
     }
@@ -2925,6 +2947,12 @@ void nsFocusManager::Focus(
     UpdateCaret(aFocusChanged && !(aFlags & FLAG_BYMOUSE), aIsNewDocument,
                 focusedElement);
   }
+
+  if (mFocusedElement) {
+    // Don't need focus navigation starting point anymore,
+    // since an element is focused.
+    mFocusedElement->OwnerDoc()->SetFocusNavigationStartingPoint(nullptr);
+  }
 }
 
 class FocusBlurEvent : public Runnable {
@@ -3018,7 +3046,7 @@ void nsFocusManager::FireFocusInOrOutEvent(
   NS_ASSERTION(aEventMessage == eFocusIn || aEventMessage == eFocusOut,
                "Wrong event type for FireFocusInOrOutEvent");
 
-  nsContentUtils::AddScriptRunner(new FocusInOutEvent(
+  nsContentUtils::AddScriptRunner(MakeAndAddRef<FocusInOutEvent>(
       aTarget, aEventMessage, aPresShell->GetPresContext(),
       aCurrentFocusedWindow, aCurrentFocusedContent, aRelatedTarget));
 }
@@ -3089,9 +3117,9 @@ void nsFocusManager::FireFocusOrBlurEvent(EventMessage aEventMessage,
   aPresShell->ScheduleContentRelevancyUpdate(
       ContentRelevancyReason::FocusInSubtree);
 
-  nsContentUtils::AddScriptRunner(
-      new FocusBlurEvent(aTarget, aEventMessage, aPresShell->GetPresContext(),
-                         aWindowRaised, aIsRefocus, aRelatedTarget));
+  nsContentUtils::AddScriptRunner(MakeAndAddRef<FocusBlurEvent>(
+      aTarget, aEventMessage, aPresShell->GetPresContext(), aWindowRaised,
+      aIsRefocus, aRelatedTarget));
 
   // Check that the target is not a window or document before firing
   // focusin/focusout. Other browsers do not fire focusin/focusout on window,
@@ -3246,7 +3274,7 @@ void nsFocusManager::UpdateCaret(bool aMoveCaretToFocus, bool aUpdateVisibility,
     }
   }
 
-  if (!isEditable && aMoveCaretToFocus) {
+  if (aMoveCaretToFocus) {
     MoveCaretToFocus(presShell, aContent);
   }
 
@@ -3275,6 +3303,19 @@ void nsFocusManager::UpdateCaret(bool aMoveCaretToFocus, bool aUpdateVisibility,
 
 void nsFocusManager::MoveCaretToFocus(PresShell* aPresShell,
                                       nsIContent* aContent) {
+  if (aContent && aContent->IsEditable()) {
+    // Caret will be handled by HTMLEditor::OnFocus
+    return;
+  }
+  const auto* textControl = TextControlElement::FromNodeOrNull(aContent);
+  const bool isTextControl =
+      textControl && textControl->IsSingleLineTextControlOrTextArea();
+  // Only change selection on focus if caret browsing is enabled,
+  // or the element is a single-line text control or textarea.
+  // Otherwise we don't move it to be consistent with other browsers.
+  if (!StaticPrefs::accessibility_browsewithcaret() && !isTextControl) {
+    return;
+  }
   nsCOMPtr<Document> doc = aPresShell->GetDocument();
   if (doc) {
     RefPtr<nsFrameSelection> frameSelection = aPresShell->FrameSelection();
@@ -3315,7 +3356,7 @@ nsresult nsFocusManager::SetCaretVisible(PresShell* aPresShell, bool aVisible,
   // When browsing with caret, make sure caret is visible after new focus
   // Return early if there is no caret. This can happen for the testcase
   // for bug 308025 where a window is closed in a blur handler.
-  RefPtr<nsCaret> caret = aPresShell->GetCaret();
+  RefPtr<nsCaret> caret = aPresShell->GetOriginalCaret();
   if (!caret) {
     return NS_OK;
   }
@@ -3453,6 +3494,23 @@ void nsFocusManager::GetSelectionLocation(Document* aDocument,
 
   NS_IF_ADDREF(*aStartContent = start);
   NS_IF_ADDREF(*aEndContent = end);
+}
+
+// Gets next sibling of aContent in the flat tree,
+// or its parent's next sibling if it has none, etc.
+static nsIContent* GetFlatTreeNextNonDescendant(nsIContent& aContent) {
+  nsIContent* content = &aContent;
+  for (nsIContent* parent = aContent.GetFlattenedTreeParent(); parent;
+       content = parent, parent = content->GetFlattenedTreeParent()) {
+    FlattenedChildIterator iterator(parent);
+    if (NS_WARN_IF(!iterator.Seek(content))) {
+      return nullptr;
+    }
+    if (auto* sibling = iterator.GetNextChild()) {
+      return sibling;
+    }
+  }
+  return nullptr;
 }
 
 nsresult nsFocusManager::DetermineElementToMoveFocus(
@@ -3617,9 +3675,30 @@ nsresult nsFocusManager::DetermineElementToMoveFocus(
       // Otherwise, for content shells, start from the location of the caret.
       nsCOMPtr<nsIDocShell> docShell = aWindow->GetDocShell();
       if (docShell && docShell->ItemType() != nsIDocShellTreeItem::typeChrome) {
+        startContent = doc->GetFocusNavigationStartingPoint();
+        bool considerStartContent = true;
+        if (aType != MOVEFOCUS_CARET && !forDocumentNavigation &&
+            startContent) {
+          if (doc->WasFocusedElementRemoved()) {
+            startContent = GetFlatTreeNextNonDescendant(*startContent);
+            considerStartContent = forward;
+          } else {
+            considerStartContent = false;
+          }
+        }
         nsCOMPtr<nsIContent> endSelectionContent;
-        GetSelectionLocation(doc, presShell, getter_AddRefs(startContent),
-                             getter_AddRefs(endSelectionContent));
+        if (!startContent) {
+          GetSelectionLocation(doc, presShell, getter_AddRefs(startContent),
+                               getter_AddRefs(endSelectionContent));
+        }
+        // If starting from a focusable and tabbable element, we want to make it
+        // focused rather than next/previous one.
+        if (considerStartContent && startContent && startContent->IsElement() &&
+            startContent->GetPrimaryFrame() &&
+            startContent->GetPrimaryFrame()->IsFocusable().IsTabbable()) {
+          NS_ADDREF(*aNextContent = startContent);
+          return NS_OK;
+        }
         // If the selection is on the rootElement, then there is no selection
         if (startContent == rootElement) {
           startContent = nullptr;
@@ -3637,31 +3716,10 @@ nsresult nsFocusManager::DetermineElementToMoveFocus(
         }
 
         if (startContent) {
-          // when starting from a selection, we always want to find the next or
-          // previous element in the document. So the tabindex on elements
-          // should be ignored.
+          // when not starting from focused element, we always want to find the
+          // next or previous element in the document. So the tabindex on
+          // elements should be ignored.
           ignoreTabIndex = true;
-          // If selection starts from a focusable and tabbable element, we want
-          // to make it focused rather than next/previous one.
-          if (startContent->IsElement() && startContent->GetPrimaryFrame() &&
-              startContent->GetPrimaryFrame()->IsFocusable().IsTabbable()) {
-            startContent =
-                forward ? (startContent->GetPreviousSibling()
-                               ? startContent->GetPreviousSibling()
-                               // We don't need to get previous leaf node
-                               // because it may be too far from
-                               // startContent. We just want the previous
-                               // node immediately before startContent.
-                               : startContent->GetParent())
-                        // We want the next node immdiately after startContent.
-                        // Therefore, we don't want its first child.
-                        : startContent->GetNextNonChildNode();
-            // If we reached the root element, we should treat it as there is no
-            // selection as same as above.
-            if (startContent == rootElement) {
-              startContent = nullptr;
-            }
-          }
         }
       }
 
@@ -4345,6 +4403,35 @@ static nsIContent* GetTopLevelScopeOwner(nsIContent* aContent) {
   return topLevelScopeOwner;
 }
 
+static Maybe<nsresult> MaybeDelegateToRemoteFrame(nsIContent* aContent,
+                                                  bool aNavigateByKey,
+                                                  bool aForward,
+                                                  bool aForDocumentNavigation) {
+  // If this is a remote child browser, call NavigateByKey to have
+  // the child process continue the navigation. Return a special error
+  // code to have the caller return early. If the child ends up not
+  // being focusable in some way, the child process will call back
+  // into document navigation again by calling MoveFocus.
+  if (BrowserParent* remote = BrowserParent::GetFrom(aContent)) {
+    if (aNavigateByKey) {
+      remote->NavigateByKey(aForward, aForDocumentNavigation);
+      return Some(NS_SUCCESS_DOM_NO_OPERATION);
+    }
+    return Some(NS_OK);
+  }
+
+  // Same as above but for out-of-process iframes
+  if (auto* bbc = BrowserBridgeChild::GetFrom(aContent)) {
+    if (aNavigateByKey) {
+      bbc->NavigateByKey(aForward, aForDocumentNavigation);
+      return Some(NS_SUCCESS_DOM_NO_OPERATION);
+    }
+    return Some(NS_OK);
+  }
+
+  return Nothing();
+}
+
 nsresult nsFocusManager::GetNextTabbableContent(
     PresShell* aPresShell, nsIContent* aRootContent,
     nsIContent* aOriginalStartContent, nsIContent* aStartContent, bool aForward,
@@ -4371,6 +4458,11 @@ nsresult nsFocusManager::GetNextTabbableContent(
         aIgnoreTabIndex, aForDocumentNavigation, aNavigateByKey,
         true /* aSkipOwner */, aReachedToEndForDocumentNavigation);
     if (contentToFocus) {
+      if (auto rv =
+              MaybeDelegateToRemoteFrame(contentToFocus, aNavigateByKey,
+                                         aForward, aForDocumentNavigation)) {
+        return *rv;
+      }
       NS_ADDREF(*aResultContent = contentToFocus);
       return NS_OK;
     }
@@ -4384,6 +4476,11 @@ nsresult nsFocusManager::GetNextTabbableContent(
         &aCurrentTabIndex, &aIgnoreTabIndex, aForDocumentNavigation,
         aNavigateByKey, aReachedToEndForDocumentNavigation);
     if (contentToFocus) {
+      if (auto rv =
+              MaybeDelegateToRemoteFrame(contentToFocus, aNavigateByKey,
+                                         aForward, aForDocumentNavigation)) {
+        return *rv;
+      }
       NS_ADDREF(*aResultContent = contentToFocus);
       return NS_OK;
     }
@@ -4430,6 +4527,11 @@ nsresult nsFocusManager::GetNextTabbableContent(
               aForDocumentNavigation, aNavigateByKey, true /* aSkipOwner */,
               aReachedToEndForDocumentNavigation);
           if (contentToFocus) {
+            if (auto rv = MaybeDelegateToRemoteFrame(contentToFocus,
+                                                     aNavigateByKey, aForward,
+                                                     aForDocumentNavigation)) {
+              return *rv;
+            }
             NS_ADDREF(*aResultContent = contentToFocus);
             return NS_OK;
           }
@@ -4562,6 +4664,11 @@ nsresult nsFocusManager::GetNextTabbableContent(
               aIgnoreTabIndex, aForDocumentNavigation, aNavigateByKey,
               true /* aSkipOwner */, aReachedToEndForDocumentNavigation);
           if (contentToFocus) {
+            if (auto rv = MaybeDelegateToRemoteFrame(contentToFocus,
+                                                     aNavigateByKey, aForward,
+                                                     aForDocumentNavigation)) {
+              return *rv;
+            }
             NS_ADDREF(*aResultContent = contentToFocus);
             return NS_OK;
           }
@@ -4624,26 +4731,10 @@ nsresult nsFocusManager::GetNextTabbableContent(
             return NS_OK;
           }
 
-          // If this is a remote child browser, call NavigateDocument to have
-          // the child process continue the navigation. Return a special error
-          // code to have the caller return early. If the child ends up not
-          // being focusable in some way, the child process will call back
-          // into document navigation again by calling MoveFocus.
-          if (BrowserParent* remote = BrowserParent::GetFrom(currentContent)) {
-            if (aNavigateByKey) {
-              remote->NavigateByKey(aForward, aForDocumentNavigation);
-              return NS_SUCCESS_DOM_NO_OPERATION;
-            }
-            return NS_OK;
-          }
-
-          // Same as above but for out-of-process iframes
-          if (auto* bbc = BrowserBridgeChild::GetFrom(currentContent)) {
-            if (aNavigateByKey) {
-              bbc->NavigateByKey(aForward, aForDocumentNavigation);
-              return NS_SUCCESS_DOM_NO_OPERATION;
-            }
-            return NS_OK;
+          if (auto rv = MaybeDelegateToRemoteFrame(currentContent,
+                                                   aNavigateByKey, aForward,
+                                                   aForDocumentNavigation)) {
+            return *rv;
           }
 
           // Next, for document navigation, check if this a non-remote child

@@ -58,6 +58,7 @@
 
     /** page **/
     --page-main-content-width: 664px;
+    --page-space-block-start: 64px;
 
     /** table **/
     --table-header-text-color: light-dark(var(--color-white), var(--color-gray-100));

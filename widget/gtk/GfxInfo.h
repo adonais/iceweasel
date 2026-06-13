@@ -126,6 +126,8 @@ class GfxInfo final : public GfxInfoBase {
   int mVAAPISupportedCodecs = 0;
   mozilla::Maybe<bool> mIsV4L2Supported;
   int mV4L2SupportedCodecs = 0;
+  mozilla::Maybe<bool> mIsVulkanSupported;
+  int mVulkanSupportedCodecs = 0;
 
   static int sGLXTestPipe;
   static pid_t sGLXTestPID;
@@ -136,6 +138,7 @@ class GfxInfo final : public GfxInfoBase {
 
   void GetDataVAAPI();
   void GetDataV4L2();
+  void GetDataVulkan();
   void V4L2ProbeDevice(nsCString& dev);
   void AddCrashReportAnnotations();
 };

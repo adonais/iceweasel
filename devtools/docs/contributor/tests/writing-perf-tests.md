@@ -7,7 +7,7 @@ Here, we will describe how to write a new test and register it to run in DAMP.
   **Reuse existing tests if possible!**
   If a `custom` page already exists for the tool you are testing, try to modify the existing `custom` test rather than adding a new individual test.
   New individual tests run separately, in new tabs, and make DAMP slower than just modifying existing tests. Complexifying `custom` test pages should also help cover more scenarios and catch more regressions. For those reasons, modifying existing tests should be the preferred way of extending DAMP coverage.
-  `custom` tests are using complex documents that should stress a particular tool in various ways. They are all named `custom.${tool}` (for instance `custom.inspector`). The test pages for those tests can be found in [pages/custom](https://searchfox.org/mozilla-central/source/testing/talos/talos/tests/devtools/addon/content/pages/custom).
+  `custom` tests are using complex documents that should stress a particular tool in various ways. They are all named `custom.${tool}` (for instance `custom.inspector`). The test pages for those tests can be found in [pages/custom](https://searchfox.org/firefox-main/source/testing/talos/talos/tests/devtools/addon/content/pages/custom).
   If your test case requires a dedicated document or can't run next to the other tests in the current `custom` test, follow the instructions below to add a new individual test.
 ```
 
@@ -17,11 +17,11 @@ This page contains the general documentation for writing DAMP tests. See also:
 
 ## Test location
 
-Tests are located in [testing/talos/talos/tests/devtools/addon/content/tests](https://searchfox.org/mozilla-central/source/testing/talos/talos/tests/devtools/addon/content/tests). You will find subfolders for panels already tested in DAMP (debugger, inspector, …) as well as other subfolders for tests not specific to a given panel (server, toolbox).
+Tests are located in [testing/talos/talos/tests/devtools/addon/content/tests](https://searchfox.org/firefox-main/source/testing/talos/talos/tests/devtools/addon/content/tests). You will find subfolders for panels already tested in DAMP (debugger, inspector, …) as well as other subfolders for tests not specific to a given panel (server, toolbox).
 
 Tests are isolated in dedicated files. Some examples of tests:
-- [tests/netmonitor/simple.js](https://searchfox.org/mozilla-central/source/testing/talos/talos/tests/devtools/addon/content/tests/netmonitor/simple.js)
-- [tests/inspector/mutations.js](https://searchfox.org/mozilla-central/source/testing/talos/talos/tests/devtools/addon/content/tests/inspector/mutations.js)
+- [tests/netmonitor/simple.js](https://searchfox.org/firefox-main/source/testing/talos/talos/tests/devtools/addon/content/tests/netmonitor/simple.js)
+- [tests/inspector/mutations.js](https://searchfox.org/firefox-main/source/testing/talos/talos/tests/devtools/addon/content/tests/inspector/mutations.js)
 
 ## Basic test
 
@@ -53,9 +53,9 @@ DevTools performance heavily depends on the document against which DevTools are 
 * "Simple", an empty webpage. This one helps highlighting the load time of panels,
 * "Complicated", a copy of bild.be, a German newspaper website. This allows us to examine the performance of the tools when inspecting complicated, big websites.
 
-The URL of those documents are exposed by [tests/head.js](https://searchfox.org/mozilla-central/source/testing/talos/talos/tests/devtools/addon/content/tests/head.js). The Simple page can be found at [testing/talos/talos/tests/devtools/addon/content/pages/simple.html](https://searchfox.org/mozilla-central/source/testing/talos/talos/tests/devtools/addon/content/pages/simple.html). The Complicated page is downloaded via [tooltool](https://wiki.mozilla.org/ReleaseEngineering/Applications/Tooltool) automatically the first time you run the DAMP tests.
+The URL of those documents are exposed by [tests/head.js](https://searchfox.org/firefox-main/source/testing/talos/talos/tests/devtools/addon/content/tests/head.js). The Simple page can be found at [testing/talos/talos/tests/devtools/addon/content/pages/simple.html](https://searchfox.org/firefox-main/source/testing/talos/talos/tests/devtools/addon/content/pages/simple.html). The Complicated page is downloaded via [tooltool](https://wiki.mozilla.org/ReleaseEngineering/Applications/Tooltool) automatically the first time you run the DAMP tests.
 
-You can create also new test documents under [testing/talos/talos/tests/devtools/addon/content/pages](https://searchfox.org/mozilla-central/source/testing/talos/talos/tests/devtools/addon/content/pages). See the pages in the `custom` subfolder for instance. If you create a document in `pages/custom/mypanel/index.html`, the URL of the document in your tests should be `PAGES_BASE_URL + "custom/mypanel/index.html"`. The constant `PAGES_BASE_URL` is exposed by head.js.
+You can create also new test documents under [testing/talos/talos/tests/devtools/addon/content/pages](https://searchfox.org/firefox-main/source/testing/talos/talos/tests/devtools/addon/content/pages). See the pages in the `custom` subfolder for instance. If you create a document in `pages/custom/mypanel/index.html`, the URL of the document in your tests should be `PAGES_BASE_URL + "custom/mypanel/index.html"`. The constant `PAGES_BASE_URL` is exposed by head.js.
 
 Note that modifying any existing test document will most likely impact the baseline for existing tests.
 
@@ -65,8 +65,8 @@ Finally you can also create very simple test documents using data urls. Test doc
 ## Test helpers
 
 Helper methods have been extracted in shared modules:
-* [tests/head.js](https://searchfox.org/mozilla-central/source/testing/talos/talos/tests/devtools/addon/content/tests/head.js) for the most common ones
-* tests/{subfolder}/{subfolder}-helpers.js for folder-specific helpers ([example](https://searchfox.org/mozilla-central/source/testing/talos/talos/tests/devtools/addon/content/tests/inspector/inspector-helpers.js))
+* [tests/head.js](https://searchfox.org/firefox-main/source/testing/talos/talos/tests/devtools/addon/content/tests/head.js) for the most common ones
+* tests/{subfolder}/{subfolder}-helpers.js for folder-specific helpers ([example](https://searchfox.org/firefox-main/source/testing/talos/talos/tests/devtools/addon/content/tests/inspector/inspector-helpers.js))
 
 To measure something which is not covered by an existing helper, you should use `runTest`, exposed by head.js.
 
@@ -95,12 +95,12 @@ If your measure is not simply the time spent by an asynchronous call (for instan
 
 ## Test runner
 
-If you need to dive into the internals of the DAMP runner, most of the logic is in [testing/talos/talos/tests/devtools/addon/content/damp.js](https://searchfox.org/mozilla-central/source/testing/talos/talos/tests/devtools/addon/content/damp.js).
+If you need to dive into the internals of the DAMP runner, most of the logic is in [testing/talos/talos/tests/devtools/addon/content/damp.js](https://searchfox.org/firefox-main/source/testing/talos/talos/tests/devtools/addon/content/damp.js).
 
 
 # How to name your test and register it?
 
-If a new test file was created, it needs to be registered in the test suite. To register the new test, add it in [damp-tests.js](https://searchfox.org/mozilla-central/source/testing/talos/talos/tests/devtools/addon/content/damp-tests.js). This file acts as the manifest for the DAMP test suite.
+If a new test file was created, it needs to be registered in the test suite. To register the new test, add it in [damp-tests.js](https://searchfox.org/firefox-main/source/testing/talos/talos/tests/devtools/addon/content/damp-tests.js). This file acts as the manifest for the DAMP test suite.
 
 If your are writing a test executing against Simple and Complicated documents, your test name will look like: `(simple|complicated).${tool-name}.${test-name}`.
 So for our example, it would be `simple.inspector.click` and `complicated.inspector.click`.

@@ -37,7 +37,6 @@ class UntrustedShmemSection;
 
 class ShmemSectionAllocator;
 class LegacySurfaceDescriptorAllocator;
-class ClientIPCAllocator;
 class HostIPCAllocator;
 class LayersIPCChannel;
 
@@ -66,8 +65,7 @@ class SurfaceDescriptor;
  */
 class ISurfaceAllocator {
  public:
-  MOZ_DECLARE_REFCOUNTED_TYPENAME(ISurfaceAllocator)
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(ISurfaceAllocator)
+  NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
 
   ISurfaceAllocator() = default;
 
@@ -80,8 +78,6 @@ class ISurfaceAllocator {
   virtual CompositableForwarder* AsCompositableForwarder() { return nullptr; }
 
   virtual RefPtr<TextureForwarder> GetTextureForwarder();
-
-  virtual ClientIPCAllocator* AsClientAllocator() { return nullptr; }
 
   virtual HostIPCAllocator* AsHostIPCAllocator() { return nullptr; }
 
@@ -110,20 +106,6 @@ class ISurfaceAllocator {
   void Finalize() {}
 
   virtual ~ISurfaceAllocator() = default;
-};
-
-/// Methods that are specific to the client/child side.
-class ClientIPCAllocator : public ISurfaceAllocator {
- public:
-  ClientIPCAllocator() = default;
-
-  ClientIPCAllocator* AsClientAllocator() override { return this; }
-
-  virtual base::ProcessId GetParentPid() const = 0;
-
-  virtual MessageLoop* GetMessageLoop() const = 0;
-
-  virtual void CancelWaitForNotifyNotUsed(uint64_t aTextureId) = 0;
 };
 
 /// Methods that are specific to the host/parent side.

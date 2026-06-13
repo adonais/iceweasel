@@ -82,6 +82,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   JsonSchema: "resource://gre/modules/JsonSchema.sys.mjs",
   NetUtil: "resource://gre/modules/NetUtil.sys.mjs",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
+  ProfileAge: "resource://gre/modules/ProfileAge.sys.mjs",
   SelectableProfileService:
     "resource:///modules/profiles/SelectableProfileService.sys.mjs",
   UIState: "resource://services-sync/UIState.sys.mjs",
@@ -924,6 +925,17 @@ export class BackupService extends EventTarget {
   #wasRestorePreviouslyDisabled = false;
 
   /**
+   * Identifies the UI that triggered the most recent call to
+   * setScheduledBackups(). Read once by onUpdateScheduledBackups() when the
+   * pref change actually flips state (in either direction), at which point it
+   * is reset to "unknown" so a subsequent direct pref flip does not inherit a
+   * stale source.
+   *
+   * @type {string}
+   */
+  #scheduledBackupsToggleSource = "unknown";
+
+  /**
    * Called when prefs or other conditions relevant to the status of the backup
    * service change. Unlike #observer, this does not wait for an idle tick.
    *
@@ -1326,35 +1338,7 @@ export class BackupService extends EventTarget {
       }
     }, BackupService.REGENERATION_DEBOUNCE_RATE_MS);
     this.#postRecoveryPromise.then(() => {
-      const payload = {
-        is_restored:
-          !!Services.prefs.getIntPref(
-            "browser.backup.profile-restoration-date",
-            0
-          ) &&
-          !Services.prefs.getBoolPref("browser.profiles.profile-copied", false),
-      };
-      if (payload.is_restored) {
-        let backupMetadata = {};
-        try {
-          backupMetadata = JSON.parse(
-            Services.prefs.getStringPref(
-              RESTORED_BACKUP_METADATA_PREF_NAME,
-              "{}"
-            )
-          );
-        } catch {}
-        payload.backup_timestamp = backupMetadata.date
-          ? new Date(backupMetadata.date).getTime()
-          : null;
-        payload.backup_app_name = backupMetadata.appName || null;
-        payload.backup_app_version = backupMetadata.appVersion || null;
-        payload.backup_build_id = backupMetadata.buildID || null;
-        payload.backup_os_name = backupMetadata.osName || null;
-        payload.backup_os_version = backupMetadata.osVersion || null;
-        payload.backup_legacy_client_id = backupMetadata.legacyClientID || null;
-      }
-      Glean.browserBackup.restoredProfileData.set(payload);
+      this.#setRestoredProfileDataMetric();
     });
 
     this.#lastSeenArchiveStatus = this.archiveEnabledStatus;
@@ -1375,6 +1359,56 @@ export class BackupService extends EventTarget {
    */
   get postRecoveryComplete() {
     return this.#postRecoveryPromise;
+  }
+
+  /**
+   * Sets the Glean restored_profile_data object metric. Reads from the
+   * restored-backup-metadata pref if the profile was restored from a backup.
+   *
+   * @param {object} [backupMetadata=null]
+   *   If provided, uses this metadata directly instead of reading from the
+   *   pref. This is used by checkForPostRecovery on the first launch after
+   *   a restore, where the metadata is available before it's written to the
+   *   pref.
+   */
+  #setRestoredProfileDataMetric(backupMetadata = null) {
+    const payload = {
+      is_restored:
+        !!Services.prefs.getIntPref(
+          "browser.backup.profile-restoration-date",
+          0
+        ) &&
+        !Services.prefs.getBoolPref("browser.profiles.profile-copied", false),
+    };
+    if (payload.is_restored) {
+      if (!backupMetadata) {
+        try {
+          backupMetadata = JSON.parse(
+            Services.prefs.getStringPref(
+              RESTORED_BACKUP_METADATA_PREF_NAME,
+              "{}"
+            )
+          );
+        } catch {
+          backupMetadata = {};
+        }
+      }
+      payload.backup_timestamp = backupMetadata.date
+        ? new Date(backupMetadata.date).getTime()
+        : null;
+      payload.backup_app_name = backupMetadata.appName || null;
+      payload.backup_app_version = backupMetadata.appVersion || null;
+      payload.backup_build_id = backupMetadata.buildID || null;
+      payload.backup_os_name = backupMetadata.osName || null;
+      payload.backup_os_version = backupMetadata.osVersion || null;
+      payload.backup_legacy_client_id = backupMetadata.healthTelemetryEnabled
+        ? backupMetadata.legacyClientID || null
+        : null;
+      payload.intermediate_profile_creation_date =
+        backupMetadata.intermediateProfileCreationDate ?? null;
+      payload.restore_source = backupMetadata.restoreSource || null;
+    }
+    Glean.browserBackup.restoredProfileData.set(payload);
   }
 
   /**
@@ -1868,9 +1902,10 @@ export class BackupService extends EventTarget {
 
     let location;
     try {
-      // By default, the backup will go into a folder called 'Restore Firefox',
-      // so we actually want the parent directory.
-      location = lazy.nsLocalFile(path).parent;
+      // Backup files live inside a subfolder (e.g. "Restore Firefox") under
+      // the actual save location (Documents, OneDrive, etc.), so we need the
+      // grandparent of the file.
+      location = lazy.nsLocalFile(path).parent?.parent;
     } catch (e) {
       // initWithPath (at least on Windows) is _really_ picky; e.g.
       // "C:/Windows/system32" will fail. Bail out if something went wrong so
@@ -3042,6 +3077,8 @@ export class BackupService extends EventTarget {
    * @param {boolean} [replaceCurrentProfile=false]
    *   An optional argument that determines if the backed up profile should replace
    *   the current profile, or add a new profile.
+   * @param {string} [source=null]
+   *   Which UI initiated the restore (e.g. "onboarding", "preferences").
    * @returns {Promise<nsIToolkitProfile>}
    *   The nsIToolkitProfile that was created for the recovered profile.
    * @throws {Exception}
@@ -3054,7 +3091,8 @@ export class BackupService extends EventTarget {
     shouldLaunchOrQuit = false,
     profilePath = PathUtils.profileDir,
     profileRootPath = null,
-    replaceCurrentProfile = false
+    replaceCurrentProfile = false,
+    source = null
   ) {
     const status = this.restoreEnabledStatus;
     if (!status.enabled) {
@@ -3075,6 +3113,16 @@ export class BackupService extends EventTarget {
     try {
       this.#_state.recoveryInProgress = true;
       this.#_state.recoveryErrorCode = 0;
+
+      try {
+        let profileAge = await lazy.ProfileAge();
+        this.#_state.intermediateProfileCreationDate = await profileAge.created;
+      } catch (e) {
+        lazy.logConsole.warn("Failed to get intermediate profile date", e);
+        this.#_state.intermediateProfileCreationDate = null;
+      }
+
+      this.#_state.restoreSource = source;
       this.stateUpdate();
       const RECOVERY_FILE_DEST_PATH = PathUtils.join(
         profilePath,
@@ -3482,7 +3530,9 @@ export class BackupService extends EventTarget {
       );
       let profile = profileSvc.createUniqueProfile(
         profileRootPath ? await IOUtils.getDirectory(profileRootPath) : null,
-        manifest.meta.profileName
+        manifest.meta.profileName,
+        // This is transient and will be overwritten when times.json is copied over.
+        "backup"
       );
 
       let postRecovery = await this.#recoverResources(
@@ -3505,6 +3555,11 @@ export class BackupService extends EventTarget {
             osName: this.#_state.backupFileInfo.osName,
             osVersion: this.#_state.backupFileInfo.osVersion,
             legacyClientID: this.#_state.backupFileInfo.legacyClientID,
+            healthTelemetryEnabled:
+              this.#_state.backupFileInfo.healthTelemetryEnabled,
+            intermediateProfileCreationDate:
+              this.#_state.intermediateProfileCreationDate,
+            restoreSource: this.#_state.restoreSource,
           },
         };
       } catch {}
@@ -3622,7 +3677,9 @@ export class BackupService extends EventTarget {
       }
       let profile = await lazy.SelectableProfileService.createNewProfile(
         false,
-        existingProfilePath
+        existingProfilePath,
+        // This is transient and will be overwritten when times.json is copied over.
+        "backup"
       );
 
       let postRecovery = await this.#recoverResources(
@@ -3630,6 +3687,11 @@ export class BackupService extends EventTarget {
         recoveryPath,
         profile.path
       );
+
+      if (copiedProfile) {
+        let profileAge = await lazy.ProfileAge(profile.path);
+        await profileAge.recordProfileCopied();
+      }
 
       let isLegacyBackup = manifest.meta?.isSelectableProfile === false;
 
@@ -3666,6 +3728,29 @@ export class BackupService extends EventTarget {
         postRecovery[
           DefaultBackupResources.SelectableProfileBackupResource.key
         ] = { themeId };
+      }
+
+      if (!copiedProfile) {
+        try {
+          postRecovery.backupServiceInternal = {
+            isProfileRestore: true,
+            restoreID: this.#_state.restoreID,
+            backupMetadata: {
+              date: this.#_state.backupFileInfo.date,
+              appName: this.#_state.backupFileInfo.appName,
+              appVersion: this.#_state.backupFileInfo.appVersion,
+              buildID: this.#_state.backupFileInfo.buildID,
+              osName: this.#_state.backupFileInfo.osName,
+              osVersion: this.#_state.backupFileInfo.osVersion,
+              legacyClientID: this.#_state.backupFileInfo.legacyClientID,
+              healthTelemetryEnabled:
+                this.#_state.backupFileInfo.healthTelemetryEnabled,
+              intermediateProfileCreationDate:
+                this.#_state.intermediateProfileCreationDate,
+              restoreSource: this.#_state.restoreSource,
+            },
+          };
+        } catch {}
       }
 
       await this.#writePostRecoveryData(postRecovery, profile.path);
@@ -4011,8 +4096,14 @@ export class BackupService extends EventTarget {
    * Sets browser.backup.scheduled.enabled to true or false.
    *
    * @param { boolean } shouldEnableScheduledBackups true if scheduled backups should be enabled. Else, false.
+   * @param { string } [source] Identifies the UI that is toggling scheduled
+   * backups, in either direction. "preferences" is used for the main backup
+   * settings page. If toggled by a message, use the message ID. Recorded to
+   * the scheduler_toggle_source metric, paired with scheduler_enabled.
    */
-  setScheduledBackups(shouldEnableScheduledBackups) {
+  setScheduledBackups(shouldEnableScheduledBackups, source = "unknown") {
+    this.#scheduledBackupsToggleSource = source || "unknown";
+
     Services.prefs.setBoolPref(
       SCHEDULED_BACKUPS_ENABLED_PREF_NAME,
       shouldEnableScheduledBackups
@@ -4061,6 +4152,12 @@ export class BackupService extends EventTarget {
       } else {
         Glean.browserBackup.toggleOff.record();
       }
+      Glean.browserBackup.schedulerToggleSource.set(
+        this.#scheduledBackupsToggleSource
+      );
+      // Reset the source to "unknown" so a subsequent toggle does not inherit
+      // a stale source.
+      this.#scheduledBackupsToggleSource = "unknown";
 
       lazy.logConsole.debug(
         "Updating scheduled backups",
@@ -5012,17 +5109,18 @@ export class BackupService extends EventTarget {
    *
    * @returns {Promise<object>} A result object with the following properties:
    * - {boolean} multipleBackupsFound — True if more than one backup candidate was found and `multipleFiles` is false.
+   * - {number} count — The number of backup candidate files found matching the expected filename pattern.
    */
   async findIfABackupFileExists({
     validateFile = true,
     multipleFiles = false,
     speedUpHeuristic = false,
   } = {}) {
-    // Do we already have a backup for this browser? if so, we don't need to do any searching!
-    if (lazy.lastBackupFileName) {
+    // If we already have a backup and aren't scanning for multiple files, skip searching
+    if (lazy.lastBackupFileName && !multipleFiles) {
       return {
-        found: true,
         multipleBackupsFound: false,
+        count: 1,
       };
     }
 
@@ -5030,21 +5128,38 @@ export class BackupService extends EventTarget {
       // During the first startup, the browser's backup location is often left
       // unconfigured; therefore, it defaults to predefined locations to look
       // for existing backup files.
-      let defaultPath = PathUtils.join(
-        BackupService.DEFAULT_PARENT_DIR_PATH,
-        BackupService.BACKUP_DIR_NAME
+      let backupPaths = [];
+
+      if (this.#_state.backupDirPath) {
+        backupPaths.push(this.#_state.backupDirPath);
+      }
+
+      // Filter out null paths (with Boolean) and append the backup dir name
+      backupPaths.push(
+        ...[
+          BackupService.docsDirFolderPath?.path,
+          BackupService.oneDriveFolderPath?.path,
+        ]
+          .filter(Boolean)
+          .map(backupPath =>
+            PathUtils.join(backupPath, BackupService.BACKUP_DIR_NAME)
+          )
       );
-      let files = await IOUtils.getChildren(
-        this.#_state.backupDirPath ? this.#_state.backupDirPath : defaultPath,
-        {
-          ignoreAbsent: true,
-        }
-      );
+
+      let files = [];
+
+      for (let backupPath of backupPaths) {
+        files.push(
+          ...(await IOUtils.getChildren(backupPath, { ignoreAbsent: true }))
+        );
+      }
+
       // filtering is an O(N) operation, we can return early if there's too many files
       // in this folder to filter to avoid a performance bottleneck
       if (speedUpHeuristic && files && files.length > 1000) {
         return {
           multipleBackupsFound: false,
+          count: 0,
         };
       }
 
@@ -5061,7 +5176,7 @@ export class BackupService extends EventTarget {
       // if we aren't validating files, and there's more than 1 html file, we decide
       // that there's no valid backup file found
       if (!multipleFiles && maybeBackupFiles.length > 1 && !validateFile) {
-        return { multipleBackupsFound: true };
+        return { multipleBackupsFound: true, count: maybeBackupFiles.length };
       }
 
       // Sort the files by the timestamp at the end of the filename,
@@ -5070,7 +5185,7 @@ export class BackupService extends EventTarget {
         maybeBackupFiles.sort((a, b) => {
           let nameA = PathUtils.filename(a);
           let nameB = PathUtils.filename(b);
-          const match = /_(\d{8}-\d{4})\.html$/;
+          const match = /_(\d{8}-\d{6}\.\d{3})\.html$/;
           let timestampA = nameA.match(match)?.[1];
           let timestampB = nameB.match(match)?.[1];
 
@@ -5113,13 +5228,16 @@ export class BackupService extends EventTarget {
         // but we also validated files to set the newest backup file as the file to restore,
         // we still want to return that multiple backups were found.
         if (multipleFiles && maybeBackupFiles.length > 1 && validateFile) {
-          return { multipleBackupsFound: true };
+          return {
+            multipleBackupsFound: true,
+            count: maybeBackupFiles.length,
+          };
         }
 
         // TODO: support multiple valid backups for different profiles.
         // Currently, we break out of the loop and select the first profile that works.
         // We want to eventually support showing multiple valid profiles to the user.
-        return { multipleBackupsFound: false };
+        return { multipleBackupsFound: false, count: maybeBackupFiles.length };
       }
     } catch (e) {
       lazy.logConsole.error(
@@ -5128,7 +5246,7 @@ export class BackupService extends EventTarget {
       );
     }
 
-    return { multipleBackupsFound: false };
+    return { multipleBackupsFound: false, count: 0 };
   }
 
   /**
@@ -5148,6 +5266,9 @@ export class BackupService extends EventTarget {
    *   before selecting it.
    * @param {boolean} [options.multipleFiles=false] - Whether to allow selecting a file
    *   when multiple files are found
+   * @param {string} [options.source] - If provided, records a
+   *   backup_detection_complete telemetry event with this value as the source
+   *   (e.g. "onboarding", "preferences"). If omitted, no event is recorded.
    *
    * @returns {Promise<object>} A result object with the following properties:
    * - {boolean} found — Whether a backup file was found.
@@ -5157,16 +5278,32 @@ export class BackupService extends EventTarget {
   async findBackupsInWellKnownLocations({
     validateFile = false,
     multipleFiles = false,
+    source = null,
   } = {}) {
     this.#_state.backupFileToRestore = null;
 
-    let { multipleBackupsFound } = await this.findIfABackupFileExists({
+    let { multipleBackupsFound, count } = await this.findIfABackupFileExists({
       validateFile,
       multipleFiles,
     });
 
-    // if a valid backup file was found, backupFileToRestore should be set
-    if (this.#_state.backupFileToRestore) {
+    let found = !!this.#_state.backupFileToRestore;
+
+    if (source) {
+      let backupDate = found ? this.#_state.backupFileInfo?.date : null;
+      let extra = {
+        count,
+        source,
+        backup_timestamp: backupDate ? new Date(backupDate).getTime() : 0,
+        location: found
+          ? this.#_state.backupFileCoarseLocation || "other"
+          : "none",
+        restore_id: found ? this.#_state.restoreID || "" : "",
+      };
+      Glean.browserBackup.backupDetectionComplete.record(extra);
+    }
+
+    if (found) {
       return {
         found: true,
         backupFileToRestore: this.#_state.backupFileToRestore,

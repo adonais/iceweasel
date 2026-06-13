@@ -362,9 +362,15 @@ describe("Smart Window model settings", () => {
     Services.prefs.clearUserPref("browser.smartwindow.endpoint");
     Services.prefs.clearUserPref("browser.smartwindow.apiKey");
 
+    await BrowserTestUtils.waitForMutationCondition(
+      customModelSaveButton,
+      { attributes: true, attributeFilter: ["disabled"] },
+      () => !customModelSaveButton.disabled
+    );
+
+    // Set values after Lit has flushed re-renders so they aren't overwritten.
     customModelName.value = "keyboard-model";
     customModelEndpoint.value = "https://example.com";
-    customModelEndpoint.dispatchEvent(new Event("change", { bubbles: true }));
     customModelAuthToken.value = "keyboard-token";
 
     // Keyboard test to focus and space bar
@@ -466,6 +472,189 @@ describe("Smart Window model settings", () => {
     );
   });
 
+  it("save button disables after save and re-enables when the user edits a field", async () => {
+    ({ doc, win } = await openSmartWindowPanel());
+
+    const customRadio = doc.querySelector(
+      'moz-radio[data-l10n-id="smart-window-model-custom"]'
+    );
+    EventUtils.synthesizeMouseAtCenter(customRadio, {}, win);
+
+    await BrowserTestUtils.waitForMutationCondition(
+      doc.body,
+      { childList: true, subtree: true },
+      () =>
+        doc.getElementById("customModelSaveButton") &&
+        BrowserTestUtils.isVisible(doc.getElementById("customModelSaveButton"))
+    );
+
+    const customModelName = doc.getElementById("customModelName");
+    const customModelEndpoint = doc.getElementById("customModelEndpoint");
+    const customModelSaveButton = doc.getElementById("customModelSaveButton");
+    let confirmation = doc.getElementById("customModelSaveConfirmation");
+
+    Assert.ok(
+      !BrowserTestUtils.isVisible(confirmation),
+      "Save confirmation is hidden before the user saves a custom model"
+    );
+
+    customModelName.value = "my-model";
+    customModelName.dispatchEvent(new Event("change", { bubbles: true }));
+    customModelEndpoint.value = "https://example.com";
+    customModelEndpoint.dispatchEvent(new Event("change", { bubbles: true }));
+    await BrowserTestUtils.waitForMutationCondition(
+      customModelSaveButton,
+      { attributes: true, attributeFilter: ["disabled"] },
+      () => !customModelSaveButton.disabled
+    );
+
+    customModelSaveButton.scrollIntoView({});
+    EventUtils.synthesizeMouseAtCenter(customModelSaveButton, {}, win);
+
+    await BrowserTestUtils.waitForMutationCondition(
+      doc.body,
+      { attributes: true, childList: true, subtree: true },
+      () =>
+        customModelSaveButton.disabled &&
+        BrowserTestUtils.isVisible(
+          doc.getElementById("customModelSaveConfirmation")
+        )
+    );
+
+    confirmation = doc.getElementById("customModelSaveConfirmation");
+    Assert.ok(
+      customModelSaveButton.disabled,
+      "Save button is disabled immediately after a successful save"
+    );
+    Assert.equal(
+      confirmation.getAttribute("role"),
+      "status",
+      "Confirmation has role=status so assistive technologies announce the message"
+    );
+    Assert.equal(
+      confirmation.querySelector("[data-l10n-id]").getAttribute("data-l10n-id"),
+      "smart-window-model-custom-save-confirmation",
+      "Confirmation renders the smart-window-model-custom-save-confirmation Fluent string"
+    );
+
+    customModelName.value = "my-other-model";
+    customModelName.dispatchEvent(
+      new Event("input", { bubbles: true, composed: true })
+    );
+
+    await BrowserTestUtils.waitForMutationCondition(
+      customModelSaveButton,
+      { attributes: true, attributeFilter: ["disabled"] },
+      () => !customModelSaveButton.disabled
+    );
+
+    Assert.ok(
+      !customModelSaveButton.disabled,
+      "Save button is enabled again once the form differs from the saved values"
+    );
+    Assert.ok(
+      !BrowserTestUtils.isVisible(
+        doc.getElementById("customModelSaveConfirmation")
+      ),
+      "Save confirmation is hidden once the form differs from the saved values"
+    );
+
+    customModelName.value = "my-model";
+    customModelName.dispatchEvent(
+      new Event("input", { bubbles: true, composed: true })
+    );
+
+    await BrowserTestUtils.waitForMutationCondition(
+      customModelSaveButton,
+      { attributes: true, attributeFilter: ["disabled"] },
+      () => customModelSaveButton.disabled
+    );
+
+    Assert.ok(
+      customModelSaveButton.disabled,
+      "Save button is disabled when the user reverts edits back to the saved values"
+    );
+    Assert.ok(
+      BrowserTestUtils.isVisible(
+        doc.getElementById("customModelSaveConfirmation")
+      ),
+      "Save confirmation is visible again when the form matches the saved values"
+    );
+  });
+
+  it("save button stays disabled after switching to a preset model and back to custom", async () => {
+    await SpecialPowers.pushPrefEnv({
+      set: [
+        ["browser.smartwindow.model", "saved-model"],
+        ["browser.smartwindow.endpoint", "https://example.com"],
+        ["browser.smartwindow.preferences.endpoint", "https://example.com"],
+        ["browser.smartwindow.apiKey", "saved-token"],
+        ["browser.smartwindow.firstrun.modelChoice", "0"],
+      ],
+    });
+
+    ({ doc, win } = await openSmartWindowPanel());
+
+    const customModelSaveButton = doc.getElementById("customModelSaveButton");
+
+    await BrowserTestUtils.waitForMutationCondition(
+      customModelSaveButton,
+      { attributes: true, attributeFilter: ["disabled"] },
+      () => customModelSaveButton.disabled
+    );
+
+    Assert.ok(
+      customModelSaveButton.disabled,
+      "Save button is disabled when a previously saved custom model is loaded"
+    );
+
+    const fastRadio = doc.querySelector(
+      'moz-radio[data-l10n-id="smart-window-model-fast"]'
+    );
+    EventUtils.synthesizeMouseAtCenter(fastRadio, {}, win);
+
+    await BrowserTestUtils.waitForMutationCondition(
+      doc.body,
+      { attributes: true, childList: true, subtree: true },
+      () => !BrowserTestUtils.isVisible(doc.getElementById("customModelName"))
+    );
+
+    const customRadio = doc.querySelector(
+      'moz-radio[data-l10n-id="smart-window-model-custom"]'
+    );
+    EventUtils.synthesizeMouseAtCenter(customRadio, {}, win);
+
+    await BrowserTestUtils.waitForMutationCondition(
+      doc.body,
+      { attributes: true, childList: true, subtree: true },
+      () =>
+        BrowserTestUtils.isVisible(doc.getElementById("customModelSaveButton"))
+    );
+
+    const restoredSaveButton = doc.getElementById("customModelSaveButton");
+
+    Assert.ok(
+      restoredSaveButton.disabled,
+      "Save button stays disabled after switching to a preset and back to custom without edits"
+    );
+    Assert.equal(
+      Services.prefs.getStringPref("browser.smartwindow.firstrun.modelChoice"),
+      "0",
+      "firstrun.modelChoice is restored to '0' so the saved custom model is the active selection again"
+    );
+    Assert.equal(
+      Services.prefs.getStringPref("browser.smartwindow.endpoint"),
+      "https://example.com",
+      "smartwindow.endpoint is restored to the previously saved value"
+    );
+    Assert.ok(
+      BrowserTestUtils.isVisible(
+        doc.getElementById("customModelSaveConfirmation")
+      ),
+      "Save confirmation is visible since the form matches the saved values"
+    );
+  });
+
   it("populates custom fields with saved values", async () => {
     await SpecialPowers.pushPrefEnv({
       set: [
@@ -481,6 +670,14 @@ describe("Smart Window model settings", () => {
     const customModelName = doc.getElementById("customModelName");
     const customModelEndpoint = doc.getElementById("customModelEndpoint");
     const customModelAuthToken = doc.getElementById("customModelAuthToken");
+    const customModelSaveButton = doc.getElementById("customModelSaveButton");
+    const confirmation = doc.getElementById("customModelSaveConfirmation");
+
+    await BrowserTestUtils.waitForMutationCondition(
+      doc.body,
+      { attributes: true, childList: true, subtree: true },
+      () => BrowserTestUtils.isVisible(confirmation)
+    );
 
     Assert.equal(
       customModelName.value,
@@ -496,6 +693,14 @@ describe("Smart Window model settings", () => {
       customModelAuthToken.value,
       "saved-token",
       "Auth token is populated"
+    );
+    Assert.ok(
+      customModelSaveButton.disabled,
+      "Save button is disabled when saved custom values have not changed"
+    );
+    Assert.ok(
+      BrowserTestUtils.isVisible(confirmation),
+      "Save confirmation is visible when saved custom values have not changed"
     );
   });
 });

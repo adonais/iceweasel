@@ -691,8 +691,8 @@ JS::ProfilingFrameIterator::getPhysicalFrameAndEntry(
   // fallible ones.  The proper solution to this problem is to fix all
   // the jitcode to use frame-pointers and reliably walk the stack with those.
   if (samplePositionInProfilerBuffer_) {
-    *entry = table->lookupForSampler(returnAddr, cx_->runtime(),
-                                     *samplePositionInProfilerBuffer_);
+    *entry =
+        table->lookupForSampler(returnAddr, *samplePositionInProfilerBuffer_);
   } else {
     *entry = table->lookup(returnAddr);
   }

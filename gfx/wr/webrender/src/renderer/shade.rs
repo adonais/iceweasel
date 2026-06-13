@@ -240,7 +240,6 @@ impl LazilyCompiledShader {
                 VertexArrayKind::LineDecoration => &desc::LINE,
                 VertexArrayKind::Blur => &desc::BLUR,
                 VertexArrayKind::ClipRect => &desc::CLIP_RECT,
-                VertexArrayKind::ClipBoxShadow => &desc::CLIP_BOX_SHADOW,
                 VertexArrayKind::Border => &desc::BORDER,
                 VertexArrayKind::Scale => &desc::SCALE,
                 VertexArrayKind::SvgFilterNode => &desc::SVG_FILTER_NODE,
@@ -606,7 +605,6 @@ pub struct Shaders {
     /// of these shaders are also used by the primitive shaders.
     cs_clip_rectangle_slow: ShaderHandle,
     cs_clip_rectangle_fast: ShaderHandle,
-    cs_clip_box_shadow: ShaderHandle,
 
     // The are "primitive shaders". These shaders draw and blend
     // final results on screen. They are aware of tile boundaries.
@@ -746,13 +744,6 @@ impl Shaders {
             ShaderKind::ClipCache(VertexArrayKind::ClipRect),
             "cs_clip_rectangle",
             &[FAST_PATH_FEATURE],
-            &shader_list,
-        )?;
-
-        let cs_clip_box_shadow = loader.create_shader(
-            ShaderKind::ClipCache(VertexArrayKind::ClipBoxShadow),
-            "cs_clip_box_shadow",
-            &["TEXTURE_2D"],
             &shader_list,
         )?;
 
@@ -1004,7 +995,6 @@ impl Shaders {
             brush_opacity_aa,
             cs_clip_rectangle_slow,
             cs_clip_rectangle_fast,
-            cs_clip_box_shadow,
             ps_text_run,
             ps_text_run_dual_source,
             ps_quad_textured,
@@ -1184,7 +1174,6 @@ impl Shaders {
     pub fn cs_svg_filter_node(&mut self) -> &mut LazilyCompiledShader { self.loader.get(self.cs_svg_filter_node) }
     pub fn cs_clip_rectangle_slow(&mut self) -> &mut LazilyCompiledShader { self.loader.get(self.cs_clip_rectangle_slow) }
     pub fn cs_clip_rectangle_fast(&mut self) -> &mut LazilyCompiledShader { self.loader.get(self.cs_clip_rectangle_fast) }
-    pub fn cs_clip_box_shadow(&mut self) -> &mut LazilyCompiledShader { self.loader.get(self.cs_clip_box_shadow) }
     pub fn ps_quad_textured(&mut self) -> &mut LazilyCompiledShader { self.loader.get(self.ps_quad_textured) }
     pub fn ps_mask(&mut self) -> &mut LazilyCompiledShader { self.loader.get(self.ps_mask) }
     pub fn ps_mask_fast(&mut self) -> &mut LazilyCompiledShader { self.loader.get(self.ps_mask_fast) }

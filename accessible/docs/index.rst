@@ -11,6 +11,7 @@ The `Mochitest FAQ docs <../testing/mochitest-plain/faq.html#how-can-i-run-acces
 .. toctree::
    :maxdepth: 1
 
+   GuidelinesForNewContributors
    Architecture
    DocumentAccessibilityLifecycle
    GeckoViewThreadTopography

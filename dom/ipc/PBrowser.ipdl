@@ -83,6 +83,7 @@ using mozilla::layers::CompositorOptions from "mozilla/layers/CompositorOptions.
 using mozilla::CSSToScreenScale from "Units.h";
 using mozilla::CommandInt from "mozilla/EventForwards.h";
 using mozilla::HapticFeedbackType from "nsIWidget.h";
+using nsIWidget::NativePointerLockMode from "nsIWidget.h";
 using nsIWidget::TouchPointerState from "nsIWidget.h";
 using nsIWidget::TouchpadGesturePhase from "nsIWidget.h";
 using nsCursor from "nsIWidget.h";
@@ -108,7 +109,7 @@ using mozilla::dom::CallerType from "mozilla/dom/BindingDeclarations.h";
 using mozilla::dom::EmbedderElementEventType from "mozilla/dom/TabMessageTypes.h";
 using mozilla::IntrinsicSize from "nsIFrame.h";
 using mozilla::AspectRatio from "mozilla/AspectRatio.h";
-using mozilla::NativeKeyBindingsType from "mozilla/NativeKeyBindingsType.h";
+using mozilla::NativeKeyBindingsType from "mozilla/widget/WidgetMessageUtils.h";
 using mozilla::StyleImageRendering from "mozilla/ServoStyleConsts.h";
 [MoveOnly] using class mozilla::ipc::BigBuffer from "mozilla/ipc/BigBuffer.h";
 using nsIFilePicker::Mode from "nsIFilePicker.h";
@@ -459,7 +460,8 @@ parent:
      * @return            Array of edit commands which should be executed in
      *                    editor of native applications.
      */
-    sync RequestNativeKeyBindings(uint32_t aType, WidgetKeyboardEvent aEvent)
+    sync RequestNativeKeyBindings(NativeKeyBindingsType aType,
+                                  WidgetKeyboardEvent aEvent)
         returns (CommandInt[] commands);
 
     async SynthesizeNativeKeyEvent(int32_t aNativeKeyboardLayout,
@@ -513,8 +515,9 @@ parent:
                                       int32_t aModifierFlags,
                                       uint64_t? aCallbackId);
 
-    async LockNativePointer();
+    async LockNativePointer(NativePointerLockMode aNativePointerLockMode);
     async UnlockNativePointer();
+    async SetNativePointerLockMode(NativePointerLockMode aNativePointerLockMode);
 
     async AccessKeyNotHandled(WidgetKeyboardEvent event);
 
@@ -948,6 +951,12 @@ child:
      *
      */
     async SafeAreaInsetsChanged(LayoutDeviceIntMargin aSafeAreaInsets);
+
+    /**
+     * Tell the child to init the supporting of unadjustedMovement.
+     *
+     */
+    async InitSupportsUnadjustedMovement(bool aSupportsUnadjustedMovement);
 
     /**
      * Tell the browser that its frame loader has been swapped

@@ -331,6 +331,10 @@ function setTabGroupColorProperties(element, tabGroup) {
     "--tab-group-color-pale",
     `var(--tab-group-color-${tabGroup.color}-pale)`
   );
+  element.style.setProperty(
+    "--tab-group-background-color",
+    `var(--tab-group-${tabGroup.color})`
+  );
 }
 
 /**
@@ -481,7 +485,7 @@ function createTabGroupSubpanel(
   panelview.appendChild(reopenTabGroupItem);
 
   element.addEventListener("command", () => {
-    aDocument.ownerGlobal.PanelUI.showSubView(panelview.id, element);
+    aDocument.documentGlobal.PanelUI.showSubView(panelview.id, element);
   });
 
   aFragment.appendChild(panelview);

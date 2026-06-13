@@ -167,16 +167,11 @@ using XDRTranscodeString =
 class XDRCoderBase {
  private:
 #ifdef DEBUG
-  JS::TranscodeResult resultCode_;
+  JS::TranscodeResult resultCode_ = JS::TranscodeResult::Ok;
 #endif
 
  protected:
-  XDRCoderBase()
-#ifdef DEBUG
-      : resultCode_(JS::TranscodeResult::Ok)
-#endif
-  {
-  }
+  XDRCoderBase() = default;
 
  public:
 #ifdef DEBUG

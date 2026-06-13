@@ -30,7 +30,7 @@ const SCHEMA = `{
     "overrides": {
       "type": "string",
       "pattern": "^[+-][A-Za-z]+(?:,[+-][A-Za-z]+)*$",
-      "description": "The fingerprinting overrides. See https://searchfox.org/mozilla-central/source/toolkit/components/resistfingerprinting/RFPTargets.inc for details."
+      "description": "The fingerprinting overrides. See https://searchfox.org/firefox-main/source/toolkit/components/resistfingerprinting/RFPTargets.inc for details."
     },
     "firstPartyDomain": {
       "type": "string",

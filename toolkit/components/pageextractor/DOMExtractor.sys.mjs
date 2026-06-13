@@ -9,13 +9,32 @@
  */
 
 /**
- * @import { GetTextOptions, DOMExtractionResult } from './PageExtractor.d.ts'
+ * @import { GetTextOptions, DOMExtractionResult, ExtractionStrategy } from './PageExtractor.d.ts'
  */
+
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
+
+const lazy = XPCOMUtils.declareLazy({
+  SearchStaticData:
+    "moz-src:///toolkit/components/search/SearchStaticData.sys.mjs",
+});
 
 const WHITESPACE_REGEX = /\s+/g;
 const MARKDOWN_TEXT_ESCAPE_REGEX = /[\[\]()]/g;
 const OPEN_PAREN_REGEX = /\(/g;
 const CLOSE_PAREN_REGEX = /\)/g;
+
+const DEFAULT_STRATEGY = Object.freeze({
+  filterSelector: null,
+  formatBlockAnchorsAsMarkdown: false,
+  formatBlockAnchorSelector: null,
+});
+
+const GOOGLE_SEARCH_STRATEGY = Object.freeze({
+  filterSelector: "cite",
+  formatBlockAnchorsAsMarkdown: true,
+  formatBlockAnchorSelector: "cite",
+});
 
 /**
  * The context for extracting text content from the DOM.
@@ -27,6 +46,14 @@ class ExtractionContext {
    * @type {Set<Node>}
    */
   #processedNodes = new Set();
+
+  /**
+   * Set of anchors that have already had their content formatted as a markdown link.
+   * Used to prevent duplicate markdown links for multiple blocks inside the same anchor.
+   *
+   * @type {Set<HTMLAnchorElement>}
+   */
+  #linkedAnchors = new Set();
 
   /**
    * The text-extraction options, provided at initialization.
@@ -70,6 +97,11 @@ class ExtractionContext {
   #viewportRect = null;
 
   /**
+   * @type {ExtractionStrategy}
+   */
+  #strategy = DEFAULT_STRATEGY;
+
+  /**
    * Constructs a new extraction context with the provided options.
    *
    * @param {Document} document
@@ -92,6 +124,28 @@ class ExtractionContext {
         bottom: offsetTop + height,
       };
     }
+
+    if (options.sourceUrl) {
+      this.#strategy = getStrategyForUrl(URL.parse(options.sourceUrl));
+    }
+  }
+
+  /**
+   * Returns true if the element should be filtered based on current site strategy.
+   *
+   * @param {Node} node
+   * @returns {boolean}
+   */
+  shouldFilterNode(node) {
+    const filterSelector = this.#strategy.filterSelector;
+    if (!filterSelector) {
+      return false;
+    }
+    const element = asElement(node);
+    if (!element) {
+      return false;
+    }
+    return element.matches(filterSelector);
   }
 
   /**
@@ -122,6 +176,39 @@ class ExtractionContext {
    */
   maybeAddLink(href) {
     this.#links.add(href);
+  }
+
+  /**
+   * Add href from an anchor element if it has one.
+   *
+   * @param {HTMLAnchorElement} anchor
+   */
+  #addHrefFromAnchor(anchor) {
+    if (anchor.hasAttribute("href")) {
+      const href = anchor.href;
+      if (href) {
+        this.#links.add(href);
+      }
+    }
+  }
+
+  /**
+   * Get an ancestor anchor element for block content.
+   * Returns null for top-level elements or if no ancestor anchor exists.
+   *
+   * @param {Element} element
+   * @returns {HTMLAnchorElement | null}
+   */
+  #getAncestorAnchor(element) {
+    const { nodeName } = element;
+    if (nodeName === "BODY" || nodeName === "HTML") {
+      return null;
+    }
+    const ancestor = element.closest("a");
+    if (ancestor?.hasAttribute("href")) {
+      return /** @type {HTMLAnchorElement} */ (ancestor);
+    }
+    return null;
   }
 
   /**
@@ -180,41 +267,18 @@ class ExtractionContext {
       return;
     }
 
-    // If the node itself is an anchor, add its href
     if (element.nodeName === "A") {
-      // Check raw attribute first to avoid URL resolution if not needed
-      if (element.hasAttribute("href")) {
-        const href = /** @type {HTMLAnchorElement} */ (element).href;
-        if (href) {
-          this.maybeAddLink(href);
-        }
-      }
+      this.#addHrefFromAnchor(/** @type {HTMLAnchorElement} */ (element));
     } else {
-      // Check ancestor anchors (for anchors wrapping block content)
-      // Skip for top-level elements that can't be inside anchors
-      const { nodeName } = element;
-      if (nodeName !== "BODY" && nodeName !== "HTML") {
-        const ancestorAnchor = element.closest("a");
-        if (ancestorAnchor?.hasAttribute("href")) {
-          const href = ancestorAnchor.href;
-          if (href) {
-            this.maybeAddLink(href);
-          }
-        }
+      const ancestorAnchor = this.#getAncestorAnchor(element);
+      if (ancestorAnchor) {
+        this.#addHrefFromAnchor(ancestorAnchor);
       }
     }
 
-    // Extract links from anchor descendants
     const anchors = element.getElementsByTagName("a");
     for (let i = 0, len = anchors.length; i < len; i++) {
-      const anchor = anchors[i];
-      // Check raw attribute first to avoid URL resolution if not needed
-      if (anchor.hasAttribute("href")) {
-        const href = anchor.href;
-        if (href) {
-          this.maybeAddLink(href);
-        }
-      }
+      this.#addHrefFromAnchor(anchors[i]);
     }
   }
 
@@ -349,17 +413,32 @@ class ExtractionContext {
     let innerText = "";
 
     if (element) {
-      if (this.#hasInlineAnchors(element)) {
+      if (this.#hasInlineAnchors(element) || this.#strategy.filterSelector) {
         innerText = this.#extractTextWithMarkdownLinks(element);
       } else {
         innerText = element.innerText.trim();
+      }
+
+      // Wrap as markdown link if block is inside an ancestor anchor.
+      // Only format once per anchor to avoid duplicate links
+      if (this.#strategy.formatBlockAnchorsAsMarkdown && innerText) {
+        const ancestorAnchor = this.#getAncestorAnchor(element);
+        const selector = this.#strategy.formatBlockAnchorSelector;
+        if (
+          ancestorAnchor?.href &&
+          !this.#linkedAnchors.has(ancestorAnchor) &&
+          (!selector || ancestorAnchor.querySelector(selector))
+        ) {
+          innerText = escapeMarkdownLink(innerText, ancestorAnchor.href);
+          this.#linkedAnchors.add(ancestorAnchor);
+        }
       }
     } else if (text?.nodeValue) {
       innerText = text.nodeValue.trim();
     }
 
     if (innerText) {
-      if (node.ownerGlobal) {
+      if (node.documentGlobal) {
         // Use whitespace behavior from the DOM.
         this.#textContent += "\n" + innerText;
       } else {
@@ -415,7 +494,8 @@ class ExtractionContext {
   }
 
   /**
-   * Recursively walk the DOM and extract text, formatting inline anchors as markdown.
+   * Recursively walk the DOM and extract text with various formatting options.
+   * Handles both markdown link formatting and filtering.
    *
    * @param {Node} node
    * @param {string[]} parts
@@ -431,6 +511,11 @@ class ExtractionContext {
 
     const element = asElement(node);
     if (!element) {
+      return;
+    }
+
+    const filterSelector = this.#strategy.filterSelector;
+    if (filterSelector && element.matches(filterSelector)) {
       return;
     }
 
@@ -488,12 +573,7 @@ class ExtractionContext {
       return linkText;
     }
 
-    // Escape brackets and parentheses in link text, and parentheses in URL for valid markdown
-    const escapedText = linkText.replace(MARKDOWN_TEXT_ESCAPE_REGEX, "\\$&");
-    const escapedHref = href
-      .replace(OPEN_PAREN_REGEX, "%28")
-      .replace(CLOSE_PAREN_REGEX, "%29");
-    return `[${escapedText}](${escapedHref})`;
+    return escapeMarkdownLink(linkText, href);
   }
 
   /**
@@ -648,15 +728,66 @@ function getShadowRoot(node) {
 }
 
 /**
+ * Escape brackets and parentheses in link text, and parentheses in URL for valid markdown
+ *
+ * @param {string} text
+ * @param {string} url
+ * @returns {string}
+ */
+function escapeMarkdownLink(text, url) {
+  const escapedText = text.replace(MARKDOWN_TEXT_ESCAPE_REGEX, "\\$&");
+  const escapedHref = url
+    .replace(OPEN_PAREN_REGEX, "%28")
+    .replace(CLOSE_PAREN_REGEX, "%29");
+  return `[${escapedText}](${escapedHref})`;
+}
+
+/**
+ * Returns the extraction strategy for the given URL.
+ *
+ * @param {URL | null} url
+ * @returns {ExtractionStrategy}
+ */
+function getStrategyForUrl(url) {
+  if (!url) {
+    return DEFAULT_STRATEGY;
+  }
+
+  const { hostname, pathname, searchParams } = url;
+
+  // Google search result page strategy:
+  // Filter out <cite> elements which contain URL breadcrumbs like
+  // "https://www.example.com > path > to > page" that confuse LLMs.
+  // Only format block anchors as markdown if they contain a cite element.
+  const matchedGoogleDomains =
+    lazy.SearchStaticData.getAlternateDomains(hostname);
+  const isGoogleSearch =
+    matchedGoogleDomains.length &&
+    pathname === "/search" &&
+    searchParams.has("q");
+
+  if (isGoogleSearch) {
+    return GOOGLE_SEARCH_STRATEGY;
+  }
+
+  return DEFAULT_STRATEGY;
+}
+
+/**
  * Determines if a node is ready for text extraction, or if it should be subdivided
- * further. It doesn't check if the node has already been processed. This id done
- * at the block level.
+ * further. Rejects nodes that the site strategy filters out, so the entire subtree
+ * is skipped without needing to check ancestors. It doesn't check if the node has
+ * already been processed. This is done at the block level.
  *
  * @param {Node} node
+ * @param {ExtractionContext} context
  * @returns {number} - NodeFilter acceptance status.
  */
-function determineBlockStatus(node) {
+function determineBlockStatus(node, context) {
   if (!node) {
+    return NodeFilter.FILTER_REJECT;
+  }
+  if (context.shouldFilterNode(node)) {
     return NodeFilter.FILTER_REJECT;
   }
   if (getShadowRoot(node)) {
@@ -758,7 +889,7 @@ function nodeNeedsSubdividing(node) {
  * @returns {boolean}
  */
 function isNodeHidden(node) {
-  if (!node.ownerGlobal) {
+  if (!node.documentGlobal) {
     // This node is not actually connected to a live browser context, so we can't
     // determine if it's hidden or not. This can happen for a DOMParser document.
     return false;
@@ -812,14 +943,14 @@ function isNodeHidden(node) {
     return true;
   }
 
-  const { ownerGlobal } = element;
-  if (!ownerGlobal) {
-    // We cannot compute the style without ownerGlobal, so we will assume it is not visible.
+  const { documentGlobal } = element;
+  if (!documentGlobal) {
+    // We cannot compute the style without documentGlobal, so we will assume it is not visible.
     return true;
   }
 
   // This flushes the style, which is a performance cost.
-  const style = ownerGlobal.getComputedStyle(element);
+  const style = documentGlobal.getComputedStyle(element);
   if (!style) {
     // We were unable to compute the style, so we will assume it is not visible.
     return true;
@@ -928,7 +1059,7 @@ function subdivideAndExtractText(node, context) {
     return;
   }
 
-  switch (determineBlockStatus(node)) {
+  switch (determineBlockStatus(node, context)) {
     case NodeFilter.FILTER_REJECT: {
       // This node is rejected as it shouldn't be used for text extraction.
       return;
@@ -982,7 +1113,7 @@ function processSubdivide(node, context) {
   const nodeIterator = ownerDocument.createTreeWalker(
     node,
     NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT,
-    determineBlockStatus
+    n => determineBlockStatus(n, context)
   );
 
   let currentNode;
@@ -1049,8 +1180,8 @@ function getIsBlockLike(node) {
     return false;
   }
 
-  const { ownerGlobal } = element;
-  if (!ownerGlobal) {
+  const { documentGlobal } = element;
+  if (!documentGlobal) {
     // This root node is detached from a window, and so there is no computed style.
     // Just use the assumed style.
     return blockLikeElements.has(element.tagName);
@@ -1064,7 +1195,7 @@ function getIsBlockLike(node) {
 
   /** @type {Record<string, string>} */
   // @ts-expect-error - This is a workaround for the CSSStyleDeclaration not being indexable.
-  const style = ownerGlobal.getComputedStyle(element) ?? { display: null };
+  const style = documentGlobal.getComputedStyle(element) ?? { display: null };
 
   return style.display !== "inline" && style.display !== "none";
 }

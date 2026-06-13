@@ -532,6 +532,7 @@ export default class SidebarMain extends MozLitElement {
             }
             window.SidebarController.hide({ dismissPanel: false });
             window.SidebarController._state.updateVisibility(false);
+            window.SidebarController.updateToolbarButton();
             break;
           case "sidebar-context-menu-enable-vertical-tabs":
             await window.SidebarController.toggleVerticalTabs();

@@ -1540,7 +1540,7 @@ void gfxTextRun::SetSpaceGlyph(gfxFont* aFont, DrawTarget* aDrawTarget,
   gfxFontShaper::RoundingFlags roundingFlags =
       aFont->GetRoundOffsetsToPixels(aDrawTarget);
   aFont->ProcessSingleSpaceShapedWord(
-      aDrawTarget, vertical, mAppUnitsPerDevUnit, flags, roundingFlags,
+      vertical, mAppUnitsPerDevUnit, flags, roundingFlags,
       [&](gfxShapedWord* aShapedWord) {
         const GlyphRun* prevRun = TrailingGlyphRun();
         bool isCJK = prevRun && prevRun->mFont == aFont &&

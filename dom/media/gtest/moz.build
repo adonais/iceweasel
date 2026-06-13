@@ -22,10 +22,13 @@ LOCAL_INCLUDES += [
 
 UNIFIED_SOURCES += [
     "MockMediaResource.cpp",
+    "TestAOMDecoder.cpp",
     "TestAudioBuffer.cpp",
+    "TestAudioBufferAddWithScale.cpp",
     "TestAudioBuffers.cpp",
     "TestAudioCallbackDriver.cpp",
     "TestAudioCompactor.cpp",
+    "TestAudioData.cpp",
     "TestAudioDecoderInputTrack.cpp",
     "TestAudioInputSource.cpp",
     "TestAudioMixer.cpp",
@@ -46,7 +49,9 @@ UNIFIED_SOURCES += [
     "TestDeviceInputTrack.cpp",
     "TestDriftCompensation.cpp",
     "TestGMPUtils.cpp",
+    "TestGMPVideoi420Frame.cpp",
     "TestGroupId.cpp",
+    "TestHDRUtils.cpp",
     "TestImageConversion.cpp",
     "TestIntervalSet.cpp",
     "TestMediaCapabilities.cpp",
@@ -66,10 +71,12 @@ UNIFIED_SOURCES += [
     "TestOfflineClockDriver.cpp",
     "TestOggWriter.cpp",
     "TestOpusParser.cpp",
+    "TestRemoteImageHolder.cpp",
     "TestRust.cpp",
     "TestSimpleMap.cpp",
     "TestTimeUnit.cpp",
     "TestUnboundedMPSCQueue.cpp",
+    "TestVideoData.cpp",
     "TestVideoFrameContainer.cpp",
     "TestVideoSegment.cpp",
     "TestVideoSink.cpp",
@@ -77,6 +84,7 @@ UNIFIED_SOURCES += [
     "TestVideoUtils.cpp",
     "TestVPXDecoding.cpp",
     "TestWebMBuffered.cpp",
+    "TestWebMDemuxer.cpp",
     "TestWebMWriter.cpp",
     "YUVBufferGenerator.cpp",
 ]
@@ -105,6 +113,7 @@ if CONFIG["MOZ_WEBRTC"] and CONFIG["OS_TARGET"] != "Android":
         "TestAudioDeviceEnumerator.cpp",
         "TestPacer.cpp",
         "TestVideoFrameConverter.cpp",
+        "TestWebRTCCodecInfo.cpp",
         "TestWebrtcGmpCodec.cpp",
     ]
 
@@ -135,6 +144,8 @@ TEST_HARNESS_FILES.gtest += [
     "test_ValidLargeEBMLMaxIdLength.webm",
     "test_ValidSmallEBMLMaxSizeLength.webm",
     "test_vbri.mp3",
+    "tos-vp9-hdr-cll.webm",
+    "truncated-xing-placeholder.mp3",
 ]
 
 TEST_DIRS += [
@@ -151,6 +162,8 @@ LOCAL_INCLUDES += [
     "/dom/media/mp4",
     "/dom/media/platforms",
     "/dom/media/platforms/agnostic",
+    "/dom/media/webaudio",
+    "/dom/media/webm",
     "/dom/media/webrtc",
     "/gfx/2d/",
     "/security/certverifier",

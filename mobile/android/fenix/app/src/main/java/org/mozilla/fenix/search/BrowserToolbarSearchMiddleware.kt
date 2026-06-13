@@ -83,6 +83,7 @@ import org.mozilla.fenix.components.metrics.MetricsUtils
 import org.mozilla.fenix.components.search.BOOKMARKS_SEARCH_ENGINE_ID
 import org.mozilla.fenix.components.search.HISTORY_SEARCH_ENGINE_ID
 import org.mozilla.fenix.components.search.TABS_SEARCH_ENGINE_ID
+import org.mozilla.fenix.ext.isGoogleSearchEngine
 import org.mozilla.fenix.ext.toolbarHintRes
 import org.mozilla.fenix.search.EditPageEndActionsInteractions.ClearSearchClicked
 import org.mozilla.fenix.search.EditPageEndActionsInteractions.LensButtonClicked
@@ -562,7 +563,7 @@ class BrowserToolbarSearchMiddleware(
                 ),
             )
         } else if (isValidSearchEngine) {
-            if (settings.googleLensIntegrationEnabled && isGoogleSearchEngine(selectedSearchEngine)) {
+            if (settings.googleLensIntegrationEnabled && selectedSearchEngine.isGoogleSearchEngine()) {
                 add(
                     ActionButtonRes(
                         drawableResId = iconsR.drawable.mozac_ic_image_24,
@@ -631,10 +632,6 @@ class BrowserToolbarSearchMiddleware(
                     }
                 }
         }
-    }
-
-    private fun isGoogleSearchEngine(searchEngine: SearchEngine?): Boolean {
-        return searchEngine?.id?.startsWith("google") == true
     }
 
     private fun observeVoiceInputResults(

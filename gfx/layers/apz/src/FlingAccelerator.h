@@ -19,7 +19,7 @@ struct FlingHandoffState;
  */
 class FlingAccelerator final {
  public:
-  FlingAccelerator() {}
+  FlingAccelerator() = default;
 
   // Resets state so that the next fling will not be accelerated.
   void Reset();

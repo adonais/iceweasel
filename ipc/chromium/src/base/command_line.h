@@ -129,7 +129,7 @@ class CommandLine {
  private:
   friend class InProcessBrowserTest;
 
-  CommandLine() {}
+  CommandLine() = default;
 
   // Used by InProcessBrowserTest.
   static CommandLine* ForCurrentProcessMutable() {

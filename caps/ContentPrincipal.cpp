@@ -161,15 +161,6 @@ nsresult ContentPrincipal::GenerateOriginNoSuffixFromURI(
     return NS_OK;
   }
 
-  // This URL can be a blobURL. In this case, we should use the 'parent'
-  // principal instead.
-  nsCOMPtr<nsIPrincipal> blobPrincipal;
-  if (dom::BlobURLProtocolHandler::GetBlobURLPrincipal(
-          origin, getter_AddRefs(blobPrincipal))) {
-    MOZ_ASSERT(blobPrincipal);
-    return blobPrincipal->GetOriginNoSuffix(aOriginNoSuffix);
-  }
-
   // If we reached this branch, we can only create an origin if we have a
   // nsIStandardURL.  So, we query to a nsIStandardURL, and fail if we aren't
   // an instance of an nsIStandardURL nsIStandardURLs have the good property
@@ -287,7 +278,7 @@ bool ContentPrincipal::MayLoadInternal(nsIURI* aURI) {
 
   nsCOMPtr<nsIPrincipal> blobPrincipal;
   if (dom::BlobURLProtocolHandler::GetBlobURLPrincipal(
-          aURI, getter_AddRefs(blobPrincipal))) {
+          aURI, OriginAttributesRef(), getter_AddRefs(blobPrincipal))) {
     MOZ_ASSERT(blobPrincipal);
     return nsIPrincipal::Subsumes(blobPrincipal);
   }

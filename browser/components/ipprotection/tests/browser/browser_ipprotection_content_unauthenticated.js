@@ -92,8 +92,7 @@ add_task(async function test_unauthenticated_content() {
  */
 add_task(async function test_signin_button() {
   setupService({
-    isSignedIn: false,
-    isEnrolledAndEntitled: false,
+    isReady: false,
   });
   Assert.equal(
     lazy.IPProtectionService.state,
@@ -156,8 +155,7 @@ add_task(async function test_signin_button() {
  */
 add_task(async function test_panel_get_started_entrypoint() {
   setupService({
-    isSignedIn: false,
-    isEnrolledAndEntitled: false,
+    isReady: false,
   });
   const { fxaSignInFlow } = STUBS;
   fxaSignInFlow.resetHistory();
@@ -195,8 +193,7 @@ add_task(async function test_panel_get_started_entrypoint() {
  */
 add_task(async function test_learn_more_vpn_link() {
   setupService({
-    isSignedIn: false,
-    isEnrolledAndEntitled: false,
+    isReady: false,
   });
 
   let content = await openPanel({ unauthenticated: true });
@@ -334,8 +331,7 @@ add_task(async function test_privacy_notice_link() {
  */
 add_task(async function test_panel_get_started_signed_in() {
   setupService({
-    isSignedIn: true,
-    isEnrolledAndEntitled: false,
+    isReady: false,
   });
   STUBS.fxaSignInFlow.resetHistory();
   let content = await openPanel({ unauthenticated: true });

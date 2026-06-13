@@ -111,7 +111,7 @@ add_task(async function () {
 
   info("Triggering badge with the keyboard");
   scrollableBage.focus();
-  EventUtils.synthesizeKey("VK_RETURN", {}, scrollableBage.ownerGlobal);
+  EventUtils.synthesizeKey("VK_RETURN", {}, scrollableBage.documentGlobal);
   await checkOverflowHighlight(
     ["#child2", "#child3"],
     ["#child1", "#child4"],
@@ -127,7 +127,7 @@ add_task(async function () {
     "Scrollable badge is pressed"
   );
 
-  EventUtils.synthesizeKey("VK_RETURN", {}, scrollableBage.ownerGlobal);
+  EventUtils.synthesizeKey("VK_RETURN", {}, scrollableBage.documentGlobal);
   await checkOverflowHighlight(
     [],
     ["#child1", "#child2", "#child3", "#child4"],

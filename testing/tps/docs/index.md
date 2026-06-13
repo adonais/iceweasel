@@ -111,13 +111,13 @@ Phase("phase2", [
 ```
 
 ### The TPS Extension
-When the Firefox profile representing the phase loads, it first installs an [extension](https://searchfox.org/mozilla-central/source/services/sync/tps/extensions/tps). The extension is what executes the tests by instructing Firefox and reading from Firefox to assert that Sync is working properly.
+When the Firefox profile representing the phase loads, it first installs an [extension](https://searchfox.org/firefox-main/source/services/sync/tps/extensions/tps). The extension is what executes the tests by instructing Firefox and reading from Firefox to assert that Sync is working properly.
 
-The test files execute in the extension, and the [extension defines all the functions that the test files may use](https://searchfox.org/mozilla-central/source/services/sync/tps/extensions/tps/resource/tps.sys.mjs). For instance, in the above [example](#example) the `Phase` function is defined [here](https://searchfox.org/mozilla-central/rev/1f27a4022f9f1269d897526c1c892a57743e650c/services/sync/tps/extensions/tps/resource/tps.sys.mjs#1234)
+The test files execute in the extension, and the [extension defines all the functions that the test files may use](https://searchfox.org/firefox-main/source/services/sync/tps/extensions/tps/resource/tps.sys.mjs). For instance, in the above [example](#example) the `Phase` function is defined [here](https://searchfox.org/mozilla-central/rev/1f27a4022f9f1269d897526c1c892a57743e650c/services/sync/tps/extensions/tps/resource/tps.sys.mjs#1234)
 
 ## Test Format
 ### Test group configuration
-The tests are referenced by a `json` file that references all the tests TPS will run. By default TPS will run the configuration in [`services/sync/tests/tps/all_tests.json`](https://searchfox.org/mozilla-central/source/services/sync/tests/tps/all_tests.json).
+The tests are referenced by a `json` file that references all the tests TPS will run. By default TPS will run the configuration in [`services/sync/tests/tps/all_tests.json`](https://searchfox.org/firefox-main/source/services/sync/tests/tps/all_tests.json).
 The test group configuration is a `json` object with one key named `tests` that is itself a `json` object. The `tests` object has a key for every test to run, and the key should be the name of the [test file](#test-files). The value for each test file is the empty object `{}` if the test should run, or
 `{"disabled": "Bug <BUG NUMBER>"}` where `<BUG NUMBER>` is a Bugzilla bug number referencing why the test was disabled.
 
@@ -136,7 +136,7 @@ var phases = {
 ```
 The inside of the curly brackets will be parsed as yaml to identify the profiles that TPS will run and map each phase to a profile. In the example above, `phase1` and `phase3` reuse the same profile, but `phase2` uses it's own profile. The rest of the file is regular JavaScript that will be loaded in the [TPS Extension](#the-tps-extension).
 #### Test File Capabilities
-The TPS Extension exports a set of functions and objects that test files may use. See the [`tps.sys.mjs`](https://searchfox.org/mozilla-central/source/services/sync/tps/extensions/tps/resource/tps.sys.mjs) for up-to-date details, the following is the list of export capabilities as of April 10th, 2024:
+The TPS Extension exports a set of functions and objects that test files may use. See the [`tps.sys.mjs`](https://searchfox.org/firefox-main/source/services/sync/tps/extensions/tps/resource/tps.sys.mjs) for up-to-date details, the following is the list of export capabilities as of April 10th, 2024:
 ##### Enabling Sync Engines
 To enable sync engines, which you should do before executing a test that depends on an engine, use the `EnableEngines` function. The function takes an array of strings representing the engine names. Eg:
 ```js

@@ -139,7 +139,7 @@ export class LoginManagerPrompter {
 
     return {
       dismiss() {
-        const { PopupNotifications } = aBrowser.ownerGlobal.wrappedJSObject;
+        const { PopupNotifications } = aBrowser.documentGlobal.wrappedJSObject;
         PopupNotifications.remove(notification);
       },
     };
@@ -473,7 +473,7 @@ export class LoginManagerPrompter {
           !Services.policies.isAllowed("removeMasterPassword")
         ) {
           if (!lazy.LoginHelper.isPrimaryPasswordSet()) {
-            browser.ownerGlobal.openDialog(
+            browser.documentGlobal.openDialog(
               "chrome://mozapps/content/preferences/changemp.xhtml",
               "",
               "centerscreen,chrome,modal,titlebar"
@@ -583,7 +583,7 @@ export class LoginManagerPrompter {
     );
 
     // .wrappedJSObject needed here -- see bug 422974 comment 5.
-    const { PopupNotifications } = browser.ownerGlobal.wrappedJSObject;
+    const { PopupNotifications } = browser.documentGlobal.wrappedJSObject;
 
     const notificationID = "password";
     // keep attention notifications around for longer after a locationchange
@@ -810,7 +810,7 @@ export class LoginManagerPrompter {
 
     return {
       dismiss() {
-        const { PopupNotifications } = aBrowser.ownerGlobal.wrappedJSObject;
+        const { PopupNotifications } = aBrowser.documentGlobal.wrappedJSObject;
         PopupNotifications.remove(notification);
       },
     };
@@ -845,7 +845,7 @@ export class LoginManagerPrompter {
     // If user selects ok, outparam.value is set to the index
     // of the selected username.
     const ok = Services.prompt.select(
-      browser.ownerGlobal,
+      browser.documentGlobal,
       dialogTitle,
       dialogText,
       usernames,

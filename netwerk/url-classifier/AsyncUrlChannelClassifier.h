@@ -22,6 +22,19 @@ class AsyncUrlChannelClassifier final {
                                std::function<void()>&& aCallback);
 };
 
+class AntiTrackingChannelClassifierUtils final {
+  static nsresult CheckChannelHelper(nsIChannel* aChannel,
+                                     std::function<void()>&& aCallback,
+                                     bool aPerformAnnotations,
+                                     bool aPerformBlocking);
+
+ public:
+  static nsresult CheckChannelBeforeBeginConnect(
+      nsIChannel* aChannel, std::function<void()>&& aCallback);
+  static nsresult CheckChannelBeforeProcessResponse(
+      nsIChannel* aChannel, std::function<void()>&& aCallback);
+};
+
 }  // namespace net
 }  // namespace mozilla
 

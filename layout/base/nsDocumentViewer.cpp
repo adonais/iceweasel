@@ -727,7 +727,7 @@ nsresult nsDocumentViewer::InitPresentationStuff(bool aDoInitialReflow) {
   // now register ourselves as a selection listener, so that we get
   // called when the selection changes in the window
   if (!mSelectionListener) {
-    mSelectionListener = new nsDocViewerSelectionListener(this);
+    mSelectionListener = MakeRefPtr<nsDocViewerSelectionListener>(this);
   }
 
   if (RefPtr<mozilla::dom::Selection> selection = GetDocumentSelection()) {
@@ -1973,7 +1973,7 @@ void nsDocumentViewer::CreateDeviceContext(
     widget = widget->GetTopLevelWidget();
   }
 
-  mDeviceContext = new nsDeviceContext();
+  mDeviceContext = MakeRefPtr<nsDeviceContext>();
   mDeviceContext->Init(widget);
 }
 
@@ -2980,7 +2980,7 @@ NS_IMETHODIMP nsDocumentViewer::SetPrintSettingsForSubdocument(
 
     auto devspec = MakeRefPtr<nsDeviceContextSpecProxy>(aRemotePrintJob);
     MOZ_TRY(devspec->Init(aPrintSettings, /* aIsPrintPreview = */ true));
-    mDeviceContext = new nsDeviceContext();
+    mDeviceContext = MakeRefPtr<nsDeviceContext>();
     MOZ_TRY(mDeviceContext->InitForPrinting(devspec));
     mPresContext = CreatePresContext(
         mDocument, nsPresContext::eContext_PrintPreview, FindContainerFrame());

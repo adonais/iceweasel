@@ -89,6 +89,7 @@ void TCPServerSocketParent::OnConnect(TCPServerSocketEvent* event) {
   RefPtr<TCPSocket> socket = event->Socket();
 
   RefPtr<TCPSocketParent> socketParent = new TCPSocketParent();
+  socketParent->AddIPDLReference();
   socketParent->SetSocket(socket);
 
   socket->SetSocketBridgeParent(socketParent);

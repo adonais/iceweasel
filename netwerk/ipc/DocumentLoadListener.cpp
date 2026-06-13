@@ -272,13 +272,7 @@ class ParentProcessDocumentOpenInfo final : public nsDocumentOpenInfo,
   bool TryDefaultContentListener(nsIChannel* aChannel,
                                  const nsCString& aContentType) {
     uint32_t canHandle = nsWebNavigationInfo::IsTypeSupported(aContentType);
-    // NOTE: We do not support the default content listener for `FALLBACK` on
-    // object/embed loads, as there's no need to send content to the content
-    // process in the fallback case. By rejecting the channel will be cancelled
-    // with NS_ERROR_WONT_HANDLE_CONTENT, which will lead to a fallback in
-    // content without sending the response data down.
-    if (canHandle != nsIWebNavigationInfo::UNSUPPORTED &&
-        (mIsDocumentLoad || canHandle != nsIWebNavigationInfo::FALLBACK)) {
+    if (canHandle != nsIWebNavigationInfo::UNSUPPORTED) {
       m_targetStreamListener = mListener;
       nsLoadFlags loadFlags = 0;
       aChannel->GetLoadFlags(&loadFlags);
@@ -403,7 +397,8 @@ class ParentProcessDocumentOpenInfo final : public nsDocumentOpenInfo,
         request->CancelWithReason(
             rv, "nsDocumentOpenInfo::OnStartRequest failed"_ns);
       }
-      return m_targetStreamListener->OnStartRequest(request);
+      nsCOMPtr<nsIStreamListener> listener = m_targetStreamListener;
+      return listener->OnStartRequest(request);
     }
     if (m_targetStreamListener != mListener) {
       LOG(
@@ -2337,7 +2332,8 @@ DocumentLoadListener::RedirectToRealChannel(
       args.timing() = std::move(mTiming);
     }
 
-    cp->TransmitBlobDataIfBlobURL(args.uri());
+    nsCOMPtr<nsILoadInfo> loadInfo = chan->LoadInfo();
+    cp->TransmitBlobDataIfBlobURL(args.uri(), loadInfo->GetOriginAttributes());
 
     if (CanonicalBrowsingContext* bc = GetDocumentBrowsingContext()) {
       if (bc->IsTop() && bc->IsActive()) {
@@ -2474,12 +2470,27 @@ void DocumentLoadListener::TriggerRedirectToRealChannel(
   // switch, and should not result in a document being loaded in the content
   // process.
   if (contentParent && !silentErrorLoad) {
+    nsCOMPtr<nsIURI> docURI;
+    MOZ_ALWAYS_SUCCEEDS(
+        NS_GetFinalChannelURI(mChannel, getter_AddRefs(docURI)));
+
     // Validate that the target process, if specified, would be allowed to load
     // this principal, and fail the navigation if it would not.
-    // System principals are allowed for now, as they are used in some
-    // edge-cases.
-    if (!contentParent->ValidatePrincipal(
-            unsandboxedPrincipal, {ValidatePrincipalOptions::AllowSystem})) {
+    // NOTE: Keep this in sync with the similar check in
+    // BrowserParent::RecvNewWindowGlobal.
+    EnumSet<ValidatePrincipalOptions> validationOptions = {};
+    // FIXME(bug 1699385): Remove allowSystem for blobs
+    // FIXME(bug 1698087): chrome://devtools/**/webextension-fallback.html
+    // Automation-Only: chrome://reftest/** + blank subframes
+    if (docURI->SchemeIs("blob") || docURI->SchemeIs("chrome") ||
+        (xpc::IsInAutomation() && NS_IsAboutBlank(docURI) &&
+         GetParentWindowContext() &&
+         GetParentWindowContext()->Manager()->Manager() == contentParent &&
+         GetParentWindowContext()->DocumentPrincipal()->IsSystemPrincipal())) {
+      validationOptions += ValidatePrincipalOptions::AllowSystem;
+    }
+    if (!contentParent->ValidatePrincipal(unsandboxedPrincipal,
+                                          validationOptions)) {
       ContentParent::LogAndAssertFailedPrincipalValidationInfo(
           unsandboxedPrincipal, "TriggerRedirectToRealChannel");
       RedirectToRealChannelFinished(NS_ERROR_FAILURE);

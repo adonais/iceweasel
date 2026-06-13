@@ -1615,19 +1615,7 @@ const nsTArray<RefPtr<GfxDriverInfo>>& GfxInfo::GetGfxDriverInfo() {
     // FEATURE_DX_P010
 
     ////////////////////////////////////
-    // FEATURE_VIDEO_HDR - ALLOWLIST
-
-    // Bug 2032616: HDR video playback allowed on AMD and NVIDIA drivers, in
-    // future we will unblock others once HLG transfer function workarounds are
-    // implemented.
-    APPEND_TO_DRIVER_BLOCKLIST2(
-        OperatingSystem::Windows, DeviceFamily::AtiAll,
-        nsIGfxInfo::FEATURE_VIDEO_HDR, nsIGfxInfo::FEATURE_ALLOW_ALWAYS,
-        DRIVER_COMPARISON_IGNORED, V(0, 0, 0, 0), "FEATURE_ROLLOUT_ATI");
-    APPEND_TO_DRIVER_BLOCKLIST2(
-        OperatingSystem::Windows, DeviceFamily::NvidiaAll,
-        nsIGfxInfo::FEATURE_VIDEO_HDR, nsIGfxInfo::FEATURE_ALLOW_ALWAYS,
-        DRIVER_COMPARISON_IGNORED, V(0, 0, 0, 0), "FEATURE_ROLLOUT_NVIDIA");
+    // FEATURE_VIDEO_HDR
 
     ////////////////////////////////////
     // FEATURE_HW_DECODED_VIDEO_ZERO_COPY
@@ -1767,6 +1755,15 @@ const nsTArray<RefPtr<GfxDriverInfo>>& GfxInfo::GetGfxDriverInfo() {
         nsIGfxInfo::FEATURE_WEBRENDER, nsIGfxInfo::FEATURE_BLOCKED_DEVICE,
         DRIVER_LESS_THAN, GfxDriverInfo::allDriverVersions,
         "INTEL_DEVICE_GEN5_OR_OLDER");
+
+    // Bug 1970532 - Intel D3D11 driver crash.
+    // Known-bad versions: 31.0.101.4032, .4091, .4146, .4255, .4314.
+    APPEND_TO_DRIVER_BLOCKLIST_RANGE(
+        OperatingSystem::Windows10or11, DeviceFamily::IntelAll,
+        nsIGfxInfo::FEATURE_WEBRENDER,
+        nsIGfxInfo::FEATURE_BLOCKED_DRIVER_VERSION, DRIVER_BETWEEN_INCLUSIVE,
+        V(31, 0, 101, 4032), V(31, 0, 101, 4314), "FEATURE_FAILURE_BUG_1970532",
+        "31.0.101.4032 - 31.0.101.4314");
 
     APPEND_TO_DRIVER_BLOCKLIST2(
         OperatingSystem::Windows, DeviceFamily::NvidiaWebRenderBlocked,

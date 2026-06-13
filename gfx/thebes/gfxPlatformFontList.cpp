@@ -47,7 +47,6 @@
 
 #include "base/eintr_wrapper.h"
 
-#include <locale.h>
 #include <numeric>
 
 using namespace mozilla;
@@ -337,7 +336,7 @@ gfxPlatformFontList::gfxPlatformFontList(bool aNeedFullnamePostscriptNames)
                                   kFontSystemWhitelistPref);
   }
 
-  RegisterStrongMemoryReporter(new MemoryReporter());
+  RegisterStrongMemoryReporter(MakeAndAddRef<MemoryReporter>());
 
   // initialize lang group pref font defaults (i.e. serif/sans-serif)
   mDefaultGenericsLangGroup.AppendElements(std::size(gPrefLangNames));

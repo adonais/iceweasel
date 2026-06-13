@@ -896,7 +896,7 @@ async function changeContentInputValue(
   str,
   shouldBlur = true
 ) {
-  await SimpleTest.promiseFocus(browser.ownerGlobal);
+  await SimpleTest.promiseFocus(browser.documentGlobal);
   // TODO: Switch to SpecialPowers.spawn
   // eslint-disable-next-line mozilla/reject-contenttask-spawn
   let oldValue = await ContentTask.spawn(browser, selector, function (sel) {
@@ -959,7 +959,7 @@ async function verifyConfirmationHint(
   anchorID = "password-notification-icon",
   expectedL10nMessageId = null
 ) {
-  let hintElem = browser.ownerGlobal.ConfirmationHint._panel;
+  let hintElem = browser.documentGlobal.ConfirmationHint._panel;
   await BrowserTestUtils.waitForPopupEvent(hintElem, "shown");
   try {
     Assert.equal(hintElem.state, "open", "hint popup is open");

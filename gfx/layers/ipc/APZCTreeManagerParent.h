@@ -13,12 +13,13 @@ namespace layers {
 class APZCTreeManager;
 class APZUpdater;
 
-class APZCTreeManagerParent : public PAPZCTreeManagerParent {
+class APZCTreeManagerParent final : public PAPZCTreeManagerParent {
  public:
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(APZCTreeManagerParent, final);
+
   APZCTreeManagerParent(LayersId aLayersId,
                         RefPtr<APZCTreeManager> aAPZCTreeManager,
                         RefPtr<APZUpdater> mAPZUpdater);
-  virtual ~APZCTreeManagerParent();
 
   LayersId GetLayersId() const { return mLayersId; }
 
@@ -63,9 +64,11 @@ class APZCTreeManagerParent : public PAPZCTreeManagerParent {
 
   mozilla::ipc::IPCResult RecvSetLongTapEnabled(const bool& aTapGestureEnabled);
 
-  void ActorDestroy(ActorDestroyReason aWhy) override {}
+  void ActorDestroy(ActorDestroyReason aWhy) override;
 
  private:
+  virtual ~APZCTreeManagerParent();
+
   bool IsGuidValid(const ScrollableLayerGuid& aGuid);
 
   LayersId mLayersId;

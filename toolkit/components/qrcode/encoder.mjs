@@ -99,15 +99,15 @@ function createEncoder(message, errorCorrectionLevelChar, version) {
 function encodeToDataURI(message, errorCorrectionLevelChar, version) {
   const encoder = createEncoder(message, errorCorrectionLevelChar, version);
   const dataURI = encoder.createDataURL();
-  const moduleCount = encoder.getModuleCount();
+  const dotCount = encoder.getModuleCount();
   const cellSize = 2;
   const margin = cellSize * 4;
-  const size = moduleCount * cellSize + margin * 2;
+  const size = dotCount * cellSize + margin * 2;
   return { src: dataURI, width: size, height: size };
 }
 
 /**
- * Return the QR module matrix without generating a raster image.
+ * Return the QR dot matrix without generating a raster image.
  *
  * @param {string} message
  *   Text to encode
@@ -116,20 +116,20 @@ function encodeToDataURI(message, errorCorrectionLevelChar, version) {
  * @param {number} [version]
  *   QR code "version" large enough to contain the message
  * @returns {object} An object with the following fields:
- *   matrix:      boolean[][] of dark modules
- *   moduleCount: number of modules per side
+ *   matrix:   boolean[][] of dark dots
+ *   dotCount: number of dots per side
  */
 function encodeToMatrix(message, errorCorrectionLevelChar, version) {
   const encoder = createEncoder(message, errorCorrectionLevelChar, version);
-  const moduleCount = encoder.getModuleCount();
+  const dotCount = encoder.getModuleCount();
   const matrix = [];
-  for (let row = 0; row < moduleCount; row++) {
+  for (let row = 0; row < dotCount; row++) {
     matrix[row] = [];
-    for (let col = 0; col < moduleCount; col++) {
+    for (let col = 0; col < dotCount; col++) {
       matrix[row][col] = encoder.isDark(row, col);
     }
   }
-  return { matrix, moduleCount };
+  return { matrix, dotCount };
 }
 
 export const QR = {

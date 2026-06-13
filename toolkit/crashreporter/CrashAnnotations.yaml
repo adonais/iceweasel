@@ -366,14 +366,15 @@ BuildID:
   glean:
     metric: crash.app_build
 
-CrashID:
+CrashEventID:
   description: A UUID for the crash event.
   type: string
   scope: ping
   bugs:
     - 1993525
+    - 2037943
   glean:
-    metric: crash.id
+    metric: crash.event_id
 
 CrashType:
   description: The type of crash that occurred (Android-only).
@@ -1212,7 +1213,7 @@ StackTraces:
     Stack traces extracted from the crash minidump, if available. A serialized
     JSON object (with a structure matching the associated Glean object description).
   type: string
-  scope: ping-only
+  scope: ping
   glean:
     type: object
     # All addresses are hex strings rather than numbers.

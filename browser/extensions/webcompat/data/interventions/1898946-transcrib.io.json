@@ -10,7 +10,7 @@
     {
       "platforms": ["all"],
       "content_scripts": {
-        "js": ["bug1898946-transcrib.io-chrome-shim.js"]
+        "js": ["add_chrome_to_useragent.js", "use_chrome_vendor.js"]
       }
     }
   ]

@@ -11,7 +11,9 @@ include "ChromiumCDMParent.h";
 using cdm::Exception from "GMPSanitizedExports.h";
 using cdm::KeyStatus from "GMPSanitizedExports.h";
 using cdm::HdcpVersion from "GMPSanitizedExports.h";
+using cdm::InitDataType from "GMPSanitizedExports.h";
 using cdm::MessageType from "GMPSanitizedExports.h";
+using cdm::SessionType from "GMPSanitizedExports.h";
 using cdm::Status from "GMPSanitizedExports.h";
 
 namespace mozilla {
@@ -34,12 +36,12 @@ child:
                              uint8_t[] aServerCert);
 
   async CreateSessionAndGenerateRequest(uint32_t aPromiseId,
-                                        uint32_t aSessionType,
-                                        uint32_t aInitDataType,
+                                        SessionType aSessionType,
+                                        InitDataType aInitDataType,
                                         uint8_t[] aInitData);
 
   async LoadSession(uint32_t aPromiseId,
-                    uint32_t aSessionType,
+                    SessionType aSessionType,
                     nsCString aSessionId);
 
   async UpdateSession(uint32_t aPromiseId,

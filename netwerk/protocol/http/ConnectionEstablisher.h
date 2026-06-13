@@ -64,11 +64,13 @@ class ConnectionEstablisher : public nsITransportEventSink,
 
   virtual void Close(nsresult aReason) = 0;
   virtual void ResetSpeculativeFlags() = 0;
-  void SetProxyTransaction(HappyEyeballsTransaction* aProxy) {
-    mProxyTransaction = aProxy;
+  void SetTransaction(HappyEyeballsTransaction* aTrans) {
+    mTransaction = aTrans;
   }
+  HappyEyeballsTransaction* Transaction() const { return mTransaction; }
   const NetAddr& Addr() const { return mAddr; }
   void ClearResultConnection();
+  HttpConnectionBase* ResultConn() const { return mResultConn; }
   virtual bool IsUDP() const { return false; }
   bool HasConnected() const { return mHasConnected; }
 
@@ -105,7 +107,7 @@ class ConnectionEstablisher : public nsITransportEventSink,
   nsCOMPtr<nsIInterfaceRequestor> mSecurityCallbacks;
   RefPtr<ConnectionHandle> mHandle;
   RefPtr<HttpConnectionBase> mResultConn;
-  RefPtr<HappyEyeballsTransaction> mProxyTransaction;
+  RefPtr<HappyEyeballsTransaction> mTransaction;
   DnsMetadata mDnsMetadata;
 };
 

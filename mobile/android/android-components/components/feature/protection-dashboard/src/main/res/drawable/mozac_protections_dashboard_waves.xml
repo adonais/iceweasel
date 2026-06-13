@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:width="414dp"
+    android:height="95dp"
+    android:viewportWidth="414.205"
+    android:viewportHeight="95.0432"
+    tools:ignore="VectorRaster">
+    <group
+        android:alpha="0.6"
+        android:translateX="-13.1016">
+        <path android:pathData="M410.883,18.4309C381.131,12.9675 369.525,0 339.356,0C309.187,0 296.669,11.4147 271.54,18.4309C255.331,22.9562 237.907,24.6041 223.097,24.4393C182.133,21.7963 175.054,8.93022 144.074,8.77177C117.634,8.63867 104.066,19.1597 83.1846,23.4886C58.6375,28.578 30.76,28.5083 18.8949,28.185C16.8118,28.128 14.6211,28.0646 13.1016,28.0202V68.8876C14.0956,68.1714 15.2289,67.3728 16.0204,66.8531C46.823,46.5145 85.5526,45.9694 111.55,60.7559C136.793,75.1114 157.332,84.8276 183.342,78.5466C200.697,74.3572 215.044,63.6524 229.1,56.6172C250.411,45.9504 269.469,43.8525 299.936,52.8524C322.077,59.3932 338.919,66.3333 362.156,66.4855C389.729,66.6693 407.862,61.6749 424.761,47.8391C425.439,47.2877 426.439,46.4194 427.306,45.6588V21.4097C426.832,21.3273 426.357,21.2449 425.983,21.1815C421.69,20.4273 416.771,19.521 410.876,18.4372L410.883,18.4309Z">
+            <aapt:attr name="android:fillColor">
+                <gradient
+                    android:type="linear"
+                    android:startX="219.925"
+                    android:startY="60.0841"
+                    android:endX="220.82"
+                    android:endY="-13.1196">
+                    <item android:color="?attr/mozacProtectionsDashboardWaveGradient1" android:offset="0" tools:color="#FCF5F0" />
+                    <item android:color="?attr/mozacProtectionsDashboardWaveGradient2" android:offset="0.22" tools:color="#FAECF1" />
+                    <item android:color="?attr/mozacProtectionsDashboardWaveGradient3" android:offset="0.56" tools:color="#F5D4F5" />
+                    <item android:color="?attr/mozacProtectionsDashboardWaveGradient4" android:offset="1" tools:color="#EEAEF0" />
+                </gradient>
+            </aapt:attr>
+        </path>
+        <path android:pathData="M443.985,27.8007C425.76,42.723 406.202,48.1095 376.464,47.9112C351.402,47.7472 333.238,40.2621 309.358,33.2077C276.499,23.501 255.952,25.7637 232.96,37.2681C217.793,44.8557 202.319,56.4011 183.609,60.9195C155.557,67.6869 133.405,57.2146 106.179,41.7318C78.1403,25.7842 36.3694,26.3652 3.14801,48.3077C2.29443,48.8682 1.0721,49.7364 0,50.502V95.0432H446.724V25.4561C445.781,26.2763 444.709,27.206 443.978,27.8075L443.985,27.8007Z">
+            <aapt:attr name="android:fillColor">
+                <gradient
+                    android:type="linear"
+                    android:startX="225.079"
+                    android:startY="90.0327"
+                    android:endX="220.44"
+                    android:endY="9.33124">
+                    <item android:color="?attr/mozacProtectionsDashboardWaveGradient1" android:offset="0" tools:color="#FCF5F0" />
+                    <item android:color="?attr/mozacProtectionsDashboardWaveGradient2" android:offset="0.22" tools:color="#FAECF1" />
+                    <item android:color="?attr/mozacProtectionsDashboardWaveGradient3" android:offset="0.56" tools:color="#F5D4F5" />
+                    <item android:color="?attr/mozacProtectionsDashboardWaveGradient4" android:offset="1" tools:color="#EEAEF0" />
+                </gradient>
+            </aapt:attr>
+        </path>
+    </group>
+</vector>

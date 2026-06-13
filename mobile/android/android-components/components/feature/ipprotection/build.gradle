@@ -25,6 +25,7 @@ dependencies {
     implementation libs.kotlinx.coroutines
 
     testImplementation project(':components:support-test')
+    testImplementation libs.androidx.test.junit
     testImplementation libs.kotlinx.coroutines.test
 }
 

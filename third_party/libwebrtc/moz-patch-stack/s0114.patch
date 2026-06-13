@@ -1,32 +1,51 @@
 From: Michael Froman <mfroman@mozilla.com>
-Date: Thu, 10 Jul 2025 20:03:00 +0000
-Subject: Bug 1975060 - improve build file generation regarding x11 usage.
- r=dbaker
+Date: Fri, 18 Jul 2025 16:07:00 -0500
+Subject: Bug 1971201 - (fix-70fb834e8c) most all of libwebrtc has converted
+ from rtc:: to webrtc::
 
-Upstream will be removing use_x11. We override the use_x11 settings
-from within gn_processor.py anyway, so we can remove our hack in
-third_party/libwebrtc/webrtc.gni, and then make gn_processor.py modify
-ozone_platform_x11 rather than use_x11.
-
-Note: these changes produce identical moz.build files for libwebrtc
-and abseil-cpp.
-
-Differential Revision: https://phabricator.services.mozilla.com/D255713
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/c8cf67108972d5caefbfbb66146e26e5358493c2
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/d51a82971b9e755d5514572fcd8ddc557153c8ef
 ---
- webrtc.gni | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ modules/video_capture/video_capture.h       | 2 +-
+ modules/video_capture/video_capture_impl.cc | 2 +-
+ modules/video_capture/video_capture_impl.h  | 2 +-
+ 3 files changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/webrtc.gni b/webrtc.gni
-index 4f63ab5990..f7c2913c6b 100644
---- a/webrtc.gni
-+++ b/webrtc.gni
-@@ -128,7 +128,7 @@ declare_args() {
-   rtc_build_tools = false
+diff --git a/modules/video_capture/video_capture.h b/modules/video_capture/video_capture.h
+index a7c1764c51..8a91ca2f83 100644
+--- a/modules/video_capture/video_capture.h
++++ b/modules/video_capture/video_capture.h
+@@ -123,7 +123,7 @@ class VideoCaptureModule : public RefCountInterface {
  
-   # Set this to false to skip building code that requires X11.
--  rtc_use_x11 = use_x11
-+  rtc_use_x11 = ozone_platform_x11
+   //  Remove capture data callback
+   virtual void DeRegisterCaptureDataCallback(
+-      rtc::VideoSinkInterface<VideoFrame> *dataCallback) = 0;
++      webrtc::VideoSinkInterface<VideoFrame> *dataCallback) = 0;
  
-   # Set this to use PipeWire on the Wayland display server.
-   # By default it's only enabled on desktop Linux (excludes ChromeOS) and
+   // Start capture device
+   virtual int32_t StartCapture(const VideoCaptureCapability& capability) = 0;
+diff --git a/modules/video_capture/video_capture_impl.cc b/modules/video_capture/video_capture_impl.cc
+index 9663c818e7..6fd29f36db 100644
+--- a/modules/video_capture/video_capture_impl.cc
++++ b/modules/video_capture/video_capture_impl.cc
+@@ -122,7 +122,7 @@ void VideoCaptureImpl::RegisterCaptureDataCallback(
+ }
+ 
+ void VideoCaptureImpl::DeRegisterCaptureDataCallback(
+-    rtc::VideoSinkInterface<VideoFrame>* dataCallBack) {
++    webrtc::VideoSinkInterface<VideoFrame>* dataCallBack) {
+   MutexLock lock(&api_lock_);
+   auto it = _dataCallBacks.find(dataCallBack);
+   if (it != _dataCallBacks.end()) {
+diff --git a/modules/video_capture/video_capture_impl.h b/modules/video_capture/video_capture_impl.h
+index 3e77b262c7..f42fc4296a 100644
+--- a/modules/video_capture/video_capture_impl.h
++++ b/modules/video_capture/video_capture_impl.h
+@@ -66,7 +66,7 @@ class RTC_EXPORT VideoCaptureImpl : public VideoCaptureModule {
+   void RegisterCaptureDataCallback(
+       RawVideoSinkInterface* dataCallback) override;
+   void DeRegisterCaptureDataCallback(
+-      rtc::VideoSinkInterface<VideoFrame>* dataCallback) override;
++      webrtc::VideoSinkInterface<VideoFrame>* dataCallback) override;
+ 
+   int32_t StopCaptureIfAllClientsClose() override;
+   int32_t SetCaptureRotation(VideoRotation rotation) override;

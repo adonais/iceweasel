@@ -345,7 +345,7 @@ class PLDHashTable {
 
     template <typename F>
     void ForEachSlot(uint32_t aCapacity, uint32_t aEntrySize, F&& aFunc) {
-      ForEachSlot(Get(), aCapacity, aEntrySize, std::move(aFunc));
+      ForEachSlot(Get(), aCapacity, aEntrySize, std::forward<F>(aFunc));
     }
 
     template <typename F>
@@ -373,7 +373,7 @@ class PLDHashTable {
       nullptr;                   // Virtual operations; see below.
   EntryStore mEntryStore;        // (Lazy) entry storage and generation.
   uint16_t mGeneration = 0;      // The storage generation.
-  uint8_t mHashShift;            // Multiplicative hash shift.
+  uint8_t mHashShift = 0;        // Multiplicative hash shift.
   const uint8_t mEntrySize = 0;  // Number of bytes in an entry.
   uint32_t mEntryCount = 0;      // Number of entries in table.
   uint32_t mRemovedCount = 0;    // Removed entry sentinels in table.
@@ -430,6 +430,9 @@ class PLDHashTable {
   }
 
   PLDHashTable& operator=(PLDHashTable&& aOther);
+
+  PLDHashTable(const PLDHashTable& aOther) = delete;
+  PLDHashTable& operator=(const PLDHashTable& aOther) = delete;
 
   ~PLDHashTable();
 
@@ -652,6 +655,10 @@ class PLDHashTable {
   class Iterator {
    public:
     explicit Iterator(PLDHashTable* aTable);
+    Iterator() = delete;
+    Iterator& operator=(const Iterator&) = delete;
+    Iterator& operator=(const Iterator&&) = delete;
+
     struct EndIteratorTag {};
     Iterator(PLDHashTable* aTable, EndIteratorTag aTag);
     Iterator(Iterator&& aOther);
@@ -696,10 +703,7 @@ class PLDHashTable {
 
     void MoveToNextLiveEntry();
 
-    Iterator() = delete;
     Iterator(const Iterator&);
-    Iterator& operator=(const Iterator&) = delete;
-    Iterator& operator=(const Iterator&&) = delete;
   };
 
   Iterator Iter() { return Iterator(this); }
@@ -797,9 +801,6 @@ class PLDHashTable {
                                               const mozilla::fallible_t&);
 
   EntryHandle MakeEntryHandle(const void* aKey);
-
-  PLDHashTable(const PLDHashTable& aOther) = delete;
-  PLDHashTable& operator=(const PLDHashTable& aOther) = delete;
 };
 
 // Compute the hash code for a given key to be looked up, added, or removed.

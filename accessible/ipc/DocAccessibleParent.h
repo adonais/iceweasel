@@ -291,6 +291,17 @@ class DocAccessibleParent : public RemoteAccessible,
   // are currently on screen (making any acc not in this list offscreen).
   nsTHashSet<uint64_t> mOnScreenAccessibles;
 
+#ifdef MOZ_WIDGET_COCOA
+  // Bounds (in screen-relative Gecko device pixels) of the focused accessible.
+  // This is used to suppress redundant notifications on viewport cache updates.
+  // This field is updated:
+  // - When a focus event is fired, changing the focused accessible
+  // - When a viewport cache update is recieved, and the computed bounds for
+  //   the focused accessible differ from the last-cached bounds in this field.
+  // Nothing() indicates we have not yet computed bounds for the focused acc.
+  Maybe<LayoutDeviceIntRect> mFocusedAccBounds;
+#endif
+
   static DocAccessibleParent* GetFrom(dom::BrowsingContext* aBrowsingContext);
 
   size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) override;

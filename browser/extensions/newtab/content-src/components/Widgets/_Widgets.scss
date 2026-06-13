@@ -243,7 +243,8 @@
     --widgets-small-card-height: var(--newtab-card-height-small);
 
     &:has(.lists),
-    &:has(.focus-timer) {
+    &:has(.focus-timer),
+    &:has(.sports) {
       display: grid;
       grid-template-columns: repeat(auto-fit, var(--widgets-card-width));
       gap: var(--widgets-grid-gap);
@@ -273,7 +274,8 @@
   --widgets-card-width: var(--newtab-card-width-medium);
 
   &:has(.lists),
-  &:has(.focus-timer) {
+  &:has(.focus-timer),
+  &:has(.sports) {
     @media(min-width: $break-point-widest) {
       --widgets-grid-gap: var(--space-large);
     }

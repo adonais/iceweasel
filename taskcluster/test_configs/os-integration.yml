@@ -63,6 +63,12 @@
       - mochitest-webgpu
   unittest_variant: null
 
+# linux 24.04 wayland snap (basic only — Bug 1941642)
+- kind: snap-upstream-test
+  snap_test_release: "2404"
+  snap_test_type: basic
+  primary-dependency-label: snap-upstream-build-amd64-nightly/opt
+
 # win/gpu
 - kind: web-platform-tests
   test_platform:
@@ -98,7 +104,6 @@
       - android-em-14-x86_64-shippable-qr/opt
       - linux1804-64-shippable-qr/opt
       - linux2404-64-shippable/opt
-      - macosx1400-64-shippable-qr/opt
       - macosx1470-64-shippable/opt
       - windows11-64-24h2-shippable/opt
       - windows11-64-shippable-qr/opt

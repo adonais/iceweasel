@@ -267,24 +267,33 @@ add_task(async function checkDomainCorrectionReplacesLearnMoreLink() {
     const netErrorCard = await ContentTaskUtils.waitForCondition(
       () => doc.querySelector("net-error-card")?.wrappedJSObject
     );
-    const errorNotice = netErrorCard.errorIntro;
-    ok(ContentTaskUtils.isVisible(errorNotice), "Error text is visible");
+    await netErrorCard.getUpdateComplete();
 
-    // Wait for the domain suggestion to be resolved and for the link href to be updated
-    let link;
+    const errorIntro = netErrorCard.errorIntro;
+    ok(ContentTaskUtils.isVisible(errorIntro), "Error intro text is visible");
+
+    let suggestionLink;
     await ContentTaskUtils.waitForCondition(() => {
-      link = netErrorCard.learnMoreLink;
+      suggestionLink = netErrorCard.dnsSuggestion?.querySelector("a");
       return (
-        link &&
-        link.textContent != "" &&
-        link.getAttribute("href") === "https://www.example.com/example2/"
+        suggestionLink?.textContent != "" &&
+        suggestionLink?.getAttribute("href") ===
+          "https://www.example.com/example2/"
       );
-    }, "Helper link has been set to corrected domain");
+    }, "www suggestion appears in intro text with correct link");
 
     is(
-      link.getAttribute("href"),
+      suggestionLink.getAttribute("href"),
       "https://www.example.com/example2/",
-      "Link points to corrected domain instead of SUMO page"
+      "Suggestion link points to www variant"
+    );
+
+    const learnMoreLink = netErrorCard.learnMoreLink;
+    ok(learnMoreLink, "Learn more link is present");
+    is(
+      learnMoreLink.getAttribute("href"),
+      _baseURL + "server-not-found-connection-problem",
+      "Learn more link still points to SUMO page"
     );
   });
 

@@ -50,7 +50,6 @@ fun HomepageHeader(
     isSportsWidgetEnabled: Boolean,
     browsingModeChanged: (BrowsingMode) -> Unit,
     onLogoClicked: () -> Unit,
-    onLogoLongClicked: () -> Unit,
 ) {
     Row(
         modifier = Modifier
@@ -62,7 +61,6 @@ fun HomepageHeader(
         WordmarkLogo(
             isSportsWidgetEnabled = isSportsWidgetEnabled,
             onLogoClicked = onLogoClicked,
-            onLogoLongClicked = onLogoLongClicked,
         )
 
         WordmarkText(wordmarkTextColor)
@@ -135,7 +133,6 @@ private fun HomepageHeaderPreview(
                 isSportsWidgetEnabled = true,
                 browsingModeChanged = {},
                 onLogoClicked = {},
-                onLogoLongClicked = {},
             )
         }
     }

@@ -487,6 +487,19 @@ Creates a taskbar tab from the current URL and asks to pin it to the taskbar. Wi
 
 - args: (none)
 
+### `PIN_TASKBAR_TAB`
+
+Pins a specific web app to the taskbar.
+
+- args:
+```ts
+{
+  url: string;      // The HTTP/HTTPS URL of the web app to pin
+  name: string;     // Display name for the web app
+  iconUrl: string;  // URL of the icon to use (256x256 PNG recommended)
+}
+```
+
 ### `RESTORE_SESSION`
 
 Restores the previous Firefox session if possible.

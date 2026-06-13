@@ -13,15 +13,13 @@ prefs = [
 ]
 
 ["browser_about_blank_same_document_tabswitch.js"]
-skip-if = [
-  "os == 'win' && os_version == '11.26200' && asan", # Bug 2019745
-]
 https_first_disabled = true
 support-files = ["open-self-from-frame.html"]
 
 ["browser_check_identity_state.js"]
 skip-if = [
   "os == 'win' && opt && msix", # Bug 1895285
+  "os == 'win' && debug", # Bug 1895285
 ]
 https_first_disabled = true
 
@@ -86,9 +84,6 @@ skip-if = [
 https_first_disabled = true
 
 ["browser_identity_web_controlled_blank.js"]
-skip-if = [
-  "os == 'win' && os_version == '11.26200' && asan", # Bug 2019745
-]
 support-files = [
   "test_web_controlled_blank.html",
   "dummy_page.html",

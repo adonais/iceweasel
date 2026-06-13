@@ -10,6 +10,7 @@
 */
 
 /* exported
+  modelFor,
   openSmartWindowPreferencesPage,
   openSmartWindowPanel,
   openManageMemoriesPanel,
@@ -19,10 +20,19 @@
   triggerBlockAndWaitForDialog,
 */
 
+ChromeUtils.defineESModuleGetters(this, {
+  getModelForChoice:
+    "moz-src:///browser/components/aiwindow/ui/modules/AIWindowConstants.sys.mjs",
+});
+
+async function modelFor(choiceId) {
+  return (await getModelForChoice(choiceId)).model;
+}
+
 async function openSmartWindowPreferencesPage() {
   await openPreferencesViaOpenPreferencesAPI("general", { leaveOpen: true });
   const doc = gBrowser.selectedBrowser.contentDocument;
-  const win = doc.ownerGlobal;
+  const win = doc.documentGlobal;
   return { doc, win };
 }
 

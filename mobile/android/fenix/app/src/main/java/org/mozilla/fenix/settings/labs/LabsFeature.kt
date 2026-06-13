@@ -13,12 +13,15 @@ import androidx.annotation.StringRes
  * @property name The string resource ID of the feature name.
  * @property description The string resource ID of the feature description.
  * @property enabled Whether or not the feature is enabled.
+ * @property feedbackUrl An optional URL for sharing feedback about this feature. When non-null,
+ * a "Share feedback" link is shown below the feature [description].
  */
 data class LabsFeature(
     val key: FeatureKey,
     @param:StringRes val name: Int,
     @param:StringRes val description: Int,
     val enabled: Boolean,
+    val feedbackUrl: String? = null,
 )
 
 /**

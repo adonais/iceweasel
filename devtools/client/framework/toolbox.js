@@ -4295,7 +4295,7 @@ class Toolbox extends EventEmitter {
    * Public API to check is the current toolbox is currently being destroyed.
    */
   isDestroying() {
-    return this._destroyer;
+    return !!this._destroyer;
   }
 
   /**

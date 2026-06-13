@@ -7,6 +7,7 @@ package org.mozilla.fenix.settings.trustpanel.store
 import mozilla.components.concept.engine.content.blocking.TrackerLog
 import mozilla.components.concept.engine.permission.SitePermissions
 import mozilla.components.lib.state.Action
+import org.mozilla.fenix.components.menu.store.IPProtectionMenuState
 import org.mozilla.fenix.settings.PhoneFeature
 import org.mozilla.fenix.trackingprotection.TrackingProtectionCategory
 import java.security.cert.X509Certificate
@@ -69,6 +70,13 @@ sealed class TrustPanelAction : Action {
      * @property sitePermissions Updated [SitePermissions] for the current site.
      */
     data class UpdateSitePermissions(val sitePermissions: SitePermissions) : TrustPanelAction()
+
+    /**
+     * [TrustPanelAction] dispatched when the IP protection menu state is updated.
+     *
+     * @property state The updated [IPProtectionMenuState].
+     */
+    data class UpdateIPProtectionMenuState(val state: IPProtectionMenuState) : TrustPanelAction()
 
     /**
      * [TrustPanelAction] dispatched when QWAC status is requested.

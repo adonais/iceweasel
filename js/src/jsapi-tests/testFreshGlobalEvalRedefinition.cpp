@@ -18,16 +18,9 @@ static bool GlobalResolve(JSContext* cx, JS::HandleObject obj, JS::HandleId id,
 
 BEGIN_TEST(testRedefineGlobalEval) {
   static const JSClassOps clsOps = {
-      nullptr,                         // addProperty
-      nullptr,                         // delProperty
-      nullptr,                         // enumerate
-      JS_NewEnumerateStandardClasses,  // newEnumerate
-      GlobalResolve,                   // resolve
-      nullptr,                         // mayResolve
-      nullptr,                         // finalize
-      nullptr,                         // call
-      nullptr,                         // construct
-      JS_GlobalObjectTraceHook,        // trace
+      .newEnumerate = JS_NewEnumerateStandardClasses,
+      .resolve = GlobalResolve,
+      .trace = JS_GlobalObjectTraceHook,
   };
 
   static const JSClass cls = {

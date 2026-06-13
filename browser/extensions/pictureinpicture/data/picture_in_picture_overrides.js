@@ -538,10 +538,12 @@ let AVAILABLE_PIP_OVERRIDES;
       "https://*.youtube.com/*": {
         visibilityThreshold: 0.6,
         videoWrapperScriptPath: "video-wrappers/youtube.js",
+        hasUrlbarEligibilityOverride: true,
       },
       "https://*.youtube-nocookie.com/*": {
         visibilityThreshold: 0.9,
         videoWrapperScriptPath: "video-wrappers/youtube.js",
+        hasUrlbarEligibilityOverride: true,
       },
     },
 

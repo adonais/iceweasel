@@ -32,6 +32,7 @@
 #include "mozilla/dom/Animation.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/BlobBinding.h"
+#include "mozilla/dom/ContentList.h"
 #include "mozilla/dom/DOMCollectedFramesBinding.h"
 #include "mozilla/dom/DOMRect.h"
 #include "mozilla/dom/DocumentInlines.h"
@@ -52,7 +53,6 @@
 #include "nsCaret.h"
 #include "nsCharsetSource.h"
 #include "nsComputedDOMStyle.h"
-#include "nsContentList.h"
 #include "nsContentUtils.h"
 #include "nsDeviceContext.h"
 #include "nsError.h"
@@ -1365,12 +1365,11 @@ nsDOMWindowUtils::NodesFromRect(float aX, float aY, float aTopSize,
                                 float aRightSize, float aBottomSize,
                                 float aLeftSize, bool aIgnoreRootScrollFrame,
                                 bool aFlushLayout, bool aOnlyVisible,
-                                float aVisibleThreshold,
-                                nsINodeList** aReturn) {
+                                float aVisibleThreshold, NodeList** aReturn) {
   RefPtr<Document> doc = GetDocument();
   NS_ENSURE_STATE(doc);
 
-  auto list = MakeRefPtr<nsSimpleContentList>(doc);
+  auto list = MakeRefPtr<SimpleContentList>(doc);
 
   // The visible threshold was omitted or given a zero value (which makes no
   // sense), so give a reasonable default.
@@ -2288,8 +2287,6 @@ nsDOMWindowUtils::SendQueryContentEvent(uint32_t aType, int64_t aOffset,
   LayoutDeviceIntPoint pt(aX, aY);
 
   WidgetQueryContentEvent::Options options;
-  options.mUseNativeLineBreak =
-      !(aAdditionalFlags & QUERY_CONTENT_FLAG_USE_XP_LINE_BREAK);
   options.mRelativeToInsertionPoint =
       (aAdditionalFlags &
        QUERY_CONTENT_FLAG_OFFSET_RELATIVE_TO_INSERTION_POINT) != 0;
@@ -2376,8 +2373,6 @@ nsDOMWindowUtils::SendSelectionSetEvent(uint32_t aOffset, uint32_t aLength,
   selectionEvent.mOffset = aOffset;
   selectionEvent.mLength = aLength;
   selectionEvent.mReversed = (aAdditionalFlags & SELECTION_SET_FLAG_REVERSE);
-  selectionEvent.mUseNativeLineBreak =
-      !(aAdditionalFlags & SELECTION_SET_FLAG_USE_XP_LINE_BREAK);
 
   widget->DispatchEvent(&selectionEvent);
 
@@ -2922,7 +2917,7 @@ static CaretInfo GetCaretContentAndBounds(
   // focused element will have multi-line content.
   nsIFrame* frame = aElement->GetPrimaryFrame();
   if (frame) {
-    RefPtr<nsCaret> caret = frame->PresShell()->GetCaret();
+    RefPtr<nsCaret> caret = frame->PresShell()->GetActiveCaret();
     if (caret && caret->IsVisible()) {
       nsRect rect;
       if (nsIFrame* textFrame = caret->GetGeometry(&rect)) {
@@ -3136,7 +3131,13 @@ nsDOMWindowUtils::GetUnanimatedComputedStyle(Element* aElement,
     return NS_ERROR_FAILURE;
   }
 
-  Maybe<PseudoStyleRequest> pseudo = PseudoStyleRequest::Parse(aPseudoElement);
+  RefPtr<Document> doc = GetDocument();
+  if (!doc) {
+    return NS_ERROR_FAILURE;
+  }
+
+  Maybe<PseudoStyleRequest> pseudo =
+      PseudoStyleRequest::Parse(aPseudoElement, doc->DefaultStyleAttrURLData());
   if (!pseudo) {
     return NS_ERROR_FAILURE;
   }
@@ -3338,7 +3339,7 @@ nsDOMWindowUtils::GetFilePath(JS::Handle<JS::Value> aFile, JSContext* aCx,
       return rv.StealNSResult();
     }
 
-    _retval = filePath;
+    _retval = std::move(filePath);
     return NS_OK;
   }
 

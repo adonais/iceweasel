@@ -14,7 +14,6 @@
 
 #include <algorithm>
 #include <fstream>
-#include <iostream>
 #include <utility>
 
 #include "gfxPlatform.h"

@@ -22,7 +22,8 @@ namespace jit {
 uint32_t OptimizationInfo::baseWarmUpThresholdForScript(JSContext* cx,
                                                         JSScript* script) {
   // If an Ion counter hint is present, override the threshold.
-  if (cx->runtime()->jitRuntime()->hasJitHintsMap()) {
+  if (MOZ_LIKELY(cx->runtime()->hasJitRuntime()) &&
+      cx->runtime()->jitRuntime()->hasJitHintsMap()) {
     JitHintsMap* jitHints = cx->runtime()->jitRuntime()->getJitHintsMap();
     uint32_t hintThreshold;
     if (jitHints->getIonThresholdHint(script, hintThreshold)) {

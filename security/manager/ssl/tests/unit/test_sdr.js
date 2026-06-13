@@ -211,9 +211,9 @@ add_task(async function testAsyncDecryptInvalidStrings() {
 
 add_task(async function testAsyncDecryptLoggedOut() {
   // Set a primary password.
-  let token = Cc["@mozilla.org/security/pk11tokendb;1"]
-    .getService(Ci.nsIPK11TokenDB)
-    .getInternalKeyToken();
+  let token = Cc["@mozilla.org/security/internalkeytoken;1"].createInstance(
+    Ci.nsIPKCS11Token
+  );
   token.initPassword("password");
   token.logoutSimple();
 

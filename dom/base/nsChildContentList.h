@@ -7,19 +7,18 @@
 
 #include "js/TypeDecls.h"  // for Handle, Value, JSObject, JSContext
 #include "mozilla/RefPtr.h"
-#include "nsINodeList.h"  // base class
+#include "mozilla/dom/NodeList.h"  // base class
 #include "nsISupportsImpl.h"
 
 class nsIContent;
 class nsINode;
 
 /**
- * Class that implements the nsINodeList interface (a list of children of
+ * Class that implements the NodeList interface (a list of children of
  * the content), by holding a reference to the content and delegating Length
  * and Item to its existing child list.
- * @see nsINodeList
  */
-class nsAttrChildContentList : public nsINodeList {
+class nsAttrChildContentList : public mozilla::dom::NodeList {
  public:
   explicit nsAttrChildContentList(nsINode* aNode) : mNode(aNode) {}
 
@@ -29,7 +28,7 @@ class nsAttrChildContentList : public nsINodeList {
   // nsWrapperCache
   JSObject* WrapObject(JSContext*, JS::Handle<JSObject*> aGivenProto) override;
 
-  // nsINodeList interface
+  // NodeList interface
   int32_t IndexOf(nsIContent* aContent) override;
   nsIContent* Item(uint32_t aIndex) override;
   uint32_t Length() override;
@@ -51,7 +50,7 @@ class nsParentNodeChildContentList final : public nsAttrChildContentList {
     ValidateCache();
   }
 
-  // nsINodeList interface
+  // NodeList interface
   int32_t IndexOf(nsIContent* aContent) override;
   nsIContent* Item(uint32_t aIndex) override;
   uint32_t Length() override;

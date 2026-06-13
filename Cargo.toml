@@ -16,6 +16,52 @@ members = [
   "services/app-services-tools/embedded-uniffi-bindgen",
   "services/app-services-tools/nimbus-fml",
   "testing/geckodriver",
+  "third_party/application-services/tools/embedded-uniffi-bindgen",
+  "third_party/application-services/tools/uniffi-bindgen-library-mode",
+  "third_party/application-services/components/ads-client",
+  "third_party/application-services/components/autofill",
+  "third_party/application-services/components/context_id",
+  "third_party/application-services/components/crashtest",
+  "third_party/application-services/components/example",
+  "third_party/application-services/components/filter_adult",
+  "third_party/application-services/components/fxa-client",
+  "third_party/application-services/components/init_rust_components",
+  "third_party/application-services/components/logins",
+  "third_party/application-services/components/merino",
+  "third_party/application-services/components/places",
+  "third_party/application-services/components/push",
+  "third_party/application-services/components/relay",
+  "third_party/application-services/components/relevancy",
+  "third_party/application-services/components/remote_settings",
+  "third_party/application-services/components/search",
+  "third_party/application-services/components/suggest",
+  "third_party/application-services/components/support/error",
+  "third_party/application-services/components/support/find-places-db",
+  "third_party/application-services/components/support/firefox-versioning",
+  "third_party/application-services/components/support/guid",
+  "third_party/application-services/components/support/interrupt",
+  "third_party/application-services/components/support/jwcrypto",
+  "third_party/application-services/components/support/payload",
+  "third_party/application-services/components/support/nimbus-fml",
+  "third_party/application-services/components/support/rand_rccrypto",
+  "third_party/application-services/components/support/rate-limiter",
+  "third_party/application-services/components/support/restmail-client",
+  "third_party/application-services/components/support/rc_crypto",
+  "third_party/application-services/components/support/rc_crypto/nss",
+  "third_party/application-services/components/support/rc_crypto/nss/nss_build_common",
+  "third_party/application-services/components/support/rc_crypto/nss/nss_sys",
+  "third_party/application-services/components/support/rust-log-forwarder",
+  "third_party/application-services/components/support/sql",
+  "third_party/application-services/components/support/text-table",
+  "third_party/application-services/components/support/tracing",
+  "third_party/application-services/components/support/types",
+  "third_party/application-services/components/sync_manager",
+  "third_party/application-services/components/sync15",
+  "third_party/application-services/components/tabs",
+  "third_party/application-services/components/viaduct",
+  "third_party/application-services/components/webext-storage",
+  "third_party/application-services/components/webext-storage/ffi",
+  "third_party/application-services/megazords/full",
   "toolkit/components/uniffi-bindgen-gecko-js",
   "toolkit/crashreporter/android/export",
   "toolkit/crashreporter/client/app",
@@ -57,6 +103,48 @@ exclude = [
 
   # Excluded because we don't want to vendor their dependencies.
   "intl/l10n/rust/l10nregistry-tests",
+
+  # Exclude various app-services crates to avoid vendoring in their dependencies
+  # The disadvantage of this is that building these crates will require a separate `Cargo.lock` file and `target` directory.
+  # This is not ideal, but we are willing accept the trade-off for now.
+  #
+  # These depend on `hyper-tls` and we do not want to bring in the subdependencies, like `openssl`
+  "third_party/application-services/components/support/viaduct-hyper",
+  "third_party/application-services/components/support/viaduct-reqwest",
+  # Excluded because it depends on `hyper` and having it as top-level member would make
+  # `cargo vet` require it to be `safe-to-deploy`.  However, since we only use it as a dev-dependency, we want
+  # it to be `safe-to-run`.
+  "third_party/application-services/components/support/viaduct-dev",
+  # CLIs that depend on `viaduct-hyper`
+  "third_party/application-services/examples/autofill-utils/",
+  "third_party/application-services/examples/cli-support/",
+  "third_party/application-services/examples/example-cli/",
+  "third_party/application-services/examples/fxa-client/",
+  "third_party/application-services/examples/merino-cli/",
+  "third_party/application-services/examples/places-autocomplete/",
+  "third_party/application-services/examples/places-utils/",
+  "third_party/application-services/examples/push-livetest/",
+  "third_party/application-services/examples/relay-cli/",
+  "third_party/application-services/examples/relevancy-cli/",
+  "third_party/application-services/examples/remote-settings-cli/",
+  "third_party/application-services/examples/suggest-cli/",
+  "third_party/application-services/examples/sync-pass/",
+  "third_party/application-services/examples/tabs-sync/",
+  "third_party/application-services/examples/viaduct-cli/",
+  "third_party/application-services/components/example/cli",
+  "third_party/application-services/components/support/nimbus-cli",
+  "third_party/application-services/components/support/nimbus-fml",
+  # Excluded to avoid vendoring in `trybuild` and its subdependencies
+  "third_party/application-services/components/support/error/tests",
+  # Temporarily in excludes until we can land some nimbus fixes:
+  # * Remove unicode_segmentation dependency
+  # * Split off the `examples` code into a separate crate
+  "third_party/application-services/components/nimbus",
+  "third_party/application-services/megazords/full",
+  # Temporarily in excludes until everyone is on the same `ohttp`/`bhttp` version
+  "third_party/application-services/components/as-ohttp-client",
+  # Excluded because of the `viaduct-reqwest` dependency
+  "third_party/application-services/megazords/ios-rust",
 ]
 
 # Use the new dependency resolver to reduce some of the platform-specific dependencies.
@@ -74,7 +162,7 @@ uniffi_pipeline = "0.31"
 # Shared across multiple application-services consumers.
 rusqlite = "0.37"
 # Shared across multiple glean consumers.
-glean = "=67.2.0"
+glean = "=67.3.2"
 
 # Explicitly specify what our profiles use.  The opt-level setting here is
 # a total fiction; see the setup of MOZ_RUST_DEFAULT_FLAGS for what the
@@ -162,6 +250,13 @@ redox_syscall = { path = "build/rust/redox_syscall" }
 
 # Patch hermit-abi to an empty crate
 hermit-abi = { path = "build/rust/hermit-abi" }
+
+# mls-rs pulls these in unconditionally (or for non-Gecko targets), but their
+# code paths are gated on `cfg(not(feature = "std"))` or
+# `cfg(not(target_has_atomic = "ptr"))`, neither of which Gecko ever hits.
+spin = { path = "build/rust/spin" }
+portable-atomic = { path = "build/rust/portable-atomic" }
+portable-atomic-util = { path = "build/rust/portable-atomic-util" }
 
 # Patch base64 0.21 to 0.22
 base64_21 = { package = "base64", path = "build/rust/base64" }
@@ -264,9 +359,12 @@ moz_asserts = { path = "mozglue/static/rust/moz_asserts" }
 # Workaround for https://github.com/rust-lang/cargo/issues/11232
 rure = { path = "third_party/rust/rure" }
 
+# Patch zlib-rs to test a workaround for crashes on Intel Raptor Lake CPU.
+zlib-rs = { path = "third_party/rust/zlib-rs" }
+
 # To-be-published changes.
 unicode-bidi = { git = "https://github.com/servo/unicode-bidi", rev = "ca612daf1c08c53abe07327cb3e6ef6e0a760f0c" }
-nss-gk-api = { git = "https://github.com/beurdouche/nss-gk-api", rev = "e48a946811ffd64abc78de3ee284957d8d1c0d63" }
+
 
 # Other overrides
 any_all_workaround = { git = "https://github.com/hsivonen/any_all_workaround", rev = "7fb1b7034c9f172aade21ee1c8554e8d8a48af80" }
@@ -312,8 +410,19 @@ viaduct = { path = "third_party/application-services/components/viaduct" }
 webext-storage = { path = "third_party/application-services/components/webext-storage" }
 logins = { path = "third_party/application-services/components/logins" }
 init_rust_components = { path = "third_party/application-services/components/init_rust_components" }
+breach-alerts = { path = "third_party/application-services/components/breach-alerts" }
+# temporary ohttp override enabling app-services build-related hacks while we wait for a new version.
+ohttp = { git = "https://github.com/martinthomson/ohttp", revision = "324f876e79394c9b815dcacda3fd4f48f105fdf2" }
+
 # Patched version of zip 2.4.2 to allow for reading omnijars.
 zip = { path = "third_party/rust/zip" }
 
 # Patch libcrux-traits to avoid unnecessary unused dependencies and conflicts.
 libcrux-traits = { path = "build/rust/libcrux-traits" }
+
+# Redirect any `nss-rs` git dependency (notably the one pinned inside upstream
+# `mls-rs-crypto-nss` in mozilla/mls-platform-api) to the in-tree vendored copy.
+# This way bumping nss-rs in tree does not require a matching update to the
+# pin in mls-platform-api on GitHub.
+[patch."https://github.com/mozilla/nss-rs"]
+nss-rs = { path = "third_party/rust/nss-rs" }

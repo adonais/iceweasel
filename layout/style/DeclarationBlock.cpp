@@ -21,9 +21,4 @@ size_t DeclarationBlock::SizeofIncludingThis(MallocSizeOf aMallocSizeOf) {
   return n;
 }
 
-bool DeclarationBlock::OwnerIsReadOnly() const {
-  css::Rule* rule = GetOwningRule();
-  return rule && rule->IsReadOnly();
-}
-
 }  // namespace mozilla

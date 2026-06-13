@@ -283,7 +283,7 @@ WorkerGlobalScopeBase::WorkerGlobalScopeBase(
 
   // In workers, each DETH must have an owner. Because the global scope doesn't
   // have one, let's set it as owner of itself.
-  BindToOwner(static_cast<nsIGlobalObject*>(this));
+  BindToGlobal(static_cast<nsIGlobalObject*>(this));
 }
 
 WorkerGlobalScopeBase::~WorkerGlobalScopeBase() = default;

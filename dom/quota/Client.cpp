@@ -205,7 +205,7 @@ bool Client::TypeToText(Type aType, nsAString& aText, const fallible_t&) {
   if (!TypeTo_impl(aType, text)) {
     return false;
   }
-  aText = text;
+  aText = std::move(text);
   return true;
 }
 

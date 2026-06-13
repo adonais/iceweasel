@@ -21,6 +21,32 @@ using JS::ToInt32;
 using mozilla::CheckedInt;
 using mozilla::IsFloat32Representable;
 
+MInstruction* jit::NewWasmDefaultConstant(TempAllocator& alloc,
+                                          wasm::ValType type) {
+  MOZ_ASSERT(type.isDefaultable());
+  switch (type.kind()) {
+    case wasm::ValType::I32:
+      return MConstant::NewInt32(alloc, 0);
+    case wasm::ValType::I64:
+      return MConstant::NewInt64(alloc, 0);
+    case wasm::ValType::F32:
+      return MWasmFloatConstant::NewFloat32(alloc, 0.0);
+    case wasm::ValType::F64:
+      return MWasmFloatConstant::NewDouble(alloc, 0.0);
+    case wasm::ValType::V128:
+#ifdef ENABLE_WASM_SIMD
+      return MWasmFloatConstant::NewSimd128(alloc, SimdConstant::Zero());
+#else
+      MOZ_CRASH();
+#endif
+    case wasm::ValType::Ref:
+      MOZ_ASSERT(type.isNullable());
+      return MWasmNullConstant::New(alloc, wasm::MaybeRefType(type.refType()));
+    default:
+      MOZ_CRASH("NYI");
+  }
+}
+
 HashNumber MWasmFloatConstant::valueHash() const {
 #ifdef ENABLE_WASM_SIMD
   return ConstantValueHash(type(), u.bits_[0] ^ u.bits_[1]);
@@ -1048,16 +1074,43 @@ MDefinition* MWasmRefAsNonNull::foldsTo(TempAllocator& alloc) {
   return this;
 }
 
-bool MWasmStructState::init() {
+bool MWasmStructState::init(TempAllocator& alloc) {
   // Reserve the size for the number of fields.
-  return fields_.resize(
-      wasmStruct_->toWasmNewStructObject()->structType().fields_.length());
+  const wasm::StructType& structType =
+      wasmStruct_->toWasmNewStructObject()->structType();
+  if (!fields_.reserve(structType.fields_.length())) {
+    return false;
+  }
+
+  for (uint32_t fieldIndex = 0; fieldIndex < structType.fields_.length();
+       fieldIndex++) {
+    wasm::StorageType storageType = structType.fields_[fieldIndex].type;
+
+    // If we were to 'struct.get' a field, it would be widened.
+    wasm::ValType valType = storageType.widenToValType();
+
+    MInstruction* defaultValue = nullptr;
+
+    // Defaultable fields start with a default value, otherwise the default
+    // value will be provided by a struct write after the allocation.
+    if (valType.isDefaultable()) {
+      defaultValue = NewWasmDefaultConstant(alloc, valType);
+      if (!defaultValue) {
+        return false;
+      }
+      wasmStruct_->block()->insertBefore(wasmStruct_, defaultValue);
+    }
+
+    fields_.infallibleAppend(defaultValue);
+  }
+
+  return true;
 }
 
 MWasmStructState* MWasmStructState::New(TempAllocator& alloc,
-                                        MDefinition* structObject) {
+                                        MWasmNewStructObject* structObject) {
   MWasmStructState* state = new (alloc) MWasmStructState(alloc, structObject);
-  if (!state->init()) {
+  if (!state->init(alloc)) {
     return nullptr;
   }
   return state;
@@ -1065,13 +1118,54 @@ MWasmStructState* MWasmStructState::New(TempAllocator& alloc,
 
 MWasmStructState* MWasmStructState::Copy(TempAllocator& alloc,
                                          MWasmStructState* state) {
-  MDefinition* newWasmStruct = state->wasmStruct();
+  MWasmNewStructObject* newWasmStruct = state->wasmStruct();
   MWasmStructState* res = new (alloc) MWasmStructState(alloc, newWasmStruct);
-  if (!res || !res->init()) {
+  if (!res || !res->fields_.appendAll(state->fields_)) {
     return nullptr;
   }
-  for (size_t i = 0; i < state->numFields(); i++) {
-    res->setField(i, state->getField(i));
-  }
   return res;
+}
+
+MDefinition* MWasmAddSubI128HI64::foldsTo(TempAllocator& alloc) {
+  MDefinition* mLhsLo = lhsLo();
+  MDefinition* mLhsHi = lhsHi();
+  MDefinition* mRhsLo = rhsLo();
+  MDefinition* mRhsHi = rhsHi();
+  MOZ_ASSERT(mLhsLo->type() == MIRType::Int64);
+  MOZ_ASSERT(mLhsHi->type() == MIRType::Int64);
+  MOZ_ASSERT(mRhsLo->type() == MIRType::Int64);
+  MOZ_ASSERT(mRhsHi->type() == MIRType::Int64);
+
+  bool lhsLoIsConst = mLhsLo->isConstant();
+  int64_t lhsLoImm = lhsLoIsConst ? mLhsLo->toConstant()->toInt64() : 0;
+
+  bool lhsHiIsConst = mLhsHi->isConstant();
+  int64_t lhsHiImm = lhsHiIsConst ? mLhsHi->toConstant()->toInt64() : 0;
+
+  bool rhsLoIsConst = mRhsLo->isConstant();
+  int64_t rhsLoImm = rhsLoIsConst ? mRhsLo->toConstant()->toInt64() : 0;
+
+  bool rhsHiIsConst = mRhsHi->isConstant();
+  int64_t rhsHiImm = rhsHiIsConst ? mRhsHi->toConstant()->toInt64() : 0;
+
+  if (isAdd()) {
+    // addHI 0:0 x:y --> x
+    if (lhsHiIsConst && lhsHiImm == 0 && lhsLoIsConst && lhsLoImm == 0) {
+      return mRhsHi;
+    }
+    // addHI x:y 0:0 --> x
+    if (rhsHiIsConst && rhsHiImm == 0 && rhsLoIsConst && rhsLoImm == 0) {
+      return mLhsHi;
+    }
+  }
+
+  // There are other folding opportunities, but none of them look particularly
+  // interesting.  In particular:
+  //
+  //   addHI 0:x 0:y = carry bit out of x +64 y
+  //
+  // This isn't helpful because we don't have a way to compute the carry bit
+  // that is cheaper than doing the full 128-bit add.
+
+  return this;
 }

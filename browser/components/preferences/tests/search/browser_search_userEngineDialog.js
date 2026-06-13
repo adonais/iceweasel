@@ -22,9 +22,7 @@ add_task(async function test_addEngineGet() {
 
   // Add new engine via add engine dialog.
   let doc = gBrowser.contentDocument;
-  let addButton = doc.querySelector(
-    SRD_PREF_VALUE ? "moz-button#addEngineButton" : "#addEngineButton"
-  );
+  let addButton = doc.querySelector("moz-button#addEngineButton");
   let dialogWin = await openDialogWith(doc, () => addButton.click());
   Assert.equal(
     dialogWin.document.getElementById("titleContainer").style.display,
@@ -82,9 +80,7 @@ add_task(async function test_addEnginePost() {
 
   // Add new engine via add engine dialog.
   let doc = gBrowser.contentDocument;
-  let addButton = doc.querySelector(
-    SRD_PREF_VALUE ? "moz-button#addEngineButton" : "#addEngineButton"
-  );
+  let addButton = doc.querySelector("moz-button#addEngineButton");
   let dialogWin = await openDialogWith(doc, () => addButton.click());
   dialogWin.document.querySelector("dialog").getButton("extra1").click();
 
@@ -139,9 +135,7 @@ add_task(async function test_validation() {
   });
 
   let doc = gBrowser.contentDocument;
-  let addButton = doc.querySelector(
-    SRD_PREF_VALUE ? "moz-button#addEngineButton" : "#addEngineButton"
-  );
+  let addButton = doc.querySelector("moz-button#addEngineButton");
   let dialogWin = await openDialogWith(doc, () => addButton.click());
 
   let accept = dialogWin.document.querySelector("dialog").getButton("accept");
@@ -257,663 +251,290 @@ add_task(async function test_validation() {
   await SearchService.removeEngine(existingEngine);
 });
 
-add_task(
-  { skip_if: () => SRD_PREF_VALUE },
-  async function test_editGetEngine_legacy() {
-    await openPreferencesViaOpenPreferencesAPI("search", {
-      leaveOpen: true,
-    });
+add_task(async function test_editGetEngine() {
+  await openPreferencesViaOpenPreferencesAPI("search", {
+    leaveOpen: true,
+  });
 
-    let doc = gBrowser.contentDocument;
-    let tree = doc.querySelector("#engineList");
-    let view = tree.view.wrappedJSObject;
-    let engine = await SearchService.addUserEngine({
-      name: "user",
-      url: "https://example.com/user?q={searchTerms}&b=ff",
-      alias: "u",
-    });
-    engine.changeUrl(
-      SearchUtils.URL_TYPE.SUGGEST_JSON,
-      "https://example.com/suggest?query={searchTerms}",
-      null
-    );
+  let doc = gBrowser.contentDocument;
+  let engineList = doc.querySelector("moz-box-group#engineList");
+  let engine = await SearchService.addUserEngine({
+    name: "user",
+    url: "https://example.com/user?q={searchTerms}&b=ff",
+    alias: "u",
+  });
+  engine.changeUrl(
+    SearchUtils.URL_TYPE.SUGGEST_JSON,
+    "https://example.com/suggest?query={searchTerms}",
+    null
+  );
+  await TestUtils.waitForTick();
 
-    // Check buttons of all search engines + local shortcuts.
-    let removeButton = doc.querySelector("#removeEngineButton");
-    let editButton = doc.querySelector("#editEngineButton");
+  // Check if engine list contains new engine without reloading.
+  let userEngineRow = [...engineList.children].find(
+    r => r.children[0].description == "u"
+  );
+  Assert.notEqual(
+    userEngineRow,
+    undefined,
+    "User engine is present in the engine list."
+  );
 
-    let userEngineIndex = null;
-    for (let i = 0; i < tree.view.rowCount; i++) {
-      view.selection.select(i);
-      let selectedEngine = view.selectedEngine;
-      if (selectedEngine?.isUserEngine) {
-        Assert.equal(selectedEngine.name, "user", "Is the new engine.");
-        Assert.ok(!removeButton.disabled, "Remove button is enabled.");
-        Assert.ok(!editButton.disabled, "Edit button is enabled.");
-        userEngineIndex = i;
-      } else {
-        Assert.ok(editButton.disabled, "Edit button is disabled.");
-      }
-    }
+  // Open the dialog and check values.
+  let editButton = [...userEngineRow.children][0].children[0].children[0];
+  let dialogWin = await openDialogWith(doc, () => editButton.click());
+  let acceptButton = dialogWin.document
+    .querySelector("dialog")
+    .shadowRoot.querySelector('button[dlgtype="accept"]');
 
-    // Check if table contains new engine without reloading.
-    Assert.ok(!!userEngineIndex, "User engine is in the table.");
-    view.selection.select(userEngineIndex);
+  Assert.equal(
+    dialogWin.document.getElementById("titleContainer").style.display,
+    "none",
+    "Adjustable title is hidden in edit engine dialog."
+  );
+  Assert.equal(
+    dialogWin.document.getElementById("engineName").value,
+    "user",
+    "Name in dialog is correct."
+  );
+  Assert.equal(
+    dialogWin.document.getElementById("engineUrl").value,
+    "https://example.com/user?q=%s&b=ff",
+    "URL in dialog is correct."
+  );
+  Assert.ok(
+    !dialogWin.document.getElementById("advanced-section").hidden,
+    "Advanced section is visible"
+  );
+  Assert.equal(
+    dialogWin.document.getElementById("enginePostData").value,
+    "",
+    "Post data input is empty."
+  );
+  Assert.equal(
+    dialogWin.document.getElementById("suggestUrl").value,
+    "https://example.com/suggest?query=%s",
+    "Suggest URL in dialog is correct"
+  );
+  Assert.equal(
+    dialogWin.document.getElementById("engineAlias").value,
+    "u",
+    "Alias in dialog is correct."
+  );
 
-    // Open the dialog and check values.
-    let dialogWin = await openDialogWith(doc, () => editButton.click());
-    let acceptButton = dialogWin.document
-      .querySelector("dialog")
-      .shadowRoot.querySelector('button[dlgtype="accept"]');
+  // Set new values.
+  setName("Searchfox", dialogWin);
+  setUrl("https://searchfox.org/mozilla-central/search", dialogWin);
+  await setAlias("sf", dialogWin);
+  setSuggestUrl("", dialogWin);
 
-    Assert.equal(
-      dialogWin.document.getElementById("titleContainer").style.display,
-      "none",
-      "Adjustable title is hidden in edit engine dialog."
-    );
-    Assert.equal(
-      dialogWin.document.getElementById("engineName").value,
-      "user",
-      "Name in dialog is correct."
-    );
-    Assert.equal(
-      dialogWin.document.getElementById("engineUrl").value,
-      "https://example.com/user?q=%s&b=ff",
-      "URL in dialog is correct."
-    );
-    Assert.ok(
-      !dialogWin.document.getElementById("advanced-section").hidden,
-      "Advanced section is visible"
-    );
-    Assert.equal(
-      dialogWin.document.getElementById("enginePostData").value,
-      "",
-      "Post data input is empty."
-    );
-    Assert.equal(
-      dialogWin.document.getElementById("suggestUrl").value,
-      "https://example.com/suggest?query=%s",
-      "Suggest URL in dialog is correct"
-    );
-    Assert.equal(
-      dialogWin.document.getElementById("engineAlias").value,
-      "u",
-      "Alias in dialog is correct."
-    );
+  dialogWin.document.querySelector("dialog").getButton("extra1").click();
+  setPostData("q=%s&path=&case=false&regexp=false", dialogWin);
 
-    // Set new values.
-    setName("Searchfox", dialogWin);
-    setUrl("https://searchfox.org/mozilla-central/search", dialogWin);
-    await setAlias("sf", dialogWin);
-    setSuggestUrl("", dialogWin);
+  // Save changes to engine.
+  let promiseChanged = SearchTestUtils.promiseSearchNotification(
+    SearchUtils.MODIFIED_TYPE.CHANGED,
+    SearchUtils.TOPIC_ENGINE_MODIFIED,
+    3
+  );
+  acceptButton.click();
+  await promiseChanged;
+  Assert.ok(true, "Got 3 change notifications.");
 
-    dialogWin.document.querySelector("dialog").getButton("extra1").click();
-    setPostData("q=%s&path=&case=false&regexp=false", dialogWin);
+  // Open dialog again and check values.
+  dialogWin = await openDialogWith(doc, () => editButton.click());
+  Assert.equal(
+    dialogWin.document.getElementById("engineName").value,
+    "Searchfox",
+    "Name in dialog reflects change"
+  );
+  Assert.equal(
+    dialogWin.document.getElementById("engineUrl").value,
+    "https://searchfox.org/mozilla-central/search",
+    "URL in dialog reflects change"
+  );
+  Assert.equal(
+    dialogWin.document.getElementById("engineAlias").value,
+    "sf",
+    "Alias in dialog reflects change"
+  );
+  Assert.ok(
+    !dialogWin.document.getElementById("advanced-section").hidden,
+    "Advanced section is still visible"
+  );
+  Assert.equal(
+    dialogWin.document.getElementById("enginePostData").value,
+    "q=%s&path=&case=false&regexp=false",
+    "Post data reflects changes"
+  );
+  Assert.equal(
+    dialogWin.document.getElementById("suggestUrl").value,
+    "",
+    "Suggest URL in dialog was removed"
+  );
 
-    // Save changes to engine.
-    let promiseChanged = SearchTestUtils.promiseSearchNotification(
-      SearchUtils.MODIFIED_TYPE.CHANGED,
-      SearchUtils.TOPIC_ENGINE_MODIFIED,
-      3
-    );
-    acceptButton.click();
-    await promiseChanged;
-    Assert.ok(true, "Got 3 change notifications.");
+  // Check search engine object.
+  let submission = engine.getSubmission("foo");
+  Assert.equal(
+    submission.uri.spec,
+    "https://searchfox.org/mozilla-central/search",
+    "Search URL reflects changes"
+  );
+  Assert.equal(
+    decodePostData(submission.postData),
+    "q=foo&path=&case=false&regexp=false",
+    "Engine was converted into a POST engine."
+  );
+  submission = engine.getSubmission("foo", SearchUtils.URL_TYPE.SUGGEST_JSON);
+  Assert.ok(!submission, "Suggest URL was removed");
 
-    // Open dialog again and check values.
-    dialogWin = await openDialogWith(doc, () => editButton.click());
-    Assert.equal(
-      dialogWin.document.getElementById("engineName").value,
-      "Searchfox",
-      "Name in dialog reflects change"
-    );
-    Assert.equal(
-      dialogWin.document.getElementById("engineUrl").value,
-      "https://searchfox.org/mozilla-central/search",
-      "URL in dialog reflects change"
-    );
-    Assert.equal(
-      dialogWin.document.getElementById("engineAlias").value,
-      "sf",
-      "Alias in dialog reflects change"
-    );
-    Assert.ok(
-      !dialogWin.document.getElementById("advanced-section").hidden,
-      "Advanced section is still visible"
-    );
-    Assert.equal(
-      dialogWin.document.getElementById("enginePostData").value,
-      "q=%s&path=&case=false&regexp=false",
-      "Post data reflects changes"
-    );
-    Assert.equal(
-      dialogWin.document.getElementById("suggestUrl").value,
-      "",
-      "Suggest URL in dialog was removed"
-    );
+  // Clean up.
+  BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  await SearchService.removeEngine(engine);
+});
 
-    // Check search engine object.
-    let submission = engine.getSubmission("foo");
-    Assert.equal(
-      submission.uri.spec,
-      "https://searchfox.org/mozilla-central/search",
-      "Search URL reflects changes"
-    );
-    Assert.equal(
-      decodePostData(submission.postData),
-      "q=foo&path=&case=false&regexp=false",
-      "Engine was converted into a POST engine."
-    );
-    submission = engine.getSubmission("foo", SearchUtils.URL_TYPE.SUGGEST_JSON);
-    Assert.ok(!submission, "Suggest URL was removed");
+add_task(async function test_editPostEngine() {
+  await openPreferencesViaOpenPreferencesAPI("search", {
+    leaveOpen: true,
+  });
 
-    // Clean up.
-    BrowserTestUtils.removeTab(gBrowser.selectedTab);
-    await SearchService.removeEngine(engine);
-  }
-);
+  let doc = gBrowser.contentDocument;
+  let engineList = doc.querySelector("moz-box-group#engineList");
 
-add_task(
-  { skip_if: () => !SRD_PREF_VALUE },
-  async function test_editGetEngine() {
-    await openPreferencesViaOpenPreferencesAPI("search", {
-      leaveOpen: true,
-    });
+  let params = new URLSearchParams();
+  params.append("q", "{searchTerms}");
+  let engine = await SearchService.addUserEngine({
+    name: "user post",
+    url: "https://example.com/user",
+    params,
+    method: "POST",
+    alias: "u",
+  });
+  await TestUtils.waitForTick();
 
-    let doc = gBrowser.contentDocument;
-    let engineList = doc.querySelector("moz-box-group#engineList");
-    let engine = await SearchService.addUserEngine({
-      name: "user",
-      url: "https://example.com/user?q={searchTerms}&b=ff",
-      alias: "u",
-    });
-    engine.changeUrl(
-      SearchUtils.URL_TYPE.SUGGEST_JSON,
-      "https://example.com/suggest?query={searchTerms}",
-      null
-    );
-    await TestUtils.waitForTick();
+  let userEngineRow = [...engineList.children].find(
+    r => r.children[0].description == "u"
+  );
+  Assert.notEqual(
+    userEngineRow,
+    undefined,
+    "User engine is present in the engine list."
+  );
+  let editButton = [...userEngineRow.children][0].children[0].children[0];
 
-    // Check if engine list contains new engine without reloading.
-    let userEngineRow = [...engineList.children].find(
-      r => r.children[0].description == "u"
-    );
-    Assert.notEqual(
-      userEngineRow,
-      undefined,
-      "User engine is present in the engine list."
-    );
+  // Open the dialog.
+  let dialogWin = await openDialogWith(doc, () => editButton.click());
+  Assert.equal(
+    dialogWin.document.getElementById("engineName").value,
+    "user post",
+    "Name in dialog is correct."
+  );
+  Assert.equal(
+    dialogWin.document.getElementById("engineUrl").value,
+    "https://example.com/user",
+    "URL in dialog is correct."
+  );
+  Assert.ok(
+    !dialogWin.document.getElementById("advanced-section").hidden,
+    "Advanced section is visible."
+  );
+  Assert.equal(
+    dialogWin.document.getElementById("enginePostData").value,
+    "q=%s",
+    "Post data in dialog is correct."
+  );
+  Assert.equal(
+    dialogWin.document.getElementById("suggestUrl").value,
+    "",
+    "Suggest URL in dialog is empty."
+  );
+  Assert.equal(
+    dialogWin.document.getElementById("engineAlias").value,
+    "u",
+    "Alias in dialog is correct."
+  );
 
-    // Open the dialog and check values.
-    let editButton = [...userEngineRow.children][0].children[0].children[0];
-    let dialogWin = await openDialogWith(doc, () => editButton.click());
-    let acceptButton = dialogWin.document
-      .querySelector("dialog")
-      .shadowRoot.querySelector('button[dlgtype="accept"]');
+  // Set new values.
+  setName("Searchfox", dialogWin);
+  setUrl("https://searchfox.org/mozilla-central/search", dialogWin);
+  setPostData("q=%s&path=&case=false&regexp=false", dialogWin);
+  setSuggestUrl("https://searchfox.org/suggest/%s", dialogWin);
+  await setAlias("sf", dialogWin);
 
-    Assert.equal(
-      dialogWin.document.getElementById("titleContainer").style.display,
-      "none",
-      "Adjustable title is hidden in edit engine dialog."
-    );
-    Assert.equal(
-      dialogWin.document.getElementById("engineName").value,
-      "user",
-      "Name in dialog is correct."
-    );
-    Assert.equal(
-      dialogWin.document.getElementById("engineUrl").value,
-      "https://example.com/user?q=%s&b=ff",
-      "URL in dialog is correct."
-    );
-    Assert.ok(
-      !dialogWin.document.getElementById("advanced-section").hidden,
-      "Advanced section is visible"
-    );
-    Assert.equal(
-      dialogWin.document.getElementById("enginePostData").value,
-      "",
-      "Post data input is empty."
-    );
-    Assert.equal(
-      dialogWin.document.getElementById("suggestUrl").value,
-      "https://example.com/suggest?query=%s",
-      "Suggest URL in dialog is correct"
-    );
-    Assert.equal(
-      dialogWin.document.getElementById("engineAlias").value,
-      "u",
-      "Alias in dialog is correct."
-    );
+  // Save changes to engine.
+  let promiseChanged = SearchTestUtils.promiseSearchNotification(
+    SearchUtils.MODIFIED_TYPE.CHANGED,
+    SearchUtils.TOPIC_ENGINE_MODIFIED,
+    4
+  );
+  EventUtils.synthesizeKey("VK_RETURN", {}, dialogWin);
+  await promiseChanged;
+  Assert.ok(true, "Got 4 change notifications.");
 
-    // Set new values.
-    setName("Searchfox", dialogWin);
-    setUrl("https://searchfox.org/mozilla-central/search", dialogWin);
-    await setAlias("sf", dialogWin);
-    setSuggestUrl("", dialogWin);
+  // Open dialog again and check values.
+  dialogWin = await openDialogWith(doc, () => editButton.click());
+  Assert.equal(
+    dialogWin.document.getElementById("engineName").value,
+    "Searchfox",
+    "Name in dialog reflects change."
+  );
+  Assert.equal(
+    dialogWin.document.getElementById("engineUrl").value,
+    "https://searchfox.org/mozilla-central/search",
+    "URL in dialog reflects changes."
+  );
+  Assert.equal(
+    dialogWin.document.getElementById("enginePostData").value,
+    "q=%s&path=&case=false&regexp=false",
+    "Post data in dialog reflects changes."
+  );
+  Assert.equal(
+    dialogWin.document.getElementById("suggestUrl").value,
+    "https://searchfox.org/suggest/%s",
+    "Suggest URL in dialog reflects changes."
+  );
+  Assert.equal(
+    dialogWin.document.getElementById("engineAlias").value,
+    "sf",
+    "Alias in dialog reflects changes."
+  );
 
-    dialogWin.document.querySelector("dialog").getButton("extra1").click();
-    setPostData("q=%s&path=&case=false&regexp=false", dialogWin);
+  // Check values of search engine object.
+  Assert.equal(
+    engine.name,
+    "Searchfox",
+    "Name of search engine object was updated."
+  );
+  let submission = engine.getSubmission("foo");
+  Assert.equal(
+    submission.uri.spec,
+    "https://searchfox.org/mozilla-central/search",
+    "Submission URL reflects changes."
+  );
+  Assert.equal(
+    decodePostData(submission.postData),
+    "q=foo&path=&case=false&regexp=false",
+    "Submission post data reflects changes"
+  );
+  submission = engine.getSubmission("foo", SearchUtils.URL_TYPE.SUGGEST_JSON);
+  Assert.equal(
+    submission.uri.spec,
+    "https://searchfox.org/suggest/foo",
+    "Submission URL reflects changes."
+  );
+  Assert.equal(submission.postData, null, "Submission URL is still GET.");
+  Assert.equal(
+    engine.alias,
+    "sf",
+    "Alias of search engine object was updated."
+  );
 
-    // Save changes to engine.
-    let promiseChanged = SearchTestUtils.promiseSearchNotification(
-      SearchUtils.MODIFIED_TYPE.CHANGED,
-      SearchUtils.TOPIC_ENGINE_MODIFIED,
-      3
-    );
-    acceptButton.click();
-    await promiseChanged;
-    Assert.ok(true, "Got 3 change notifications.");
+  // Clean up.
+  BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  await SearchService.removeEngine(engine);
+});
 
-    // Open dialog again and check values.
-    dialogWin = await openDialogWith(doc, () => editButton.click());
-    Assert.equal(
-      dialogWin.document.getElementById("engineName").value,
-      "Searchfox",
-      "Name in dialog reflects change"
-    );
-    Assert.equal(
-      dialogWin.document.getElementById("engineUrl").value,
-      "https://searchfox.org/mozilla-central/search",
-      "URL in dialog reflects change"
-    );
-    Assert.equal(
-      dialogWin.document.getElementById("engineAlias").value,
-      "sf",
-      "Alias in dialog reflects change"
-    );
-    Assert.ok(
-      !dialogWin.document.getElementById("advanced-section").hidden,
-      "Advanced section is still visible"
-    );
-    Assert.equal(
-      dialogWin.document.getElementById("enginePostData").value,
-      "q=%s&path=&case=false&regexp=false",
-      "Post data reflects changes"
-    );
-    Assert.equal(
-      dialogWin.document.getElementById("suggestUrl").value,
-      "",
-      "Suggest URL in dialog was removed"
-    );
-
-    // Check search engine object.
-    let submission = engine.getSubmission("foo");
-    Assert.equal(
-      submission.uri.spec,
-      "https://searchfox.org/mozilla-central/search",
-      "Search URL reflects changes"
-    );
-    Assert.equal(
-      decodePostData(submission.postData),
-      "q=foo&path=&case=false&regexp=false",
-      "Engine was converted into a POST engine."
-    );
-    submission = engine.getSubmission("foo", SearchUtils.URL_TYPE.SUGGEST_JSON);
-    Assert.ok(!submission, "Suggest URL was removed");
-
-    // Clean up.
-    BrowserTestUtils.removeTab(gBrowser.selectedTab);
-    await SearchService.removeEngine(engine);
-  }
-);
-
-add_task(
-  { skip_if: () => SRD_PREF_VALUE },
-  async function test_editPostEngine_legacy() {
-    await openPreferencesViaOpenPreferencesAPI("search", {
-      leaveOpen: true,
-    });
-
-    let doc = gBrowser.contentDocument;
-    let tree = doc.querySelector("#engineList");
-    let view = tree.view.wrappedJSObject;
-
-    let params = new URLSearchParams();
-    params.append("q", "{searchTerms}");
-    let engine = await SearchService.addUserEngine({
-      name: "user post",
-      url: "https://example.com/user",
-      params,
-      method: "POST",
-      alias: "u",
-    });
-
-    let editButton = doc.querySelector("#editEngineButton");
-
-    for (let i = 0; i < tree.view.rowCount; i++) {
-      view.selection.select(i);
-      let selectedEngine = view.selectedEngine;
-      if (selectedEngine?.isUserEngine) {
-        view.selection.select(i);
-        break;
-      }
-    }
-
-    // Open the dialog.
-    let dialogWin = await openDialogWith(doc, () => editButton.click());
-    Assert.equal(
-      dialogWin.document.getElementById("engineName").value,
-      "user post",
-      "Name in dialog is correct."
-    );
-    Assert.equal(
-      dialogWin.document.getElementById("engineUrl").value,
-      "https://example.com/user",
-      "URL in dialog is correct."
-    );
-    Assert.ok(
-      !dialogWin.document.getElementById("advanced-section").hidden,
-      "Advanced section is visible."
-    );
-    Assert.equal(
-      dialogWin.document.getElementById("enginePostData").value,
-      "q=%s",
-      "Post data in dialog is correct."
-    );
-    Assert.equal(
-      dialogWin.document.getElementById("suggestUrl").value,
-      "",
-      "Suggest URL in dialog is empty."
-    );
-    Assert.equal(
-      dialogWin.document.getElementById("engineAlias").value,
-      "u",
-      "Alias in dialog is correct."
-    );
-
-    // Set new values.
-    setName("Searchfox", dialogWin);
-    setUrl("https://searchfox.org/mozilla-central/search", dialogWin);
-    setPostData("q=%s&path=&case=false&regexp=false", dialogWin);
-    setSuggestUrl("https://searchfox.org/suggest/%s", dialogWin);
-    await setAlias("sf", dialogWin);
-
-    // Save changes to engine.
-    let promiseChanged = SearchTestUtils.promiseSearchNotification(
-      SearchUtils.MODIFIED_TYPE.CHANGED,
-      SearchUtils.TOPIC_ENGINE_MODIFIED,
-      4
-    );
-    EventUtils.synthesizeKey("VK_RETURN", {}, dialogWin);
-    await promiseChanged;
-    Assert.ok(true, "Got 4 change notifications.");
-
-    // Open dialog again and check values.
-    dialogWin = await openDialogWith(doc, () => editButton.click());
-    Assert.equal(
-      dialogWin.document.getElementById("engineName").value,
-      "Searchfox",
-      "Name in dialog reflects change."
-    );
-    Assert.equal(
-      dialogWin.document.getElementById("engineUrl").value,
-      "https://searchfox.org/mozilla-central/search",
-      "URL in dialog reflects changes."
-    );
-    Assert.equal(
-      dialogWin.document.getElementById("enginePostData").value,
-      "q=%s&path=&case=false&regexp=false",
-      "Post data in dialog reflects changes."
-    );
-    Assert.equal(
-      dialogWin.document.getElementById("suggestUrl").value,
-      "https://searchfox.org/suggest/%s",
-      "Suggest URL in dialog reflects changes."
-    );
-    Assert.equal(
-      dialogWin.document.getElementById("engineAlias").value,
-      "sf",
-      "Alias in dialog reflects changes."
-    );
-
-    // Check values of search engine object.
-    Assert.equal(
-      engine.name,
-      "Searchfox",
-      "Name of search engine object was updated."
-    );
-    let submission = engine.getSubmission("foo");
-    Assert.equal(
-      submission.uri.spec,
-      "https://searchfox.org/mozilla-central/search",
-      "Submission URL reflects changes."
-    );
-    Assert.equal(
-      decodePostData(submission.postData),
-      "q=foo&path=&case=false&regexp=false",
-      "Submission post data reflects changes"
-    );
-    submission = engine.getSubmission("foo", SearchUtils.URL_TYPE.SUGGEST_JSON);
-    Assert.equal(
-      submission.uri.spec,
-      "https://searchfox.org/suggest/foo",
-      "Submission URL reflects changes."
-    );
-    Assert.equal(submission.postData, null, "Submission URL is still GET.");
-    Assert.equal(
-      engine.alias,
-      "sf",
-      "Alias of search engine object was updated."
-    );
-
-    // Clean up.
-    BrowserTestUtils.removeTab(gBrowser.selectedTab);
-    await SearchService.removeEngine(engine);
-  }
-);
-
-add_task(
-  { skip_if: () => !SRD_PREF_VALUE },
-  async function test_editPostEngine() {
-    await openPreferencesViaOpenPreferencesAPI("search", {
-      leaveOpen: true,
-    });
-
-    let doc = gBrowser.contentDocument;
-    let engineList = doc.querySelector("moz-box-group#engineList");
-
-    let params = new URLSearchParams();
-    params.append("q", "{searchTerms}");
-    let engine = await SearchService.addUserEngine({
-      name: "user post",
-      url: "https://example.com/user",
-      params,
-      method: "POST",
-      alias: "u",
-    });
-    await TestUtils.waitForTick();
-
-    let userEngineRow = [...engineList.children].find(
-      r => r.children[0].description == "u"
-    );
-    Assert.notEqual(
-      userEngineRow,
-      undefined,
-      "User engine is present in the engine list."
-    );
-    let editButton = [...userEngineRow.children][0].children[0].children[0];
-
-    // Open the dialog.
-    let dialogWin = await openDialogWith(doc, () => editButton.click());
-    Assert.equal(
-      dialogWin.document.getElementById("engineName").value,
-      "user post",
-      "Name in dialog is correct."
-    );
-    Assert.equal(
-      dialogWin.document.getElementById("engineUrl").value,
-      "https://example.com/user",
-      "URL in dialog is correct."
-    );
-    Assert.ok(
-      !dialogWin.document.getElementById("advanced-section").hidden,
-      "Advanced section is visible."
-    );
-    Assert.equal(
-      dialogWin.document.getElementById("enginePostData").value,
-      "q=%s",
-      "Post data in dialog is correct."
-    );
-    Assert.equal(
-      dialogWin.document.getElementById("suggestUrl").value,
-      "",
-      "Suggest URL in dialog is empty."
-    );
-    Assert.equal(
-      dialogWin.document.getElementById("engineAlias").value,
-      "u",
-      "Alias in dialog is correct."
-    );
-
-    // Set new values.
-    setName("Searchfox", dialogWin);
-    setUrl("https://searchfox.org/mozilla-central/search", dialogWin);
-    setPostData("q=%s&path=&case=false&regexp=false", dialogWin);
-    setSuggestUrl("https://searchfox.org/suggest/%s", dialogWin);
-    await setAlias("sf", dialogWin);
-
-    // Save changes to engine.
-    let promiseChanged = SearchTestUtils.promiseSearchNotification(
-      SearchUtils.MODIFIED_TYPE.CHANGED,
-      SearchUtils.TOPIC_ENGINE_MODIFIED,
-      4
-    );
-    EventUtils.synthesizeKey("VK_RETURN", {}, dialogWin);
-    await promiseChanged;
-    Assert.ok(true, "Got 4 change notifications.");
-
-    // Open dialog again and check values.
-    dialogWin = await openDialogWith(doc, () => editButton.click());
-    Assert.equal(
-      dialogWin.document.getElementById("engineName").value,
-      "Searchfox",
-      "Name in dialog reflects change."
-    );
-    Assert.equal(
-      dialogWin.document.getElementById("engineUrl").value,
-      "https://searchfox.org/mozilla-central/search",
-      "URL in dialog reflects changes."
-    );
-    Assert.equal(
-      dialogWin.document.getElementById("enginePostData").value,
-      "q=%s&path=&case=false&regexp=false",
-      "Post data in dialog reflects changes."
-    );
-    Assert.equal(
-      dialogWin.document.getElementById("suggestUrl").value,
-      "https://searchfox.org/suggest/%s",
-      "Suggest URL in dialog reflects changes."
-    );
-    Assert.equal(
-      dialogWin.document.getElementById("engineAlias").value,
-      "sf",
-      "Alias in dialog reflects changes."
-    );
-
-    // Check values of search engine object.
-    Assert.equal(
-      engine.name,
-      "Searchfox",
-      "Name of search engine object was updated."
-    );
-    let submission = engine.getSubmission("foo");
-    Assert.equal(
-      submission.uri.spec,
-      "https://searchfox.org/mozilla-central/search",
-      "Submission URL reflects changes."
-    );
-    Assert.equal(
-      decodePostData(submission.postData),
-      "q=foo&path=&case=false&regexp=false",
-      "Submission post data reflects changes"
-    );
-    submission = engine.getSubmission("foo", SearchUtils.URL_TYPE.SUGGEST_JSON);
-    Assert.equal(
-      submission.uri.spec,
-      "https://searchfox.org/suggest/foo",
-      "Submission URL reflects changes."
-    );
-    Assert.equal(submission.postData, null, "Submission URL is still GET.");
-    Assert.equal(
-      engine.alias,
-      "sf",
-      "Alias of search engine object was updated."
-    );
-
-    // Clean up.
-    BrowserTestUtils.removeTab(gBrowser.selectedTab);
-    await SearchService.removeEngine(engine);
-  }
-);
-
-add_task(
-  { skip_if: () => SRD_PREF_VALUE },
-  async function test_icon_srd_legacy() {
-    // Set up favicon.
-    let pageUrl = "https://search.test/";
-    let iconUrl = "https://search.test/favicon.svg";
-    let dataURL = "data:image/svg+xml;base64,PHN2Zy8+";
-
-    await PlacesTestUtils.addVisits({ uri: new URL(pageUrl).URI });
-    await PlacesTestUtils.setFaviconForPage(pageUrl, iconUrl, dataURL);
-
-    // Open Settings.
-    await openPreferencesViaOpenPreferencesAPI("search", {
-      leaveOpen: true,
-    });
-
-    let doc = gBrowser.contentDocument;
-    let tree = doc.querySelector("#engineList");
-    let view = tree.view.wrappedJSObject;
-
-    let addButton = doc.querySelector("#addEngineButton");
-    let editButton = doc.querySelector("#editEngineButton");
-
-    // Add engine and check favicon.
-    let dialogWin = await openDialogWith(doc, () => addButton.click());
-    setName("Bugzilla", dialogWin);
-    setUrl("https://search.test/search?q=%s", dialogWin);
-
-    let promiseIcon = SearchTestUtils.promiseSearchNotification(
-      SearchUtils.MODIFIED_TYPE.ICON_CHANGED,
-      SearchUtils.TOPIC_ENGINE_MODIFIED
-    );
-    dialogWin.document.querySelector("dialog").getButton("accept").click();
-    let engine = await promiseIcon;
-
-    Assert.ok(true, "Icon was added");
-    Assert.equal(await engine.getIconURL(), dataURL, "Icon is correct");
-
-    // Change favicon.
-    dataURL = "data:image/svg+xml;base64,PHN2Zz48Y2lyY2xlIHI9IjEiLz48L3N2Zz4=";
-    await PlacesTestUtils.setFaviconForPage(pageUrl, iconUrl, dataURL);
-
-    // Edit engine and check favicon.
-    let engines = await SearchService.getEngines();
-    let i = engines.findIndex(e => e.id == engine.id);
-    view.selection.select(i);
-    dialogWin = await openDialogWith(doc, () => editButton.click());
-
-    promiseIcon = SearchTestUtils.promiseSearchNotification(
-      SearchUtils.MODIFIED_TYPE.ICON_CHANGED,
-      SearchUtils.TOPIC_ENGINE_MODIFIED
-    );
-    dialogWin.document.querySelector("dialog").getButton("accept").click();
-    await promiseIcon;
-
-    Assert.ok(true, "Icon was changed");
-    Assert.equal(await engine.getIconURL(), dataURL, "New icon is correct");
-
-    // Clean up.
-    BrowserTestUtils.removeTab(gBrowser.selectedTab);
-    await SearchService.removeEngine(engine);
-    PlacesUtils.favicons.expireAllFavicons();
-    await PlacesUtils.history.clear();
-  }
-);
-
-add_task({ skip_if: () => !SRD_PREF_VALUE }, async function test_icon_srd() {
+add_task(async function test_icon() {
   // Set up favicon.
   let pageUrl = "https://search.test/";
   let iconUrl = "https://search.test/favicon.svg";
@@ -1001,7 +622,7 @@ async function openDialogWith(doc, fn) {
   await TestUtils.waitForTick();
   await fn();
   let [dialogWin] = await dialogLoaded;
-  await doc.ownerGlobal.gSubDialog.dialogs[0]._dialogReady;
+  await doc.documentGlobal.gSubDialog.dialogs[0]._dialogReady;
   Assert.ok(true, "Engine dialog opened");
   return dialogWin;
 }

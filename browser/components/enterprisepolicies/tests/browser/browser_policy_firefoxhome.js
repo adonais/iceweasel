@@ -150,18 +150,37 @@ add_task(async function test_firefoxhome_preferences_set() {
   });
 
   await BrowserTestUtils.withNewTab("about:preferences#home", async browser => {
-    let data = {
-      Search: "browser.newtabpage.activity-stream.showSearch",
-      TopSites: "browser.newtabpage.activity-stream.feeds.topsites",
-      SponsoredTopSites:
-        "browser.newtabpage.activity-stream.showSponsoredTopSites",
-      Highlights: "browser.newtabpage.activity-stream.feeds.section.highlights",
-    };
-    for (let [section, preference] of Object.entries(data)) {
+    const srdEnabled = Services.prefs.getBoolPref(
+      "browser.settings-redesign.enabled",
+      false
+    );
+    // Legacy uses XUL <checkbox preference=...> bound to a pref. The Settings
+    // Redesign exposes the same prefs through differently-named settings
+    // backed by moz-checkbox elements with the friendly setting id.
+    const data = srdEnabled
+      ? {
+          Search: "webSearch",
+          TopSites: "shortcuts",
+          SponsoredTopSites: "sponsoredShortcuts",
+          Highlights: "recentActivity",
+        }
+      : {
+          Search: "browser.newtabpage.activity-stream.showSearch",
+          TopSites: "browser.newtabpage.activity-stream.feeds.topsites",
+          SponsoredTopSites:
+            "browser.newtabpage.activity-stream.showSponsoredTopSites",
+          Highlights:
+            "browser.newtabpage.activity-stream.feeds.section.highlights",
+        };
+    for (let [section, key] of Object.entries(data)) {
+      const el = srdEnabled
+        ? browser.contentDocument.getElementById(key)
+        : browser.contentDocument.querySelector(
+            `checkbox[preference='${key}']`
+          );
+      ok(el, `${section} control should be in the DOM`);
       is(
-        browser.contentDocument.querySelector(
-          `checkbox[preference='${preference}']`
-        ).disabled,
+        !!(el.disabled || el.hasAttribute("disabled")),
         true,
         `${section} checkbox should be disabled`
       );

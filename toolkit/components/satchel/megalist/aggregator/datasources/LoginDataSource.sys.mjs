@@ -496,7 +496,7 @@ export class LoginDataSource extends DataSourceBase {
       allowFromInactiveWorkspace: true,
     }).gBrowser;
     try {
-      lazy.MigrationUtils.showMigrationWizard(browser.ownerGlobal, {
+      lazy.MigrationUtils.showMigrationWizard(browser.documentGlobal, {
         entrypoint: lazy.MigrationUtils.MIGRATION_ENTRYPOINTS.PASSWORDS,
       });
     } catch (ex) {
@@ -561,12 +561,9 @@ export class LoginDataSource extends DataSourceBase {
       allowFromInactiveWorkspace: true,
     }).browsingContext;
 
-    const isOSAuthEnabled = LoginHelper.getOSAuthEnabled();
-
     const reason = "export_cpm";
     let { isAuthorized, telemetryEvent } = await LoginHelper.requestReauth(
       browsingContext,
-      isOSAuthEnabled,
       null, // Prompt regardless of a recent prompt
       this.#exportPasswordsStrings.OSReauthMessage,
       this.#exportPasswordsStrings.OSAuthDialogCaption,
@@ -628,7 +625,7 @@ export class LoginDataSource extends DataSourceBase {
     const browser = BrowserWindowTracker.getTopWindow({
       allowFromInactiveWorkspace: true,
     }).gBrowser;
-    browser.ownerGlobal.switchToTabHavingURI(url, true, {
+    browser.documentGlobal.switchToTabHavingURI(url, true, {
       ignoreFragment: "whenComparingAndReplace",
     });
   }

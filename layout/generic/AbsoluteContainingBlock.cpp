@@ -1648,8 +1648,9 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
   const WritingMode wm = aKidFrame->GetWritingMode();
 
   const bool isGrid = aFlags.contains(AbsPosReflowFlag::IsGridContainerCB);
-  auto fallbacks =
-      aKidFrame->StylePosition()->mPositionTryFallbacks._0.AsSpan();
+  const auto* kidStylePosition = aKidFrame->StylePosition();
+  auto fallbacks = kidStylePosition->mPositionTryFallbacks.value._0.AsSpan();
+  const auto fallbackScope = kidStylePosition->mPositionTryFallbacks.scope;
   Maybe<uint32_t> currentFallbackIndex;
   const StylePositionTryFallbacksItem* currentFallback = nullptr;
   RefPtr<ComputedStyle> currentFallbackStyle;
@@ -1665,7 +1666,7 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
   // exit the loop.
   bool finalizing = false;
 
-  auto tryOrder = aKidFrame->StylePosition()->mPositionTryOrder;
+  auto tryOrder = kidStylePosition->mPositionTryOrder;
   // If position-try-order is a logical value, resolve to physical using
   // the containing block's writing mode.
   switch (tryOrder) {
@@ -1701,7 +1702,8 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
     while (true) {
       nextFallback = &fallbacks[index];
       nextFallbackStyle = aPresContext->StyleSet()->ResolvePositionTry(
-          *aKidFrame->GetContent()->AsElement(), *baseStyle, *nextFallback);
+          fallbackScope, *aKidFrame->GetContent()->AsElement(), *baseStyle,
+          *nextFallback);
       if (nextFallbackStyle) {
         break;
       }
@@ -1740,15 +1742,13 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
 
   Maybe<nsRect> firstTryRect;
   if (auto* lastSuccessfulPosition =
-          aKidFrame->GetProperty(nsIFrame::LastSuccessfulPositionFallback())) {
-    if (SeekFallbackTo(Some(lastSuccessfulPosition->mIndex))) {
-      // Remember which fallback we're trying first; also record its style,
-      // in case we need to restore it later.
-      firstTryIndex = Some(lastSuccessfulPosition->mIndex);
-      firstTryStyle = currentFallbackStyle;
-    } else {
-      aKidFrame->RemoveProperty(nsIFrame::LastSuccessfulPositionFallback());
-    }
+          aKidFrame->GetProperty(nsIFrame::LastSuccessfulPositionFallback());
+      lastSuccessfulPosition && lastSuccessfulPosition->mRecordedIndex &&
+      SeekFallbackTo(lastSuccessfulPosition->mRecordedIndex)) {
+    // Remember which fallback we're trying first; also record its style,
+    // in case we need to restore it later.
+    firstTryIndex = lastSuccessfulPosition->mRecordedIndex;
+    firstTryStyle = currentFallbackStyle;
   }
 
   // Assume we *are* overflowing the CB and if we find a fallback that doesn't
@@ -2144,8 +2144,16 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
       // didn't have any to try in the first place.
       isOverflowingCB = !fits;
       fallback.CommitCurrentFallback();
-      if (currentFallbackIndex == Nothing()) {
-        aKidFrame->RemoveProperty(nsIFrame::LastSuccessfulPositionFallback());
+      if (currentFallbackIndex.isNothing()) {
+        if (auto* prop = aKidFrame->GetProperty(
+                nsIFrame::LastSuccessfulPositionFallback())) {
+          // When the fallback list changes, we clear the recorded fallback data
+          // as per spec, so we shouldn't get there in this case.
+          MOZ_ASSERT(!fallbacks.IsEmpty(), "how?");
+          prop->mLastIndex.reset();
+          prop->mLastStyle = nullptr;
+          prop->mTriedAllFallbacks = isOverflowingCB;
+        }
       }
       break;
     }
@@ -2234,10 +2242,13 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
   }();
 
   if (currentFallbackIndex) {
-    aKidFrame->SetOrUpdateDeletableProperty(
-        nsIFrame::LastSuccessfulPositionFallback(),
-        LastSuccessfulPositionData{currentFallbackStyle, *currentFallbackIndex,
-                                   isOverflowingCB});
+    auto* lastSuccessfulPosition = aKidFrame->GetOrCreateDeletableProperty(
+        nsIFrame::LastSuccessfulPositionFallback());
+    // NOTE: We don't touch the last recorded index, that's done at resize
+    // observer time.
+    lastSuccessfulPosition->mLastIndex = currentFallbackIndex;
+    lastSuccessfulPosition->mLastStyle = std::move(currentFallbackStyle);
+    lastSuccessfulPosition->mTriedAllFallbacks = isOverflowingCB;
   }
 
 #ifdef DEBUG
@@ -2259,7 +2270,7 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
   }
 
   if (aOverflowAreas) {
-    aOverflowAreas->UnionWithAbsoluteOverflowAreas(
-        aKidFrame->GetOverflowAreasRelativeToParent());
+    aDelegatingFrame->ConsiderChildOverflow(
+        *aOverflowAreas, aKidFrame, OverflowAreaUnionFlags::ChildIsAbsPos);
   }
 }

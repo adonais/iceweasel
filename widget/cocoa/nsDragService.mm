@@ -386,6 +386,18 @@ nsDragSession::IsDataFlavorSupported(const char* aDataFlavor, bool* _retval) {
     *_retval = true;
   }
 
+  // Also accept files for kURLMime, which we convert to file:// URLs.
+  if (!*_retval && dataFlavor.EqualsLiteral(kURLMime)) {
+    NSString* fileType =
+        [UTIHelper stringFromPboardType:(NSString*)kUTTypeFileURL];
+    NSString* availableFileType =
+        [globalDragPboard availableTypeFromArray:@[ (id)fileType ]];
+    if (availableFileType &&
+        nsCocoaUtils::IsValidPasteboardType(availableFileType, true)) {
+      *_retval = true;
+    }
+  }
+
   return NS_OK;
 
   NS_OBJC_END_TRY_BLOCK_RETURN(NS_ERROR_FAILURE);

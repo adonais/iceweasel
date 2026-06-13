@@ -5,8 +5,6 @@
 #ifndef GMPStorageChild_h_
 #define GMPStorageChild_h_
 
-#include <queue>
-
 #include "gmp-platform.h"
 #include "gmp-storage.h"
 #include "mozilla/Mutex.h"
@@ -55,7 +53,7 @@ class GMPStorageChild final : public PGMPStorageChild {
   friend class PGMPStorageChild;
 
  public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(GMPStorageChild)
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(GMPStorageChild, final)
 
   explicit GMPStorageChild(GMPChild* aPlugin);
 

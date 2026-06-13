@@ -578,7 +578,7 @@ function Spinner(props, context) {
       }
 
       this.elements.selected = itemsViewElements[currentItemIndex];
-      if (itemsView[currentItemIndex] && itemsView[currentItemIndex].enabled) {
+      if (itemsView[currentItemIndex]) {
         this.elements.selected.classList.add("selection");
       }
     },

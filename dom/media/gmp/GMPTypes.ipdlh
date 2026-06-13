@@ -6,6 +6,9 @@ include "GMPMessageUtils.h";
 
 using cdm::EncryptionScheme from "GMPSanitizedExports.h";
 using cdm::KeyStatus from "GMPSanitizedExports.h";
+using cdm::VideoCodec from "GMPSanitizedExports.h";
+using cdm::VideoCodecProfile from "GMPSanitizedExports.h";
+using cdm::VideoFormat from "GMPSanitizedExports.h";
 using GMPBufferType from "gmp-video-codec.h";
 
 namespace mozilla {
@@ -81,9 +84,9 @@ struct CDMInputBuffer {
 };
 
 struct CDMVideoDecoderConfig {
-  uint32_t mCodec;
-  uint32_t mProfile;
-  uint32_t mFormat;
+  VideoCodec mCodec;
+  VideoCodecProfile mProfile;
+  VideoFormat mFormat;
   int32_t mImageWidth;
   int32_t mImageHeight;
   uint8_t[] mExtraData;

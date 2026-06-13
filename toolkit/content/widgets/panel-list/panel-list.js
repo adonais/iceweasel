@@ -10,4 +10,9 @@
  * Once that's the case, we should replace all imports of the .js by the .mjs.
  */
 
-import("chrome://global/content/elements/panel-list.mjs");
+import("chrome://global/content/elements/panel-list.mjs").catch(e => {
+  // Realm-teardown aborts surface as bare undefined; ignore those.
+  if (e !== undefined) {
+    console.error("panel-list.mjs failed to load:", e);
+  }
+});

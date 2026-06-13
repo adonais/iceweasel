@@ -5,7 +5,6 @@
 package mozilla.components.feature.awesomebar.provider
 
 import androidx.annotation.VisibleForTesting
-import kotlinx.coroutines.delay
 import mozilla.components.concept.awesomebar.AwesomeBar
 import mozilla.components.feature.awesomebar.facts.SuggestionCardType
 import mozilla.components.feature.awesomebar.facts.emitOptimizedSuggestionCardClickedFact
@@ -17,7 +16,6 @@ import java.util.UUID
 import kotlin.math.abs
 
 internal const val DEFAULT_STOCK_SUGGESTION_LIMIT = 1
-internal const val ARTIFICIAL_DELAY = 350L
 
 /**
  * [AwesomeBar.SuggestionProvider] implementation that provides suggestions based on online stocks.
@@ -27,7 +25,7 @@ internal const val ARTIFICIAL_DELAY = 350L
  */
 class StocksOnlineSuggestionProvider(
     private val searchUseCase: SearchUseCases.SearchUseCase,
-    private val dataSource: AwesomeBar.StocksSuggestionDataSource,
+    private val dataSource: AwesomeBar.CombinedSuggestionsDataSource,
     private val suggestionsHeader: String? = null,
     @get:VisibleForTesting internal val maxNumberOfSuggestions: Int = DEFAULT_STOCK_SUGGESTION_LIMIT,
     private val locale: Locale = Locale.getDefault(),
@@ -48,11 +46,9 @@ class StocksOnlineSuggestionProvider(
     override suspend fun onInputChanged(text: String): List<AwesomeBar.StockSuggestion> {
         if (!text.contains("stock", ignoreCase = true)) return emptyList()
 
-        delay(ARTIFICIAL_DELAY)
+        val items = dataSource.fetchStocks(text)
 
-        val results = dataSource.fetch(text)
-
-        return results
+        return items
             .asSequence()
             .mapNotNull { it.toSuggestionOrNull(locale) }
             .take(maxNumberOfSuggestions)

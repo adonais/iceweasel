@@ -13,6 +13,7 @@
 #include "api/frame_transformer_interface.h"
 #include "js/RootingAPI.h"
 #include "jsapi/RTCEncodedFrameBase.h"
+#include "jsapi/RTCStatsReport.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/dom/RTCEncodedVideoFrameBinding.h"
@@ -22,20 +23,31 @@
 #include "mozilla/fallible.h"
 #include "nsContentUtils.h"
 #include "nsIGlobalObject.h"
-#include "nsISupports.h"
-#include "nsWrapperCache.h"
 
 namespace mozilla::dom {
 
 RTCEncodedVideoFrame::RTCEncodedVideoFrame(
     nsIGlobalObject* aGlobal,
     std::unique_ptr<webrtc::TransformableFrameInterface> aFrame,
-    uint64_t aCounter, RTCRtpScriptTransformer* aOwner)
+    uint64_t aCounter, RTCRtpScriptTransformer* aOwner,
+    const Maybe<RTCStatsTimestampMaker>& aTimestampMaker)
     : RTCEncodedVideoFrameData{RTCEncodedFrameState{std::move(aFrame), aCounter,
                                                     /*timestamp*/ 0}},
       RTCEncodedFrameBase(aGlobal, static_cast<RTCEncodedFrameState&>(*this),
                           aOwner) {
   InitMetadata();
+  const DebugOnly<bool> isReceived =
+      mFrame->GetDirection() ==
+      webrtc::TransformableFrameInterface::Direction::kReceiver;
+  MOZ_ASSERT_IF(isReceived, aTimestampMaker);
+  MOZ_ASSERT_IF(isReceived, mFrame->ReceiveTime());
+  if (aTimestampMaker) {
+    if (const auto receiveTime = mFrame->ReceiveTime()) {
+      mMetadata.mReceiveTime.Construct(
+          RTCStatsTimestamp::FromRealtime(*aTimestampMaker, *receiveTime)
+              .ToDomNoTimeOrigin());
+    }
+  }
 }
 
 RTCEncodedVideoFrame::RTCEncodedVideoFrame(nsIGlobalObject* aGlobal,
@@ -121,6 +133,7 @@ already_AddRefed<RTCEncodedVideoFrame> RTCEncodedVideoFrame::Constructor(
     set_if(dst.mPayloadType, src.mPayloadType);
     set_if(dst.mMimeType, src.mMimeType);
     set_if(dst.mRtpTimestamp, src.mRtpTimestamp);
+    set_if(dst.mReceiveTime, src.mReceiveTime);
     set_if(dst.mContributingSources, src.mContributingSources);
     set_if(dst.mTimestamp, src.mTimestamp);
   }

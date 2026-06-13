@@ -8,7 +8,6 @@
 #include "DNSLogging.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/glean/NetwerkDnsMetrics.h"
-#include "mozilla/ThreadSafety.h"
 #include "TRRService.h"
 #include "mozilla/ProfilerMarkers.h"
 
@@ -255,7 +254,6 @@ size_t AddrHostRecord::SizeOfIncludingThis(MallocSizeOf mallocSizeOf) const {
       n += mUnusableItems[i].SizeOfExcludingThisIfUnshared(mallocSizeOf);
     }
   }
-
   return n;
 }
 
@@ -510,10 +508,8 @@ bool TypeHostRecord::HasUsableResultInternal(
     return true;
   }
 
-  MOZ_PUSH_IGNORE_THREAD_SAFETY
-  // To avoid locking in a const method
+  MutexAutoLock lock(mResultsLock);
   return !mResults.is<Nothing>();
-  MOZ_POP_THREAD_SAFETY
 }
 
 bool TypeHostRecord::RefreshForNegativeResponse() const { return false; }

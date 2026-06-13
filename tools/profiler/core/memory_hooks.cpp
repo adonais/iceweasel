@@ -21,7 +21,6 @@
 #include "prenv.h"
 #include "replace_malloc.h"
 
-#include <ctype.h>
 #include <errno.h>
 #include <limits.h>
 #include <stdio.h>

@@ -43,8 +43,6 @@ release_partners: []
 release_product: null
 release_type: ''
 repository_type: git
-required_signoffs: []
-signoff_urls: {}
 target_tasks_method: firefox_pull_request_tasks
 tasks_for: github-pull-request
 test_manifest_loader: default

@@ -11,8 +11,11 @@
 #include "mozilla/dom/BlobImpl.h"
 #include "mozilla/dom/BlobURL.h"
 #include "mozilla/dom/BlobURLInputStream.h"
+#include "nsQueryObject.h"
 
 using namespace mozilla::dom;
+
+NS_IMPL_ISUPPORTS_INHERITED(BlobURLChannel, nsBaseChannel, BlobURLChannel)
 
 BlobURLChannel::BlobURLChannel(nsIURI* aURI, nsILoadInfo* aLoadInfo)
     : mContentStreamOpened(false) {
@@ -28,6 +31,45 @@ BlobURLChannel::BlobURLChannel(nsIURI* aURI, nsILoadInfo* aLoadInfo)
 }
 
 BlobURLChannel::~BlobURLChannel() = default;
+
+nsresult BlobURLChannel::SetRequestContentRangeHeader(
+    const nsACString& aContentRangeHeader) {
+  NS_ENSURE_FALSE(mContentStreamOpened, NS_ERROR_ALREADY_INITIALIZED);
+  NS_ENSURE_FALSE(mRequestContentRange, NS_ERROR_ALREADY_INITIALIZED);
+
+  // Just parse the range request. We can't construct the full
+  // mozilla::net::ContentRange here, as the response size is unknown.
+  mRequestContentRange =
+      nsContentUtils::ParseSingleRangeRequest(aContentRangeHeader, true);
+  if (!mRequestContentRange) {
+    // https://fetch.spec.whatwg.org/#ref-for-simple-range-header-value%E2%91%A1
+    // If rangeValue is failure, then return a network error.
+    return NS_ERROR_NET_PARTIAL_TRANSFER;
+  }
+  return NS_OK;
+}
+
+nsresult BlobURLChannel::SetResponseContentRange(
+    net::ContentRange* aContentRange) {
+  NS_ENSURE_ARG(aContentRange);
+  NS_ENSURE_FALSE(mResponseContentRange, NS_ERROR_ALREADY_INITIALIZED);
+  mResponseContentRange = aContentRange;
+  return NS_OK;
+}
+
+nsresult BlobURLChannel::GetBackingBlob(BlobImpl** aBlobImpl) {
+  NS_ENSURE_ARG(aBlobImpl);
+  NS_ENSURE_TRUE(mBlobImpl, NS_ERROR_NOT_AVAILABLE);
+  *aBlobImpl = do_AddRef(mBlobImpl).take();
+  return NS_OK;
+}
+
+nsresult BlobURLChannel::SetBackingBlob(BlobImpl* aBlobImpl) {
+  NS_ENSURE_ARG(aBlobImpl);
+  NS_ENSURE_FALSE(mBlobImpl, NS_ERROR_ALREADY_INITIALIZED);
+  mBlobImpl = aBlobImpl;
+  return NS_OK;
+}
 
 NS_IMETHODIMP
 BlobURLChannel::SetContentType(const nsACString& aContentType) {
@@ -54,8 +96,7 @@ nsresult BlobURLChannel::OpenContentStream(bool aAsync,
   nsresult rv = GetURI(getter_AddRefs(uri));
   NS_ENSURE_SUCCESS(rv, NS_ERROR_MALFORMED_URI);
 
-  RefPtr<BlobURL> blobURL;
-  rv = uri->QueryInterface(kHOSTOBJECTURICID, getter_AddRefs(blobURL));
+  RefPtr<BlobURL> blobURL = do_QueryObject(uri);
 
   if (NS_WARN_IF(NS_FAILED(rv)) || NS_WARN_IF(!blobURL)) {
     return NS_ERROR_MALFORMED_URI;

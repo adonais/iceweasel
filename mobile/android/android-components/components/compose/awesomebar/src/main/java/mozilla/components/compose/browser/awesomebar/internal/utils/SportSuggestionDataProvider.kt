@@ -22,8 +22,8 @@ internal class SportSuggestionDataProvider : PreviewParameterProvider<SportSugge
                 status = SportSuggestionStatus.Final,
                 statusType = SportSuggestionStatusType.PAST,
                 date = SportSuggestionDate.General("28 Oct 2025"),
-                awayTeam = SportSuggestionTeam(name = "Lakers", score = 107),
-                homeTeam = SportSuggestionTeam(name = "Clippers", score = 103),
+                awayTeam = SportSuggestionTeam(name = "Lakers", score = 107, icon = null),
+                homeTeam = SportSuggestionTeam(name = "Clippers", score = 103, icon = null),
             ),
         ),
         SportSuggestionPreviewModel(
@@ -33,8 +33,8 @@ internal class SportSuggestionDataProvider : PreviewParameterProvider<SportSugge
                 status = SportSuggestionStatus.InProgress,
                 statusType = SportSuggestionStatusType.LIVE,
                 date = SportSuggestionDate.Today,
-                awayTeam = SportSuggestionTeam(name = "Columbus Blue Jackets", score = 14),
-                homeTeam = SportSuggestionTeam(name = "Minnesota Vikings", score = 12),
+                awayTeam = SportSuggestionTeam(name = "Columbus Blue Jackets", score = 14, icon = null),
+                homeTeam = SportSuggestionTeam(name = "Minnesota Vikings", score = 12, icon = null),
             ),
         ),
         SportSuggestionPreviewModel(
@@ -44,8 +44,8 @@ internal class SportSuggestionDataProvider : PreviewParameterProvider<SportSugge
                 status = SportSuggestionStatus.Scheduled,
                 statusType = SportSuggestionStatusType.SCHEDULED,
                 date = SportSuggestionDate.Tomorrow("5PM"),
-                awayTeam = SportSuggestionTeam(name = "Yankees", score = null),
-                homeTeam = SportSuggestionTeam(name = "Diamondbacks", score = null),
+                awayTeam = SportSuggestionTeam(name = "Yankees", score = null, icon = null),
+                homeTeam = SportSuggestionTeam(name = "Diamondbacks", score = null, icon = null),
             ),
         ),
         SportSuggestionPreviewModel(
@@ -55,8 +55,8 @@ internal class SportSuggestionDataProvider : PreviewParameterProvider<SportSugge
                 status = SportSuggestionStatus.NotNecessary,
                 statusType = SportSuggestionStatusType.PAST,
                 date = SportSuggestionDate.General("28 Nov 24"),
-                awayTeam = SportSuggestionTeam(name = "Lightning", score = 1),
-                homeTeam = SportSuggestionTeam(name = "Canucks", score = 0),
+                awayTeam = SportSuggestionTeam(name = "Lightning", score = 1, icon = null),
+                homeTeam = SportSuggestionTeam(name = "Canucks", score = 0, icon = null),
             ),
         ),
     )

@@ -21,9 +21,15 @@ const EXPECTED = {
       isVisible: true,
       l10nId: "addressbar-header-firefox-suggest-2",
     },
+    firefoxSuggestAll: { isVisible: true },
+    firefoxSuggestSponsored: { isVisible: true },
+    dismissedSuggestionsDescription: { isVisible: true },
   },
   [QuickSuggest.SETTINGS_UI.NONE]: {
     locationBarGroupHeader: { isVisible: true, l10nId: "addressbar-header-1" },
+    firefoxSuggestAll: { isVisible: false },
+    firefoxSuggestSponsored: { isVisible: false },
+    dismissedSuggestionsDescription: { isVisible: false },
   },
   [QuickSuggest.SETTINGS_UI.OFFLINE_ONLY]: {
     [ONLINE_ENABLED_TOGGLE_ID]: { isVisible: false },
@@ -31,6 +37,9 @@ const EXPECTED = {
       isVisible: true,
       l10nId: "addressbar-header-firefox-suggest-2",
     },
+    firefoxSuggestAll: { isVisible: true },
+    firefoxSuggestSponsored: { isVisible: true },
+    dismissedSuggestionsDescription: { isVisible: true },
   },
 };
 

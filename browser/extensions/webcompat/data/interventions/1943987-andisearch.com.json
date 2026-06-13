@@ -6,12 +6,13 @@
       "matches": ["*://andisearch.com/*"]
     }
   },
+  "css": {
+    "fix-offscreen-elements": "@media screen and (max-width: 800px) { .rcw-conversation-container { height: 90%; } }"
+  },
   "interventions": [
     {
       "platforms": ["android"],
-      "content_scripts": {
-        "css": ["bug1943987-andisearch.com-fix-offscreen-elements.css"]
-      }
+      "css": ["fix-offscreen-elements"]
     }
   ]
 }

@@ -19,7 +19,8 @@ fun interface PageContentExtractor {
     /**
      * An exception that occurs in page content extraction.
      */
-    class Exception : Llm.Exception("Could not extract content", errorCode)
+    data class Exception(val originalCause: Throwable) :
+        Llm.Exception("Could not extract content: ${originalCause::javaClass.name}", errorCode)
 
     /**
      * Options defining how the content should be extracted.

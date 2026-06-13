@@ -239,6 +239,8 @@ void WindowGlobalChild::OnNewDocument(Document* aDocument) {
   txn.SetIsThirdPartyTrackingResourceWindow(
       nsContentUtils::IsThirdPartyTrackingResourceWindow(mWindowGlobal));
   txn.SetIsSecureContext(mWindowGlobal->IsSecureContext());
+  txn.SetIsFramebustingAllowed(
+      mWindowGlobal->GetBrowsingContext()->ComputeIsFramebustingAllowed());
   if (auto policy = aDocument->GetEmbedderPolicy()) {
     txn.SetEmbedderPolicy(*policy);
   }
@@ -502,11 +504,10 @@ mozilla::ipc::IPCResult WindowGlobalChild::RecvMakeFrameRemote(
 
 mozilla::ipc::IPCResult WindowGlobalChild::RecvDrawSnapshot(
     const Maybe<IntRect>& aRect, const float& aScale,
-    const nscolor& aBackgroundColor, const uint32_t& aFlags,
+    const nscolor& aBackgroundColor, const gfx::CrossProcessPaintFlags& aFlags,
     DrawSnapshotResolver&& aResolve) {
   aResolve(gfx::PaintFragment::Record(BrowsingContext(), aRect, aScale,
-                                      aBackgroundColor,
-                                      (gfx::CrossProcessPaintFlags)aFlags));
+                                      aBackgroundColor, aFlags));
   return IPC_OK();
 }
 

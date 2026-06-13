@@ -57,6 +57,7 @@
 #include "test/create_test_field_trials.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
+#include "test/run_loop.h"
 
 // This file contains unit tests that relate to the behavior of the
 // SdpOfferAnswer module.
@@ -153,7 +154,7 @@ class SdpOfferAnswerTest : public ::testing::Test {
   scoped_refptr<PeerConnectionFactoryInterface> pc_factory_;
 
  private:
-  AutoThread main_thread_;
+  test::RunLoop main_thread_;
 };
 
 TEST_F(SdpOfferAnswerTest, OnTrackReturnsProxiedObject) {
@@ -2011,30 +2012,30 @@ TEST_F(SdpOfferAnswerTest, SctpInitDisabled) {
   auto pc2 = CreatePeerConnection("WebRTC-Sctp-Snap/Disabled/");
   EXPECT_TRUE(pc1->pc()->CreateDataChannelOrError("dc", nullptr).ok());
   auto offer = pc1->CreateOfferAndSetAsLocal();
-  ASSERT_NE(offer, nullptr);
+  ASSERT_THAT(offer, NotNull());
 
   {
     auto& contents = offer->description()->contents();
-    ASSERT_EQ(contents.size(), 1u);
+    ASSERT_THAT(contents, SizeIs(1));
     auto* media_description = contents[0].media_description();
-    ASSERT_TRUE(media_description);
+    ASSERT_THAT(media_description, NotNull());
     auto* sctp_description = media_description->as_sctp();
-    ASSERT_TRUE(sctp_description);
+    ASSERT_THAT(sctp_description, NotNull());
     EXPECT_FALSE(sctp_description->sctp_init());
   }
 
   RTCError error;
   EXPECT_TRUE(pc2->SetRemoteDescription(std::move(offer)));
   auto answer = pc2->CreateAnswerAndSetAsLocal();
-  ASSERT_NE(answer, nullptr);
+  ASSERT_THAT(answer, NotNull());
 
   {
     auto& contents = answer->description()->contents();
-    ASSERT_EQ(contents.size(), 1u);
+    ASSERT_THAT(contents, SizeIs(1));
     auto* media_description = contents[0].media_description();
-    ASSERT_TRUE(media_description);
+    ASSERT_THAT(media_description, NotNull());
     auto* sctp_description = media_description->as_sctp();
-    ASSERT_TRUE(sctp_description);
+    ASSERT_THAT(sctp_description, NotNull());
     EXPECT_FALSE(sctp_description->sctp_init());
   }
 
@@ -2046,7 +2047,7 @@ TEST_F(SdpOfferAnswerTest, SctpInitWithTrial) {
   auto pc2 = CreatePeerConnection("WebRTC-Sctp-Snap/Enabled/");
   EXPECT_TRUE(pc1->pc()->CreateDataChannelOrError("dc", nullptr).ok());
   auto offer = pc1->CreateOfferAndSetAsLocal();
-  ASSERT_NE(offer, nullptr);
+  ASSERT_THAT(offer, NotNull());
 
   {
     auto& contents = offer->description()->contents();
@@ -2061,7 +2062,7 @@ TEST_F(SdpOfferAnswerTest, SctpInitWithTrial) {
   RTCError error;
   EXPECT_TRUE(pc2->SetRemoteDescription(std::move(offer)));
   auto answer = pc2->CreateAnswerAndSetAsLocal();
-  ASSERT_NE(answer, nullptr);
+  ASSERT_THAT(answer, NotNull());
 
   {
     auto& contents = answer->description()->contents();
@@ -2101,7 +2102,7 @@ TEST_F(SdpOfferAnswerTest, AnswerNoSctpInitInOffer) {
 
   EXPECT_TRUE(pc->SetRemoteDescription(std::move(desc)));
   auto answer = pc->CreateAnswerAndSetAsLocal();
-  ASSERT_NE(answer, nullptr);
+  ASSERT_THAT(answer, NotNull());
   EXPECT_TRUE(answer->ToString(&sdp));
 
   auto& contents = answer->description()->contents();
@@ -2133,6 +2134,31 @@ TEST_F(SdpOfferAnswerTest, AnswerNonBase64SctpInit) {
       "a=mid:0\r\n";
   auto desc = CreateSessionDescription(SdpType::kOffer, sdp);
   EXPECT_EQ(desc, nullptr);
+}
+
+TEST_F(SdpOfferAnswerTest,
+       AnswerFromNewPeerAfterProvisionalAnswerFailsSnapSctpInit) {
+  auto pc1 = CreatePeerConnection("WebRTC-Sctp-Snap/Enabled/");
+  auto pc2 = CreatePeerConnection("WebRTC-Sctp-Snap/Enabled/");
+  auto pc3 = CreatePeerConnection("WebRTC-Sctp-Snap/Enabled/");
+  EXPECT_TRUE(pc1->pc()->CreateDataChannelOrError("dc", nullptr).ok());
+  auto offer = pc1->CreateOfferAndSetAsLocal();
+  ASSERT_THAT(offer, NotNull());
+
+  EXPECT_TRUE(pc2->SetRemoteDescription(offer->Clone()));
+  EXPECT_TRUE(pc3->SetRemoteDescription(std::move(offer)));
+
+  auto answer2 = pc2->CreateAnswerAndSetAsLocal();
+  ASSERT_THAT(answer2, NotNull());
+  std::string sdp;
+  answer2->ToString(&sdp);
+  auto pranswer2 = CreateSessionDescription(SdpType::kPrAnswer, sdp);
+  EXPECT_TRUE(pc1->SetRemoteDescription(std::move(pranswer2)));
+
+  // Changing the sctp-init is not supported currently.
+  auto answer3 = pc3->CreateAnswerAndSetAsLocal();
+  ASSERT_THAT(answer3, NotNull());
+  EXPECT_FALSE(pc1->SetRemoteDescription(std::move(answer3)));
 }
 #endif  // WEBRTC_HAVE_SCTP
 

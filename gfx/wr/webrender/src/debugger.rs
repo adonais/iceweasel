@@ -7,7 +7,6 @@ use crate::profiler::{Profiler, RenderCommandLog};
 use crate::composite::CompositeState;
 use std::collections::HashMap;
 use std::convert::Infallible;
-use api::crossbeam_channel;
 use api::channel::{Sender, unbounded_channel};
 use api::{DebugFlags, TextureCacheCategory};
 use api::debugger::{DebuggerMessage, SetDebugFlagsMessage, ProfileCounterDescriptor};
@@ -291,7 +290,7 @@ async fn handle_request(
         }
         "/query" => {
             // Query internal state about WR.
-            let (tx, rx) = crossbeam_channel::unbounded();
+            let (tx, rx) = unbounded_channel();
             let kind = match args.get("type").map(|s| s.as_str()) {
                 Some("spatial-tree") => DebugQueryKind::SpatialTree {},
                 Some("composite-view") => DebugQueryKind::CompositorView {},

@@ -15,7 +15,7 @@ static already_AddRefed<imgFrame> CreateEmptyFrame(
     const gfx::IntSize& aSize = gfx::IntSize(1, 1),
     const gfx::IntRect& aFrameRect = gfx::IntRect(0, 0, 1, 1),
     bool aCanRecycle = true) {
-  RefPtr<imgFrame> frame = new imgFrame();
+  auto frame = MakeRefPtr<imgFrame>();
   AnimationParams animParams{aFrameRect, FrameTimeout::Forever(),
                              /* aFrameNum */ 1, BlendMethod::OVER,
                              DisposalMethod::NOT_SPECIFIED};

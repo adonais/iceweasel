@@ -131,16 +131,24 @@ class BackupTestBase(MarionetteTestCase):
         """Register the profile with toolkit profile service and restart."""
         profile_name = "marionette-backup-test-" + str(int(time.time() * 1000))
 
-        self.marionette.execute_script(
+        self.run_async(
             """
             let profD = Services.dirsvc.get("ProfD", Ci.nsIFile);
             let profileName = arguments[0];
             let profileSvc = Cc["@mozilla.org/toolkit/profile-service;1"]
                 .getService(Ci.nsIToolkitProfileService);
-            let myProfile = profileSvc.createProfile(profD, profileName);
+            profileSvc.createProfile(profD, profileName, "backup-legacy-source");
+            let { ProfileAge } = ChromeUtils.importESModule(
+                "resource://gre/modules/ProfileAge.sys.mjs"
+            );
+
+            // Manually patch times.json as createNewProfile will not do this for existing directories.
+            let profileAge = await ProfileAge(profD.path);
+            profileAge._times.source = "backup-legacy-source";
+            await profileAge.writeTimes();
             profileSvc.flush();
             """,
-            script_args=(profile_name,),
+            script_args=[profile_name],
         )
 
         self.marionette.restart(clean=False, in_app=True)
@@ -154,12 +162,20 @@ class BackupTestBase(MarionetteTestCase):
             const { SelectableProfileService } = ChromeUtils.importESModule(
                 "resource:///modules/profiles/SelectableProfileService.sys.mjs"
             );
-            let newProfile = await SelectableProfileService.createNewProfile(false);
+            const { ProfileAge } = ChromeUtils.importESModule(
+                "resource://gre/modules/ProfileAge.sys.mjs"
+            );
+            let newProfile = await SelectableProfileService.createNewProfile(false, null, "backup-selectable-source");
             let profileCount = (await SelectableProfileService.getAllProfiles()).length;
             let profile = SelectableProfileService.currentProfile;
             if (!profile) {
                 throw new Error("currentProfile is null after createNewProfile");
             }
+
+            // Manually patch times.json as createNewProfile will not do this for existing directories.
+            let profileAge = await ProfileAge(PathUtils.profileDir);
+            profileAge._times.source = "backup-selectable-source";
+            await profileAge.writeTimes();
             return {
                 path: profile.path,
                 name: profile.name,
@@ -249,6 +265,25 @@ class BackupTestBase(MarionetteTestCase):
             );
             await BackupService.get().postRecoveryComplete;
             """
+        )
+
+    def assert_profile_source(self, expected_source, profile_path=None):
+        """Assert ProfileAge metadata for the current or specified profile."""
+        source = self.run_async(
+            """
+            const { ProfileAge } = ChromeUtils.importESModule(
+                "resource://gre/modules/ProfileAge.sys.mjs"
+            );
+            let profileAge = await ProfileAge(arguments[0]);
+            return profileAge.source;
+            """,
+            script_args=[profile_path],
+        )
+
+        self.assertEqual(
+            source,
+            expected_source,
+            f"ProfileAge source should be {expected_source}",
         )
 
     def get_all_profiles(self):

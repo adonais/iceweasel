@@ -41,10 +41,11 @@ class ChromeProcessController : public mozilla::layers::GeckoContentController {
   typedef mozilla::layers::ScrollableLayerGuid ScrollableLayerGuid;
 
  public:
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(ChromeProcessController, final);
+
   explicit ChromeProcessController(nsIWidget* aWidget,
                                    APZEventState* aAPZEventState,
                                    IAPZCTreeManager* aAPZCTreeManager);
-  virtual ~ChromeProcessController();
   void Destroy() override;
 
   // GeckoContentController interface
@@ -81,6 +82,9 @@ class ChromeProcessController : public mozilla::layers::GeckoContentController {
                                   float aScale) override;
 
   PresShell* GetTopLevelPresShell() const override { return GetPresShell(); }
+
+ protected:
+  virtual ~ChromeProcessController();
 
  private:
   nsCOMPtr<nsIWidget> mWidget;

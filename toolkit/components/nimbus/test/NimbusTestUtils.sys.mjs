@@ -436,7 +436,14 @@ export const NimbusTestUtils = {
      * @param {object?} props
      *        Additional properties to splat into to the
      */
-    recipe(slug, props = {}) {
+    recipe(
+      slug,
+      { isFirefoxLabsOptIn = false, isRollout = false, ...props } = {}
+    ) {
+      if (isFirefoxLabsOptIn && !isRollout) {
+        throw new Error("isFirefoxLabsOptIn requires isRollout");
+      }
+
       return {
         id: slug,
         schemaVersion: "1.7.0",
@@ -451,7 +458,7 @@ export const NimbusTestUtils = {
         proposedEnrollment: 7,
         referenceBranch: "control",
         application: "firefox-desktop",
-        branches: props?.isRollout
+        branches: isRollout
           ? [NimbusTestUtils.factories.recipe.branches[0]]
           : NimbusTestUtils.factories.recipe.branches,
         bucketConfig: NimbusTestUtils.factories.recipe.bucketConfig,
@@ -461,12 +468,14 @@ export const NimbusTestUtils = {
           "testFeature",
         ],
         targeting: "true",
-        isRollout: false,
-        isFirefoxLabsOptIn: false,
-        firefoxLabsTitle: null,
-        firefoxLabsDescription: null,
+        isRollout,
+        isFirefoxLabsOptIn,
+        firefoxLabsTitle: isFirefoxLabsOptIn ? "placeholder-title" : null,
+        firefoxLabsDescription: isFirefoxLabsOptIn
+          ? "placeholder-description"
+          : null,
         firefoxLabsDescriptionLinks: null,
-        firefoxLabsGroup: null,
+        firefoxLabsGroup: isFirefoxLabsOptIn ? "placeholder-group" : null,
         requiresRestart: false,
         localizations: null,
         ...props,

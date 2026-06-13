@@ -9,9 +9,14 @@
   "interventions": [
     {
       "platforms": ["android"],
-      "content_scripts": {
+      "modify_meta_viewport": {
         "all_frames": true,
-        "js": ["1997575-perplexity.ai-covered-fixed-element.js"]
+        "modify": {
+          "interactive-widget": {
+            "value": "resizes-content",
+            "only_if_not_equals": "resizes-content"
+          }
+        }
       }
     }
   ]

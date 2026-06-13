@@ -287,8 +287,11 @@ void profiler_record_wakeup_count(const nsACString& aProcessType);
 void profiler_set_process_name(const nsACString& aProcessName,
                                const nsACString* aETLDplus1 = nullptr);
 
-// Record an exit profile from a child process.
-void profiler_received_exit_profile(const nsACString& aExitProfile);
+// Record an exit profile from a child process. The struct carries the profile
+// JSON along with optional additional information (shared libraries, JS
+// sources) that was gathered alongside it in the child process.
+void profiler_received_exit_profile(
+    mozilla::ProfileAndAdditionalInformation&& aExitProfileAndAdditionalInfo);
 
 // Get the profile encoded as a JSON string. A no-op (returning nullptr) if the
 // profiler is inactive.

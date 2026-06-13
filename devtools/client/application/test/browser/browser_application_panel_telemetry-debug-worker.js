@@ -14,7 +14,7 @@ add_task(async function () {
 
   const doc = panel.panelWin.document;
 
-  selectPage(panel, "service-workers");
+  await selectPage(panel, "service-workers");
   setupTelemetryTest();
 
   info("Wait until the service worker appears in the application panel");

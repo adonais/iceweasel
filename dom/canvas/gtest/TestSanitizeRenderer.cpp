@@ -229,6 +229,22 @@ TEST(SanitizeRenderer, TestAdreno512)
   EXPECT_EQ(sanitized, expectation);
 }
 
+TEST(SanitizeRenderer, TestAdrenoA33)
+{
+  const std::string renderer("Adreno(TM) A33");
+  const std::string expectation("Adreno (TM) A11, or similar");
+  const auto sanitized = mozilla::webgl::SanitizeRenderer(renderer);
+  EXPECT_EQ(sanitized, expectation);
+}
+
+TEST(SanitizeRenderer, TestAdrenoX1_85)
+{
+  const std::string renderer("Adreno(TM) X1-85 GPU");
+  const std::string expectation("Adreno (TM) X1-45, or similar");
+  const auto sanitized = mozilla::webgl::SanitizeRenderer(renderer);
+  EXPECT_EQ(sanitized, expectation);
+}
+
 TEST(SanitizeRenderer, TestIntelArcWindowsAngle)
 {
   const std::string renderer(

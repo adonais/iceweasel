@@ -42,13 +42,13 @@ struct DeclarationTraits<InlineStyleDeclarations> {
 
     auto valueList = StylePropertyTypedValueList::None();
 
-    RefPtr<DeclarationBlock> block =
-        aStyledElement->GetInlineStyleDeclaration();
+    RefPtr block = aStyledElement->GetInlineStyleDeclaration();
     if (!block) {
       return valueList;
     }
 
-    if (!block->GetPropertyTypedValueList(aPropertyId, valueList)) {
+    if (!Servo_DeclarationBlock_GetPropertyTypedValueList(block, &aPropertyId,
+                                                          &valueList)) {
       aRv.ThrowTypeError("Invalid property");
       return valueList;
     }
@@ -107,9 +107,9 @@ struct DeclarationTraits<StyleRuleDeclarations> {
 
     auto valueList = StylePropertyTypedValueList::None();
 
-    DeclarationBlock& block = aRule->GetDeclarationBlock();
-
-    if (!block.GetPropertyTypedValueList(aPropertyId, valueList)) {
+    StyleLockedDeclarationBlock& block = aRule->GetDeclarationBlock();
+    if (!Servo_DeclarationBlock_GetPropertyTypedValueList(&block, &aPropertyId,
+                                                          &valueList)) {
       aRv.ThrowTypeError("Invalid property");
       return valueList;
     }

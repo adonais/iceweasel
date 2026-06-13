@@ -4,21 +4,24 @@
 
 package org.mozilla.fenix.tabstray.redux.reducer
 
-import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.mozilla.fenix.tabstray.data.TabGroupTheme
 import org.mozilla.fenix.tabstray.data.TabsTrayItem
 import org.mozilla.fenix.tabstray.data.createTab
 import org.mozilla.fenix.tabstray.data.createTabGroup
+import org.mozilla.fenix.tabstray.navigation.TabManagerNavDestination
 import org.mozilla.fenix.tabstray.navigation.TabManagerNavDestination.AddToTabGroup
+import org.mozilla.fenix.tabstray.navigation.TabManagerNavDestination.CloseTabAndDeleteGroupConfirmationDialog
 import org.mozilla.fenix.tabstray.navigation.TabManagerNavDestination.DeleteTabGroupConfirmationDialog
 import org.mozilla.fenix.tabstray.navigation.TabManagerNavDestination.EditTabGroup
 import org.mozilla.fenix.tabstray.navigation.TabManagerNavDestination.ExpandedTabGroup
 import org.mozilla.fenix.tabstray.redux.action.TabGroupAction
+import org.mozilla.fenix.tabstray.redux.state.Page
 import org.mozilla.fenix.tabstray.redux.state.TabGroupFormState
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState.Mode
 import org.mozilla.fenix.tabstray.redux.state.initializeTabGroupForm
+import kotlin.test.assertEquals
 
 class TabGroupReducerTest {
     @Test
@@ -83,16 +86,17 @@ class TabGroupReducerTest {
     }
 
     @Test
-    fun `WHEN FormDismissed THEN form state is set to null and the tab group flow is closed`() {
+    fun `WHEN SaveClicked THEN drag and drop mode is exited and the tab group flow is closed`() {
+        val formState = TabGroupFormState(
+            tabGroupId = null,
+            name = "Tab Group 1",
+            edited = true,
+        )
         val initialState = TabsTrayState(
+            mode = Mode.DragAndDrop(sourceId = "12345", destinationId = "54321"),
             tabGroupState = TabsTrayState.TabGroupState(
-                formState = TabGroupFormState(
-                    tabGroupId = "1",
-                    name = "Tab Group 1",
-                    edited = true,
-                ),
+                formState = formState,
             ),
-            mode = Mode.Select(selectedTabs = setOf()),
             backStack = listOf(
                 TabsTrayState().backStack.first(),
                 AddToTabGroup,
@@ -100,44 +104,11 @@ class TabGroupReducerTest {
             ),
         )
 
-        val resultState = TabGroupActionReducer.reduce(initialState, TabGroupAction.FormDismissed)
+        val resultState = TabGroupActionReducer.reduce(initialState, TabGroupAction.SaveClicked)
 
         val expectedState = initialState.copy(
-            tabGroupState = initialState.tabGroupState.copy(formState = null),
+            mode = Mode.Normal,
             backStack = TabsTrayState().backStack,
-        )
-
-        assertEquals(expectedState, resultState)
-    }
-
-    @Test
-    fun `WHEN FormDismissed from editing an expanded tab group THEN return to the expanded tab group`() {
-        val group = createTabGroup()
-        val initialState = TabsTrayState(
-            tabGroupState = TabsTrayState.TabGroupState(
-                formState = TabGroupFormState(
-                    tabGroupId = group.id,
-                    name = group.title,
-                    edited = true,
-                ),
-            ),
-            backStack = listOf(
-                TabsTrayState().backStack.first(),
-                ExpandedTabGroup(group = group),
-                EditTabGroup,
-            ),
-        )
-
-        val resultState = TabGroupActionReducer.reduce(initialState, TabGroupAction.FormDismissed)
-
-        val expectedState = initialState.copy(
-            tabGroupState = initialState.tabGroupState.copy(
-                formState = null,
-            ),
-            backStack = listOf(
-                TabsTrayState().backStack.first(),
-                ExpandedTabGroup(group = group),
-            ),
         )
 
         assertEquals(expectedState, resultState)
@@ -167,6 +138,28 @@ class TabGroupReducerTest {
         )
 
         assertEquals(expectedBackStack, resultState.backStack)
+    }
+
+    @Test
+    fun `WHEN open tab group is clicked from tab groups page THEN switch to normal tabs, reopen group, and show expanded sheet`() {
+        val tabGroup = createTabGroup(closed = true)
+        val initialState = TabsTrayState(
+            selectedPage = Page.TabGroups,
+            backStack = TabsTrayState().backStack,
+        )
+
+        val resultState = TabGroupActionReducer.reduce(
+            state = initialState,
+            action = TabGroupAction.OpenTabGroupClicked(group = tabGroup),
+        )
+
+        val expectedState = initialState.copy(
+            selectedPage = Page.NormalTabs,
+            mode = Mode.Normal,
+            backStack = initialState.backStack + ExpandedTabGroup(group = tabGroup.copy(closed = false)),
+        )
+
+        assertEquals(expectedState, resultState)
     }
 
     @Test
@@ -303,13 +296,87 @@ class TabGroupReducerTest {
     }
 
     @Test
+    fun `WHEN creating a new tab group THEN default theme is next from most recently used theme`() {
+        val initialState = TabsTrayState(
+            tabGroupState = TabsTrayState.TabGroupState(
+                groups = listOf(
+                    TabsTrayItem.TabGroup(
+                        title = "Older",
+                        theme = TabGroupTheme.Yellow,
+                        tabs = mutableListOf(),
+                        lastModified = 1L,
+                    ),
+                    TabsTrayItem.TabGroup(
+                        title = "Newer",
+                        theme = TabGroupTheme.Red,
+                        tabs = mutableListOf(),
+                        lastModified = 2L,
+                    ),
+                ),
+            ),
+        )
+        val resultState = TabGroupActionReducer.reduce(
+            state = initialState,
+            action = TabGroupAction.AddToNewTabGroup,
+        )
+        val expectedState = initialState.copy(
+            tabGroupState = initialState.tabGroupState.copy(
+                formState = TabGroupFormState(
+                    tabGroupId = null,
+                    name = "",
+                    nextTabGroupNumber = 3,
+                    theme = TabGroupTheme.Pink,
+                    edited = false,
+                ),
+            ),
+            backStack = initialState.backStack + EditTabGroup,
+        )
+
+        assertEquals(expectedState, resultState)
+    }
+
+    @Test
+    fun `WHEN most recently used theme is last in sequence THEN default theme wraps to first theme`() {
+        val initialState = TabsTrayState(
+            tabGroupState = TabsTrayState.TabGroupState(
+                groups = listOf(
+                    TabsTrayItem.TabGroup(
+                        title = "Latest",
+                        theme = TabGroupTheme.Grey,
+                        tabs = mutableListOf(),
+                        lastModified = 5L,
+                    ),
+                ),
+            ),
+        )
+        val resultState = TabGroupActionReducer.reduce(
+            state = initialState,
+            action = TabGroupAction.AddToNewTabGroup,
+        )
+        val expectedState = initialState.copy(
+            tabGroupState = initialState.tabGroupState.copy(
+                formState = TabGroupFormState(
+                    tabGroupId = null,
+                    name = "",
+                    nextTabGroupNumber = 2,
+                    theme = TabGroupTheme.Yellow,
+                    edited = false,
+                ),
+            ),
+            backStack = initialState.backStack + EditTabGroup,
+        )
+
+        assertEquals(expectedState, resultState)
+    }
+
+    @Test
     fun `WHEN tabs are added to a group via multiselection THEN multiselection is exited and navigate back to the root`() {
         val resultState = TabGroupActionReducer.reduce(
             state = TabsTrayState(
                 mode = Mode.Select(),
                 backStack = TabsTrayState().backStack + AddToTabGroup,
             ),
-            action = TabGroupAction.TabsAddedToGroup(groupId = "12345"),
+            action = TabGroupAction.SelectedTabsAddedToGroup(groupId = "12345"),
         )
         val expectedState = TabsTrayState(
             mode = Mode.Normal,
@@ -460,5 +527,136 @@ class TabGroupReducerTest {
         )
 
         assertEquals(expectedState, resultState)
+    }
+
+    @Test
+    fun `WHEN the user closes a tab group THEN navigate back to the root`() {
+        val tabs = List(size = 20) { createTab(url = "") }
+        val tabGroup = createTabGroup(
+            tabs = MutableList(size = 20) { createTab(url = "") },
+        )
+        val initialState = TabsTrayState(
+            normalTabsState = TabsTrayState.NormalTabsState(items = tabs + tabGroup),
+            tabGroupState = TabsTrayState.TabGroupState(groups = listOf(tabGroup)),
+            backStack = listOf(TabManagerNavDestination.Root, ExpandedTabGroup(group = tabGroup)),
+        )
+        val resultState = TabsTrayReducer.reduce(
+            state = initialState,
+            action = TabGroupAction.CloseTabGroupClicked(group = tabGroup),
+        )
+        val expectedState = initialState.copy(
+            backStack = listOf(TabManagerNavDestination.Root),
+        )
+
+        assertEquals(expectedState, resultState)
+    }
+
+    @Test
+    fun `WHEN TabClosed is dispatched AND group has 1 tab THEN navigate to the confirmation dialog`() {
+        val tab = createTab(url = "")
+        val group = createTabGroup(tabs = mutableListOf(tab))
+        val initialState = TabsTrayState(
+            backStack = listOf(
+                TabsTrayState().backStack.first(),
+                ExpandedTabGroup(group = group),
+            ),
+        )
+
+        val resultState = TabGroupActionReducer.reduce(
+            state = initialState,
+            action = TabGroupAction.TabClosed(tab = tab, group = group),
+        )
+
+        val expectedState = initialState.copy(
+            backStack = initialState.backStack + CloseTabAndDeleteGroupConfirmationDialog(group = group),
+        )
+
+        assertEquals(expectedState, resultState)
+    }
+
+    @Test
+    fun `WHEN TabClosed is dispatched AND group has multiple tabs THEN state is unchanged`() {
+        val tab1 = createTab(url = "")
+        val tab2 = createTab(url = "")
+        val group = createTabGroup(tabs = mutableListOf(tab1, tab2))
+        val initialState = TabsTrayState(
+            backStack = listOf(
+                TabsTrayState().backStack.first(),
+                ExpandedTabGroup(group = group),
+            ),
+        )
+
+        val resultState = TabGroupActionReducer.reduce(
+            state = initialState,
+            action = TabGroupAction.TabClosed(tab = tab1, group = group),
+        )
+
+        assertEquals(initialState, resultState)
+    }
+
+    @Test
+    fun `WHEN close tab and delete group is confirmed THEN pop the confirmation dialog and expanded tab group`() {
+        val group = createTabGroup()
+        val initialState = TabsTrayState(
+            backStack = listOf(
+                TabsTrayState().backStack.first(),
+                ExpandedTabGroup(group = group),
+                CloseTabAndDeleteGroupConfirmationDialog(group = group),
+            ),
+        )
+
+        val resultState = TabGroupActionReducer.reduce(
+            state = initialState,
+            action = TabGroupAction.CloseTabAndDeleteGroupConfirmed(group = group),
+        )
+
+        assertEquals(TabsTrayState().backStack, resultState.backStack)
+    }
+
+    @Test
+    fun `WHEN the user completes a drag and drop action THEN the normal tabs page focus indicator is re-enabled`() {
+        val initialState = TabsTrayState(
+            normalTabsState = TabsTrayState.NormalTabsState(
+                itemFocusIndicatorEnabled = false,
+            ),
+        )
+        val expectedState = initialState.copy(
+            normalTabsState = initialState.normalTabsState.copy(
+                itemFocusIndicatorEnabled = true,
+            ),
+        )
+        val resultState = TabGroupActionReducer.reduce(
+            state = TabsTrayState(),
+            action = TabGroupAction.DragAndDropCompleted(sourceId = "54321", destinationId = "12345"),
+        )
+        assertEquals(expected = expectedState, actual = resultState)
+    }
+
+    @Test
+    fun `WHEN the user performs a drag and drop with two tabs THEN the state is updated with the drag and drop information`() {
+        val draggedId = "54321"
+        val destinationId = "12345"
+        val initialState = TabsTrayState()
+        val expectedState = initialState.copy(
+            tabGroupState = initialState.tabGroupState.copy(
+                formState = TabGroupFormState(
+                    tabGroupId = null,
+                    name = "",
+                    nextTabGroupNumber = 1,
+                    theme = TabGroupTheme.Yellow,
+                    edited = false,
+                ),
+            ),
+            backStack = listOf(TabManagerNavDestination.Root, EditTabGroup),
+            mode = Mode.DragAndDrop(
+                sourceId = draggedId,
+                destinationId = destinationId,
+            ),
+        )
+        val resultState = TabGroupActionReducer.reduce(
+            state = initialState,
+            action = TabGroupAction.DragAndDropTwoTabs(sourceTabId = draggedId, destinationTabId = destinationId),
+        )
+        assertEquals(expected = expectedState, actual = resultState)
     }
 }

@@ -10,7 +10,6 @@ const SHORTCUTS_ROWS_PREF = "browser.newtabpage.activity-stream.topSitesRows";
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [
-      ["browser.settings-redesign.enabled", true],
       // Opening preferences initializes FxA code which sets this pref.
       // Track it to avoid test warnings.
       ["identity.fxaccounts.account.device.name", ""],
@@ -75,6 +74,11 @@ add_task(async function test_shortcuts_rows() {
   ok(select, "Shortcuts rows select exists");
   let nativeSelect = select.inputEl;
   ok(nativeSelect, "Shortcuts rows native select exists");
+
+  ok(
+    nativeSelect.getAttribute("aria-label"),
+    "Shortcuts rows select has an aria-label"
+  );
 
   let optionValues = [...nativeSelect.options].map(option =>
     Number(option.value)

@@ -273,7 +273,8 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
   // depending whether the proxy is used.
   uint32_t MaxPersistConnections(ConnectionEntry* ent) const;
 
-  bool AtActiveConnectionLimit(ConnectionEntry*, uint32_t caps);
+  bool AtActiveConnectionLimit(ConnectionEntry*, uint32_t caps,
+                               bool forInnerConn = false);
   [[nodiscard]] nsresult TryDispatchTransaction(
       ConnectionEntry* ent, bool onlyReusedConnection,
       PendingTransactionInfo* pendingTransInfo);

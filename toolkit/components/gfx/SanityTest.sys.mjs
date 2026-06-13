@@ -77,15 +77,7 @@ function takeWindowSnapshot(win, ctx) {
     ctx.DRAWWINDOW_DRAW_CARET |
     ctx.DRAWWINDOW_DRAW_VIEW |
     ctx.DRAWWINDOW_USE_WIDGET_LAYERS;
-  ctx.drawWindow(
-    win.ownerGlobal,
-    0,
-    0,
-    PAGE_WIDTH,
-    PAGE_HEIGHT,
-    "rgb(255,255,255)",
-    flags
-  );
+  ctx.drawWindow(win, 0, 0, PAGE_WIDTH, PAGE_HEIGHT, "rgb(255,255,255)", flags);
 }
 
 // Verify that all the 4 coloured squares of the video
@@ -276,7 +268,7 @@ var listener = {
       return;
     }
 
-    this.win.ownerGlobal.close();
+    this.win.close();
     this.win = null;
     this.utils = null;
     this.canvas = null;

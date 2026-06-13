@@ -7,14 +7,16 @@ import { html, nothing } from "chrome://global/content/vendor/lit.all.mjs";
 
 /**
  * Numeric error codes received from the back-end via error.error.
- * These are the only reliable identifiers as the HTTP status codes
- * do not propagate to the front-end.
+ * Codes 1-6 are MLPA spec codes; 7 is set locally for Fastly-blocked 406s.
  */
 const ERROR_CODES = {
   BUDGET_EXCEEDED: 1,
   RATE_LIMIT_EXCEEDED: 2,
   CHAT_MAX_LENGTH: 3,
-  ACCOUNT_ERROR: 4,
+  MAX_USERS_REACHED: 4,
+  UPSTREAM_RATE_LIMIT: 5,
+  FASTLY_WAF_RATE_LIMIT: 6,
+  INVALID_PAGE_CONTENT: 7,
 };
 
 /**
@@ -81,6 +83,17 @@ export class ChatAssistantError extends MozLitElement {
       return;
     }
 
+    if (this.error.clientReason === "fxaTokenUnavailable") {
+      this.errorText = {
+        header: "smartwindow-assistant-error-account-header",
+      };
+      this.actionButton = {
+        label: "smartwindow-signin-btn",
+        action: this.openAccountSignIn.bind(this),
+      };
+      return;
+    }
+
     switch (this.error.error) {
       case ERROR_CODES.CHAT_MAX_LENGTH:
         this.errorText = {
@@ -93,6 +106,8 @@ export class ChatAssistantError extends MozLitElement {
         break;
 
       case ERROR_CODES.RATE_LIMIT_EXCEEDED:
+      case ERROR_CODES.UPSTREAM_RATE_LIMIT:
+      case ERROR_CODES.FASTLY_WAF_RATE_LIMIT:
         this.errorText = {
           header: "smartwindow-assistant-error-many-requests-header",
         };
@@ -107,18 +122,28 @@ export class ChatAssistantError extends MozLitElement {
         this.actionButton = null;
         break;
 
-      case ERROR_CODES.ACCOUNT_ERROR:
+      case ERROR_CODES.MAX_USERS_REACHED:
         this.errorText = {
-          header: "smartwindow-assistant-error-account-header",
+          header: "smartwindow-assistant-error-capacity-header",
         };
-        this.actionButton = {
-          label: "smartwindow-signin-btn",
-          action: this.openAccountSignIn.bind(this),
+        this.actionButton = null;
+        break;
+
+      case ERROR_CODES.INVALID_PAGE_CONTENT:
+        this.errorText = {
+          header: "smartwindow-assistant-error-page-content-header",
         };
+        this.actionButton = null;
         break;
 
       default:
         this.setGenericError();
+        if (this.error.httpStatus) {
+          this.errorText = {
+            header: "smartwindow-assistant-error-http-header",
+            args: { status: this.error.httpStatus },
+          };
+        }
         break;
     }
   }
@@ -133,6 +158,9 @@ export class ChatAssistantError extends MozLitElement {
         <h3
           class="chat-assistant-error__header"
           data-l10n-id=${this.errorText?.header}
+          data-l10n-args=${this.errorText?.args
+            ? JSON.stringify(this.errorText.args)
+            : nothing}
         ></h3>
         ${this.errorText?.body
           ? html`<p

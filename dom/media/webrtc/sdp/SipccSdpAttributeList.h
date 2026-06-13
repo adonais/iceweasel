@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef SIPCCSDPATTRIBUTELIST_H_
-#define SIPCCSDPATTRIBUTELIST_H_
+#ifndef DOM_MEDIA_WEBRTC_SDP_SIPCCSDPATTRIBUTELIST_H_
+#define DOM_MEDIA_WEBRTC_SDP_SIPCCSDPATTRIBUTELIST_H_
 
 #include "sdp/SdpAttributeList.h"
 #include "sdp/SdpParser.h"
@@ -26,12 +26,12 @@ class SipccSdpAttributeList : public SdpAttributeList {
   using SdpAttributeList::GetAttribute;
   using SdpAttributeList::HasAttribute;
 
-  virtual bool HasAttribute(AttributeType type,
-                            bool sessionFallback) const override;
-  virtual const SdpAttribute* GetAttribute(AttributeType type,
-                                           bool sessionFallback) const override;
+  virtual bool HasAttribute(const AttributeType type,
+                            const bool sessionFallback) const override;
+  virtual const SdpAttribute* GetAttribute(
+      const AttributeType type, const bool sessionFallback) const override;
   virtual void SetAttribute(SdpAttribute* attr) override;
-  virtual void RemoveAttribute(AttributeType type) override;
+  virtual void RemoveAttribute(const AttributeType type) override;
   virtual void Clear() override;
   virtual uint32_t Count() const override;
 
@@ -79,6 +79,9 @@ class SipccSdpAttributeList : public SdpAttributeList {
 
   virtual ~SipccSdpAttributeList();
 
+  SipccSdpAttributeList(const SipccSdpAttributeList& orig) = delete;
+  SipccSdpAttributeList& operator=(const SipccSdpAttributeList& rhs) = delete;
+
  private:
   static const std::string kEmptyString;
   static const size_t kNumAttributeTypes = SdpAttribute::kLastAttribute + 1;
@@ -93,49 +96,55 @@ class SipccSdpAttributeList : public SdpAttributeList {
 
   using InternalResults = SdpParser::InternalResults;
 
-  bool Load(sdp_t* sdp, uint16_t level, InternalResults& results);
-  void LoadSimpleStrings(sdp_t* sdp, uint16_t level, InternalResults& results);
-  void LoadSimpleString(sdp_t* sdp, uint16_t level, sdp_attr_e attr,
-                        AttributeType targetType, InternalResults& results);
-  void LoadSimpleNumbers(sdp_t* sdp, uint16_t level, InternalResults& results);
-  void LoadSimpleNumber(sdp_t* sdp, uint16_t level, sdp_attr_e attr,
-                        AttributeType targetType, InternalResults& results);
-  void LoadFlags(sdp_t* sdp, uint16_t level);
-  void LoadDirection(sdp_t* sdp, uint16_t level, InternalResults& results);
-  bool LoadRtpmap(sdp_t* sdp, uint16_t level, InternalResults& results);
-  bool LoadSctpmap(sdp_t* sdp, uint16_t level, InternalResults& results);
-  void LoadIceAttributes(sdp_t* sdp, uint16_t level);
-  bool LoadFingerprint(sdp_t* sdp, uint16_t level, InternalResults& results);
-  void LoadCandidate(sdp_t* sdp, uint16_t level);
-  void LoadSetup(sdp_t* sdp, uint16_t level);
-  void LoadSsrc(sdp_t* sdp, uint16_t level);
-  void LoadSsrcGroup(sdp_t* sdp, uint16_t level);
-  bool LoadImageattr(sdp_t* sdp, uint16_t level, InternalResults& results);
-  bool LoadSimulcast(sdp_t* sdp, uint16_t level, InternalResults& results);
-  bool LoadGroups(sdp_t* sdp, uint16_t level, InternalResults& results);
-  bool LoadMsidSemantics(sdp_t* sdp, uint16_t level, InternalResults& results);
-  void LoadIdentity(sdp_t* sdp, uint16_t level);
-  void LoadDtlsMessage(sdp_t* sdp, uint16_t level);
-  void LoadFmtp(sdp_t* sdp, uint16_t level);
-  void LoadMsids(sdp_t* sdp, uint16_t level, InternalResults& results);
-  bool LoadRid(sdp_t* sdp, uint16_t level, InternalResults& results);
-  void LoadExtmap(sdp_t* sdp, uint16_t level, InternalResults& results);
-  void LoadRtcpFb(sdp_t* sdp, uint16_t level, InternalResults& results);
-  void LoadRtcp(sdp_t* sdp, uint16_t level, InternalResults& results);
-  static SdpRtpmapAttributeList::CodecType GetCodecType(rtp_ptype type);
+  bool Load(sdp_t* sdp, const uint16_t level, InternalResults& results);
+  void LoadSimpleStrings(sdp_t* sdp, const uint16_t level,
+                         InternalResults& results);
+  void LoadSimpleString(sdp_t* sdp, const uint16_t level, const sdp_attr_e attr,
+                        const AttributeType targetType,
+                        InternalResults& results);
+  void LoadSimpleNumbers(sdp_t* sdp, const uint16_t level,
+                         InternalResults& results);
+  void LoadSimpleNumber(sdp_t* sdp, const uint16_t level, const sdp_attr_e attr,
+                        const AttributeType targetType,
+                        InternalResults& results);
+  void LoadFlags(sdp_t* sdp, const uint16_t level);
+  void LoadDirection(sdp_t* sdp, const uint16_t level,
+                     InternalResults& results);
+  bool LoadRtpmap(sdp_t* sdp, const uint16_t level, InternalResults& results);
+  bool LoadSctpmap(sdp_t* sdp, const uint16_t level, InternalResults& results);
+  void LoadIceAttributes(sdp_t* sdp, const uint16_t level);
+  bool LoadFingerprint(sdp_t* sdp, const uint16_t level,
+                       InternalResults& results);
+  void LoadCandidate(sdp_t* sdp, const uint16_t level);
+  void LoadSetup(sdp_t* sdp, const uint16_t level);
+  void LoadSsrc(sdp_t* sdp, const uint16_t level);
+  void LoadSsrcGroup(sdp_t* sdp, const uint16_t level);
+  bool LoadImageattr(sdp_t* sdp, const uint16_t level,
+                     InternalResults& results);
+  bool LoadSimulcast(sdp_t* sdp, const uint16_t level,
+                     InternalResults& results);
+  bool LoadGroups(sdp_t* sdp, const uint16_t level, InternalResults& results);
+  bool LoadMsidSemantics(sdp_t* sdp, const uint16_t level,
+                         InternalResults& results);
+  void LoadIdentity(sdp_t* sdp, const uint16_t level);
+  void LoadDtlsMessage(sdp_t* sdp, const uint16_t level);
+  void LoadFmtp(sdp_t* sdp, const uint16_t level);
+  void LoadMsids(sdp_t* sdp, const uint16_t level, InternalResults& results);
+  bool LoadRid(sdp_t* sdp, const uint16_t level, InternalResults& results);
+  void LoadExtmap(sdp_t* sdp, const uint16_t level, InternalResults& results);
+  void LoadRtcpFb(sdp_t* sdp, const uint16_t level, InternalResults& results);
+  void LoadRtcp(sdp_t* sdp, const uint16_t level, InternalResults& results);
+  static SdpRtpmapAttributeList::CodecType GetCodecType(const rtp_ptype type);
 
   bool AtSessionLevel() const { return !mSessionLevel; }
-  bool IsAllowedHere(SdpAttribute::AttributeType type) const;
-  void WarnAboutMisplacedAttribute(SdpAttribute::AttributeType type,
-                                   uint32_t lineNumber,
+  bool IsAllowedHere(const SdpAttribute::AttributeType type) const;
+  void WarnAboutMisplacedAttribute(const SdpAttribute::AttributeType type,
+                                   const uint32_t lineNumber,
                                    InternalResults& results);
 
   const SipccSdpAttributeList* mSessionLevel;
 
   SdpAttribute* mAttributes[kNumAttributeTypes];
-
-  SipccSdpAttributeList(const SipccSdpAttributeList& orig) = delete;
-  SipccSdpAttributeList& operator=(const SipccSdpAttributeList& rhs) = delete;
 };
 
 }  // namespace mozilla

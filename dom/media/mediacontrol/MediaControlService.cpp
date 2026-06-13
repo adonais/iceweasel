@@ -274,8 +274,10 @@ MediaMetadataBase MediaControlService::GetMainControllerMediaMetadata() const {
   if (!StaticPrefs::media_mediacontrol_testingevents_enabled()) {
     return metadata;
   }
-  return GetMainController() ? GetMainController()->GetCurrentMediaMetadata()
-                             : metadata;
+  if (auto* controller = GetMainController()) {
+    return controller->GetCurrentMediaMetadata();
+  }
+  return metadata;
 }
 
 MediaSessionPlaybackState MediaControlService::GetMainControllerPlaybackState()

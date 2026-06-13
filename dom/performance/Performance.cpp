@@ -1120,7 +1120,7 @@ void Performance::RunNotificationObserversTask() {
   mPendingNotificationObserversTask = true;
   nsCOMPtr<nsIRunnable> task = new NotifyObserversTask(this);
   nsresult rv;
-  if (nsIGlobalObject* global = GetOwnerGlobal()) {
+  if (nsIGlobalObject* global = GetRelevantGlobal()) {
     rv = global->Dispatch(task.forget());
   } else {
     rv = NS_DispatchToCurrentThread(task.forget());

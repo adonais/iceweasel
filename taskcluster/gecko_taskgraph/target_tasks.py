@@ -231,15 +231,6 @@ def filter_release_tasks(task, parameters):
     return True
 
 
-def filter_out_missing_signoffs(task, parameters):
-    for signoff in parameters["required_signoffs"]:
-        if signoff not in parameters["signoff_urls"] and signoff in task.attributes.get(
-            "required_signoffs", []
-        ):
-            return False
-    return True
-
-
 def filter_tests_without_manifests(task, parameters):
     """Remove test tasks that have an empty 'test_manifests' attribute.
 
@@ -540,9 +531,6 @@ def target_tasks_promote_desktop(full_task_graph, parameters, graph_config):
         if task.attributes.get("shipping_product") != parameters["release_product"]:
             return False
 
-        if not filter_out_missing_signoffs(task, parameters):
-            return False
-
         if task.attributes.get("shipping_phase") == "promote":
             return True
 
@@ -560,8 +548,6 @@ def target_tasks_push_desktop(full_task_graph, parameters, graph_config):
     )
 
     def filter(task):
-        if not filter_out_missing_signoffs(task, parameters):
-            return False
         # Include promotion tasks; these will be optimized out
         if task.label in filtered_for_candidates:
             return True
@@ -586,8 +572,6 @@ def target_tasks_ship_desktop(full_task_graph, parameters, graph_config):
     )
 
     def filter(task):
-        if not filter_out_missing_signoffs(task, parameters):
-            return False
         # Include promotion tasks; these will be optimized out
         if task.label in filtered_for_candidates:
             return True
@@ -693,6 +677,14 @@ def target_tasks_custom_car_perf_testing(full_task_graph, parameters, graph_conf
                 # Bug 1898514: avoid tp6m or non-essential tp6 jobs in cron
                 if "tp6" in try_name and "essential" not in try_name:
                     return False
+                # Bug 2038340: temporarily limit CaR benchmarks on Windows
+                # to sp3/js3/motionmark during PSU replacement
+                if "windows" in platform and "benchmark" in try_name:
+                    if not any(
+                        x in try_name
+                        for x in ["speedometer3", "jetstream3", "motionmark"]
+                    ):
+                        return False
                 # Bug 1928416
                 # For ARM coverage, this will only run on M2 machines at the moment.
                 if "jetstream2" in try_name:
@@ -778,6 +770,14 @@ def target_tasks_general_perf_testing(full_task_graph, parameters, graph_config)
                 if "chrome" in try_name:
                     if "tp6" in try_name and "essential" not in try_name:
                         return False
+                    # Bug 2038340: temporarily limit Chrome benchmarks on Windows
+                    # to sp3/js3/motionmark during PSU replacement
+                    if "windows" in platform and "benchmark" in try_name:
+                        if not any(
+                            x in try_name
+                            for x in ["speedometer3", "jetstream3", "motionmark"]
+                        ):
+                            return False
                     return True
                 # chromium-as-release has its own cron
                 if "custom-car" in try_name:
@@ -789,6 +789,14 @@ def target_tasks_general_perf_testing(full_task_graph, parameters, graph_config)
                 if "linux" in platform:
                     if "speedometer3" in try_name:
                         return True
+                # Bug 2038340: temporarily limit Firefox benchmarks on Windows
+                # to sp3/js3/motionmark during PSU replacement
+                if "windows" in platform and "benchmark" in try_name:
+                    if not any(
+                        x in try_name
+                        for x in ["speedometer3", "jetstream3", "motionmark"]
+                    ):
+                        return False
                 if "safari" and "benchmark" in try_name:
                     if "jetstream2" in try_name and "safari" in try_name:
                         return False
@@ -1711,7 +1719,12 @@ def target_tasks_os_integration(full_task_graph, parameters, graph_config):
 
     labels = []
     for label, task in full_task_graph.tasks.items():
-        if task.kind not in TEST_KINDS + ("source-test", "perftest", "startup-test"):
+        if task.kind not in TEST_KINDS + (
+            "source-test",
+            "perftest",
+            "startup-test",
+            "snap-upstream-test",
+        ):
             continue
 
         # Match tasks against attribute sets defined in os-integration.yml.
@@ -1726,6 +1739,12 @@ def target_tasks_os_integration(full_task_graph, parameters, graph_config):
                 task.attributes.get("build_platform") == "macosx64"
                 or "android-hw" in label
             ):
+                continue
+
+            # The `-local` snap variants depend on local gecko checkouts and
+            # aren't meaningful on m-c; match the exclusion used by
+            # `snap_upstream_tasks`.
+            if task.kind == "snap-upstream-test" and "-local" in label:
                 continue
 
             # Perform additional filtering for non-try repos. We don't want to
@@ -1757,6 +1776,17 @@ def target_tasks_test_info_timings_periodic(full_task_graph, parameters, graph_c
     ]
 
 
+@register_target_task("android-macrobenchmark_daily")
+def target_tasks_android_macrobenchmark_daily(
+    full_task_graph, parameters, graph_config
+):
+    return [
+        label
+        for label, task in full_task_graph.tasks.items()
+        if task.kind == "run-macrobenchmark-firebase"
+    ]
+
+
 @register_target_task("firefox_pull_request_tasks")
 def target_firefox_pull_requests(full_task_graph, parameters, graph_config):
     if parameters["tasks_for"] != "github-pull-request":
@@ -1764,10 +1794,11 @@ def target_firefox_pull_requests(full_task_graph, parameters, graph_config):
 
     labels = []
     for label, task in full_task_graph.tasks.items():
-        if not standard_filter(task, parameters):
-            continue
-
+        # Always add the code review analysis & ending tasks
         if task.attributes.get("code-review") or task.kind == "code-review":
             labels.append(label)
+
+        elif not standard_filter(task, parameters):
+            continue
 
     return labels

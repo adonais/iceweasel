@@ -78,31 +78,27 @@ struct HitTestClipNode {
 impl HitTestClipNode {
     fn new(
         item: &ClipItemKey,
-        clip_rect_origin: LayoutPoint,
+        clip_rect: LayoutRect,
         interners: &Interners,
         parent: ClipNodeId,
         spatial_node_index: SpatialNodeIndex,
     ) -> Self {
         let region = match item.kind {
-            ClipItemKeyKind::Rectangle(size, mode) => {
-                let rect = LayoutRect::from_origin_and_size(clip_rect_origin, size.into());
-                HitTestRegion::Rectangle(rect, mode)
+            ClipItemKeyKind::Rectangle(mode) => {
+                HitTestRegion::Rectangle(clip_rect, mode)
             }
-            ClipItemKeyKind::RoundedRectangle(size, radius, mode) => {
-                let rect = LayoutRect::from_origin_and_size(clip_rect_origin, size.into());
-                HitTestRegion::RoundedRectangle(rect, radius.into(), mode)
+            ClipItemKeyKind::RoundedRectangle(radius, mode) => {
+                HitTestRegion::RoundedRectangle(clip_rect, radius.into(), mode)
             }
-            ClipItemKeyKind::ImageMask(size, _, polygon_handle) => {
-                let rect = LayoutRect::from_origin_and_size(clip_rect_origin, size.into());
+            ClipItemKeyKind::ImageMask(_, polygon_handle) => {
                 if let Some(handle) = polygon_handle {
                     // Retrieve the polygon data from the interner.
                     let polygon = &interners.polygon[handle];
-                    HitTestRegion::Polygon(rect, *polygon)
+                    HitTestRegion::Polygon(clip_rect, *polygon)
                 } else {
-                    HitTestRegion::Rectangle(rect, ClipMode::Clip)
+                    HitTestRegion::Rectangle(clip_rect, ClipMode::Clip)
                 }
             }
-            ClipItemKeyKind::BoxShadow(..) => HitTestRegion::Invalid,
         };
 
         HitTestClipNode {
@@ -211,7 +207,7 @@ impl HitTestingScene {
 
             let clip_node = HitTestClipNode::new(
                 &clip_item.key,
-                src_clip_node.clip_rect_origin,
+                src_clip_node.clip_rect,
                 interners,
                 src_clip_node.parent,
                 src_clip_node.spatial_node_index,
@@ -258,7 +254,6 @@ impl HitTestingScene {
 
 #[derive(MallocSizeOf)]
 enum HitTestRegion {
-    Invalid,
     Rectangle(LayoutRect, ClipMode),
     RoundedRectangle(LayoutRect, BorderRadius, ClipMode),
     Polygon(LayoutRect, PolygonKey),
@@ -277,7 +272,6 @@ impl HitTestRegion {
                 !rounded_rectangle_contains_point(point, &rect, &radii),
             HitTestRegion::Polygon(rect, polygon) =>
                 polygon_contains_point(point, &rect, &polygon),
-            HitTestRegion::Invalid => true,
         }
     }
 }

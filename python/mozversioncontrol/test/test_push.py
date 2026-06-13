@@ -112,6 +112,9 @@ def test_push(repo, remote, ref, kwargs):
         elif repo.vcs == "jj":
             ref = "test-bookmark"
 
+    if ref is None and repo.vcs == "jj":
+        pytest.skip("jj requires a bookmark ref to push")
+
     vcs.push(remote=remote, ref=ref, **kwargs)
     verify_push_succeeded(repo)
 
@@ -198,7 +201,7 @@ def test_push_dest_branch(repo, with_dest):
             cwd=str(repo.dir),
             check=True,
         )
-        vcs.push(remote="upstream", ref=change_id, dest_branch="try")
+        vcs.push(remote="upstream", ref="test-bookmark", dest_branch="try")
         subprocess.run(
             ["jj", "git", "fetch", "--remote", "upstream"],
             cwd=str(repo.dir),

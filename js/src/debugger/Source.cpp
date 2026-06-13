@@ -53,16 +53,7 @@ using mozilla::Nothing;
 using mozilla::Some;
 
 const JSClassOps DebuggerSource::classOps_ = {
-    nullptr,                          // addProperty
-    nullptr,                          // delProperty
-    nullptr,                          // enumerate
-    nullptr,                          // newEnumerate
-    nullptr,                          // resolve
-    nullptr,                          // mayResolve
-    nullptr,                          // finalize
-    nullptr,                          // call
-    nullptr,                          // construct
-    CallTraceMethod<DebuggerSource>,  // trace
+    .trace = CallTraceMethod<DebuggerSource>,
 };
 
 const JSClass DebuggerSource::class_ = {

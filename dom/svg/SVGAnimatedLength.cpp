@@ -15,6 +15,7 @@
 #include "mozilla/GeckoBindings.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/PresShell.h"
+#include "mozilla/ReflowInput.h"
 #include "mozilla/SMILValue.h"
 #include "mozilla/SVGIntegrationUtils.h"
 #include "mozilla/StaticPresData.h"

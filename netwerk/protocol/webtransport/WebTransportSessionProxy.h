@@ -196,7 +196,7 @@ class WebTransportSessionProxy final
   nsCOMPtr<nsIEventTarget> mTarget MOZ_GUARDED_BY(mMutex);
   nsTArray<RefPtr<nsIWebTransportHash>> mServerCertHashes
       MOZ_GUARDED_BY(mMutex);
-  bool mDedicatedConnection;  // for WebTranport
+  bool mDedicatedConnection = false;  // for WebTranport
   nsIWebTransport::HTTPVersion mHTTPVersion = nsIWebTransport::HTTPVersion::h3;
 };
 

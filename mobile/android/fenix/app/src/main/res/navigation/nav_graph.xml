@@ -54,10 +54,9 @@
         app:launchSingleTop="true" />
 
     <action
-        android:id="@+id/action_global_search_dialog"
-        app:destination="@id/searchDialogFragment"
-        app:popUpTo="@id/searchDialogFragment"
-        app:popUpToInclusive="true" />
+      android:id="@+id/action_global_ip_protection_dialog"
+      app:destination="@+id/ipProtectionOnboardingDialogFragment"
+      app:launchSingleTop="true" />
 
     <action
         android:id="@+id/action_global_recently_closed"
@@ -205,8 +204,12 @@
         android:id="@+id/action_global_to_installedAddonDetailsFragment"
         app:destination="@id/installedAddonDetailsFragment" />
     <action
-      android:id="@+id/action_global_aiControlsFragment"
-      app:destination="@+id/aiControlsFragment"/>
+        android:id="@+id/action_global_to_downloadAddonDialogFragment"
+        app:destination="@id/downloadAddonDialogFragment" />
+
+    <action
+        android:id="@+id/action_global_aiControlsFragment"
+        app:destination="@+id/aiControlsFragment"/>
 
     <fragment
         android:id="@+id/tabManagementFragment"
@@ -340,33 +343,12 @@
     </dialog>
 
     <dialog
-        android:id="@+id/searchDialogFragment"
-        android:name="org.mozilla.fenix.search.SearchDialogFragment"
-        tools:layout="@layout/fragment_search_dialog">
+        android:id="@+id/ipProtectionOnboardingDialogFragment"
+        android:name="org.mozilla.fenix.ipprotection.ui.IPProtectionBottomSheetFragment">
         <argument
-            android:name="session_id"
-            app:argType="string"
-            app:nullable="true" />
-        <argument
-            android:name="pastedText"
-            android:defaultValue="@null"
-            app:argType="string"
-            app:nullable="true" />
-        <argument
-            android:name="search_access_point"
-            android:defaultValue="NONE"
-            app:argType="org.mozilla.fenix.components.metrics.MetricsUtils$Source" />
-        <argument
-            android:name="search_engine"
-            android:defaultValue="@null"
-            app:argType="string"
-            app:nullable="true" />
-        <action
-            android:id="@+id/action_gleanDebugToolsFragment"
-            app:destination="@id/gleanDebugToolsFragment" />
-        <action
-            android:id="@+id/action_crashListFragment"
-            app:destination="@id/crashListFragment" />
+            android:name="surface"
+            app:argType="org.mozilla.fenix.ipprotection.store.Surface"
+            app:nullable="false" />
     </dialog>
 
     <fragment
@@ -426,6 +408,12 @@
         <action
             android:id="@+id/action_browserFragment_to_summarizationFragment"
             app:destination="@id/summarizationFragment" />
+        <action
+            android:id="@+id/action_browserFragment_to_storiesFragment"
+            app:destination="@id/storiesFragment"
+            app:popUpTo="@id/storiesFragment"
+            app:popUpToInclusive="false"
+            app:launchSingleTop="true" />
     </fragment>
 
     <fragment
@@ -466,8 +454,7 @@
     <fragment
         android:id="@+id/downloadsFragment"
         android:name="org.mozilla.fenix.downloads.listscreen.DownloadFragment"
-        android:label="Downloads"
-        tools:layout="@layout/fragment_downloads" />
+        android:label="Downloads" />
 
     <fragment
         android:id="@+id/webCompatReporterFragment"
@@ -480,8 +467,7 @@
 
     <fragment
         android:id="@+id/bookmarkFragment"
-        android:name="org.mozilla.fenix.bookmarks.BookmarkFragment"
-        tools:layout="@layout/fragment_bookmark">
+        android:name="org.mozilla.fenix.bookmarks.BookmarkFragment">
         <argument
             android:name="currentRoot"
             app:argType="string" />
@@ -495,8 +481,7 @@
 
     <fragment
         android:id="@+id/bookmarkEditFragment"
-        android:name="org.mozilla.fenix.bookmarks.EditBookmarkFragment"
-        tools:layout="@layout/fragment_edit_bookmark">
+        android:name="org.mozilla.fenix.bookmarks.EditBookmarkFragment">
         <argument
             android:name="guidToEdit"
             app:argType="string"
@@ -906,6 +891,11 @@
             app:exitAnim="@anim/slide_out_left"
             app:popEnterAnim="@anim/slide_in_left"
             app:popExitAnim="@anim/slide_out_right" />
+        <argument
+            android:name="preference_to_scroll_to"
+            android:defaultValue="@null"
+            app:argType="string"
+            app:nullable="true" />
     </fragment>
     <fragment
         android:id="@+id/dataChoicesFragment"
@@ -1423,9 +1413,7 @@
     </dialog>
     <fragment
         android:id="@+id/dohSettingsFragment"
-        android:name="org.mozilla.fenix.settings.doh.DohSettingsFragment"
-        tools:layout="@layout/fragment_doh_settings">
-    </fragment>
+        android:name="org.mozilla.fenix.settings.doh.DohSettingsFragment" />
     <fragment
         android:id="@+id/addonDetailsFragment"
         android:name="org.mozilla.fenix.addons.AddonDetailsFragment"
@@ -1518,8 +1506,7 @@
     </fragment>
     <fragment
         android:id="@+id/addonPermissionsDetailFragment"
-        android:name="org.mozilla.fenix.addons.AddonPermissionsDetailsFragment"
-        tools:layout="@layout/fragment_add_on_permissions">
+        android:name="org.mozilla.fenix.addons.AddonPermissionsDetailsFragment">
         <argument
             android:name="addon"
             app:argType="mozilla.components.feature.addons.Addon" />
@@ -1532,6 +1519,27 @@
             android:name="addon"
             app:argType="mozilla.components.feature.addons.Addon" />
     </fragment>
+
+    <dialog
+        android:id="@+id/downloadAddonDialogFragment"
+        android:name="org.mozilla.fenix.addons.DownloadAddonDialogFragment">
+        <argument
+            android:name="addonDownloadUrl"
+            app:argType="string"
+            app:nullable="false" />
+        <argument
+            android:name="addonName"
+            app:argType="string"
+            app:nullable="true" />
+        <argument
+            android:name="addonImageUrl"
+            app:argType="string"
+            app:nullable="true" />
+        <argument
+            android:name="addonInstallationSource"
+            android:defaultValue="MANAGER"
+            app:argType="mozilla.components.concept.engine.webextension.InstallationMethod" />
+    </dialog>
 
     <navigation
         android:id="@+id/addons_management_graph"
@@ -1580,8 +1588,7 @@
         </fragment>
         <fragment
             android:id="@+id/searchShortcutsFragment"
-            android:name="org.mozilla.fenix.settings.search.SearchShortcutsFragment"
-            tools:layout="@layout/fragment_search_shortcuts">
+            android:name="org.mozilla.fenix.settings.search.SearchShortcutsFragment">
             <action
                 android:id="@+id/action_searchShortcutsFragment_to_saveSearchEngineFragment"
                 app:destination="@+id/saveSearchEngineFragment" />
@@ -1710,8 +1717,7 @@
         app:startDestination="@id/savedLoginsFragment">
         <fragment
             android:id="@+id/savedLoginsFragment"
-            android:name="org.mozilla.fenix.settings.logins.fragment.SavedLoginsFragment"
-            tools:layout="@layout/fragment_saved_logins">
+            android:name="org.mozilla.fenix.settings.logins.fragment.SavedLoginsFragment">
             <action
                 android:id="@+id/action_savedLoginsFragment_to_browserFragment"
                 app:destination="@id/browserFragment"
@@ -1859,6 +1865,12 @@
                 android:name="isSandboxCustomTab"
                 android:defaultValue="false"
                 app:argType="boolean" />
+            <action
+               android:id="@+id/action_menuDialogFragment_to_storiesFragment"
+                app:destination="@id/storiesFragment"
+                app:popUpTo="@id/storiesFragment"
+                app:popUpToInclusive="false"
+                app:launchSingleTop="true" />
             <action
                 android:id="@+id/action_menuDialogFragment_to_translationsDialogFragment"
                 app:destination="@id/translationsDialogFragment" />

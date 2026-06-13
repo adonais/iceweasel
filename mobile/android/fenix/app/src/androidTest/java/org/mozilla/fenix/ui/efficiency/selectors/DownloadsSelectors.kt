@@ -18,7 +18,23 @@ object DownloadsSelectors {
         groups = listOf("requiredForPage"),
     )
 
+    val EMPTY_DOWNLOADS_MESSAGE = Selector(
+        strategy = SelectorStrategy.COMPOSE_BY_TEXT,
+        value = getStringResource(R.string.download_empty_message_2),
+        description = "No downloads yet message",
+        groups = listOf("emptyDownloads"),
+    )
+
+    val EMPTY_DOWNLOADS_DESCRIPTION = Selector(
+        strategy = SelectorStrategy.COMPOSE_BY_TEXT,
+        value = getStringResource(R.string.download_empty_description),
+        description = "Files you download will appear here description",
+        groups = listOf("emptyDownloads"),
+    )
+
     val all = listOf(
         NAVIGATE_BACK_TOOLBAR_BUTTON,
+        EMPTY_DOWNLOADS_MESSAGE,
+        EMPTY_DOWNLOADS_DESCRIPTION,
     )
 }

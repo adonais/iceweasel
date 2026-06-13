@@ -11,10 +11,10 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/b0658888969395dca
  2 files changed, 10 insertions(+)
 
 diff --git a/BUILD.gn b/BUILD.gn
-index 2912209101..0f1d978aa7 100644
+index e16d071c6a..1c37f0229e 100644
 --- a/BUILD.gn
 +++ b/BUILD.gn
-@@ -601,6 +601,10 @@ if (!build_with_chromium) {
+@@ -605,6 +605,10 @@ if (!build_with_chromium) {
        ]
      }
  
@@ -26,7 +26,7 @@ index 2912209101..0f1d978aa7 100644
        deps += [ "logging:rtc_event_log_proto" ]
      }
 diff --git a/sdk/BUILD.gn b/sdk/BUILD.gn
-index 065df50da8..137ab195fd 100644
+index 5252eb9193..119af02e14 100644
 --- a/sdk/BUILD.gn
 +++ b/sdk/BUILD.gn
 @@ -556,6 +556,7 @@ if (is_ios || is_mac) {

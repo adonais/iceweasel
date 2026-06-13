@@ -57,29 +57,19 @@ class ActiveLayerTracker {
    * layer.
    */
   static void NotifyNeedsRepaint(nsIFrame* aFrame);
-  /**
-   * Return true if aFrame's property style in |aPropertySet| should be
-   * considered as being animated for constructing active layers.
-   */
-  static bool IsStyleAnimated(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
-                              const nsCSSPropertyIDSet& aPropertySet);
-  /**
-   * Return true if aFrame's transform-like property,
-   * i.e. transform/translate/rotate/scale, is animated.
-   */
-  static bool IsTransformAnimated(nsDisplayListBuilder* aBuilder,
-                                  nsIFrame* aFrame);
-  /**
-   * Return true if aFrame's transform style should be considered as being
-   * animated for pre-rendering.
-   */
-  static bool IsTransformMaybeAnimated(nsIFrame* aFrame);
+
+  /** Return true if aFrame's transform-like properties are animated. */
+  static bool IsTransformAnimated(nsIFrame* aFrame);
+
   /**
    * Return true if aFrame either has an animated scale now, or is likely to
    * have one in the future because it has a CSS animation or transition
    * (which may not be playing right now) that affects its scale.
    */
   static bool IsScaleSubjectToAnimation(nsIFrame* aFrame);
+
+  /** Return true if aFrame's opacity property is animated. */
+  static bool IsOpacityAnimated(nsIFrame* aFrame);
 
   /**
    * Transfer the LayerActivity property to the frame's content node when the

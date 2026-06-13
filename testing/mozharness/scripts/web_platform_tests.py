@@ -511,6 +511,7 @@ class WebPlatformTest(TestingMixin, MercurialScript, CodeCoverageMixin, AndroidM
                 )
             cmd.append("--webdriver-binary=%s" % geckodriver_path)
             cmd.append("--webdriver-arg=-vv")  # enable trace logs
+            cmd.append("--log-raw-unexpectedonly")
 
         test_type_suite = {
             "testharness": "web-platform-tests",

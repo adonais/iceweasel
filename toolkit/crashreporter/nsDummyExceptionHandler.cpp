@@ -4,8 +4,6 @@
 
 #include "nsExceptionHandler.h"
 
-using mozilla::UniqueFileHandle;
-
 namespace CrashReporter {
 
 void AnnotateOOMAllocationSize(size_t size) {}
@@ -209,9 +207,8 @@ void SetNotificationPipeForChild(FileHandle breakpadFd,
                                  FileHandle crashHelperFd) {}
 #endif  // defined(MOZ_WIDGET_ANDROID)
 
-CrashPipeType GetChildNotificationPipe() { return nullptr; }
-
-bool RegisterChildIPCChannel(mozilla::geckoargs::ChildProcessArgs& aArgs) {
+bool RegisterChildIPCChannel(mozilla::geckoargs::ChildProcessArgs& aArgs,
+                             GeckoChildID aID) {
   return false;
 }
 
@@ -220,6 +217,12 @@ void SetCrashHelperPipes(FileHandle breakpadFd, FileHandle crashHelperFd) {}
 #endif  // defined(MOZ_WIDGET_ANDROID)
 
 bool GetLastRunCrashID(nsAString& id) { return false; }
+
+#if defined(XP_WIN)
+bool ChildProcessProxyRendezvous(GeckoChildID aID, DWORD aPid, HANDLE aHandle) {
+  return false;
+}
+#endif  // defined(XP_WIN)
 
 bool SetRemoteExceptionHandler(int& aArgc, char** aArgv) { return false; }
 

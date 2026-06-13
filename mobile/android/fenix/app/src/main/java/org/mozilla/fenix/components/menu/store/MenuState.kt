@@ -194,34 +194,48 @@ data class TranslationInfo(
 )
 
 /**
- * Represents the possible display states of the IP protection menu item badge.
+ * Represents the display states of the IP protection menu item.
  */
 enum class IPProtectionMenuStatus {
-    /** Proxy is ready but not active. */
-    Off,
+    /**
+     * IP protection is inactive.
+     */
+    Disabled,
 
-    /** Proxy is active and protecting traffic. */
-    On,
-
-    /** Proxy is in the process of activating. */
+    /**
+     * IP protection is in the process of activating.
+     */
     Activating,
 
-    /** Proxy is paused. */
-    Paused,
+    /**
+     * IP protection is active.
+     */
+    Enabled,
 
-    /** Proxy encountered an error. */
-    Error,
+    /**
+     * IP protection is paused until the data limit resets.
+     */
+    DataLimitReached,
 
-    /** User needs to authenticate before IP protection can be used. */
-    NeedsAuthentication,
+    /**
+     * IP protection has errored.
+     */
+    ConnectionError,
+
+    /**
+     * User needs to authenticate or to authorize ip protection service before IP protection can be used.
+     */
+    AuthRequired,
 }
 
 /**
  * Represents the state of the IP protection menu item.
  *
  * @property status The current [IPProtectionMenuStatus] shown in the badge.
+ * @property dataLimitGb The total monthly data allowance in GB.
  */
 @Immutable
 data class IPProtectionMenuState(
-    val status: IPProtectionMenuStatus = IPProtectionMenuStatus.Off,
+    val status: IPProtectionMenuStatus = IPProtectionMenuStatus.Disabled,
+    val dataLimitGb: Int = -1,
 )

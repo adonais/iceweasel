@@ -173,6 +173,7 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
   bool SHORT_NAME##Enabled() const { return features().SHORT_NAME; }
   JS_FOR_WASM_FEATURES(WASM_FEATURE)
 #undef WASM_FEATURE
+  bool v128RelaxedEnabled() const { return features().relaxedSimd; }
   Shareable sharedMemoryEnabled() const { return features().sharedMemory; }
   bool simdAvailable() const { return features().simd; }
 
@@ -213,7 +214,6 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
   }
 
   BuiltinModuleFuncId knownFuncImport(uint32_t funcIndex) const {
-    MOZ_ASSERT(funcIndex < numFuncImports);
     if (knownFuncImports.empty()) {
       return BuiltinModuleFuncId::None;
     }
@@ -240,24 +240,24 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
                           UTF8Bytes* name) const;
 
   uint32_t offsetOfFuncDefInstanceData(uint32_t funcIndex) const {
-    MOZ_ASSERT(funcIndex >= numFuncImports && funcIndex < numFuncs());
+    MOZ_RELEASE_ASSERT(funcIndex >= numFuncImports && funcIndex < numFuncs());
     return funcDefsOffsetStart +
            (funcIndex - numFuncImports) * sizeof(FuncDefInstanceData);
   }
 
   uint32_t offsetOfFuncImportInstanceData(uint32_t funcIndex) const {
-    MOZ_ASSERT(funcIndex < numFuncImports);
+    MOZ_RELEASE_ASSERT(funcIndex < numFuncImports);
     return funcImportsOffsetStart + funcIndex * sizeof(FuncImportInstanceData);
   }
 
   uint32_t offsetOfFuncExportInstanceData(uint32_t funcExportIndex) const {
-    MOZ_ASSERT(funcExportIndex < exportedFuncIndices.length());
+    MOZ_RELEASE_ASSERT(funcExportIndex < exportedFuncIndices.length());
     return funcExportsOffsetStart +
            funcExportIndex * sizeof(FuncExportInstanceData);
   }
 
   uint32_t offsetOfTypeDefInstanceData(uint32_t typeIndex) const {
-    MOZ_ASSERT(typeIndex < types->length());
+    MOZ_RELEASE_ASSERT(typeIndex < types->length());
     return typeDefsOffsetStart + typeIndex * sizeof(TypeDefInstanceData);
   }
 
@@ -271,16 +271,16 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
   }
 
   uint32_t offsetOfMemoryInstanceData(uint32_t memoryIndex) const {
-    MOZ_ASSERT(memoryIndex < memories.length());
+    MOZ_RELEASE_ASSERT(memoryIndex < memories.length());
     return memoriesOffsetStart + memoryIndex * sizeof(MemoryInstanceData);
   }
   uint32_t offsetOfTableInstanceData(uint32_t tableIndex) const {
-    MOZ_ASSERT(tableIndex < tables.length());
+    MOZ_RELEASE_ASSERT(tableIndex < tables.length());
     return tablesOffsetStart + tableIndex * sizeof(TableInstanceData);
   }
 
   uint32_t offsetOfTagInstanceData(uint32_t tagIndex) const {
-    MOZ_ASSERT(tagIndex < tags.length());
+    MOZ_RELEASE_ASSERT(tagIndex < tags.length());
     return tagsOffsetStart + tagIndex * sizeof(TagInstanceData);
   }
 
@@ -374,7 +374,7 @@ struct CodeTailMetadata : public ShareableBase<CodeTailMetadata> {
     return funcDefRanges[funcDefIndex].start;
   }
   const BytecodeRange& funcDefRange(uint32_t funcIndex) const {
-    MOZ_ASSERT(funcIndex >= codeMeta->numFuncImports);
+    MOZ_RELEASE_ASSERT(funcIndex >= codeMeta->numFuncImports);
     uint32_t funcDefIndex = funcIndex - codeMeta->numFuncImports;
     return funcDefRanges[funcDefIndex];
   }
@@ -384,19 +384,19 @@ struct CodeTailMetadata : public ShareableBase<CodeTailMetadata> {
         .toSpan(*codeSectionBytecode);
   }
   FeatureUsage funcDefFeatureUsage(uint32_t funcIndex) const {
-    MOZ_ASSERT(funcIndex >= codeMeta->numFuncImports);
+    MOZ_RELEASE_ASSERT(funcIndex >= codeMeta->numFuncImports);
     uint32_t funcDefIndex = funcIndex - codeMeta->numFuncImports;
     return funcDefFeatureUsages[funcDefIndex];
   }
 
   CallRefMetricsRange getFuncDefCallRefs(uint32_t funcIndex) const {
-    MOZ_ASSERT(funcIndex >= codeMeta->numFuncImports);
+    MOZ_RELEASE_ASSERT(funcIndex >= codeMeta->numFuncImports);
     uint32_t funcDefIndex = funcIndex - codeMeta->numFuncImports;
     return funcDefCallRefs[funcDefIndex];
   }
 
   AllocSitesRange getFuncDefAllocSites(uint32_t funcIndex) const {
-    MOZ_ASSERT(funcIndex >= codeMeta->numFuncImports);
+    MOZ_RELEASE_ASSERT(funcIndex >= codeMeta->numFuncImports);
     uint32_t funcDefIndex = funcIndex - codeMeta->numFuncImports;
     return funcDefAllocSites[funcDefIndex];
   }

@@ -939,16 +939,7 @@ void SharedArrayBufferObject::wasmDiscard(Handle<SharedArrayBufferObject*> buf,
 }
 
 static const JSClassOps SharedArrayBufferObjectClassOps = {
-    nullptr,                            // addProperty
-    nullptr,                            // delProperty
-    nullptr,                            // enumerate
-    nullptr,                            // newEnumerate
-    nullptr,                            // resolve
-    nullptr,                            // mayResolve
-    SharedArrayBufferObject::Finalize,  // finalize
-    nullptr,                            // call
-    nullptr,                            // construct
-    nullptr,                            // trace
+    .finalize = SharedArrayBufferObject::Finalize,
 };
 
 static const JSFunctionSpec sharedarray_functions[] = {

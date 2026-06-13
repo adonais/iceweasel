@@ -3,7 +3,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include <prinrval.h>
-#include <thread>
 #include <mutex>
 #include "FuzzingTraits.h"
 

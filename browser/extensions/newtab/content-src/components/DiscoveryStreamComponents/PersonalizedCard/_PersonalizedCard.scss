@@ -119,9 +119,8 @@
 
 .personalized-card-wrapper {
   background-color: var(--newtab-background-card);
-  // @backward-compat { version 150 } D281466/D283723 renamed design tokens; remove once Firefox 150 is on Release.
   // @nova-cleanup(merge-styles): Nova removed the border
-  border: 2px solid var(--card-border-color, var(--border-color-card));
+  border: 2px solid var(--card-border-color);
   color: var(--text-color);
   border-radius: var(--border-radius-large);
   padding-block-start: var(--space-xxlarge);
@@ -156,9 +155,8 @@
     }
 
     h2 {
-      // @backward-compat { version 150 } D281466/D283723 renamed design tokens; remove once Firefox 150 is on Release.
-      font-size: var(--font-size-heading-large, var(--font-size-xlarge));
-      font-weight: var(--font-weight-heading, var(--heading-font-weight));
+      font-size: var(--font-size-heading-large);
+      font-weight: var(--font-weight-heading);
     }
   }
 

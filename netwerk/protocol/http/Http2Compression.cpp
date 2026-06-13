@@ -102,12 +102,17 @@ static void AddStaticElement(const nsCString& name) {
   AddStaticElement(name, ""_ns);
 }
 
+class nvPairDeallocator : public nsDequeFunctor<nvPair> {
+ public:
+  void operator()(nvPair* aPair) override { delete aPair; }
+};
+
 static void InitializeStaticHeaders() {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
   if (!gStaticHeaders) {
-    gStaticHeaders = new nsDeque<nvPair>();
+    gStaticHeaders = new nsDeque<nvPair>(new nvPairDeallocator());
     gStaticReporter = new HpackStaticTableReporter();
-    RegisterStrongMemoryReporter(gStaticReporter);
+    RegisterStrongMemoryReporter(do_AddRef(gStaticReporter));
     AddStaticElement(":authority"_ns);
     AddStaticElement(":method"_ns, "GET"_ns);
     AddStaticElement(":method"_ns, "POST"_ns);
@@ -240,7 +245,7 @@ const nvPair* nvFIFO::operator[](size_t index) const {
 
 Http2BaseCompressor::Http2BaseCompressor() {
   mDynamicReporter = new HpackDynamicTableReporter(this);
-  RegisterStrongMemoryReporter(mDynamicReporter);
+  RegisterStrongMemoryReporter(do_AddRef(mDynamicReporter));
 }
 
 Http2BaseCompressor::~Http2BaseCompressor() {

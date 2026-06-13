@@ -311,6 +311,10 @@ class SettingsSubMenuCustomizeRobot {
         backToolbarShortcutOption()
             .check(matches(ViewMatchers.withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)))
         Log.i(TAG, "verifyTheSimpleToolbarShortcutOptions: Verified that the \"Back\" simple toolbar shortcut option is visible")
+        Log.i(TAG, "verifyTheSimpleToolbarShortcutOptions: Trying to verify that the \"None\" simple toolbar shortcut option is visible")
+        noneToolbarShortcutOption()
+            .check(matches(ViewMatchers.withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)))
+        Log.i(TAG, "verifyTheSimpleToolbarShortcutOptions: Verified that the \"None\" simple toolbar shortcut option is visible")
     }
 
     fun verifyTheExpandedToolbarShortcutOptions() {
@@ -450,3 +454,5 @@ private fun translateToolbarShortcutOption() = onView(withText(getStringResource
 private fun homepageToolbarShortcutOption() = onView(withText(getStringResource(R.string.toolbar_customize_shortcut_homepage)))
 
 private fun backToolbarShortcutOption() = onView(withText(getStringResource(R.string.toolbar_customize_shortcut_back)))
+
+private fun noneToolbarShortcutOption() = onView(withText(getStringResource(R.string.toolbar_customize_shortcut_none)))

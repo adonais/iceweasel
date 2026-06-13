@@ -9,17 +9,14 @@ import logging
 from typing import Optional
 
 from taskgraph.transforms.base import TransformSequence
-from taskgraph.util.dependencies import get_dependencies, get_primary_dependency
+from taskgraph.util.dependencies import get_primary_dependency
 from taskgraph.util.schema import Schema
 from taskgraph.util.taskcluster import get_artifact_prefix
 from taskgraph.util.treeherder import inherit_treeherder_from_dep, replace_group
 
 from gecko_taskgraph.transforms.beetmover import craft_release_properties
 from gecko_taskgraph.transforms.task import TaskDescriptionSchema
-from gecko_taskgraph.util.attributes import (
-    copy_attributes_from_dependent_job,
-    sorted_unique_list,
-)
+from gecko_taskgraph.util.attributes import copy_attributes_from_dependent_job
 from gecko_taskgraph.util.partials import (
     get_balrog_platform_name,
     get_partials_artifacts_from_params,
@@ -84,18 +81,6 @@ def get_label_by_suffix(labels: list, suffix: str):
             f"There should only be a single label with suffix: {suffix} - found {len(labels)}"
         )
     return labels[0]
-
-
-@transforms.add
-def gather_required_signoffs(config, jobs):
-    for job in jobs:
-        job.setdefault("attributes", {})["required_signoffs"] = sorted_unique_list(
-            *(
-                dep.attributes.get("required_signoffs", [])
-                for dep in get_dependencies(config, job)
-            )
-        )
-        yield job
 
 
 @transforms.add

@@ -10,7 +10,7 @@ add_task(async function test_set_default_pdf_handler_no_data() {
   await SMATestUtils.executeAndValidateAction(
     { type: "SET_DEFAULT_PDF_HANDLER" },
     {
-      ownerGlobal: {
+      documentGlobal: {
         getShellService: () => ({
           setAsDefaultPDFHandler: stub,
         }),
@@ -41,7 +41,7 @@ add_task(async function test_set_default_pdf_handler_data_false() {
       },
     },
     {
-      ownerGlobal: {
+      documentGlobal: {
         getShellService: () => ({
           setAsDefaultPDFHandler: stub,
         }),
@@ -72,7 +72,7 @@ add_task(async function test_set_default_pdf_handler_data_true() {
       },
     },
     {
-      ownerGlobal: {
+      documentGlobal: {
         getShellService: () => ({
           setAsDefaultPDFHandler: stub,
         }),

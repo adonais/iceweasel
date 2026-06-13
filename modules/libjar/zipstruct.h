@@ -89,15 +89,17 @@ typedef struct ZipEnd_ {
 #define EXTENDED_TIMESTAMP_MODTIME 0x01
 
 /* compression methods */
-#define STORED 0
-#define SHRUNK 1
-#define REDUCED1 2
-#define REDUCED2 3
-#define REDUCED3 4
-#define REDUCED4 5
-#define IMPLODED 6
-#define TOKENIZED 7
-#define DEFLATED 8
-#define UNSUPPORTED 0xFF
+enum ZipCompressionMethod {
+  STORED = 0,
+  SHRUNK = 1,
+  REDUCED1 = 2,
+  REDUCED2 = 3,
+  REDUCED3 = 4,
+  REDUCED4 = 5,
+  IMPLODED = 6,
+  TOKENIZED = 7,
+  DEFLATED = 8,
+  UNSUPPORTED = 0xFF
+};
 
 #endif /* _zipstruct_h */

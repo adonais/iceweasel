@@ -125,7 +125,7 @@ static constexpr ARMRegister ZeroRegister32{Registers::sp, 32};
 // of how the address is formed.
 //
 // In order to allow word-wise pushes and pops, some of our ARM64 jits
-// (JS-Baseline, JS-Ion, and Wasm-Ion, but not Wasm-Baseline) dedicate x28 to
+// (JS-Baseline, JS-Ion, and Wasm-Ion, but not Wasm-Baseline) dedicate x20 to
 // be used as a PseudoStackPointer (PSP).
 //
 // Initially the PSP will have the same value as the SP.  Code can, if it
@@ -157,7 +157,7 @@ static constexpr ARMRegister ZeroRegister32{Registers::sp, 32};
 //     clear and merits further investigation.  The following points are
 //     believed to be relevant:
 //
-//     - For calls to functions observing the system AArch64 ABI, PSP (x28) is
+//     - For calls to functions observing the system AArch64 ABI, PSP (x20) is
 //       callee-saved.  That, combined with (3) above, implies SP == PSP
 //       immediately after the call returns.
 //
@@ -229,7 +229,7 @@ static constexpr ARMRegister ZeroRegister32{Registers::sp, 32};
 //   the same as the entry SP by the JIT ABI.
 //
 // * Call-outs to non-JIT C++ code do not need to set up the PSP (it won't be
-//   used), and will not need to restore the PSP on return because x28 is
+//   used), and will not need to restore the PSP on return because x20 is
 //   non-volatile in the ARM64 ABI.
 //
 //                               ================
@@ -265,7 +265,7 @@ static constexpr ARMRegister ZeroRegister32{Registers::sp, 32};
 //
 // * It would give us a simple story about calls and returns:
 //   - for calls to non-JIT generated code (viz, C++ etc), we need no extra
-//     copies, because PSP (x28) is callee-saved
+//     copies, because PSP (x20) is callee-saved
 //   - for calls to JIT-generated code, we need no extra copies, because of (2)
 //     above
 //
@@ -276,8 +276,8 @@ static constexpr ARMRegister ZeroRegister32{Registers::sp, 32};
 //   path-dependent reasoning (for paths in the generated code, not in the
 //   compiler) when reading/understanding the code.
 //
-// * x28 would become free for use by stubs and the baseline compiler without
-//   having to worry about interoperating with code that expects x28 to hold a
+// * x20 would become free for use by stubs and the baseline compiler without
+//   having to worry about interoperating with code that expects x20 to hold a
 //   valid PSP.
 //
 // One might ask what mechanical checks we can add to ensure correctness, rather
@@ -289,7 +289,7 @@ static constexpr ARMRegister ZeroRegister32{Registers::sp, 32};
 //
 // * In debug builds, scanning sections of generated code to ensure no
 //   SP-relative stack accesses have been created -- for some sections, at
-//   least every assignment to SP is immediately followed by a copy to x28.
+//   least every assignment to SP is immediately followed by a copy to x20.
 //   This would also facilitate detection of duplicate syncs.
 //
 //                               ================
@@ -344,9 +344,9 @@ static constexpr ARMRegister ZeroRegister32{Registers::sp, 32};
 // sp as a base register is only valid if sp % 16 == 0.
 static constexpr Register RealStackPointer{Registers::sp};
 
-static constexpr Register PseudoStackPointer{Registers::x28};
-static constexpr ARMRegister PseudoStackPointer64 = {Registers::x28, 64};
-static constexpr ARMRegister PseudoStackPointer32 = {Registers::x28, 32};
+static constexpr Register PseudoStackPointer{Registers::x20};
+static constexpr ARMRegister PseudoStackPointer64 = {Registers::x20, 64};
+static constexpr ARMRegister PseudoStackPointer32 = {Registers::x20, 32};
 
 static constexpr Register IntArgReg0{Registers::x0};
 static constexpr Register IntArgReg1{Registers::x1};

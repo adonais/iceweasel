@@ -90,8 +90,9 @@ class InternalJobQueue : public JS::JobQueue {
   ~InternalJobQueue() = default;
 
   // JS::JobQueue methods.
-  bool getHostDefinedData(JSContext* cx,
-                          JS::MutableHandle<JSObject*> data) const override;
+  bool getHostDefinedData(
+      JSContext* cx, JS::MutableHandle<JSObject*> incumbentGlobal,
+      JS::MutableHandle<JSObject*> optionalHostDefinedData) const override;
 
   bool getHostDefinedGlobal(JSContext*,
                             JS::MutableHandle<JSObject*>) const override;
@@ -283,6 +284,14 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
 
   /* Clear the pending exception (if any) due to OOM. */
   void recoverFromOutOfMemory();
+
+  // Clears a pending OOM or over-recursion exception. Documents that the
+  // preceding operation is only fallible due to resource exhaustion, not
+  // spec-related reasons.
+  void recoverFromResourceExhaustion() {
+    MOZ_ASSERT(isThrowingOutOfMemory() || isThrowingOverRecursed());
+    clearPendingException();
+  }
 
   void reportAllocOverflow();
 
@@ -974,6 +983,11 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
   // Such conditions permit optimizations around `await` expressions.
   js::ContextData<bool> canSkipEnqueuingJobs;
 
+  // Depth of nested AsyncFunctionResume / AsyncGeneratorResume calls on the
+  // C++ stack. Maintained by AutoAsyncResumeDepth. See
+  // IsTopMostAsyncFunctionCall for more details.
+  js::ContextData<uint32_t> asyncResumeDepth;
+
   js::ContextData<JS::PromiseRejectionTrackerCallback>
       promiseRejectionTrackerCallback;
   js::ContextData<void*> promiseRejectionTrackerCallbackData;
@@ -1253,7 +1267,7 @@ class MOZ_RAII AutoUnsafeCallWithABI {
 #ifdef JS_CHECK_UNSAFE_CALL_WITH_ABI
   JSContext* cx_;
   bool nested_;
-  bool checkForPendingException_;
+  bool checkForPendingException_ = false;
 #endif
   JS::AutoCheckCannotGC nogc;
 

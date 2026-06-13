@@ -38,7 +38,6 @@ import mozilla.components.support.test.robolectric.testContext
 import mozilla.components.ui.widgets.SnackbarDelegate
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -51,6 +50,7 @@ import org.mockito.Mockito.doThrow
 import org.mockito.Mockito.spy
 import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
+import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class ContextMenuCandidateTest {

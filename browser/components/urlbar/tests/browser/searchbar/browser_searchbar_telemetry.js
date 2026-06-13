@@ -89,11 +89,11 @@ add_task(async function test_pasteAndGo() {
 add_task(async function test_searchMode() {
   resetTelemetry();
 
-  let popup = await SearchbarTestUtils.openSearchModeSwitcher(window);
-  info("Entering search mode for engine2");
-  let popupHidden = SearchbarTestUtils.searchModeSwitcherPopupClosed(window);
-  popup.querySelector("panel-item[data-engine-id=engine2]").button.click();
-  await popupHidden;
+  info("Enter search mode for engine2.");
+  await SearchbarTestUtils.activateSearchModeSwitcherItem(
+    window,
+    "panel-item[data-engine-id=engine2]"
+  );
 
   await SearchbarTestUtils.promiseAutocompleteResultPopup({
     window,

@@ -32,32 +32,30 @@ class WebGLMethodDispatcher
 // Defines each method the WebGLMethodDispatcher handles.  The COUNTER value
 // is used as a cross-process ID for each of the methods.
 #define DEFINE_ASYNC(_METHOD) DEFINE_METHOD_DISPATCHER(__COUNTER__, _METHOD, 0)
-#define DEFINE_ASYNC_LOCKED(_METHOD) \
-  DEFINE_METHOD_DISPATCHER(__COUNTER__, _METHOD, LOCK_IN_PROCESS)
 
-DEFINE_ASYNC_LOCKED(HostWebGLContext::CreateBuffer)
-DEFINE_ASYNC_LOCKED(HostWebGLContext::CreateFramebuffer)
-DEFINE_ASYNC_LOCKED(HostWebGLContext::CreateProgram)
-DEFINE_ASYNC_LOCKED(HostWebGLContext::CreateQuery)
-DEFINE_ASYNC_LOCKED(HostWebGLContext::CreateRenderbuffer)
-DEFINE_ASYNC_LOCKED(HostWebGLContext::CreateSampler)
-DEFINE_ASYNC_LOCKED(HostWebGLContext::CreateShader)
-DEFINE_ASYNC_LOCKED(HostWebGLContext::CreateSync)
-DEFINE_ASYNC_LOCKED(HostWebGLContext::CreateTexture)
-DEFINE_ASYNC_LOCKED(HostWebGLContext::CreateTransformFeedback)
-DEFINE_ASYNC_LOCKED(HostWebGLContext::CreateVertexArray)
+DEFINE_ASYNC(HostWebGLContext::CreateBuffer)
+DEFINE_ASYNC(HostWebGLContext::CreateFramebuffer)
+DEFINE_ASYNC(HostWebGLContext::CreateProgram)
+DEFINE_ASYNC(HostWebGLContext::CreateQuery)
+DEFINE_ASYNC(HostWebGLContext::CreateRenderbuffer)
+DEFINE_ASYNC(HostWebGLContext::CreateSampler)
+DEFINE_ASYNC(HostWebGLContext::CreateShader)
+DEFINE_ASYNC(HostWebGLContext::CreateSync)
+DEFINE_ASYNC(HostWebGLContext::CreateTexture)
+DEFINE_ASYNC(HostWebGLContext::CreateTransformFeedback)
+DEFINE_ASYNC(HostWebGLContext::CreateVertexArray)
 
-DEFINE_ASYNC_LOCKED(HostWebGLContext::DeleteBuffer)
-DEFINE_ASYNC_LOCKED(HostWebGLContext::DeleteFramebuffer)
-DEFINE_ASYNC_LOCKED(HostWebGLContext::DeleteProgram)
-DEFINE_ASYNC_LOCKED(HostWebGLContext::DeleteQuery)
-DEFINE_ASYNC_LOCKED(HostWebGLContext::DeleteRenderbuffer)
-DEFINE_ASYNC_LOCKED(HostWebGLContext::DeleteSampler)
-DEFINE_ASYNC_LOCKED(HostWebGLContext::DeleteShader)
-DEFINE_ASYNC_LOCKED(HostWebGLContext::DeleteSync)
-DEFINE_ASYNC_LOCKED(HostWebGLContext::DeleteTexture)
-DEFINE_ASYNC_LOCKED(HostWebGLContext::DeleteTransformFeedback)
-DEFINE_ASYNC_LOCKED(HostWebGLContext::DeleteVertexArray)
+DEFINE_ASYNC(HostWebGLContext::DeleteBuffer)
+DEFINE_ASYNC(HostWebGLContext::DeleteFramebuffer)
+DEFINE_ASYNC(HostWebGLContext::DeleteProgram)
+DEFINE_ASYNC(HostWebGLContext::DeleteQuery)
+DEFINE_ASYNC(HostWebGLContext::DeleteRenderbuffer)
+DEFINE_ASYNC(HostWebGLContext::DeleteSampler)
+DEFINE_ASYNC(HostWebGLContext::DeleteShader)
+DEFINE_ASYNC(HostWebGLContext::DeleteSync)
+DEFINE_ASYNC(HostWebGLContext::DeleteTexture)
+DEFINE_ASYNC(HostWebGLContext::DeleteTransformFeedback)
+DEFINE_ASYNC(HostWebGLContext::DeleteVertexArray)
 
 DEFINE_ASYNC(HostWebGLContext::SetEnabled)
 DEFINE_ASYNC(HostWebGLContext::GenerateError)
@@ -151,7 +149,6 @@ DEFINE_ASYNC(HostWebGLContext::CopyToSwapChain)
 DEFINE_ASYNC(HostWebGLContext::EndOfFrame)
 
 #undef DEFINE_ASYNC
-#undef DEFINE_ASYNC_LOCKED
 #undef DEFINE_METHOD_DISPATCHER
 
 }  // namespace mozilla

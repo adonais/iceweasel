@@ -334,10 +334,8 @@ NS_DECLARE_FRAME_PROPERTY_DELETABLE(FloatRegionProperty, nsMargin)
 LogicalRect nsFloatManager::GetRegionFor(WritingMode aWM, nsIFrame* aFloat,
                                          const nsSize& aContainerSize) {
   LogicalRect region = aFloat->GetLogicalRect(aWM, aContainerSize);
-  void* storedRegion = aFloat->GetProperty(FloatRegionProperty());
-  if (storedRegion) {
-    nsMargin margin = *static_cast<nsMargin*>(storedRegion);
-    region.Inflate(aWM, LogicalMargin(aWM, margin));
+  if (nsMargin* storedRegion = aFloat->GetProperty(FloatRegionProperty())) {
+    region.Inflate(aWM, LogicalMargin(aWM, *storedRegion));
   }
   return region;
 }
@@ -350,11 +348,8 @@ void nsFloatManager::StoreRegionFor(WritingMode aWM, nsIFrame* aFloat,
   if (region.IsEqualEdges(rect)) {
     aFloat->RemoveProperty(FloatRegionProperty());
   } else {
-    nsMargin* storedMargin = aFloat->GetProperty(FloatRegionProperty());
-    if (!storedMargin) {
-      storedMargin = new nsMargin();
-      aFloat->SetProperty(FloatRegionProperty(), storedMargin);
-    }
+    nsMargin* storedMargin =
+        aFloat->GetOrCreateDeletableProperty(FloatRegionProperty());
     *storedMargin = region - rect;
   }
 }

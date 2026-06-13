@@ -30,15 +30,15 @@ export class ContextMenuParent extends JSWindowActorParent {
       return;
     }
 
-    let win = browser.ownerGlobal;
+    let win = browser.documentGlobal;
     // It's possible that the <xul:browser> associated with this
     // ContextMenu message doesn't belong to a window that actually
     // loads nsContextMenu.js. In that case, try to find the chromeEventHandler,
     // since that'll likely be the "top" <xul:browser>, and then use its window's
     // nsContextMenu instance instead.
     if (!win.nsContextMenu) {
-      let topBrowser = browser.ownerGlobal.docShell.chromeEventHandler;
-      win = topBrowser.ownerGlobal;
+      let topBrowser = browser.documentGlobal.docShell.chromeEventHandler;
+      win = topBrowser.documentGlobal;
     }
 
     message.data.context.showRelay &&= lazy.FirefoxRelay.isEnabled;
@@ -101,7 +101,7 @@ export class ContextMenuParent extends JSWindowActorParent {
   mediaCommand(targetIdentifier, command, data) {
     let windowGlobal = this.manager.browsingContext.currentWindowGlobal;
     let browser = windowGlobal.rootFrameLoader.ownerElement;
-    let win = browser.ownerGlobal;
+    let win = browser.documentGlobal;
     let windowUtils = win.windowUtils;
     this.sendAsyncMessage("ContextMenu:MediaCommand", {
       targetIdentifier,

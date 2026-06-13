@@ -32,6 +32,7 @@ XPCOMUtils.defineLazyPreferenceGetter(
 );
 
 ChromeUtils.defineESModuleGetters(this, {
+  FaviconUtils: "moz-src:///toolkit/modules/FaviconUtils.sys.mjs",
   PanelMultiView:
     "moz-src:///browser/components/customizableui/PanelMultiView.sys.mjs",
   RecentlyClosedTabsAndWindowsMenuUtils:
@@ -322,8 +323,12 @@ var StarUI = {
       return;
     }
 
-    // If we're changing where a bookmark gets saved, persist that location.
-    if (didChangeFolder) {
+    // If we're changing where a bookmark gets saved, persist that location,
+    // unless it is the mobile root.
+    if (
+      didChangeFolder &&
+      selectedFolderGuid !== PlacesUtils.bookmarks.mobileGuid
+    ) {
       Services.prefs.setCharPref(
         "browser.bookmarks.defaultLocation",
         selectedFolderGuid
@@ -1200,7 +1205,7 @@ var PlacesToolbarHelper = {
   onWidgetUnderflow(aNode) {
     // The view gets broken by being removed and reinserted by the overflowable
     // toolbar, so we have to force an uninit and reinit.
-    let win = aNode.ownerGlobal;
+    let win = aNode.documentGlobal;
     if (aNode.id == "personal-bookmarks" && win == window) {
       this._resetView();
     }
@@ -1249,6 +1254,9 @@ var PlacesToolbarHelper = {
     popup.appendChild(fragment);
   },
 
+  // Schemes accepted for the ManagedBookmarks `favicon` policy property.
+  MANAGED_BOOKMARK_FAVICON_SCHEMES: ["data:", "http:", "https:"],
+
   async addManagedBookmarks(menu, children) {
     for (let i = 0; i < children.length; i++) {
       let entry = children[i];
@@ -1271,9 +1279,27 @@ var PlacesToolbarHelper = {
         let { preferredURI } = Services.uriFixup.getFixupURIInfo(entry.url);
         let menuitem = document.createXULElement("menuitem");
         menuitem.setAttribute("label", entry.name);
+        let imageURL;
+        if (entry.favicon) {
+          let iconURL = URL.parse(entry.favicon);
+          if (
+            iconURL &&
+            this.MANAGED_BOOKMARK_FAVICON_SCHEMES.includes(iconURL.protocol)
+          ) {
+            imageURL = FaviconUtils.getMozRemoteImageURL(entry.favicon, {
+              size: 16,
+            });
+          } else {
+            console.error(
+              `ManagedBookmarks: ignoring favicon "${entry.favicon}", ` +
+                `expected one of: ${this.MANAGED_BOOKMARK_FAVICON_SCHEMES.join(", ")}`
+            );
+          }
+        }
         menuitem.setAttribute(
           "image",
-          "page-icon:" + ChromeUtils.encodeURIForSrcset(preferredURI.spec)
+          imageURL ||
+            "page-icon:" + ChromeUtils.encodeURIForSrcset(preferredURI.spec)
         );
         menuitem.classList.add(
           "menuitem-iconic",
@@ -2164,7 +2190,7 @@ var BookmarkingUI = {
   },
 
   onWidgetUnderflow(aNode) {
-    let win = aNode.ownerGlobal;
+    let win = aNode.documentGlobal;
     if (aNode.id != this.BOOKMARK_BUTTON_ID || win != window) {
       return;
     }
@@ -2268,7 +2294,7 @@ var BookmarkingUI = {
       is: "places-popup",
     });
     otherBookmarksPopup.setAttribute("placespopup", "true");
-    otherBookmarksPopup.setAttribute("native", "false");
+    otherBookmarksPopup.toggleAttribute("nonnative", true);
     otherBookmarksPopup.setAttribute("context", "placesContext");
     otherBookmarksPopup.classList.add("toolbar-menupopup");
     otherBookmarksPopup.id = "OtherBookmarksPopup";

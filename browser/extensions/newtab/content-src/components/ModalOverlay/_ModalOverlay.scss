@@ -1,7 +1,6 @@
 .modalOverlayOuter {
   border: none;
-  // @backward-compat { version 150 } D281466/D283723 renamed design tokens; remove once Firefox 150 is on Release.
-  box-shadow: var(--popup-box-shadow, var(--box-shadow-popup));
+  box-shadow: var(--popup-box-shadow);
   padding: 0;
   border-radius: var(--border-radius-medium);
 

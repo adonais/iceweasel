@@ -14,7 +14,7 @@ Our largest deviation from these architectures is that while they each recommend
 
 A store of State.
 
-See [mozilla.components.lib.state.Store](https://searchfox.org/mozilla-central/source/mobile/android/android-components/components/lib/state/src/main/java/mozilla/components/lib/state/Store.kt)
+See [mozilla.components.lib.state.Store](https://searchfox.org/firefox-main/source/mobile/android/android-components/components/lib/state/src/main/java/mozilla/components/lib/state/Store.kt)
 
 Holds app State.
 
@@ -35,7 +35,7 @@ Screen-based Stores should be created using [StoreProvider APIs](https://searchf
 ### **Overview**
 Description of the state of a screen or other area of the app.
 
-See [mozilla.components.lib.state.State](https://searchfox.org/mozilla-central/source/mobile/android/android-components/components/lib/state/src/main/java/mozilla/components/lib/state/State.kt)
+See [mozilla.components.lib.state.State](https://searchfox.org/firefox-main/source/mobile/android/android-components/components/lib/state/src/main/java/mozilla/components/lib/state/State.kt)
 
 ### **Description**
 Simple, immutable data object that contains all of the backing data required to display a screen. This should ideally only include Kotlin/Java data types which can be easily tested, avoiding Android platform types. This is especially true of large, expensive types like `Context` or `View` which should never be included in State.
@@ -52,7 +52,7 @@ This also gives us a major advantage when debugging. If the UI looks wrong, chec
 ### **Overview**
 Simple description of a State change or a user interaction. Dispatched to Stores.
 
-See [mozilla.components.lib.state.Action](https://searchfox.org/mozilla-central/source/mobile/android/android-components/components/lib/state/src/main/java/mozilla/components/lib/state/Action.kt)
+See [mozilla.components.lib.state.Action](https://searchfox.org/firefox-main/source/mobile/android/android-components/components/lib/state/src/main/java/mozilla/components/lib/state/Action.kt)
 
 ### **Description**
 Simple data object that carries information about a [State](#state) change to a [Store](#store).  An Action describes _something that happened_, and carries any data relevant to that change. For example, `HistoryFragmentAction.ChangeEmptyState(isEmpty = true)`, captures that the State of the history fragment has become empty.
@@ -63,7 +63,7 @@ Simple data object that carries information about a [State](#state) change to a 
 ### **Overview**
 Pure function used to create new [State](#state) objects.
 
-See [mozilla.components.lib.state.Reducer](https://searchfox.org/mozilla-central/source/mobile/android/android-components/components/lib/state/src/main/java/mozilla/components/lib/state/Reducer.kt)
+See [mozilla.components.lib.state.Reducer](https://searchfox.org/firefox-main/source/mobile/android/android-components/components/lib/state/src/main/java/mozilla/components/lib/state/Reducer.kt)
 
 Referenced by: [Store](#store)
 
@@ -115,13 +115,13 @@ When reading through live code trying to understand an architecture, it can be d
 
 The following are links to the example versions of the architectural components listed above.
 
-- [HistoryFragment](https://searchfox.org/mozilla-central/source/mobile/android/fenix/docs/architectureexample/HistoryFragmentExample.kt)
-- [HistoryStore](https://searchfox.org/mozilla-central/source/mobile/android/fenix/docs/architectureexample/HistoryStoreExample.kt)
-- [HistoryState](https://searchfox.org/mozilla-central/source/mobile/android/fenix/docs/architectureexample/HistoryStoreExample.kt)
-- [HistoryReducer](https://searchfox.org/mozilla-central/source/mobile/android/fenix/docs/architectureexample/HistoryStoreExample.kt)
-- [HistoryNavigationMiddleware](https://searchfox.org/mozilla-central/source/mobile/android/fenix/docs/architectureexample/HistoryNavigationMiddlewareExample.kt)
-- [HistoryStorageMiddleware](https://searchfox.org/mozilla-central/source/mobile/android/fenix/docs/architectureexample/HistoryStorageMiddlewareExample.kt)
-- [HistoryTelemetryMiddleware](https://searchfox.org/mozilla-central/source/mobile/android/fenix/docs/architectureexample/HistoryTelemetryMiddlewareExample.kt)
+- [HistoryFragment](https://searchfox.org/firefox-main/source/mobile/android/fenix/docs/architectureexample/HistoryFragmentExample.kt)
+- [HistoryStore](https://searchfox.org/firefox-main/source/mobile/android/fenix/docs/architectureexample/HistoryStoreExample.kt)
+- [HistoryState](https://searchfox.org/firefox-main/source/mobile/android/fenix/docs/architectureexample/HistoryStoreExample.kt)
+- [HistoryReducer](https://searchfox.org/firefox-main/source/mobile/android/fenix/docs/architectureexample/HistoryStoreExample.kt)
+- [HistoryNavigationMiddleware](https://searchfox.org/firefox-main/source/mobile/android/fenix/docs/architectureexample/HistoryNavigationMiddlewareExample.kt)
+- [HistoryStorageMiddleware](https://searchfox.org/firefox-main/source/mobile/android/fenix/docs/architectureexample/HistoryStorageMiddlewareExample.kt)
+- [HistoryTelemetryMiddleware](https://searchfox.org/firefox-main/source/mobile/android/fenix/docs/architectureexample/HistoryTelemetryMiddlewareExample.kt)
 
 -------
 

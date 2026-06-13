@@ -956,8 +956,7 @@ VectorImage::Draw(gfxContext* aContext, const nsIntSize& aSize,
   std::tie(sourceSurface, params.size) =
       LookupCachedSurface(aSize, params.svgContext, aFlags);
   if (sourceSurface) {
-    RefPtr<gfxDrawable> drawable =
-        new gfxSurfaceDrawable(sourceSurface, params.size);
+    auto drawable = MakeRefPtr<gfxSurfaceDrawable>(sourceSurface, params.size);
     Show(drawable, params);
     return ImgDrawResult::SUCCESS;
   }
@@ -980,8 +979,7 @@ VectorImage::Draw(gfxContext* aContext, const nsIntSize& aSize,
     return ImgDrawResult::SUCCESS;
   }
 
-  RefPtr<gfxDrawable> drawable =
-      new gfxSurfaceDrawable(sourceSurface, params.size);
+  auto drawable = MakeRefPtr<gfxSurfaceDrawable>(sourceSurface, params.size);
   Show(drawable, params);
   SendFrameComplete(didCache, params.flags);
   return ImgDrawResult::SUCCESS;
@@ -1241,10 +1239,10 @@ bool VectorImage::MaybeRestrictSVGContext(SVGImageContext& aSVGContext,
 
 already_AddRefed<gfxDrawable> VectorImage::CreateSVGDrawable(
     const SVGDrawingParameters& aParams) {
-  RefPtr<gfxDrawingCallback> cb = new SVGDrawingCallback(
+  auto cb = MakeRefPtr<SVGDrawingCallback>(
       mSVGDocumentWrapper, aParams.viewportSize, aParams.size, aParams.flags);
 
-  RefPtr<gfxDrawable> svgDrawable = new gfxCallbackDrawable(cb, aParams.size);
+  auto svgDrawable = MakeRefPtr<gfxCallbackDrawable>(cb, aParams.size);
   return svgDrawable.forget();
 }
 
@@ -1455,7 +1453,8 @@ VectorImage::OnStartRequest(nsIRequest* aRequest) {
              "Repeated call to OnStartRequest -- can this happen?");
 
   mSVGDocumentWrapper = new SVGDocumentWrapper();
-  nsresult rv = mSVGDocumentWrapper->OnStartRequest(aRequest);
+  RefPtr<SVGDocumentWrapper> wrapper = mSVGDocumentWrapper;
+  nsresult rv = wrapper->OnStartRequest(aRequest);
   if (NS_FAILED(rv)) {
     mSVGDocumentWrapper = nullptr;
     mError = true;
@@ -1487,7 +1486,8 @@ VectorImage::OnStopRequest(nsIRequest* aRequest, nsresult aStatus) {
     return NS_ERROR_FAILURE;
   }
 
-  return mSVGDocumentWrapper->OnStopRequest(aRequest, aStatus);
+  RefPtr<SVGDocumentWrapper> wrapper = mSVGDocumentWrapper;
+  return wrapper->OnStopRequest(aRequest, aStatus);
 }
 
 void VectorImage::OnSVGDocumentParsed() {
@@ -1632,8 +1632,8 @@ VectorImage::OnDataAvailable(nsIRequest* aRequest, nsIInputStream* aInStr,
     return NS_ERROR_FAILURE;
   }
 
-  return mSVGDocumentWrapper->OnDataAvailable(aRequest, aInStr, aSourceOffset,
-                                              aCount);
+  RefPtr<SVGDocumentWrapper> wrapper = mSVGDocumentWrapper;
+  return wrapper->OnDataAvailable(aRequest, aInStr, aSourceOffset, aCount);
 }
 
 // --------------------------

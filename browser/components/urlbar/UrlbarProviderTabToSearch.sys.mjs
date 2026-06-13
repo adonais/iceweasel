@@ -231,7 +231,7 @@ export class UrlbarProviderTabToSearch extends UrlbarProvider {
       // Confirm search mode, but only for the onboarding (dynamic) result. The
       // input will handle confirming search mode for the non-onboarding
       // `RESULT_TYPE.SEARCH` result since it sets `providesSearchMode`.
-      element.ownerGlobal.gURLBar.maybeConfirmSearchModeFromResult({
+      element.documentGlobal.gURLBar.maybeConfirmSearchModeFromResult({
         result,
         checkValue: false,
       });

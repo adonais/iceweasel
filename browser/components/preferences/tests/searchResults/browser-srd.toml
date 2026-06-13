@@ -1,0 +1,25 @@
+[DEFAULT]
+dupe-manifest=true
+prefs = [
+  "browser.settings-redesign.enabled=true",
+]
+support-files = [
+  "head.js",
+]
+tags = "os_integration"
+
+["browser_search_category_filter.js"]
+
+["browser_search_no_results_change_category.js"]
+
+["browser_search_subdialogs_within_preferences_4.js"]
+
+["browser_search_subdialogs_within_preferences_5.js"]
+
+["browser_search_subdialogs_within_preferences_6.js"]
+
+["browser_search_subdialogs_within_preferences_8.js"]
+
+["browser_search_subdialogs_within_preferences_9.js"]
+
+["browser_search_subdialogs_within_preferences_site_data.js"]

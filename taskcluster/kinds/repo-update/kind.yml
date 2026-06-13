@@ -63,7 +63,7 @@ tasks:
                   type: file
 
     periodic-file-update:
-        description: Remote settings, suffix list, mobile experiments, and CT log update
+        description: Remote settings, suffix list, mobile experiments, mobile merino manifest, and CT log update
         worker-type: b-linux
         treeherder:
             symbol: pfu
@@ -82,6 +82,10 @@ tasks:
                     by-project:
                         mozilla-(central|beta|release): "1"
                         default: ""
+                DO_MOBILE_MERINO_MANIFEST:
+                    by-project:
+                        mozilla-(central|beta|release): "1"
+                        default: ""
                 DO_CT_LOGS:
                     by-project:
                         mozilla-(central|beta|esr.*): "1"
@@ -95,4 +99,7 @@ tasks:
                   type: file
                 - name: 'public/build/initial_experiments.diff'
                   path: '/home/worker/artifacts/initial_experiments.diff'
+                  type: file
+                - name: 'public/build/merino_manifest.diff'
+                  path: '/home/worker/artifacts/merino_manifest.diff'
                   type: file

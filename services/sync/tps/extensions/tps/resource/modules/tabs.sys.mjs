@@ -54,7 +54,7 @@ export var BrowserTabs = {
 
     // Wait for the tab to load.
     await new Promise(resolve => {
-      let mm = browser.ownerGlobal.messageManager;
+      let mm = browser.documentGlobal.messageManager;
       mm.addMessageListener("tps:loadEvent", function onLoad() {
         mm.removeMessageListener("tps:loadEvent", onLoad);
         resolve();

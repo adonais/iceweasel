@@ -228,9 +228,9 @@ add_task(async function open_tab_new_window() {
     ]);
     ok(row.tabElement, "The row has a tabElement property");
     is(
-      row.tabElement.ownerGlobal,
+      row.tabElement.documentGlobal,
       window,
-      "The tabElement's ownerGlobal is our original window"
+      "The tabElement's documentGlobal is our original window"
     );
     info(`Clicking on row with URL: ${row.url}`);
     row.mainEl.click();

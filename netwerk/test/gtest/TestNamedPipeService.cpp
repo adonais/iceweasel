@@ -43,8 +43,8 @@ class Event {
   }
 
  private:
-  Monitor mMonitor MOZ_UNANNOTATED;
-  bool mSignaled = false;
+  Monitor mMonitor;
+  bool mSignaled MOZ_GUARDED_BY(mMonitor) = false;
 };
 
 class nsNamedPipeDataObserver final : public nsINamedPipeDataObserver {

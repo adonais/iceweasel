@@ -38,7 +38,7 @@ class nsFindService : public nsIFindService {
   bool mWrapFind;
   bool mEntireWord;
   bool mMatchCase;
-  bool mMatchDiacritics;
+  bool mMatchDiacritics = false;
 };
 
 #endif  // TOOLKIT_COMPONENTS_FIND_NSFINDSERVICE_H_

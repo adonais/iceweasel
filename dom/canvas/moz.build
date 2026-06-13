@@ -44,8 +44,6 @@ EXPORTS += [
 ]
 
 EXPORTS.mozilla += [
-    "IsEnumCase.h",
-    "ParamTraits_IsEnumCase.h",
     "ParamTraits_STL.h",
     "ParamTraits_TiedFields.h",
     "TiedFields.h",

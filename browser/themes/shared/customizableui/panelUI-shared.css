@@ -17,6 +17,9 @@
   --menu-panel-width: 22.35em;
   --menu-panel-width-wide: 29em;
 
+  --panel-header-info-icon-padding: 4px;
+  --panel-header-info-icon-full-width: calc(var(--icon-size-small) + (2 * var(--panel-header-info-icon-padding)));
+
   --panel-separator-padding-vertical: var(--dimension-4);
   --panel-separator-padding-horizontal: var(--dimension-8);
   --panel-separator-padding: var(--panel-separator-padding-vertical) var(--panel-separator-padding-horizontal);
@@ -135,7 +138,7 @@ panel toolbarseparator {
   &[notificationid="update-unsupported"] > .toolbarbutton-icon {
     background: url(chrome://global/skin/icons/warning.svg) no-repeat center;
     -moz-context-properties: stroke, fill;
-    stroke: var(--panel-background);
+    stroke: var(--panel-background-color);
     fill: var(--warning-icon-bgcolor);
   }
 }
@@ -160,7 +163,7 @@ panel toolbarseparator {
     border-radius: 0;
     -moz-context-properties: fill, stroke;
     fill: var(--warning-icon-bgcolor);
-    stroke: var(--toolbar-bgcolor);
+    stroke: var(--toolbar-background-color);
   }
 }
 
@@ -171,7 +174,7 @@ panel toolbarseparator {
   -moz-context-properties: stroke, fill;
   background: url(chrome://browser/skin/notification-fill-12.svg) no-repeat center;
   background-size: var(--icon-size-xsmall);
-  stroke: var(--panel-background);
+  stroke: var(--panel-background-color);
   fill: var(--warning-icon-bgcolor);
   filter: drop-shadow(0 0 5px var(--warning-icon-bgcolor));
 }
@@ -306,12 +309,12 @@ panelview {
     border: none;
     font: menu;
     background-color: transparent;
-    --panel-background: inherit;
+    --panel-background-color: inherit;
     --panel-border-color: inherit;
     --panel-border-radius: inherit;
-    --panel-color: inherit;
+    --panel-text-color: inherit;
     --panel-padding: var(--panel-subview-body-padding);
-    --panel-shadow-margin: inherit;
+    --panel-box-shadow-margin: inherit;
     --menuitem-border-radius: var(--panel-menuitem-border-radius);
     --menuitem-padding: var(--panel-menuitem-padding);
     --menuitem-margin: var(--panel-menuitem-margin);
@@ -320,7 +323,7 @@ panelview {
   menupopup {
     /* Align non top-level menupopup's first menuitem with the menuitem that opened it.
      * The 1px is for the menupopup's border. */
-    margin-top: calc(-1 * (var(--panel-subview-body-padding-block) + var(--panel-shadow-margin) + 1px));
+    margin-top: calc(-1 * (var(--panel-subview-body-padding-block) + var(--panel-box-shadow-margin) + 1px));
   }
 
   menu,
@@ -391,9 +394,9 @@ menupopup[emptyplacesresult] > .hide-if-empty-places-result {
 }
 
 #confirmation-hint {
-  --panel-background: #0060df;
+  --panel-background-color: #0060df;
   --panel-border-color: #0060df;
-  --panel-color: #fff;
+  --panel-text-color: #fff;
   --panel-padding: 6px 10px;
   font-size: 1.1rem;
 
@@ -401,9 +404,14 @@ menupopup[emptyplacesresult] > .hide-if-empty-places-result {
     align-items: center;
   }
 
-  /* Don't show the checkmark if there is a description */
-  &.with-description #confirmation-hint-checkmark-animation-container {
+  /* Don't show the checkmark if there is a description or if we don't want to show one */
+  &.with-description #confirmation-hint-checkmark-animation-container,
+  &:not(.with-checkmark) #confirmation-hint-checkmark-animation-container {
     display: none;
+  }
+
+  &:not(.with-checkmark) #confirmation-hint-message-container {
+    margin-inline-start: 0;
   }
 
   &[data-message-id="loginRemoved"] #confirmation-hint-checkmark-image {
@@ -467,9 +475,11 @@ menupopup[emptyplacesresult] > .hide-if-empty-places-result {
   }
 }
 
-#confirmation-hint-message {
-  margin-inline: 7px 0;
+#confirmation-hint-message-container {
+  margin-inline-start: var(--space-small);
+}
 
+#confirmation-hint-message {
   #confirmation-hint.with-description & {
     font-size: 1.2em;
     font-weight: var(--font-weight-semibold);
@@ -935,7 +945,7 @@ toolbarbutton[constrain-size="true"][cui-areatype="panel"] > .toolbarbutton-badg
 }
 
 #fxa-menu-header-title {
-  color: var(--panel-color);
+  color: var(--panel-text-color);
   text-wrap: wrap;
 }
 
@@ -1567,7 +1577,7 @@ toolbarbutton[itemtype="showinactivebutton"] {
 #zoom-controls[cui-areatype="toolbar"] > #zoom-reset-button > .toolbarbutton-text {
   display: block;
   /* 4 chars max, but `ch` is the width of the `0` glyph, so account for larger glyphs by adding 1ch */
-  min-width: calc(5ch + var(--toolbarbutton-inner-padding) * 2);
+  min-width: calc(5ch + var(--toolbarbutton-padding-inner) * 2);
 }
 
 .widget-overflow-list {
@@ -2123,7 +2133,44 @@ radiogroup:focus-visible > .subviewradio[focused="true"] {
 }
 
 .report-broken-site-view {
-  max-height: 68vh;
+  max-height: 80vh;
+
+  &.wrong-tab-info {
+    .favicon,
+    .tab-specific-data,
+    #report-broken-site-popup-screenshot-toggle,
+    #report-broken-site-popup-blocked-trackers-toggle {
+      display: none;
+    }
+  }
+
+  &.no-screenshot,
+  &.screenshots-disabled,
+  &.screenshot-opt-out {
+    .preview-screenshot {
+      display: none;
+    }
+  }
+
+  &.no-screenshot,
+  &.screenshots-disabled {
+    #report-broken-site-popup-screenshot-toggle {
+      display: none;
+    }
+  }
+
+  &.no-blocked-trackers,
+  &.blocked-trackers-opt-out {
+    .preview-blockedOrigins {
+      display: none;
+    }
+  }
+
+  &.no-blocked-trackers {
+    #report-broken-site-popup-blocked-trackers-toggle {
+      display: none;
+    }
+  }
 
   description,
   label,
@@ -2133,14 +2180,66 @@ radiogroup:focus-visible > .subviewradio[focused="true"] {
     margin: 0;
   }
 
-  > .panel-subview-body {
-    toolbarbutton {
-      margin-inline: calc(-1 * var(--panel-menuitem-padding-inline));
+  #report-broken-site-popup-intro {
+    margin-block-start: var(--space-xlarge);
+  }
+
+  #report-broken-site-popup-intro,
+  #report-broken-site-details-instructions {
+    line-height: 1.25em;
+  }
+
+  #report-broken-site-reason-selector-intro,
+  #report-broken-site-details-instructions {
+    margin-block: 0 var(--space-xlarge);
+  }
+
+  #report-broken-site-popup-screenshot {
+    max-height: 13rem;
+    object-fit: contain;
+    object-position: left top;
+  }
+
+  button.arrow-button {
+    font-weight: normal;
+    padding: var(--space-large) var(--space-medium);
+    margin: 0 0 var(--space-large);
+    border: 0;
+
+    > hbox > label {
+      text-align: start;
+
+      /* allow for multi-line localizations */
+      display: block !important;
+      text-wrap: balance;
+      width: 100%;
     }
 
-    toolbarbutton::after {
-      position: absolute;
-      inset-inline-end: calc(2 * var(--panel-menuitem-padding-inline));
+    background: url("chrome://global/skin/icons/arrow-right.svg") no-repeat calc(100% - var(--panel-menuitem-padding-inline)) center;
+    &:dir(rtl) {
+      background: url("chrome://global/skin/icons/arrow-left.svg") no-repeat var(--panel-menuitem-padding-inline) center;
+    }
+    background-color: var(--background-color-box);
+    -moz-context-properties: fill;
+    fill: currentColor;
+
+    &:not(:hover, :active) {
+      background-color: inherit;
+    }
+  }
+
+  &.preview-view {
+    toolbarseparator {
+      display: none;
+    }
+
+    #report-broken-site-panel-preview-items.update {
+      margin: 0;
+      border-inline: 0;
+      border-radius: 0;
+      details > summary {
+        border-radius: 0;
+      }
     }
   }
 
@@ -2162,8 +2261,8 @@ radiogroup:focus-visible > .subviewradio[focused="true"] {
     .data {
       padding: var(--panel-menuitem-padding);
       background:
-        linear-gradient(0deg, color-mix(in srgb, currentColor 7%, transparent) 0, transparent 16px),
-        linear-gradient(180deg, color-mix(in srgb, currentColor 7%, transparent) 0, transparent 16px);
+        linear-gradient(0deg, color-mix(in srgb, currentColor 7%, transparent) 0, transparent var(--panel-padding)),
+        linear-gradient(180deg, color-mix(in srgb, currentColor 7%, transparent) 0, transparent var(--panel-padding));
       overflow: auto;
 
       .entry {
@@ -2176,9 +2275,7 @@ radiogroup:focus-visible > .subviewradio[focused="true"] {
     }
 
     details {
-      & {
-        width: 100%;
-      }
+      width: 100%;
 
       &:not(:first-of-type) > summary {
         border-top: 1px solid var(--card-border-color);
@@ -2189,7 +2286,7 @@ radiogroup:focus-visible > .subviewradio[focused="true"] {
         cursor: pointer;
         width: -moz-available;
         padding: var(--panel-menuitem-padding);
-        padding-inline-start: calc(16px + calc(2 * var(--panel-menuitem-padding-block)));
+        padding-inline-start: calc(var(--icon-size-small) + var(--space-xlarge));
         background-image: url("chrome://global/skin/icons/arrow-down.svg");
         background-position: var(--panel-menuitem-padding-block) var(--panel-menuitem-padding-inline);
         background-repeat: no-repeat;
@@ -2197,11 +2294,27 @@ radiogroup:focus-visible > .subviewradio[focused="true"] {
         fill: currentColor;
       }
 
+      > summary,
+      > .data {
+        /* prevent the keyboard-focus outlines from being partly cut off due to the summaries taking up the full width */
+        outline-offset: calc(-1 * var(--default-focusring-width));
+      }
+
       &[open] > summary {
         background-image: url("chrome://global/skin/icons/arrow-up.svg");
       }
-    }
 
+      img {
+        /* the screenshot */
+        display: block;
+        max-width: -moz-available;
+        max-height: 15vh;
+      }
+    }
+  }
+
+  @media not (prefers-contrast) {
+    fieldset > label,
     details > summary {
       color: var(--button-text-color);
       background-color: var(--button-background-color-ghost);
@@ -2219,31 +2332,6 @@ radiogroup:focus-visible > .subviewradio[focused="true"] {
       &:focus-visible {
         outline: var(--focus-outline);
       }
-
-      @media (prefers-contrast) {
-        outline: var(--button-border-color) solid var(--border-width);
-      }
-    }
-
-    details > summary {
-      border-radius: calc(var(--border-radius-medium) - var(--border-width));
-    }
-
-    details:not(:first-of-type):not(:last-of-type) > summary {
-      border-radius: 0;
-    }
-
-    details:first-of-type,
-    details:last-of-type[open] {
-      > summary {
-        border-end-end-radius: 0;
-        border-end-start-radius: 0;
-      }
-    }
-
-    details:last-of-type > summary {
-      border-start-start-radius: 0;
-      border-start-end-radius: 0;
     }
   }
 
@@ -2251,57 +2339,48 @@ radiogroup:focus-visible > .subviewradio[focused="true"] {
     line-height: 1.5;
   }
 
-  vbox > checkbox {
-    margin-block-start: var(--space-large);
-  }
-
-  #report-broken-site-popup-blocked-trackers > p {
-    font-size: 0.9em;
-    color: var(--text-color-deemphasized);
-    line-height: 1.2em;
-    margin-inline-start: calc(var(--space-medium) + var(--checkbox-size));
+  url-input {
+    margin-block-end: var(--space-xxlarge);
   }
 
   textarea {
     resize: vertical;
-  }
 
-  > .panel-subview-body > label {
-    margin-block: 1.5em 0.5em;
+    &:invalid {
+      outline-color: var(--border-color-error);
+    }
 
-    &.invalid-message {
-      margin-block: 0.5em 0;
+    &:not(:invalid) + .invalid-message {
+      display: none;
+    }
+
+    + .invalid-message {
       background-image: url("chrome://global/skin/icons/error.svg");
       background-position: left center;
       background-repeat: no-repeat;
       -moz-context-properties: fill;
       fill: var(--icon-color-critical);
-      padding-inline-start: calc(16px + 0.25em);
+      margin-block-start: var(--space-xsmall);
+      padding-inline-start: calc(var(--icon-size-small) + var(--space-small));
 
       &:-moz-locale-dir(rtl) {
         background-position-x: right;
       }
-
-      display: none;
-
-      input:user-invalid + &,
-      select:user-invalid + & {
-        display: block;
-      }
     }
   }
 
-  &.main-view {
-    p {
-      margin-block: 0;
+  moz-toggle[disabled],
+  moz-toggle:not([pressed]) {
+    #report-broken-site-popup-screenshot {
+      display: none;
     }
+  }
 
-    a {
-      margin-block: 1.5em 1em;
-    }
-
-    hbox:has(a#report-broken-site-popup-send-more-info-link[hidden]) + #report-broken-site-popup-preview-button {
-      margin-block-start: 1.5em;
+  > .panel-subview-body {
+    moz-toggle,
+    textarea:not(:invalid),
+    textarea:invalid + label {
+      margin-block-end: var(--space-xxlarge);
     }
   }
 
@@ -2311,20 +2390,16 @@ radiogroup:focus-visible > .subviewradio[focused="true"] {
     }
 
     > .panel-header {
-      --panel-header-additional-element-width: 16px;
+      --panel-header-additional-element-width: var(--icon-size-small);
 
       > .checkmark-icon {
         list-style-image: url(chrome://global/skin/icons/check-filled.svg);
         -moz-context-properties: fill;
-        fill: #2ac3a2;
+        fill: var(--color-accent-attention);
       }
     }
 
     > .panel-subview-body {
-      /* Don't let the footer appear way down in the panel while there's
-       * almost no content above. */
-      flex: 0 auto;
-
       > .subview-subheader {
         font-size: inherit;
       }
@@ -2333,7 +2408,15 @@ radiogroup:focus-visible > .subviewradio[focused="true"] {
 }
 
 #report-broken-site-panel-container {
-  padding: 8px 16px 16px;
+  padding: var(--space-small) var(--space-xlarge) var(--space-xlarge);
+}
+
+#report-broken-site-popup-detailsView > .panel-subview-body {
+  padding: var(--space-small) var(--space-xlarge) 0 var(--space-xlarge);
+}
+
+#report-broken-site-popup-previewView > .panel-footer {
+  padding-block-start: var(--space-small);
 }
 
 /* ----- Profiles panels ----- */
@@ -2369,7 +2452,7 @@ radiogroup:focus-visible > .subviewradio[focused="true"] {
   -moz-context-properties: fill, stroke;
   fill: var(--appmenu-profiles-theme-bg);
   stroke: var(--appmenu-profiles-theme-fg);
-  border: 4px solid var(--panel-background);
+  border: 4px solid var(--panel-background-color);
   border-radius: var(--border-radius-circle);
 }
 
@@ -2430,16 +2513,6 @@ radiogroup:focus-visible > .subviewradio[focused="true"] {
   margin-inline-start: var(--space-xsmall);
   display: inline-block;
   color: var(--text-color-deemphasized);
-}
-
-#confirmation-hint[data-message-id="confirmation-hint-ipprotection-navigated-to-excluded-site"] {
-  #confirmation-hint-checkmark-animation-container {
-    display: none;
-  }
-
-  #confirmation-hint-message {
-    margin-inline-start: 0;
-  }
 }
 
 #PanelUI-ipprotection-locations {

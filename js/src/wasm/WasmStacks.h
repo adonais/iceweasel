@@ -1,5 +1,4 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
+/*
  *
  * Copyright 2025 Mozilla Foundation
  *
@@ -19,13 +18,19 @@
 #ifndef wasm_stacks_h
 #define wasm_stacks_h
 
+#include "mozilla/UniquePtr.h"
+#include "mozilla/Vector.h"
+
+#include <bit>
+
+#include "gc/Barrier.h"
+#include "js/AllocPolicy.h"
 #include "js/TypeDecls.h"
+#include "js/Utility.h"
 #include "util/TrailingArray.h"
-#include "vm/JSContext.h"
 #include "vm/NativeObject.h"
 #include "wasm/WasmAnyRef.h"
 #include "wasm/WasmConstants.h"
-#include "wasm/WasmContext.h"
 #include "wasm/WasmFrame.h"
 
 namespace js {
@@ -49,11 +54,38 @@ struct Handler;
 struct Handlers;
 class ContStack;
 class ContObject;
+class ContStackArena;
+class ContStackAllocator;
 
 #ifdef ENABLE_WASM_JSPI
 
+// A stack target describes a stack that can be switched to using the
+// stack-switching feature. There is one for the 'main stack' and one for each
+// continuation stack.
+//
+// StackTarget is declared here so that WasmContext.h can include this file
+// and get both StackTarget and the allocator types without a cycle.
+struct StackTarget {
+  // The continuation stack, if any. This is a weak self-reference, as
+  // it's only non-null when stored on the same ContStack.
+  ContStack* stack = nullptr;
+
+  // The limit that jit code should use on this stack. This will be constant
+  // over the lifetime of the stack.
+  JS::NativeStackLimit jitLimit = JS::NativeStackLimitMin;
+
+  // The Win32 TIB stack base and limit fields. With lazy commit these may
+  // change as the stack grows.
+#  if defined(_WIN32)
+  void* tibStackBase = nullptr;
+  void* tibStackLimit = nullptr;
+#  endif
+
+  bool isMainStack() const { return !stack; }
+};
+
 struct ContStackDeleter {
-  void operator()(const ContStack* cont);
+  void operator()(ContStack* cont);
 };
 using UniqueContStack = mozilla::UniquePtr<ContStack, ContStackDeleter>;
 
@@ -136,15 +168,28 @@ struct alignas(16) Handlers : TrailingArray<Handlers> {
   void trace(JSTracer* trc) const;
 };
 
+// The size of a continuation stack is determined by the system page sizes and
+// user preferences. We compute the dynamic parts once so it stays consistent
+// within an allocator.
+struct ContStackSize {
+  size_t jitStackSize = 0;
+  size_t headerSize = 0;
+  size_t totalSize = 0;
+
+  void compute();
+};
+
 // The underlying execution stack of a continuation. This class is the header
-// of the stack and the actual execution stack is executed physically before
+// of the stack and the actual execution stack is located physically before
 // this header.
 //
 // See [SMDOC] Wasm Stack Switching in WasmStacks.cpp for more information.
 class ContStack {
-  // Pointers to the underlying allocation.
-  void* allocation_ = nullptr;
-  size_t allocationSize_ = 0;
+  // The arena this stack was allocated from.
+  ContStackArena* arena_ = nullptr;
+
+  // The base pointer of the allocation this stack is from.
+  uintptr_t allocationBase_ = 0;
 
   // Pointers to the usable regions of the stack.
   JS::NativeStackBase stackBase_ = 0;
@@ -153,7 +198,7 @@ class ContStack {
 
   // The initial resume target and callee for the base frame to use.
   SwitchTarget initialResumeTarget_{};
-  GCPtr<JSFunction*> initialResumeCallee_;
+  HeapPtr<JSFunction*> initialResumeCallee_;
 
   // A target useable when switching to this stack.
   StackTarget target_{};
@@ -169,12 +214,15 @@ class ContStack {
   // resume target stack.
   SwitchTarget* resumeTarget_ = nullptr;
 
-  // Whether this stack is registered in the wasm::Context, and if so what
-  // index in the vector we are.
-  mozilla::Maybe<size_t> registeredIndex_;
+  // Current state of the jit stack pages. Transitions:
+  //   Ready -> Poisoned    via poison()    (filled with poison, NoAccess)
+  //   Ready -> Decommitted via decommit()  (physical pages returned to OS)
+  //   *     -> Ready       via prepare()
+  enum class PageState : uint8_t { Ready, Poisoned, Decommitted };
+  PageState pageState_ = PageState::Ready;
 
   ContStack() = default;
-  ~ContStack();
+  ~ContStack() = default;
 
   FrameWithInstances* baseFrame() {
     uintptr_t baseFrameAddress =
@@ -182,20 +230,35 @@ class ContStack {
     return reinterpret_cast<FrameWithInstances*>(baseFrameAddress);
   }
 
-  static void free(const ContStack* stack);
-  static void unregisterAndFree(JSContext* cx, UniqueContStack stack);
+  // Return if this stack is dead (not active nor resumable).
+  bool isDead() const { return !handlers_ && !resumeTarget_; }
+
+  // Initialize a ContStack in a ContStackArena. This will leave it in a
+  // poisoned state, ready to be prepared for use.
+  static void init(ContStackArena* arena, uintptr_t allocationBase,
+                   const ContStackSize& size);
+  // Prepare a stack for execution. Must be called after init, poison, or
+  // decommit. Transitions pageState_ to Ready.
+  void prepare(Handle<ContObject*> continuation, Handle<JSFunction*> target,
+               void* contBaseFrameStub);
+  // Reset the fields for returning to a ContStackArena. Can call poison or
+  // decommit after this. Must call prepare before executing.
+  void reset();
+  // Fill the jit stack pages with the poison pattern and mark them no-access.
+  // Caller decides whether poisoning is wanted; this method does the work
+  // unconditionally. Requires pageState_ == Ready.
+  void poison();
+  // Return the physical pages of the jit stack region to the OS. No-op if
+  // already decommitted. Requires gc::DecommitEnabled().
+  void decommit();
+
+  static void free(ContStack* stack);
   friend ContStackDeleter;
+  friend class ContStackArena;
 
  public:
-  static UniqueContStack allocate(JSContext* cx,
-                                  Handle<ContObject*> continuation,
-                                  Handle<JSFunction*> target,
-                                  void* contBaseFrameStub);
-  static void unwind(JSContext* cx, wasm::Handlers* handlers);
-  static void freeSuspended(JSContext* cx, UniqueContStack resumeBase);
-
-  [[nodiscard]] bool registerSelf(JSContext* cx);
-  void unregisterSelf(JSContext* cx);
+  static void unwind(wasm::Handlers* handlers);
+  static void freeSuspended(UniqueContStack resumeBase);
 
   // Trace the fields on this stack, but no the frames.
   void traceFields(JSTracer* trc);
@@ -204,6 +267,13 @@ class ContStack {
   void traceSuspended(JSTracer* trc);
   // Update all the frames for a moving GC. This must be the resume base.
   void updateSuspendedForMovingGC(Nursery& nursery);
+
+  // Given the base of the allocation for a continuation stack, get this header.
+  static ContStack* fromAllocation(uintptr_t allocation,
+                                   const ContStackSize& size) {
+    return reinterpret_cast<ContStack*>(allocation + size.totalSize -
+                                        size.headerSize);
+  }
 
   // Given the base frame pointer of a continuation stack, get this header.
   static ContStack* fromBaseFrameFP(void* fp) {
@@ -229,6 +299,10 @@ class ContStack {
   static constexpr int32_t offsetOfResumeTarget() {
     return offsetof(ContStack, resumeTarget_);
   }
+
+  // The allocation base pointer for this stack. This is not the stack base for
+  // execution.
+  uintptr_t allocationBase() const { return allocationBase_; }
 
   // Return if we can resume this stack.
   bool canResume() const {
@@ -295,6 +369,171 @@ class ContStack {
     }
     return handlers;
   }
+};
+
+using UniqueContStackArena =
+    mozilla::UniquePtr<ContStackArena, JS::DeletePolicy<ContStackArena>>;
+using ContStackArenaVector =
+    mozilla::Vector<UniqueContStackArena, 4, SystemAllocPolicy>;
+
+// A free-list of contiguously allocated ContStack objects. This object is the
+// header which points at the actual mmapped region.
+class ContStackArena {
+  ContStackAllocator* const owner_;
+  // The base pointer of the mmapped region of this arena.
+  void* base_ = nullptr;
+  // How many stacks can be stored in this arena.
+  const uint32_t capacity_ = 0;
+  // A bitmask representing everything being freed.
+  const uint64_t allFreeMask_ = 0;
+  // A bitmask of the free stacks in this arena.
+  uint64_t currentFreeMask_ = 0;
+  // Set when a stack is freed; cleared by purge(). Used to skip redundant
+  // madvise calls when nothing has been freed since the last purge.
+  bool dirtySinceLastPurge_ = false;
+
+  // Return the stack to the free list and poison it. Called automatically
+  // by ContStackDeleter.
+  void free(ContStack* stack);
+
+  bool isAllocated(uint32_t index) const {
+    MOZ_RELEASE_ASSERT(index < capacity_);
+    return (currentFreeMask_ & (uint64_t(1) << index)) == 0;
+  }
+
+  // Return the base of the allocation for `index`.
+  uintptr_t stackAllocation(uint32_t index) const;
+  // Return the ContStack pointer for `index`.
+  ContStack* stack(uint32_t index) const;
+  // Compute the index of a given ContStack header within this arena.
+  uint32_t stackIndex(const ContStack* stack) const;
+
+  friend class ContStack;
+
+ public:
+  // Do not use this, only public to make js_new work well.
+  ContStackArena(ContStackAllocator* owner, void* base);
+  ~ContStackArena();
+
+  // We use a bitvector for managing allocation status, which limits our
+  // capacity.
+  static constexpr size_t MaxCapacity = sizeof(currentFreeMask_) * CHAR_BIT;
+
+  // Allocate and initialize an arena of continuation stacks.
+  static UniqueContStackArena create(ContStackAllocator* owner);
+
+  // The base pointer of the arena.
+  uintptr_t base() const { return reinterpret_cast<uintptr_t>(base_); }
+  // How many stacks can be stored in this arena.
+  uint32_t capacity() const { return capacity_; }
+  // Whether any stacks have been allocated in this arena.
+  bool isEmpty() const { return currentFreeMask_ == allFreeMask_; }
+  // Whether a new stack can be allocated from this arena.
+  bool isFull() const { return currentFreeMask_ == 0; }
+  // Whether this arena contains a stack pointer.
+  bool contains(uintptr_t address) const;
+
+  // Allocate a ContStack. The stack will be returned automatically to the pool
+  // through ContStackDeleter when the UniquePtr goes out of scope.
+  UniqueContStack allocate(Handle<ContObject*> continuation,
+                           Handle<JSFunction*> target, void* contBaseFrameStub);
+
+  // Find the stack that would belong to this SP, if any.
+  ContStack* findForAddress(uintptr_t address) const;
+
+  template <typename Fn>
+  void forEachAllocatedStack(Fn&& fn) const {
+    uint64_t allocatedMask = ~currentFreeMask_ & allFreeMask_;
+    while (allocatedMask) {
+      // Find the lowest allocated bit.
+      uint32_t index = uint32_t(std::countr_zero(allocatedMask));
+
+      // Visit the stack.
+      fn(stack(index));
+
+      // Clear the lowest set bit.
+      allocatedMask &= allocatedMask - 1;
+    }
+  }
+
+  template <typename Fn>
+  void forEachFreedStack(Fn&& fn) const {
+    uint64_t freeMask = currentFreeMask_;
+    while (freeMask) {
+      uint32_t index = uint32_t(std::countr_zero(freeMask));
+      fn(stack(index));
+      freeMask &= freeMask - 1;
+    }
+  }
+
+  // Decommit the jit-stack pages of all freed slots in this arena.
+  void purge();
+};
+
+// An allocator for ContStack. It supports efficient:
+//   1. Allocation and deallocation
+//   2. Iteration over all allocated stacks
+//   3. Search for a stack given an SP
+//
+// Every ContStack has a fixed size determined at runtime and stored as
+// ContStackSize. The allocator manages a pool of ContStackArena which each
+// contain contiguous pools of ContStacks.
+//
+// This class is not thread-safe and must be used only on the same thread.
+class ContStackAllocator {
+  // The runtime computed size we should use for continuation stacks. Computed
+  // once at the first allocation; changes to the relevant prefs at runtime do
+  // not take effect.
+  ContStackSize stackSize_;
+  // How many stacks to put in an arena. Computed once at the first allocation,
+  // like stackSize_.
+  uint32_t arenaCapacity_ = 0;
+  // The pool of arenas. These are sorted by base address and don't overlap,
+  // which allows us to binary search to find an arena for a given SP.
+  ContStackArenaVector arenas_;
+  // Whether we've been initialized or not.
+  bool initialized_ = false;
+
+  void ensureInitialized();
+
+  ContStackArena* addArena(JSContext* cx);
+  ContStackArena* findOrAddArenaForAllocate(JSContext* cx);
+  ContStackArena* findArenaForAddress(uintptr_t address) const;
+
+ public:
+  ContStackAllocator() = default;
+
+  const ContStackSize& stackSize() const { return stackSize_; }
+  uint32_t arenaCapacity() const { return arenaCapacity_; }
+  size_t arenaSize() const {
+    // See the assertion in ContStackSize::compute for why this is safe.
+    return arenaCapacity_ * stackSize_.totalSize;
+  }
+
+  // Allocate a ContStack. The stack will be returned automatically to the pool
+  // through ContStackDeleter when the UniquePtr goes out of scope.
+  UniqueContStack allocate(JSContext* cx, Handle<ContObject*> continuation,
+                           Handle<JSFunction*> target, void* contBaseFrameStub);
+
+  // Find the ContStack whose stack region contains `address`.
+  ContStack* findForAddress(uintptr_t address) const;
+
+  // Call fn(ContStack*) for every currently allocated ContStack.
+  template <typename Fn>
+  void forEachAllocatedStack(Fn&& fn) const {
+    for (const auto& arena : arenas_) {
+      arena->forEachAllocatedStack(fn);
+    }
+  }
+
+  // Free empty arenas. If !shrinking, keep one empty arena cached.
+  void purge(bool shrinking);
+
+  // Total mapped bytes across all arenas. This reads arenas_.length()
+  // without synchronization, so it is only safe to call from the thread that
+  // owns this allocator (typically during memory reporting on the main
+  // thread).
+  size_t sizeOfNonHeap() const;
 };
 
 // A suspended wasm continuation that can be resumed.

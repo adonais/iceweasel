@@ -422,7 +422,7 @@ void nsAtomSubTable::GCLocked(GCKind aKind) {
       nsAutoCString name;
       atom->ToUTF8String(name);
       if (nonZeroRefcountAtomsCount == 0) {
-        nonZeroRefcountAtoms = name;
+        nonZeroRefcountAtoms = std::move(name);
       } else if (nonZeroRefcountAtomsCount < 20) {
         nonZeroRefcountAtoms += ","_ns + name;
       } else if (nonZeroRefcountAtomsCount == 20) {

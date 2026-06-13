@@ -162,7 +162,7 @@ async function openContextMenuForPasswordInput(browser) {
 async function testContextMenuOnInputField(testData) {
   let browser = gBrowser.selectedBrowser;
 
-  await SimpleTest.promiseFocus(browser.ownerGlobal);
+  await SimpleTest.promiseFocus(browser.documentGlobal);
   await testData.setup(browser);
 
   info("test setup completed");

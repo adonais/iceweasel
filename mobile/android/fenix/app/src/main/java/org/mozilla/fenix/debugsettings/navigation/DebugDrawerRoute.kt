@@ -30,6 +30,7 @@ import org.mozilla.fenix.debugsettings.logins.LoginsTools
 import org.mozilla.fenix.debugsettings.region.RegionTools
 import org.mozilla.fenix.debugsettings.store.DebugDrawerAction
 import org.mozilla.fenix.debugsettings.store.DebugDrawerStore
+import org.mozilla.fenix.debugsettings.tabprocesstools.TabProcessTools
 import org.mozilla.fenix.debugsettings.tabs.TabGroupTools
 import org.mozilla.fenix.tabgroups.storage.repository.TabGroupRepository
 import org.mozilla.fenix.debugsettings.cfrs.CfrTools as CfrToolsScreen
@@ -96,6 +97,10 @@ enum class DebugDrawerRoute(
     TabGroupTools(
         route = "tab_group_tools",
         title = R.string.debug_drawer_tab_group_tools_title,
+    ),
+    TabProcessTools(
+        route = "tab_process_tools",
+        title = R.string.debug_drawer_tab_process_tools_title,
     ),
     SportsWidgetTool(
         route = "sports_widget_tool",
@@ -264,6 +269,15 @@ enum class DebugDrawerRoute(
                                 tabGroupRepository = tabGroupRepository,
                                 browserStore = browserStore,
                             )
+                        }
+                    }
+
+                    TabProcessTools -> {
+                        onClick = {
+                            debugDrawerStore.dispatch(DebugDrawerAction.NavigateTo.TabProcessTools)
+                        }
+                        content = {
+                            TabProcessTools()
                         }
                     }
 

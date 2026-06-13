@@ -9,7 +9,6 @@ import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiSelector
 import androidx.test.uiautomator.Until
 import org.junit.After
-import org.junit.Assert
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -25,6 +24,7 @@ import org.mozilla.focus.helpers.TestHelper.mDevice
 import org.mozilla.focus.helpers.TestHelper.pressHomeKey
 import org.mozilla.focus.helpers.TestHelper.waitingTime
 import org.mozilla.focus.testAnnotations.SmokeTest
+import kotlin.test.assertNotNull
 
 // This test switches out of Focus and opens it from the private browsing notification
 @RunWith(AndroidJUnit4ClassRunner::class)
@@ -99,7 +99,7 @@ class SwitchContextTest {
         pressHomeKey()
 
         // Wait for launcher
-        Assert.assertNotNull(launcherPackage)
+        assertNotNull(launcherPackage)
         mDevice.wait(
             Until.hasObject(By.pkg(launcherPackage).depth(0)),
             appLaunchTimeoutMillis.toLong(),

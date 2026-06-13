@@ -38,7 +38,7 @@ export class MiddleMousePasteHandlerParent extends JSWindowActorParent {
         return;
       }
       fillInClickEvent(this, message.data);
-      browser.ownerGlobal.middleMousePaste(message.data);
+      browser.documentGlobal.middleMousePaste(message.data);
     }
   }
 }
@@ -77,7 +77,7 @@ export class ClickHandlerParent extends JSWindowActorParent {
       // Just bail.
       return;
     }
-    let window = browser.ownerGlobal;
+    let window = browser.documentGlobal;
 
     // If the browser is not in a place where we can open links, bail out.
     // This can happen in osx sheets, dialogs, etc. that are not browser

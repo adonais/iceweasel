@@ -490,6 +490,7 @@ void GeckoMediaPluginServiceParent::UnloadPlugins() {
     std::swap(plugins, mPlugins);
 
     for (GMPServiceParent* parent : mServiceParents) {
+      parent->BeginShutdown();
       (void)parent->SendBeginShutdown();
     }
 
@@ -586,7 +587,7 @@ RefPtr<GenericPromise> GeckoMediaPluginServiceParent::LoadFromEnvironment() {
 class NotifyObserversTask final : public mozilla::Runnable {
  public:
   explicit NotifyObserversTask(const char* aTopic, nsString aData = u""_ns)
-      : Runnable(aTopic), mTopic(aTopic), mData(aData) {}
+      : Runnable(aTopic), mTopic(aTopic), mData(std::move(aData)) {}
   NS_IMETHOD Run() override {
     MOZ_ASSERT(NS_IsMainThread());
     nsCOMPtr<nsIObserverService> obsService =
@@ -1924,6 +1925,11 @@ GMPServiceParent::GMPServiceParent(GeckoMediaPluginServiceParent* aService)
 GMPServiceParent::~GMPServiceParent() {
   MOZ_ASSERT(NS_IsMainThread(), "Should be destroyted on the main thread");
   mService->ServiceUserDestroyed(this);
+}
+
+void GMPServiceParent::BeginShutdown() {
+  mService->mMutex.AssertCurrentThreadOwns();
+  mShutdownBlocker = nullptr;
 }
 
 mozilla::ipc::IPCResult GMPServiceParent::RecvLaunchGMP(

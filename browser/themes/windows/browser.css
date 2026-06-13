@@ -29,10 +29,10 @@
 :root[customtitlebar]:not([lwtheme], [builtintheme]) {
   /* stylelint-disable-next-line media-query-no-invalid */
   @media (-moz-windows-mica) or ((-moz-windows-accent-color-in-titlebar) and -moz-pref("browser.theme.windows.accent-color-in-tabs.enabled")) {
-    --toolbox-bgcolor: ActiveCaption;
-    --toolbox-textcolor: CaptionText;
-    --toolbox-bgcolor-inactive: InactiveCaption;
-    --toolbox-textcolor-inactive: InactiveCaptionText;
+    --toolbox-background-color: ActiveCaption;
+    --toolbox-text-color: CaptionText;
+    --toolbox-background-color-inactive: InactiveCaption;
+    --toolbox-text-color-inactive: InactiveCaptionText;
   }
 
   @media (-moz-windows-mica) {
@@ -49,7 +49,10 @@
      * as the backdrop matches our color scheme. The .6 matches what we do for
      * acrylic, and the .15 matches the 85% we do for the default toolbar
      * background on the native theme. */
-    --toolbar-bgcolor: light-dark(var(--color-white-alpha-60), var(--color-white-alpha-20));
+    /* stylelint-disable-next-line media-query-no-invalid */
+    @media not -moz-pref("browser.nova.enabled") {
+      --toolbar-background-color: light-dark(var(--color-white-alpha-60), var(--color-white-alpha-20));
+    }
   }
 
   /* stylelint-disable-next-line media-query-no-invalid */
@@ -60,7 +63,7 @@
        * is arbitrary, so the hardcoded brand colors from browser-colors.css
        * might not provide sufficient contrast. */
       --toolbarbutton-icon-fill: currentColor;
-      --toolbar-field-color: currentColor;
+      --toolbar-field-text-color: currentColor;
       --urlbar-box-background-color: var(--button-background-color-hover);
       --urlbar-box-background-color-focus: var(--button-background-color);
       --urlbar-box-background-color-hover: var(--button-background-color-hover);
@@ -142,10 +145,10 @@
 
   @media not (prefers-contrast) {
     &:hover {
-      background-color: var(--toolbarbutton-hover-background);
+      background-color: var(--toolbarbutton-background-color-hover);
 
       &:active {
-        background-color: var(--toolbarbutton-active-background);
+        background-color: var(--toolbarbutton-background-color-active);
       }
     }
 

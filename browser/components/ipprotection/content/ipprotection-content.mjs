@@ -109,7 +109,7 @@ export default class IPProtectionContentElement extends MozLitElement {
   }
 
   handleClickSupportLink(event) {
-    const win = event.target.ownerGlobal;
+    const win = event.target.documentGlobal;
 
     if (event.target === this.supportLinkEl) {
       event.preventDefault();
@@ -121,7 +121,7 @@ export default class IPProtectionContentElement extends MozLitElement {
   }
 
   handleUpgrade(event) {
-    const win = event.target.ownerGlobal;
+    const win = event.target.documentGlobal;
     win.openWebLinkIn(LINKS.PRODUCT_URL + "#pricing", "tab");
     // Close the panel
     this.dispatchEvent(
@@ -194,7 +194,7 @@ export default class IPProtectionContentElement extends MozLitElement {
 
   handleClickSettingsButton(event) {
     event.preventDefault();
-    const win = event.target.ownerGlobal;
+    const win = event.target.documentGlobal;
     win.openPreferences("privacy-vpn");
     this.dispatchEvent(
       new CustomEvent("IPProtection:Close", { bubbles: true, composed: true })
@@ -324,21 +324,21 @@ export default class IPProtectionContentElement extends MozLitElement {
     const isNetworkError = this.state.error === ERRORS.NETWORK;
     const isCatastrophicError = this.state.error === ERRORS.CATASTROPHIC;
 
-    let headerL10nId = "ipprotection-connection-status-generic-error-title";
+    let headerL10nId = "ipprotection-connection-status-generic-error-title-1";
     let descriptionL10nId =
       "ipprotection-connection-status-generic-error-description";
     let errorType = ERRORS.GENERIC;
     let imageSrc = null;
 
     if (isNetworkError) {
-      headerL10nId = "ipprotection-connection-status-network-error-title";
+      headerL10nId = "ipprotection-connection-status-network-error-title-1";
       descriptionL10nId =
         "ipprotection-connection-status-network-error-description";
       errorType = ERRORS.NETWORK;
       imageSrc =
         "chrome://browser/content/ipprotection/assets/states/ipprotection-info.svg";
     } else if (isCatastrophicError) {
-      headerL10nId = "ipprotection-connection-status-blocked-error-title";
+      headerL10nId = "ipprotection-connection-status-blocked-error-title-1";
       descriptionL10nId =
         "ipprotection-connection-status-generic-error-try-again";
       errorType = ERRORS.CATASTROPHIC;
@@ -369,7 +369,7 @@ export default class IPProtectionContentElement extends MozLitElement {
   pausedTemplate() {
     return html`
       <ipprotection-status-box
-        headerL10nId="ipprotection-connection-status-paused-title-1"
+        headerL10nId="ipprotection-connection-status-paused-title-2"
         descriptionL10nId="ipprotection-connection-status-paused-description-1"
         .descriptionL10nArgs=${JSON.stringify({
           maxUsage: this.state.bandwidthUsage.max / BANDWIDTH.BYTES_IN_GB,
@@ -457,7 +457,7 @@ export default class IPProtectionContentElement extends MozLitElement {
   }
 
   mainContentTemplate() {
-    if (this.state.isCheckingEntitlement) {
+    if (this.state.isEnrolling) {
       return html`${this.enrollingTemplate()} ${this.footerTemplate()}`;
     }
 

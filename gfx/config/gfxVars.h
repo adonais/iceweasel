@@ -25,7 +25,6 @@ class MOZ_STACK_CLASS gfxVarsCollectUpdates;
   _(AllowWebGL, bool, true)                                        \
   _(AllowWebgl2, bool, true)                                       \
   _(AllowWebglAccelAngle, bool, true)                              \
-  _(AllowWebglOop, bool, true)                                     \
   _(BrowserTabsRemoteAutostart, bool, false)                       \
   _(ContentBackend, BackendType, BackendType::NONE)                \
   _(SoftwareBackend, BackendType, BackendType::NONE)               \
@@ -98,6 +97,7 @@ class MOZ_STACK_CLASS gfxVarsCollectUpdates;
   _(UseAV1HwEncode, bool, false)                                   \
   _(UseH264HwDecode, bool, false)                                  \
   _(UseH264HwEncode, bool, false)                                  \
+  _(HasWebrtcH264Hw, bool, false)                                  \
   _(UseHEVCHwDecode, bool, false)                                  \
   _(UseHEVCHwEncode, bool, false)                                  \
   _(HwDecodedVideoZeroCopy, bool, false)                           \

@@ -6,7 +6,6 @@
 #include "MPRISServiceHandler.h"
 
 #include <stdint.h>
-#include <inttypes.h>
 #include <unordered_map>
 
 #include "MPRISInterfaceDescription.h"
@@ -844,17 +843,33 @@ struct InterfaceProperty {
   const char* interface;
   const char* property;
 };
-MOZ_RUNINIT static const std::unordered_map<dom::MediaControlKey,
-                                            InterfaceProperty>
-    gKeyProperty = {
-        {dom::MediaControlKey::Focus, {DBUS_MPRIS_INTERFACE, "CanRaise"}},
-        {dom::MediaControlKey::Nexttrack,
-         {DBUS_MPRIS_PLAYER_INTERFACE, "CanGoNext"}},
-        {dom::MediaControlKey::Previoustrack,
-         {DBUS_MPRIS_PLAYER_INTERFACE, "CanGoPrevious"}},
-        {dom::MediaControlKey::Play, {DBUS_MPRIS_PLAYER_INTERFACE, "CanPlay"}},
-        {dom::MediaControlKey::Pause,
-         {DBUS_MPRIS_PLAYER_INTERFACE, "CanPause"}}};
+
+class MediaControlKeyToInterfaceProperty {
+  static constexpr std::pair<dom::MediaControlKey, InterfaceProperty>
+      mapping[] = {
+          {dom::MediaControlKey::Focus, {DBUS_MPRIS_INTERFACE, "CanRaise"}},
+          {dom::MediaControlKey::Nexttrack,
+           {DBUS_MPRIS_PLAYER_INTERFACE, "CanGoNext"}},
+          {dom::MediaControlKey::Previoustrack,
+           {DBUS_MPRIS_PLAYER_INTERFACE, "CanGoPrevious"}},
+          {dom::MediaControlKey::Play,
+           {DBUS_MPRIS_PLAYER_INTERFACE, "CanPlay"}},
+          {dom::MediaControlKey::Pause,
+           {DBUS_MPRIS_PLAYER_INTERFACE, "CanPause"}},
+  };
+
+ public:
+  auto find(dom::MediaControlKey Value) const {
+    // Linear scan has we have only a few entries. Could move to a LUT if that
+    // number were to grow.
+    return std::find_if(std::begin(mapping), std::end(mapping),
+                        [Value](const auto& kv) { return kv.first == Value; });
+  }
+  auto begin() const { return std::begin(mapping); }
+  auto end() const { return std::end(mapping); }
+};
+
+constexpr MediaControlKeyToInterfaceProperty gKeyProperty;
 
 void MPRISServiceHandler::SetSupportedMediaKeys(
     const MediaKeysArray& aSupportedKeys) {

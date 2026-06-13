@@ -94,17 +94,17 @@ void ModuleLoaderBase::EnsureModuleHooksInitialized() {
 
   SetModuleLoadHook(rt, HostLoadImportedModule);
   SetModuleMetadataHook(rt, HostPopulateImportMeta);
-  SetScriptPrivateReferenceHooks(rt, HostAddRefTopLevelScript,
-                                 HostReleaseTopLevelScript);
+  SetScriptPrivateReferenceHooks(rt, HostAddRefScriptFetchInfo,
+                                 HostReleaseScriptFetchInfo);
 }
 
-static bool CreateBadModuleTypeError(JSContext* aCx, LoadedScript* aScript,
-                                     nsIURI* aURI,
+static bool CreateBadModuleTypeError(JSContext* aCx,
+                                     ScriptFetchInfo* aFetchInfo, nsIURI* aURI,
                                      MutableHandle<Value> aErrorOut) {
   Rooted<JSString*> filename(aCx);
-  if (aScript) {
+  if (aFetchInfo) {
     nsAutoCString url;
-    aScript->BaseURL()->GetAsciiSpec(url);
+    aFetchInfo->BaseURL()->GetAsciiSpec(url);
     filename = JS_NewStringCopyZ(aCx, url.get());
   } else {
     filename = JS_NewStringCopyZ(aCx, "(unknown)");
@@ -177,129 +177,125 @@ bool ModuleLoaderBase::HostLoadImportedModule(
     return false;
   }
 
-  {
-    // LoadedScript should only live in this block, otherwise it will be a GC
-    // hazard
-    RefPtr<LoadedScript> script(GetLoadedScriptOrNull(aReferrer));
+  RefPtr<ScriptFetchInfo> fetchInfo(GetScriptFetchInfoOrNull(aReferrer));
 
-    // Step 8. Let url be the result of resolving a module specifier given
-    //   referencingScript and moduleRequest.[[Specifier]], catching any
-    //   exceptions. If they throw an exception, let resolutionError be the
-    //   thrown exception.
-    auto result = loader->ResolveModuleSpecifier(script, string);
+  // Step 8. Let url be the result of resolving a module specifier given
+  //   referencingScript and moduleRequest.[[Specifier]], catching any
+  //   exceptions. If they throw an exception, let resolutionError be the
+  //   thrown exception.
+  auto result = loader->ResolveModuleSpecifier(fetchInfo, string);
 
-    // Step 9. If the previous step threw an exception, then:
-    if (result.isErr()) {
-      Rooted<Value> error(aCx);
-      nsresult rv =
-          loader->HandleResolveFailure(aCx, script, string, result.unwrapErr(),
-                                       aLineNumber, aColumnNumber, &error);
-      if (NS_FAILED(rv)) {
-        JS_ReportOutOfMemory(aCx);
-        return false;
-      }
-
-      // Step 2. Perform FinishLoadingImportedModule(referrer, moduleRequest,
-      //   payload, ThrowCompletion(resolutionError)).
-      FinishLoadingImportedModuleFailed(aCx, aPayload, error);
-
-      // Step 3. Return.
-      return true;
-    }
-
-    MOZ_ASSERT(result.isOk());
-    auto record = result.unwrap();
-    nsCOMPtr<nsIURI> uri = record->Result();
-    MOZ_ASSERT(uri, "Failed to resolve module specifier");
-
-    if (ImportMap::IsMultipleImportMapsSupported()) {
-      // This implements the 'Add module to resolved module set' part defined in
-      // 'resolve a module specifier'. This is done here because we need to
-      // process the resolved specifiers differently for preloading module
-      // scripts.
-      //
-      // See https://html.spec.whatwg.org/#resolve-a-module-specifier
-      loader->AddToResolvedModuleSet(std::move(record), script, aHostDefined);
-    }
-
-    ModuleType moduleType = GetModuleRequestType(aCx, aModuleRequest);
-    if (!loader->IsModuleTypeAllowed(moduleType)) {
-      LOG(("ModuleLoaderBase::HostLoadImportedModule uri %s, bad module type",
-           uri->GetSpecOrDefault().get()));
-      Rooted<Value> error(aCx);
-      if (!CreateBadModuleTypeError(aCx, script, uri, &error)) {
-        JS_ReportOutOfMemory(aCx);
-        return false;
-      }
-      JS_SetPendingException(aCx, error);
+  // Step 9. If the previous step threw an exception, then:
+  if (result.isErr()) {
+    Rooted<Value> error(aCx);
+    nsresult rv =
+        loader->HandleResolveFailure(aCx, fetchInfo, string, result.unwrapErr(),
+                                     aLineNumber, aColumnNumber, &error);
+    if (NS_FAILED(rv)) {
+      JS_ReportOutOfMemory(aCx);
       return false;
     }
 
-    RefPtr<ScriptFetchOptions> options = nullptr;
-    ReferrerPolicy referrerPolicy;
-    nsIURI* fetchReferrer = nullptr;
-    if (script) {
-      options = script->GetFetchOptions();
-      referrerPolicy = script->ReferrerPolicy();
-      fetchReferrer = script->BaseURL();
-    } else {
-      options = loader->CreateDefaultScriptFetchOptions();
-      referrerPolicy = ReferrerPolicy::_empty;
-      fetchReferrer = loader->GetClientReferrerURI();
+    // Step 2. Perform FinishLoadingImportedModule(referrer, moduleRequest,
+    //   payload, ThrowCompletion(resolutionError)).
+    FinishLoadingImportedModuleFailed(aCx, aPayload, error);
+
+    // Step 3. Return.
+    return true;
+  }
+
+  MOZ_ASSERT(result.isOk());
+  auto record = result.unwrap();
+  nsCOMPtr<nsIURI> uri = record->Result();
+  MOZ_ASSERT(uri, "Failed to resolve module specifier");
+
+  if (ImportMap::IsMultipleImportMapsSupported()) {
+    // This implements the 'Add module to resolved module set' part defined in
+    // 'resolve a module specifier'. This is done here because we need to
+    // process the resolved specifiers differently for preloading module
+    // scripts.
+    //
+    // See https://html.spec.whatwg.org/#resolve-a-module-specifier
+    loader->AddToResolvedModuleSet(std::move(record), fetchInfo, aHostDefined);
+  }
+
+  ModuleType moduleType = GetModuleRequestType(aCx, aModuleRequest);
+  if (!loader->IsModuleTypeAllowed(moduleType)) {
+    LOG(("ModuleLoaderBase::HostLoadImportedModule uri %s, bad module type",
+         uri->GetSpecOrDefault().get()));
+    Rooted<Value> error(aCx);
+    if (!CreateBadModuleTypeError(aCx, fetchInfo, uri, &error)) {
+      JS_ReportOutOfMemory(aCx);
+      return false;
     }
+    JS_SetPendingException(aCx, error);
+    return false;
+  }
 
-    mozilla::dom::SRIMetadata sriMetadata;
-    loader->GetImportMapSRI(
-        uri, fetchReferrer,
-        loader->GetScriptLoaderInterface()->GetConsoleReportCollector(),
-        &sriMetadata);
+  RefPtr<ScriptFetchOptions> options = nullptr;
+  ReferrerPolicy referrerPolicy;
+  nsIURI* fetchReferrer = nullptr;
+  if (fetchInfo) {
+    options = fetchInfo->FetchOptions();
+    referrerPolicy = fetchInfo->ReferrerPolicy();
+    fetchReferrer = fetchInfo->BaseURL();
+  } else {
+    options = loader->CreateDefaultScriptFetchOptions();
+    referrerPolicy = ReferrerPolicy::_empty;
+    fetchReferrer = loader->GetClientReferrerURI();
+  }
 
-    RefPtr<ModuleLoadRequest> request = loader->CreateRequest(
-        aCx, uri, aModuleRequest, aHostDefined, aPayload, isDynamicImport,
-        options, referrerPolicy, fetchReferrer, sriMetadata);
-    if (!request) {
-      MOZ_ASSERT(isDynamicImport);
+  mozilla::dom::SRIMetadata sriMetadata;
+  loader->GetImportMapSRI(
+      uri, fetchReferrer,
+      loader->GetScriptLoaderInterface()->GetConsoleReportCollector(),
+      &sriMetadata);
+
+  RefPtr<ModuleLoadRequest> request = loader->CreateRequest(
+      aCx, uri, aModuleRequest, aHostDefined, aPayload, isDynamicImport,
+      options, referrerPolicy, fetchReferrer, sriMetadata);
+  if (!request) {
+    MOZ_ASSERT(isDynamicImport);
+    nsAutoCString url;
+    uri->GetSpec(url);
+    JS_ReportErrorNumberASCII(aCx, js::GetErrorMessage, nullptr,
+                              JSMSG_DYNAMIC_IMPORT_FAILED, url.get());
+    return false;
+  }
+
+  LOG(
+      ("ModuleLoaderBase::HostLoadImportedModule loader (%p) uri %s referrer "
+       "(%p) request (%p)",
+       loader.get(), uri->GetSpecOrDefault().get(), aReferrer.get(),
+       request.get()));
+
+  request->SetImport(aReferrer, aModuleRequest, aPayload);
+
+  if (isDynamicImport) {
+    loader->AppendDynamicImport(request);
+  }
+
+  nsresult rv = loader->StartModuleLoad(request);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    MOZ_ASSERT(!request->mModuleScript);
+    loader->GetScriptLoaderInterface()->ReportErrorToConsole(request, rv);
+    if (isDynamicImport) {
+      loader->RemoveDynamicImport(request);
+
       nsAutoCString url;
       uri->GetSpec(url);
       JS_ReportErrorNumberASCII(aCx, js::GetErrorMessage, nullptr,
                                 JSMSG_DYNAMIC_IMPORT_FAILED, url.get());
-      return false;
+    } else {
+      loader->OnFetchFailed(request);
+      return true;
     }
 
-    LOG(
-        ("ModuleLoaderBase::HostLoadImportedModule loader (%p) uri %s referrer "
-         "(%p) request (%p)",
-         loader.get(), uri->GetSpecOrDefault().get(), aReferrer.get(),
-         request.get()));
+    return false;
+  }
 
-    request->SetImport(aReferrer, aModuleRequest, aPayload);
-
-    if (isDynamicImport) {
-      loader->AppendDynamicImport(request);
-    }
-
-    nsresult rv = loader->StartModuleLoad(request);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      MOZ_ASSERT(!request->mModuleScript);
-      loader->GetScriptLoaderInterface()->ReportErrorToConsole(request, rv);
-      if (isDynamicImport) {
-        loader->RemoveDynamicImport(request);
-
-        nsAutoCString url;
-        uri->GetSpec(url);
-        JS_ReportErrorNumberASCII(aCx, js::GetErrorMessage, nullptr,
-                                  JSMSG_DYNAMIC_IMPORT_FAILED, url.get());
-      } else {
-        loader->OnFetchFailed(request);
-        return true;
-      }
-
-      return false;
-    }
-
-    if (isDynamicImport) {
-      loader->OnDynamicImportStarted(request);
-    }
+  if (isDynamicImport) {
+    loader->OnDynamicImportStarted(request);
   }
 
   return true;
@@ -377,13 +373,12 @@ JSString* ModuleLoaderBase::ImportMetaResolveImpl(
     Handle<JSString*> aSpecifier) {
   RootedString urlString(aCx);
 
+  // The destructor of RefPtr local variables can GC, and they should be
+  // performed before returning the raw JSString* pointer.
   {
-    // ModuleScript should only live in this block, otherwise it will be a GC
-    // hazard
-    RefPtr<ModuleScript> script =
-        static_cast<ModuleScript*>(aReferencingPrivate.toPrivate());
-    MOZ_ASSERT(script->IsModuleScript());
-    MOZ_ASSERT(GetModulePrivate(script->ModuleRecord()) == aReferencingPrivate);
+    RefPtr<ScriptFetchInfo> fetchInfo =
+        static_cast<ScriptFetchInfo*>(aReferencingPrivate.toPrivate());
+    MOZ_ASSERT(fetchInfo->IsForModuleScript());
 
     RefPtr<ModuleLoaderBase> loader = GetCurrentModuleLoader(aCx);
     if (!loader) {
@@ -395,11 +390,11 @@ JSString* ModuleLoaderBase::ImportMetaResolveImpl(
       return nullptr;
     }
 
-    auto result = loader->ResolveModuleSpecifier(script, specifier);
+    auto result = loader->ResolveModuleSpecifier(fetchInfo, specifier);
     if (result.isErr()) {
       Rooted<Value> error(aCx);
       nsresult rv = loader->HandleResolveFailure(
-          aCx, script, specifier, result.unwrapErr(), 0,
+          aCx, fetchInfo, specifier, result.unwrapErr(), 0,
           ColumnNumberOneOrigin(), &error);
       if (NS_FAILED(rv)) {
         JS_ReportOutOfMemory(aCx);
@@ -434,14 +429,13 @@ JSString* ModuleLoaderBase::ImportMetaResolveImpl(
 bool ModuleLoaderBase::HostPopulateImportMeta(JSContext* aCx,
                                               Handle<JSObject*> aModuleRecord,
                                               Handle<JSObject*> aMetaObject) {
-  RefPtr<ModuleScript> script = static_cast<ModuleScript*>(
+  RefPtr<ScriptFetchInfo> fetchInfo = static_cast<ScriptFetchInfo*>(
       JS::GetModulePrivate(aModuleRecord).toPrivate());
-  MOZ_ASSERT(script->ModuleRecord() == aModuleRecord);
-  MOZ_ASSERT(script->IsModuleScript());
+  MOZ_ASSERT(fetchInfo->IsForModuleScript());
 
   nsAutoCString url;
-  MOZ_DIAGNOSTIC_ASSERT(script->BaseURL());
-  MOZ_ALWAYS_SUCCEEDS(script->BaseURL()->GetAsciiSpec(url));
+  MOZ_DIAGNOSTIC_ASSERT(fetchInfo->BaseURL());
+  MOZ_ALWAYS_SUCCEEDS(fetchInfo->BaseURL()->GetAsciiSpec(url));
 
   Rooted<JSString*> urlString(aCx, JS_NewStringCopyZ(aCx, url.get()));
   if (!urlString) {
@@ -538,7 +532,7 @@ ModuleLoaderBase* ModuleLoaderBase::GetCurrentModuleLoader(JSContext* aCx) {
 }
 
 // static
-LoadedScript* ModuleLoaderBase::GetLoadedScriptOrNull(
+ScriptFetchInfo* ModuleLoaderBase::GetScriptFetchInfoOrNull(
     Handle<JSScript*> aReferrer) {
   if (!aReferrer) {
     return nullptr;
@@ -549,7 +543,7 @@ LoadedScript* ModuleLoaderBase::GetLoadedScriptOrNull(
     return nullptr;
   }
 
-  return static_cast<LoadedScript*>(value.toPrivate());
+  return static_cast<ScriptFetchInfo*>(value.toPrivate());
 }
 
 nsresult ModuleLoaderBase::StartModuleLoad(ModuleLoadRequest* aRequest) {
@@ -565,14 +559,10 @@ nsresult ModuleLoaderBase::StartOrRestartModuleLoad(ModuleLoadRequest* aRequest,
   MOZ_ASSERT(aRequest->mLoader == this);
   MOZ_ASSERT(aRequest->IsFetching());
 
-  // NOTE: The LoadedScript::mDataType field used by the IsStencil call can be
-  //       modified asynchronously after the StartFetch call.
-  //       In order to avoid the race condition, cache the value here.
-  bool isCachedStencil = aRequest->IsCachedStencil();
+  MOZ_ASSERT_IF(aRequest->IsRetrievedFromMemoryCache(),
+                aRestart == RestartRequest::No);
 
-  MOZ_ASSERT_IF(isCachedStencil, aRestart == RestartRequest::No);
-
-  if (!isCachedStencil) {
+  if (!aRequest->IsRetrievedFromMemoryCache()) {
     aRequest->SetUnknownDataType();
   }
 
@@ -607,7 +597,7 @@ nsresult ModuleLoaderBase::StartOrRestartModuleLoad(ModuleLoadRequest* aRequest,
   rv = StartFetch(aRequest);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  if (isCachedStencil) {
+  if (aRequest->IsRetrievedFromMemoryCache()) {
     MOZ_ASSERT(
         IsModuleFetched(ModuleMapKey(aRequest->URI(), aRequest->mModuleType)));
     return NS_OK;
@@ -636,10 +626,8 @@ bool ModuleLoaderBase::IsModuleFetched(const ModuleMapKey& key) const {
 
 nsresult ModuleLoaderBase::GetFetchedModuleURLs(nsTArray<nsCString>& aURLs) {
   for (const auto& entry : mFetchedModules) {
-    nsIURI* uri = entry.GetData()->GetURI();
-
     nsAutoCString spec;
-    nsresult rv = uri->GetSpec(spec);
+    nsresult rv = entry.mUri->GetSpec(spec);
     NS_ENSURE_SUCCESS(rv, rv);
 
     aURLs.AppendElement(spec);
@@ -780,8 +768,8 @@ nsresult ModuleLoaderBase::OnFetchComplete(ModuleLoadRequest* aRequest,
     }
 #endif
 
-    if (aRequest->IsTextSource()) {
-      aRequest->ClearScriptText();
+    if (aRequest->getLoadedScript()->IsTextSource()) {
+      aRequest->getLoadedScript()->ClearScriptText();
     }
 
     if (NS_FAILED(rv)) {
@@ -1029,14 +1017,9 @@ nsresult ModuleLoaderBase::CreateModuleScript(ModuleLoadRequest* aRequest) {
     }
 
     MOZ_ASSERT(aRequest->mLoadedScript->IsModuleScript());
-    RefPtr<ModuleScript> moduleScript =
-        aRequest->mLoadedScript->AsModuleScript();
 
-    // Update the module script's referrer policy to reflect any changes made
-    // to the ModuleLoadRequest during HTTP response parsing.
-    if (moduleScript->ReferrerPolicy() != aRequest->ReferrerPolicy()) {
-      moduleScript->UpdateReferrerPolicy(aRequest->ReferrerPolicy());
-    }
+    RefPtr<ModuleScript> moduleScript = new ModuleScript(aRequest->FetchInfo());
+
     aRequest->mModuleScript = moduleScript;
 
     moduleScript->SetForPreload(aRequest->mLoadContext->IsPreload());
@@ -1058,6 +1041,10 @@ nsresult ModuleLoaderBase::CreateModuleScript(ModuleLoadRequest* aRequest) {
     }
 
     moduleScript->SetModuleRecord(module);
+
+    if (IsCyclicModule(module)) {
+      aRequest->FetchInfo()->AssociateWithModule(module);
+    }
   }
 
   LOG(("ScriptLoadRequest (%p):   module script == %p ForPreload %d", aRequest,
@@ -1080,13 +1067,13 @@ nsresult ModuleLoaderBase::GetResolveFailureMessage(ResolveError aError,
 }
 
 nsresult ModuleLoaderBase::HandleResolveFailure(
-    JSContext* aCx, LoadedScript* aScript, const nsAString& aSpecifier,
+    JSContext* aCx, ScriptFetchInfo* aFetchInfo, const nsAString& aSpecifier,
     ResolveError aError, uint32_t aLineNumber,
     ColumnNumberOneOrigin aColumnNumber, MutableHandle<Value> aErrorOut) {
   Rooted<JSString*> filename(aCx);
-  if (aScript) {
+  if (aFetchInfo) {
     nsAutoCString url;
-    aScript->BaseURL()->GetAsciiSpec(url);
+    aFetchInfo->BaseURL()->GetAsciiSpec(url);
     filename = JS_NewStringCopyZ(aCx, url.get());
   } else {
     filename = JS_NewStringCopyZ(aCx, "(unknown)");
@@ -1115,15 +1102,15 @@ nsresult ModuleLoaderBase::HandleResolveFailure(
 }
 
 ResolveResult ModuleLoaderBase::ResolveModuleSpecifier(
-    LoadedScript* aScript, const nsAString& aSpecifier) {
+    ScriptFetchInfo* aFetchInfo, const nsAString& aSpecifier) {
   // Import Maps are not supported on workers/worklets.
   // See https://github.com/WICG/import-maps/issues/2
   MOZ_ASSERT_IF(!NS_IsMainThread(), mImportMap == nullptr);
 
   // Forward to the updated 'Resolve a module specifier' algorithm defined in
   // the Import Maps spec.
-  return ImportMap::ResolveModuleSpecifier(mImportMap.get(), mLoader, aScript,
-                                           aSpecifier);
+  return ImportMap::ResolveModuleSpecifier(mImportMap.get(), mLoader,
+                                           aFetchInfo, aSpecifier);
 }
 
 ResolvedModuleSet* ModuleLoaderBase::GetResolvedModuleSet() {
@@ -1173,15 +1160,16 @@ static ModuleLoadRequest* GetPreloadRootModuleRequest(
 }
 
 void ModuleLoaderBase::AddToResolvedModuleSet(
-    UniquePtr<SpecifierResolutionRecord> aRecord, LoadedScript* aScript,
-    Handle<Value> aHostDefined) {
+    UniquePtr<SpecifierResolutionRecord> aRecord,
+    ScriptFetchInfo* aFetchInfo /* = nullptr */,
+    Handle<Value> aHostDefined /* = UndefinedHandleValue */) {
   // 2. If global does not implement Window, then return.
   if (!mLoader->IsImportMapSupported()) {
     return;
   }
 
-  bool isPreloadModule = aScript && aScript->IsModuleScript() &&
-                         aScript->AsModuleScript()->ForPreload();
+  bool isPreloadModule = aFetchInfo && aFetchInfo->IsForModuleScript() &&
+                         aFetchInfo->IsForModulePreload();
   if (isPreloadModule) {
     RefPtr<ModuleLoadRequest> root = GetPreloadRootModuleRequest(aHostDefined);
     AddToPreloadedResolvedSet(root, std::move(aRecord));
@@ -1671,7 +1659,10 @@ void ModuleLoaderBase::ProcessDynamicImport(ModuleLoadRequest* aRequest) {
   LOG(("ScriptLoadRequest (%p): ProcessDynamicImport", aRequest));
   FinishLoadingImportedModule(cx, aRequest);
 
-  (void)mLoader->MaybePrepareModuleForDiskCacheAfterExecute(aRequest, NS_OK);
+  // TODO: Implement caching for wasm modules (Bug 1998240).
+  if (!aRequest->IsWasmBytes()) {
+    (void)mLoader->MaybePrepareModuleForDiskCacheAfterExecute(aRequest, NS_OK);
+  }
 
   mLoader->MaybeUpdateDiskCache();
 }
@@ -1775,7 +1766,10 @@ nsresult ModuleLoaderBase::EvaluateModuleInContext(
     }
   }
 
-  rv = mLoader->MaybePrepareModuleForDiskCacheAfterExecute(aRequest, NS_OK);
+  // TODO: Implement caching for wasm modules (Bug 1998240).
+  if (!aRequest->IsWasmBytes()) {
+    rv = mLoader->MaybePrepareModuleForDiskCacheAfterExecute(aRequest, NS_OK);
+  }
 
   mLoader->MaybeUpdateDiskCache();
 
@@ -1796,7 +1790,7 @@ UniquePtr<ImportMap> ModuleLoaderBase::ParseImportMap(
     return nullptr;
   }
 
-  MOZ_ASSERT(aRequest->IsTextSource());
+  MOZ_ASSERT(aRequest->IsFetchedAsTextSource());
   MaybeSourceText maybeSource;
   nsresult rv = aRequest->GetScriptSource(jsapi.cx(), &maybeSource,
                                           aRequest->mLoadContext.get());

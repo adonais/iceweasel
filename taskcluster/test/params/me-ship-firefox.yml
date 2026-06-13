@@ -10084,8 +10084,6 @@ release_partners: null
 release_product: firefox
 release_type: esr140
 repository_type: hg
-required_signoffs: []
-signoff_urls: {}
 target_tasks_method: ship_desktop
 tasks_for: hg-push
 test_manifest_loader: default

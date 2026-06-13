@@ -14,7 +14,8 @@
 
 #include "jstypes.h"  // JS_PUBLIC_API
 
-#include "js/Class.h"       // js::ESClass, JSCLASS_RESERVED_SLOTS
+#include "js/Class.h"  // js::ESClass, JSCLASS_RESERVED_SLOTS
+#include "js/Proxy.h"  // js::IsProxy, js::GetProxyReservedSlot, js::SetProxyReservedSlot
 #include "js/Realm.h"       // JS::GetCompartmentForRealm
 #include "js/RootingAPI.h"  // JS::{,Mutable}Handle
 #include "js/Value.h"       // JS::Value
@@ -40,11 +41,6 @@ class JS_PUBLIC_API Compartment;
 extern JS_PUBLIC_API bool GetBuiltinClass(JSContext* cx, Handle<JSObject*> obj,
                                           js::ESClass* cls);
 
-/** Get the |JSClass| of an object. */
-inline const JSClass* GetClass(const JSObject* obj) {
-  return reinterpret_cast<const shadow::Object*>(obj)->shape->base->clasp;
-}
-
 /**
  * Get the |JS::Compartment*| of an object.
  *
@@ -57,38 +53,69 @@ static MOZ_ALWAYS_INLINE Compartment* GetCompartment(JSObject* obj) {
   return GetCompartmentForRealm(realm);
 }
 
-/**
- * Get the value stored in a reserved slot in an object.
- *
- * If |obj| is known to be a proxy and you're willing to use friend APIs,
- * |js::GetProxyReservedSlot| in "js/Proxy.h" is very slightly more efficient.
- */
-inline const Value& GetReservedSlot(const JSObject* obj, size_t slot) {
-  MOZ_ASSERT(slot < JSCLASS_RESERVED_SLOTS(GetClass(obj)));
-  return reinterpret_cast<const shadow::Object*>(obj)->slotRef(slot);
-}
-
 namespace detail {
 
-extern JS_PUBLIC_API void SetReservedSlotWithBarrier(JSObject* obj, size_t slot,
-                                                     const Value& value);
+extern JS_PUBLIC_API void SetNativeObjectReservedSlotWithBarrier(
+    JSObject* obj, size_t slot, const Value& value);
 
 }  // namespace detail
 
 /**
+ * Get the value stored in a reserved slot of a native (non-proxy) object.
+ *
+ * Faster than |GetReservedSlot| because it skips the runtime kind check, but
+ * the caller must guarantee that |obj| is not a proxy.
+ */
+inline const Value& GetNativeObjectReservedSlot(const JSObject* obj,
+                                                size_t slot) {
+  MOZ_ASSERT(GetClass(obj)->isNativeObject());
+  MOZ_ASSERT(slot < JSCLASS_RESERVED_SLOTS(GetClass(obj)));
+  auto* nobj = reinterpret_cast<const shadow::NativeObject*>(obj);
+  return nobj->reservedSlotRef(slot);
+}
+
+/**
+ * Store a value in a reserved slot of a native (non-proxy) object.
+ *
+ * Faster than |SetReservedSlot| because it skips the runtime kind check, but
+ * the caller must guarantee that |obj| is not a proxy.
+ */
+inline void SetNativeObjectReservedSlot(JSObject* obj, size_t slot,
+                                        const Value& value) {
+  MOZ_ASSERT(GetClass(obj)->isNativeObject());
+  MOZ_ASSERT(slot < JSCLASS_RESERVED_SLOTS(GetClass(obj)));
+  auto* nobj = reinterpret_cast<shadow::NativeObject*>(obj);
+  if (nobj->reservedSlotRef(slot).isGCThing() || value.isGCThing()) {
+    detail::SetNativeObjectReservedSlotWithBarrier(obj, slot, value);
+  } else {
+    nobj->reservedSlotRef(slot) = value;
+  }
+}
+
+/**
+ * Get the value stored in a reserved slot in an object.
+ *
+ * If |obj| is known to be a proxy or native, the |js::GetProxyReservedSlot| /
+ * |JS::GetNativeObjectReservedSlot| variants are slightly more efficient.
+ */
+inline const Value& GetReservedSlot(const JSObject* obj, size_t slot) {
+  if (js::IsProxy(obj)) {
+    return js::GetProxyReservedSlot(obj, slot);
+  }
+  return GetNativeObjectReservedSlot(obj, slot);
+}
+
+/**
  * Store a value in an object's reserved slot.
  *
- * This can be used with both native objects and proxies.  However, if |obj| is
- * known to be a proxy, |js::SetProxyReservedSlot| in "js/Proxy.h" is very
- * slightly more efficient.
+ * If |obj| is known to be a proxy or native, the |js::SetProxyReservedSlot| /
+ * |JS::SetNativeObjectReservedSlot| variants are slightly more efficient.
  */
 inline void SetReservedSlot(JSObject* obj, size_t slot, const Value& value) {
-  MOZ_ASSERT(slot < JSCLASS_RESERVED_SLOTS(GetClass(obj)));
-  auto* sobj = reinterpret_cast<shadow::Object*>(obj);
-  if (sobj->slotRef(slot).isGCThing() || value.isGCThing()) {
-    detail::SetReservedSlotWithBarrier(obj, slot, value);
+  if (js::IsProxy(obj)) {
+    js::SetProxyReservedSlot(obj, slot, value);
   } else {
-    sobj->slotRef(slot) = value;
+    SetNativeObjectReservedSlot(obj, slot, value);
   }
 }
 
@@ -100,6 +127,16 @@ inline void SetReservedSlot(JSObject* obj, size_t slot, const Value& value) {
 template <typename T>
 inline T* GetMaybePtrFromReservedSlot(JSObject* obj, size_t slot) {
   Value v = GetReservedSlot(obj, slot);
+  return v.isUndefined() ? nullptr : static_cast<T*>(v.toPrivate());
+}
+
+/**
+ * Like GetMaybePtrFromReservedSlot, but for native objects. The caller must
+ * guarantee that |obj| is not a proxy.
+ */
+template <typename T>
+inline T* GetMaybePtrFromNativeObjectReservedSlot(JSObject* obj, size_t slot) {
+  Value v = GetNativeObjectReservedSlot(obj, slot);
   return v.isUndefined() ? nullptr : static_cast<T*>(v.toPrivate());
 }
 

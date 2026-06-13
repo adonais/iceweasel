@@ -46,6 +46,7 @@
 #include "nsIFrame.h"
 #include "nsGtkUtils.h"
 #include "nsGtkKeyUtils.h"
+#include "mozilla/widget/nsGtkHtmlUtils.h"
 #include "mozilla/gfx/2D.h"
 #include "gfxPlatform.h"
 #include "ScreenHelperGTK.h"
@@ -347,6 +348,27 @@ bool DragData::Export(nsITransferable* aTransferable, uint32_t aItemIndex) {
 
     return NS_SUCCEEDED(
         aTransferable->SetTransferData(kTextMime, genericDataWrapper));
+  }
+
+  // text/html from external apps arrives as raw bytes in a charset that may
+  // not be UTF-16.  Detect and decode it just as the clipboard code does.
+  if (nsDependentCString(flavorName.get()).EqualsLiteral(kHTMLMime) &&
+      mDragData && mDragDataLen) {
+    LOGDRAG("  export HTML, decoding charset");
+    mozilla::Span<const char> span(static_cast<const char*>(mDragData.get()),
+                                   mDragDataLen);
+    nsAutoString unicodeData;
+    if (!mozilla::widget::DecodeHTMLData(span, unicodeData)) {
+      LOGDRAG("  failed to decode HTML data");
+      return false;
+    }
+    nsCOMPtr<nsISupports> genericDataWrapper;
+    nsPrimitiveHelpers::CreatePrimitiveForData(
+        nsLiteralCString(kHTMLMime), (const char*)unicodeData.BeginReading(),
+        unicodeData.Length() * sizeof(char16_t),
+        getter_AddRefs(genericDataWrapper));
+    return NS_SUCCEEDED(
+        aTransferable->SetTransferData(kHTMLMime, genericDataWrapper));
   }
 
   // We export obtained data directly from Gtk. In such case only
@@ -1299,6 +1321,16 @@ nsDragSession::IsDataFlavorSupported(const char* aDataFlavor, bool* _retval) {
     return NS_OK;
   }
 
+  // GetData can convert text/plain;charset=utf-8 to text/plain, so report it
+  // as supported here too.
+  if (requestedFlavor == sTextMimeAtom &&
+      IsDragFlavorAvailable(sTextPlainUTF8TypeAtom)) {
+    LOGDRAGSERVICE("  %s supported with conversion from %s", aDataFlavor,
+                   gTextPlainUTF8Type);
+    *_retval = true;
+    return NS_OK;
+  }
+
   // Check for file/url conversion from uri list
   if ((requestedFlavor == sURLMimeAtom || requestedFlavor == sFileMimeAtom) &&
       IsDragFlavorAvailable(sTextUriListTypeAtom)) {
@@ -1906,7 +1938,7 @@ static nsresult GetDownloadDetails(nsITransferable* aTransferable,
   }
 
   sourceURI.swap(*aSourceURI);
-  aFilename = srcFileName;
+  aFilename = std::move(srcFileName);
   return NS_OK;
 }
 
@@ -2395,6 +2427,35 @@ void nsDragSession::SourceDataGet(GtkWidget* aWidget, GdkDragContext* aContext,
   }
   // Just try to get and set whatever we're asked for.
   GUniquePtr<gchar> flavorName(gdk_atom_name(requestedFlavor));
+
+  // text/html is stored internally as UTF-16 but must be sent as UTF-8 over
+  // X11 DnD, matching the clipboard write path.  Prepend kHTMLMarkupPrefix so
+  // that DecodeHTMLData on the receiving side finds the charset declaration.
+  if (nsDependentCString(flavorName.get()).EqualsLiteral(kHTMLMime)) {
+    nsCOMPtr<nsISupports> data;
+    if (NS_FAILED(item->GetTransferData(kHTMLMime, getter_AddRefs(data))) ||
+        !data) {
+      LOGDRAGSERVICE("  Failed to get kHTMLMime data!");
+      return;
+    }
+    nsCOMPtr<nsISupportsString> wideString = do_QueryInterface(data);
+    if (!wideString) {
+      // Consistent with the clipboard write path: if the data is not a wide
+      // string there is nothing sensible to send.
+      LOGDRAGSERVICE("  kHTMLMime data is not nsISupportsString");
+      return;
+    }
+    nsAutoString ucs2string;
+    wideString->GetData(ucs2string);
+    nsAutoCString html;
+    html.AppendLiteral(mozilla::widget::kHTMLMarkupPrefix);
+    AppendUTF16toUTF8(ucs2string, html);
+    GdkAtom target = gtk_selection_data_get_target(aSelectionData);
+    gtk_selection_data_set(aSelectionData, target, 8, (const guchar*)html.get(),
+                           html.Length());
+    return;
+  }
+
   if (!SourceDataGetText(item, nsDependentCString(flavorName.get()),
                          /* aNeedToDoConversionToPlainText */ false,
                          aSelectionData)) {

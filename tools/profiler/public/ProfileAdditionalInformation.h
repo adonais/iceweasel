@@ -132,6 +132,14 @@ struct ParamTraits<mozilla::ProfileGenerationAdditionalInformation> {
   static void Write(MessageWriter* aWriter, const paramType& aParam);
   static bool Read(MessageReader* aReader, paramType* aResult);
 };
+
+template <>
+struct ParamTraits<mozilla::ProfileAndAdditionalInformation> {
+  typedef mozilla::ProfileAndAdditionalInformation paramType;
+
+  static void Write(MessageWriter* aWriter, const paramType& aParam);
+  static bool Read(MessageReader* aReader, paramType* aResult);
+};
 }  // namespace IPC
 
 #endif  // ProfileAdditionalInformation_h

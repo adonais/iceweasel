@@ -36,7 +36,7 @@ constexpr static uint32_t scMaximumChunkSize = 1024 * 1024;
 // Limit to 128MiB as a lower buffer size usually isn't enough.
 constexpr static uint32_t scMinimumBufferSize = 128u * 1024u * 1024u;
 // Note: Keep in sync with GeckoThread.maybeStartGeckoProfiler:
-// https://searchfox.org/mozilla-central/source/mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoThread.java
+// https://searchfox.org/firefox-main/source/mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoThread.java
 constexpr static uint32_t scMinimumBufferEntries =
     scMinimumBufferSize / scBytesPerEntry;
 

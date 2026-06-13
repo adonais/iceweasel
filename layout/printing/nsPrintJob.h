@@ -89,6 +89,8 @@ class nsPrintJob final : public nsIWebProgressListener,
   nsPrintJob(nsIDocumentViewerPrint& aDocViewerPrint, nsIDocShell& aDocShell,
              Document& aOriginalDoc, float aScreenDPI);
 
+  nsPrintJob& operator=(const nsPrintJob& aOther) = delete;
+
   // Our nsIWebBrowserPrint implementation (nsDocumentViewer) defers to the
   // following methods.
 
@@ -153,8 +155,6 @@ class nsPrintJob final : public nsIWebProgressListener,
   void DestroyPrintingData();
 
  private:
-  nsPrintJob& operator=(const nsPrintJob& aOther) = delete;
-
   ~nsPrintJob();
 
   MOZ_CAN_RUN_SCRIPT nsresult DocumentReadyForPrinting();

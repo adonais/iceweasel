@@ -10,13 +10,16 @@ ChromeUtils.defineESModuleGetters(lazy, {
   AboutWelcomeTelemetry:
     "resource:///modules/aboutwelcome/AboutWelcomeTelemetry.sys.mjs",
   AddonManager: "resource://gre/modules/AddonManager.sys.mjs",
-  AWScreenUtils: "resource:///modules/aboutwelcome/AWScreenUtils.sys.mjs",
+  ASRouterScreenUtils:
+    "resource:///modules/asrouter/ASRouterScreenUtils.sys.mjs",
   BackupService: "resource:///modules/backup/BackupService.sys.mjs",
   BrowserUtils: "resource://gre/modules/BrowserUtils.sys.mjs",
   BuiltInThemes: "resource:///modules/BuiltInThemes.sys.mjs",
+  EnrollmentType: "resource://nimbus/ExperimentAPI.sys.mjs",
   ExperimentAPI: "resource://nimbus/ExperimentAPI.sys.mjs",
   FxAccounts: "resource://gre/modules/FxAccounts.sys.mjs",
   LangPackMatcher: "resource://gre/modules/LangPackMatcher.sys.mjs",
+  NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
   ShellService: "moz-src:///browser/components/shell/ShellService.sys.mjs",
   SpecialMessageActions:
     "resource://messaging-system/lib/SpecialMessageActions.sys.mjs",
@@ -343,11 +346,11 @@ export class AboutWelcomeParent extends JSWindowActorParent {
       case "AWPage:GET_APP_AND_SYSTEM_LOCALE_INFO":
         return lazy.LangPackMatcher.getAppAndSystemLocaleInfo();
       case "AWPage:EVALUATE_SCREEN_TARGETING":
-        return lazy.AWScreenUtils.evaluateTargetingAndRemoveScreens(data);
+        return lazy.ASRouterScreenUtils.evaluateTargetingAndRemoveScreens(data);
       case "AWPage:ADD_SCREEN_IMPRESSION":
-        return lazy.AWScreenUtils.addScreenImpression(data);
+        return lazy.ASRouterScreenUtils.addScreenImpression(data);
       case "AWPage:EVALUATE_ATTRIBUTE_TARGETING":
-        return lazy.AWScreenUtils.evaluateScreenTargeting(data);
+        return lazy.ASRouterScreenUtils.evaluateScreenTargeting(data);
       case "AWPage:NEGOTIATE_LANGPACK":
         return lazy.LangPackMatcher.negotiateLangPackForLanguageMismatch(data);
       case "AWPage:ENSURE_LANG_PACK_INSTALLED":
@@ -361,7 +364,7 @@ export class AboutWelcomeParent extends JSWindowActorParent {
         if (
           !Services.prefs.getBoolPref(DID_HANDLE_CAMAPAIGN_ACTION_PREF, false)
         ) {
-          return lazy.AWScreenUtils.getUnhandledCampaignAction();
+          return lazy.ASRouterScreenUtils.getUnhandledCampaignAction();
         }
         break;
       }
@@ -391,6 +394,15 @@ export class AboutWelcomeParent extends JSWindowActorParent {
       }
       case "AWPage:WAIT_FOR_NIMBUS": {
         return waitForNimbusForAboutWelcome();
+      }
+      case "AWPage:GET_ABOUTWELCOME_FEATURE_CONFIG": {
+        return {
+          experimentMetadata:
+            lazy.NimbusFeatures.aboutwelcome.getEnrollmentMetadata(
+              lazy.EnrollmentType.EXPERIMENT
+            ) ?? {},
+          featureConfig: lazy.NimbusFeatures.aboutwelcome.getAllVariables(),
+        };
       }
       default:
         lazy.log.debug(`Unexpected event ${type} was not handled.`);

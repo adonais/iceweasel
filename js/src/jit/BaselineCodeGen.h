@@ -261,7 +261,7 @@ class BaselineCodeGen {
 
   [[nodiscard]] bool emitUninitializedLexicalCheck(const ValueOperand& val);
 
-  [[nodiscard]] bool emitIsMagicValue();
+  [[nodiscard]] bool emitIsMagicValue(JSWhyMagic why);
 
   void getEnvironmentCoordinateObject(Register reg);
   Address getEnvironmentCoordinateAddressFromObject(Register objReg,

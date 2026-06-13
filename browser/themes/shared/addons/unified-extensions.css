@@ -91,7 +91,7 @@ unified-extensions-item {
   background-repeat: no-repeat;
 
   /* Adjust attention dots position in the toolbar. */
-  background-position: center bottom calc(var(--toolbarbutton-inner-padding) / 2 - var(--uei-attention-dot-size) / 2);
+  background-position: center bottom calc(var(--toolbarbutton-padding-inner) / 2 - var(--uei-attention-dot-size) / 2);
 
   /* Adjust attention dots position in the unified extensions panel. */
   &.subviewbutton {

@@ -608,7 +608,7 @@ add_task(async function testAvailableUpdates() {
 
   // Check for all updates.
   let updatesFound = TestUtils.topicObserved("EM-update-check-finished");
-  doc.querySelector('#page-options [action="check-for-updates"]').click();
+  await triggerPageOptionsAction(win, "check-for-updates");
 
   is_element_visible(updatesMessage, "The message is visible");
   ok(!updatesMessage.message.textContent, "The message is empty");

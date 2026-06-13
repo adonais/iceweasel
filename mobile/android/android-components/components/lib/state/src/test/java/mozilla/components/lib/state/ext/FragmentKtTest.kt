@@ -20,7 +20,6 @@ import mozilla.components.support.test.any
 import mozilla.components.support.test.argumentCaptor
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -33,6 +32,7 @@ import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class FragmentKtTest {
@@ -248,8 +248,8 @@ class FragmentKtTest {
         testScheduler.runCurrent()
         verify(viewMock).addOnAttachStateChangeListener(attachStateChangeListenerCaptor.capture())
         assertNotNull(
-            "OnAttachStateChangeListener should have been captured",
             attachStateChangeListenerCaptor.value,
+            "OnAttachStateChangeListener should have been captured",
         )
 
         store.dispatch(TestAction.IncrementAction)
@@ -313,8 +313,8 @@ class FragmentKtTest {
 
         verify(viewMock).addOnAttachStateChangeListener(attachStateChangeListenerCaptor.capture())
         assertNotNull(
-            "OnAttachStateChangeListener should have been captured",
             attachStateChangeListenerCaptor.value,
+            "OnAttachStateChangeListener should have been captured",
         )
 
         // Move to STARTED to allow collection of initial state (10)

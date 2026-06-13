@@ -86,10 +86,6 @@ document.addEventListener(
           break;
         case "context_shareSelectedTabs":
           lazy.ContentSharingUtils.handleShareTabs(TabContextMenu.contextTabs);
-          Services.prefs.setBoolPref(
-            "browser.contentsharing.newBadge.enabled",
-            false
-          );
           break;
         case "context_bookmarkTab":
           PlacesCommandHook.bookmarkTabs([TabContextMenu.contextTab]);
@@ -158,7 +154,7 @@ document.addEventListener(
           {
             let { tabGroupId } = event.target.parentElement.triggerNode.dataset;
             let tabGroup = gBrowser.getTabGroupById(tabGroupId);
-            tabGroup.ownerGlobal.gBrowser.replaceGroupWithWindow(tabGroup);
+            tabGroup.documentGlobal.gBrowser.replaceGroupWithWindow(tabGroup);
           }
           break;
         case "open-tab-group-context-menu_moveToThisWindow":
@@ -177,7 +173,7 @@ document.addEventListener(
             let tabGroup = gBrowser.getTabGroupById(tabGroupId);
             // Tabs need to be removed by their owning `Tabbrowser` or else
             // there are errors.
-            tabGroup.ownerGlobal.gBrowser.removeTabGroup(
+            tabGroup.documentGlobal.gBrowser.removeTabGroup(
               tabGroup,
               lazy.TabMetrics.userTriggeredContext(
                 lazy.TabMetrics.METRIC_SOURCE.TAB_OVERFLOW_MENU
@@ -451,6 +447,16 @@ document.addEventListener(
       PlacesUIUtils.createContainerTabMenu(event)
     );
 
+    const containerSyncedTabsPopup = document.getElementById(
+      "sidebar-synced-tabs-context-menu-container-popup"
+    );
+    containerSyncedTabsPopup.addEventListener("command", event =>
+      PlacesUIUtils.openInContainerTab(event)
+    );
+    containerSyncedTabsPopup.addEventListener("popupshowing", event =>
+      PlacesUIUtils.createContainerTabMenu(event)
+    );
+
     document
       .getElementById("sidebar-bookmarks-context-container-tab-popup")
       .addEventListener("popupshowing", event =>
@@ -597,7 +603,7 @@ document.addEventListener(
           // that are the only things in their respective window.
           let groupAloneInWindow =
             tabGroup.tabs.length ==
-            tabGroup.ownerGlobal.gBrowser.openTabs.length;
+            tabGroup.documentGlobal.gBrowser.openTabs.length;
           event.target.querySelector(
             "#open-tab-group-context-menu_moveToNewWindow"
           ).disabled = groupAloneInWindow;

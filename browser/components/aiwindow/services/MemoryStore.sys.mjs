@@ -70,6 +70,16 @@ async function loadMemories() {
     sanitizedBasename: "memories",
   });
 
+  let markerData = null;
+  if (Services.profiler.IsActive()) {
+    let sizeLabel = "0 B";
+    try {
+      const stat = await IOUtils.stat(lazy.gStorePath);
+      sizeLabel = `${(stat.size / 1048576).toFixed(1)} MiB`;
+    } catch (_e) {}
+    markerData = { startTime: ChromeUtils.now(), sizeLabel };
+  }
+
   try {
     await gJSONFile.load();
   } catch (ex) {
@@ -78,6 +88,14 @@ async function loadMemories() {
     gJSONFile.data = gState;
     gInitialized = true;
     return;
+  } finally {
+    if (markerData) {
+      ChromeUtils.addProfilerMarker(
+        "SmartWindow",
+        { startTime: markerData.startTime },
+        `MemoryStore:load_db(${markerData.sizeLabel})`
+      );
+    }
   }
 
   // Normalize the loaded data into our expected shape.
@@ -294,9 +312,10 @@ export const MemoryStore = {
    *
    * @param {string} id
    * @param {string} trigger
+   * @param {number|null} inUse
    * @returns {Promise<boolean>}
    */
-  async hardDeleteMemory(id, trigger = "other") {
+  async hardDeleteMemory(id, trigger = "other", inUse = null) {
     await this.ensureInitialized();
     const idx = gState.memories.findIndex(i => i.id === id);
     if (idx === -1) {
@@ -307,6 +326,7 @@ export const MemoryStore = {
     Glean.smartWindow.memoryRemovedPanel.record({
       memories: gState.memories.length,
       trigger,
+      in_use: inUse,
     });
     Services.obs.notifyObservers(null, MEMORY_STORE_CHANGED);
     updateMemoriesCountMetric();

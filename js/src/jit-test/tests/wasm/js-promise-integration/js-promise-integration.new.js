@@ -1,3 +1,5 @@
+// |jit-test| skip-if: !wasmJSPromiseIntegrationEnabled()
+
 // JS promise integration API tests
 // Modified https://github.com/WebAssembly/js-promise-integration/tree/main/test/js-api/js-promise-integration
 

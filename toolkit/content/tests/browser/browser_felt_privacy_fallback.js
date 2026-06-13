@@ -6,13 +6,11 @@
 /**
  * Tests for the fallback behavior during error resolution.
  *
- * These tests verify four scenarios:
- * 1. A registered SSL error uses its own config via selectErrorId.
- * 2. An unregistered error falls back to the general gErrorCode config
- *    when gErrorCode is "nssFailure2".
- * 3. An unregistered error does not fall back when gErrorCode is a
- *    registered error other than "nssFailure2".
- * 4. The deniedPortAccess error shows the correct intro text.
+ * These tests verify three scenarios:
+ * 1. A registered SSL error resolves to its own config ID.
+ * 2. An unregistered error does not trigger the nssFailure2 fallback when
+ *    gErrorCode is a registered error other than "nssFailure2".
+ * 3. The deniedPortAccess error shows the correct intro text.
  */
 
 const TLS10_PAGE = "https://tls1.example.com/";
@@ -35,11 +33,11 @@ async function openErrorTab(url) {
   return { browser, tab };
 }
 
-// Verify that selectErrorId prefers the registered error
-// (SSL_ERROR_RX_RECORD_TOO_LONG) over the nssFailure2 fallback.
+// Verify that a registered SSL error resolves directly to its own config,
+// not to the nssFailure2 fallback.
 add_task(async function test_registered_ssl_error() {
   info(
-    "Testing that selectErrorId prefers SSL_ERROR_RX_RECORD_TOO_LONG over nssFailure2 fallback"
+    "Testing that SSL_ERROR_RX_RECORD_TOO_LONG resolves to its own registry ID"
   );
 
   Services.prefs.setIntPref("security.tls.version.min", 3);
@@ -65,53 +63,49 @@ add_task(async function test_registered_ssl_error() {
     );
     await netErrorCard.getUpdateComplete();
 
-    const selectedId = netErrorCard.constructor.selectErrorId(
-      "SSL_ERROR_RX_RECORD_TOO_LONG"
+    // Call resolveErrorID directly with a mocked SSL_ERROR_RX_RECORD_TOO_LONG
+    // input. initializeRegistry populates the full registry so that scenario 1
+    // (direct match) correctly resolves the registered error.
+    const { resolveErrorID, getResolvedErrorConfig } =
+      ChromeUtils.importESModule(
+        "chrome://global/content/errors/error-lookup.mjs"
+      );
+    const { initializeRegistry } = ChromeUtils.importESModule(
+      "chrome://global/content/errors/error-registry.mjs"
     );
+    initializeRegistry();
     Assert.equal(
-      selectedId,
+      resolveErrorID({
+        errorCodeString: "SSL_ERROR_RX_RECORD_TOO_LONG",
+        gErrorCode: "nssFailure2",
+        noConnectivity: false,
+        vpnActive: false,
+      }),
       "SSL_ERROR_RX_RECORD_TOO_LONG",
-      "Should select the registered error, not fall back to nssFailure2"
+      "Should resolve to the registered error, not fall back to nssFailure2"
     );
-  });
 
-  BrowserTestUtils.removeTab(tab);
-  Services.prefs.clearUserPref("security.tls.version.min");
-  Services.prefs.clearUserPref("security.tls.version.max");
-});
+    // An unregistered SSL error falling through to nssFailure2 should expose
+    // its runtime errorCodeString via mapCustomNetErrorConfigToParams.
+    const UNREGISTERED_CODE = "SSL_ERROR_DECRYPT_ERROR_ALERT";
+    const mockErrorInfo = new content.Object();
+    mockErrorInfo.errorCodeString = UNREGISTERED_CODE;
+    netErrorCard.errorInfo = mockErrorInfo;
 
-// Verify that selectErrorId falls back to nssFailure2 when the
-// error code is not registered and gErrorCode is "nssFailure2".
-add_task(async function test_fallback_to_general_nss_error() {
-  info(
-    "Testing fallback from unregistered NSS error to general nssFailure2 config"
-  );
-
-  Services.prefs.setIntPref("security.tls.version.min", 3);
-  Services.prefs.setIntPref("security.tls.version.max", 4);
-  registerCleanupFunction(() => {
-    Services.prefs.clearUserPref("security.tls.version.min");
-    Services.prefs.clearUserPref("security.tls.version.max");
-  });
-
-  const { browser, tab } = await openErrorTab(TLS10_PAGE);
-  registerCleanupFunction(() => BrowserTestUtils.removeTab(tab));
-
-  await SpecialPowers.spawn(browser, [], async () => {
-    const doc = content.document;
-    const netErrorCard = await ContentTaskUtils.waitForCondition(
-      () => doc.querySelector("net-error-card")?.wrappedJSObject,
-      "net-error-card should be present"
-    );
-    await netErrorCard.getUpdateComplete();
-
-    const selectedId = netErrorCard.constructor.selectErrorId(
-      "SSL_ERROR_UNREGISTERED_FAKE_ERROR"
+    const config = getResolvedErrorConfig("nssFailure2", {
+      hostname: "example.com",
+      errorInfo: mockErrorInfo,
+      noConnectivity: false,
+      offline: false,
+    });
+    const params = netErrorCard.mapCustomNetErrorConfigToParams(
+      config.customNetError,
+      config
     );
     Assert.equal(
-      selectedId,
-      "nssFailure2",
-      "Should fall back to nssFailure2 for unregistered error codes"
+      params.errorCode,
+      UNREGISTERED_CODE,
+      "mapCustomNetErrorConfigToParams should use the runtime errorCodeString for unregistered SSL errors"
     );
   });
 
@@ -122,7 +116,7 @@ add_task(async function test_fallback_to_general_nss_error() {
 
 add_task(async function test_no_fallback_for_non_nssFailure2_gErrorCode() {
   info(
-    "Testing that an unregistered errorCodeString that's not nssFailure2 does not trigger the fallback"
+    "Testing that deniedPortAccess resolves directly to its own registry ID"
   );
   await SpecialPowers.pushPrefEnv({
     set: [
@@ -144,12 +138,10 @@ add_task(async function test_no_fallback_for_non_nssFailure2_gErrorCode() {
     );
     await netErrorCard.getUpdateComplete();
 
-    const selectedId =
-      netErrorCard.constructor.selectErrorId("UNREGISTERED_ERROR");
     Assert.equal(
-      selectedId,
-      null,
-      "selectErrorId should return null when errorCodeString is unregistered and gErrorCode is not nssFailure2"
+      netErrorCard.resolvedErrorId,
+      "deniedPortAccess",
+      "resolvedErrorId should be deniedPortAccess"
     );
   });
 

@@ -1,7 +1,7 @@
 "use strict";
 
-const { AWScreenUtils } = ChromeUtils.importESModule(
-  "resource:///modules/aboutwelcome/AWScreenUtils.sys.mjs"
+const { ASRouterScreenUtils } = ChromeUtils.importESModule(
+  "resource:///modules/asrouter/ASRouterScreenUtils.sys.mjs"
 );
 
 const { ASRouterTargeting } = ChromeUtils.importESModule(
@@ -258,7 +258,7 @@ add_task(
       set: [["browser.aboutwelcome.experimentsGate.enabled", false]],
     });
 
-    const result = await AWScreenUtils.evaluateTargetingAndRemoveScreens([
+    const result = await ASRouterScreenUtils.evaluateTargetingAndRemoveScreens([
       makeSplashScreen(),
     ]);
     Assert.equal(
@@ -280,7 +280,7 @@ add_task(
       ],
     });
 
-    const result = await AWScreenUtils.evaluateTargetingAndRemoveScreens([
+    const result = await ASRouterScreenUtils.evaluateTargetingAndRemoveScreens([
       makeSplashScreen(),
     ]);
     Assert.equal(
@@ -307,7 +307,7 @@ add_task(
       ],
     });
 
-    const result = await AWScreenUtils.evaluateTargetingAndRemoveScreens([
+    const result = await ASRouterScreenUtils.evaluateTargetingAndRemoveScreens([
       makeSplashScreen(),
     ]);
     Assert.equal(
@@ -334,7 +334,7 @@ add_task(async function test_splash_screen_kept_when_nimbus_not_yet_loaded() {
     ],
   });
 
-  const result = await AWScreenUtils.evaluateTargetingAndRemoveScreens([
+  const result = await ASRouterScreenUtils.evaluateTargetingAndRemoveScreens([
     makeSplashScreen(),
   ]);
   Assert.equal(

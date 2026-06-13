@@ -165,7 +165,6 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
   PRIntervalTime SpdyPingThreshold() { return mSpdyPingThreshold; }
   PRIntervalTime SpdyPingTimeout() { return mSpdyPingTimeout; }
   bool AllowAltSvc() { return mEnableAltSvc; }
-  bool AllowAltSvcOE() { return mEnableAltSvcOE; }
   uint32_t ConnectTimeout() { return mConnectTimeout; }
   uint32_t TLSHandshakeTimeout() { return mTLSHandshakeTimeout; }
   uint32_t ParallelSpeculativeConnectLimit() {
@@ -676,7 +675,6 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
   uint32_t mDebugObservations : 1;
 
   uint32_t mEnableAltSvc : 1;
-  uint32_t mEnableAltSvcOE : 1;
 
   // Try to use SPDY features instead of HTTP/1.1 over SSL
   SpdyInformation mSpdyInfo;

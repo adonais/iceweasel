@@ -349,8 +349,8 @@ class MallocAllocPolicy : public MallocAllocPolicyBase {
 
 } /* namespace js */
 
-class JSInfallibleAllocPolicy : public js::AllocPolicyBase,
-                                public ::InfallibleAllocPolicy {
+class MOZ_EMPTY_BASES JSInfallibleAllocPolicy : public js::AllocPolicyBase,
+                                                public ::InfallibleAllocPolicy {
  public:
   using ::InfallibleAllocPolicy::reportAllocOverflow;
   // Simulated OOM is not supported.

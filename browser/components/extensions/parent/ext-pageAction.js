@@ -32,7 +32,7 @@ class PageAction extends PageActionBase {
   }
 
   updateOnChange(target) {
-    this.buttonDelegate.updateButton(target.ownerGlobal);
+    this.buttonDelegate.updateButton(target.documentGlobal);
   }
 
   dispatchClick(tab, clickInfo) {
@@ -51,7 +51,7 @@ class PageAction extends PageActionBase {
     if (isGloballyBlockingOpenPopup(window)) {
       return true;
     }
-    return panel && panel.ownerGlobal === window && panel.state !== "closed";
+    return panel && panel.documentGlobal === window && panel.state !== "closed";
   }
 }
 
@@ -109,7 +109,7 @@ this.pageAction = class extends ExtensionAPIPersistent {
           if (isPanel) {
             buttonNode.closest("#pageActionPanel").hidePopup();
           }
-          let window = event.target.ownerGlobal;
+          let window = event.target.documentGlobal;
           let tab = window.gBrowser.selectedTab;
           this.tabManager.addActiveTabPermission(tab);
           this.action.dispatchClick(tab, {
@@ -128,7 +128,7 @@ this.pageAction = class extends ExtensionAPIPersistent {
           pinnedToUrlbar: this.action.getPinned(),
           disabled: !this.action.getProperty(null, "enabled"),
           onCommand: event => {
-            this.handleClick(event.target.ownerGlobal, {
+            this.handleClick(event.target.documentGlobal, {
               button: event.button || 0,
               modifiers: clickModifiersFromEvent(event),
             });
@@ -270,7 +270,7 @@ this.pageAction = class extends ExtensionAPIPersistent {
           menu.id === "pageActionContextMenu" &&
           trigger &&
           getActionId() === this.browserPageAction.id &&
-          !this.browserPageAction.getDisabled(trigger.ownerGlobal) &&
+          !this.browserPageAction.getDisabled(trigger.documentGlobal) &&
           (this.extension.hasPermission("contextMenus") ||
             this.extension.hasPermission("menus"))
         ) {

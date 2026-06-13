@@ -453,17 +453,18 @@ mozilla::ipc::IPCResult Parent<Super>::RecvGetPrincipalKey(
         if (NS_WARN_IF(NS_FAILED(rv))) {
           return PrincipalKeyPromise::CreateAndReject(rv, __func__);
         }
-        return PrincipalKeyPromise::CreateAndResolve(result, __func__);
+        return PrincipalKeyPromise::CreateAndResolve(std::move(result),
+                                                     __func__);
       })
-      ->Then(
-          GetCurrentSerialEventTarget(), __func__,
-          [aResolve](const PrincipalKeyPromise::ResolveOrRejectValue& aValue) {
-            if (aValue.IsReject()) {
-              aResolve(""_ns);
-            } else {
-              aResolve(aValue.ResolveValue());
-            }
-          });
+      ->Then(GetCurrentSerialEventTarget(), __func__,
+             [aResolve = std::move(aResolve)](
+                 const PrincipalKeyPromise::ResolveOrRejectValue& aValue) {
+               if (aValue.IsReject()) {
+                 aResolve(""_ns);
+               } else {
+                 aResolve(aValue.ResolveValue());
+               }
+             });
 
   return IPC_OK();
 }

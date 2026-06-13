@@ -69,16 +69,7 @@ export function playSound(event) {
       return;
   }
 
-  if (soundUrl === "") {
-    return;
-  }
-
   if (soundUrl == "beep") {
     gSound.beep();
-  } else {
-    if (soundUrl == "default") {
-      soundUrl = "chrome://global/content/notfound.wav";
-    }
-    gSound.play(Services.io.newURI(soundUrl));
   }
 }

@@ -78,6 +78,16 @@ static void PopulateTopLevelInfoFromURI(const bool aIsTopLevelDocument,
   } while (nestedURI && !scheme.EqualsLiteral("about") &&
            NS_SUCCEEDED(nestedURI->GetInnerURI(getter_AddRefs(uri))));
 
+  // Use the creator origin's URI if we're passed a blob URI.
+  if (scheme.EqualsLiteral("blob")) {
+    nsCOMPtr<nsIPrincipal> blobPrincipal;
+    NS_ENSURE_TRUE_VOID(dom::BlobURLProtocolHandler::GetBlobURLPrincipal(
+        uri, aOriginAttributes, getter_AddRefs(blobPrincipal)));
+    uri = blobPrincipal->GetURI();
+    NS_ENSURE_TRUE_VOID(uri);
+    NS_ENSURE_SUCCESS_VOID(uri->GetScheme(scheme));
+  }
+
   if (scheme.EqualsLiteral("about")) {
     MakeTopLevelInfo(scheme, nsLiteralCString(ABOUT_URI_FIRST_PARTY_DOMAIN),
                      aForeignByAncestorContext, aUseSite, topLevelInfo);
@@ -103,14 +113,6 @@ static void PopulateTopLevelInfoFromURI(const bool aIsTopLevelDocument,
   // attributes in order to guarantee their storage integrity when switching
   // FPI on and off.
   if (scheme.EqualsLiteral("moz-extension")) {
-    return;
-  }
-
-  nsCOMPtr<nsIPrincipal> blobPrincipal;
-  if (dom::BlobURLProtocolHandler::GetBlobURLPrincipal(
-          uri, getter_AddRefs(blobPrincipal))) {
-    MOZ_ASSERT(blobPrincipal);
-    topLevelInfo = blobPrincipal->OriginAttributesRef().*aTarget;
     return;
   }
 
@@ -391,7 +393,7 @@ bool OriginAttributes::PopulateFromOrigin(const nsACString& aOrigin,
   int32_t pos = origin.RFindChar('^');
 
   if (pos == kNotFound) {
-    aOriginNoSuffix = origin;
+    aOriginNoSuffix = std::move(origin);
     return true;
   }
 

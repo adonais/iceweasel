@@ -19,7 +19,7 @@ use crate::render_task::{RenderTask, RenderTaskKind, RenderTaskLocation};
 use crate::space::SpaceMapper;
 use crate::spatial_tree::{SpatialTree, SpatialNodeIndex};
 use crate::util::MaxRect;
-use crate::visibility::{VisibilityState, PrimitiveVisibility, FrameVisibilityContext};
+use crate::visibility::{DrawState, PrimitiveDrawHeader, FrameVisibilityContext};
 pub use crate::picture_composite_mode::get_surface_rects;
 
 
@@ -217,7 +217,7 @@ impl SurfaceInfo {
         let raster_rect = if self.raster_spatial_node_index != self.surface_spatial_node_index {
             // Currently, the surface's spatial node can be different from its raster node only
             // for surfaces in the root coordinate system for snapping reasons.
-            // See `PicturePrimitive::assign_surface`.
+            // See `PictureInstance::assign_surface`.
             assert_eq!(self.device_pixel_scale.0, 1.0);
             assert_eq!(self.raster_spatial_node_index, spatial_tree.root_reference_frame_index());
 
@@ -560,26 +560,26 @@ impl SurfaceBuilder {
     // to for a given current visbility / dirty state
     pub fn get_cmd_buffer_targets_for_prim(
         &mut self,
-        vis: &PrimitiveVisibility,
+        vis: &PrimitiveDrawHeader,
         targets: &mut Vec<CommandBufferIndex>,
     ) -> bool {
         targets.clear();
 
         match vis.state {
-            VisibilityState::Unset => {
+            DrawState::Unset => {
                 panic!("bug: invalid vis state");
             }
-            VisibilityState::Culled => {
+            DrawState::Culled => {
                 false
             }
-            VisibilityState::Visible { sub_slice_index, .. } => {
+            DrawState::Visible { sub_slice_index, .. } => {
                 self.current_cmd_buffers.get_cmd_buffer_targets_for_rect(
                     &vis.clip_chain.pic_coverage_rect,
                     sub_slice_index,
                     targets,
                 )
             }
-            VisibilityState::PassThrough => {
+            DrawState::PassThrough => {
                 true
             }
         }

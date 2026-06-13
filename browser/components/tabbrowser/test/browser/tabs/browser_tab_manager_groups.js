@@ -44,6 +44,7 @@ function forgetSavedTabGroups() {
  * @returns {Promise<PanelView>}
  */
 async function openTabsMenu(win = window) {
+  await BrowserTestUtils.ensureWindowActivated(win);
   let viewShown = BrowserTestUtils.waitForEvent(
     win.document.getElementById("allTabsMenu-allTabsView"),
     "ViewShown"

@@ -4,8 +4,6 @@
 
 #include "Tracing.h"
 
-#include <inttypes.h>
-
 using namespace mozilla;
 
 using TracingPhase = mozilla::AsyncLogger::TracingPhase;

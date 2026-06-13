@@ -6,6 +6,14 @@ import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useSelector, batch } from "react-redux";
 import { useIntersectionObserver } from "../../../lib/utils";
+import { WIDGET_REGISTRY, resolveWidgetSize } from "common/WidgetsRegistry.mjs";
+import { WidgetCelebration } from "../WidgetCelebration";
+import { useWidgetCelebration } from "../useWidgetCelebration";
+
+const FOCUS_TIMER_CELEBRATION_GRADIENT_STOPS = [
+  { offset: "0%", color: "var(--timer-celebration-leading)" },
+  { offset: "100%", color: "var(--timer-celebration-trailing)" },
+];
 
 const USER_ACTION_TYPES = {
   CHANGE_SIZE: "change_size",
@@ -70,6 +78,25 @@ export const isAtMaxLength = currentValue => {
   return currentValue.length >= 2;
 };
 
+// @nova-cleanup(remove): Drop after Nova ships
+/**
+ * Validates whether the next state of the Nova spinbutton is acceptable.
+ * Allows up to 2 digits, an optional single colon, and up to 2 more digits.
+ *
+ * @param current - The element's current text content
+ * @param input - The string the user is about to insert
+ * @param start - The selection start (insertion point) within `current`
+ * @param end - The selection end within `current`
+ * @returns boolean - true if the resulting string matches the MM:SS pattern
+ */
+export const isValidSpinbuttonInput = (current, input, start, end) => {
+  if (input === null || input === undefined) {
+    return true;
+  }
+  const next = current.slice(0, start) + input + current.slice(end);
+  return /^(\d{1,2})?(:\d{0,2})?$/.test(next);
+};
+
 /**
  * Converts a polar coordinate (angle on circle) into a percentage-based [x,y] position for clip-path
  *
@@ -108,6 +135,7 @@ export const getClipPath = progress => {
   return `polygon(${points.join(", ")})`;
 };
 
+/* eslint-disable complexity, max-statements */
 export const FocusTimer = ({
   dispatch,
   handleUserInteraction,
@@ -130,17 +158,28 @@ export const FocusTimer = ({
   const initialTimerDuration = timerData[timerType].initialDuration;
 
   const prefs = useSelector(state => state.Prefs.values);
-  // @nova-cleanup(remove-pref): Remove novaEnabled and this check; always use prefs[PREF_FOCUS_TIMER_SIZE] directly after Nova ships
+  // @nova-cleanup(remove-pref): Remove novaEnabled and this check; always use resolveWidgetSize directly after Nova ships
   const novaEnabled = prefs[PREF_NOVA_ENABLED];
   const isSmallSize = novaEnabled
     ? false
     : !isMaximized && widgetsMayBeMaximized;
+  const timerWidget = WIDGET_REGISTRY.find(w => w.id === "focusTimer");
   let widgetSize;
   if (novaEnabled) {
-    widgetSize = prefs[PREF_FOCUS_TIMER_SIZE] || "large";
+    widgetSize = resolveWidgetSize(timerWidget, prefs);
   } else {
     widgetSize = isSmallSize ? "small" : "medium";
   }
+
+  // @nova-cleanup(remove-conditional): Inline these for Nova-only after Nova ships
+  // Nova spinbutton works in whole minutes; ceil to the next minute so a 4:38
+  // remainder reads as "5 minutes" via aria-valuenow / accessible name.
+  const minutesValue = Math.max(1, Math.ceil((timeLeft || duration) / 60));
+  // For +/- and arrow-key adjustments, treat the integer-minutes part of the
+  // current duration as the base so e.g. 0:01 + 1 -> 1:00 (not 2:00).
+  const minutesFloor = Math.floor((timeLeft || duration) / 60);
+  const hasProgressed = duration < initialDuration || isRunning;
+  const isComplete = progress === 1;
 
   const handleTimerInteraction = useCallback(
     () => handleUserInteraction("focusTimer"),
@@ -174,6 +213,22 @@ export const FocusTimer = ({
   }, [dispatch, widgetSize]);
 
   const timerRef = useIntersectionObserver(handleIntersection);
+  const widgetCelebrationRef = useRef(null);
+  const {
+    celebrationFrame,
+    celebrationId,
+    completeCelebration,
+    isCelebrating,
+    triggerCelebration,
+  } = useWidgetCelebration(widgetCelebrationRef);
+  // Guards against a double-fire that would re-toggle SET_TYPE.
+  const celebrationCompletedRef = useRef(false);
+
+  useEffect(() => {
+    if (isCelebrating) {
+      celebrationCompletedRef.current = false;
+    }
+  }, [isCelebrating]);
 
   const resetProgressCircle = useCallback(() => {
     if (arcRef?.current) {
@@ -184,144 +239,148 @@ export const FocusTimer = ({
     handleTimerInteraction();
   }, [arcRef, handleTimerInteraction]);
 
-  const showSystemNotifications =
-    prefs["widgets.focusTimer.showSystemNotifications"];
-
-  useEffect(() => {
-    // resets default values after timer ends
-    let interval;
-    let hasReachedZero = false;
-    if (isRunning && duration > 0) {
-      interval = setInterval(() => {
-        const currentTime = Math.floor(Date.now() / 1000);
-        const elapsed = currentTime - startTime;
-        const remaining = calculateTimeRemaining(duration, startTime);
-
-        // using setTimeLeft to trigger a re-render of the component to show live countdown each second
-        setTimeLeft(remaining);
-        setProgress((initialDuration - remaining) / initialDuration);
-
-        if (elapsed >= duration && hasReachedZero) {
-          clearInterval(interval);
-
-          batch(() => {
-            dispatch(
-              ac.AlsoToMain({
-                type: at.WIDGETS_TIMER_END,
-                data: {
-                  timerType,
-                  duration: initialTimerDuration,
-                  initialDuration: initialTimerDuration,
-                },
-              })
-            );
-
-            dispatch(
-              ac.OnlyToMain({
-                type: at.WIDGETS_TIMER_USER_EVENT,
-                data: { userAction: USER_ACTION_TYPES.TIMER_END },
-              })
-            );
-
-            const telemetryData = {
-              widget_name: "focus_timer",
-              widget_source: "widget",
-              user_action: USER_ACTION_TYPES.TIMER_END,
-              widget_size: widgetSize,
-            };
-
-            dispatch(
-              ac.OnlyToMain({
-                type: at.WIDGETS_USER_EVENT,
-                data: telemetryData,
-              })
-            );
-          });
-
-          // animate the progress circle to turn solid green
-          setProgress(1);
-
-          // More transitions after a delay to allow the animation above to complete
-          setTimeout(() => {
-            // progress circle goes back to default grey
-            resetProgressCircle();
-
-            // There's more to see!
-            setTimeout(() => {
-              // switch over to the other timer type
-              // eslint-disable-next-line max-nested-callbacks
-              batch(() => {
-                dispatch(
-                  ac.AlsoToMain({
-                    type: at.WIDGETS_TIMER_SET_TYPE,
-                    data: {
-                      timerType: timerType === "focus" ? "break" : "focus",
-                    },
-                  })
-                );
-
-                const userAction =
-                  timerType === "focus"
-                    ? USER_ACTION_TYPES.TIMER_TOGGLE_BREAK
-                    : USER_ACTION_TYPES.TIMER_TOGGLE_FOCUS;
-
-                dispatch(
-                  ac.OnlyToMain({
-                    type: at.WIDGETS_TIMER_USER_EVENT,
-                    data: { userAction },
-                  })
-                );
-
-                const telemetryData = {
-                  widget_name: "focus_timer",
-                  widget_source: "widget",
-                  user_action: userAction,
-                  widget_size: widgetSize,
-                };
-
-                dispatch(
-                  ac.OnlyToMain({
-                    type: at.WIDGETS_USER_EVENT,
-                    data: telemetryData,
-                  })
-                );
-              });
-            }, 500);
-          }, 1000);
-        } else if (elapsed >= duration) {
-          hasReachedZero = true;
-        }
-      }, 1000);
+  const handleCelebrationComplete = useCallback(() => {
+    if (celebrationCompletedRef.current) {
+      return;
     }
+    celebrationCompletedRef.current = true;
+    resetProgressCircle();
 
-    // Shows the correct live time in the UI whenever the timer state changes
-    const newTime = isRunning
-      ? calculateTimeRemaining(duration, startTime)
-      : duration;
+    batch(() => {
+      dispatch(
+        ac.AlsoToMain({
+          type: at.WIDGETS_TIMER_SET_TYPE,
+          data: { timerType: timerType === "focus" ? "break" : "focus" },
+        })
+      );
 
-    setTimeLeft(newTime);
+      const userAction =
+        timerType === "focus"
+          ? USER_ACTION_TYPES.TIMER_TOGGLE_BREAK
+          : USER_ACTION_TYPES.TIMER_TOGGLE_FOCUS;
 
-    // Set progress for paused timers (handles page load and timer type toggling)
-    if (!isRunning && duration < initialDuration) {
-      // Show previously elapsed time
-      setProgress((initialDuration - duration) / initialDuration);
-    } else if (!isRunning) {
-      // Reset progress for fresh timers
-      setProgress(0);
-    }
+      dispatch(
+        ac.OnlyToMain({
+          type: at.WIDGETS_TIMER_USER_EVENT,
+          data: { userAction },
+        })
+      );
 
-    return () => clearInterval(interval);
+      dispatch(
+        ac.OnlyToMain({
+          type: at.WIDGETS_USER_EVENT,
+          data: {
+            widget_name: "focus_timer",
+            widget_source: "widget",
+            user_action: userAction,
+            widget_size: widgetSize,
+          },
+        })
+      );
+    });
+
+    completeCelebration();
   }, [
-    isRunning,
-    startTime,
-    duration,
-    initialDuration,
+    completeCelebration,
     dispatch,
     resetProgressCircle,
     timerType,
-    initialTimerDuration,
     widgetSize,
   ]);
+
+  const showSystemNotifications =
+    prefs["widgets.focusTimer.showSystemNotifications"];
+
+  // Held in a ref so the ticker effect below doesn't re-arm whenever
+  // timerType / widgetSize / handleCelebrationComplete change. Reassigned
+  // each render so the closure captures the latest values at fire time.
+  const handleTimerEndRef = useRef(null);
+  handleTimerEndRef.current = () => {
+    batch(() => {
+      dispatch(
+        ac.AlsoToMain({
+          type: at.WIDGETS_TIMER_END,
+          data: {
+            timerType,
+            duration: initialTimerDuration,
+            initialDuration: initialTimerDuration,
+          },
+        })
+      );
+
+      dispatch(
+        ac.OnlyToMain({
+          type: at.WIDGETS_TIMER_USER_EVENT,
+          data: { userAction: USER_ACTION_TYPES.TIMER_END },
+        })
+      );
+
+      dispatch(
+        ac.OnlyToMain({
+          type: at.WIDGETS_USER_EVENT,
+          data: {
+            widget_name: "focus_timer",
+            widget_source: "widget",
+            user_action: USER_ACTION_TYPES.TIMER_END,
+            widget_size: widgetSize,
+          },
+        })
+      );
+    });
+
+    celebrationCompletedRef.current = false;
+
+    // animate the progress circle to turn solid green
+    setProgress(1);
+
+    // Classic mode and reduced-motion users skip the animation, so
+    // run the completion handler inline so the auto-toggle still fires.
+    // @nova-cleanup(remove-conditional): replace with `if (!triggerCelebration())`.
+    if (!(novaEnabled && triggerCelebration())) {
+      handleCelebrationComplete();
+    }
+  };
+
+  // Ticker: re-arms only when run-state changes, not on every timerType flip.
+  useEffect(() => {
+    if (!isRunning || duration <= 0) {
+      return undefined;
+    }
+    let hasReachedZero = false;
+    const interval = setInterval(() => {
+      const currentTime = Math.floor(Date.now() / 1000);
+      const elapsed = currentTime - startTime;
+      const remaining = calculateTimeRemaining(duration, startTime);
+
+      // using setTimeLeft to trigger a re-render of the component to show live countdown each second
+      setTimeLeft(remaining);
+      setProgress((initialDuration - remaining) / initialDuration);
+
+      if (elapsed >= duration && hasReachedZero) {
+        clearInterval(interval);
+        handleTimerEndRef.current?.();
+      } else if (elapsed >= duration) {
+        hasReachedZero = true;
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [isRunning, startTime, duration, initialDuration]);
+
+  // Paused-UI sync: shows the correct live time and progress whenever timer
+  // state changes (page load, type toggle, pause/resume).
+  useEffect(() => {
+    setTimeLeft(
+      isRunning ? calculateTimeRemaining(duration, startTime) : duration
+    );
+
+    if (!isRunning && duration < initialDuration) {
+      // Show previously elapsed time
+      setProgress((initialDuration - duration) / initialDuration);
+    } else if (!isRunning && !isCelebrating) {
+      // Don't reset while celebrating — would clear progress=1 mid-animation.
+      setProgress(0);
+    }
+  }, [isRunning, startTime, duration, initialDuration, isCelebrating]);
 
   // Update the clip-path of the gradient circle to match the current progress value
   useEffect(() => {
@@ -340,11 +399,11 @@ export const FocusTimer = ({
     const minutesEl = activeMinutesRef.current;
     const secondsEl = activeSecondsRef.current;
 
-    const minutesValue = minutesEl.innerText.trim() || "0";
-    const secondsValue = secondsEl.innerText.trim() || "0";
+    const minutesText = minutesEl.innerText.trim() || "0";
+    const secondsText = secondsEl.innerText.trim() || "0";
 
-    let minutes = parseInt(minutesValue || "0", 10);
-    let seconds = parseInt(secondsValue || "0", 10);
+    let minutes = parseInt(minutesText || "0", 10);
+    let seconds = parseInt(secondsText || "0", 10);
 
     // Set a limit of 99 minutes
     minutes = Math.min(minutes, 99);
@@ -393,6 +452,11 @@ export const FocusTimer = ({
 
   // Pause timer function
   const toggleTimer = () => {
+    // Ignore activations during the celebration window so the just-finished
+    // timer can't be restarted before Focus<->Break flips.
+    if (isCelebrating) {
+      return;
+    }
     if (!isRunning && duration > 0) {
       batch(() => {
         dispatch(
@@ -464,6 +528,11 @@ export const FocusTimer = ({
 
   // reset timer function
   const resetTimer = () => {
+    // Same rationale as toggleTimer: don't let the keyboard-reachable
+    // reset button restart the cycle while the celebration is running.
+    if (isCelebrating) {
+      return;
+    }
     batch(() => {
       dispatch(
         ac.AlsoToMain({
@@ -730,6 +799,168 @@ export const FocusTimer = ({
     [dispatch]
   );
 
+  // @nova-cleanup(remove-conditional): Drop the legacy callers and inline this for Nova
+  const setTimerMinutes = useCallback(
+    nextMinutes => {
+      const clamped = Math.max(1, Math.min(99, nextMinutes));
+      const totalSeconds = clamped * 60;
+      if (totalSeconds === duration) {
+        return;
+      }
+      batch(() => {
+        dispatch(
+          ac.AlsoToMain({
+            type: at.WIDGETS_TIMER_SET_DURATION,
+            data: { timerType, duration: totalSeconds },
+          })
+        );
+
+        dispatch(
+          ac.OnlyToMain({
+            type: at.WIDGETS_TIMER_USER_EVENT,
+            data: { userAction: USER_ACTION_TYPES.TIMER_SET },
+          })
+        );
+
+        dispatch(
+          ac.OnlyToMain({
+            type: at.WIDGETS_USER_EVENT,
+            data: {
+              widget_name: "focus_timer",
+              widget_source: "widget",
+              user_action: USER_ACTION_TYPES.TIMER_SET,
+              widget_size: widgetSize,
+            },
+          })
+        );
+      });
+      handleTimerInteraction();
+    },
+    [dispatch, duration, timerType, widgetSize, handleTimerInteraction]
+  );
+
+  // @nova-cleanup(remove-conditional): Inline this once the Nova spinbutton is the only path
+  const commitSpinbuttonDuration = useCallback(() => {
+    const el = activeMinutesRef.current;
+    if (!el) {
+      return;
+    }
+    const text = el.innerText.replace(/\s+/g, "");
+    const [mmRaw, ssRaw = "0"] = text.split(":");
+    const mm = parseInt(mmRaw, 10);
+    const ss = parseInt(ssRaw, 10);
+    if (Number.isNaN(mm)) {
+      // Invalid input; restore visual to current state by re-rendering
+      el.innerText = formatTime(timeLeft);
+      return;
+    }
+    const minutes = Math.min(99, Math.max(0, mm));
+    const seconds = Math.min(59, Math.max(0, Number.isNaN(ss) ? 0 : ss));
+    const totalSeconds = Math.max(1, minutes * 60 + seconds);
+    if (totalSeconds === duration) {
+      // No change; rewrite text to clamp display to valid range
+      el.innerText = formatTime(totalSeconds);
+      return;
+    }
+    batch(() => {
+      dispatch(
+        ac.AlsoToMain({
+          type: at.WIDGETS_TIMER_SET_DURATION,
+          data: { timerType, duration: totalSeconds },
+        })
+      );
+
+      dispatch(
+        ac.OnlyToMain({
+          type: at.WIDGETS_TIMER_USER_EVENT,
+          data: { userAction: USER_ACTION_TYPES.TIMER_SET },
+        })
+      );
+
+      dispatch(
+        ac.OnlyToMain({
+          type: at.WIDGETS_USER_EVENT,
+          data: {
+            widget_name: "focus_timer",
+            widget_source: "widget",
+            user_action: USER_ACTION_TYPES.TIMER_SET,
+            widget_size: widgetSize,
+          },
+        })
+      );
+    });
+    handleTimerInteraction();
+  }, [
+    dispatch,
+    duration,
+    timerType,
+    widgetSize,
+    handleTimerInteraction,
+    timeLeft,
+  ]);
+
+  // @nova-cleanup(remove-conditional): Remove if the Nova spinbutton is replaced
+  const handleSpinBeforeInput = e => {
+    const input = e.data;
+    if (input === null || input === undefined) {
+      return;
+    }
+    const current = e.target.innerText;
+    const selection = window.getSelection();
+    const start = selection
+      ? Math.min(selection.anchorOffset, selection.focusOffset)
+      : current.length;
+    const end = selection
+      ? Math.max(selection.anchorOffset, selection.focusOffset)
+      : current.length;
+    if (!isValidSpinbuttonInput(current, input, start, end)) {
+      e.preventDefault();
+    }
+  };
+
+  // @nova-cleanup(remove-conditional): Remove if the Nova spinbutton is replaced
+  const handleSpinKeyDown = e => {
+    let next = minutesValue;
+    switch (e.key) {
+      case "Enter":
+        e.preventDefault();
+        commitSpinbuttonDuration();
+        e.target.blur();
+        return;
+      case "ArrowUp":
+        next = minutesFloor + 1;
+        break;
+      case "ArrowDown":
+        next = minutesFloor - 1;
+        break;
+      case "PageUp":
+        next = minutesFloor + 5;
+        break;
+      case "PageDown":
+        next = minutesFloor - 5;
+        break;
+      case "Home":
+        next = 1;
+        break;
+      case "End":
+        next = 99;
+        break;
+      default:
+        return;
+    }
+    e.preventDefault();
+    setTimerMinutes(next);
+  };
+
+  // @nova-cleanup(remove-conditional): Remove with the Nova radiogroup
+  const handleRadiogroupKeyDown = e => {
+    if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") {
+      return;
+    }
+    e.preventDefault();
+    toggleType(timerType === "focus" ? "break" : "focus");
+  };
+
   const sizeSubmenuRef = useRef(null);
   useEffect(() => {
     const el = sizeSubmenuRef.current;
@@ -750,14 +981,42 @@ export const FocusTimer = ({
     return () => el.removeEventListener("click", listener);
   }, [handleChangeSize]);
 
+  // Keep the running-state body layout through the celebration so the ring
+  // doesn't shift to a third position during the animation.
+  const bodyShowsRunningLayout = hasProgressed || isCelebrating || isComplete;
+
   return timerData ? (
     <article
       // @nova-cleanup(remove-conditional): Remove novaEnabled check; always apply col-4 and size class after Nova ships
-      className={`focus-timer widget ${novaEnabled ? `col-4 ${widgetSize}-widget` : ""} ${isSmallSize ? "is-small" : ""} ${isMaximized ? "is-maximized" : ""}`}
+      className={`focus-timer widget ${novaEnabled ? `col-4 ${widgetSize}-widget` : ""} ${isSmallSize ? "is-small" : ""} ${isMaximized ? "is-maximized" : ""}${isComplete ? " is-complete" : ""}${isCelebrating ? " is-celebrating" : ""}${hasProgressed && !isComplete ? " is-active" : ""}`}
       ref={el => {
         timerRef.current = [el];
+        widgetCelebrationRef.current = el;
       }}
     >
+      {
+        // @nova-cleanup(remove-conditional): drop the `novaEnabled &&` guard.
+        novaEnabled && isCelebrating && celebrationFrame ? (
+          <WidgetCelebration
+            classNamePrefix="focus-timer-celebration"
+            celebrationFrame={celebrationFrame}
+            celebrationId={celebrationId}
+            gradientStops={FOCUS_TIMER_CELEBRATION_GRADIENT_STOPS}
+            headlineL10nId={
+              timerType === "focus"
+                ? "newtab-widget-timer-celebration-heading-focus"
+                : "newtab-widget-timer-celebration-heading-break"
+            }
+            illustrationSrc={null}
+            onComplete={handleCelebrationComplete}
+            subheadL10nId={
+              timerType === "focus"
+                ? "newtab-widget-timer-celebration-message-focus"
+                : "newtab-widget-timer-celebration-message-break"
+            }
+          />
+        ) : null
+      }
       <div className="newtab-widget-timer-notification-title-wrapper">
         <h2 data-l10n-id="newtab-widget-timer-notification-title"></h2>
         <div className="focus-timer-context-menu-wrapper">
@@ -779,6 +1038,34 @@ export const FocusTimer = ({
                   "widgets.focusTimer.showSystemNotifications",
                   !showSystemNotifications
                 );
+              }}
+            />
+            <panel-item
+              // @nova-cleanup(remove-conditional): Drop the ternary and keep
+              // newtab-widget-timer-menu-hide once Nova ships.
+              data-l10n-id={
+                novaEnabled
+                  ? "newtab-widget-timer-menu-hide"
+                  : "newtab-widget-menu-hide"
+              }
+              onClick={() => {
+                batch(() => {
+                  handlePrefUpdate("widgets.focusTimer.enabled", false);
+
+                  const telemetryData = {
+                    widget_name: "focus_timer",
+                    widget_source: "context_menu",
+                    enabled: false,
+                    widget_size: widgetSize,
+                  };
+
+                  dispatch(
+                    ac.OnlyToMain({
+                      type: at.WIDGETS_ENABLED,
+                      data: telemetryData,
+                    })
+                  );
+                });
               }}
             />
             {
@@ -805,28 +1092,10 @@ export const FocusTimer = ({
                 </panel-item>
               )
             }
-            <panel-item
-              data-l10n-id="newtab-widget-menu-hide"
-              onClick={() => {
-                batch(() => {
-                  handlePrefUpdate("widgets.focusTimer.enabled", false);
-
-                  const telemetryData = {
-                    widget_name: "focus_timer",
-                    widget_source: "context_menu",
-                    enabled: false,
-                    widget_size: widgetSize,
-                  };
-
-                  dispatch(
-                    ac.OnlyToMain({
-                      type: at.WIDGETS_ENABLED,
-                      data: telemetryData,
-                    })
-                  );
-                });
-              }}
-            />
+            {
+              // @nova-cleanup(remove-conditional): Remove the `novaEnabled &&` check; always render the divider.
+              novaEnabled && <hr />
+            }
             <panel-item
               data-l10n-id="newtab-widget-timer-menu-learn-more"
               onClick={handleLearnMore}
@@ -834,91 +1103,253 @@ export const FocusTimer = ({
           </panel-list>
         </div>
       </div>
-      <div className="focus-timer-tabs">
-        <div className="focus-timer-tabs-buttons">
-          <moz-button
-            type={timerType === "focus" ? "default" : "ghost"}
-            data-l10n-id="newtab-widget-timer-mode-focus"
-            size="small"
-            onClick={() => toggleType("focus")}
-          />
-          <moz-button
-            type={timerType === "break" ? "default" : "ghost"}
-            data-l10n-id="newtab-widget-timer-mode-break"
-            size="small"
-            onClick={() => toggleType("break")}
-          />
-        </div>
-      </div>
-      <div
-        role="progress"
-        className={`progress-circle-wrapper ${
-          !showSystemNotifications && !timerData[timerType].isRunning
-            ? "is-small"
-            : ""
-        }`}
-      >
-        <div
-          className={`progress-circle-background${timerType === "break" ? "-break" : ""}`}
-        />
+      {
+        // @nova-cleanup(remove-conditional): Remove this branch and the legacy block below; keep only the Nova body
+        novaEnabled ? (
+          <>
+            {/*
+             * Clicking anywhere inside the circle (including the ring) toggles
+             * the timer. The moz-button inside still owns focus and the
+             * accessible name; its click handler stops propagation so the
+             * wrapper handler doesn't double-fire.
+             */}
+            <div
+              role="progress"
+              className={`progress-circle-wrapper${isComplete ? " is-complete" : ""}${hasProgressed ? " is-active" : ""}`}
+              onClick={toggleTimer}
+            >
+              <div
+                className={`progress-circle-background${timerType === "break" ? "-break" : ""}`}
+              />
+              <div
+                className={`progress-circle ${timerType === "focus" ? "focus-visible" : "focus-hidden"}`}
+                ref={timerType === "focus" ? arcRef : null}
+              />
+              <div
+                className={`progress-circle ${timerType === "break" ? "break-visible" : "break-hidden"}`}
+                ref={timerType === "break" ? arcRef : null}
+              />
+              <div
+                className={`progress-circle-complete${isComplete ? " visible" : ""}`}
+              />
+              {progress > 0 && progress < 1 && (
+                <div
+                  className={`progress-circle-cap-rotator is-${timerType}`}
+                  style={{ "--progress-angle": `${progress * 360}deg` }}
+                  aria-hidden="true"
+                >
+                  <div className="progress-circle-cap" />
+                </div>
+              )}
+              <moz-button
+                className="focus-timer-play-button"
+                type="icon ghost"
+                iconsrc={`chrome://global/skin/media/${isRunning ? "pause" : "play"}-fill.svg`}
+                data-l10n-id={
+                  isRunning
+                    ? "newtab-widget-timer-pause-aria"
+                    : "newtab-widget-timer-start-aria"
+                }
+                data-l10n-args={JSON.stringify({ minutes: minutesValue })}
+                onClick={e => {
+                  e.stopPropagation();
+                  toggleTimer();
+                }}
+              />
+            </div>
 
-        <div
-          className={`progress-circle ${timerType === "focus" ? "focus-visible" : "focus-hidden"}`}
-          ref={timerType === "focus" ? arcRef : null}
-        />
+            <div className="focus-timer-body">
+              <div className="focus-timer-time-slot">
+                {bodyShowsRunningLayout && (
+                  <div className="focus-timer-time-display">
+                    <span className="focus-timer-time-text">
+                      {formatTime(timeLeft)}
+                    </span>
+                    <span
+                      className="focus-timer-time-mode"
+                      data-l10n-id={
+                        timerType === "focus"
+                          ? "newtab-widget-timer-running-focus"
+                          : "newtab-widget-timer-running-break"
+                      }
+                    />
+                  </div>
+                )}
+                {!bodyShowsRunningLayout && (
+                  <div className="focus-timer-time-row">
+                    <moz-button
+                      className="focus-timer-minute-decrement"
+                      type="icon ghost"
+                      iconsrc="chrome://global/skin/icons/minus.svg"
+                      data-l10n-id="newtab-widget-timer-decrease-min"
+                      aria-controls="focus-timer-spinbutton"
+                      tabindex="-1"
+                      onClick={() => setTimerMinutes(minutesFloor - 1)}
+                    />
+                    <span
+                      id="focus-timer-spinbutton"
+                      className="focus-timer-spinbutton"
+                      role="spinbutton"
+                      aria-valuemin={1}
+                      aria-valuemax={99}
+                      aria-valuenow={minutesValue}
+                      data-l10n-id="newtab-widget-timer-spinbutton-name"
+                      data-l10n-args={JSON.stringify({
+                        minutes: minutesValue,
+                      })}
+                      contentEditable="true"
+                      suppressContentEditableWarning={true}
+                      tabIndex={0}
+                      onKeyDown={handleSpinKeyDown}
+                      onBeforeInput={handleSpinBeforeInput}
+                      onFocus={handleFocus}
+                      onBlur={commitSpinbuttonDuration}
+                      ref={activeMinutesRef}
+                    >
+                      {formatTime(timeLeft)}
+                    </span>
+                    <moz-button
+                      className="focus-timer-minute-increment"
+                      type="icon ghost"
+                      iconsrc="chrome://global/skin/icons/plus.svg"
+                      data-l10n-id="newtab-widget-timer-increase-min"
+                      aria-controls="focus-timer-spinbutton"
+                      tabindex="-1"
+                      onClick={() => setTimerMinutes(minutesFloor + 1)}
+                    />
+                  </div>
+                )}
+              </div>
 
-        <div
-          className={`progress-circle ${timerType === "break" ? "break-visible" : "break-hidden"}`}
-          ref={timerType === "break" ? arcRef : null}
-        />
+              <div className="focus-timer-bottom-slot">
+                {bodyShowsRunningLayout && widgetSize === "large" && (
+                  <moz-button
+                    className="focus-timer-reset-button"
+                    type="icon"
+                    iconsrc="chrome://newtab/content/data/content/assets/arrow-clockwise-16.svg"
+                    data-l10n-id="newtab-widget-timer-reset"
+                    onClick={resetTimer}
+                  />
+                )}
+                {!bodyShowsRunningLayout && (
+                  <div
+                    className="focus-timer-mode-group"
+                    role="radiogroup"
+                    data-l10n-id="newtab-widget-timer-mode-group"
+                    onKeyDown={handleRadiogroupKeyDown}
+                  >
+                    <moz-button
+                      role="radio"
+                      aria-checked={timerType === "focus" ? "true" : "false"}
+                      tabindex={timerType === "focus" ? "0" : "-1"}
+                      type={timerType === "focus" ? "default" : "ghost"}
+                      data-l10n-id="newtab-widget-timer-mode-focus"
+                      onClick={() => toggleType("focus")}
+                    />
+                    <moz-button
+                      role="radio"
+                      aria-checked={timerType === "break" ? "true" : "false"}
+                      tabindex={timerType === "break" ? "0" : "-1"}
+                      type={timerType === "break" ? "default" : "ghost"}
+                      data-l10n-id="newtab-widget-timer-mode-break"
+                      onClick={() => toggleType("break")}
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="focus-timer-tabs">
+              <div className="focus-timer-tabs-buttons">
+                <moz-button
+                  type={timerType === "focus" ? "default" : "ghost"}
+                  data-l10n-id="newtab-widget-timer-mode-focus"
+                  size="small"
+                  onClick={() => toggleType("focus")}
+                />
+                <moz-button
+                  type={timerType === "break" ? "default" : "ghost"}
+                  data-l10n-id="newtab-widget-timer-mode-break"
+                  size="small"
+                  onClick={() => toggleType("break")}
+                />
+              </div>
+            </div>
+            <div
+              role="progress"
+              className={`progress-circle-wrapper ${
+                !showSystemNotifications && !timerData[timerType].isRunning
+                  ? "is-small"
+                  : ""
+              }`}
+            >
+              <div
+                className={`progress-circle-background${timerType === "break" ? "-break" : ""}`}
+              />
 
-        <div
-          className={`progress-circle-complete${progress === 1 ? " visible" : ""}`}
-        />
-        <div role="timer" className="progress-circle-label">
-          <EditableTimerFields
-            minutesRef={activeMinutesRef}
-            secondsRef={activeSecondsRef}
-            onKeyDown={handleKeyDown}
-            onBeforeInput={handleBeforeInput}
-            onFocus={handleFocus}
-            timeLeft={timeLeft}
-            onBlur={() => setTimerDuration()}
-          />
-        </div>
-      </div>
+              <div
+                className={`progress-circle ${timerType === "focus" ? "focus-visible" : "focus-hidden"}`}
+                ref={timerType === "focus" ? arcRef : null}
+              />
 
-      <div className="set-timer-controls-wrapper">
-        <div className={`focus-timer-controls timer-running`}>
-          <moz-button
-            {...(!isRunning ? { type: "primary" } : {})}
-            iconsrc={`chrome://global/skin/media/${isRunning ? "pause" : "play"}-fill.svg`}
-            data-l10n-id={
-              isRunning
-                ? "newtab-widget-timer-label-pause"
-                : "newtab-widget-timer-label-play"
-            }
-            onClick={toggleTimer}
-          />
-          {isRunning && (
-            <moz-button
-              type="icon ghost"
-              iconsrc="chrome://newtab/content/data/content/assets/arrow-clockwise-16.svg"
-              data-l10n-id="newtab-widget-timer-reset"
-              onClick={resetTimer}
-            />
-          )}
-        </div>
-      </div>
-      {!showSystemNotifications && !timerData[timerType].isRunning && (
-        <p
-          className="timer-notification-status"
-          data-l10n-id="newtab-widget-timer-notification-warning"
-        ></p>
-      )}
+              <div
+                className={`progress-circle ${timerType === "break" ? "break-visible" : "break-hidden"}`}
+                ref={timerType === "break" ? arcRef : null}
+              />
+
+              <div
+                className={`progress-circle-complete${progress === 1 ? " visible" : ""}`}
+              />
+              <div role="timer" className="progress-circle-label">
+                <EditableTimerFields
+                  minutesRef={activeMinutesRef}
+                  secondsRef={activeSecondsRef}
+                  onKeyDown={handleKeyDown}
+                  onBeforeInput={handleBeforeInput}
+                  onFocus={handleFocus}
+                  timeLeft={timeLeft}
+                  onBlur={() => setTimerDuration()}
+                />
+              </div>
+            </div>
+
+            <div className="set-timer-controls-wrapper">
+              <div className={`focus-timer-controls timer-running`}>
+                <moz-button
+                  {...(!isRunning ? { type: "primary" } : {})}
+                  iconsrc={`chrome://global/skin/media/${isRunning ? "pause" : "play"}-fill.svg`}
+                  data-l10n-id={
+                    isRunning
+                      ? "newtab-widget-timer-label-pause"
+                      : "newtab-widget-timer-label-play"
+                  }
+                  onClick={toggleTimer}
+                />
+                {isRunning && (
+                  <moz-button
+                    type="icon ghost"
+                    iconsrc="chrome://newtab/content/data/content/assets/arrow-clockwise-16.svg"
+                    data-l10n-id="newtab-widget-timer-reset"
+                    onClick={resetTimer}
+                  />
+                )}
+              </div>
+            </div>
+            {!showSystemNotifications && !timerData[timerType].isRunning && (
+              <p
+                className="timer-notification-status"
+                data-l10n-id="newtab-widget-timer-notification-warning"
+              ></p>
+            )}
+          </>
+        )
+      }
     </article>
   ) : null;
 };
+/* eslint-enable complexity, max-statements */
 
 function EditableTimerFields({
   minutesRef,

@@ -47,6 +47,19 @@ async function activateContextAndWaitFor(selector, where) {
       );
       closeMethod = async win => BrowserTestUtils.closeWindow(win);
       break;
+    case "smartwindow":
+      contextMenuItem += "smartwindow";
+      openPromise = BrowserTestUtils.waitForNewWindow({ url: TEST_LINK }).then(
+        win => {
+          ok(
+            win.document.documentElement.hasAttribute("ai-window"),
+            "Should have opened a smart window."
+          );
+          return win;
+        }
+      );
+      closeMethod = async win => BrowserTestUtils.closeWindow(win);
+      break;
   }
   let contextMenu = document.getElementById("contentAreaContextMenu");
   is(contextMenu.state, "closed", "checking if popup is closed");
@@ -94,6 +107,21 @@ add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [["test.wait300msAfterTabSwitch", true]],
   });
+});
+
+add_task(async function test_select_text_link_smartwindow() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.smartwindow.enabled", true]],
+  });
+  let testTab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    RESOURCE_LINK
+  );
+  for (let elementID of ["test-link", "test-image-link"]) {
+    await activateContextAndWaitFor("#" + elementID, "smartwindow");
+  }
+  BrowserTestUtils.removeTab(testTab);
+  await SpecialPowers.popPrefEnv();
 });
 
 add_task(async function test_select_text_link() {

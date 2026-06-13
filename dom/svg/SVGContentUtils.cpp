@@ -18,6 +18,7 @@
 #include "mozilla/ComputedStyle.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/ReflowInput.h"
 #include "mozilla/SVGContextPaint.h"
 #include "mozilla/SVGUtils.h"
 #include "mozilla/TextUtils.h"

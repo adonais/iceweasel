@@ -5,8 +5,8 @@
 package org.mozilla.fenix.home
 
 import android.content.Context
-import android.view.View
 import androidx.annotation.VisibleForTesting
+import androidx.compose.material3.SnackbarHostState
 import androidx.navigation.NavController
 import kotlinx.coroutines.CoroutineScope
 import mozilla.components.browser.state.selector.findTab
@@ -24,6 +24,7 @@ import org.mozilla.fenix.home.HomeScreenViewModel.Companion.ALL_NORMAL_TABS
 import org.mozilla.fenix.home.HomeScreenViewModel.Companion.ALL_PRIVATE_TABS
 import org.mozilla.fenix.utils.Settings
 import org.mozilla.fenix.utils.allowUndo
+import org.mozilla.fenix.utils.getUndoDelay
 
 /**
  * Delegate to handle tab removal and undo actions in the homepage.
@@ -36,7 +37,7 @@ import org.mozilla.fenix.utils.allowUndo
  * @param tabsUseCases The [TabsUseCases] instance to perform tab actions.
  * @param fenixBrowserUseCases [FenixBrowserUseCases] used for adding new homepage tabs.
  * @param settings [Settings] used to check the application shared preferences.
- * @param snackBarParentView The [View] to find a parent from for displaying the snackbar.
+ * @param snackbarHostState The [SnackbarHostState] used to display snackbars.
  * @param viewLifecycleScope The [CoroutineScope] to use for launching coroutines.
  */
 @Suppress("LongParameterList")
@@ -49,7 +50,7 @@ class TabsCleanupFeature(
     private val tabsUseCases: TabsUseCases,
     private val fenixBrowserUseCases: FenixBrowserUseCases,
     private val settings: Settings,
-    private val snackBarParentView: View,
+    private val snackbarHostState: SnackbarHostState,
     private val viewLifecycleScope: CoroutineScope,
 ) : LifecycleAwareFeature {
 
@@ -79,11 +80,12 @@ class TabsCleanupFeature(
     @VisibleForTesting
     internal fun showUndoSnackbar(message: String, onCancel: () -> Unit) {
         viewLifecycleScope.allowUndo(
-            view = snackBarParentView,
+            snackbarHostState = snackbarHostState,
             message = message,
             undoActionTitle = context.getString(R.string.snackbar_deleted_undo),
             onCancel = onCancel,
             operation = {},
+            undoDelay = context.getUndoDelay(),
         )
     }
 

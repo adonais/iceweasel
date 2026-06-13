@@ -40,11 +40,13 @@ enum class LineReflowStatus {
 };
 
 class nsBlockInFlowLineIterator;
+class nsLineLayout;
 namespace mozilla {
 class BlockReflowState;
 class PresShell;
 class ServoRestyleState;
 class ServoStyleSet;
+
 }  // namespace mozilla
 
 /**

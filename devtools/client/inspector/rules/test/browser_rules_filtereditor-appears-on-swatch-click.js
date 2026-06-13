@@ -51,11 +51,7 @@ add_task(async function () {
   info("Hide the filter select");
   const onSelectPopupHidden = once(selectPopup, "popuphidden");
   const blurMenuItem = selectPopup.querySelector("menuitem[label='blur']");
-  if (
-    AppConstants.platform == "macosx" &&
-    Services.prefs.getBoolPref("widget.macos.native-anchored-menus", false) &&
-    Services.prefs.getBoolPref("widget.macos.allow-native-select", false)
-  ) {
+  if (selectPopup.isNativeMenu) {
     selectPopup.activateItem(blurMenuItem);
   } else {
     EventUtils.synthesizeMouseAtCenter(blurMenuItem, {}, window);

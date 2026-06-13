@@ -8,7 +8,7 @@ use base64::prelude::*;
 use neqo_bin::server::{HttpServer, Runner};
 use neqo_common::Bytes;
 use neqo_common::{event::Provider, qdebug, qerror, qinfo, qtrace, Datagram, Header};
-use neqo_crypto::{generate_ech_keys, init_db, AllowZeroRtt, AntiReplay};
+use nss_rs::{generate_ech_keys, init_db, AllowZeroRtt, AntiReplay};
 use neqo_http3::{
     ConnectUdpRequest, ConnectUdpServerEvent, Error, Http3OrWebTransportStream, Http3Parameters,
     Http3Server, Http3ServerEvent, SessionAcceptAction, StreamId, WebTransportRequest,
@@ -1243,14 +1243,21 @@ impl HttpServer for Http3ConnectProxyServer {
                     );
                     let tcp_stream = self.tcp_streams.get_mut(&stream.stream_id()).unwrap();
                     while !tcp_stream.recv_buffer.is_empty() {
-                        let sent = stream
-                            .send_data(&tcp_stream.recv_buffer.make_contiguous(), now)
-                            .unwrap();
-                        qtrace!("tcp_stream send to client sent={}", sent);
-                        if sent == 0 {
-                            break;
+                        match stream.send_data(&tcp_stream.recv_buffer.make_contiguous(), now) {
+                            Ok(sent) => {
+                                qtrace!("tcp_stream send to client sent={}", sent);
+                                if sent == 0 {
+                                    // no progress possible right now — stop trying to send in this loop
+                                    // (could also mark for later retry)
+                                    break;
+                                }
+                                tcp_stream.recv_buffer.drain(0..sent);
+                            }
+                            Err(e) => {
+                                eprintln!("send_data failed: {:?}", e);
+                                break;
+                            }
                         }
-                        tcp_stream.recv_buffer.drain(0..sent);
                     }
                 }
                 Http3ServerEvent::ConnectUdp(ConnectUdpServerEvent::NewSession {

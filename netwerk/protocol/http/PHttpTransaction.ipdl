@@ -21,6 +21,7 @@ using mozilla::net::TRRSkippedReason from "nsITRRSkipReason.h";
 using nsIRequest::TRRMode from "nsIRequest.h";
 using nsILoadInfo::IPAddressSpace from "nsILoadInfo.h";
 using struct mozilla::net::LNAPerms from "mozilla/net/HttpTransactionShell.h";
+using mozilla::net::HttpTrafficCategory from "mozilla/net/HttpTrafficAnalyzer.h";
 
 namespace mozilla {
 namespace net {
@@ -83,7 +84,7 @@ child:
              uint64_t reqContentLength,
              bool reqBodyIncludesHeaders,
              uint64_t topLevelOuterContentWindowId,
-             uint8_t httpTrafficCategory,
+             HttpTrafficCategory httpTrafficCategory,
              uint64_t requestContextID,
              ClassOfService classOfService,
              uint32_t initialRwin,

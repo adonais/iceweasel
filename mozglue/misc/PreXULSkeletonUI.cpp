@@ -11,7 +11,6 @@
 #include <math.h>
 #include <limits.h>
 #include <cmath>
-#include <locale>
 #include <string>
 #include <objbase.h>
 #include <shlobj.h>
@@ -1359,14 +1358,14 @@ ThemeColors GetTheme(ThemeMode themeId) {
     case ThemeMode::Dark:
       // Dark theme or default theme when in dark mode
 
-      // controlled by css variable --toolbar-bgcolor
+      // controlled by design token --toolbar-background-color
       theme.backgroundColor = 0x2b2a33;
       theme.tabColor = 0x42414d;
       theme.toolbarForegroundColor = 0x6a6a6d;
       theme.tabOutlineColor = 0x1c1b22;
       // controlled by css variable --lwt-accent-color
       theme.titlebarColor = 0x1c1b22;
-      // controlled by --toolbar-color in browser.css
+      // controlled by design token --toolbar-text-color
       theme.chromeContentDividerColor = 0x0c0c0d;
       // controlled by css variable --toolbar-field-background-color
       theme.urlbarColor = 0x42414d;
@@ -1376,7 +1375,7 @@ ThemeColors GetTheme(ThemeMode themeId) {
     case ThemeMode::Light:
     case ThemeMode::Default:
     default:
-      // --toolbar-bgcolor in browser.css
+      // --toolbar-background-color
       theme.backgroundColor = 0xf9f9fb;
       theme.tabColor = 0xf9f9fb;
       theme.toolbarForegroundColor = 0xdddde1;
@@ -1384,7 +1383,7 @@ ThemeColors GetTheme(ThemeMode themeId) {
       theme.titlebarColor = 0xeaeaed;
       // --chrome-content-separator-color in browser.css
       theme.chromeContentDividerColor = 0xe1e1e2;
-      // controlled by css variable --toolbar-color
+      // controlled by design token --toolbar-text-color
       theme.urlbarColor = 0xffffff;
       theme.urlbarBorderColor = 0xdddde1;
       theme.animationColor = theme.backgroundColor;

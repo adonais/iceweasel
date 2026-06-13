@@ -1,87 +1,41 @@
-From: Michael Froman <mjfroman@mac.com>
-Date: Mon, 15 Sep 2025 14:53:58 -0500
-Subject: Bug 1973648 - move applicable libwebrtc changes to our new
- libwebrtc_overrides location. r=ng
+From: Michael Froman <mfroman@mozilla.com>
+Date: Thu, 11 Sep 2025 14:17:00 -0500
+Subject: Bug 1988042 - add BSD support to new version of libwebrtc's
+ cpu_info.cc r?ng!
 
-Differential Revision: https://phabricator.services.mozilla.com/D258499
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/19164e58323d59c1f66f7fcf671b8d0b6366f708
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/e3b37acb8816aefb9134a68cafad8c7d5e145179
 ---
- call/call.cc                     | 13 -------------
- call/call.h                      | 16 ++--------------
- modules/desktop_capture/BUILD.gn |  5 +++++
- 3 files changed, 7 insertions(+), 27 deletions(-)
+ rtc_base/cpu_info.cc | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
 
-diff --git a/call/call.cc b/call/call.cc
-index 052c8a76fe..cbefd29825 100644
---- a/call/call.cc
-+++ b/call/call.cc
-@@ -472,19 +472,6 @@ class Call final : public webrtc::Call,
- };
- }  // namespace internal
+diff --git a/rtc_base/cpu_info.cc b/rtc_base/cpu_info.cc
+index 0c6a76fcad..ec74055c26 100644
+--- a/rtc_base/cpu_info.cc
++++ b/rtc_base/cpu_info.cc
+@@ -29,14 +29,14 @@
+ #include <unistd.h>
+ #elif defined(WEBRTC_FUCHSIA)
+ #include <zircon/syscalls.h>
+-#elif defined(WEBRTC_LINUX)
++#elif defined(WEBRTC_LINUX) || defined(WEBRTC_BSD)
+ #include <unistd.h>
+ #endif  // WEBRTC_LINUX
  
--std::string Call::Stats::ToString(int64_t time_ms) const {
--  char buf[1024];
--  SimpleStringBuilder ss(buf);
--  ss << "Call stats: " << time_ms << ", {";
--  ss << "send_bw_bps: " << send_bandwidth_bps << ", ";
--  ss << "recv_bw_bps: " << recv_bandwidth_bps << ", ";
--  ss << "max_pad_bps: " << max_padding_bitrate_bps << ", ";
--  ss << "pacer_delay_ms: " << pacer_delay_ms << ", ";
--  ss << "rtt_ms: " << rtt_ms;
--  ss << '}';
--  return ss.str();
--}
--
- std::unique_ptr<Call> Call::Create(CallConfig config) {
-   auto transport_send = std::make_unique<RtpTransportControllerSend>(
-       config.ExtractTransportConfig());
-diff --git a/call/call.h b/call/call.h
-index 8f58370194..35ee184f48 100644
---- a/call/call.h
-+++ b/call/call.h
-@@ -26,6 +26,7 @@
- #include "api/transport/bitrate_settings.h"
- #include "call/audio_receive_stream.h"
- #include "call/audio_send_stream.h"
-+#include "call/call_basic_stats.h"
- #include "call/call_config.h"
- #include "call/flexfec_receive_stream.h"
- #include "call/packet_receiver.h"
-@@ -51,20 +52,7 @@ namespace webrtc {
- 
- class Call {
-  public:
--  struct Stats {
--    std::string ToString(int64_t time_ms) const;
--
--    int send_bandwidth_bps = 0;       // Estimated available send bandwidth.
--    int max_padding_bitrate_bps = 0;  // Cumulative configured max padding.
--    int recv_bandwidth_bps = 0;       // Estimated available receive bandwidth.
--    int64_t pacer_delay_ms = 0;
--    int64_t rtt_ms = -1;
--    std::optional<int64_t> ccfb_messages_received = std::nullopt;
--    flat_map<uint32_t, SentCongestionControllerFeedbackStats>
--        sent_ccfb_stats_per_ssrc;
--    flat_map<uint32_t, ReceivedCongestionControlFeedbackStats>
--        received_ccfb_stats_per_ssrc;
--  };
-+  using Stats = CallBasicStats;
- 
-   static std::unique_ptr<Call> Create(CallConfig config);
- 
-diff --git a/modules/desktop_capture/BUILD.gn b/modules/desktop_capture/BUILD.gn
-index eaf1301fd0..dbebbd5b26 100644
---- a/modules/desktop_capture/BUILD.gn
-+++ b/modules/desktop_capture/BUILD.gn
-@@ -400,6 +400,11 @@ rtc_library("desktop_capture") {
-     ]
-     if (build_with_mozilla) {
-       libs -= [ "Xtst" ]
-+      # Mozilla provides custom impl of x_error_trap.*
-+      sources -= [
-+        "linux/x11/x_error_trap.cc",
-+        "linux/x11/x_error_trap.h",
-+      ]
-     }
-   }
- 
+ #if defined(WEBRTC_ARCH_X86_FAMILY) && defined(_MSC_VER)
+ #include <intrin.h>
+ #endif
+-#if defined(WEBRTC_ARCH_ARM_FAMILY) && defined(WEBRTC_LINUX)
++#if defined(WEBRTC_ARCH_ARM_FAMILY) && (defined(WEBRTC_LINUX) || defined(WEBRTC_BSD))
+ #include <asm/hwcap.h>
+ #include <sys/auxv.h>
+ #endif
+@@ -176,6 +176,9 @@ bool Supports(ISA instruction_set_architecture) {
+   if (instruction_set_architecture == ISA::kNeon) {
+ #if defined(WEBRTC_ANDROID)
+     return 0 != (android_getCpuFeatures() & ANDROID_CPU_ARM_FEATURE_NEON);
++#elif defined(WEBRTC_BSD)
++    // OpenBSD does not have getauxval() and does not have /proc reading
++    return false;
+ #elif defined(WEBRTC_LINUX)
+     uint64_t hwcap = 0;
+     hwcap = getauxval(AT_HWCAP);

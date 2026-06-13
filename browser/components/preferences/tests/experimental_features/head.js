@@ -148,6 +148,7 @@ function enrollByClick(el, wantedActive) {
   info(`Enrolling in ${slug}:${el.dataset.nimbusBranchSlug}...`);
 
   const promise = promiseNimbusStoreUpdate(slug, wantedActive);
+  el.scrollIntoView();
   EventUtils.synthesizeMouseAtCenter(el.inputEl, {}, gBrowser.contentWindow);
   return promise;
 }

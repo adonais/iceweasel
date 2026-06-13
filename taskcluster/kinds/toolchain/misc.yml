@@ -924,16 +924,16 @@ talos-pdfs:
         fetch:
             - mozilla-pdf.js
 
-symbolicator-cli:
-    description: "symbolicator-cli from firefox profiler"
+profiler-node-tools:
+    description: "profiler node tools from firefox profiler"
     treeherder:
-        symbol: TL(symbolicator-cli)
+        symbol: TL(profiler-node-tools)
     run:
-        script: build-symbolicator-cli.sh
-        toolchain-artifact: public/build/symbolicator-cli.tar.zst
+        script: build-profiler-node-tools.sh
+        toolchain-artifact: public/build/profiler-node-tools.tar.zst
     run-on-projects: []
     fetches:
         fetch:
             - firefox-profiler
         toolchain:
-            - linux64-node
+            - linux64-node-24

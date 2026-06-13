@@ -15,6 +15,11 @@
 #include "nsINode.h"
 #include "nsRange.h"
 
+// from vs/Windows Kits/10/.../rpcndr.h
+#ifdef small
+#  undef small
+#endif
+
 class nsISupports;
 
 namespace mozilla {

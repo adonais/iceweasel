@@ -55,7 +55,7 @@ export class InputPickerChildCommon extends JSWindowActorChild {
    */
   addListeners(aElement) {
     this.#abortController = new AbortController();
-    aElement.ownerGlobal.addEventListener("pagehide", this, {
+    aElement.documentGlobal.addEventListener("pagehide", this, {
       signal: this.#abortController.signal,
     });
   }
@@ -64,7 +64,7 @@ export class InputPickerChildCommon extends JSWindowActorChild {
    * Helper function that returns the CSS direction property of the element.
    */
   getComputedDirection(aElement) {
-    return aElement.ownerGlobal
+    return aElement.documentGlobal
       .getComputedStyle(aElement)
       .getPropertyValue("direction");
   }
@@ -115,7 +115,7 @@ export class InputPickerChildCommon extends JSWindowActorChild {
     switch (aEvent.type) {
       case `MozOpen${this.#namespace}`: {
         if (
-          !aEvent.originalTarget.ownerGlobal.HTMLInputElement.isInstance(
+          !aEvent.originalTarget.documentGlobal.HTMLInputElement.isInstance(
             aEvent.originalTarget
           )
         ) {

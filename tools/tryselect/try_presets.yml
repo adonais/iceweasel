@@ -162,6 +162,23 @@ builds-debugopt:
     query:
         - "^build- !fuzzing !rusttests !signing !plain !asan !tsan !noopt !toolchain !upload-symbols !components !apk !bundle"
 
+claudometer:
+    selector: fuzzy
+    description: >-
+        Run the full Linux test suite (linux2204-wayland, linux2404) plus cross-platform
+        wdspec-headless tests and SpiderMonkey/hazard jobs for comprehensive coverage.
+    query:
+        - "^build-linux64/"
+        - "^test-linux2204-64-wayland/"
+        - "^test-linux2204-64-wayland-shippable"
+        - "^test-linux2404-64/"
+        - "^test-linux2404-64-shippable 'headless"
+        - "^test-macosx1470-64-shippable 'wdspec-headless"
+        - "^test-macosx1500-aarch64-shippable 'wdspec-headless"
+        - "^test-windows11-64-25h2-shippable 'wdspec-headless"
+        - "^spidermonkey-sm- !win"
+        - "^hazard-linux64-shell-haz"
+
 desktop-frontend:
     description: >-
         Run mochitest-browser, xpcshell, mochitest-chrome, mochitest-a11y,
@@ -329,17 +346,30 @@ wpt-linux-opt:
 media-full:
     selector: fuzzy
     description: >-
-        Runs tests that exercise media playback and WebRTC code.
+        Runs tests that exercise media playback, WebRTC, EME, WebCodecs and
+        Media Source code. Covers mochitest-media (media-subsuite plain
+        mochitests under dom/media, including webcodecs, webaudio, webrtc),
+        mochitest-browser-media, WPT testharness and crashtest tasks (for
+        media/encrypted-media/webcodecs/webrtc/mediacapture specs), desktop
+        reftest (dom/media reftests), crashtest (dom/media crashtests),
+        and gtest (media C++ unit tests). The intersect_query keeps only
+        debug, asan and tsan builds, so opt and shippable variants are
+        dropped and try cycles run cheaper without losing the correctness
+        signal a media change needs. Push opt-only via a separate preset
+        (or via autoland) when validating timing-sensitive changes.
     query:
         - "mochitest-media !dfpi !nofis"
         - "mochitest-media android !spi !swr !lite"
-        - "mochitest-browser-chrome !dfpi !nofis !a11y"
         - "mochitest-browser-media"
-        - "web-platform-tests !dfpi !nofis !shippable"
+        - "web-platform-tests !dfpi !nofis !wdspec"
         - "web-platform-tests android !wdspec !spi !swr !lite"
         - "crashtest !wdspec !nofis"
         - "crashtest android !wdspec !spi !swr !lite"
+        - "reftest !nofis"
+        - "reftest android !spi !swr !lite"
         - "'gtest"
+    intersect_query:
+        - "'debug | '-asan | '-tsan"
 
 mochitest-bc:
     description: >-
@@ -467,7 +497,7 @@ webextensions:
         - toolkit/components/extensions/test/
         - toolkit/mozapps/extensions/test/
     query:
-        - "'android | '64/ | 'windows11-64-24h2 !wpt !gpu !msix !-lite !-asan"
+        - "'android | '64/ | 'windows11-64- !wpt !gpu !msix !-lite !-asan"
 
 webgpu:
     selector: fuzzy

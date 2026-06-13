@@ -14,16 +14,15 @@ namespace mozilla {
 namespace layers {
 
 /* static */
-APZInputBridgeParent* APZInputBridgeParent::Create(
-    const LayersId& aLayersId, Endpoint<PAPZInputBridgeParent>&& aEndpoint) {
-  APZInputBridgeParent* parent = new APZInputBridgeParent(aLayersId);
+void APZInputBridgeParent::Create(const LayersId& aLayersId,
+                                  Endpoint<PAPZInputBridgeParent>&& aEndpoint) {
+  auto parent = MakeRefPtr<APZInputBridgeParent>(aLayersId);
   if (!aEndpoint.Bind(parent)) {
     // We can't recover from this.
     MOZ_CRASH("Failed to bind APZInputBridgeParent to endpoint");
   }
 
-  CompositorBridgeParent::SetAPZInputBridgeParent(aLayersId, parent);
-  return parent;
+  CompositorBridgeParent::SetAPZInputBridgeParent(aLayersId, std::move(parent));
 }
 
 APZInputBridgeParent::APZInputBridgeParent(const LayersId& aLayersId) {

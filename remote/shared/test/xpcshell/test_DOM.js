@@ -15,7 +15,7 @@ class MockElement {
     this.localName = tagName;
 
     this.isConnected = false;
-    this.ownerGlobal = {
+    this.documentGlobal = {
       document: {
         isActive() {
           return true;
@@ -180,7 +180,7 @@ add_task(function test_isElement() {
   ok(dom.isElement(xulElInPrivilegedDocument));
 
   ok(!dom.isElement(shadowRoot));
-  ok(!dom.isElement(divEl.ownerGlobal));
+  ok(!dom.isElement(divEl.documentGlobal));
   ok(!dom.isElement(iframeEl.contentWindow));
 
   for (const type of [true, 42, {}, [], undefined, null]) {
@@ -196,7 +196,7 @@ add_task(function test_isDOMElement() {
   ok(dom.isDOMElement(domElInPrivilegedDocument));
 
   ok(!dom.isDOMElement(shadowRoot));
-  ok(!dom.isDOMElement(divEl.ownerGlobal));
+  ok(!dom.isDOMElement(divEl.documentGlobal));
   ok(!dom.isDOMElement(iframeEl.contentWindow));
   ok(!dom.isDOMElement(xulEl));
   ok(!dom.isDOMElement(xulElInPrivilegedDocument));
@@ -216,7 +216,7 @@ add_task(function test_isXULElement() {
   ok(!dom.isXULElement(domElInPrivilegedDocument));
   ok(!dom.isXULElement(svgEl));
   ok(!dom.isXULElement(shadowRoot));
-  ok(!dom.isXULElement(divEl.ownerGlobal));
+  ok(!dom.isXULElement(divEl.documentGlobal));
   ok(!dom.isXULElement(iframeEl.contentWindow));
 
   for (const type of [true, 42, "foo", {}, [], undefined, null]) {
@@ -227,7 +227,7 @@ add_task(function test_isXULElement() {
 add_task(function test_isDOMWindow() {
   const { divEl, iframeEl, shadowRoot, svgEl } = setupTest();
 
-  ok(dom.isDOMWindow(divEl.ownerGlobal));
+  ok(dom.isDOMWindow(divEl.documentGlobal));
   ok(dom.isDOMWindow(iframeEl.contentWindow));
 
   ok(!dom.isDOMWindow(divEl));
@@ -249,7 +249,7 @@ add_task(function test_isShadowRoot() {
 
   ok(!dom.isShadowRoot(divEl));
   ok(!dom.isShadowRoot(svgEl));
-  ok(!dom.isShadowRoot(divEl.ownerGlobal));
+  ok(!dom.isShadowRoot(divEl.documentGlobal));
   ok(!dom.isShadowRoot(iframeEl.contentWindow));
   ok(!dom.isShadowRoot(xulEl));
   ok(!dom.isShadowRoot(domElInPrivilegedDocument));

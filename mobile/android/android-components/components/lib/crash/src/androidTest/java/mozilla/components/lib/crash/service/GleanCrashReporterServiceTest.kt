@@ -18,7 +18,6 @@ import mozilla.components.lib.crash.Crash
 import mozilla.components.lib.crash.NativeCrashTools
 import mozilla.components.lib.crash.RuntimeTag
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
@@ -30,6 +29,7 @@ import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import java.io.IOException
 import java.util.Date
+import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class GleanCrashReporterServiceTest {
@@ -279,7 +279,7 @@ class GleanCrashReporterServiceTest {
                 "StartupCrash": "1",
                 "TotalPhysicalMemory": "100",
                 "AsyncShutdownTimeout": "{\"phase\":\"abcd\",\"conditions\":[{\"foo\":\"bar\"}],\"brokenAddBlockers\":[\"foo\"]}",
-                "CrashID": "d462c4b4-a9f8-4244-b526-7435fcdc4403",
+                "CrashEventID": "d462c4b4-a9f8-4244-b526-7435fcdc4403",
                 "QuotaManagerShutdownTimeout": "line1\nline2\nline3",
                 "StackTraces": "${stackTracesAnnotation.replace("\"", "\\\"")}",
                 "JSLargeAllocationFailure": "reporting",
@@ -305,7 +305,7 @@ class GleanCrashReporterServiceTest {
                 get("crash.time")?.jsonPrimitive?.content,
             )
             assertEquals("main", get("crash.process_type")?.jsonPrimitive?.content)
-            assertEquals("d462c4b4-a9f8-4244-b526-7435fcdc4403", get("crash.id")?.jsonPrimitive?.content)
+            assertEquals("d462c4b4-a9f8-4244-b526-7435fcdc4403", get("crash.event_id")?.jsonPrimitive?.content)
             assertEquals(
                 "fatal native crash",
                 get("crash.crash_type")?.jsonPrimitive?.content,
@@ -368,7 +368,7 @@ class GleanCrashReporterServiceTest {
                 get("crash.time")?.jsonPrimitive?.content,
             )
             assertEquals("main", get("crash.process_type")?.jsonPrimitive?.content)
-            assertEquals("2b341259-e273-47a8-8a31-86c7ebe2e6f8", get("crash.id")?.jsonPrimitive?.content)
+            assertEquals("2b341259-e273-47a8-8a31-86c7ebe2e6f8", get("crash.event_id")?.jsonPrimitive?.content)
             assertEquals(
                 "uncaught exception",
                 get("crash.crash_type")?.jsonPrimitive?.content,
@@ -378,9 +378,9 @@ class GleanCrashReporterServiceTest {
             assertEquals("142.0.0", get("crash.app_display_version")?.jsonPrimitive?.content)
             val exc = get("crash.java_exception")
             assertNotNull(exc)
-            val throwables = exc?.jsonObject?.get("throwables")
+            val throwables = exc.jsonObject.get("throwables")
             assertNotNull(throwables)
-            throwables?.jsonArray?.let { arr ->
+            throwables.jsonArray.let { arr ->
                 assertEquals(2, arr.size)
                 val first = arr.get(0).jsonObject.toMutableMap()
                 val second = arr.get(1).jsonObject.toMutableMap()

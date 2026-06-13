@@ -671,6 +671,24 @@
           "open attribute is not set on host when the panel-list is hidden"
         );
       });
+
+      add_task(async function testMozButtonLabelWithAccesskeyUpdate() {
+        const NEW_LABEL = "Updated label";
+        const ACCESSKEY = "t";
+
+        let button = document.querySelector("moz-button.two");
+        button.accessKey = ACCESSKEY;
+        await button.updateComplete;
+
+        button.label = NEW_LABEL;
+        await button.updateComplete;
+
+        is(
+          button.buttonEl.textContent.trim(),
+          NEW_LABEL,
+          "Button label updates to new value without corruption when accesskey is set."
+        );
+      });
     </script>
   </head>
   <body>

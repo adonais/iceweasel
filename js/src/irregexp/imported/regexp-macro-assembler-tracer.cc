@@ -36,6 +36,11 @@ void RegExpMacroAssemblerTracer::Bind(Label* label) {
   assembler_->Bind(label);
 }
 
+void RegExpMacroAssemblerTracer::BindJumpTarget(Label* label) {
+  PrintF("label[%08x]: (BindJumpTarget)\n", LabelToInt(label));
+  assembler_->BindJumpTarget(label);
+}
+
 void RegExpMacroAssemblerTracer::AdvanceCurrentPosition(int by) {
   PrintF(" AdvanceCurrentPosition(by=%d);\n", by);
   assembler_->AdvanceCurrentPosition(by);
@@ -572,11 +577,6 @@ void RegExpMacroAssemblerTracer::IfRegisterGE(int register_index, int comparand,
 void RegExpMacroAssemblerTracer::set_global_mode(GlobalMode mode) {
   RegExpMacroAssembler::set_global_mode(mode);
   assembler_->set_global_mode(mode);
-}
-
-void RegExpMacroAssemblerTracer::set_slow_safe(bool ssc) {
-  RegExpMacroAssembler::set_slow_safe(ssc);
-  assembler_->set_slow_safe(ssc);
 }
 
 void RegExpMacroAssemblerTracer::set_backtrack_limit(uint32_t backtrack_limit) {

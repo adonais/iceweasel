@@ -152,6 +152,62 @@ add_task(async function test_sync_error() {
   await tearDown(sandbox);
 });
 
+// test for sync admin disabled
+add_task(async function test_sync_admin_disabled() {
+  const sandbox = sinon.createSandbox();
+  sandbox.stub(UIState, "get").callsFake(() => {
+    return {
+      status: UIState.STATUS_NOT_CONFIGURED,
+      syncEnabled: false,
+    };
+  });
+
+  Services.prefs.lockPref("identity.fxaccounts.enabled");
+
+  await withFirefoxView({}, async browser => {
+    const { document } = browser.contentWindow;
+    await navigateToViewAndWait(document, "syncedtabs");
+
+    Services.obs.notifyObservers(null, UIState.ON_UPDATE);
+
+    is(
+      Services.prefs.getBoolPref("identity.fxaccounts.enabled"),
+      true,
+      "Expected identity.fxaccounts.enabled pref to be true"
+    );
+    is(
+      Services.prefs.prefIsLocked("identity.fxaccounts.enabled"),
+      true,
+      "Expected identity.fxaccounts.enabled pref to be locked"
+    );
+
+    let syncedTabsComponent = document.querySelector(
+      "view-syncedtabs:not([slot=syncedtabs])"
+    );
+    await TestUtils.waitForCondition(
+      () => syncedTabsComponent.fullyUpdated,
+      "The synced tabs component has finished updating."
+    );
+    await TestUtils.waitForCondition(
+      () =>
+        syncedTabsComponent.emptyState.shadowRoot.textContent.includes(
+          "disabled"
+        ),
+      "The expected fxa admin disabled error message is displayed."
+    );
+
+    ok(
+      syncedTabsComponent.emptyState
+        .getAttribute("headerlabel")
+        .includes("fxa-admin-disabled"),
+      "Correct message should show when fxa is disabled by an admin"
+    );
+  });
+
+  Services.prefs.unlockPref("identity.fxaccounts.enabled");
+  await tearDown(sandbox);
+});
+
 add_task(async function test_sync_disabled_by_policy() {
   await SpecialPowers.pushPrefEnv({
     set: [["identity.fxaccounts.enabled", false]],

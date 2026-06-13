@@ -13,7 +13,7 @@ function changeToOption(helper, index) {
     EventUtils.sendKey("space", helper.win);
     const selectPopup = await popupOpen;
 
-    if (nativeSelectEnabled()) {
+    if (selectPopup.isNativeMenu) {
       selectPopup.activateItem(selectPopup.childNodes[index]);
     } else {
       let selectedIndex = select.selectedIndex;

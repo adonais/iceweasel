@@ -2979,6 +2979,13 @@ nsCSSFrameConstructor::FindSelectData(const Element& aElement,
   // Construct a frame-based listbox or combobox
   const auto* sel = dom::HTMLSelectElement::FromNode(aElement);
   MOZ_ASSERT(sel);
+  switch (aStyle.StyleDisplay()->EffectiveAppearance()) {
+    case StyleAppearance::Base:
+    case StyleAppearance::BaseSelect:
+      return nullptr;
+    default:
+      break;
+  }
   if (sel->IsCombobox()) {
     static constexpr FrameConstructionData sComboboxData{
         ToCreationFunc(NS_NewComboboxControlFrame)};
@@ -5804,7 +5811,7 @@ nsIFrame* nsCSSFrameConstructor::GetInsertionPrevSibling(
       AssertAnonymousFlexOrGridItemParent(aInsertion->mParentFrame);
       if (!prevSibling->GetNextSibling() &&
           (!aChild->IsText() || aChild->TextIsOnlyWhitespace())) {
-        prevSibling = aInsertion->mParentFrame;
+        prevSibling = aInsertion->mParentFrame->GetTailContinuation();
         aInsertion->mParentFrame = prevSibling->GetParent();
       }
     }
@@ -5823,7 +5830,8 @@ nsIFrame* nsCSSFrameConstructor::GetInsertionPrevSibling(
       AssertAnonymousFlexOrGridItemParent(aInsertion->mParentFrame);
       if (!nextSibling->GetPrevSibling() &&
           (!aChild->IsText() || aChild->TextIsOnlyWhitespace())) {
-        aInsertion->mParentFrame = aInsertion->mParentFrame->GetParent();
+        aInsertion->mParentFrame =
+            aInsertion->mParentFrame->FirstContinuation()->GetParent();
       }
     }
   } else {

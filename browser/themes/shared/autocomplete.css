@@ -259,13 +259,13 @@
 
   /* Insecure field warning */
   &[originaltype="insecureWarning"] {
-    background-color: var(--panel-dimmed);
+    background-color: var(--panel-background-color-dimmed);
     color: inherit;
     border-bottom: 1px solid var(--panel-separator-color);
     padding-block: 4px;
 
     &[selected] {
-      background-color: var(--panel-dimmed-further);
+      background-color: var(--panel-background-color-dimmed-further);
       color: inherit;
     }
 
@@ -286,7 +286,7 @@
 /* Popup states */
 .autocomplete-richlistitem {
   &:not([disabled]):not([selected]):hover {
-    background-color: var(--panel-dimmed);
+    background-color: var(--panel-background-color-dimmed);
     @media (forced-colors) {
       background-color: ButtonText;
       color: ButtonFace;

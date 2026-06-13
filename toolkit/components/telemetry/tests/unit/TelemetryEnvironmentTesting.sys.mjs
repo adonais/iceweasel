@@ -43,6 +43,7 @@ const PROFILE_FIRST_USE_MS = PROFILE_RESET_DATE_MS - MILLISECONDS_PER_DAY;
 const PROFILE_CREATION_DATE_MS = PROFILE_FIRST_USE_MS - MILLISECONDS_PER_DAY;
 const PROFILE_RECOVERED_FROM_BACKUP =
   PROFILE_RESET_DATE_MS - MILLISECONDS_PER_HOUR;
+const PROFILE_SOURCE = "telemetry-tests";
 
 const GFX_VENDOR_ID = "0xabcd";
 const GFX_DEVICE_ID = "0x1234";
@@ -144,6 +145,7 @@ export var TelemetryEnvironmentTesting = {
         reset: PROFILE_RESET_DATE_MS,
         firstUse: PROFILE_FIRST_USE_MS,
         recoveredFromBackup: PROFILE_RECOVERED_FROM_BACKUP,
+        source: PROFILE_SOURCE,
       }
     );
   },
@@ -524,6 +526,7 @@ export var TelemetryEnvironmentTesting = {
       data.profile.recoveredFromBackup,
       Glean.profiles.recoveredFromBackup.testGetValue()
     );
+    lazy.Assert.equal(Glean.profiles.source.testGetValue(), PROFILE_SOURCE);
   },
 
   checkPartnerSection(data, isInitial) {

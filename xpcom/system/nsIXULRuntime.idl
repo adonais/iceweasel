@@ -79,7 +79,7 @@ interface nsIXULRuntime : nsISupports
     MissingWebRender = 2,
     OperatingSystemNotSupported = 3,
     PrefNotSet = 4,  // no longer used
-    MissingRemoteWebGL = 5,
+    //MissingRemoteWebGL = 5,
     MissingNonNativeTheming = 6,
     DisabledByEnvVar = 7,  // - MOZ_ENABLE_WIN32K is set
     //DisabledBySafeMode = 8,

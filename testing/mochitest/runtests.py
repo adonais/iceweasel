@@ -194,6 +194,10 @@ class MessageLogger:
         self._saved_buffers = None
         self._current_test_name = None
 
+        # Retry-on-failure support: when retry_mode is True, failures are
+        # marked as expected so they don't fail the job on the initial run.
+        self.retry_mode = False
+
     def enable_saved_buffers(self):
         self._saved_buffers = {}
 
@@ -219,7 +223,10 @@ class MessageLogger:
 
     def _fix_test_name(self, message):
         """Normalize a logged test path to match the relative path from the sourcedir."""
-        if message.get("test") is not None:
+        if message.get("test") is None:
+            if self._current_test_name is not None:
+                message["test"] = self._current_test_name
+        else:
             test = message["test"]
             for pattern in MessageLogger.TEST_PATH_PREFIXES:
                 test = re.sub(pattern, "", test)
@@ -303,8 +310,11 @@ class MessageLogger:
             self.restore_buffering = self.restore_buffering or self.buffering
             self.buffering = False
             if self.buffered_messages:
-                self.dump_buffered()
+                self.dump_buffered(mark_failures_as_expected=self.retry_mode)
             self.dump_saved_buffer(message.get("test"))
+
+            if self.retry_mode:
+                self._mark_as_expected(message)
 
             # Logging the error message
             self.logger.log_raw(message)
@@ -345,7 +355,23 @@ class MessageLogger:
     def flush(self):
         sys.stdout.flush()
 
-    def dump_buffered(self, messages=None):
+    def _mark_as_expected(self, message):
+        """Transform a failure message so it doesn't fail the job."""
+        if message.get("action") == "test_status" and "expected" in message:
+            message["expected"] = message.get("status")
+        elif message.get("action") == "log":
+            if message.get("message", "").startswith("TEST-UNEXPECTED"):
+                message["message"] = message["message"].replace(
+                    "TEST-UNEXPECTED", "TEST-KNOWN", 1
+                )
+            elif message.get("level") == "ERROR":
+                message["action"] = "test_status"
+                message["status"] = "ERROR"
+                message["expected"] = "ERROR"
+                message["subtest"] = ""
+                message.pop("level", None)
+
+    def dump_buffered(self, messages=None, mark_failures_as_expected=False):
         if messages is None:
             messages = self.buffered_messages
             self.buffered_messages = []
@@ -356,6 +382,9 @@ class MessageLogger:
             if timestamp != last_timestamp:
                 self.logger.info(f"Buffered messages logged at {timestamp}")
             last_timestamp = timestamp
+
+            if mark_failures_as_expected:
+                self._mark_as_expected(buf)
 
             self.logger.log_raw(buf)
         self.logger.info("Buffered messages finished")
@@ -568,6 +597,15 @@ class MochitestServer:
                 os.path.join(os.path.dirname(here), "bin"),
                 env["LD_LIBRARY_PATH"],
             ])
+            # The trainhop bundle ships an m-c libxul.so in tests/bin that gets
+            # loaded by this xpcshell. That libxul would rendez-vous with the
+            # crashhelper from the Beta/Release application directory, but the
+            # two speak incompatible IPC protocols (see bug 2037462), causing
+            # the synchronous startup rendez-vous to hang. The httpd xpcshell
+            # is not the SUT, so suppress its crash-reporter setup -- xpcshell
+            # only enters the OOPInit/SetExceptionHandler block when
+            # MOZ_CRASHREPORTER is set (XPCShellImpl.cpp), so we just unset it.
+            env.pop("MOZ_CRASHREPORTER", None)
 
         # When running with an ASan build, our xpcshell server will also be ASan-enabled,
         # thus consuming too much resources when running together with the browser on
@@ -1052,6 +1090,9 @@ class MochitestDesktop:
         self.countpass = 0
         self.countfail = 0
         self.counttodo = 0
+        self.countretry = 0
+        self.failedTests = set()
+        self.tests_started = 0
 
         self.expectedError = {}
         self.result = {}
@@ -2870,12 +2911,12 @@ toolbar#nav-bar {
 
             # Log if slow events are used from chrome.
             env["MOZ_LOG"] = (
-                env["MOZ_LOG"] + "," if env["MOZ_LOG"] else ""
+                env["MOZ_LOG"] + "," if env.get("MOZ_LOG") else ""
             ) + "SlowChromeEvent:3"
 
             if detectShutdownLeaks:
                 env["MOZ_LOG"] = (
-                    env["MOZ_LOG"] + "," if env["MOZ_LOG"] else ""
+                    env["MOZ_LOG"] + "," if env.get("MOZ_LOG") else ""
                 ) + "DocShellAndDOMWindowLeak:3"
                 shutdownLeaks = ShutdownLeaks(self.log)
             else:
@@ -3023,10 +3064,18 @@ toolbar#nav-bar {
             runner.process_handler = None
 
             if not status and self.message_logger.is_test_running:
+                # In retry mode, queue the test for retry and suppress the
+                # unexpected failure on the initial run; otherwise report it
+                # as a real failure.
+                if self.message_logger.retry_mode:
+                    self.failedTests.add(self.lastTestSeen)
+                    expected = "FAIL"
+                else:
+                    expected = "PASS"
                 message = {
                     "action": "test_end",
                     "status": "FAIL",
-                    "expected": "PASS",
+                    "expected": expected,
                     "thread": None,
                     "pid": None,
                     "source": "mochitest",
@@ -3367,6 +3416,17 @@ toolbar#nav-bar {
         finished = False
         status = 0
         bisection_log = 0
+
+        # Retry-on-failure relies on counters populated by the desktop
+        # OutputHandler pipeline, which remote harness subclasses bypass.
+        retry = (
+            type(self) is MochitestDesktop
+            and os.environ.get("MOZ_AUTOMATION") is not None
+        )
+        if retry:
+            self.message_logger.retry_mode = True
+            self.failedTests = set()
+
         while not finished:
             if options.bisectChunk:
                 testsToRun = bisect.pre_test(options, testsToRun, status)
@@ -3380,6 +3440,7 @@ toolbar#nav-bar {
                     )
                     bisection_log = 1
 
+            self.tests_started = 0
             if options.restartBetweenTests:
                 result = self.doTests(options, testsToRun[:1], manifestToFilter)
             else:
@@ -3406,11 +3467,27 @@ toolbar#nav-bar {
                 testsToRun = testsToRun[1:]
                 if not testsToRun:
                     status = -1
+            elif retry and 0 < self.tests_started < len(testsToRun):
+                # A test timed out and the browser exited. Continue
+                # with the tests that didn't get to start.
+                testsToRun = testsToRun[self.tests_started :]
             else:
                 status = -1
 
             if status == -1:
                 finished = True
+
+        if retry:
+            self.message_logger.retry_mode = False
+            if self.failedTests:
+                self.countretry += len(self.failedTests)
+                self.log.info("Retrying tests that failed during initial run.")
+                self.log.group_start(name="retry")
+                res = self.doTests(options, self.failedTests, manifestToFilter)
+                self.log.group_end(name="retry")
+                if res == TBPL_RETRY:
+                    return res
+                result = result or res
 
         # We need to print the summary only if options.bisectChunk has a value.
         # Also we need to make sure that we do not print the summary in between
@@ -3600,7 +3677,6 @@ toolbar#nav-bar {
             "verify": options.verify,
             "verify_fission": options.verify_fission,
             "vertical_tab": self.extraPrefs.get("sidebar.verticalTabs", False),
-            "webgl_ipc": self.extraPrefs.get("webgl.out-of-process", False),
             "wmfme": (
                 self.extraPrefs.get("media.wmf.media-engine.enabled", 0)
                 and self.extraPrefs.get(
@@ -3737,6 +3813,7 @@ toolbar#nav-bar {
             print(f"\tPassed: {self.countpass}")
             print(f"\tFailed: {self.countfail}")
             print(f"\tTodo: {self.counttodo}")
+            print(f"\tRetried: {self.countretry}")
             print(f"\tMode: {e10s_mode}")
             print("*** End BrowserChrome Test Results ***")
         else:
@@ -3744,8 +3821,9 @@ toolbar#nav-bar {
             print(f"1 INFO Passed:  {self.countpass}")
             print(f"2 INFO Failed:  {self.countfail}")
             print(f"3 INFO Todo:    {self.counttodo}")
-            print(f"4 INFO Mode:    {e10s_mode}")
-            print("5 INFO SimpleTest FINISHED")
+            print(f"4 INFO Retried: {self.countretry}")
+            print(f"5 INFO Mode:    {e10s_mode}")
+            print("6 INFO SimpleTest FINISHED")
 
         if os.getenv("MOZ_AUTOMATION") and self.perfherder_data:
             upload_dir = Path(os.getenv("MOZ_UPLOAD_DIR"))
@@ -4246,7 +4324,7 @@ toolbar#nav-bar {
             self.restartAfterFailure = restartAfterFailure
             self.browserProcessId = None
             self.stackFixerFunction = self.stackFixer()
-            self.current_test_failcount = 0
+            self.current_test = None
 
             if shutdownLeaks:
                 harness.message_logger.enable_saved_buffers()
@@ -4293,9 +4371,14 @@ toolbar#nav-bar {
 
         def finish(self):
             if self.shutdownLeaks:
-                numFailures, errorMessages = self.shutdownLeaks.process()
-                self.harness.countfail += numFailures
-                for message in errorMessages:
+                unattributedFailures, leakErrors = self.shutdownLeaks.process()
+                self.harness.countfail += unattributedFailures
+                for error in leakErrors:
+                    if error["test"] not in self.harness.failedTests:
+                        if self.harness.message_logger.retry_mode:
+                            self.harness.failedTests.add(error["test"])
+                        else:
+                            self.harness.countfail += 1
                     msg = {
                         "action": "test_status",
                         "subtest": "Shutdown",
@@ -4304,9 +4387,9 @@ toolbar#nav-bar {
                         "thread": None,
                         "pid": None,
                         "source": "mochitest",
-                        "time": message.get("time") or int(time.time() * 1000),
-                        "test": message["test"],
-                        "message": message["msg"],
+                        "time": error.get("time") or int(time.time() * 1000),
+                        "test": error["test"],
+                        "message": error["msg"],
                     }
                     self.harness.message_logger.process_message(msg)
 
@@ -4344,18 +4427,31 @@ toolbar#nav-bar {
 
         def count_structured(self, message):
             if message["action"] == "test_start":
-                self.current_test_failcount = 0
+                self.harness.tests_started += 1
+                self.current_test = message["test"]
             elif message["action"] == "test_status":
                 if "expected" in message:
-                    self.current_test_failcount += 1
+                    if self.harness.message_logger.retry_mode:
+                        self.harness.failedTests.add(message["test"])
+                    else:
+                        self.harness.countfail += 1
                 elif message["status"] == "FAIL":
                     self.harness.counttodo += 1
                 else:
                     self.harness.countpass += 1
             elif message["action"] == "log" and message.get("level") == "ERROR":
-                self.current_test_failcount += 1
+                if self.harness.message_logger.retry_mode and self.current_test:
+                    self.harness.failedTests.add(self.current_test)
+                else:
+                    self.harness.countfail += 1
             elif message["action"] == "test_end":
-                self.harness.countfail += self.current_test_failcount
+                self.current_test = None
+                if (
+                    self.harness.message_logger.retry_mode
+                    and message["test"] in self.harness.failedTests
+                ):
+                    message["message"] = "Test had failures, will retry"
+                    message["expected"] = message.get("status", "PASS")
             return message
 
         def fix_stack(self, message):

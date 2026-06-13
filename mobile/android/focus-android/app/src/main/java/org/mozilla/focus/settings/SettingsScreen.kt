@@ -15,9 +15,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import org.mozilla.focus.R
 import org.mozilla.focus.state.Screen
+import org.mozilla.focus.ui.theme.focusDimensions
 import org.mozilla.focus.ui.theme.focusTypography
 
 /**
@@ -73,7 +73,7 @@ private fun SettingItem(
         modifier = modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(16.dp),
+            .padding(focusDimensions.paddingDefault),
     ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(

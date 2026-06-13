@@ -11,7 +11,10 @@ import React, {
 } from "react";
 import { useSelector, batch } from "react-redux";
 import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
-import { useIntersectionObserver, useConfetti } from "../../../lib/utils";
+import { useIntersectionObserver } from "../../../lib/utils";
+import { WIDGET_REGISTRY, resolveWidgetSize } from "common/WidgetsRegistry.mjs";
+import { WidgetCelebration } from "../WidgetCelebration";
+import { useWidgetCelebration } from "../useWidgetCelebration";
 
 const TASK_TYPE = {
   IN_PROGRESS: "tasks",
@@ -22,22 +25,134 @@ const USER_ACTION_TYPES = {
   CHANGE_SIZE: "change_size",
   LIST_COPY: "list_copy",
   LIST_CREATE: "list_create",
-  LIST_DELETE: "list_delete",
   LIST_EDIT: "list_edit",
-  TASK_COMPLETE: "task_complete",
+  LIST_DELETE: "list_delete",
   TASK_CREATE: "task_create",
-  TASK_DELETE: "task_delete",
   TASK_EDIT: "task_edit",
+  TASK_DELETE: "task_delete",
+  TASK_COMPLETE: "task_complete",
 };
 
 const PREF_WIDGETS_LISTS_MAX_LISTS = "widgets.lists.maxLists";
 const PREF_WIDGETS_LISTS_MAX_LISTITEMS = "widgets.lists.maxListItems";
 const PREF_WIDGETS_LISTS_BADGE_ENABLED = "widgets.lists.badge.enabled";
 const PREF_WIDGETS_LISTS_BADGE_LABEL = "widgets.lists.badge.label";
+const PREF_WIDGETS_LISTS_SIZE = "widgets.lists.size";
 const PREF_NOVA_ENABLED = "nova.enabled";
-const PREF_LISTS_SIZE = "widgets.lists.size";
+const LISTS_EMPTY_STATE_ILLUSTRATION =
+  "chrome://newtab/content/data/content/assets/lists-empty-state-comet.svg";
+const LISTS_CELEBRATION = {
+  headlineL10nId: "newtab-widget-lists-celebration-headline",
+  illustrationSrc:
+    "chrome://newtab/content/data/content/assets/firefox-motion-head-pop-up-no-bg.svg",
+  subheadL10nId: "newtab-widget-lists-celebration-subhead",
+};
+const ENABLE_COMPACT_COMPLETED_PREVIEW = false;
 
-// eslint-disable-next-line max-statements
+const getCompactPreviewState = ({
+  enableCompactCompletedPreview,
+  isCompactMediumSize,
+  selectedList,
+  showCompactCompleted,
+}) => {
+  const hasIncompleteTasks = selectedList?.tasks.length >= 1;
+  const hasCompletedTasks = selectedList?.completed.length >= 1;
+  const hasAnyTasks = hasIncompleteTasks || hasCompletedTasks;
+  const isShowingCompactCompleted =
+    enableCompactCompletedPreview &&
+    isCompactMediumSize &&
+    hasCompletedTasks &&
+    (showCompactCompleted || !hasIncompleteTasks);
+  let hasVisibleTasks = hasAnyTasks;
+
+  if (isCompactMediumSize) {
+    hasVisibleTasks = isShowingCompactCompleted
+      ? hasCompletedTasks
+      : hasIncompleteTasks;
+  }
+
+  return {
+    hasIncompleteTasks,
+    hasCompletedTasks,
+    hasAnyTasks,
+    hasVisibleTasks,
+    isShowingCompactCompleted,
+    compactPreviewTasks: isShowingCompactCompleted
+      ? selectedList?.completed
+      : selectedList?.tasks,
+    compactPreviewTaskType: isShowingCompactCompleted
+      ? TASK_TYPE.COMPLETED
+      : TASK_TYPE.IN_PROGRESS,
+  };
+};
+
+const renderListSwitcherOrTitle = ({
+  currentListsCount,
+  lists,
+  onSelect,
+  selected,
+  defaultListLabelL10nId,
+}) => {
+  const selectedLabel = lists[selected]?.label;
+
+  if (currentListsCount > 1) {
+    return (
+      <div className="lists-switcher">
+        <span
+          className="lists-title"
+          id="lists-switcher-label"
+          {...(selectedLabel
+            ? {}
+            : {
+                "data-l10n-id": defaultListLabelL10nId,
+              })}
+        >
+          {selectedLabel || null}
+        </span>
+        <moz-button
+          aria-haspopup="true"
+          aria-labelledby="lists-switcher-label"
+          className="lists-switcher-button"
+          iconSrc="chrome://global/skin/icons/arrow-down-12.svg"
+          menuId="lists-switcher-panel"
+          type="ghost"
+        />
+        <panel-list id="lists-switcher-panel">
+          {Object.entries(lists).map(([key, list]) => (
+            <panel-item
+              key={key}
+              checked={key === selected}
+              onClick={() => onSelect(key)}
+              type="checkbox"
+              {...(list.label
+                ? {}
+                : {
+                    "data-l10n-id": defaultListLabelL10nId,
+                  })}
+            >
+              {list.label || null}
+            </panel-item>
+          ))}
+        </panel-list>
+      </div>
+    );
+  }
+
+  return (
+    <span
+      className="lists-title"
+      {...(selectedLabel
+        ? {}
+        : {
+            "data-l10n-id": defaultListLabelL10nId,
+          })}
+    >
+      {selectedLabel || null}
+    </span>
+  );
+};
+
+// eslint-disable-next-line complexity, max-statements
 function Lists({
   dispatch,
   handleUserInteraction,
@@ -47,33 +162,68 @@ function Lists({
   const prefs = useSelector(state => state.Prefs.values);
   const { selected, lists } = useSelector(state => state.ListsWidget);
   const [newTask, setNewTask] = useState("");
+  const [isAddingTask, setIsAddingTask] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [pendingNewList, setPendingNewList] = useState(null);
+  const [isCreatingNewList, setIsCreatingNewList] = useState(false);
+  const [showCompactCompleted, setShowCompactCompleted] = useState(false);
   const selectedList = useMemo(() => lists[selected], [lists, selected]);
 
-  // @nova-cleanup(remove-pref): Remove novaEnabled and this check; always use prefs[PREF_LISTS_SIZE] directly and always apply col-4 class after Nova ships
   const novaEnabled = prefs[PREF_NOVA_ENABLED];
-  // Nova path: only "medium" or "large" are selectable; "small" is disabled in the submenu
-  const isSmallSize = novaEnabled
-    ? false
-    : !isMaximized && widgetsMayBeMaximized;
-  let widgetSize;
-  if (novaEnabled) {
-    widgetSize = prefs[PREF_LISTS_SIZE] || "large";
-  } else {
-    widgetSize = isSmallSize ? "small" : "medium";
-  }
+  const listsWidget = WIDGET_REGISTRY.find(w => w.id === "lists");
+  const getListsWidgetSize = () => {
+    if (novaEnabled) {
+      const resolvedSize = resolveWidgetSize(listsWidget, prefs);
+      return resolvedSize === "small" ? "medium" : resolvedSize;
+    }
 
-  const prevCompletedCount = useRef(selectedList?.completed?.length || 0);
+    const requestedSize = prefs[PREF_WIDGETS_LISTS_SIZE];
+    if (requestedSize === "large" || requestedSize === "medium") {
+      return requestedSize;
+    }
+    if (requestedSize === "small") {
+      return "medium";
+    }
+
+    if (!widgetsMayBeMaximized) {
+      return "large";
+    }
+
+    return isMaximized ? "large" : "medium";
+  };
+  const widgetSize = getListsWidgetSize();
+  const isMediumSize = widgetSize === "medium";
+
   const inputRef = useRef(null);
-  const selectRef = useRef(null);
   const reorderListRef = useRef(null);
-  const [canvasRef, fireConfetti] = useConfetti();
+  const sizeSubmenuRef = useRef(null);
+  const widgetRef = useRef(null);
   const impressionFired = useRef(false);
+  const {
+    celebrationFrame,
+    celebrationId,
+    completeCelebration,
+    isCelebrating,
+    triggerCelebration,
+  } = useWidgetCelebration(widgetRef);
 
   const handleListInteraction = useCallback(
     () => handleUserInteraction("lists"),
     [handleUserInteraction]
+  );
+
+  const handleSelectList = useCallback(
+    listId => {
+      setIsEditing(false);
+      setIsCreatingNewList(false);
+      dispatch(
+        ac.AlsoToMain({
+          type: at.WIDGETS_LISTS_CHANGE_SELECTED,
+          data: listId,
+        })
+      );
+      handleListInteraction();
+    },
+    [dispatch, handleListInteraction]
   );
 
   // store selectedList with useMemo so it isnt re-calculated on every re-render
@@ -93,7 +243,7 @@ function Lists({
       );
       const telemetryData = {
         widget_name: "lists",
-        widget_size: widgetSize,
+        widget_size: widgetsMayBeMaximized ? widgetSize : "medium",
       };
       dispatch(
         ac.AlsoToMain({
@@ -102,7 +252,7 @@ function Lists({
         })
       );
     });
-  }, [dispatch, widgetSize]);
+  }, [dispatch, widgetsMayBeMaximized, widgetSize]);
 
   const listsRef = useIntersectionObserver(handleIntersection);
 
@@ -174,44 +324,35 @@ function Lists({
   );
 
   useEffect(() => {
-    const selectNode = selectRef.current;
     const reorderNode = reorderListRef.current;
-
-    if (!selectNode || !reorderNode) {
-      return undefined;
-    }
-
-    function handleSelectChange(e) {
-      dispatch(
-        ac.AlsoToMain({
-          type: at.WIDGETS_LISTS_CHANGE_SELECTED,
-          data: e.target.value,
-        })
-      );
-      handleListInteraction();
-    }
 
     function handleReorder(e) {
       const { draggedElement, targetElement, position } = e.detail;
       reorderLists(draggedElement, targetElement, position === -1);
     }
 
-    reorderNode.addEventListener("reorder", handleReorder);
-    selectNode.addEventListener("change", handleSelectChange);
+    reorderNode?.addEventListener("reorder", handleReorder);
 
     return () => {
-      selectNode.removeEventListener("change", handleSelectChange);
-      reorderNode.removeEventListener("reorder", handleReorder);
+      reorderNode?.removeEventListener("reorder", handleReorder);
     };
-  }, [dispatch, isEditing, reorderLists, handleListInteraction]);
+  }, [reorderLists]);
 
-  // effect that enables editing new list name only after store has been hydrated
   useEffect(() => {
-    if (selected === pendingNewList) {
-      setIsEditing(true);
-      setPendingNewList(null);
+    if (isAddingTask) {
+      inputRef.current?.focus();
     }
-  }, [selected, pendingNewList]);
+  }, [isAddingTask]);
+
+  useEffect(() => {
+    setShowCompactCompleted(false);
+  }, [selected]);
+
+  useEffect(() => {
+    if (!selectedList?.completed?.length) {
+      setShowCompactCompleted(false);
+    }
+  }, [selectedList]);
 
   function saveTask() {
     const trimmedTask = newTask.trimEnd();
@@ -248,7 +389,7 @@ function Lists({
           widget_name: "lists",
           widget_source: "widget",
           user_action: USER_ACTION_TYPES.TASK_CREATE,
-          widget_size: widgetSize,
+          widget_size: widgetsMayBeMaximized ? widgetSize : "medium",
         };
         dispatch(
           ac.OnlyToMain({
@@ -258,8 +399,9 @@ function Lists({
         );
       });
       setNewTask("");
-      handleListInteraction();
     }
+    setIsAddingTask(false);
+    handleListInteraction();
   }
 
   function updateTask(updatedTask, type) {
@@ -288,6 +430,9 @@ function Lists({
       newCompleted = [...selectedList.completed, updatedTask];
 
       userAction = USER_ACTION_TYPES.TASK_COMPLETE;
+      if (!newTasks.length && newCompleted.length) {
+        triggerCelebration();
+      }
     } else {
       const targetKey = isCompletedType ? "completed" : "tasks";
       const updatedArray = selectedList[targetKey].map(task =>
@@ -329,7 +474,7 @@ function Lists({
           widget_name: "lists",
           widget_source: "widget",
           user_action: userAction,
-          widget_size: widgetSize,
+          widget_size: widgetsMayBeMaximized ? widgetSize : "medium",
         };
         dispatch(
           ac.AlsoToMain({
@@ -370,7 +515,7 @@ function Lists({
         widget_name: "lists",
         widget_source: "widget",
         user_action: USER_ACTION_TYPES.TASK_DELETE,
-        widget_size: widgetSize,
+        widget_size: widgetsMayBeMaximized ? widgetSize : "medium",
       };
       dispatch(
         ac.OnlyToMain({
@@ -391,11 +536,72 @@ function Lists({
     ) {
       // Clear out the input when esc is pressed
       setNewTask("");
+      setIsAddingTask(false);
     }
+  }
+
+  function handleShowTaskInput() {
+    setIsAddingTask(true);
+    handleListInteraction();
   }
 
   function handleListNameSave(newLabel) {
     const trimmedLabel = newLabel.trimEnd();
+
+    if (isCreatingNewList) {
+      setIsCreatingNewList(false);
+
+      if (!trimmedLabel) {
+        handleListInteraction();
+        return;
+      }
+
+      const id = crypto.randomUUID();
+      const newLists = {
+        ...lists,
+        [id]: {
+          label: trimmedLabel,
+          tasks: [],
+          completed: [],
+        },
+      };
+
+      batch(() => {
+        dispatch(
+          ac.AlsoToMain({
+            type: at.WIDGETS_LISTS_UPDATE,
+            data: { lists: newLists },
+          })
+        );
+        dispatch(
+          ac.AlsoToMain({
+            type: at.WIDGETS_LISTS_CHANGE_SELECTED,
+            data: id,
+          })
+        );
+        dispatch(
+          ac.OnlyToMain({
+            type: at.WIDGETS_LISTS_USER_EVENT,
+            data: { userAction: USER_ACTION_TYPES.LIST_CREATE },
+          })
+        );
+        const telemetryData = {
+          widget_name: "lists",
+          widget_source: "widget",
+          user_action: USER_ACTION_TYPES.LIST_CREATE,
+          widget_size: widgetsMayBeMaximized ? widgetSize : "medium",
+        };
+        dispatch(
+          ac.OnlyToMain({
+            type: at.WIDGETS_USER_EVENT,
+            data: telemetryData,
+          })
+        );
+      });
+      handleListInteraction();
+      return;
+    }
+
     if (trimmedLabel && trimmedLabel !== selectedList?.label) {
       const updatedLists = {
         ...lists,
@@ -421,7 +627,7 @@ function Lists({
           widget_name: "lists",
           widget_source: "widget",
           user_action: USER_ACTION_TYPES.LIST_EDIT,
-          widget_size: widgetSize,
+          widget_size: widgetsMayBeMaximized ? widgetSize : "medium",
         };
         dispatch(
           ac.OnlyToMain({
@@ -436,92 +642,14 @@ function Lists({
   }
 
   function handleCreateNewList() {
-    const id = crypto.randomUUID();
-    const newLists = {
-      ...lists,
-      [id]: {
-        label: "",
-        tasks: [],
-        completed: [],
-      },
-    };
-
-    batch(() => {
-      dispatch(
-        ac.AlsoToMain({
-          type: at.WIDGETS_LISTS_UPDATE,
-          data: { lists: newLists },
-        })
-      );
-      dispatch(
-        ac.AlsoToMain({
-          type: at.WIDGETS_LISTS_CHANGE_SELECTED,
-          data: id,
-        })
-      );
-      dispatch(
-        ac.OnlyToMain({
-          type: at.WIDGETS_LISTS_USER_EVENT,
-          data: { userAction: USER_ACTION_TYPES.LIST_CREATE },
-        })
-      );
-      const telemetryData = {
-        widget_name: "lists",
-        widget_source: "widget",
-        user_action: USER_ACTION_TYPES.LIST_CREATE,
-        widget_size: widgetSize,
-      };
-      dispatch(
-        ac.OnlyToMain({
-          type: at.WIDGETS_USER_EVENT,
-          data: telemetryData,
-        })
-      );
-    });
-    setPendingNewList(id);
+    setIsCreatingNewList(true);
+    setIsEditing(true);
     handleListInteraction();
   }
 
   function handleCancelNewList() {
-    // If current list is new and has no label/tasks, remove it
-    if (!selectedList?.label && selectedList?.tasks?.length === 0) {
-      const updatedLists = { ...lists };
-      delete updatedLists[selected];
-
-      const listKeys = Object.keys(updatedLists);
-      const key = listKeys[listKeys.length - 1];
-      batch(() => {
-        dispatch(
-          ac.AlsoToMain({
-            type: at.WIDGETS_LISTS_UPDATE,
-            data: { lists: updatedLists },
-          })
-        );
-        dispatch(
-          ac.AlsoToMain({
-            type: at.WIDGETS_LISTS_CHANGE_SELECTED,
-            data: key,
-          })
-        );
-        dispatch(
-          ac.OnlyToMain({
-            type: at.WIDGETS_LISTS_USER_EVENT,
-            data: { userAction: USER_ACTION_TYPES.LIST_DELETE },
-          })
-        );
-        const telemetryData = {
-          widget_name: "lists",
-          widget_source: "widget",
-          user_action: USER_ACTION_TYPES.LIST_DELETE,
-          widget_size: widgetSize,
-        };
-        dispatch(
-          ac.OnlyToMain({
-            type: at.WIDGETS_USER_EVENT,
-            data: telemetryData,
-          })
-        );
-      });
+    if (isCreatingNewList) {
+      setIsCreatingNewList(false);
     }
 
     handleListInteraction();
@@ -567,7 +695,7 @@ function Lists({
           widget_name: "lists",
           widget_source: "widget",
           user_action: USER_ACTION_TYPES.LIST_DELETE,
-          widget_size: widgetSize,
+          widget_size: widgetsMayBeMaximized ? widgetSize : "medium",
         };
         dispatch(
           ac.OnlyToMain({
@@ -595,7 +723,7 @@ function Lists({
         widget_name: "lists",
         widget_source: "context_menu",
         enabled: false,
-        widget_size: widgetSize,
+        widget_size: widgetsMayBeMaximized ? widgetSize : "medium",
       };
       dispatch(
         ac.OnlyToMain({
@@ -645,7 +773,7 @@ function Lists({
         widget_name: "lists",
         widget_source: "widget",
         user_action: USER_ACTION_TYPES.LIST_COPY,
-        widget_size: widgetSize,
+        widget_size: widgetsMayBeMaximized ? widgetSize : "medium",
       };
       dispatch(
         ac.OnlyToMain({
@@ -663,31 +791,12 @@ function Lists({
         type: at.OPEN_LINK,
         data: {
           url: "https://support.mozilla.org/kb/firefox-new-tab-widgets",
+          where: "tab",
         },
       })
     );
     handleListInteraction();
   }
-
-  // Reset baseline only when switching lists
-  useEffect(() => {
-    prevCompletedCount.current = selectedList?.completed?.length || 0;
-    // intentionally leaving out selectedList from dependency array
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selected]);
-
-  useEffect(() => {
-    if (selectedList) {
-      const doneCount = selectedList.completed?.length || 0;
-      const previous = Math.floor(prevCompletedCount.current / 5);
-      const current = Math.floor(doneCount / 5);
-
-      if (current > previous) {
-        fireConfetti();
-      }
-      prevCompletedCount.current = doneCount;
-    }
-  }, [selectedList, fireConfetti, selected]);
 
   const handleChangeSize = useCallback(
     size => {
@@ -695,7 +804,7 @@ function Lists({
         dispatch(
           ac.OnlyToMain({
             type: at.SET_PREF,
-            data: { name: PREF_LISTS_SIZE, value: size },
+            data: { name: PREF_WIDGETS_LISTS_SIZE, value: size },
           })
         );
         dispatch(
@@ -715,25 +824,26 @@ function Lists({
     [dispatch]
   );
 
-  const sizeSubmenuRef = useRef(null);
   useEffect(() => {
     const el = sizeSubmenuRef.current;
     if (!el) {
       return undefined;
     }
-    // The size submenu panel-list is moved into the panel-item's shadow DOM by
-    // the panel-list custom element, so React's synthetic onClick doesn't reach
-    // inner items. We use composedPath() to find the clicked item across the
-    // shadow boundary via its data-size attribute.
+
     const listener = e => {
       const item = e.composedPath().find(node => node.dataset?.size);
       if (item) {
         handleChangeSize(item.dataset.size);
       }
     };
+
     el.addEventListener("click", listener);
     return () => el.removeEventListener("click", listener);
   }, [handleChangeSize]);
+
+  useEffect(() => {
+    setIsAddingTask(false);
+  }, [selected]);
 
   if (!lists) {
     return null;
@@ -767,8 +877,8 @@ function Lists({
 
   const listNamePlaceholder =
     currentListsCount > 1 && selectedIndex !== 0
-      ? "newtab-widget-lists-name-placeholder-new"
-      : "newtab-widget-lists-name-placeholder-default";
+      ? "newtab-widget-lists-name-placeholder-new2"
+      : "newtab-widget-lists-name-placeholder-checklist2";
 
   const nimbusBadgeEnabled = prefs.widgetsConfig?.listsBadgeEnabled;
   const nimbusBadgeLabel = prefs.widgetsConfig?.listsBadgeLabel;
@@ -787,42 +897,91 @@ function Lists({
     prefs[PREF_WIDGETS_LISTS_BADGE_LABEL] ??
     "";
 
+  const {
+    hasIncompleteTasks,
+    hasCompletedTasks,
+    hasAnyTasks,
+    hasVisibleTasks,
+    isShowingCompactCompleted,
+  } = getCompactPreviewState({
+    enableCompactCompletedPreview: ENABLE_COMPACT_COMPLETED_PREVIEW,
+    isCompactMediumSize: isMediumSize,
+    selectedList,
+    showCompactCompleted,
+  });
+  const showCompactPopulatedState = isMediumSize && hasAnyTasks;
+  const showCompletedTasks = !isMediumSize && hasCompletedTasks;
+  const showInlineAddButton = !showCompactPopulatedState;
+  const showHeaderAddButton = showCompactPopulatedState;
+  const showEmptyState = !hasAnyTasks && !isAddingTask;
+  const defaultListLabelL10nId = "newtab-widget-lists-name-default";
+  const listsSizeClass =
+    widgetSize === "large" ? "large-widget" : "medium-widget compact-widget";
+
+  function renderAddTaskButton(iconOnly = false) {
+    return (
+      <button
+        className={`lists-add-button${iconOnly ? " icon-only" : ""}`}
+        disabled={isAtMaxListItemsLimit}
+        onClick={handleShowTaskInput}
+        type="button"
+      >
+        <span className="icon icon-add" />
+        <span
+          className={iconOnly ? "sr-only" : "button-label"}
+          data-l10n-id="newtab-widget-lists-button-add-item"
+        />
+      </button>
+    );
+  }
+
   return (
     <article
-      // @nova-cleanup(remove-conditional): Remove novaEnabled check; always apply col-4 and size class after Nova ships
-      className={`lists widget ${novaEnabled ? `col-4 ${widgetSize}-widget` : ""} ${isSmallSize ? "is-small" : ""} ${isMaximized ? "is-maximized" : ""}`}
+      className={`lists widget ${novaEnabled ? "col-4" : ""} ${listsSizeClass} ${isMaximized ? "is-maximized" : ""}${showEmptyState ? " is-empty" : ""}${hasVisibleTasks ? " has-visible-tasks" : ""}${isAddingTask ? " is-adding-task" : ""}${isCelebrating ? " is-celebrating" : ""}`}
       ref={el => {
+        widgetRef.current = el;
         listsRef.current = [el];
       }}
     >
-      <div className="select-wrapper">
+      {isCelebrating && celebrationFrame ? (
+        <WidgetCelebration
+          classNamePrefix="lists-celebration"
+          celebrationFrame={celebrationFrame}
+          celebrationId={celebrationId}
+          headlineL10nId={LISTS_CELEBRATION.headlineL10nId}
+          illustrationSrc={LISTS_CELEBRATION.illustrationSrc}
+          onComplete={completeCelebration}
+          subheadL10nId={LISTS_CELEBRATION.subheadL10nId}
+        />
+      ) : null}
+      <div className="lists-header">
         <EditableText
-          value={lists[selected]?.label || ""}
+          key={`${selected}-${isCreatingNewList ? "draft" : "saved"}`}
+          value={isCreatingNewList ? "" : lists[selected]?.label || ""}
           onSave={handleListNameSave}
           isEditing={isEditing}
           setIsEditing={setIsEditing}
           onCancel={handleCancelNewList}
           type="list"
           maxLength={30}
-          dataL10nId={listNamePlaceholder}
+          ariaLabelL10nId="newtab-widget-lists-menu-edit2"
+          saveOnBlur={!isCreatingNewList}
+          dataL10nId={
+            isCreatingNewList
+              ? "newtab-widget-lists-name-placeholder-new2"
+              : listNamePlaceholder
+          }
         >
-          <moz-select ref={selectRef} value={selected}>
-            {Object.entries(lists).map(([key, list]) => (
-              <moz-option
-                key={key}
-                value={key}
-                // On the first/initial list, use default name
-                {...(list.label
-                  ? { label: list.label }
-                  : {
-                      "data-l10n-id": "newtab-widget-lists-name-label-default",
-                    })}
-              />
-            ))}
-          </moz-select>
+          {renderListSwitcherOrTitle({
+            currentListsCount,
+            lists,
+            onSelect: handleSelectList,
+            selected,
+            defaultListLabelL10nId,
+          })}
         </EditableText>
         {/* Hide the badge when user is editing task list title */}
-        {!isEditing && badgeEnabled && badgeLabel && (
+        {!isEditing && badgeEnabled && badgeLabel && !isMediumSize && (
           <moz-badge
             data-l10n-id={(() => {
               if (badgeLabel === "New") {
@@ -835,8 +994,35 @@ function Lists({
             })()}
           ></moz-badge>
         )}
+        {showHeaderAddButton && renderAddTaskButton(true)}
+        {ENABLE_COMPACT_COMPLETED_PREVIEW &&
+          isMediumSize &&
+          hasCompletedTasks && (
+            <button
+              aria-pressed={isShowingCompactCompleted}
+              className={`lists-completed-button${isShowingCompactCompleted ? " is-active" : ""}`}
+              onClick={() =>
+                hasIncompleteTasks &&
+                setShowCompactCompleted(currentValue => !currentValue)
+              }
+              type="button"
+            >
+              {/* Keep the compact completed-items toggle staged off until design comes up with "Completed" items for compact view. */}
+              <span aria-hidden="true" className="lists-completed-button-label">
+                C
+              </span>
+              <span
+                className="sr-only"
+                data-l10n-id="newtab-widget-lists-completed-list"
+                data-l10n-args={JSON.stringify({
+                  number: selectedList?.completed.length,
+                })}
+              />
+            </button>
+          )}
         <moz-button
           className="lists-panel-button"
+          data-l10n-id="newtab-menu-section-tooltip"
           iconSrc="chrome://global/skin/icons/more.svg"
           menuId="lists-panel"
           type="ghost"
@@ -861,30 +1047,26 @@ function Lists({
             data-l10n-id="newtab-widget-lists-menu-copy"
             onClick={() => handleCopyListToClipboard()}
           ></panel-item>
-          {
-            // @nova-cleanup(remove-conditional): Remove the `novaEnabled &&` check; keep widgetsMayBeMaximized
-            novaEnabled && widgetsMayBeMaximized && (
-              <panel-item submenu="lists-size-submenu">
-                <span data-l10n-id="newtab-widget-menu-change-size"></span>
-                <panel-list
-                  ref={sizeSubmenuRef}
-                  slot="submenu"
-                  id="lists-size-submenu"
-                >
-                  {["small", "medium", "large"].map(size => (
-                    <panel-item
-                      key={size}
-                      type="checkbox"
-                      checked={widgetSize === size || undefined}
-                      data-size={size}
-                      data-l10n-id={`newtab-widget-size-${size}`}
-                      {...(size === "small" ? { disabled: true } : {})}
-                    />
-                  ))}
-                </panel-list>
-              </panel-item>
-            )
-          }
+          {novaEnabled && widgetsMayBeMaximized && (
+            <panel-item submenu="lists-size-submenu">
+              <span data-l10n-id="newtab-widget-menu-change-size"></span>
+              <panel-list
+                ref={sizeSubmenuRef}
+                slot="submenu"
+                id="lists-size-submenu"
+              >
+                {["medium", "large"].map(size => (
+                  <panel-item
+                    key={size}
+                    type="checkbox"
+                    checked={widgetSize === size || undefined}
+                    data-size={size}
+                    data-l10n-id={`newtab-widget-size-${size}`}
+                  />
+                ))}
+              </panel-list>
+            </panel-item>
+          )}
           <panel-item
             data-l10n-id="newtab-widget-menu-hide"
             onClick={() => handleHideLists()}
@@ -896,96 +1078,105 @@ function Lists({
           ></panel-item>
         </panel-list>
       </div>
-      <div className="add-task-container">
-        <span
-          className={`icon icon-add ${isAtMaxListItemsLimit ? "icon-disabled" : ""}`}
-        />
-        <input
-          ref={inputRef}
-          onBlur={() => saveTask()}
-          onChange={e => setNewTask(e.target.value)}
-          value={newTask}
-          data-l10n-id="newtab-widget-lists-input-add-an-item"
-          className="add-task-input"
-          onKeyDown={handleKeyDown}
-          type="text"
-          maxLength={100}
-          disabled={isAtMaxListItemsLimit}
-        />
-      </div>
+      {(showInlineAddButton || isAddingTask) && (
+        <div className="lists-add-action">
+          {showInlineAddButton && renderAddTaskButton()}
+          <div className="add-task-container">
+            <span
+              className={`icon icon-add ${isAtMaxListItemsLimit ? "icon-disabled" : ""}`}
+            />
+            <input
+              ref={inputRef}
+              onBlur={() => saveTask()}
+              onChange={e => setNewTask(e.target.value)}
+              value={newTask}
+              data-l10n-id="newtab-widget-lists-input-add-an-item2"
+              data-l10n-attrs="placeholder,aria-label"
+              className="add-task-input"
+              onKeyDown={handleKeyDown}
+              type="text"
+              maxLength={100}
+              disabled={isAtMaxListItemsLimit}
+            />
+          </div>
+        </div>
+      )}
       <div className="task-list-wrapper">
-        <moz-reorderable-list
-          ref={reorderListRef}
-          itemSelector="fieldset .task-type-tasks"
-          dragSelector=".checkbox-wrapper:has(.task-label)"
-        >
-          <fieldset>
-            {/* Incomplete List  */}
-            {selectedList?.tasks.length >= 1 &&
-              selectedList.tasks.map((task, index) => (
-                <ListItem
-                  type={TASK_TYPE.IN_PROGRESS}
-                  task={task}
-                  key={task.id}
-                  updateTask={updateTask}
-                  deleteTask={deleteTask}
-                  moveTask={moveTask}
-                  isValidUrl={isValidUrl}
-                  isFirst={index === 0}
-                  isLast={index === selectedList.tasks.length - 1}
-                />
-              ))}
-            {/* Completed List */}
-            {selectedList?.completed.length >= 1 && (
-              <details
-                className="completed-task-wrapper"
-                open={selectedList?.tasks.length < 1}
-              >
-                <summary>
-                  <span
-                    data-l10n-id="newtab-widget-lists-completed-list"
-                    data-l10n-args={JSON.stringify({
-                      number: lists[selected]?.completed.length,
-                    })}
-                    className="completed-title"
-                  ></span>
-                </summary>
-                {selectedList?.completed.map(completedTask => (
-                  <ListItem
-                    key={completedTask.id}
-                    type={TASK_TYPE.COMPLETED}
-                    task={completedTask}
-                    deleteTask={deleteTask}
-                    updateTask={updateTask}
-                  />
-                ))}
-              </details>
-            )}
-          </fieldset>
-        </moz-reorderable-list>
-        {/* Empty State */}
-        {selectedList?.tasks.length < 1 &&
-          selectedList?.completed.length < 1 && (
-            <div className="empty-list">
-              <picture>
-                <source
-                  srcSet="chrome://newtab/content/data/content/assets/lists-empty-state-dark.svg"
-                  media="(prefers-color-scheme: dark)"
-                />
-                <source
-                  srcSet="chrome://newtab/content/data/content/assets/lists-empty-state-light.svg"
-                  media="(prefers-color-scheme: light)"
-                />
-                <img width="100" height="100" alt="" />
-              </picture>
-              <p
-                className="empty-list-text"
-                data-l10n-id="newtab-widget-lists-empty-cta"
-              ></p>
-            </div>
-          )}
+        {showEmptyState ? (
+          <div className="empty-list">
+            <img
+              alt=""
+              className="empty-list-illustration"
+              height="66"
+              src={LISTS_EMPTY_STATE_ILLUSTRATION}
+              width="75"
+            />
+          </div>
+        ) : (
+          <moz-reorderable-list
+            ref={reorderListRef}
+            itemSelector="fieldset .task-type-tasks"
+            dragSelector=".checkbox-wrapper:has(.task-label)"
+          >
+            <fieldset>
+              {isMediumSize
+                ? hasIncompleteTasks &&
+                  selectedList.tasks.map((task, index) => (
+                    <ListItem
+                      type={TASK_TYPE.IN_PROGRESS}
+                      task={task}
+                      key={task.id}
+                      updateTask={updateTask}
+                      deleteTask={deleteTask}
+                      moveTask={moveTask}
+                      isValidUrl={isValidUrl}
+                      isFirst={index === 0}
+                      isLast={index === selectedList.tasks.length - 1}
+                    />
+                  ))
+                : hasIncompleteTasks &&
+                  selectedList.tasks.map((task, index) => (
+                    <ListItem
+                      type={TASK_TYPE.IN_PROGRESS}
+                      task={task}
+                      key={task.id}
+                      updateTask={updateTask}
+                      deleteTask={deleteTask}
+                      moveTask={moveTask}
+                      isValidUrl={isValidUrl}
+                      isFirst={index === 0}
+                      isLast={index === selectedList.tasks.length - 1}
+                    />
+                  ))}
+              {showCompletedTasks && (
+                <details
+                  className="completed-task-wrapper"
+                  open={selectedList?.tasks.length < 1}
+                >
+                  <summary>
+                    <span
+                      data-l10n-id="newtab-widget-lists-completed-list"
+                      data-l10n-args={JSON.stringify({
+                        number: lists[selected]?.completed.length,
+                      })}
+                      className="completed-title"
+                    ></span>
+                  </summary>
+                  {selectedList.completed.map(completedTask => (
+                    <ListItem
+                      key={completedTask.id}
+                      type={TASK_TYPE.COMPLETED}
+                      task={completedTask}
+                      deleteTask={deleteTask}
+                      updateTask={updateTask}
+                    />
+                  ))}
+                </details>
+              )}
+            </fieldset>
+          </moz-reorderable-list>
+        )}
       </div>
-      <canvas className="confetti-canvas" ref={canvasRef} />
     </article>
   );
 }
@@ -1087,12 +1278,14 @@ function ListItem({
             value={task.value}
             onSave={handleSave}
             type="task"
+            ariaLabelL10nId="newtab-widget-lists-input-menu-edit2"
           >
             {taskLabel}
           </EditableText>
         )}
       </div>
       <moz-button
+        data-l10n-id="newtab-menu-section-tooltip"
         iconSrc="chrome://global/skin/icons/more.svg"
         menuId={`panel-task-${task.id}`}
         type="ghost"
@@ -1142,13 +1335,19 @@ function EditableText({
   children,
   type,
   dataL10nId = null,
+  ariaLabelL10nId = null,
   maxLength = 100,
+  saveOnBlur = true,
 }) {
   const [tempValue, setTempValue] = useState(value);
   const inputRef = useRef(null);
 
   // True if tempValue is empty, null/undefined, or only whitespace
   const showPlaceholder = (tempValue ?? "").trim() === "";
+  const inputL10nId =
+    showPlaceholder && dataL10nId ? dataL10nId : ariaLabelL10nId;
+  const inputL10nAttrs =
+    showPlaceholder && dataL10nId ? "placeholder,aria-label" : "aria-label";
 
   useEffect(() => {
     if (isEditing) {
@@ -1170,6 +1369,15 @@ function EditableText({
   }
 
   function handleOnBlur() {
+    if (!saveOnBlur) {
+      if (tempValue.trim()) {
+        return;
+      }
+      setIsEditing(false);
+      onCancel?.();
+      return;
+    }
+
     onSave(tempValue.trim());
     setIsEditing(false);
   }
@@ -1184,8 +1392,8 @@ function EditableText({
       onChange={event => setTempValue(event.target.value)}
       onBlur={handleOnBlur}
       onKeyDown={handleKeyDown}
-      // Note that if a user has a custom name set, it will override the placeholder
-      {...(showPlaceholder && dataL10nId ? { "data-l10n-id": dataL10nId } : {})}
+      {...(inputL10nId ? { "data-l10n-id": inputL10nId } : {})}
+      {...(inputL10nId ? { "data-l10n-attrs": inputL10nAttrs } : {})}
     />
   ) : (
     [children]

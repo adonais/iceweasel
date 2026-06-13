@@ -21,11 +21,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.unit.dp
+import mozilla.components.compose.base.BottomSheetHandle
 import mozilla.components.concept.engine.translate.Language
 import mozilla.components.concept.engine.translate.TranslationError
 import mozilla.components.concept.engine.translate.TranslationPageSettings
 import org.mozilla.fenix.R
-import org.mozilla.fenix.compose.BottomSheetHandle
 
 private const val BOTTOM_SHEET_HANDLE_WIDTH_PERCENT = 0.1f
 

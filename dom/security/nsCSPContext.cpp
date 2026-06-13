@@ -2330,7 +2330,7 @@ nsresult nsCSPContext::TryReadPolicies(PolicyDataVersion aVersion,
   }
 
   // Success! Add the policies now.
-  for (auto policy : policies) {
+  for (const auto& policy : policies) {
     AddIPCPolicy(policy);
   }
   return NS_OK;

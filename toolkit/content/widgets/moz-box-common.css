@@ -2,26 +2,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+@import url("chrome://global/content/elements/moz-box.tokens.css");
+
 @layer box-common {
   :host {
-    --box-border-width: var(--border-width);
-    --box-border-color: var(--border-color);
-    --box-border: var(--box-border-width) solid var(--box-border-color);
-    --box-border-radius: var(--border-radius-medium);
-    --box-border-radius-inner: calc(var(--box-border-radius) - var(--border-width));
-    --box-padding: var(--space-large);
-    --box-icon-size: var(--icon-size);
-    --box-icon-fill: var(--icon-color);
-    --box-icon-stroke: var(--box-icon-fill);
-    --box-button-background-color: var(--button-background-color-menu);
-    --box-button-background-color-hover: var(--button-background-color-menu-hover);
-    --box-button-background-color-active: var(--button-background-color-menu-active);
-    --box-button-background-color-disabled: var(--button-background-color-menu-disabled);
-    --box-button-text-color: var(--button-text-color-menu);
-    --box-button-text-color-hover: var(--button-text-color-menu-hover);
-    --box-button-text-color-active: var(--button-text-color-menu-active);
-    --box-button-text-color-disabled: var(--button-text-color-menu-disabled);
-
     border-inline-start: var(--box-border-inline-start, var(--box-border));
     border-inline-end: var(--box-border-inline-end, var(--box-border));
     border-block-start: var(--box-border-block-start, var(--box-border));
@@ -32,6 +16,14 @@
     border-end-end-radius: var(--box-border-radius-end, var(--box-border-radius));
     display: block;
     position: relative;
+  }
+
+  :host([layout="medium-icon"]) {
+    --box-icon-size: var(--icon-size-large);
+  }
+
+  :host([layout="large-icon"]) {
+    --box-icon-size: var(--icon-size-xlarge);
   }
 
   .text-content {
@@ -66,8 +58,8 @@
 
   .icon {
     grid-area: icon;
-    width: var(--box-icon-size);
-    height: var(--box-icon-size);
+    width: var(--icon-size);
+    height: var(--icon-size);
     -moz-context-properties: fill, stroke;
     fill: var(--box-icon-fill);
     stroke: var(--box-icon-stroke);
@@ -76,6 +68,8 @@
     &:not(.nav-icon) {
       fill: var(--box-icon-start-fill, var(--box-icon-fill));
       stroke: var(--box-icon-start-stroke, var(--box-icon-stroke));
+      width: var(--box-icon-size);
+      height: var(--box-icon-size);
 
       .button & {
         fill: var(--box-icon-start-fill, var(--button-icon-fill));

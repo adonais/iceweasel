@@ -10,6 +10,7 @@
 #include "nsDateTimeControlFrame.h"
 
 #include "mozilla/PresShell.h"
+#include "mozilla/ReflowInput.h"
 #include "nsLayoutUtils.h"
 #include "nsTextControlFrame.h"
 

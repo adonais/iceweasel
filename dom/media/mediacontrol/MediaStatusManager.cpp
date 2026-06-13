@@ -50,7 +50,11 @@ MediaStatusManager::MediaStatusManager(uint64_t aBrowsingContextId)
 }
 
 void MediaStatusManager::NotifyMediaAudibleChanged(uint64_t aBrowsingContextId,
-                                                   MediaAudibleState aState) {
+                                                   MediaAudibleState aState,
+                                                   ControlType aType) {
+  // MediaStatusManager only tracks controllable sources; uncontrollable
+  // sources are handled by the derived MediaController override.
+  MOZ_ASSERT(aType == ControlType::eControllable);
   Maybe<uint64_t> oldAudioFocusOwnerId =
       mPlaybackStatusDelegate.GetAudioFocusOwnerContextId();
   mPlaybackStatusDelegate.UpdateMediaAudibleState(aBrowsingContextId, aState);
@@ -512,6 +516,9 @@ bool MediaStatusManager::IsInPrivateBrowsing() const {
   }
   RefPtr<Element> element = bc->GetEmbedderElement();
   if (!element) {
+    return false;
+  }
+  if (StaticPrefs::media_privatebrowsing_metadata_enabled()) {
     return false;
   }
   return element->OwnerDoc()->IsInPrivateBrowsing();

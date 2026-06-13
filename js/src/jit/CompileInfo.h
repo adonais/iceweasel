@@ -372,7 +372,7 @@ class CompileInfo {
   bool hadBoundsCheckBailout_;
   bool hadUnboxFoldingBailout_;
 
-  bool branchHintingEnabled_;
+  bool branchHintingEnabled_ = false;
 
   bool mayReadFrameArgsDirectly_;
   bool anyFormalIsForwarded_;

@@ -69,8 +69,8 @@ class DOMEventTargetHelper : public dom::EventTarget,
 
   NS_INLINE_DECL_STATIC_IID(NS_DOMEVENTTARGETHELPER_IID)
 
-  nsIGlobalObject* GetOwnerGlobal() const override {
-    return GlobalTeardownObserver::GetOwnerGlobal();
+  nsIGlobalObject* GetRelevantGlobal() const override {
+    return GlobalTeardownObserver::GetRelevantGlobal();
   }
 
   static DOMEventTargetHelper* FromSupports(nsISupports* aSupports) {
@@ -92,8 +92,6 @@ class DOMEventTargetHelper : public dom::EventTarget,
   bool HasListenersFor(const nsAString& aType) const;
 
   bool HasListenersFor(nsAtom* aTypeWithOn) const;
-
-  nsPIDOMWindowOuter* GetOwnerGlobalForBindingsInternal() override;
 
   // Like GetOwner, but only returns non-null if the window being returned is
   // current (in the "current document" sense of the HTML spec).

@@ -97,7 +97,7 @@ class HeapSnapshot final : public nsISupports, public nsWrapperCache {
  protected:
   nsCOMPtr<nsISupports> mParent;
 
-  virtual ~HeapSnapshot() {}
+  virtual ~HeapSnapshot() = default;
 
  public:
   // Create a `HeapSnapshot` from the given buffer that contains a serialized
@@ -169,7 +169,7 @@ class HeapSnapshot final : public nsISupports, public nsWrapperCache {
 // serializes it to disk, or memory, or a socket, etc.
 class CoreDumpWriter {
  public:
-  virtual ~CoreDumpWriter() {};
+  virtual ~CoreDumpWriter() = default;
 
   // Write the given bits of metadata we would like to associate with this core
   // dump.

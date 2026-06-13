@@ -9,7 +9,6 @@ import android.widget.RadioButton
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.SwitchPreferenceCompat
-import io.mockk.Called
 import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
@@ -19,13 +18,13 @@ import mozilla.components.support.ktx.android.view.putCompoundDrawablesRelative
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.R
 import org.robolectric.RobolectricTestRunner
+import kotlin.test.assertNotNull
 
 @RunWith(RobolectricTestRunner::class)
 class ExtensionsTest {
@@ -65,17 +64,20 @@ class ExtensionsTest {
 
     @Test
     fun `set change listener with typed argument`() {
-        val callback = mockk<(Preference, String) -> Unit>(relaxed = true)
+        val callbackCalls = mutableListOf<Pair<Preference, String>>()
+        val callback: (Preference, String) -> Unit = { pref, value ->
+            callbackCalls.add(pref to value)
+        }
         preference.setOnPreferenceChangeListener<String> { pref, value ->
             callback(pref, value)
             true
         }
 
         assertFalse(preference.callChangeListener(10))
-        verify { callback wasNot Called }
+        assertTrue(callbackCalls.isEmpty())
 
         assertTrue(preference.callChangeListener("Hello"))
-        verify { callback(preference, "Hello") }
+        assertEquals(listOf(preference to "Hello"), callbackCalls)
     }
 
     @Test

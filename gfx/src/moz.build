@@ -29,6 +29,7 @@ EXPORTS += [
     "nsPoint.h",
     "nsRect.h",
     "nsRectAbsolute.h",
+    "nsRectIntersectGeneric.h",
     "nsRegion.h",
     "nsRegionFwd.h",
     "nsSize.h",
@@ -93,3 +94,16 @@ FINAL_LIBRARY = "xul"
 if CONFIG["MOZ_WIDGET_TOOLKIT"] == "gtk":
     CXXFLAGS += CONFIG["MOZ_GTK3_CFLAGS"]
     CXXFLAGS += CONFIG["MOZ_PANGO_CFLAGS"]
+
+if CONFIG["TARGET_CPU"] == "aarch64":
+    DEFINES["USE_NEON"] = True
+    LOCAL_INCLUDES += ["/third_party/xsimd/include"]
+    SOURCES += ["nsRectIntersectGenericNeon.cpp"]
+    SOURCES["nsRectIntersectGenericNeon.cpp"].flags += CONFIG["NEON_FLAGS"]
+
+if CONFIG["INTEL_ARCHITECTURE"]:
+    if CONFIG["SSE4_2_FLAGS"]:
+        DEFINES["USE_SSE4_2"] = True
+        LOCAL_INCLUDES += ["/third_party/xsimd/include"]
+        SOURCES += ["nsRectIntersectGenericSSE42.cpp"]
+        SOURCES["nsRectIntersectGenericSSE42.cpp"].flags += CONFIG["SSE4_2_FLAGS"]

@@ -269,7 +269,7 @@ async function testPopupBlockingToolbar(
   expectedBlocked = 2,
   expectedOpened = 2
 ) {
-  let win = tab.ownerGlobal;
+  let win = tab.documentGlobal;
   // Wait for the popup-blocked notification.
   let notification;
   await TestUtils.waitForCondition(

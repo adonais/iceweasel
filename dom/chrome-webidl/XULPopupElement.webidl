@@ -201,4 +201,9 @@ interface XULPopupElement : XULElement
 
   readonly attribute boolean isWaylandDragSource;
   readonly attribute boolean isWaylandPopup;
+
+  /**
+   * Whether the popup is being displayed as an OS-native menu.
+   */
+  readonly attribute boolean isNativeMenu;
 };

@@ -404,7 +404,9 @@ nsresult nsJARChannel::OpenLocalFile() {
   RefPtr<nsJARChannel> self = this;
   return mWorker->Dispatch(NS_NewRunnableFunction(
       "nsJARChannel::OpenLocalFile",
-      [self, jarCache, clonedFile, jarEntry, innerJarEntry]() mutable {
+      [self, jarCache = std::move(jarCache), clonedFile = std::move(clonedFile),
+       jarEntry = std::move(jarEntry),
+       innerJarEntry = std::move(innerJarEntry)]() mutable {
         RefPtr<nsJARInputThunk> input;
         nsresult rv = CreateLocalJarInput(jarCache, clonedFile, innerJarEntry,
                                           jarEntry, getter_AddRefs(input));
@@ -1064,14 +1066,6 @@ static void RecordZeroLengthEvent(bool aIsSync, const nsCString& aSpec,
       return;
     }
 
-    // See bug 1695560. "search-extensions/google/favicon.ico" with
-    // NS_BINDING_ABORTED is filtered out.
-    if (fileName.EqualsLiteral(
-            "omni.ja!/chrome/browser/search-extensions/google/favicon.ico") &&
-        aStatus == NS_BINDING_ABORTED) {
-      return;
-    }
-
     glean::zero_byte_load::LoadOthersExtra extra = {
         .cancelReason = Some(aCanceledReason),
         .cancelled = Some(aCanceled),
@@ -1280,7 +1274,8 @@ nsJARChannel::OnStartRequest(nsIRequest* req) {
   LOG(("nsJARChannel::OnStartRequest [this=%p %s]\n", this, mSpec.get()));
 
   mRequest = req;
-  nsresult rv = mListener->OnStartRequest(this);
+  nsCOMPtr<nsIStreamListener> listener = mListener;
+  nsresult rv = listener->OnStartRequest(this);
   if (NS_FAILED(rv)) {
     return rv;
   }
@@ -1314,13 +1309,13 @@ nsJARChannel::OnStopRequest(nsIRequest* req, nsresult status) {
 
   if (NS_SUCCEEDED(mStatus)) mStatus = status;
 
-  if (mListener) {
+  if (nsCOMPtr<nsIStreamListener> listener = mListener) {
     if (!mOnDataCalled || NS_FAILED(status)) {
       RecordZeroLengthEvent(false, mSpec, status, mCanceled, mCanceledReason,
                             mLoadInfo);
     }
 
-    mListener->OnStopRequest(this, status);
+    listener->OnStopRequest(this, status);
     mListener = nullptr;
   }
 
@@ -1356,7 +1351,8 @@ nsJARChannel::OnDataAvailable(nsIRequest* req, nsIInputStream* stream,
   }
 
   mOnDataCalled = true;
-  rv = mListener->OnDataAvailable(this, stream, offset, count);
+  nsCOMPtr<nsIStreamListener> listener = mListener;
+  rv = listener->OnDataAvailable(this, stream, offset, count);
 
   // simply report progress here instead of hooking ourselves up as a
   // nsITransportEventSink implementation.

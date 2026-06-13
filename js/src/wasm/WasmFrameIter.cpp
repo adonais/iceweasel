@@ -394,9 +394,9 @@ void WasmFrameIter::popFrame(bool isLeavingFrame) {
 #ifdef ENABLE_WASM_JSPI
   if (codeRange->isContBaseFrame()) {
     ContStack* stack = ContStack::fromBaseFrameFP(fp_);
-    MOZ_RELEASE_ASSERT(cx()->wasm().findStackForAddress(
-                           cx(), reinterpret_cast<uintptr_t>(fp_)) == stack);
-    MOZ_RELEASE_ASSERT(stack == contStack_);
+    MOZ_ASSERT(cx()->wasm().findStackForAddress(
+                   cx(), reinterpret_cast<uintptr_t>(fp_)) == stack);
+    MOZ_ASSERT(stack == contStack_);
 
     const Handlers* handlers = stack->handlers();
     fp_ = (wasm::Frame*)handlers->returnTarget.framePointer;
@@ -439,11 +439,9 @@ void WasmFrameIter::popFrame(bool isLeavingFrame) {
   }
 
 #ifdef ENABLE_WASM_JSPI
-  currentFrameStackSwitched_ = site.isStackSwitch();
-  if (currentFrameStackSwitched_) {
-    contStack_ = cx()->wasm().findStackForAddress(
-        cx(), reinterpret_cast<uintptr_t>(fp_));
-  }
+  // A stack switch should always go through the cont base frame case above.
+  MOZ_RELEASE_ASSERT(!site.isStackSwitch());
+  currentFrameStackSwitched_ = false;
 #endif
 
   MOZ_ASSERT(code_ == &instance_->code());

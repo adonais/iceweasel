@@ -152,9 +152,6 @@ class StringBuilder {
   // characters.
   uint8_t numHeaderChars_ = 0;
 
-  StringBuilder(const StringBuilder& other) = delete;
-  void operator=(const StringBuilder& other) = delete;
-
   // Returns the number of characters to prepend to reserve enough space for the
   // mozilla::StringBuffer header.
   template <typename CharT>
@@ -223,6 +220,9 @@ class StringBuilder {
     MOZ_ASSERT(fc);
     cb.construct<Latin1CharBuffer>(StringBuilderAllocPolicy{fc, arenaId});
   }
+
+  StringBuilder(const StringBuilder& other) = delete;
+  void operator=(const StringBuilder& other) = delete;
 
   void clear() { shrinkTo(0); }
 

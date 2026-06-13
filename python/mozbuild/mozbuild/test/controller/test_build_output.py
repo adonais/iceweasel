@@ -45,6 +45,11 @@ SAMPLE_LOG_BUILD_OUTPUT_TEMPLATES = [
     (STDERR, THIRD_PARTY_WARNING, "{topsrcdir}/nsprpub/pr/src/misc/prdtoa.c(1261,27): warning: operator '>>' has lower precedence than '-'; '-' will be evaluated first [-Wshift-op-parentheses]"),
     (STDERR, THIRD_PARTY_WARNING, " 1261 |     d1 = z << k | y >> 32 - k;"),
     (STDERR, THIRD_PARTY_WARNING, "      |                     ~~ ~~~^~~"),
+    # Same warning as above, but with relative path {
+    (STDERR, THIRD_PARTY_WARNING, "../../nsprpub/pr/src/misc/prdtoa.c(1261,27): warning: operator '>>' has lower precedence than '-'; '-' will be evaluated first [-Wshift-op-parentheses]"),
+    (STDERR, THIRD_PARTY_WARNING, " 1261 |     d1 = z << k | y >> 32 - k;"),
+    (STDERR, THIRD_PARTY_WARNING, "      |                     ~~ ~~~^~~"),
+    # }
     (STDERR, BUILD_ERROR,         "1 error generated."),
     (STDOUT, logging.INFO,        "browser/components/about"),
     (STDOUT, logging.INFO,        "   Compiling syn v2.0.106"),
@@ -101,6 +106,12 @@ SAMPLE_GCC_BUILD_OUTPUT_TEMPLATES = [
     (STDERR, THIRD_PARTY_WARNING, "{topsrcdir}/nsprpub/pr/src/misc/prdtoa.c:566:52: warning: comparison of integer expressions of different signedness: 'long int' and 'long unsigned int' [-Wsign-compare]"),
     (STDERR, THIRD_PARTY_WARNING, "  566 |     if (k <= Kmax && pmem_next - private_mem + len <= PRIVATE_mem) {{"),
     (STDERR, THIRD_PARTY_WARNING, "      |                                                    ^~"),
+    # Same warning as above, but with relative paths {
+    (STDERR, THIRD_PARTY_WARNING, "In file included from ./../../nsprpub/pr/src/misc/prdtoa.c:307:"),
+    (STDERR, THIRD_PARTY_WARNING, "./../../nsprpub/pr/src/misc/prdtoa.c:566:52: warning: comparison of integer expressions of different signedness: 'long int' and 'long unsigned int' [-Wsign-compare]"),
+    (STDERR, THIRD_PARTY_WARNING, "  566 |     if (k <= Kmax && pmem_next - private_mem + len <= PRIVATE_mem) {{"),
+    (STDERR, THIRD_PARTY_WARNING, "      |                                                    ^~"),
+    # }
     (STDOUT, logging.INFO,        "security/nss/lib/nss"),
     (STDERR, logging.WARNING,     "In file included from {topsrcdir}/objdir/dist/include/nss/seccomon.h:27,"),
     (STDERR, THIRD_PARTY_WARNING, "                 from /usr/include/ctype.h:66,"),

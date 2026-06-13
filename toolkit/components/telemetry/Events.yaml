@@ -185,7 +185,7 @@ addonsManager:
         The method used by the source to install the add-on (included when the source can use more than one,
         e.g. install events with source "about:addons" may have "install-from-file" or "url" as method),
         one of "amWebAPI", "drag-and-drop", "installTrigger", "install-from-file", "link",
-        "management-webext-api", "sideload", "onboarding" "synthetic-install", "url", "product-updates".
+        "management-webext-api", "sideload", "onboarding", "rtamo", "synthetic-install", "url", "product-updates".
         e.g. install events with source "about:addons" may have "install-from-file" or "drag-and-drop" as method),
         one of "amWebAPI", "drag-and-drop", "installTrigger", "install-from-file", "link", "management-webext-api",
         "sideload", "synthetic-install", "url", "product-updates", "manager".
@@ -319,185 +319,6 @@ form_autocomplete:
       - firefox
     record_in_processes: ["main"]
     release_channel_collection: opt-out
-
-address:
-  doorhanger:
-    description: >-
-      User interactions for the browser address autofill doorhanger.
-    objects:
-      - "capture_doorhanger"
-      - "update_doorhanger"
-      - "edit_doorhanger"
-    methods:
-      - "show"
-      - "save"
-      - "update"
-      - "cancel"
-      - "disable"
-      - "pref"
-      - "learn_more"
-    bug_numbers: [1801039]
-    notification_emails: ["autofill@lists.mozilla.org", "passwords-dev@mozilla.org"]
-    expiry_version: never
-    products:
-      - "firefox"
-    record_in_processes: ["main"]
-    release_channel_collection: opt-out
-  manage:
-    description: >-
-      User interactions for address autofill preferences management UI.
-    objects:
-      - "manage"
-    methods:
-      - "show"
-      - "add"
-      - "delete"
-      - "show_entry"
-      - "edit"
-    bug_numbers: [1801039]
-    notification_emails: ["autofill@lists.mozilla.org", "passwords-dev@mozilla.org"]
-    expiry_version: never
-    products:
-      - "firefox"
-    record_in_processes: ["main"]
-    release_channel_collection: opt-out
-  address_form:
-    description: >-
-      User interactions for address autofill forms
-        'detected': Recorded when a form is recognized as a credit card form.
-                    The possible value of cc_* in extra_keys are "true", "false", or 0
-                    When the value is "true", the field is identified via autocomplete attribute
-                    When the value is "false", the field is not detected in the form
-                    When the value is an 0, then the field is identified by regexp-based heuristic
-        'popup_shown': Recorded when autofill popup is shown. Using field_name to record the field
-                       that triggers this event
-        'filled': Recorded when a form is autofiled. Possible values are
-                  `filled`, `not_filled`, `user_filled` or `unavailable`
-        'filled_modified': Recorded when a field is autofilled and then modified by the user.
-                           Using field_name to record the field that triggers this event.
-        'submitted': Recorded when a form is submitted. Possible values are `autofilled`, `not_filled`, `user_filled` or `unavailable`
-        'cleared' Recorded when a form is cleared . Using field_name to record the field that triggers this event
-    objects: ["address_form"]
-    methods: ["detected", "popup_shown", "filled", "filled_modified", "submitted", "cleared"]
-    bug_numbers: [1804901]
-    notification_emails: ["autofill@lists.mozilla.org", "passwords-dev@mozilla.org"]
-    expiry_version: never
-    products:
-      - "firefox"
-    record_in_processes: ["main"]
-    release_channel_collection: opt-out
-    extra_keys:
-      street_address: street address result, filled when method is `detected`, `filled`, or `filled_modified`
-      address_line1: address_line1 result, filled when method is `detected`, `filled`, or `filled_modified`.
-      address_line2: address_line2 result, filled when method is `detected`, `filled`, or `filled_modified`.
-      address_line3: address_line3 result, filled when method is `detected`, `filled`, or `filled_modified`.
-      address_level1: address_level1 result, filled when method is `detected`, `filled`, or `filled_modified`.
-      address_level2: address_level2 result, filled when method is `detected`, `filled`, or `filled_modified`.
-      postal_code: postal_code result, filled when method is `detected`, `filled`, or `filled_modified`.
-      country: country result, filled when method is `detected`, `filled`, or `filled_modified`.
-      field_name: Name of the field being affected by the method, filled when method is `popup_shown` or `filled_modified`.
-  address_form_ext:
-    description: >-
-      Address has too many fields so we cannot cover them all in the above `address_form` telemetry
-      This telemetry is used to record address fields that are not listed in `address_form`
-    objects: ["address_form_ext"]
-    methods: ["detected", "filled", "submitted"]
-    bug_numbers: [1804901]
-    notification_emails: ["autofill@lists.mozilla.org", "passwords-dev@mozilla.org"]
-    expiry_version: never
-    products:
-      - "firefox"
-    record_in_processes: ["main"]
-    release_channel_collection: opt-out
-    extra_keys:
-      name: name
-      given_name: give_name
-      additional_name: additional_name
-      family_name: family_name
-      email: email
-      organization: organization
-      tel: telephone
-
-creditcard:
-  doorhanger:
-    description: >-
-      User interactions for the browser credit card autofill doorhanger.
-    objects:
-      - "capture_doorhanger"
-      - "update_doorhanger"
-    methods:
-      - "show"
-      - "save"
-      - "update"
-      - "cancel"
-      - "disable"
-    bug_numbers: [1653073, 1653083, 1720608, 1767907]
-    notification_emails: ["autofill@lists.mozilla.org", "passwords-dev@mozilla.org"]
-    expiry_version: never
-    products:
-      - "firefox"
-    record_in_processes: ["main"]
-    release_channel_collection: opt-out
-  manage:
-    description: >-
-      User interactions for credit card autofill preferences management UI.
-    objects:
-      - "manage"
-    methods:
-      - "show"
-      - "add"
-      - "delete"
-      - "show_entry"
-      - "edit"
-    bug_numbers: [1653073, 1654167, 1720608, 1767907]
-    notification_emails: ["autofill@lists.mozilla.org", "passwords-dev@mozilla.org"]
-    expiry_version: never
-    products:
-      - "firefox"
-    record_in_processes: ["main"]
-    release_channel_collection: opt-out
-  cc_form_v2:
-    description: >-
-      User interactions for credit card autofill forms
-      Expected values are store in extra_keys and are varies depends on the methods
-        'detected': Recorded when a form is recognized as a credit card form.
-                    The possible value of cc_* in extra_keys are "true", "false", or an integer between 0-100
-                    When the value is "true", the field is identified via autocomplete attribute
-                    When the value is "false", the field is not detected in the form
-                    When the value is an integer greater than 0, the value indicates the confidence value from fathom (normalized to 0-100)
-                    When the value is an 0, then the field is identified by regexp-based heuristic
-        'popup_shown': Recorded when autofill popup is shown. Using field_name to record the field
-                       that triggers this event
-        'filled': Recorded when a form is autofiled. Possible values are
-                  `filled`, `not_filled`, `user_filled` or `unavailable`
-        'filled_modified': Recorded when a field is autofilled and then modified by the user.
-                           Using field_name to record the field that triggers this event.
-        'submitted': Recorded when a form is submitted. Possible values are `autofilled`, `user_filled` or `unavailable`
-        'cleared' Recorded when a form is cleared . Using field_name to record the field that triggers this event
-    objects:
-      - "cc_form_v2"
-    methods:
-      - "detected"
-      - "popup_shown"
-      - "filled"
-      - "filled_modified"
-      - "submitted"
-      - "cleared"
-    bug_numbers: [1757731]
-    notification_emails: ["autofill@lists.mozilla.org", "passwords-dev@mozilla.org"]
-    expiry_version: never
-    products:
-      - "firefox"
-    record_in_processes: ["main"]
-    release_channel_collection: opt-out
-    extra_keys:
-      cc_name: cardholder name field result. Used by `detected`, `filled`, and `filled_modified` methods.
-      cc_number: credit card number field result
-      cc_type: credit card type result
-      cc_exp: credit card expiration date
-      cc_exp_month: credit card expiration month
-      cc_exp_year: credit card expiration year
-      field_name: Name of the field being affected by the method. Used by `popup_shown` and `filled_modified` methods.
 
 homepage:
   preference:
@@ -1360,6 +1181,7 @@ messaging_experiments:
       "spotlight",
       "featureCallout",
       "fxms_bmb_button",
+      "fxms_message",
       "fxms_message_1",
       "fxms_message_2",
       "fxms_message_3",
@@ -1399,9 +1221,8 @@ messaging_experiments:
     notification_emails: ["omc-core@mozilla.com"]
     expiry_version: "never"
     extra_keys:
-      branches: >
-        A semicolon separated string for all the qualified branch ID(s).
-        e.g. "control;variant_01;treatment_02".
+      branches: The slug for the branch the message came from.
+      message_id: The ID of the message that triggered this reach event.
   targeting:
     objects:
       - attribute_error
@@ -2449,48 +2270,6 @@ intl.ui.browserLanguage:
       - 1928262
       - 1999880
 
-network.dns:
-  trrConfirmation:
-    objects: ["context"]
-    bug_numbers:
-      - 1691408
-      - 1694949
-    description: >
-      This telemetry records the status of the TRR confirmation across.
-      The value of the event is one of:
-        "ok"
-        "trying"
-    notification_emails:
-      - vgosu@mozilla.com
-      - necko@mozilla.com
-    release_channel_collection: opt-out
-    products:
-      - firefox
-    expiry_version: "never"
-    record_in_processes: ["main", "socket"]
-    extra_keys:
-      trigger: >
-        The reason why this confirmation was triggered.
-        Values: [cp-connectivity, pref-change, context-init, retry, failed-lookups]
-      contextReason: >
-        The cause of the current confirmation context.
-        Values: [success, pref-change, network-change, shutdown]
-      attemptCount: >
-        The number of NS requests that were issued for this confirmation.
-      results: >
-        String representation of the last 32 confirmation results.
-        Example: nnnnnnttttttttt indicates a number of network (n) failures
-        followed by timeouts (t).
-      failedLookups: >
-        When the trigger is failed-lookups, this contains the string
-        representation of the failures that triggered the confirmation.
-      networkID: >
-        The network ID for the recorded confirmation attempts
-      captivePortal: >
-        One of [unknown, not_captive, unlocked, locked]
-      time: >
-        Time from first confirmation attempt to event being recorded
-
 security:
   prefUsage:
     objects: ["contentProcess"]
@@ -2629,68 +2408,6 @@ launch_on_login:
     expiry_version: "never"
     release_channel_collection: opt-out
 
-doh:
-  evaluate_v2:
-    methods: ["evaluate_v2"]
-    objects: ["heuristics"]
-    bug_numbers:
-      - 1573840
-      - 1631609
-      - 1603779
-      - 1654714
-    description: >
-      Results of DoH heuristics at startup and after network changes.
-    expiry_version: never
-    record_in_processes:
-      - main
-    release_channel_collection: opt-out
-    notification_emails:
-      - nhnt11@mozilla.com
-      - ddamjanovic@mozilla.com
-      - seceng-telemetry@mozilla.com
-      - necko@mozilla.com
-    products:
-      - firefox
-    extra_keys:
-      canaries: Comma-separated list of canaries that were detected (canary,zscalerCanary)
-      filtering: Comma-separated list of detected parental controls/content filtering (browserParent,google,youtube)
-      enterprise: Comma-separated list of detected enterprise config (policy,modifiedRoots,thirdPartyRoots)
-      steeredProvider: Whether we detected a steering provider
-      evaluateReason: The reason for running heuristics - startup or netchange
-      networkID: An ID representing the network on which heuristics were run, unique to this client
-      captiveState: The Captive Portal Service state - unknown, not_captive, locked, or unlocked
-      platform: Comma-separated list of platform attributes that would cause split-horizon issues (vpn, proxy, nrpt)
-  state:
-    methods: ["state"]
-    objects: [
-      "enabled",
-      "disabled",
-      "manuallyDisabled",
-      "policyDisabled",
-      "uninstalled",
-      "UIOk",
-      "UIDisabled",
-      "rollback",
-      "shutdown",
-    ]
-    bug_numbers:
-      - 1573840
-      - 1631609
-      - 1603779
-    description: >
-      Results of DoH heuristics at startup and after network changes.
-    expiry_version: never
-    record_in_processes:
-      - main
-    release_channel_collection: opt-out
-    notification_emails:
-      - nhnt11@mozilla.com
-      - ddamjanovic@mozilla.com
-      - seceng-telemetry@mozilla.com
-      - necko@mozilla.com
-    products:
-      - firefox
-
 security.doh.trrPerformance:
   resolved:
     objects: ["record"]
@@ -2734,32 +2451,10 @@ security.doh.trrPerformance:
       - firefox
 
 security.doh.neterror:
-  load:
-    objects: ["dohwarning"]
-    bug_numbers:
-      - 1829342
-    description: >
-      The DoH warning page is loaded.
-    expiry_version: never
-    notification_emails:
-      - necko@mozilla.com
-      - kershaw@mozilla.com
-    release_channel_collection: opt-out
-    products:
-      - "firefox"
-    record_in_processes: ["content"]
-    extra_keys:
-      mode: Current TRR mode
-      provider_key: TRR provider
-      skip_reason: The reason why DoH request is failed
   click:
     objects: [
-      "try_again_button",
-      "add_exception_button",
-      "settings_button",
       "continue_button",
       "disable_warning",
-      "learn_more_link",
     ]
     bug_numbers:
       - 1829342
@@ -2778,40 +2473,6 @@ security.doh.neterror:
       provider_key: TRR provider
       skip_reason: The reason why DoH request is failed
 
-security.doh.settings:
-  mode_changed:
-    objects: ["button"]
-    bug_numbers:
-      - 1829905
-    description: >
-      User changed the TRR mode in about:preferences#privacy settings
-      Value is id of the clicked button.
-    expiry_version: never
-    record_in_processes:
-      - main
-    release_channel_collection: opt-out
-    notification_emails:
-      - vgosu@mozilla.com
-      - necko@mozilla.com
-    products:
-      - firefox
-  provider_choice:
-    objects: ["value"]
-    bug_numbers:
-      - 1829905
-    description: >
-      User changed their DoH provider. Recorded value is URL of one of the
-      existing providers or "custom".
-    expiry_version: never
-    record_in_processes:
-      - main
-    release_channel_collection: opt-out
-    notification_emails:
-      - vgosu@mozilla.com
-      - necko@mozilla.com
-    products:
-      - firefox
-
 security.ui.certerror:
   load:
     objects: ["aboutcerterror"]
@@ -2821,7 +2482,7 @@ security.ui.certerror:
       - 1553181
       - 1629826
     description: >
-      The about:certerror page is loaded, keyed by error code, see https://searchfox.org/mozilla-central/source/security/nss/lib/mozpkix/include/pkix/Result.h
+      The about:certerror page is loaded, keyed by error code, see https://searchfox.org/firefox-main/source/security/nss/lib/mozpkix/include/pkix/Result.h
     expiry_version: never
     notification_emails:
       - jhofmann@mozilla.com
@@ -2855,7 +2516,7 @@ security.ui.certerror:
       - 1553181
       - 1629826
     description: >
-      User interaction by click events on the cert error page. Keyed by error code, see https://searchfox.org/mozilla-central/source/security/nss/lib/mozpkix/include/pkix/Result.h
+      User interaction by click events on the cert error page. Keyed by error code, see https://searchfox.org/firefox-main/source/security/nss/lib/mozpkix/include/pkix/Result.h
     expiry_version: never
     notification_emails:
       - jhofmann@mozilla.com
@@ -3161,310 +2822,6 @@ synced_tabs:
     extra_keys:
       tab_pos: position of the tab clicked
       filter: was there a filter enabled
-
-firefoxview_next:
-  recently_closed:
-    objects: ["tabs"]
-    description: >
-      Recorded when a recently closed tab is clicked
-    extra_keys:
-      delta: Time since the tab was closed
-      position: The position of the tab in the recently closed tab list (starting at 1)
-      page: The short page name where the recently closed tab was clicked
-    notification_emails:
-      - firefoxview@mozilla.com
-    products:
-      - "firefox"
-    record_in_processes:
-      - main
-    bug_numbers:
-      - 1842616
-    expiry_version: "never"
-    release_channel_collection: opt-out
-  dismiss_closed_tab:
-    objects: ["tabs"]
-    description: >
-      Recorded when a recently closed tab is dismissed
-    extra_keys:
-      delta: Time since the tab was closed to when dismissed
-      position: The position of the tab in the recently closed tab list (starting at 1)
-      page: The short page name where the recently closed tab was dismissed
-    notification_emails:
-      - firefoxview@mozilla.com
-    products:
-      - "firefox"
-    record_in_processes:
-      - main
-    bug_numbers:
-      - 1842616
-    expiry_version: "never"
-    release_channel_collection: opt-out
-  card_collapsed:
-    objects: ["card_container"]
-    description: >
-      Recorded when a card-container is collapsed on the 'Recent browsing' page
-    extra_keys:
-      data_type: The type of data being collapsed in a card on the 'Recent browsing' page
-    notification_emails:
-      - firefoxview@mozilla.com
-    products:
-      - "firefox"
-    record_in_processes:
-      - main
-    bug_numbers:
-      - 1842616
-    expiry_version: "never"
-    release_channel_collection: opt-out
-  card_expanded:
-    objects: ["card_container"]
-    description: >
-      Recorded when a card-container is expanded on the 'Recent browsing' page
-    extra_keys:
-      data_type: The type of data being expanded in a card on the 'Recent browsing' page
-    notification_emails:
-      - firefoxview@mozilla.com
-    products:
-      - "firefox"
-    record_in_processes:
-      - main
-    bug_numbers:
-      - 1842616
-    expiry_version: "never"
-    release_channel_collection: opt-out
-  change_page:
-    objects: ["navigation"]
-    description: >
-      Recorded when the page/view is changed in Firefox View
-    extra_keys:
-      page: The short page name that the user is navigating to
-      source: Whether the page was changed via the side navigation vs the 'View all' link on cards on the Recent browsing page
-    notification_emails:
-      - firefoxview@mozilla.com
-    products:
-      - "firefox"
-    record_in_processes:
-      - main
-    bug_numbers:
-      - 1842616
-    expiry_version: "never"
-    release_channel_collection: opt-out
-  context_menu:
-    objects: ["tabs"]
-    description: >
-      Recorded when a context menu selection is made in Firefox View
-    extra_keys:
-      menu_action: The menu action the user has selected for a given tab
-      data_type: The type of data the user has used the context menu for
-    notification_emails:
-      - firefoxview@mozilla.com
-    products:
-      - "firefox"
-    record_in_processes:
-      - main
-    bug_numbers:
-      - 1842616
-    expiry_version: "never"
-    release_channel_collection: opt-out
-  close_open_tab:
-    objects: ["tabs"]
-    description: >
-      Recorded when a tab is closed via the close button on an open tab row.
-    notification_emails:
-      - firefoxview@mozilla.com
-    products:
-      - "firefox"
-    record_in_processes:
-      - main
-    bug_numbers:
-      - 1857298
-    expiry_version: "never"
-    release_channel_collection: opt-out
-  browser_context_menu:
-    objects: ["tabs"]
-    description: >
-      Recorded when a browser context menu selection is made in Firefox View
-    extra_keys:
-      menu_action: The menu action the user has selected for a given tab
-      page: The short page name used as the location hash when selecting the Firefox View tab
-    notification_emails:
-      - firefoxview@mozilla.com
-    products:
-      - "firefox"
-    record_in_processes:
-      - main
-    bug_numbers:
-      - 1851197
-    expiry_version: "never"
-    release_channel_collection: opt-out
-  entered:
-    objects: ["firefoxview"]
-    description: >
-      Recorded when the Firefox View tab is selected
-    extra_keys:
-      page: The short page name used as the location hash when selecting the Firefox View tab
-    notification_emails:
-      - firefoxview@mozilla.com
-    products:
-      - "firefox"
-    record_in_processes:
-      - main
-    bug_numbers:
-      - 1852036
-    expiry_version: "never"
-    release_channel_collection: opt-out
-  fxa_continue:
-    objects: ["sync"]
-    description: >
-      Recorded when button to sign in or sign up is clicked
-    notification_emails:
-      - firefoxview@mozilla.com
-    products:
-      - "firefox"
-    record_in_processes:
-      - main
-    bug_numbers:
-      - 1833671
-    expiry_version: "never"
-    release_channel_collection: opt-out
-  fxa_mobile:
-    objects: ["sync"]
-    description: >
-      Recorded when the 'Try Firefox for mobile' button is clicked
-    extra_keys:
-      has_devices: True if user has other devices signed into sync
-    notification_emails:
-      - firefoxview@mozilla.com
-    products:
-      - "firefox"
-    record_in_processes:
-      - main
-    bug_numbers:
-      - 1833671
-    expiry_version: "never"
-    release_channel_collection: opt-out
-  synced_tabs:
-    objects: ["tabs"]
-    description: >
-      Recorded when a synced tab is clicked
-    extra_keys:
-      page: The short page name where the synced tab was clicked
-    notification_emails:
-      - firefoxview@mozilla.com
-    products:
-      - "firefox"
-    record_in_processes:
-      - main
-    bug_numbers:
-      - 1833671
-    expiry_version: "never"
-    release_channel_collection: opt-out
-  history:
-    objects: ["visits"]
-    description: >
-      Recorded when a history tab is clicked
-    notification_emails:
-      - firefoxview@mozilla.com
-    products:
-      - "firefox"
-    record_in_processes:
-      - main
-    bug_numbers:
-      - 1842616
-    expiry_version: "never"
-    release_channel_collection: opt-out
-  sort_history:
-    objects: ["tabs"]
-    description: >
-      Recorded when the sort option is changed for History in Firefox View
-    extra_keys:
-      sort_type: The type of sort the user has switched to
-      search_start: Boolean for if the sort by click occured during search activity.
-    notification_emails:
-      - firefoxview@mozilla.com
-    products:
-      - "firefox"
-    record_in_processes:
-      - main
-    bug_numbers:
-      - 1833674
-    expiry_version: "never"
-    release_channel_collection: opt-out
-  show_all_history:
-    objects: ["tabs"]
-    description: >
-      Recorded when the 'Show all history' button is clicked on the History page in Firefox View
-    notification_emails:
-      - firefoxview@mozilla.com
-    products:
-      - "firefox"
-    record_in_processes:
-      - main
-    bug_numbers:
-      - 1833674
-    expiry_version: "never"
-    release_channel_collection: opt-out
-  open_tab:
-    objects: ["tabs"]
-    description: Recorded when an open tab is clicked
-    extra_keys:
-      page: The short page name where the open tab was clicked
-      window: The window the open tab belongs to
-    notification_emails:
-      - firefoxview@mozilla.com
-    products:
-      - "firefox"
-    record_in_processes:
-      - main
-    bug_numbers:
-      - 1833669
-    expiry_version: "never"
-    release_channel_collection: opt-out
-  tab_selected:
-    objects: ["toolbarbutton"]
-    description: >
-      Recorded when the Firefox View tab is clicked
-    notification_emails:
-      - firefoxview@mozilla.com
-    products:
-      - "firefox"
-    record_in_processes:
-      - main
-    bug_numbers:
-      - 1852989
-    expiry_version: "never"
-    release_channel_collection: opt-out
-  search_initiated:
-    objects: ["search"]
-    description: >
-      Recorded when search is initiated and from what page.
-    extra_keys:
-      page: The short page name used as the location hash when selecting the Firefox View tab.
-    notification_emails:
-      - firefoxview@mozilla.com
-    products:
-      - "firefox"
-    record_in_processes:
-      - main
-    bug_numbers:
-      - 1869765
-    expiry_version: "never"
-    release_channel_collection: opt-out
-  search_show_all:
-    objects: ["showallbutton"]
-    description: >
-      Recorded when the show all button is clicked to show more search results.
-    extra_keys:
-      section: Section within which show all is clicked.
-    notification_emails:
-      - firefoxview@mozilla.com
-    products:
-      - "firefox"
-    record_in_processes:
-      - main
-    bug_numbers:
-      - 1869765
-    expiry_version: "never"
-    release_channel_collection: opt-out
 
 screenshots:
   download:

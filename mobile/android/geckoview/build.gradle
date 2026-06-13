@@ -120,6 +120,13 @@ android {
                 srcDir "${topobjdir}/dist/geckoview/assets"
             }
 
+            if (mozconfig.substs.MOZ_ARTIFACT_BUILDS) {
+                assets {
+                    // The assets_jog directory should contain only `jogfile.json`.
+                    srcDir "${topobjdir}/dist/bin/assets_jog"
+                }
+            }
+
             jniLibs {
                 if (!mozconfig.substs.MOZ_ANDROID_FAT_AAR_ARCHITECTURES) {
                     srcDir "${topobjdir}/dist/geckoview/lib"
@@ -207,6 +214,7 @@ dependencies {
     androidTestImplementation libs.androidx.test.junit
     androidTestImplementation libs.androidx.test.rules
     androidTestImplementation libs.androidx.test.runner
+    androidTestImplementation libs.kotlin.test
     androidTestImplementation libs.kotlinx.coroutines.test
     androidTestImplementation 'com.koushikdutta.async:androidasync:3.1.0'
 }

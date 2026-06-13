@@ -39,6 +39,7 @@ class JsepSessionCopyableStuff {
   bool mRemoteIsIceLite = false;
   std::vector<std::string> mIceOptions;
   JsepBundlePolicy mBundlePolicy = kBundleBalanced;
+  JsepRtcpMuxPolicy mRtcpMuxPolicy = kRtcpMuxNegotiate;
   std::vector<JsepDtlsFingerprint> mDtlsFingerprints;
   uint64_t mSessionId = 0;
   uint64_t mSessionVersion = 0;
@@ -80,6 +81,8 @@ class JsepSessionImpl : public JsepSession, public JsepSessionCopyableStuff {
   virtual nsresult Init() override;
 
   nsresult SetBundlePolicy(JsepBundlePolicy policy) override;
+  nsresult SetRtcpMuxPolicy(JsepRtcpMuxPolicy policy) override;
+  JsepRtcpMuxPolicy GetRtcpMuxPolicy() const override { return mRtcpMuxPolicy; }
 
   virtual bool RemoteIsIceLite() const override { return mRemoteIsIceLite; }
 
@@ -212,6 +215,7 @@ class JsepSessionImpl : public JsepSession, public JsepSessionCopyableStuff {
   nsresult ValidateRemoteDescription(const Sdp& description);
   nsresult ValidateOffer(const Sdp& offer);
   nsresult ValidateAnswer(const Sdp& offer, const Sdp& answer);
+  nsresult CheckRtcpMux(const Sdp& description);
   nsresult UpdateTransceiversFromRemoteDescription(const Sdp& remote);
   Maybe<JsepTransceiver> GetTransceiverForLevel(size_t level) const;
   Maybe<JsepTransceiver> GetTransceiverForMid(const std::string& mid) const;
@@ -222,7 +226,7 @@ class JsepSessionImpl : public JsepSession, public JsepSessionCopyableStuff {
       const std::string& transportId) const;
   // The w3c and IETF specs have a lot of "magical" behavior that happens when
   // addTrack is used. This was a deliberate design choice. Sadface.
-  Maybe<JsepTransceiver> FindUnassociatedTransceiver(
+  Maybe<JsepTransceiver> FindUnassociatedRtpTransceiver(
       SdpMediaSection::MediaType type, bool magic);
   // Called for rollback of local description
   void RollbackLocalOffer();

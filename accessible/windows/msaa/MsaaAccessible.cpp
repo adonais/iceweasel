@@ -989,7 +989,7 @@ AccessibleEnumerator::Next(unsigned long celt, VARIANT FAR* rgvar,
 
 STDMETHODIMP
 AccessibleEnumerator::Clone(IEnumVARIANT FAR* FAR* ppenum) {
-  RefPtr newEnum = new AccessibleEnumerator(*this);
+  auto newEnum = MakeRefPtr<AccessibleEnumerator>(*this);
   newEnum.forget(ppenum);
   return S_OK;
 }
@@ -1046,8 +1046,7 @@ MsaaAccessible::get_accSelection(VARIANT __RPC_FAR* pvarChildren) {
     pvarChildren->vt = VT_DISPATCH;
     pvarChildren->pdispVal = NativeAccessible(selectedItems[0]);
   } else if (count > 1) {
-    RefPtr<AccessibleEnumerator> pEnum =
-        new AccessibleEnumerator(selectedItems);
+    auto pEnum = MakeRefPtr<AccessibleEnumerator>(selectedItems);
     pvarChildren->vt =
         VT_UNKNOWN;  // this must be VT_UNKNOWN for an IEnumVARIANT
     NS_ADDREF(pvarChildren->punkVal = pEnum);

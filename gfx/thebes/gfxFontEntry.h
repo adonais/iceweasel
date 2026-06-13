@@ -135,6 +135,9 @@ class gfxCharacterMap : public gfxSparseBitSet {
   explicit gfxCharacterMap(const gfxSparseBitSet& aOther)
       : gfxSparseBitSet(aOther) {}
 
+  gfxCharacterMap(const gfxCharacterMap&) = delete;
+  gfxCharacterMap& operator=(const gfxCharacterMap&) = delete;
+
   size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const {
     return gfxSparseBitSet::SizeOfExcludingThis(aMallocSizeOf);
   }
@@ -171,10 +174,6 @@ class gfxCharacterMap : public gfxSparseBitSet {
   }
 
   mozilla::ThreadSafeAutoRefCnt mRefCnt;
-
- private:
-  gfxCharacterMap(const gfxCharacterMap&) = delete;
-  gfxCharacterMap& operator=(const gfxCharacterMap&) = delete;
 };
 
 // Info on an individual font feature, for reporting available features
@@ -383,13 +382,14 @@ class gfxFontEntry {
       mBlob = aFontEntry->GetFontTable(aTag);
     }
     ~AutoTable() { hb_blob_destroy(mBlob); }
+
+    AutoTable(const AutoTable&) = delete;
+    AutoTable& operator=(const AutoTable&) = delete;
+
     operator hb_blob_t*() const { return mBlob; }
 
    private:
     hb_blob_t* mBlob;
-    // not implemented:
-    AutoTable(const AutoTable&) = delete;
-    AutoTable& operator=(const AutoTable&) = delete;
   };
 
   // Return a font instance for a particular style. This may be a newly-

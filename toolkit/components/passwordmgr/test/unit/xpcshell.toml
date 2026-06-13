@@ -5,6 +5,8 @@ run-if = [
 ]
 support-files = ["data/**"]
 
+["test_BreachAlertStore.js"]
+
 ["test_CSVParser.js"]
 
 ["test_LoginManagerParent_doAutocompleteSearch.js"]

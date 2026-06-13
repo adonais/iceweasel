@@ -421,9 +421,15 @@ pub extern "C" fn mozurl_set_fragment(url: &mut MozURL, fragment: &nsACString) -
 }
 
 #[no_mangle]
-pub extern "C" fn mozurl_sizeof(url: &MozURL, size_of_op: unsafe extern "C" fn(ptr: *const c_void) -> usize) -> usize {
+pub extern "C" fn mozurl_sizeof(
+    url: &MozURL,
+    size_of_op: unsafe extern "C" fn(ptr: *const c_void) -> usize,
+) -> usize {
     debug_assert_mut!(url);
-    unsafe { size_of_op(url as *const _ as *const c_void) + size_of_op(url.as_str().as_ptr() as *const c_void) }
+    unsafe {
+        size_of_op(url as *const _ as *const c_void)
+            + size_of_op(url.as_str().as_ptr() as *const c_void)
+    }
 }
 
 #[no_mangle]

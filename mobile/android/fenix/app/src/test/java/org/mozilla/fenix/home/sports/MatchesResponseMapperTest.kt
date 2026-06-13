@@ -266,15 +266,18 @@ class MatchesResponseMapperTest {
     }
 
     @Test
-    fun `GIVEN status_type live and null period and clock WHEN mapped THEN Live has empty strings`() {
+    fun `GIVEN status_type live and null period and clock WHEN mapped THEN Live has empty period and null clock`() {
         val dto = minimalEvent().copy(statusType = "live", period = null, clock = null)
-        assertEquals(MatchStatus.Live(period = "", clock = ""), mapSingle(dto).matchStatus)
+        assertEquals(MatchStatus.Live(period = "", clock = null), mapSingle(dto).matchStatus)
     }
 
     @Test
-    fun `GIVEN status_type live and Break period WHEN mapped THEN MatchStatus is Live (halftime collapsed)`() {
-        val dto = minimalEvent().copy(statusType = "live", period = "Break", clock = "45")
-        assertEquals(MatchStatus.Live(period = "Break", clock = "45"), mapSingle(dto).matchStatus)
+    fun `GIVEN status_type live and status Break WHEN mapped THEN Live is halftime`() {
+        val dto = minimalEvent().copy(statusType = "live", status = "Break", period = "1", clock = null)
+        assertEquals(
+            MatchStatus.Live(period = "1", clock = null, isHalftime = true),
+            mapSingle(dto).matchStatus,
+        )
     }
 
     @Test

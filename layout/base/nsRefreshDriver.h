@@ -37,6 +37,7 @@ struct DocumentFrameCallbacks;
 
 namespace mozilla {
 class AnimationEventDispatcher;
+class PaintPendingHangAnnotator;
 class PresShell;
 class RefreshDriverTimer;
 class Runnable;
@@ -536,6 +537,8 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
   bool mHasImageAnimations : 1;
 
   bool mHasStartedTimerAtLeastOnce : 1;
+
+  mozilla::UniquePtr<mozilla::PaintPendingHangAnnotator> mHangAnnotator;
 
   mozilla::TimeStamp mMostRecentRefresh;
   mozilla::TimeStamp mTickStart;

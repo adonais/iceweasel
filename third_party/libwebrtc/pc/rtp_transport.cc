@@ -11,6 +11,8 @@
 #include "pc/rtp_transport.h"
 
 #include <algorithm>
+#include <bitset>
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <optional>
@@ -18,7 +20,10 @@
 #include <utility>
 #include <vector>
 
+#include "absl/algorithm/container.h"
 #include "absl/strings/string_view.h"
+#include "api/rtc_error.h"
+#include "api/rtp_parameters.h"
 #include "api/sequence_checker.h"
 #include "api/task_queue/pending_task_safety_flag.h"
 #include "api/task_queue/task_queue_base.h"
@@ -53,6 +58,28 @@ void RemoveExtensionMapForMid(
   if (it != extensions.end()) {
     extensions.erase(it);
   }
+}
+
+RTCError VerifyExtensionIds(const RtpHeaderExtensions& extensions) {
+  using ExtensionsUsed = std::bitset<1 + RtpExtension::kMaxId>;
+  ExtensionsUsed id_used;
+  for (const auto& extension : extensions) {
+    if (extension.id == 0) {
+      continue;
+    }
+    if (extension.id < RtpExtension::kMinId ||
+        extension.id > RtpExtension::kMaxId) {
+      return RTCError::InvalidParameter()
+             << "Bad extension ID: " << extension.ToString();
+    }
+    ExtensionsUsed::reference entry = id_used[extension.id];
+    if (entry) {
+      return RTCError::InvalidParameter()
+             << "Duplicate extension ID: " << extension.ToString();
+    }
+    entry = true;
+  }
+  return RTCError::OK();
 }
 
 }  // namespace
@@ -202,14 +229,64 @@ bool RtpTransport::SendPacket(bool rtcp,
   return true;
 }
 
-void RtpTransport::RegisterRtpHeaderExtensionMap(
-    absl::string_view mid,
-    const RtpHeaderExtensions& header_extensions) {
+RTCError RtpTransport::VerifyRtpHeaderExtensionMap(
+    const RtpHeaderExtensions& extensions) const {
   RTC_DCHECK_RUN_ON(&network_thread_checker_);
+
+  RTCError error = VerifyExtensionIds(extensions);
+  if (!error.ok()) {
+    return error;
+  }
+
+  for (const auto& new_extension : extensions) {
+    if (new_extension.id == 0) {
+      continue;
+    }
+    // TODO: bugs.webrtc.org/503013383 - Introduce checking against IDs that are
+    // currently not present in the SDP, but have been used in previous
+    // negotiation rounds. Reusing extensions with a different ID is a protocol
+    // violation, but we cannot check this until we check against the same
+    // protocol violation on the sender side.
+    for (const auto& [mid, active_extensions] : header_extensions_by_mid_) {
+      auto it = absl::c_find_if(
+          active_extensions,
+          [&](const RtpExtension& ext) { return ext.id == new_extension.id; });
+      if (it != active_extensions.end() && it->uri != new_extension.uri) {
+        return RTCError::InvalidParameter()
+               << "RTP extension ID reassignment not supported (collision on "
+                  "active MID "
+               << mid << ", id=" << new_extension.id << ", old_uri=\""
+               << it->uri << "\", new_uri=\"" << new_extension.uri << "\").";
+      }
+    }
+  }
+
+  return RTCError::OK();
+}
+
+RTCError RtpTransport::RegisterRtpHeaderExtensionMap(
+    absl::string_view mid,
+    const RtpHeaderExtensions& extensions) {
+  RTC_DCHECK_RUN_ON(&network_thread_checker_);
+
+  RTCError error = VerifyRtpHeaderExtensionMap(extensions);
+  if (!error.ok()) {
+    return error;
+  }
+
+  auto existing_extensions =
+      absl::c_find_if(header_extensions_by_mid_,
+                      [mid](const auto& kv) { return kv.first == mid; });
+  if (existing_extensions != header_extensions_by_mid_.end() &&
+      existing_extensions->second == extensions) {
+    return RTCError::OK();
+  }
+
   RemoveExtensionMapForMid(mid, header_extensions_by_mid_);
-  header_extensions_by_mid_.emplace_back(std::string(mid), header_extensions);
+  header_extensions_by_mid_.emplace_back(std::string(mid), extensions);
 
   RebuildMergedMap();
+  return RTCError::OK();
 }
 
 void RtpTransport::UnregisterRtpHeaderExtensionMap(absl::string_view mid) {
@@ -256,9 +333,14 @@ void RtpTransport::RebuildMergedMap() {
   header_extension_map_ = std::move(merged_map);
 }
 
+void RtpTransport::SetActivePayloadTypeDemuxing(bool enabled) {
+  rtp_demuxer_.set_use_payload_type_demuxing(enabled);
+}
+
 bool RtpTransport::RegisterRtpDemuxerSink(const RtpDemuxerCriteria& criteria,
                                           RtpPacketSinkInterface* sink) {
   rtp_demuxer_.RemoveSink(sink);
+
   if (!rtp_demuxer_.AddSink(criteria, sink)) {
     RTC_LOG(LS_ERROR) << "Failed to register the sink for RTP demuxer.";
     return false;

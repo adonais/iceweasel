@@ -637,7 +637,7 @@ class DevTools extends EventEmitter {
       tab.linkedBrowser.browsingContext.opener &&
       Services.prefs.getBoolPref(POPUP_DEBUG_PREF)
     ) {
-      const openerTab = tab.ownerGlobal.gBrowser.getTabForBrowser(
+      const openerTab = tab.documentGlobal.gBrowser.getTabForBrowser(
         tab.linkedBrowser.browsingContext.opener.embedderElement
       );
       const openerCommands =

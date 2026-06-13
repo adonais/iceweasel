@@ -178,8 +178,7 @@ class ContextGenerationInfo final {
 
 // -
 
-// In the cross process case, the WebGL actor's ownership relationship looks
-// like this:
+// The WebGL actor's ownership relationship looks like this:
 // ---------------------------------------------------------------------
 // | ClientWebGLContext -> WebGLChild -> WebGLParent -> HostWebGLContext
 // ---------------------------------------------------------------------
@@ -193,7 +192,6 @@ struct NotLostData final : public SupportsWeakPtr, RefCounted<NotLostData> {
   webgl::InitContextResult info;
 
   RefPtr<mozilla::dom::WebGLChild> outOfProcess;
-  std::unique_ptr<HostWebGLContext> inProcess;
 
   webgl::ContextGenerationInfo state;
   std::array<RefPtr<ClientWebGLExtensionBase>,
@@ -240,7 +238,9 @@ class ObjectJS {
   // The workhorse:
   bool ValidateUsable(const ClientWebGLContext& context,
                       const char* const argName) const {
-    if (MOZ_LIKELY(IsUsable(context))) return true;
+    if (IsUsable(context)) [[likely]] {
+      return true;
+    }
     WarnInvalidUse(context, argName);
     return false;
   }
@@ -948,7 +948,7 @@ class ClientWebGLContext final : public nsICanvasRenderingContextInternal,
   }
 
   bool ValidateNonNegative(const char* argName, int64_t val) const {
-    if (MOZ_UNLIKELY(val < 0)) {
+    if (val < 0) [[unlikely]] {
       EnqueueError(LOCAL_GL_INVALID_VALUE, "`%s` must be non-negative.",
                    argName);
       return false;
@@ -1121,7 +1121,9 @@ class ClientWebGLContext final : public nsICanvasRenderingContextInternal,
   mutable bool mAutoFlushPending = false;
 
   void AutoEnqueueFlush() const {
-    if (MOZ_LIKELY(mAutoFlushPending)) return;
+    if (mAutoFlushPending) [[likely]] {
+      return;
+    }
     mAutoFlushPending = true;
 
     const auto DeferredFlush = [weak =
@@ -2348,8 +2350,7 @@ class ClientWebGLContext final : public nsICanvasRenderingContextInternal,
   // The cross-process communication mechanism
   // -------------------------------------------------------------------------
  protected:
-  // If we are running WebGL in this process then call the HostWebGLContext
-  // method directly.  Otherwise, dispatch over IPC.
+  // Dispatches over IPC.
   template <typename MethodType, MethodType method, typename... CallerArgs>
   void Run(const CallerArgs&... args) const {
     const auto info = WebGLMethodInfo::Get<MethodType, method>();

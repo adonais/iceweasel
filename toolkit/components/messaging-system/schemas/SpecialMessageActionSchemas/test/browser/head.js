@@ -60,6 +60,6 @@ const SMATestUtils = {
    */
   async executeAndValidateAction(action, browser = gBrowser) {
     await SMATestUtils.validateAction(action);
-    await SpecialMessageActions.handleAction(action, browser);
+    return SpecialMessageActions.handleAction(action, browser);
   },
 };

@@ -421,7 +421,7 @@ class MachFormatter(base.BaseFormatter):
         data_log["level"] = "INFO"
         data_log["message"] = "leakcheck: %s leaked %d %s" % (
             data["process"],
-            data["bytes"],
+            data["count"],
             data["name"],
         )
         return self.log(data_log)

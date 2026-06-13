@@ -124,6 +124,7 @@ class alignas(uintptr_t) ICScript final : public TrailingArray<ICScript> {
            InliningRoot* inliningRoot = nullptr)
       : inliningRoot_(inliningRoot),
         warmUpCount_(warmUpCount),
+        ionThreshold_(JitOptions.normalIonWarmUpThreshold),
         fallbackStubsOffset_(fallbackStubsOffset),
         endOffset_(endOffset),
         depth_(depth),
@@ -170,6 +171,9 @@ class alignas(uintptr_t) ICScript final : public TrailingArray<ICScript> {
 
   static constexpr Offset offsetOfWarmUpCount() {
     return offsetof(ICScript, warmUpCount_);
+  }
+  static constexpr Offset offsetOfIonThreshold() {
+    return offsetof(ICScript, ionThreshold_);
   }
   static constexpr Offset offsetOfDepth() { return offsetof(ICScript, depth_); }
 
@@ -249,6 +253,8 @@ class alignas(uintptr_t) ICScript final : public TrailingArray<ICScript> {
   // backedges taken.  Reset if the script's JIT code is forcibly discarded.
   // See also the ScriptWarmUpData class.
   mozilla::Atomic<uint32_t, mozilla::Relaxed> warmUpCount_ = {};
+
+  uint32_t ionThreshold_;
 
   // The offset of the ICFallbackStub array.
   Offset fallbackStubsOffset_;
@@ -448,6 +454,8 @@ class alignas(uintptr_t) JitScript final
   void incWarmUpCount() { icScript_.warmUpCount_++; }
   void resetWarmUpCount(uint32_t count);
 
+  void setIonThreshold(uint32_t count) { icScript_.ionThreshold_ = count; }
+
   void prepareForDestruction(Zone* zone);
 
   void addSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf, size_t* data,
@@ -638,12 +646,12 @@ class MOZ_RAII AutoKeepJitScripts {
   jit::JitZone* zone_;
   bool prev_;
 
-  AutoKeepJitScripts(const AutoKeepJitScripts&) = delete;
-  void operator=(const AutoKeepJitScripts&) = delete;
-
  public:
   explicit inline AutoKeepJitScripts(JSContext* cx);
   inline ~AutoKeepJitScripts();
+
+  AutoKeepJitScripts(const AutoKeepJitScripts&) = delete;
+  void operator=(const AutoKeepJitScripts&) = delete;
 };
 
 // Mark ICScripts on the stack as active, so that they are not discarded

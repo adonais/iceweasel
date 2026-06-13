@@ -242,7 +242,11 @@ this.AccessibilityUtils = (function () {
    */
   function isNoKeyNavButton(accessible) {
     const node = accessible.DOMNode;
-    if (!node || !node.ownerGlobal || node.getAttribute("keyNav") != "false") {
+    if (
+      !node ||
+      !node.documentGlobal ||
+      node.getAttribute("keyNav") != "false"
+    ) {
       return false;
     }
 
@@ -262,7 +266,7 @@ this.AccessibilityUtils = (function () {
    */
   function isKeyboardFocusableBrowserToolbarButton(accessible) {
     const node = accessible.DOMNode;
-    if (!node || !node.ownerGlobal) {
+    if (!node || !node.documentGlobal) {
       return false;
     }
     const toolbar =
@@ -271,7 +275,7 @@ this.AccessibilityUtils = (function () {
     if (!toolbar || toolbar.getAttribute("keyNav") != "true") {
       return false;
     }
-    return node.ownerGlobal.ToolbarKeyboardNavigator._isButton(node);
+    return node.documentGlobal.ToolbarKeyboardNavigator._isButton(node);
   }
 
   /**
@@ -284,7 +288,7 @@ this.AccessibilityUtils = (function () {
    */
   function isKeyboardFocusableFxviewControlInApplication(accessible) {
     const node = accessible.DOMNode;
-    if (!node || !node.ownerGlobal) {
+    if (!node || !node.documentGlobal) {
       return false;
     }
     // Firefox View application rows currently include only buttons and links:
@@ -357,7 +361,7 @@ this.AccessibilityUtils = (function () {
    */
   function isKeyboardFocusableOption(accessible) {
     const node = accessible.DOMNode;
-    if (!node || !node.ownerGlobal) {
+    if (!node || !node.documentGlobal) {
       return false;
     }
     const urlbarListbox = node.closest(".urlbarView-results");
@@ -375,7 +379,7 @@ this.AccessibilityUtils = (function () {
    */
   function isKeyboardFocusablePanelMultiViewControl(accessible) {
     const node = accessible.DOMNode;
-    if (!node || !node.ownerGlobal) {
+    if (!node || !node.documentGlobal) {
       return false;
     }
     const panelview = node.closest("panelview");
@@ -383,9 +387,9 @@ this.AccessibilityUtils = (function () {
       return false;
     }
     return (
-      node.ownerGlobal.PanelView.forNode(panelview)._tabNavigableWalker.filter(
-        node
-      ) == NodeFilter.FILTER_ACCEPT
+      node.documentGlobal.PanelView.forNode(
+        panelview
+      )._tabNavigableWalker.filter(node) == NodeFilter.FILTER_ACCEPT
     );
   }
 
@@ -402,7 +406,7 @@ this.AccessibilityUtils = (function () {
    */
   function isKeyboardFocusableSpinbuttonSibling(accessible) {
     const node = accessible.DOMNode;
-    if (!node || !node.ownerGlobal) {
+    if (!node || !node.documentGlobal) {
       return false;
     }
 
@@ -432,7 +436,7 @@ this.AccessibilityUtils = (function () {
    */
   function isKeyboardFocusableTabInTablist(accessible) {
     const node = accessible.DOMNode;
-    if (!node || !node.ownerGlobal) {
+    if (!node || !node.documentGlobal) {
       return false;
     }
     if (accessible.role != Ci.nsIAccessibleRole.ROLE_PAGETAB) {
@@ -485,7 +489,7 @@ this.AccessibilityUtils = (function () {
    */
   function isKeyboardFocusableUrlbarButton(accessible) {
     const node = accessible.DOMNode;
-    if (!node || !node.ownerGlobal) {
+    if (!node || !node.documentGlobal) {
       return false;
     }
     const isUrlBar =
@@ -525,7 +529,7 @@ this.AccessibilityUtils = (function () {
    * accessible created. We need to special case the check for these gridcells.
    */
   function isAccessibleGridcell(node) {
-    if (!node || !node.ownerGlobal) {
+    if (!node || !node.documentGlobal) {
       return false;
     }
     const accessible = getAccessible(node);
@@ -586,7 +590,7 @@ this.AccessibilityUtils = (function () {
    * ToDo: We should remove this exception after this is fixed in bug 1848397.
    */
   function isInaccessibleXulTreecol(node) {
-    if (!node || !node.ownerGlobal) {
+    if (!node || !node.documentGlobal) {
       return false;
     }
     const listheader = node.flattenedTreeParentNode;
@@ -607,7 +611,7 @@ this.AccessibilityUtils = (function () {
    * the input. Thus, we need to special case the label check for this control.
    */
   function isUnlabeledUrlBarCombobox(node) {
-    if (!node || !node.ownerGlobal) {
+    if (!node || !node.documentGlobal) {
       return false;
     }
     let ariaRole = node.getAttribute("role");
@@ -627,7 +631,7 @@ this.AccessibilityUtils = (function () {
    * need to special case the label check for these controls.
    */
   function isUnlabeledUrlBarOption(node) {
-    if (!node || !node.ownerGlobal) {
+    if (!node || !node.documentGlobal) {
       return false;
     }
     const role = getAccessible(node)?.role;
@@ -653,7 +657,7 @@ this.AccessibilityUtils = (function () {
    * case the label check for these controls.
    */
   function isUnlabeledMenuitem(node) {
-    if (!node || !node.ownerGlobal) {
+    if (!node || !node.documentGlobal) {
       return false;
     }
     const hasLabel = node.querySelector("label, description");
@@ -688,7 +692,7 @@ this.AccessibilityUtils = (function () {
    * Thus, we need to special case the label check for these controls.
    */
   function isUnlabeledImageButton(node) {
-    if (!node || !node.ownerGlobal) {
+    if (!node || !node.documentGlobal) {
       return false;
     }
     const isShowAllButton = node.id == "show-all";
@@ -714,7 +718,7 @@ this.AccessibilityUtils = (function () {
    * the label check for these controls.
    */
   function isUnlabeledXulButton(node) {
-    if (!node || !node.ownerGlobal) {
+    if (!node || !node.documentGlobal) {
       return false;
     }
     const hasLabel = node.querySelector("label, xul\\:label");
@@ -1303,7 +1307,7 @@ this.AccessibilityUtils = (function () {
         composedTarget = composedTarget.flattenedTreeParentNode;
       }
       const bounds =
-        composedTarget.ownerGlobal?.windowUtils?.getBoundsWithoutFlushing(
+        composedTarget.documentGlobal?.windowUtils?.getBoundsWithoutFlushing(
           composedTarget
         );
       if (bounds && (bounds.width == 0 || bounds.height == 0)) {

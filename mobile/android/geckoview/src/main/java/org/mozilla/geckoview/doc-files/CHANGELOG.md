@@ -13,6 +13,29 @@ exclude: true
 
 ⚠️  breaking change and deprecation notices
 
+## v152
+- Added [`WebExtensionController.INSTALLATION_METHOD_RTAMO`][152.1], which should be used when a `WebExtension` is installed for the RTAMO feature. ([bug 2029607]({{bugzilla}}2029607))
+- Added [`IPProtectionController.AuthProvider`][152.2], [`setAuthProvider`][152.3] / [`getAuthProvider`][152.4], and [`notifySignInStateChanged`][152.5] so embedders can supply Guardian authentication tokens to the IP Protection service. ([bug 2020725]({{bugzilla}}2020725))
+- Added `safeBrowsingGlobalCacheEnabled`, `safeBrowsingRealTimeEnabled`, `safeBrowsingRealTimeSimulationEnabled`, `safeBrowsingRealTimeSimulationHitProbability`, `safeBrowsingRealTimeSimulationCacheTTLSec`, `safeBrowsingRealTimeSimulationNegativeCacheEnabled`, `safeBrowsingRealTimeSimulationNegativeCacheTTLSec` to [`ContentBlocking.Settings.Builder`][152.6] to enable configuring SafeBrowsing V5 Real-Time mode simulation.
+- Added new APIs - [`getTrackingDbEventsByDateRange`][152.2], [`sumAllTrackingDbEvents`][152.3] and [`getTrackingDbEarliestRecordedDate`][152.4] to ContentBlockingController to query Gecko for tracking protection details.
+- Added [`WebAuthnRelatedOriginPrompt`][152.7] and [`onWebAuthnRelatedOriginPrompt`][152.8] to `GeckoSession.PromptDelegate` for confirming WebAuthn related origin requests.
+    ([bug 2010193]({{bugzilla}}2010193))
+- Added [`IPProtectionController.enroll`][152.9] and [`IPProtectionController.EnrollResult`][152.10] to trigger enrollment via the active auth provider. ([bug 2037352]({{bugzilla}}2037352))
+
+[152.1]: {{javadoc_uri}}/WebExtensionController.html#INSTALLATION_METHOD_RTAMO
+[152.2]: {{javadoc_uri}}/IPProtectionController.AuthProvider.html
+[152.3]: {{javadoc_uri}}/IPProtectionController.html#setAuthProvider(org.mozilla.geckoview.IPProtectionController.AuthProvider)
+[152.4]: {{javadoc_uri}}/IPProtectionController.html#getAuthProvider()
+[152.5]: {{javadoc_uri}}/IPProtectionController.html#notifySignInStateChanged(boolean)
+[152.6]: {{javadoc_uri}}/ContentBlocking.Settings.Builder.html
+[152.2]: {{javadoc_uri}}/ContentBlockingController.html#getTrackingDbEventsByDateRange(long,long)
+[152.3]: {{javadoc_uri}}/ContentBlockingController.html#sumAllTrackingDbEvents()
+[152.4]: {{javadoc_uri}}/ContentBlockingController.html#getTrackingDbEarliestRecordedDate()
+[152.7]: {{javadoc_uri}}/GeckoSession.PromptDelegate.WebAuthnRelatedOriginPrompt.html
+[152.8]: {{javadoc_uri}}/GeckoSession.PromptDelegate.html#onWebAuthnRelatedOriginPrompt(org.mozilla.geckoview.GeckoSession,org.mozilla.geckoview.GeckoSession.PromptDelegate.WebAuthnRelatedOriginPrompt)
+[152.9]: {{javadoc_uri}}/IPProtectionController.html#enroll()
+[152.10]: {{javadoc_uri}}/IPProtectionController.EnrollResult.html
+
 ## v151
 - Added `isBlocked` to `AIFeature` on [`AIFeaturesController`][150.3].
 - ⚠️ Remove deprecated `ContentDelegate.ContextElement` constructor.
@@ -24,6 +47,7 @@ exclude: true
 - Added [`isReaderable`][151.5] to [`PageMetadata`][150.6] in `PageExtractionController` to indicate whether the page is likely readable by reader mode.
     ([bug 2030001]({{bugzilla}}2030001))
 - Added `getContentBlockingDatabaseStatus` \ `setContentBlockingDatabaseStatus` to [`ContentBlocking.Settings`][151.6] to enable the trackers blocked database recording blocked trackers events. ([bug 1974742]({{bugzilla}}1974742))
+- Added experimental [`IPProtectionController`][151.7] for accessing the IPProtection feature.
 
 [151.1]: {{javadoc_uri}}/AIFeaturesController.RuntimeAIFeatures.html#makeFeatureAvailable(java.lang.String)
 [151.2]: {{javadoc_uri}}/TranslationsController.TranslationsException.html#ERROR_ENGINE_DEACTIVATED
@@ -32,6 +56,7 @@ exclude: true
 [151.4]: {{javadoc_uri}}/PageExtractionController.SessionPageExtractor.html#getPageContent(org.mozilla.geckoview.PageExtractionController.GetTextOptionsParams)
 [151.5]: {{javadoc_uri}}/PageExtractionController.PageMetadata.html#isReaderable
 [151.6]: {{javadoc_uri}}/ContentBlocking.Settings.html
+[151.7]: {{javadoc_uri}}/IPProtectionController.html
 
 ## v150
 - Added support for `COOKIES_PARTITIONED_TRACKER` in the tracking protection blocking log. ([bug 2020898 ]({{bugzilla}}2020898))
@@ -130,6 +155,8 @@ exclude: true
 [145.5]: {{javadoc_uri}}/GeckoRuntimeSettings.html#setCertificateTransparencyMode
 
 ## v144
+- Added [`GeckoSession.flushSessionState()`][144.1] to immediately notify the registered [`GeckoSession.ProgressDelegate`][144.2] and [`GeckoSession.HistoryDelegate`][144.3] of the current session state.
+  ([bug 1970055]({{bugzilla}}1970055))
 - Added [`GeckoRuntimeSettings.getIsolatedProcessEnabled`][144.4] and [`GeckoRuntimeSettings.Builder.isolatedProcessEnabled`][144.5] to control whether content service runs on isolated process or not.
 - Added [`ContentBlocking.GOOGLE_SAFE_BROWSING_V5_PROVIDER`][144.6] for the configuration of the SafeBrowsing V5 provider
 - ⚠️ Removed deprecated `onOptionalPrompt` function signature. ([bug 1972510]({{bugzilla}}1972510))
@@ -1949,4 +1976,4 @@ to allow adding gecko profiler markers.
 [65.24]: {{javadoc_uri}}/CrashReporter.html#sendCrashReport(android.content.Context,android.os.Bundle,java.lang.String)
 [65.25]: {{javadoc_uri}}/GeckoResult.html
 
-[api-version]: 1f7aa7b2b928ec436f5fbec35e3dbb1b34475d05
+[api-version]: a7c7f294566e80df1f819e7e32e914477018f982

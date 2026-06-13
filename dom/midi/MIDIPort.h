@@ -38,7 +38,7 @@ class MIDIPort : public DOMEventTargetHelper {
   virtual ~MIDIPort();
 
  public:
-  nsIGlobalObject* GetParentObject() const { return GetOwnerGlobal(); }
+  nsIGlobalObject* GetParentObject() const { return GetRelevantGlobal(); }
 
   // Getters
   void GetId(nsString& aRetVal) const;

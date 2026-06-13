@@ -169,7 +169,7 @@ class mozSpellChecker final {
   nsCOMPtr<mozIPersonalDictionary> mPersonalDictionary;
 
   nsCOMPtr<mozISpellCheckingEngine> mSpellCheckingEngine;
-  bool mFromStart;
+  bool mFromStart = false;
 
   nsTArray<nsCString> mCurrentDictionaries;
 

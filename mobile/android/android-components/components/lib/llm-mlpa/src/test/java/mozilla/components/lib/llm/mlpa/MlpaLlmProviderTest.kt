@@ -5,7 +5,6 @@
 package mozilla.components.lib.llm.mlpa
 
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import mozilla.components.concept.llm.CloudLlmProvider
 import mozilla.components.concept.llm.ErrorCode
@@ -19,6 +18,7 @@ import mozilla.components.lib.llm.mlpa.fakes.successTokenProvider
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import kotlin.test.assertIs
 
 class MlpaLlmProviderTest {
     @Test
@@ -30,11 +30,11 @@ class MlpaLlmProviderTest {
                 mlpaService = FakeMlpaService(),
             )
 
-            assertTrue(provider.state.value is CloudLlmProvider.State.Available)
+            assertIs<CloudLlmProvider.State.Available>(provider.state.value)
 
             provider.prepare()
 
-            assertTrue(provider.state.value is CloudLlmProvider.State.Ready)
+            assertIs<CloudLlmProvider.State.Ready>(provider.state.value)
         }
 
     @Test
@@ -46,11 +46,11 @@ class MlpaLlmProviderTest {
                 mlpaService = FakeMlpaService(),
             )
 
-            assertTrue(provider.state.value is CloudLlmProvider.State.Available)
+            assertIs<CloudLlmProvider.State.Available>(provider.state.value)
 
             provider.prepare()
 
-            assertTrue(provider.state.value is CloudLlmProvider.State.Unavailable)
+            assertIs<CloudLlmProvider.State.Unavailable>(provider.state.value)
         }
 
     @Test
@@ -66,7 +66,7 @@ class MlpaLlmProviderTest {
                 mlpaService = service,
             )
 
-            assertTrue(provider.state.value is CloudLlmProvider.State.Available)
+            assertIs<CloudLlmProvider.State.Available>(provider.state.value)
 
             provider.prepare()
 
@@ -74,7 +74,7 @@ class MlpaLlmProviderTest {
                 ?.catch {}
                 ?.collect {}
 
-            assertTrue(provider.state.value is CloudLlmProvider.State.Available)
+            assertIs<CloudLlmProvider.State.Available>(provider.state.value)
         }
 
     @Test
@@ -90,7 +90,7 @@ class MlpaLlmProviderTest {
                 mlpaService = service,
             )
 
-            assertTrue(provider.state.value is CloudLlmProvider.State.Available)
+            assertIs<CloudLlmProvider.State.Available>(provider.state.value)
 
             provider.prepare()
 
@@ -98,7 +98,7 @@ class MlpaLlmProviderTest {
                 ?.catch {}
                 ?.collect {}
 
-            assertTrue(provider.state.value is CloudLlmProvider.State.Ready)
+            assertIs<CloudLlmProvider.State.Ready>(provider.state.value)
         }
 
     @Test
@@ -121,7 +121,7 @@ class MlpaLlmProviderTest {
                 ?.catch { caughtError = it }
                 ?.collect {}
 
-            assertTrue(caughtError is Llm.Exception)
+            assertIs<Llm.Exception>(caughtError)
             assertEquals(ErrorCode(1001), (caughtError as Llm.Exception).errorCode)
         }
 }

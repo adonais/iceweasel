@@ -8,9 +8,13 @@
 newtab-page-title = Nova kartica
 newtab-settings-button =
     .title = Prilagodi stranicu za nove kartice
+#  (developer note): @nova-cleanup(remove-string): Remove newtab-customize-panel-icon-button once Nova lands, will be using newtab-customize-panel-label instead
 newtab-customize-panel-icon-button =
     .title = Prilagodi ovu stranicu
+#  (developer note): @nova-cleanup(remove-string): Remove newtab-customize-panel-icon-button-label once Nova lands, will be using newtab-customize-panel-label instead
 newtab-customize-panel-icon-button-label = Prilagodi
+newtab-customize-panel-label =
+    .label = Prilagodi
 newtab-personalize-settings-icon-label =
     .title = Personaliziraj novu karticu
     .aria-label = Postavke
@@ -705,10 +709,16 @@ newtab-widget-lists-label-beta =
 newtab-widget-lists-completed-list = Završeno ({ $number })
 newtab-widget-task-list-menu-copy = Kopiraj
 newtab-widget-lists-menu-edit = Uredi naziv popisa
+newtab-widget-lists-menu-edit2 =
+    .aria-label = Uredi naziv popisa
 newtab-widget-lists-menu-create = Stvori novi popis
 newtab-widget-lists-menu-delete = Obriši ovaj popis
 newtab-widget-lists-menu-copy = Kopiraj popis u međuspremnik
 newtab-widget-lists-menu-learn-more = Saznaj više
+newtab-widget-lists-button-add-item = Dodaj stavku
+newtab-widget-lists-input-add-an-item2 =
+    .placeholder = Dodaj stavku
+    .aria-label = Dodaj stavku
 newtab-widget-lists-input-add-an-item =
     .placeholder = Dodaj stavku
 newtab-widget-lists-input-error = Molimo uključite tekst za dodavanje stavke.
@@ -724,6 +734,10 @@ newtab-widget-lists-name-label-default =
     .label = Popis zadataka
 newtab-widget-lists-name-placeholder-default =
     .placeholder = Popis zadataka
+# The placeholder value of the name field for a newly created list
+newtab-widget-lists-name-placeholder-new2 =
+    .placeholder = Novi popis
+    .aria-label = Uredi naziv popisa
 # The placeholder value of the name field for a newly created list
 newtab-widget-lists-name-placeholder-new =
     .placeholder = Novi popis
@@ -743,10 +757,10 @@ newtab-widget-section-maximize =
 newtab-widget-section-minimize =
     .title = Smanji widgete
     .aria-label = Smanji sve widgete na kompaktnu veličinu
+newtab-widget-section-menu-manage = Upravljaj widgetima
 newtab-widget-section-feedback = Reci nam svoje mišljenje
 
-## Strings for timer productivity widget
-## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown
+## Strings introduced by the Nova redesign of the Timer widget
 
 newtab-widget-timer-notification-title = Odbrojavanje
 newtab-widget-timer-notification-focus = Vrijeme za koncentraciju je isteklo. Dobar posao. Trebaš pauzu?

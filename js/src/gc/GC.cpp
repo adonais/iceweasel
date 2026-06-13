@@ -1801,11 +1801,11 @@ void GCRuntime::setHostCleanupFinalizationRegistryCallback(
 }
 
 void GCRuntime::callHostCleanupFinalizationRegistryCallback(
-    JSFunction* doCleanup, JSObject* hostDefinedData) {
+    JSFunction* doCleanup, JSObject* incumbentGlobal) {
   JS::AutoSuppressGCAnalysis nogc;
   const auto& callback = hostCleanupFinalizationRegistryCallback.ref();
   if (callback.op) {
-    callback.op(doCleanup, hostDefinedData, callback.data);
+    callback.op(doCleanup, incumbentGlobal, callback.data);
   }
 }
 
@@ -2639,6 +2639,9 @@ void GCRuntime::purgeRuntime() {
   queueUnusedLifoBlocksForFree(&cx->tempLifoAlloc());
   cx->interpreterStack().purge(rt);
   cx->frontendCollectionPool().purge();
+#ifdef ENABLE_WASM_JSPI
+  cx->wasm().contStacks().purge(isShrinkingGC());
+#endif
 
   rt->caches().purge();
 
@@ -5385,10 +5388,6 @@ void GCRuntime::collectNursery(JS::GCOptions options, JS::GCReason reason,
 
   startBackgroundFreeAfterMinorGC();
 
-  if (wasMarking) {
-    resumeBackgroundMarking();
-  }
-
   // We ignore gcMaxBytes when allocating for minor collection. However, if we
   // overflowed, we disable the nursery. The next time we allocate, we'll fail
   // because bytes >= gcMaxBytes.
@@ -5407,6 +5406,10 @@ void GCRuntime::collectNursery(JS::GCOptions options, JS::GCReason reason,
     AutoGCSession session(this, JS::HeapState::MinorCollecting);
 
     nursery().disable();
+  }
+
+  if (wasMarking) {
+    resumeBackgroundMarking();
   }
 }
 
@@ -5929,9 +5932,13 @@ js::gc::ClearEdgesTracer::ClearEdgesTracer(JSRuntime* rt)
 
 template <typename T>
 void js::gc::ClearEdgesTracer::onEdge(T** thingp, const char* name) {
+  T* thing = *thingp;
+  if (!thing) {
+    return;
+  }
+
   // We don't handle removing pointers to nursery edges from the store buffer
   // with this tracer. Check that this doesn't happen.
-  T* thing = *thingp;
   MOZ_ASSERT(!IsInsideNursery(thing));
 
   // Fire the pre-barrier since we're removing an edge from the graph.

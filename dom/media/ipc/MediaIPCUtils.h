@@ -41,6 +41,7 @@ struct ParamTraits<mozilla::VideoInfo> {
     WriteParam(aWriter, aParam.mColorSpace);
     WriteParam(aWriter, aParam.mColorPrimaries);
     WriteParam(aWriter, aParam.mTransferFunction);
+    WriteParam(aWriter, aParam.mHDRMetadata);
     WriteParam(aWriter, aParam.mColorRange);
     WriteParam(aWriter, aParam.mAlphaPresent);
     WriteParam(aWriter, aParam.mCrypto);
@@ -59,6 +60,7 @@ struct ParamTraits<mozilla::VideoInfo> {
            ReadParam(aReader, &aResult->mColorSpace) &&
            ReadParam(aReader, &aResult->mColorPrimaries) &&
            ReadParam(aReader, &aResult->mTransferFunction) &&
+           ReadParam(aReader, &aResult->mHDRMetadata) &&
            ReadParam(aReader, &aResult->mColorRange) &&
            ReadParam(aReader, &aResult->mAlphaPresent) &&
            ReadParam(aReader, &aResult->mCrypto);
@@ -72,11 +74,20 @@ struct ParamTraits<mozilla::TrackInfo::TrackType>
           mozilla::TrackInfo::TrackType::kUndefinedTrack,
           mozilla::TrackInfo::TrackType::kTextTrack> {};
 
+struct VideoRotationValidator {
+  using IntegralType = std::underlying_type_t<mozilla::VideoRotation>;
+
+  static bool IsLegalValue(const IntegralType e) {
+    return e == IntegralType(mozilla::VideoRotation::kDegree_0) ||
+           e == IntegralType(mozilla::VideoRotation::kDegree_90) ||
+           e == IntegralType(mozilla::VideoRotation::kDegree_180) ||
+           e == IntegralType(mozilla::VideoRotation::kDegree_270);
+  }
+};
+
 template <>
 struct ParamTraits<mozilla::VideoRotation>
-    : public ContiguousEnumSerializerInclusive<
-          mozilla::VideoRotation, mozilla::VideoRotation::kDegree_0,
-          mozilla::VideoRotation::kDegree_270> {};
+    : EnumSerializer<mozilla::VideoRotation, VideoRotationValidator> {};
 
 template <>
 struct ParamTraits<mozilla::MediaByteBuffer>
@@ -214,7 +225,7 @@ struct ParamTraits<mozilla::MediaDataDecoder::ConversionRequired>
 
 template <>
 struct ParamTraits<mozilla::MediaDataDecoder::PropertyName>
-    : public ContiguousEnumSerializerInclusive<
+    : public ContiguousEnumSerializer<
           mozilla::MediaDataDecoder::PropertyName,
           mozilla::MediaDataDecoder::PropertyName(0),
           mozilla::MediaDataDecoder::sHighestPropertyName> {};
@@ -427,17 +438,53 @@ struct ParamTraits<mozilla::Usage>
     : public ContiguousEnumSerializerInclusive<
           mozilla::Usage, mozilla::Usage::Realtime, mozilla::Usage::Record> {};
 
+struct H264ProfileValidator {
+  using IntegralType = std::underlying_type_t<mozilla::H264_PROFILE>;
+
+  static bool IsLegalValue(const IntegralType e) {
+    return e == IntegralType(mozilla::H264_PROFILE::H264_PROFILE_UNKNOWN) ||
+           e == IntegralType(mozilla::H264_PROFILE::H264_PROFILE_BASE) ||
+           e == IntegralType(mozilla::H264_PROFILE::H264_PROFILE_MAIN) ||
+           e == IntegralType(mozilla::H264_PROFILE::H264_PROFILE_EXTENDED) ||
+           e == IntegralType(mozilla::H264_PROFILE::H264_PROFILE_HIGH);
+  }
+};
+
 template <>
 struct ParamTraits<mozilla::H264_PROFILE>
-    : public ContiguousEnumSerializerInclusive<
-          mozilla::H264_PROFILE, mozilla::H264_PROFILE::H264_PROFILE_UNKNOWN,
-          mozilla::H264_PROFILE::H264_PROFILE_HIGH> {};
+    : EnumSerializer<mozilla::H264_PROFILE, H264ProfileValidator> {};
+
+struct H264LevelValidator {
+  using IntegralType = std::underlying_type_t<mozilla::H264_LEVEL>;
+
+  static bool IsLegalValue(const IntegralType e) {
+    static_assert(mozilla::H264_LEVEL::H264_LEVEL_1_b ==
+                  mozilla::H264_LEVEL::H264_LEVEL_1_1);
+    return e == IntegralType(mozilla::H264_LEVEL::H264_LEVEL_1) ||
+           e == IntegralType(mozilla::H264_LEVEL::H264_LEVEL_1_1) ||
+           e == IntegralType(mozilla::H264_LEVEL::H264_LEVEL_1_2) ||
+           e == IntegralType(mozilla::H264_LEVEL::H264_LEVEL_1_3) ||
+           e == IntegralType(mozilla::H264_LEVEL::H264_LEVEL_2) ||
+           e == IntegralType(mozilla::H264_LEVEL::H264_LEVEL_2_1) ||
+           e == IntegralType(mozilla::H264_LEVEL::H264_LEVEL_2_2) ||
+           e == IntegralType(mozilla::H264_LEVEL::H264_LEVEL_3) ||
+           e == IntegralType(mozilla::H264_LEVEL::H264_LEVEL_3_1) ||
+           e == IntegralType(mozilla::H264_LEVEL::H264_LEVEL_3_2) ||
+           e == IntegralType(mozilla::H264_LEVEL::H264_LEVEL_4) ||
+           e == IntegralType(mozilla::H264_LEVEL::H264_LEVEL_4_1) ||
+           e == IntegralType(mozilla::H264_LEVEL::H264_LEVEL_4_2) ||
+           e == IntegralType(mozilla::H264_LEVEL::H264_LEVEL_5) ||
+           e == IntegralType(mozilla::H264_LEVEL::H264_LEVEL_5_1) ||
+           e == IntegralType(mozilla::H264_LEVEL::H264_LEVEL_5_2) ||
+           e == IntegralType(mozilla::H264_LEVEL::H264_LEVEL_6) ||
+           e == IntegralType(mozilla::H264_LEVEL::H264_LEVEL_6_1) ||
+           e == IntegralType(mozilla::H264_LEVEL::H264_LEVEL_6_2);
+  }
+};
 
 template <>
 struct ParamTraits<mozilla::H264_LEVEL>
-    : public ContiguousEnumSerializerInclusive<
-          mozilla::H264_LEVEL, mozilla::H264_LEVEL::H264_LEVEL_1,
-          mozilla::H264_LEVEL::H264_LEVEL_6_2> {};
+    : EnumSerializer<mozilla::H264_LEVEL, H264LevelValidator> {};
 
 template <>
 struct ParamTraits<mozilla::OpusBitstreamFormat>
@@ -453,7 +500,8 @@ struct ParamTraits<mozilla::OpusSpecific::Application>
           mozilla::OpusSpecific::Application::RestricedLowDelay> {};
 
 template <>
-struct ParamTraits<mozilla::VPXComplexity>
+struct MOZ_ENUM_SERIALIZER_ALLOW_SENTINEL_UPPER_BOUND
+    ParamTraits<mozilla::VPXComplexity>
     : public ContiguousEnumSerializerInclusive<mozilla::VPXComplexity,
                                                mozilla::VPXComplexity::Normal,
                                                mozilla::VPXComplexity::Max> {};

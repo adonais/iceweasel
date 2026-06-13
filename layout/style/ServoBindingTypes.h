@@ -88,6 +88,7 @@ namespace dom {
 class StyleChildrenIterator;
 class Document;
 class Element;
+class ShadowRoot;
 }  // namespace dom
 
 }  // namespace mozilla

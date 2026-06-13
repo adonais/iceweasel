@@ -14,40 +14,51 @@
 
   --urlbarView-small-font-size: 0.85em;
 
-  --urlbarView-results-padding: 7px;
-  --urlbarView-row-gutter: var(--space-xxsmall);
-  --urlbarView-item-inline-padding: var(--urlbar-icon-padding);
-  --urlbarView-item-block-padding: 6px;
+  /* The purpose of the gutter is to create a visible gap between adjacent hovered
+     and selected rows while keeping the view's entire hover area contiguous. */
+  --urlbarView-row-gutter: var(--space-xsmall);
+  --urlbarView-row-border: var(--urlbarView-row-gutter) solid transparent;
+  --urlbarView-row-border-radius: calc(var(--urlbar-inner-border-radius) + var(--urlbarView-row-gutter));
+  --urlbarView-row-background-clip: padding-box;
+
+  --urlbarView-row-padding-block: var(--space-small);
+  --urlbarView-row-padding-inline: var(--urlbar-icon-padding);
+  --urlbarView-row-min-height: var(--size-item-large);
+  --urlbarView-row-inner-min-height: calc(var(--urlbarView-row-min-height) - var(--urlbarView-row-padding-block) * 2);
+
+  --urlbarView-padding: calc(var(--space-large) - var(--urlbarView-row-gutter));
 
   /* The two common row icon types are favicons and rich search suggestion icons,
      favicons being smaller. Depending on current product requirements, there
      may be other icon types of various sizes. All icons no larger than rich
-     search suggestion icons should be center-aligned along one vertical axis. */
+     search suggestion icons should be center-aligned along one vertical axis.
+     Larger icons should be left-aligned with rich search suggestion icons. */
   --urlbarView-favicon-size: 16px;
   --urlbarView-rich-search-suggestion-icon-size: 28px;
+  --urlbarView-top-pick-icon-size: 58px;
 
-  /* Inline margins required for center-aligning favicons along the icon axis.
-     Icons larger than rich search suggestion icons also use these margins so
-     that they are left-aligned with favicons. */
+  /* Icon margin-end not taking into account the size of the icon */
+  --urlbarView-icon-margin-end-base: calc(var(--urlbar-icon-padding) + var(--identity-box-margin-inline));
+
   --urlbarView-favicon-margin-start: calc((var(--urlbarView-rich-search-suggestion-icon-size) - var(--urlbarView-favicon-size)) / 2);
-  --urlbarView-favicon-margin-end: calc(
-    var(--urlbar-icon-padding) + var(--identity-box-margin-inline) + ((var(--urlbarView-rich-search-suggestion-icon-size) - var(--urlbarView-favicon-size)) / 2)
-  );
+  --urlbarView-favicon-margin-end: calc(var(--urlbarView-icon-margin-end-base) + var(--urlbarView-favicon-margin-start));
 
-  --urlbarView-top-pick-large-icon-box-size: 52px;
+  --urlbarView-icon-border-radius-rounded: calc(
+    var(--urlbarView-row-border-radius) - min(var(--urlbarView-row-padding-block), var(--urlbarView-row-padding-inline))
+  );
 
   --urlbarView-result-button-size: 24px;
   --urlbarView-result-button-background-opacity: 60%;
-  --urlbarView-result-button-selected-color: var(--toolbar-field-focus-color);
+  --urlbarView-result-button-selected-color: var(--toolbar-field-text-color-focus);
   --urlbarView-result-button-selected-background-color: color-mix(
     in srgb,
-    var(--toolbar-field-focus-background-color) var(--urlbarView-result-button-background-opacity),
+    var(--toolbar-field-background-color-focus) var(--urlbarView-result-button-background-opacity),
     transparent
   );
-  --urlbarView-result-button-hover-color: var(--toolbar-field-focus-background-color);
+  --urlbarView-result-button-hover-color: var(--toolbar-field-background-color-focus);
   --urlbarView-result-button-hover-background-color: color-mix(
     in srgb,
-    var(--toolbar-field-focus-color) var(--urlbarView-result-button-background-opacity),
+    var(--toolbar-field-text-color-focus) var(--urlbarView-result-button-background-opacity),
     transparent
   );
 
@@ -62,7 +73,7 @@
   --urlbarView-tail150-overlay-color: var(--color-gray-05);
   --urlbarView-tail150-canvas-background: var(--color-violet-110);
 
-  --urlbarView-separator-char: "•";
+  --urlbarView-separator-char: "•" / "—";
   --urlbarView-separator-margin-inline: 0.6em;
 
   &:-moz-locale-dir(rtl) {
@@ -82,27 +93,20 @@
 }
 
 .urlbarView {
+  /* Compensate for the row's transparent border (gutter), so the selection rect
+     is flush with the input container's border edge. */
+  margin-inline: calc(-1 * var(--urlbarView-row-gutter));
+
   /* Don't handle window drag events in case we are overlapping a toolbar */
   -moz-window-dragging: no-drag;
 
   display: block;
   text-shadow: none;
   overflow: clip;
-  margin-inline: var(--urlbarView-results-padding);
-  width: calc(100% - 2 * var(--urlbarView-results-padding));
-}
-
-.urlbarView-body-inner {
-  width: calc(100% + 2 * var(--urlbarView-row-gutter));
-  margin-inline: calc(-1 * var(--urlbarView-row-gutter));
-
-  #urlbar[open] > .urlbarView > .urlbarView-body-outer > & {
-    border-top: 1px solid var(--urlbarview-separator-color);
-  }
 }
 
 .urlbarView-results {
-  padding-block: calc(var(--urlbarView-results-padding) - var(--urlbarView-row-gutter));
+  padding-block: var(--urlbarView-padding);
   white-space: nowrap;
 
   /* Vertically center the one-offs when no results are present. */
@@ -115,53 +119,24 @@
 
 .urlbarView-row {
   --urlbarView-icon-size: var(--urlbarView-favicon-size);
-  --urlbarView-icon-margin-start: var(--urlbarView-favicon-margin-start);
-  --urlbarView-icon-margin-end: var(--urlbarView-favicon-margin-end);
   --urlbarView-icon-border-radius: 0;
-
-  &[icon-size="24"] {
-    --urlbarView-icon-size: 24px;
-  }
-
-  &[icon-size="28"] {
-    --urlbarView-icon-size: 28px;
-  }
-
-  &[icon-size="32"] {
-    --urlbarView-icon-size: 32px;
-  }
-
-  &[icon-size="52"] {
-    --urlbarView-icon-size: 52px;
-  }
-
-  /* Inline margins required for center-aligning icons no larger than rich search
-     suggestion icons. Larger icons are left-aligned with favicons. */
-  &[icon-size="24"],
-  &[icon-size="28"] {
-    --urlbarView-icon-margin-start: calc((var(--urlbarView-rich-search-suggestion-icon-size) - var(--urlbarView-icon-size)) / 2);
-    --urlbarView-icon-margin-end: calc(
-      var(--urlbar-icon-padding) + var(--identity-box-margin-inline) + ((var(--urlbarView-rich-search-suggestion-icon-size) - var(--urlbarView-icon-size)) / 2)
-    );
-  }
+  --urlbarView-icon-margin-start: max(0px, (var(--urlbarView-rich-search-suggestion-icon-size) - var(--urlbarView-icon-size)) / 2);
+  --urlbarView-icon-margin-end: calc(var(--urlbarView-icon-margin-end-base) + var(--urlbarView-icon-margin-start));
 
   display: flex;
   align-items: center;
   fill: currentColor;
   fill-opacity: var(--urlbar-icon-fill-opacity);
-
-  /* Use a transparent border rather than margin such that the view's entire
-     hover area is contiguous and a row is always hovered as the user moves the
-     mouse across rows, even though each row's highlighted area is smaller. */
-  border: var(--urlbarView-row-gutter) solid transparent;
-  border-radius: calc(var(--urlbarView-row-gutter) + var(--urlbar-inner-border-radius));
-  background-clip: padding-box;
+  border: var(--urlbarView-row-border);
+  border-radius: var(--urlbarView-row-border-radius);
+  background-clip: var(--urlbarView-row-background-clip);
 
   /* Must hide the overflowing rows while the view is updating */
   &[hidden] {
     display: none !important;
   }
 
+  &[context-menu-trigger],
   &[row-selectable]:not([selected]):hover {
     background-color: var(--urlbarview-background-color-hover);
   }
@@ -173,7 +148,7 @@
 
   &:not([type="tip"], [type="dynamic"]) {
     :root:not([uidensity="compact"]) & {
-      min-height: 32px;
+      min-height: var(--urlbarView-row-min-height);
     }
     :root[uidensity="touch"] & {
       padding-block: 11px;
@@ -181,6 +156,9 @@
   }
 
   &[type="rich-search"] {
+    --urlbarView-icon-size: 28px;
+    --urlbarView-icon-border-radius: var(--urlbarView-icon-border-radius-rounded);
+
     :root:not([uidensity="compact"]) & {
       min-height: 46px;
     }
@@ -197,11 +175,11 @@
 
   flex: auto;
   overflow: hidden;
-  padding-inline: var(--urlbarView-item-inline-padding);
-  padding-block: var(--urlbarView-item-block-padding);
+  padding-inline: var(--urlbarView-row-padding-inline);
+  padding-block: var(--urlbarView-row-padding-block);
 
   :root:not([uidensity="compact"]) & {
-    min-height: 20px; /* row min-height 32px - (2 * padding-block 6px) */
+    min-height: var(--urlbarView-row-inner-min-height);
   }
 }
 
@@ -321,10 +299,6 @@
     color: var(--link-color);
     -moz-context-properties: fill;
   }
-
-  .urlbarView-row[type="rich-search"] > .urlbarView-row-inner > & {
-    border-radius: var(--border-radius-circle);
-  }
 }
 
 /* Type icon (favicon badge) */
@@ -339,7 +313,7 @@
   background-repeat: no-repeat;
   background-size: contain;
   -moz-context-properties: fill, stroke;
-  stroke: var(--toolbar-field-focus-background-color);
+  stroke: var(--toolbar-field-background-color-focus);
 
   /* Favicon badges have this priority: pinned > bookmark. */
   .urlbarView-row[type="bookmark"] > .urlbarView-row-inner > & {
@@ -479,7 +453,7 @@
 
 .urlbarView-button:where(:not(:empty):not(.urlbarView-button-result-menu)),
 .urlbarView-splitbutton-dropmarker {
-  border-radius: var(--urlbar-inner-border-radius);
+  border-radius: var(--button-border-radius);
   padding: 0.5em 1em;
   font-size: 0.93em;
   font-weight: var(--font-weight-semibold);
@@ -549,12 +523,12 @@
     position: absolute;
     /* `top` controls how far the label is from the main part of the row. */
     top: var(--urlbarView-labeled-row-label-top);
-    margin-inline-start: var(--urlbarView-item-inline-padding);
+    margin-inline-start: var(--urlbarView-row-padding-inline);
     font-size: 0.8em;
     /* The color and opacity of labels is the same as the "This time, search with"
        text in the search shortcuts. See `.search-panel-header > label` in
        searchbar.css. */
-    color: var(--toolbar-field-focus-color);
+    color: var(--toolbar-field-text-color-focus);
     opacity: 0.6;
     pointer-events: none;
   }
@@ -588,7 +562,7 @@
     position: absolute;
     bottom: 0.72em;
     font-size: var(--urlbarView-small-font-size);
-    margin-inline-start: calc(var(--urlbarView-item-inline-padding) + var(--urlbarView-favicon-margin-start));
+    margin-inline-start: calc(var(--urlbarView-row-padding-inline) + var(--urlbarView-favicon-margin-start));
     padding-inline-start: calc(var(--urlbarView-favicon-size) + var(--urlbarView-favicon-margin-end));
     background-image: url("chrome://branding/content/icon32.png");
     background-repeat: no-repeat;
@@ -759,8 +733,8 @@
     }
 
     &.urlbarView-tabGroup {
-      color: light-dark(var(--tab-group-color-pale), var(--tab-group-label-text-dark));
-      background-color: light-dark(var(--tab-group-color), var(--tab-group-color-invert));
+      color: var(--tab-group-text-color);
+      background-color: var(--tab-group-background-color);
     }
 
     -moz-context-properties: fill, fill-opacity;
@@ -816,7 +790,7 @@
 
   .urlbarView-row:is([type="remotetab"], [sponsored]):not([selected], :hover) &,
   .urlbarView-row:is([show-action-text], [restyled-search]) &,
-  .urlbarView:not([action-override]) .urlbarView-row[type="switchtab"] & {
+  .urlbarView:not([action-override]) .urlbarView-row[type="switchtab"] > .urlbarView-row-inner > .urlbarView-row-body > .urlbarView-row-body-top > & {
     /* Use visibility:collapse instead of display:none since the latter can
        confuse the overflow state of these elements when their content
        changes while they're hidden (bug 1549787). */
@@ -894,7 +868,7 @@
   }
 
   > .urlbarView-row-inner {
-    min-height: 32px;
+    min-height: var(--urlbarView-row-min-height);
     align-items: center;
 
     /* Add space between the tip title (and the rest of row-inner) and its
@@ -968,26 +942,50 @@
       padding-block: 6px;
 
       &:last-child {
-        padding-block-end: max(0px, 6px - var(--urlbarView-results-padding));
+        padding-block-end: max(0px, 6px - var(--urlbarView-padding));
       }
     }
+  }
+
+  &[tip-type="dismissalAcknowledgment"] {
+    --urlbarView-icon-size: var(--urlbarView-rich-search-suggestion-icon-size);
   }
 }
 
 /* Firefox Suggest rows */
 
-.urlbarView-row[type$="_amo"][icon-size="24"] > .urlbarView-row-inner > .urlbarView-favicon {
-  padding: calc((var(--urlbarView-top-pick-large-icon-box-size) - 24px) / 2);
-  background-color: var(--urlbar-box-background-color-focus);
-  border-radius: var(--border-radius-xsmall);
+.urlbarView-row[is-top-pick] {
+  --urlbarView-icon-size: var(--urlbarView-top-pick-icon-size);
+  --urlbarView-icon-border-radius: var(--urlbarView-icon-border-radius-rounded);
 }
 
-.urlbarView-row[type$="_amo"][icon-size="24"]:is([selected], :hover) > .urlbarView-row-inner > .urlbarView-favicon {
-  background-color: var(--urlbarView-result-button-selected-background-color);
+.urlbarView-row[type$="_adm_sponsored"][is-top-pick] {
+  --urlbarView-icon-size: var(--urlbarView-rich-search-suggestion-icon-size);
 }
 
-.urlbarView-row[type$="_vpn"][icon-size="32"] > .urlbarView-row-inner > .urlbarView-favicon {
-  padding: calc((var(--urlbarView-top-pick-large-icon-box-size) - 32px) / 2);
+.urlbarView-row[type$="_amo"] {
+  /* Draw the icon at 24px but give it a padding and background color to make it
+     overall the size of top-pick icons. */
+  --urlbarView-icon-size: 24px;
+  --urlbarView-icon-border-radius: 0;
+  --urlbarView-icon-margin-start: 0;
+  --urlbarView-icon-margin-end: var(--urlbarView-icon-margin-end-base);
+
+  > .urlbarView-row-inner > .urlbarView-favicon {
+    padding: calc((var(--urlbarView-top-pick-icon-size) - 24px) / 2);
+    background-color: var(--urlbar-box-background-color-focus);
+    border-radius: var(--urlbarView-icon-border-radius-rounded);
+  }
+
+  &:is([selected], :hover) > .urlbarView-row-inner > .urlbarView-favicon {
+    background-color: var(--urlbarView-result-button-selected-background-color);
+  }
+}
+
+.urlbarView-row[type$="_important_dates"] {
+  /* Important dates are top picks, but their icons are smaller. */
+  --urlbarView-icon-size: 24px;
+  --urlbarView-icon-border-radius: 0;
 }
 
 .urlbarView-row[dynamicType="weather"],
@@ -1101,9 +1099,9 @@
 
 .urlbarView-actions-container {
   margin-inline-start: calc(
-    var(--urlbarView-item-inline-padding) + var(--urlbarView-favicon-margin-start) + var(--urlbarView-favicon-size) + var(--urlbarView-icon-margin-end)
+    var(--urlbarView-row-padding-inline) + var(--urlbarView-favicon-margin-start) + var(--urlbarView-favicon-size) + var(--urlbarView-icon-margin-end)
   );
-  margin-block-end: var(--urlbarView-item-block-padding);
+  margin-block-end: var(--urlbarView-row-padding-block);
 }
 
 .urlbarView-action-btn {
@@ -1142,8 +1140,8 @@
   }
 
   &[data-action^="tabgroup-"] {
-    color: light-dark(var(--tab-group-color-pale), var(--tab-group-label-text-dark));
-    background-color: light-dark(var(--tab-group-color), var(--tab-group-color-invert));
+    color: var(--tab-group-text-color);
+    background-color: var(--tab-group-background-color);
     max-width: 30%;
 
     /* Add offset to the focus / selection indicator as the outline color could
@@ -1152,7 +1150,7 @@
     margin-inline-start: 1px;
 
     &:hover {
-      opacity: 0.8;
+      background-color: var(--tab-group-background-color-hover);
     }
 
     > .urlbarView-action-btn-label {
@@ -1167,7 +1165,7 @@
 .urlbarView-row[tip-type="realtime_opt_in"] {
   /* `margin-block-end` is large to give enough spacing between the opt-in and the
      row label in the next row. */
-  margin-block: var(--urlbarView-item-block-padding) calc(5 * var(--urlbarView-item-block-padding));
+  margin-block: var(--urlbarView-row-padding-block) calc(5 * var(--urlbarView-row-padding-block));
   padding-block: 0;
   border-block: none;
   border-radius: var(--border-radius-medium);
@@ -1225,6 +1223,18 @@
 
 /* Basic style for Realtime suggestions */
 
+.urlbarView-row[dynamicType^="realtime-"]:not([row-selectable]) {
+  /* When a realtime row contains multiple items, each item is individually
+     selectable rather than the row. Set borders on the items so that the gutter
+     and selection styling applies to them and not the row. */
+  border: none;
+  > .urlbarView-realtime-root > .urlbarView-realtime-item {
+    border: var(--urlbarView-row-border);
+    border-radius: var(--urlbarView-row-border-radius);
+    background-clip: var(--urlbarView-row-background-clip);
+  }
+}
+
 .urlbarView-realtime-root {
   --green-status-color: light-dark(var(--color-green-60), var(--color-green-20));
   --red-status-color: light-dark(var(--color-red-70), var(--color-red-40));
@@ -1248,17 +1258,13 @@
     display: flex;
     align-items: center;
 
-    /* This should match the radius on `.urlbarView-row`. Only visible when there
-     are multiple items in a row. */
-    border-radius: calc(var(--urlbarView-row-gutter) + var(--urlbar-border-radius));
-
     /* Inline spacing between multiple items in a row */
     margin-inline-end: var(--space-small);
 
     /* The block and inline-start padding should match the normal inner inline
      padding we removed above, in order to keep the first item's image aligned
      with the text and images in other rows. */
-    padding: var(--urlbarView-item-inline-padding);
+    padding: var(--urlbarView-row-padding-inline);
     padding-inline-end: var(--space-large);
 
     .urlbarView-realtime-root:not([selectable]) > &:not([selected]):hover {
@@ -1274,11 +1280,11 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      width: var(--urlbarView-top-pick-large-icon-box-size);
-      height: var(--urlbarView-top-pick-large-icon-box-size);
+      width: var(--urlbarView-top-pick-icon-size);
+      height: var(--urlbarView-top-pick-icon-size);
       margin-inline-end: var(--space-medium);
       border: 1px solid transparent;
-      border-radius: var(--border-radius-small);
+      border-radius: var(--urlbarView-icon-border-radius-rounded);
 
       fill: currentColor;
       fill-opacity: var(--urlbar-icon-fill-opacity);
@@ -1297,10 +1303,17 @@
       text-align: start;
       grid-row-gap: var(--space-xsmall);
 
+      > .urlbarView-realtime-description-top,
       > .urlbarView-realtime-description-bottom {
         display: flex;
-        align-items: center;
+        align-items: baseline;
+      }
+
+      > .urlbarView-realtime-description-bottom {
         font-size: var(--urlbarView-small-font-size);
+      }
+
+      .urlbarView-row:not([selected]) > .urlbarView-realtime-root > .urlbarView-realtime-item:not([selected]) > & > .urlbarView-realtime-description-bottom {
         color: var(--urlbarView-secondary-text-color);
       }
 
@@ -1417,9 +1430,10 @@
   --star-size: 12px;
 
   > .urlbarView-realtime-image-container > .urlbarView-realtime-image {
-    width: 52px;
-    height: 52px;
-    flex-basis: 52px;
+    width: var(--urlbarView-top-pick-icon-size);
+    height: var(--urlbarView-top-pick-icon-size);
+    flex-basis: var(--urlbarView-top-pick-icon-size);
+    border-radius: var(--urlbarView-icon-border-radius-rounded);
   }
 
   > .urlbarView-realtime-description {
@@ -1552,6 +1566,11 @@
 /* Realtime sports suggestions */
 
 .urlbarView-row[dynamicType="realtime-sports"] > .urlbarView-realtime-root > .urlbarView-realtime-item {
+  > .urlbarView-realtime-image-container > .urlbarView-realtime-image {
+    width: 44px;
+    max-height: 44px;
+  }
+
   > .urlbarView-realtime-image-container[hidden] {
     display: none;
   }
@@ -1621,21 +1640,30 @@
 
   > .urlbarView-realtime-description {
     > .urlbarView-realtime-description-top {
-      > .urlbarView-sports-team-names {
+      > .urlbarView-sports-team-names,
+      > .urlbarView-sports-score {
         font-weight: var(--font-weight-bold);
       }
 
-      > .urlbarView-sports-score {
-        font-weight: var(--font-weight-bold);
-        margin-inline-start: var(--space-xsmall);
+      > .urlbarView-sports-score-home {
+        margin-inline-start: var(--space-small);
+      }
+      > .urlbarView-sports-score-away {
+        margin-inline-end: var(--space-small);
       }
     }
 
-    > .urlbarView-realtime-description-bottom {
+    > .urlbarView-realtime-description-bottom > .urlbarView-sports-status {
+      font-weight: var(--font-weight-bold);
+    }
+
+    .urlbarView-row:not([selected])
+      > .urlbarView-realtime-root
+      > .urlbarView-realtime-item:not([selected])
+      > &
+      > .urlbarView-realtime-description-bottom
       > .urlbarView-sports-status {
-        color: var(--green-status-color);
-        font-weight: var(--font-weight-bold);
-      }
+      color: var(--green-status-color);
     }
   }
 }
@@ -1673,7 +1701,7 @@
 #urlbar .search-panel-one-offs-header-label {
   white-space: nowrap;
   margin: 0;
-  padding-inline: var(--urlbarView-item-inline-padding) 18px;
+  padding-inline: var(--urlbarView-row-padding-inline) 18px;
 }
 
 #urlbar .searchbar-engine-one-off-item {
@@ -1789,8 +1817,8 @@
 /* search bar popup */
 
 #PopupSearchAutoComplete {
-  --panel-color: var(--toolbar-field-focus-color);
-  --panel-background: var(--toolbar-field-focus-background-color);
+  --panel-text-color: var(--toolbar-field-text-color-focus);
+  --panel-background-color: var(--toolbar-field-background-color-focus);
   --panel-border-color: inherit;
 }
 

@@ -6,6 +6,8 @@ support-files = [
   "sendMoreInfoTestEndpoint.html",
 ]
 
+["browser_a11y.js"]
+
 ["browser_addon_data_sent.js"]
 support-files = [ "send_more_info.js" ]
 
@@ -36,8 +38,6 @@ skip-if = [
 
 ["browser_prefers_contrast.js"]
 
-["browser_reason_dropdown.js"]
-
 ["browser_report_preview.js"]
 
 ["browser_report_send.js"]
@@ -52,6 +52,8 @@ support-files = [
 ["browser_tab_key_order.js"]
 
 ["browser_tab_switch_handling.js"]
+
+["browser_url_widgets.js"]
 
 ["browser_webcompat.com_fallback.js"]
 support-files = [

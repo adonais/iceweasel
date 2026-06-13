@@ -158,14 +158,14 @@ export class AboutLoginsParent extends JSWindowActorParent {
     }
   }
 
-  get #ownerGlobal() {
-    return this.browsingContext.embedderElement?.ownerGlobal;
+  get #documentGlobal() {
+    return this.browsingContext.embedderElement?.documentGlobal;
   }
 
   async #createLogin(newLogin) {
     if (!Services.policies.isAllowed("removeMasterPassword")) {
       if (!lazy.LoginHelper.isPrimaryPasswordSet()) {
-        this.#ownerGlobal.openDialog(
+        this.#documentGlobal.openDialog(
           "chrome://mozapps/content/preferences/changemp.xhtml",
           "",
           "centerscreen,chrome,modal,titlebar"
@@ -199,9 +199,12 @@ export class AboutLoginsParent extends JSWindowActorParent {
 
   get preselectedLogin() {
     const preselectedLogin =
-      this.#ownerGlobal?.gBrowser.selectedTab.getAttribute("preselect-login") ||
-      this.browsingContext.currentURI?.ref;
-    this.#ownerGlobal?.gBrowser.selectedTab.removeAttribute("preselect-login");
+      this.#documentGlobal?.gBrowser.selectedTab.getAttribute(
+        "preselect-login"
+      ) || this.browsingContext.currentURI?.ref;
+    this.#documentGlobal?.gBrowser.selectedTab.removeAttribute(
+      "preselect-login"
+    );
     return preselectedLogin || null;
   }
 
@@ -215,12 +218,12 @@ export class AboutLoginsParent extends JSWindowActorParent {
   }
 
   #syncEnable() {
-    this.#ownerGlobal.gSync.openFxAEmailFirstPage("password-manager");
+    this.#documentGlobal.gSync.openFxAEmailFirstPage("password-manager");
   }
 
   #importFromBrowser() {
     try {
-      lazy.MigrationUtils.showMigrationWizard(this.#ownerGlobal, {
+      lazy.MigrationUtils.showMigrationWizard(this.#documentGlobal, {
         entrypoint: lazy.MigrationUtils.MIGRATION_ENTRYPOINTS.PASSWORDS,
       });
     } catch (ex) {
@@ -237,13 +240,13 @@ export class AboutLoginsParent extends JSWindowActorParent {
     const SUPPORT_URL =
       Services.urlFormatter.formatURLPref("app.support.baseURL") +
       "password-manager-remember-delete-edit-logins";
-    this.#ownerGlobal.openWebLinkIn(SUPPORT_URL, "tab", {
+    this.#documentGlobal.openWebLinkIn(SUPPORT_URL, "tab", {
       relatedToCurrent: true,
     });
   }
 
   #openPreferences() {
-    this.#ownerGlobal.openPreferences("privacy-logins");
+    this.#documentGlobal.openPreferences("privacy-logins");
   }
 
   async #primaryPasswordRequest(messageId, reason) {
@@ -273,7 +276,6 @@ export class AboutLoginsParent extends JSWindowActorParent {
 
     let { isAuthorized, telemetryEvent } = await lazy.LoginHelper.requestReauth(
       this.browsingContext.embedderElement,
-      isOSAuthEnabled,
       AboutLogins._authExpirationTime,
       messageText.value,
       captionText.value,
@@ -395,7 +397,6 @@ export class AboutLoginsParent extends JSWindowActorParent {
     let reason = "export_logins";
     let { isAuthorized, telemetryEvent } = await lazy.LoginHelper.requestReauth(
       this.browsingContext.embedderElement,
-      true,
       null, // Prompt regardless of a recent prompt
       messageText.value,
       captionText.value,
@@ -701,14 +702,14 @@ class AboutLoginsInternal {
   } = {}) {
     for (let subscriber of this.#subscriberIterator()) {
       let browser = subscriber.embedderElement;
-      let MozXULElement = browser.ownerGlobal.MozXULElement;
+      let MozXULElement = browser.documentGlobal.MozXULElement;
       MozXULElement.insertFTLIfNeeded("browser/aboutLogins.ftl");
       for (let ftl of extraFtl) {
         MozXULElement.insertFTLIfNeeded(ftl);
       }
 
       // If there's already an existing notification bar, don't do anything.
-      let { gBrowser } = browser.ownerGlobal;
+      let { gBrowser } = browser.documentGlobal;
       let notificationBox = gBrowser.getNotificationBox(browser);
       let notification = notificationBox.getNotificationWithValue(id);
       if (notification) {
@@ -741,7 +742,7 @@ class AboutLoginsInternal {
   #removeNotifications(notificationId) {
     for (let subscriber of this.#subscriberIterator()) {
       let browser = subscriber.embedderElement;
-      let { gBrowser } = browser.ownerGlobal;
+      let { gBrowser } = browser.documentGlobal;
       let notificationBox = gBrowser.getNotificationBox(browser);
       let notification =
         notificationBox.getNotificationWithValue(notificationId);

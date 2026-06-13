@@ -64,6 +64,21 @@ class NoSystemCurrentTimeMillisRuleTest {
     }
 
     @Test
+    fun testSystemCurrentTimeMillisDetectedAsMethodReference() {
+        val code = """
+            |package my.package
+            |
+            |class MyClass {
+            |    val getTime: () -> Long = System::currentTimeMillis
+            |}
+        """.trimMargin()
+
+        val findings = NoSystemCurrentTimeMillisRule().lint(code)
+
+        assertEquals(1, findings.size)
+    }
+
+    @Test
     fun testNoViolationWithOtherSystemMethods() {
         val code = """
             |package my.package

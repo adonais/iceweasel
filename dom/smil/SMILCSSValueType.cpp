@@ -6,7 +6,6 @@
 
 #include "SMILCSSValueType.h"
 
-#include "mozilla/DeclarationBlock.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/PresShellInlines.h"
 #include "mozilla/SMILParserUtils.h"
@@ -481,19 +480,18 @@ SMILValue SMILCSSValueType::ValueFromAnimationValue(
 // static
 bool SMILCSSValueType::SetPropertyValues(NonCustomCSSPropertyId aPropertyId,
                                          const SMILValue& aValue,
-                                         DeclarationBlock& aDecl) {
+                                         StyleLockedDeclarationBlock& aDecl) {
   MOZ_ASSERT(aValue.mType == &SMILCSSValueType::sSingleton,
              "Unexpected SMIL value type");
   const ValueWrapper* wrapper = ExtractValueWrapper(aValue);
   if (!wrapper) {
-    return Servo_DeclarationBlock_RemovePropertyById(aDecl.Raw(), aPropertyId,
-                                                     {});
+    return Servo_DeclarationBlock_RemovePropertyById(&aDecl, aPropertyId, {});
   }
 
   bool changed = false;
   for (const auto& value : wrapper->mServoValues) {
-    changed |= Servo_DeclarationBlock_SetPropertyToAnimationValue(aDecl.Raw(),
-                                                                  value, {});
+    changed |=
+        Servo_DeclarationBlock_SetPropertyToAnimationValue(&aDecl, value, {});
   }
 
   return changed;

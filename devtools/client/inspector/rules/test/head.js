@@ -695,7 +695,7 @@ async function openEyedropper(view, swatch) {
   const onColorPickerReady = view.tooltips
     .getTooltip("colorPicker")
     .once("ready");
-  EventUtils.synthesizeMouseAtCenter(swatch, {}, swatch.ownerGlobal);
+  EventUtils.synthesizeMouseAtCenter(swatch, {}, swatch.documentGlobal);
   await onColorPickerReady;
 
   const dropperButton = tooltip.container.querySelector("#eyedropper-button");

@@ -12,10 +12,11 @@ import io.gitlab.arturbosch.detekt.api.Issue
 import io.gitlab.arturbosch.detekt.api.Rule
 import io.gitlab.arturbosch.detekt.api.Severity
 import org.jetbrains.kotlin.psi.KtCallExpression
+import org.jetbrains.kotlin.psi.KtCallableReferenceExpression
 import org.jetbrains.kotlin.psi.KtDotQualifiedExpression
 
 /**
- * Detects usage of `System.currentTimeMillis()` and enforces the use of
+ * Detects usage of [System.currentTimeMillis] and enforces the use of
  * `mozilla.components.support.utils.DateTimeProvider.currentTimeMillis()` instead to improve
  * testability.
  */
@@ -48,6 +49,24 @@ class NoSystemCurrentTimeMillisRule(config: Config = Config.empty) : Rule(config
                     ),
                 )
             }
+        }
+    }
+
+    override fun visitCallableReferenceExpression(expression: KtCallableReferenceExpression) {
+        super.visitCallableReferenceExpression(expression)
+
+        val receiverText = expression.receiverExpression?.text
+        val referencedName = expression.callableReference.getReferencedName()
+
+        if (receiverText == "System" && referencedName == "currentTimeMillis") {
+            report(
+                CodeSmell(
+                    issue,
+                    Entity.from(expression),
+                    "Avoid using `System.currentTimeMillis()` directly. " +
+                        "Use `mozilla.components.support.utils.DateTimeProvider.currentTimeMillis()`",
+                ),
+            )
         }
     }
 }

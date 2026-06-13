@@ -260,7 +260,7 @@ class StartupCache : public nsIMemoryReporter {
   // could create dangling pointers. RefPtrs could be introduced, but it would
   // be a large amount of error-prone work to change.
   nsTArray<decltype(mTable)> mOldTables MOZ_GUARDED_BY(mTableLock);
-  size_t mAllowedInvalidationsCount;
+  size_t mAllowedInvalidationsCount = 0;
   nsCOMPtr<nsIFile> mFile;
   mozilla::loader::AutoMemMap mCacheData MOZ_GUARDED_BY(mTableLock);
   Mutex mTableLock;

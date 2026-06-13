@@ -20,7 +20,7 @@ add_task(function test_smartwindow_semantic_history_pref_enabled_for_users() {
   clearTestPrefs();
   Services.prefs.setBoolPref(PREF_SMARTWINDOW_ENABLED, true);
 
-  ProfileDataUpgrader.upgrade(168, 169);
+  ProfileDataUpgrader.upgrade(171, 172);
 
   Assert.ok(
     Services.prefs.getBoolPref(
@@ -34,7 +34,7 @@ add_task(function test_smartwindow_semantic_history_pref_enabled_for_users() {
 add_task(function test_smartwindow_disabled_does_not_enable_semantic() {
   clearTestPrefs();
 
-  ProfileDataUpgrader.upgrade(168, 169);
+  ProfileDataUpgrader.upgrade(171, 172);
 
   Assert.ok(
     !Services.prefs.prefHasUserValue(

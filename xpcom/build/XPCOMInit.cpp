@@ -122,14 +122,6 @@ static mozilla::BackgroundHangMonitor* sMainHangMonitor;
 
 } /* anonymous namespace */
 
-// Registry Factory creation function defined in nsRegistry.cpp
-// We hook into this function locally to create and register the registry
-// Since noone outside xpcom needs to know about this and nsRegistry.cpp
-// does not have a local include file, we are putting this definition
-// here rather than in nsIRegistry.h
-extern nsresult NS_RegistryGetFactory(nsIFactory** aFactory);
-extern nsresult NS_CategoryManagerGetFactory(nsIFactory**);
-
 #ifdef XP_WIN
 extern nsresult CreateAnonTempFileRemover();
 #endif
@@ -449,8 +441,8 @@ NS_InitXPCOM(nsIServiceManager** aResult, nsIFile* aBinDirectory,
 #endif
 
   // The memory reporter manager is up and running -- register our reporters.
-  RegisterStrongMemoryReporter(new ICUReporter());
-  RegisterStrongMemoryReporter(new OggReporter());
+  RegisterStrongMemoryReporter(mozilla::MakeAndAddRef<ICUReporter>());
+  RegisterStrongMemoryReporter(mozilla::MakeAndAddRef<OggReporter>());
   xpc::SelfHostedShmem::GetSingleton().InitMemoryReporter();
 
   mozilla::gecko_trace::Init();

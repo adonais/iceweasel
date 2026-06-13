@@ -53,6 +53,10 @@ class TreeWalker final {
 
   ~TreeWalker();
 
+  TreeWalker() = delete;
+  TreeWalker(const TreeWalker&) = delete;
+  TreeWalker& operator=(const TreeWalker&) = delete;
+
   /**
    * Resets the walker state, and sets the given node as an anchor. Returns a
    * first accessible element within the node including the node itself.
@@ -87,10 +91,6 @@ class TreeWalker final {
   DocAccessible* Document() const { return mDoc; }
 
  private:
-  TreeWalker();
-  TreeWalker(const TreeWalker&);
-  TreeWalker& operator=(const TreeWalker&);
-
   /**
    * Return an accessible for the given node if any.
    */

@@ -14,6 +14,7 @@
 #include <cstdint>
 #include <optional>
 
+#include "api/rtc_error.h"
 #include "api/rtp_parameters.h"
 #include "api/test/rtc_error_matchers.h"
 #include "api/transport/ecn_marking.h"
@@ -31,7 +32,6 @@
 #include "rtc_base/logging.h"
 #include "rtc_base/network/sent_packet.h"
 #include "rtc_base/network_route.h"
-#include "rtc_base/thread.h"
 #include "test/create_test_field_trials.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
@@ -44,6 +44,7 @@ namespace {
 
 using ::testing::Eq;
 using ::testing::Ge;
+using ::testing::HasSubstr;
 
 constexpr bool kMuxDisabled = false;
 constexpr bool kMuxEnabled = true;
@@ -238,7 +239,7 @@ TEST(RtpTransportTest, SetRtcpTransportWithNetworkRouteChanged) {
 TEST(RtpTransportTest, RtcpPacketSentOverCorrectTransport) {
   // If the RTCP-mux is not enabled, RTCP packets are expected to be sent over
   // the RtcpPacketTransport.
-  AutoThread thread;
+  test::RunLoop thread;
   RtpTransport transport(kMuxDisabled, CreateTestFieldTrials());
   FakePacketTransport fake_rtcp("fake_rtcp");
   FakePacketTransport fake_rtp("fake_rtp");
@@ -289,7 +290,7 @@ TEST(RtpTransportTest, ChangingReadyToSendStateOnlySignalsWhenChanged) {
 }
 
 TEST(RtpTransportTest, RegisterAndUnregisterRtpHeaderExtensionMap) {
-  AutoThread thread;
+  test::RunLoop thread;
   RtpTransport transport(kMuxDisabled, CreateTestFieldTrials());
   RtpHeaderExtensions extensions1 = {
       RtpExtension("urn:ietf:params:rtp-hdrext:ssrc-audio-level", 1)};
@@ -365,10 +366,56 @@ TEST(RtpTransportTest, RegisterAndUnregisterRtpHeaderExtensionMap) {
   transport.UnregisterRtpDemuxerSink(&observer);
 }
 
+TEST(RtpTransportTest, VerifyRtpHeaderExtensionMapRejectsIdReassignment) {
+  test::RunLoop loop;
+  RtpTransport transport(kMuxDisabled, CreateTestFieldTrials());
+  RtpHeaderExtensions extensions1 = {
+      RtpExtension("urn:ietf:params:rtp-hdrext:ssrc-audio-level", 1)};
+  RtpHeaderExtensions extensions2 = {RtpExtension(
+      "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time", 1)};
+
+  // Registering the first map should succeed.
+  EXPECT_TRUE(
+      transport.RegisterRtpHeaderExtensionMap("audio", extensions1).ok());
+
+  // Verifying a map that tries to reassign ID 1 to a different URI should fail.
+  RTCError error = transport.VerifyRtpHeaderExtensionMap(extensions2);
+  EXPECT_FALSE(error.ok());
+  EXPECT_EQ(error.type(), RTCErrorType::INVALID_PARAMETER);
+  EXPECT_THAT(error.message(), HasSubstr("RTP extension ID reassignment"));
+
+  // Registering the second map should also fail.
+  error = transport.RegisterRtpHeaderExtensionMap("video", extensions2);
+  EXPECT_FALSE(error.ok());
+  EXPECT_EQ(error.type(), RTCErrorType::INVALID_PARAMETER);
+}
+
+TEST(RtpTransportTest,
+     VerifyRtpHeaderExtensionMapAllowsIdReuseAfterUnregister) {
+  test::RunLoop loop;
+  RtpTransport transport(kMuxDisabled, CreateTestFieldTrials());
+  RtpHeaderExtensions extensions1 = {
+      RtpExtension("urn:ietf:params:rtp-hdrext:ssrc-audio-level", 1)};
+  RtpHeaderExtensions extensions2 = {RtpExtension(
+      "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time", 1)};
+
+  // Registering the first map should succeed.
+  EXPECT_TRUE(
+      transport.RegisterRtpHeaderExtensionMap("audio", extensions1).ok());
+
+  // Unregister the first map.
+  transport.UnregisterRtpHeaderExtensionMap("audio");
+
+  // Registering the second map with same ID but different URI should now
+  // succeed!
+  EXPECT_TRUE(
+      transport.RegisterRtpHeaderExtensionMap("video", extensions2).ok());
+}
+
 // Test that SignalPacketReceived fires with rtcp=true when a RTCP packet is
 // received.
 TEST(RtpTransportTest, SignalDemuxedRtcp) {
-  AutoThread thread;
+  test::RunLoop thread;
   RtpTransport transport(kMuxDisabled, CreateTestFieldTrials());
   FakePacketTransport fake_rtp("fake_rtp");
   fake_rtp.SetDestination(&fake_rtp, true);
@@ -392,7 +439,7 @@ const int kRtpLen = 12;
 // Test that SignalPacketReceived fires with rtcp=false when a RTP packet with a
 // handled payload type is received.
 TEST(RtpTransportTest, SignalHandledRtpPayloadType) {
-  AutoThread thread;
+  test::RunLoop thread;
   RtpTransport transport(kMuxDisabled, CreateTestFieldTrials());
   FakePacketTransport fake_rtp("fake_rtp");
   fake_rtp.SetDestination(&fake_rtp, true);
@@ -417,7 +464,7 @@ TEST(RtpTransportTest, SignalHandledRtpPayloadType) {
 }
 
 TEST(RtpTransportTest, ReceivedPacketEcnMarkingPropagatedToDemuxedPacket) {
-  AutoThread thread;
+  test::RunLoop thread;
   RtpTransport transport(kMuxDisabled, CreateTestFieldTrials());
   // Setup FakePacketTransport to send packets to itself.
   FakePacketTransport fake_rtp("fake_rtp");
@@ -442,7 +489,7 @@ TEST(RtpTransportTest, ReceivedPacketEcnMarkingPropagatedToDemuxedPacket) {
 }
 
 TEST(RtpTransportTest, RtcpSentAsEct1IfReceivedRtpPacketAsEct1) {
-  AutoThread thread;
+  test::RunLoop thread;
   RtpTransport transport(kMuxDisabled, CreateTestFieldTrials());
   // Setup FakePacketTransport to send packets to itself.
   FakePacketTransport fake_rtp("fake_rtp");
@@ -478,7 +525,7 @@ TEST(RtpTransportTest, RtcpSentAsEct1IfReceivedRtpPacketAsEct1) {
 // Test that SignalPacketReceived does not fire when a RTP packet with an
 // unhandled payload type is received.
 TEST(RtpTransportTest, DontSignalUnhandledRtpPayloadType) {
-  AutoThread thread;
+  test::RunLoop thread;
   RtpTransport transport(kMuxDisabled, CreateTestFieldTrials());
   FakePacketTransport fake_rtp("fake_rtp");
   fake_rtp.SetDestination(&fake_rtp, true);
@@ -504,7 +551,7 @@ TEST(RtpTransportTest, DontSignalUnhandledRtpPayloadType) {
 
 TEST(RtpTransportTest, DontChangeReadyToSendStateOnSendFailure) {
   // ReadyToSendState should only care about if transport is writable.
-  AutoThread thread;
+  test::RunLoop thread;
   RtpTransport transport(kMuxEnabled, CreateTestFieldTrials());
   TransportObserver observer(&transport);
 

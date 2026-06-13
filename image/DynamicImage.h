@@ -57,7 +57,7 @@ class DynamicImage : public Image {
   nsIURI* GetURI() const override;
 
  private:
-  virtual ~DynamicImage() {}
+  virtual ~DynamicImage() = default;
 
   RefPtr<gfxDrawable> mDrawable;
 };

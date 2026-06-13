@@ -55,4 +55,5 @@ data class TeamDto(
     val name: String,
     val colors: List<String> = emptyList(),
     val score: Int? = null,
+    val icon: String? = null,
 )

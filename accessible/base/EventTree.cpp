@@ -48,7 +48,7 @@ void TreeMutation::AfterInsertion(LocalAccessible* aChild) {
     return;
   }
 
-  RefPtr<AccShowEvent> ev = new AccShowEvent(aChild);
+  auto ev = MakeRefPtr<AccShowEvent>(aChild);
   DebugOnly<bool> added = Controller()->QueueMutationEvent(ev);
   MOZ_ASSERT(added);
   aChild->SetShowEventTarget(true);
@@ -65,7 +65,7 @@ void TreeMutation::BeforeRemoval(LocalAccessible* aChild, bool aNoShutdown) {
     return;
   }
 
-  RefPtr<AccHideEvent> ev = new AccHideEvent(aChild, !aNoShutdown);
+  auto ev = MakeRefPtr<AccHideEvent>(aChild, !aNoShutdown);
   if (Controller()->QueueMutationEvent(ev)) {
     aChild->SetHideEventTarget(true);
   }

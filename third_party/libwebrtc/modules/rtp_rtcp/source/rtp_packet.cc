@@ -228,17 +228,16 @@ void RtpPacket::SetCsrcs(std::span<const uint32_t> csrcs) {
   RTC_DCHECK_EQ(extensions_size_, 0);
   RTC_DCHECK_EQ(payload_size_, 0);
   RTC_DCHECK_EQ(padding_size_, 0);
-  RTC_DCHECK_LE(csrcs.size(), 0x0fu);
-  RTC_DCHECK_LE(kFixedHeaderSize + 4 * csrcs.size(), capacity());
 
   if (csrcs.size() > kMaxCsrcs) {
-    RTC_LOG(LS_WARNING) << "Truncating CSRC list to spec length " << kMaxCsrcs
-                        << " from " << csrcs.size();
+    RTC_LOG(LS_ERROR) << "Truncating CSRC list, length exceeded " << kMaxCsrcs
+                      << ": " << csrcs.size();
     csrcs = csrcs.first(kMaxCsrcs);
   }
 
   payload_offset_ = kFixedHeaderSize + 4 * csrcs.size();
-  buffer_.SetSize(payload_offset_);
+  buffer_.SetSize(payload_offset_);  // SetSize before WriteAt.
+
   WriteAt(0, (data()[0] & 0xF0) | dchecked_cast<uint8_t>(csrcs.size()));
   size_t offset = kFixedHeaderSize;
   for (uint32_t csrc : csrcs) {

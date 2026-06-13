@@ -28,6 +28,7 @@ namespace IPC {
 
 // -
 
+DEFINE_IPC_SERIALIZER_DOM_ENUM(mozilla::dom::GPUDeviceLostReason);
 DEFINE_IPC_SERIALIZER_DOM_ENUM(mozilla::dom::GPUErrorFilter);
 DEFINE_IPC_SERIALIZER_DOM_ENUM(mozilla::dom::GPUPowerPreference);
 

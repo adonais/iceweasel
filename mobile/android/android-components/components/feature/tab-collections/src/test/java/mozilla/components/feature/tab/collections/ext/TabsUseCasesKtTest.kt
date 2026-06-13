@@ -95,4 +95,31 @@ class TabsUseCasesKtTest {
 
         assertEquals("123", store.state.tabs.last().id)
     }
+
+    @Test
+    fun `GIVEN source and target keys are the same WHEN MoveTabs is invoked THEN order is not updated`() {
+        val initialState = store.state.copy()
+        tabsUseCases.moveTabs.invoke("mozilla", "mozilla", true)
+        assertEquals(initialState, store.state)
+    }
+
+    @Test
+    fun `GIVEN source and target keys are not the same WHEN MoveTabs is invoked THEN order is updated`() {
+        val initialState = store.state.copy()
+        val expectedState = store.state.copy(
+            tabs = listOf(
+                initialState.tabs[1],
+                initialState.tabs[0],
+            ),
+        )
+        tabsUseCases.moveTabs.invoke("mozilla", "example", true)
+        assertEquals(expectedState, store.state)
+    }
+
+    @Test
+    fun `GIVEN target key is null WHEN MoveTabs is invoked THEN order is not updated`() {
+        val initialState = store.state.copy()
+        tabsUseCases.moveTabs.invoke("mozilla", null, true)
+        assertEquals(initialState, store.state)
+    }
 }

@@ -197,6 +197,9 @@ run-if = [
 ]
 
 ["browser_toolbox_meatball.js"]
+skip-if = [
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 2034604
+]
 
 ["browser_toolbox_options.js"]
 

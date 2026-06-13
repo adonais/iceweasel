@@ -123,7 +123,7 @@ PerformanceEventTiming::TryGenerateEventTiming(const EventTarget* aTarget,
   }
 
   nsCOMPtr<nsPIDOMWindowInner> innerWindow =
-      do_QueryInterface(aTarget->GetOwnerGlobal());
+      do_QueryInterface(aTarget->GetRelevantGlobal());
   if (!innerWindow) {
     return nullptr;
   }
@@ -182,7 +182,7 @@ nsINode* PerformanceEventTiming::GetTarget() const {
   }
 
   nsCOMPtr<nsPIDOMWindowInner> global =
-      do_QueryInterface(element->GetOwnerGlobal());
+      do_QueryInterface(element->GetRelevantGlobal());
   if (!global) {
     return nullptr;
   }
@@ -197,7 +197,7 @@ void PerformanceEventTiming::FinalizeEventTiming(const WidgetEvent* aEvent) {
     return;
   }
   nsCOMPtr<nsPIDOMWindowInner> global =
-      do_QueryInterface(target->GetOwnerGlobal());
+      do_QueryInterface(target->GetRelevantGlobal());
   if (!global) {
     return;
   }

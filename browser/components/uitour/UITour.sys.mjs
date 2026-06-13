@@ -180,7 +180,7 @@ export var UITour = {
     [
       "urlbar",
       {
-        query: "#urlbar",
+        query: "#urlbar-container",
         widgetName: "urlbar-container",
       },
     ],
@@ -240,7 +240,7 @@ export var UITour = {
 
   onPageEvent(aEvent, aBrowser) {
     let browser = aBrowser;
-    let window = browser.ownerGlobal;
+    let window = browser.documentGlobal;
 
     // Does the window have tabs? We need to make sure since windowless browsers do
     // not have tabs.
@@ -557,6 +557,14 @@ export var UITour = {
         break;
       }
 
+      case "pinToTaskbar": {
+        let shell = window.getShellService();
+        if (shell) {
+          shell.pinToTaskbar().catch(console.error);
+        }
+        break;
+      }
+
       case "setTreatmentTag": {
         let name = data.name;
         let value = data.value;
@@ -613,7 +621,7 @@ export var UITour = {
         // was generated originally. If the browser where the UI tour is loaded
         // is windowless, just ignore the request to close the tab. The request
         // is also ignored if this is the only tab in the window.
-        let tabBrowser = browser.ownerGlobal.gBrowser;
+        let tabBrowser = browser.documentGlobal.gBrowser;
         if (tabBrowser && tabBrowser.browsers.length > 1) {
           tabBrowser.removeTab(tabBrowser.getTabForBrowser(browser));
         }
@@ -660,7 +668,7 @@ export var UITour = {
     lazy.log.debug("handleEvent: type =", aEvent.type, "event =", aEvent);
     switch (aEvent.type) {
       case "TabSelect": {
-        let window = aEvent.target.ownerGlobal;
+        let window = aEvent.target.documentGlobal;
 
         // Teardown the browser of the tab we just switched away from.
         if (aEvent.detail && aEvent.detail.previousTab) {
@@ -898,7 +906,7 @@ export var UITour = {
   },
 
   isElementVisible(aElement) {
-    let targetStyle = aElement.ownerGlobal.getComputedStyle(aElement);
+    let targetStyle = aElement.documentGlobal.getComputedStyle(aElement);
     return (
       !aElement.ownerDocument.hidden &&
       targetStyle.display != "none" &&
@@ -959,7 +967,7 @@ export var UITour = {
     let targetElement = aTarget.node;
     // Use the widget for filtering if it exists since the target may be the icon inside.
     if (aTarget.widgetName) {
-      let doc = aTarget.node.ownerGlobal.document;
+      let doc = aTarget.node.documentGlobal.document;
       targetElement =
         doc.getElementById(aTarget.widgetName) ||
         lazy.PanelMultiView.getViewNode(doc, aTarget.widgetName);
@@ -1495,7 +1503,7 @@ export var UITour = {
   },
 
   _hideAnnotationsForPanel(aEvent, aShouldClosePanel, aTargetPositionCallback) {
-    let win = aEvent.target.ownerGlobal;
+    let win = aEvent.target.documentGlobal;
     let hideHighlightMethod = null;
     let hideInfoMethod = null;
     if (aShouldClosePanel) {
@@ -1626,6 +1634,38 @@ export var UITour = {
           aCallbackID,
           lazy.ResetProfile.resetSupported()
         );
+        break;
+      case "aiControls":
+        this.sendPageCallback(aBrowser, aCallbackID, {
+          default: Services.prefs.getStringPref(
+            "browser.ai.control.default",
+            "available"
+          ),
+          translations: Services.prefs.getStringPref(
+            "browser.ai.control.translations",
+            "default"
+          ),
+          pdfjsAltText: Services.prefs.getStringPref(
+            "browser.ai.control.pdfjsAltText",
+            "default"
+          ),
+          smartTabGroups: Services.prefs.getStringPref(
+            "browser.ai.control.smartTabGroups",
+            "default"
+          ),
+          linkPreviewKeyPoints: Services.prefs.getStringPref(
+            "browser.ai.control.linkPreviewKeyPoints",
+            "default"
+          ),
+          sidebarChatbot: Services.prefs.getStringPref(
+            "browser.ai.control.sidebarChatbot",
+            "default"
+          ),
+          smartWindow: Services.prefs.getStringPref(
+            "browser.ai.control.smartWindow",
+            "default"
+          ),
+        });
         break;
       default:
         lazy.log.error(
@@ -1784,6 +1824,13 @@ export var UITour = {
       } catch (e) {}
       appinfo.defaultBrowser = isDefaultBrowser;
 
+      try {
+        let shell = aWindow.getShellService();
+        if (shell) {
+          appinfo.needsPin = await shell.doesAppNeedPin();
+        }
+      } catch (e) {}
+
       let canSetDefaultBrowserInBackground = true;
       if (AppConstants.platform == "win" || AppConstants.platform == "macosx") {
         canSetDefaultBrowserInBackground = false;
@@ -1899,7 +1946,7 @@ export var UITour = {
       if (observer) {
         return;
       }
-      let win = aPanelEl.ownerGlobal;
+      let win = aPanelEl.documentGlobal;
       observer = new win.MutationObserver(this._annotationMutationCallback);
       this._annotationPanelMutationObservers.set(aPanelEl, observer);
       let observerOptions = {

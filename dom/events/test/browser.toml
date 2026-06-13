@@ -70,4 +70,10 @@ fail-if = [
 
 ["browser_mouseout_notification_panel.js"]
 
+
+["browser_shortcutkey_ctrlf5_prevent_default.js"]
+skip-if = [
+  "os == 'mac'" # On macOS, Ctrl+F5 is not the reload shortcut (Cmd+R is)
+]
+
 ["browser_shortcutkey_modifier_conflicts_with_content_accesskey_modifier.js"]

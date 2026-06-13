@@ -52,7 +52,7 @@ class AsyncStatementParams final : public nsISupports, public nsWrapperCache {
   nsPIDOMWindowInner* GetParentObject() const { return mWindow; }
 
  private:
-  virtual ~AsyncStatementParams() {}
+  virtual ~AsyncStatementParams() = default;
 
   nsCOMPtr<nsPIDOMWindowInner> mWindow;
   AsyncStatement* mStatement;

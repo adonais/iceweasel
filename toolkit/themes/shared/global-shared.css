@@ -27,14 +27,12 @@
 
   @media (-moz-platform: macos) {
     /* On macOS we use native shadows via -moz-window-shadow */
-    --panel-shadow-margin: 0px;
+    --panel-box-shadow-margin: 0px;
   }
 
   --panel-separator-color: color-mix(in srgb, currentColor 25%, transparent);
 
   --popup-notification-body-width: calc(31em - calc(2 * var(--panel-padding)));
-
-  --input-border-color: var(--border-color-interactive);
 
   &[lwtheme] {
     &[lwt-icon-fill-attention="dark"] {
@@ -45,7 +43,7 @@
     }
   }
 
-  /* This color scheme should match --toolbar-color. However, note that
+  /* This color scheme should match --toolbar-text-color. However, note that
    * individual toolbars might override this (see ToolbarIconColor and the
    * brighttext attribute). */
   --toolbar-color-scheme: light dark;
@@ -74,6 +72,18 @@
   --menuitem-border-radius: var(--panel-menuitem-border-radius);
   --menuitem-padding: var(--panel-menuitem-padding);
   --menuitem-margin: var(--panel-menuitem-margin);
+}
+
+/* stylelint-disable-next-line media-query-no-invalid */
+@media -moz-pref("widget.macos.native-popovers") and (-moz-platform: macos) {
+  panel:not([nonnative]) {
+    background-color: transparent;
+    --panel-background: transparent;
+    --panel-box-shadow: none;
+    --panel-border-color: transparent;
+    --panel-box-shadow-margin: 0px;
+    --panel-padding: 0px;
+  }
 }
 
 /* Lightweight theme roots */
@@ -308,7 +318,15 @@ button.text-link .button-text {
   }
 
   &[disabled] {
-    opacity: 0.4;
+    background-color: var(--button-background-color-disabled);
+    color: var(--button-text-color-disabled);
+    opacity: var(--button-opacity-disabled);
+  }
+
+  &[default][disabled],
+  &.primary[disabled] {
+    background-color: var(--button-background-color-primary-disabled);
+    color: var(--button-text-color-primary-disabled);
   }
 
   &:focus-visible {
@@ -369,9 +387,9 @@ button.text-link .button-text {
   --autoscroll-background-image: url("chrome://global/skin/icons/autoscroll.svg");
   --panel-border-color: rgba(0, 0, 0, 0.4);
   --panel-padding: 0;
-  --panel-background: rgba(249, 249, 250, 0.8) no-repeat center var(--autoscroll-background-image);
-  --panel-shadow: 0 0 var(--panel-shadow-margin) rgba(0, 0, 0, 0.2);
-  --panel-shadow-margin: 4px;
+  --panel-background-color: rgba(249, 249, 250, 0.8) no-repeat center var(--autoscroll-background-image);
+  --panel-box-shadow: 0 0 var(--panel-box-shadow-margin) rgba(0, 0, 0, 0.2);
+  --panel-box-shadow-margin: 4px;
   --panel-border-radius: 100%;
 
   /* Set pointer-events: none; so that mousemove events can be handled by AutoScrollChild.sys.mjs. */

@@ -1,7 +1,3 @@
-const { TelemetryTestUtils } = ChromeUtils.importESModule(
-  "resource://testing-common/TelemetryTestUtils.sys.mjs"
-);
-
 const { FormAutofill } = ChromeUtils.importESModule(
   "resource://autofill/FormAutofill.sys.mjs"
 );
@@ -77,97 +73,6 @@ function assertFormInteractionEventsInGlean(events) {
   );
 }
 
-async function assertTelemetry(expected_content, expected_parent) {
-  let snapshots;
-
-  info(
-    `Waiting for ${expected_content?.length ?? 0} content events and ` +
-      `${expected_parent?.length ?? 0} parent events`
-  );
-
-  await TestUtils.waitForCondition(
-    () => {
-      snapshots = Services.telemetry.snapshotEvents(
-        Ci.nsITelemetry.DATASET_PRERELEASE_CHANNELS,
-        false
-      );
-
-      return (
-        (snapshots.parent?.length ?? 0) >= (expected_parent?.length ?? 0) &&
-        (snapshots.content?.length ?? 0) >= (expected_content?.length ?? 0)
-      );
-    },
-    "Wait for telemetry to be collected",
-    100,
-    100
-  );
-
-  info(JSON.stringify(snapshots, null, 2));
-
-  if (expected_content !== undefined) {
-    expected_content = expected_content.map(
-      ([category, method, object, value, extra]) => {
-        return { category, method, object, value, extra };
-      }
-    );
-
-    let clear = expected_parent === undefined;
-
-    TelemetryTestUtils.assertEvents(
-      expected_content,
-      {
-        category: "creditcard",
-      },
-      { clear, process: "content" }
-    );
-  }
-
-  if (expected_parent !== undefined) {
-    expected_parent = expected_parent.map(
-      ([category, method, object, value, extra]) => {
-        return { category, method, object, value, extra };
-      }
-    );
-    TelemetryTestUtils.assertEvents(
-      expected_parent,
-      {
-        category: "creditcard",
-      },
-      { process: "parent" }
-    );
-  }
-}
-
-async function assertHistogram(histogramId, expectedNonZeroRanges) {
-  let actualNonZeroRanges = {};
-  await TestUtils.waitForCondition(
-    () => {
-      const snapshot = Services.telemetry
-        .getHistogramById(histogramId)
-        .snapshot();
-      // Compute the actual ranges in the format { range1: value1, range2: value2 }.
-      for (let [range, value] of Object.entries(snapshot.values)) {
-        if (value > 0) {
-          actualNonZeroRanges[range] = value;
-        }
-      }
-
-      return (
-        JSON.stringify(actualNonZeroRanges) ==
-        JSON.stringify(expectedNonZeroRanges)
-      );
-    },
-    "Wait for telemetry to be collected",
-    100,
-    100
-  );
-
-  Assert.equal(
-    JSON.stringify(actualNonZeroRanges),
-    JSON.stringify(expectedNonZeroRanges)
-  );
-}
-
 async function openTabAndUseCreditCard(
   idx,
   creditCard,
@@ -219,14 +124,6 @@ async function openTabAndUseCreditCard(
   return null;
 }
 
-async function clearTelemetry(histogramId) {
-  Services.telemetry.clearEvents();
-  if (histogramId) {
-    Services.telemetry.getHistogramById(histogramId).clear();
-  }
-  await clearGleanTelemetry();
-}
-
 /**
  * Sets up a telemetry task and returns an async cleanup function
  */
@@ -237,7 +134,7 @@ async function setupTask(prefEnv, ...itemsToStore) {
     await SpecialPowers.pushPrefEnv(prefEnv);
   }
 
-  await clearTelemetry();
+  await clearGleanTelemetry();
 
   if (itemCount) {
     await setStorage(...itemsToStore);

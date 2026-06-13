@@ -6,6 +6,8 @@ UNIFIED_SOURCES = [
     "TestGfxInfo.cpp",
     "TestTimeConverter.cpp",
     "TestTouchResampler.cpp",
+    "TestWidgetMouseEventCtors.cpp",
+    "TestWidgetTouchEventCtors.cpp",
 ]
 
 if CONFIG["MOZ_WIDGET_TOOLKIT"] == "cocoa":
@@ -25,6 +27,7 @@ if CONFIG["OS_ARCH"] == "WINNT":
 if CONFIG["MOZ_WIDGET_TOOLKIT"] == "gtk":
     UNIFIED_SOURCES += [
         "TestDMABufSurface.cpp",
+        "TestGtkDragDrop.cpp",
     ]
 
 FINAL_LIBRARY = "xul-gtest"

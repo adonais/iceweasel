@@ -11,6 +11,7 @@
 #include "GMPServiceChild.h"
 #include "GMPServiceParent.h"
 #include "GMPVideoDecoderParent.h"
+#include "mozilla/AppShutdown.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/dom/Document.h"
@@ -106,6 +107,12 @@ class GMPServiceCreateHelper final : public mozilla::Runnable {
     MOZ_ASSERT(NS_IsMainThread());
 
     if (!sSingletonService) {
+      // Refuse to construct a new singleton once shutdown has been confirmed.
+      // The service registers an xpcom-will-shutdown blocker in its Init(),
+      // which fails (and asserts) once that barrier has begun gathering.
+      if (AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed)) {
+        return nullptr;
+      }
       if (XRE_IsParentProcess()) {
         RefPtr<GeckoMediaPluginServiceParent> service =
             new GeckoMediaPluginServiceParent();

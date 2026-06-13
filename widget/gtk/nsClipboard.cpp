@@ -35,15 +35,15 @@
 #include "WidgetUtilsGtk.h"
 
 #include "imgIContainer.h"
+#include "mozilla/widget/nsGtkHtmlUtils.h"
 
 #include <gtk/gtk.h>
 #if defined(MOZ_X11)
 #  include <gtk/gtkx.h>
 #endif
 
-#include "mozilla/Encoding.h"
-
 using namespace mozilla;
+using namespace mozilla::widget;
 
 // Idle timeout for receiving selection and property notify events (microsec)
 // Right now it's set to 1 sec.
@@ -53,11 +53,6 @@ const int kClipboardTimeout = 1000000;
 // We ususally get data in first 2-3 iterations unless some large object
 // (an image for instance) is transferred through clipboard.
 const int kClipboardFastIterationNum = 3;
-
-// We add this prefix to HTML markup, so that GetHTMLCharset can correctly
-// detect the HTML as UTF-8 encoded.
-static const char kHTMLMarkupPrefix[] =
-    R"(<meta http-equiv="content-type" content="text/html; charset=utf-8">)";
 
 static const char kURIListMime[] = "text/uri-list";
 
@@ -80,8 +75,6 @@ static void clipboard_clear_cb(GtkClipboard* aGtkClipboard, gpointer user_data);
 static void clipboard_owner_change_cb(GtkClipboard* aGtkClipboard,
                                       GdkEventOwnerChange* aEvent,
                                       gpointer aUserData);
-
-static bool GetHTMLCharset(Span<const char> aData, nsCString& str);
 
 ClipboardTargets ClipboardTargets::Clone() {
   ClipboardTargets ret;
@@ -449,59 +442,14 @@ static already_AddRefed<nsIFile> GetFileData(const nsACString& aURIList) {
 }
 
 static already_AddRefed<nsISupports> GetHTMLData(Span<const char> aData) {
-  nsLiteralCString mimeType(kHTMLMime);
-
-  // Convert text/html into our text format
-  nsAutoCString charset;
-  if (!GetHTMLCharset(aData, charset)) {
-    // Fall back to utf-8 in case html/data is missing kHTMLMarkupPrefix.
-    MOZ_CLIPBOARD_LOG(
-        "Failed to get html/text encoding, fall back to utf-8.\n");
-    charset.AssignLiteral("utf-8");
-  }
-
-  MOZ_CLIPBOARD_LOG("GetHTMLData: HTML detected charset %s", charset.get());
-  // app which use "text/html" to copy&paste
-  // get the decoder
-  auto encoding = Encoding::ForLabelNoReplacement(charset);
-  if (!encoding) {
-    MOZ_CLIPBOARD_LOG("GetHTMLData: get unicode decoder error (charset: %s)",
-                      charset.get());
-    return nullptr;
-  }
-
-  // According to spec html UTF-16BE/LE should be switched to UTF-8
-  // https://html.spec.whatwg.org/#determining-the-character-encoding:utf-16-encoding-2
-  if (encoding == UTF_16LE_ENCODING || encoding == UTF_16BE_ENCODING) {
-    encoding = UTF_8_ENCODING;
-  }
-
-  // Remove kHTMLMarkupPrefix again, it won't necessarily cause any
-  // issues, but might confuse other users.
-  const size_t prefixLen = std::size(kHTMLMarkupPrefix) - 1;
-  if (aData.Length() >= prefixLen && nsDependentCSubstring(aData.To(prefixLen))
-                                         .EqualsLiteral(kHTMLMarkupPrefix)) {
-    aData = aData.From(prefixLen);
-  }
-
   nsAutoString unicodeData;
-  auto [rv, enc] = encoding->Decode(AsBytes(aData), unicodeData);
-#if MOZ_LOGGING
-  if (enc != UTF_8_ENCODING && MOZ_CLIPBOARD_LOG_ENABLED()) {
-    nsCString decoderName;
-    enc->Name(decoderName);
-    MOZ_CLIPBOARD_LOG("GetHTMLData: expected UTF-8 decoder but got %s",
-                      decoderName.get());
-  }
-#endif
-  if (NS_FAILED(rv)) {
+  if (!DecodeHTMLData(aData, unicodeData)) {
     MOZ_CLIPBOARD_LOG("GetHTMLData: failed to decode HTML");
     return nullptr;
   }
-
   nsCOMPtr<nsISupports> wrapper;
   nsPrimitiveHelpers::CreatePrimitiveForData(
-      mimeType, (const char*)unicodeData.BeginReading(),
+      nsLiteralCString(kHTMLMime), (const char*)unicodeData.BeginReading(),
       unicodeData.Length() * sizeof(char16_t), getter_AddRefs(wrapper));
   return wrapper.forget();
 }
@@ -1393,49 +1341,4 @@ void clipboard_owner_change_cb(GtkClipboard* aGtkClipboard,
   MOZ_CLIPBOARD_LOG("clipboard_owner_change_cb() callback\n");
   nsClipboard* clipboard = static_cast<nsClipboard*>(aUserData);
   clipboard->OwnerChangedEvent(aGtkClipboard, aEvent);
-}
-
-/*
- * This function extracts the encoding label from the subset of HTML internal
- * encoding declaration syntax that uses the old long form with double quotes
- * and without spaces around the equals sign between the "content" attribute
- * name and the attribute value.
- *
- * This was added for the sake of an ancient version of StarOffice
- * in the pre-UTF-8 era in bug 123389. It is unclear if supporting
- * non-UTF-8 encodings is still necessary and if this function
- * still needs to exist.
- *
- * As of December 2022, both Gecko and LibreOffice emit an UTF-8
- * declaration that this function successfully extracts "UTF-8" from,
- * but that's also the default that we fall back on if this function
- * fails to extract a label.
- */
-bool GetHTMLCharset(Span<const char> aData, nsCString& aFoundCharset) {
-  // Assume ASCII first to find "charset" info
-  const nsDependentCSubstring htmlStr(aData);
-  nsACString::const_iterator start, end;
-  htmlStr.BeginReading(start);
-  htmlStr.EndReading(end);
-  nsACString::const_iterator valueStart(start), valueEnd(start);
-
-  if (CaseInsensitiveFindInReadable("CONTENT=\"text/html;"_ns, start, end)) {
-    start = end;
-    htmlStr.EndReading(end);
-
-    if (CaseInsensitiveFindInReadable("charset="_ns, start, end)) {
-      valueStart = end;
-      start = end;
-      htmlStr.EndReading(end);
-
-      if (FindCharInReadable('"', start, end)) valueEnd = start;
-    }
-  }
-  // find "charset" in HTML
-  if (valueStart != valueEnd) {
-    aFoundCharset = Substring(valueStart, valueEnd);
-    ToUpperCase(aFoundCharset);
-    return true;
-  }
-  return false;
 }

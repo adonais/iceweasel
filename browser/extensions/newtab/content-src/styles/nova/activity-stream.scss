@@ -173,9 +173,13 @@ input {
 
 // Widget Components
 @import '../../components/Widgets/Widgets';
+@import '../../components/Widgets/WidgetWrapper';
+@import '../../components/Widgets/WidgetCelebration';
 @import '../../components/Widgets/Lists/Lists';
 @import '../../components/Widgets/FocusTimer/FocusTimer';
+@import '../../components/Widgets/SportsWidget/SportsWidget';
 @import '../../components/Widgets/Weather/Weather';
+@import '../../components/Widgets/Clocks/Clocks';
 
 // Discovery Stream Components
 @import '../../components/DiscoveryStreamComponents/CardGrid/CardGrid';
@@ -198,6 +202,7 @@ input {
 @import '../../components/DiscoveryStreamComponents/FeatureHighlight/FollowSectionButtonHighlight';
 @import '../../components/DiscoveryStreamComponents/FeatureHighlight/WallpaperFeatureHighlight';
 @import '../../components/DiscoveryStreamComponents/FeatureHighlight/ShortcutFeatureHighlight';
+@import '../../components/DiscoveryStreamComponents/FeatureHighlight/WidgetsRowFeatureHighlight';
 @import '../../components/DiscoveryStreamComponents/TopicSelection/TopicSelection';
 @import '../../components/DiscoveryStreamComponents/AdBanner/AdBanner';
 @import '../../components/DiscoveryStreamComponents/AdBannerContextMenu/AdBannerContextMenu';

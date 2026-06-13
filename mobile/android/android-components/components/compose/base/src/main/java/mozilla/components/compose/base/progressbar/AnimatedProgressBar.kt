@@ -36,6 +36,7 @@ import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.graphics.nativePaint
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalView
@@ -178,7 +179,7 @@ fun AnimatedProgressBar(
         }
 
         glowRadius?.let { radius ->
-            paint.asFrameworkPaint().apply {
+            paint.nativePaint.apply {
                 setShadowLayer(radius.toPx(), 0f, 0f, backgroundColor.toArgb())
             }
         }

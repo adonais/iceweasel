@@ -158,7 +158,7 @@ export class AboutReaderParent extends JSWindowActorParent {
       return;
     }
 
-    let doc = browser.ownerGlobal.document;
+    let doc = browser.documentGlobal.document;
     let button = doc.getElementById("reader-mode-button");
     let menuitem = doc.getElementById("menu_readerModeItem");
     let key = doc.getElementById("key_toggleReaderMode");
@@ -201,7 +201,7 @@ export class AboutReaderParent extends JSWindowActorParent {
   }
 
   static toggleReaderMode(event) {
-    let win = event.target.ownerGlobal;
+    let win = event.target.documentGlobal;
     if (win.gBrowser) {
       let browser = win.gBrowser.selectedBrowser;
 

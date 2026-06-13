@@ -5,9 +5,18 @@
 package org.mozilla.fenix.ui.efficiency.pageObjects
 
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
+import androidx.test.uiautomator.By
+import androidx.test.uiautomator.Until
+import org.junit.Assert.assertTrue
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
+import org.mozilla.fenix.helpers.TestAssetHelper.waitingTime
+import org.mozilla.fenix.helpers.TestAssetHelper.waitingTimeLong
+import org.mozilla.fenix.helpers.TestHelper.mDevice
+import org.mozilla.fenix.helpers.TestHelper.packageName
+import org.mozilla.fenix.helpers.ext.waitNotNull
 import org.mozilla.fenix.ui.efficiency.helpers.BasePage
 import org.mozilla.fenix.ui.efficiency.helpers.Selector
+import org.mozilla.fenix.ui.efficiency.helpers.SelectorStrategy
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationRegistry
 import org.mozilla.fenix.ui.efficiency.navigation.NavigationStep
 import org.mozilla.fenix.ui.efficiency.selectors.BrowserPageSelectors
@@ -29,11 +38,12 @@ class BrowserPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRule
             ),
         )
 
+        // Use UIAutomator selector to avoid Compose sync hanging when GeckoView is active.
         NavigationRegistry.register(
             from = pageName,
             to = pageName,
             steps = listOf(
-                NavigationStep.Click(ToolbarSelectors.TOOLBAR_URL_BOX),
+                NavigationStep.Click(ToolbarSelectors.TOOLBAR_URL_BOX_UIAUTOMATOR),
                 NavigationStep.EnterText(SearchBarSelectors.TOOLBAR_IN_EDIT_MODE),
                 NavigationStep.PressEnter(SearchBarSelectors.TOOLBAR_IN_EDIT_MODE),
             ),
@@ -54,9 +64,79 @@ class BrowserPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRule
             to = "MainMenuPage",
             steps = listOf(NavigationStep.Click(HomeSelectors.MAIN_MENU_BUTTON_UIAUTOMATOR)),
         )
+
+        // Use UIAutomator selector to avoid Compose sync hanging when GeckoView is active.
+        NavigationRegistry.register(
+            from = pageName,
+            to = "HomePage",
+            steps = listOf(
+                NavigationStep.Click(ToolbarSelectors.NEW_TAB_BUTTON),
+                NavigationStep.PressBack,
+            ),
+        )
+    }
+
+    override fun navigateToPage(url: String): BrowserPage {
+        super.navigateToPage(url.ifBlank { "example.com" })
+        return this
     }
 
     override fun mozGetSelectorsByGroup(group: String): List<Selector> {
         return BrowserPageSelectors.all.filter { it.groups.contains(group) }
+    }
+
+    fun verifyPageContent(text: String): BrowserPage {
+        mDevice.waitNotNull(
+            Until.findObject(By.res("$packageName:id/engineView")),
+            waitingTime,
+        )
+        assertTrue(
+            mDevice.wait(Until.findObject(By.textContains(text)), waitingTimeLong) != null,
+        )
+        return this
+    }
+
+    fun verifyHttpsOnlyErrorPage(): BrowserPage {
+        return verifyPageContent("Secure site not available")
+            .verifyPageContent("Most likely, the website simply does not support HTTPS.")
+            .verifyPageContent("HTTPS-Only mode will be turned off temporarily")
+            .verifyPageContent(HTTPS_ERROR_GO_BACK)
+    }
+
+    fun goBackFromHttpsError(): BrowserPage {
+        return clickPageContent(HTTPS_ERROR_GO_BACK)
+            .clickPageContentIfPresent(HTTPS_ERROR_GO_BACK)
+    }
+
+    fun clickPageContent(text: String): BrowserPage {
+        mozClick(
+            Selector(
+                strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT_CONTAINS,
+                value = text,
+                description = "Page content '$text'",
+                groups = listOf(),
+            ),
+        )
+        return this
+    }
+
+    fun clickPageContentIfPresent(text: String): BrowserPage {
+        mozClickIfPresent(
+            Selector(
+                strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT_CONTAINS,
+                value = text,
+                description = "Page content '$text'",
+                groups = listOf(),
+            ),
+        )
+        return this
+    }
+
+    fun continueToHttpSite(): BrowserPage {
+        return clickPageContent("Continue to HTTP Site")
+    }
+
+    private companion object {
+        const val HTTPS_ERROR_GO_BACK = "Go Back (Recommended)"
     }
 }

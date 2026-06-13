@@ -130,9 +130,9 @@ class PaymentResponse final : public DOMEventTargetHelper,
                              const nsAString& aPayerEmail,
                              const nsAString& aPayerPhone);
 
-  already_AddRefed<Promise> Retry(JSContext* aCx,
-                                  const PaymentValidationErrors& errorField,
-                                  ErrorResult& aRv);
+  MOZ_CAN_RUN_SCRIPT already_AddRefed<Promise> Retry(
+      JSContext* aCx, const PaymentValidationErrors& errorField,
+      ErrorResult& aRv);
 
   void RespondRetry(const nsAString& aMethodName,
                     const nsAString& aShippingOption,
@@ -147,15 +147,15 @@ class PaymentResponse final : public DOMEventTargetHelper,
   void ValidatePaymentValidationErrors(const PaymentValidationErrors& aErrors,
                                        ErrorResult& aRv);
 
-  void ConvertPaymentMethodErrors(JSContext* aCx,
-                                  const PaymentValidationErrors& aErrors,
-                                  ErrorResult& aRv) const;
+  MOZ_CAN_RUN_SCRIPT void ConvertPaymentMethodErrors(
+      JSContext* aCx, const PaymentValidationErrors& aErrors,
+      ErrorResult& aRv) const;
 
   nsresult DispatchUpdateEvent(const nsAString& aType);
 
  private:
   bool mCompleteCalled;
-  PaymentRequest* mRequest;
+  RefPtr<PaymentRequest> mRequest;
   nsString mRequestId;
   nsString mMethodName;
   ResponseData mDetails;

@@ -1966,7 +1966,7 @@ class Skipfails:
             elif tsan:
                 skip_if += "ThreadSanitizer"
             # See implicit VARIANT_DEFAULTS in
-            # https://searchfox.org/mozilla-central/source/layout/tools/reftest/manifest.sys.mjs#30
+            # https://searchfox.org/firefox-main/source/layout/tools/reftest/manifest.sys.mjs#30
             no_fission = "!fission" not in runtimes
             snapshot = "snapshot" in runtimes
             swgl = "swgl" in runtimes

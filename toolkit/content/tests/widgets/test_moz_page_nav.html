@@ -128,13 +128,13 @@
        */
       add_task(async function test_first_item_selected_by_default() {
         is(
-          mozPageNav.pageNavButtons.length,
+          mozPageNav.visiblePageNavButtons.length,
           5,
           "Five page nav buttons are in the navigation"
         );
 
         ok(
-          mozPageNav.pageNavButtons[0].view === mozPageNav.currentView,
+          mozPageNav.visiblePageNavButtons[0].view === mozPageNav.currentView,
           "The first page nav button is selected by default"
         );
       });
@@ -489,6 +489,64 @@
         );
 
         container.remove();
+      });
+
+      /**
+       * Tests that setting the title property maps it to the wrapped element
+       * for all three variants (tab button, support link, external link).
+       */
+      add_task(async function test_title_attribute() {
+        const tabButton = mozPageNav.pageNavButtons[0];
+        const supportLink = mozPageNav.secondaryNavButtons[0];
+        const externalLink = mozPageNav.secondaryNavButtons[1];
+
+        // Tab button — title mapped to the wrapped <button>.
+        const EXPECTED_TAB_BUTTON_TITLE = "Tab button title";
+        tabButton.title = EXPECTED_TAB_BUTTON_TITLE;
+        await tabButton.updateComplete;
+        is(
+          tabButton.buttonEl.getAttribute("title"),
+          EXPECTED_TAB_BUTTON_TITLE,
+          "Tab button wrapped button has the expected title attribute"
+        );
+        tabButton.title = undefined;
+        await tabButton.updateComplete;
+        ok(
+          !tabButton.buttonEl.hasAttribute("title"),
+          "Tab button wrapped button has no title attribute when title is unset"
+        );
+
+        // Support link — title mapped to the wrapped <a>.
+        const EXPECTED_SUPPORT_LINK_TITLE = "Support link title";
+        supportLink.title = EXPECTED_SUPPORT_LINK_TITLE;
+        await supportLink.updateComplete;
+        is(
+          supportLink.linkEl.getAttribute("title"),
+          EXPECTED_SUPPORT_LINK_TITLE,
+          "Support link wrapped link has the expected title attribute"
+        );
+        supportLink.title = undefined;
+        await supportLink.updateComplete;
+        ok(
+          !supportLink.linkEl.hasAttribute("title"),
+          "Support link wrapped link has no title attribute when title is unset"
+        );
+
+        // External link — title mapped to the inner <a>.
+        const EXPECTED_EXTERNAL_LINK_TITLE = "External link title";
+        externalLink.title = EXPECTED_EXTERNAL_LINK_TITLE;
+        await externalLink.updateComplete;
+        is(
+          externalLink.linkEl.getAttribute("title"),
+          EXPECTED_EXTERNAL_LINK_TITLE,
+          "External link wrapped link has the expected title attribute"
+        );
+        externalLink.title = undefined;
+        await externalLink.updateComplete;
+        ok(
+          !externalLink.linkEl.hasAttribute("title"),
+          "External link wrapped link has no title attribute when title is unset"
+        );
       });
 
       /**

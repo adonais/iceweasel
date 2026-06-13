@@ -1888,9 +1888,7 @@ bool BaselineCacheIRCompiler::emitLoadDOMExpandoValueGuardGeneration(
     return false;
   }
 
-  masm.loadPtr(Address(obj, ProxyObject::offsetOfReservedSlots()), scratch);
-  Address expandoAddr(scratch,
-                      js::detail::ProxyReservedSlots::offsetOfPrivateSlot());
+  Address expandoAddr(obj, ProxyObject::offsetOfPrivateSlot());
 
   // Load the ExpandoAndGeneration* in the output scratch register and guard
   // it matches the proxy's ExpandoAndGeneration.
@@ -3269,7 +3267,8 @@ void BaselineCacheIRCompiler::createThis(Register argcReg, Register calleeReg,
 #ifdef DEBUG
   Label createdThisOK;
   masm.branchTestObject(Assembler::Equal, JSReturnOperand, &createdThisOK);
-  masm.branchTestMagic(Assembler::Equal, JSReturnOperand, &createdThisOK);
+  masm.branchTestMagicValue(Assembler::Equal, JSReturnOperand,
+                            JS_UNINITIALIZED_LEXICAL, &createdThisOK);
   masm.assumeUnreachable(
       "The return of CreateThis must be an object or uninitialized.");
   masm.bind(&createdThisOK);

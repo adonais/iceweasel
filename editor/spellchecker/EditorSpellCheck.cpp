@@ -639,12 +639,19 @@ EditorSpellCheck::SetCurrentDictionaries(
       } else {
         anonymousDivOrEditingHost = mEditor->GetRoot();
       }
-      RefPtr<Document> ownerDoc = anonymousDivOrEditingHost->OwnerDoc();
-      Document* parentDoc = ownerDoc->GetInProcessParentDocument();
-      if (parentDoc) {
-        parentDoc->SetHeaderData(
-            nsGkAtoms::headerContentLanguage,
-            NS_ConvertUTF8toUTF16(DictionariesToString(aDictionaries)));
+      // If lang is available, we should respect it for spellchecker. But if not
+      // available or cannot access editing host, we don't know better language
+      // for content. But since this is mail composer, we will also respect pref
+      // (dictionary.spellchecker), application locale and system locale, if not
+      // available.
+      if (anonymousDivOrEditingHost) {
+        RefPtr<Document> ownerDoc = anonymousDivOrEditingHost->OwnerDoc();
+        Document* parentDoc = ownerDoc->GetInProcessParentDocument();
+        if (parentDoc) {
+          parentDoc->SetHeaderData(
+              nsGkAtoms::headerContentLanguage,
+              NS_ConvertUTF8toUTF16(DictionariesToString(aDictionaries)));
+        }
       }
     }
   }

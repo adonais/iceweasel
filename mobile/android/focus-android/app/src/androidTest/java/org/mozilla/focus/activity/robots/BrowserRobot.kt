@@ -208,7 +208,13 @@ class BrowserRobot {
                 if (i == RETRY_COUNT) {
                     throw e
                 } else {
-                    clickPlayButton()
+                    // Video failed to start - refresh the page and try again
+                    browserScreen {
+                    }.openMainMenu {
+                    }.clickReloadButton {
+                        progressBar.waitUntilGone(waitingTime)
+                        clickPlayButton()
+                    }
                 }
             }
         }

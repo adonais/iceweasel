@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
-import { CustomKeys } from "resource:///modules/CustomKeys.sys.mjs";
+import { CustomKeys } from "moz-src:///browser/components/customkeys/CustomKeys.sys.mjs";
 import { ShortcutUtils } from "resource://gre/modules/ShortcutUtils.sys.mjs";
 
 const KEY_NAMES_TO_CODES = {
@@ -181,18 +181,23 @@ export class CustomKeysParent extends JSWindowActorParent {
       let modifiers = [];
       const isMac = AppConstants.platform === "macosx";
       if (event.altKey) {
-        modifiers.push("Alt");
+        modifiers.push("alt");
       }
       if (event.ctrlKey) {
-        modifiers.push(isMac ? "MacCtrl" : "Ctrl");
+        modifiers.push(isMac ? "control" : "accel");
       }
-      if (isMac && event.metaKey) {
-        modifiers.push("Command");
+      // We can't support the Windows key (metaKey) on Windows because
+      // GlobalKeyListener ignores the Windows key state if no shortcut keys
+      // match the event. See bug 1100862. Unfortunately, there are multiple
+      // keysets and the absence of a match in one keyset doesn't mean there
+      // won't be a match in another.
+      if (event.metaKey && AppConstants.platform !== "win") {
+        modifiers.push(isMac ? "accel" : "meta");
       }
       if (event.shiftKey) {
-        modifiers.push("Shift");
+        modifiers.push("shift");
       }
-      data.modifiers = ShortcutUtils.getModifiersAttribute(modifiers);
+      data.modifiers = modifiers.sort().join(",");
       if (
         event.key == "Alt" ||
         event.key == "Control" ||

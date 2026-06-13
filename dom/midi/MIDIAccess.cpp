@@ -142,7 +142,7 @@ void MIDIAccess::FireConnectionEvent(MIDIPort* aPort) {
 void MIDIAccess::MaybeCreateMIDIPort(const MIDIPortInfo& aInfo,
                                      ErrorResult& aRv) {
   nsAutoString id(aInfo.id());
-  MIDIPortType type = static_cast<MIDIPortType>(aInfo.type());
+  MIDIPortType type = aInfo.type();
   RefPtr<MIDIPort> port;
   if (type == MIDIPortType::Input) {
     if (mInputMap->Has(id) || NS_WARN_IF(aRv.Failed())) {

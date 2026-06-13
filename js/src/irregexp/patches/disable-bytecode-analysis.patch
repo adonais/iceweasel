@@ -1,41 +1,3 @@
-diff --git a/js/src/irregexp/imported/regexp-bytecode-peephole.cc b/js/src/irregexp/imported/regexp-bytecode-peephole.cc
---- a/imported/regexp-bytecode-peephole.cc
-+++ b/imported/regexp-bytecode-peephole.cc
-@@ -1087,7 +1087,6 @@
-
-   // Run the peephole optimizer until we've reached a fixed point. All relevant
-   // data structures ping-pong between src and dst_writer.
--  bool any_pass_optimized = false;
-   for (;;) {
-     dst_writer->Reset();
-     // TODO(jgruber): This currently recreates standard definitions for each
-@@ -1096,7 +1095,6 @@
-     bool this_pass_optimized =
-         BytecodePeephole::OptimizeBytecode(zone, src_writer, dst_writer);
-     if (!this_pass_optimized) break;
--    any_pass_optimized = true;
-     std::swap(dst_writer, src_writer);
-   }
-
-@@ -1109,18 +1107,6 @@
-       isolate->factory()->NewTrustedByteArray(optimized_length);
-   MemCopy(array->begin(), optimized_bytecode, optimized_length);
-
--  if (any_pass_optimized && v8_flags.trace_regexp_peephole_optimization) {
--    std::unique_ptr<char[]> pattern_cstring =
--        re_data->escaped_source()->ToCString();
--    PrintF("Original Bytecode:\n");
--    RegExpBytecodeDisassemble(original_bytecode->data(),
--                              static_cast<uint32_t>(original_bytecode->size()),
--                              pattern_cstring.get());
--    PrintF("Optimized Bytecode:\n");
--    RegExpBytecodeDisassemble(array->begin(), optimized_length,
--                              pattern_cstring.get());
--  }
--
-   return array;
- }
-
 diff --git a/js/src/irregexp/imported/regexp-bytecodes-inl.h b/js/src/irregexp/imported/regexp-bytecodes-inl.h
 index 78f63ca35f..f6cd7fb82f 100644
 --- a/imported/regexp-bytecodes-inl.h
@@ -86,27 +48,41 @@ index 78f63ca35f..f6cd7fb82f 100644
      return []<size_t... Is>(std::index_sequence<Is...>) {
        return std::tuple_cat([]<size_t I>() {
          constexpr auto id = static_cast<Operand>(I);
+diff --git a/js/src/irregexp/imported/regexp-bytecode-peephole.cc b/js/src/irregexp/imported/regexp-bytecode-peephole.cc
+--- a/imported/regexp-bytecode-peephole.cc
++++ b/imported/regexp-bytecode-peephole.cc
+@@ -1090,6 +1090,7 @@
+       isolate->factory()->NewTrustedByteArray(optimized_length);
+   MemCopy(array->begin(), optimized_bytecode, optimized_length);
+
++#ifndef COMPILING_IRREGEXP_FOR_EXTERNAL_EMBEDDER
+   if (did_optimize && v8_flags.trace_regexp_peephole_optimization) {
+     std::unique_ptr<char[]> pattern_cstring =
+         re_data->escaped_source()->ToCString();
+@@ -1101,3 +1102,4 @@
+     RegExpBytecodeDisassemble(array->begin(), optimized_length,
+                               pattern_cstring.get());
+   }
++#endif // !COMPILING_IRREGEXP_FOR_EXTERNAL_EMBEDDER
+
+   return array;
+ }
 diff --git a/js/src/irregexp/imported/regexp-code-generator.cc b/js/src/irregexp/imported/regexp-code-generator.cc
 --- a/imported/regexp-code-generator.cc
 +++ b/imported/regexp-code-generator.cc
-@@ -36,20 +36,6 @@
+@@ -36,6 +36,7 @@
    USE(isolate_);
    USE(masm_);
 
--  // Bytecode analysis is currently unused. In future work it could form the
--  // basis for compiler optimizations.
--  if (V8_UNLIKELY(v8_flags.regexp_bytecode_analysis)) {
--    BytecodeAnalysis analysis(isolate_, &zone_, bytecode_);
--    analysis.Analyze();
--    if (v8_flags.trace_regexp_bytecode_analysis) {
--      std::unique_ptr<char[]> pattern_cstring =
--          re_data->escaped_source()->ToCString();
--      RegExpBytecodeDisassemble(bytecode_->begin(),
--                                bytecode_->ulength().value(),
--                                pattern_cstring.get(), &analysis);
--    }
--  }
--
++#ifndef COMPILING_IRREGEXP_FOR_EXTERNAL_EMBEDDER
+   // Bytecode analysis is currently unused. In future work it could form the
+   // basis for compiler optimizations.
+   if (V8_UNLIKELY(v8_flags.regexp_bytecode_analysis)) {
+@@ -49,3 +50,4 @@
+                                 pattern_cstring.get(), &analysis);
+     }
+   }
++#endif // !COMPILING_IRREGEXP_FOR_EXTERNAL_EMBEDDER
+
    PreVisitBytecodes();
    iter_.reset();
-   VisitBytecodes();

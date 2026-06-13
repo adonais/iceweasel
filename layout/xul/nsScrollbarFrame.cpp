@@ -13,6 +13,7 @@
 
 #include "mozilla/LookAndFeel.h"
 #include "mozilla/PresShell.h"
+#include "mozilla/ReflowInput.h"
 #include "mozilla/ScrollContainerFrame.h"
 #include "mozilla/dom/Element.h"
 #include "nsContentCreatorFunctions.h"

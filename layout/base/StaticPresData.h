@@ -127,23 +127,8 @@ class StaticPresData {
    * be fine. But just to be on the safe side, we leave the old mechanism as-is,
    * with an additional per-session cache that new callers can use if they don't
    * have a PresContext.
-   *
-   * aNeedsToCache is used for two things.  If null, it indicates that
-   * it is safe for the StaticPresData to cache the result of the
-   * prefs lookup, either because we're on the main thread,
-   * or because we're on a style worker thread but the font lock has
-   * been acquired.  If non-null, it indicates that it's not safe to
-   * cache the result of the prefs lookup (because we're on
-   * a style worker thread without the lock acquired).  In this case,
-   * GetFontPrefsForLang will store true in *aNeedsToCache true if we
-   * would have cached the result of a new lookup, and false if we
-   * were able to use an existing cached result.  Thus, callers that
-   * get a true *aNeedsToCache outparam value should make an effort
-   * to re-call GetFontPrefsForLang when it is safe to cache, to avoid
-   * recomputing the prefs again later.
    */
-  const LangGroupFontPrefs* GetFontPrefsForLang(nsAtom* aLanguage,
-                                                bool* aNeedsToCache = nullptr);
+  const LangGroupFontPrefs* GetFontPrefsForLang(nsAtom* aLanguage);
 
   void InvalidateFontPrefs() {
     AutoWriteLock lock(mLock);

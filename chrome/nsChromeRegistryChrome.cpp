@@ -173,7 +173,7 @@ nsresult nsChromeRegistryChrome::OverrideLocalePackage(
   nsresult rv = mozilla::Preferences::GetCString(PromiseFlatCString(pref).get(),
                                                  override);
   if (NS_SUCCEEDED(rv)) {
-    aOverride = override;
+    aOverride = std::move(override);
   } else {
     aOverride = aPackage;
   }
@@ -599,7 +599,8 @@ void nsChromeRegistryChrome::ManifestOverride(ManifestProcessingContext& cx,
     SerializeURI(chromeuri, serializedChrome);
     SerializeURI(resolveduri, serializedOverride);
 
-    OverrideMapping override = {serializedChrome, serializedOverride};
+    OverrideMapping override = {std::move(serializedChrome),
+                                std::move(serializedOverride)};
     SendManifestEntry(override);
   }
 }

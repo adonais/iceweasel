@@ -635,6 +635,11 @@ void MacroAssembler::branchTestMagic(Condition cond, const Address& valaddr,
   MOZ_CRASH();
 }
 
+void MacroAssembler::branchTestMagic(Condition cond, const BaseIndex& valaddr,
+                                     JSWhyMagic why, Label* label) {
+  MOZ_CRASH();
+}
+
 template <typename T>
 void MacroAssembler::branchTestValue(Condition cond, const T& lhs,
                                      const ValueOperand& rhs, Label* label) {

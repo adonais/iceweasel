@@ -79,29 +79,6 @@ prefFlips:
     uri: resource://nimbus/schemas/PrefFlipsFeature.schema.json
     path: toolkit/components/nimbus/schemas/PrefFlipsFeature.schema.json
 
-# TODO(bug 1972426): Remove this feature.
-nimbusStore:
-  description: Configuration for the Nimbus ExperimentStore.
-  owner: beth@mozilla.com
-  hasExposure: false
-  variables:
-    dbEnabled:
-      type: boolean
-      description: >
-        If enabled, the NimbusEnrollments database table will be used as the
-        primary enrollment store.
-      setPref:
-        branch: user
-        pref: nimbus.profilesdatastoreservice.read.enabled
-    dbSyncEnabled:
-      type: boolean
-      description: >
-        If enabled, the RemoteSettingsExperimentLoader will trigger
-        unenrollments for experiments that are unenrolled in other profiles.
-      setPref:
-        branch: user
-        pref: nimbus.profilesdatastoreservice.sync.enabled
-
 search:
   description: Search service related features.
   owner: search-and-suggest-program@mozilla.com
@@ -262,11 +239,15 @@ urlbar:
         in the Rust component coerced to a 1-based integer value).
     autoFillAdaptiveHistoryEnabled:
       type: boolean
-      fallbackPref: browser.urlbar.autoFill.adaptiveHistory.enabled
+      setPref:
+        pref: browser.urlbar.autoFill.adaptiveHistory.enabled
+        branch: user
       description: Whether enabling adaptive history autofill.
     autoFillAdaptiveHistoryMinCharsThreshold:
       type: int
-      fallbackPref: browser.urlbar.autoFill.adaptiveHistory.minCharsThreshold
+      setPref:
+        pref: browser.urlbar.autoFill.adaptiveHistory.minCharsThreshold
+        branch: user
       description: Minimum char length of the user's search string to trigger adaptive history autofill.
     autoFillAdaptiveHistoryUseCountThreshold:
       type: string
@@ -1764,6 +1745,14 @@ newtabWidgets:
       type: boolean
       description: >-
         Enable Focus Timer widget
+    clocksEnabled:
+      type: boolean
+      description: >-
+        Enable Clocks widget
+    sportsWidgetEnabled:
+      type: boolean
+      description: >-
+        Enable Sports widget
     listsBadgeEnabled:
       type: boolean
       description: >-
@@ -2304,6 +2293,18 @@ pdfjs:
       setPref:
         branch: default
         pref: pdfjs.enableSignatureEditor
+
+fxms-message:
+  description: A messaging channel that supports multiple simultaneous enrollments
+  owner: omc@mozilla.com
+  allowCoenrollment: true
+  hasExposure: true
+  exposureDescription: >-
+    "Exposure is sent if the message is about to be shown after trigger and targeting conditions on the message matched."
+  schema:
+    uri: "chrome://browser/content/asrouter/schemas/MessagingExperiment.schema.json"
+    path: "browser/components/asrouter/content-src/schemas/MessagingExperiment.schema.json"
+  variables: {}
 
 # fxms-message-* placeholder feature ids
 #
@@ -2979,11 +2980,23 @@ networking:
         branch: default
         pref: "network.http.http3.cc_algorithm"
     http3SlowStartAlgorithm:
-      description: The slow start algorithm with which to configure neqo. Use 0 for Classic, 1 for HyStart++.
+      description: The slow start algorithm with which to configure neqo. Use 0 for Classic, 1 for HyStart++, 2 for SEARCH.
       type: int
       setPref:
         branch: default
         pref: "network.http.http3.slow_start_algorithm"
+    http3HyStartAlternativeCssBaseline:
+      description: Whether the HyStart++ alternative CSS baseline value should be used. Has no effect if HyStart++ is not used.
+      type: boolean
+      setPref:
+        branch: default
+        pref: "network.http.http3.hystart_alternative_css_baseline"
+    http3SpuriousRecovery:
+      description: Whether Spurious Congestion Event Recovery is turned on.
+      type: boolean
+      setPref:
+        branch: default
+        pref: "network.http.http3.spurious_recovery"
     enableOffMainThreadStreamDecompression:
       description: Whether to enable decompression of network streams off-main-thread
       type: boolean
@@ -3092,6 +3105,18 @@ networkingConnections:
       setPref:
         branch: default
         pref: "network.http.happy_eyeballs_enabled"
+    happyEyeballsResolutionDelay:
+      description: Time in ms to wait after the first DNS response before starting connections
+      type: int
+      setPref:
+        branch: default
+        pref: "network.http.happy_eyeballs_resolution_delay"
+    happyEyeballsConnectionAttemptDelay:
+      description: Time in ms between successive connection attempts
+      type: int
+      setPref:
+        branch: default
+        pref: "network.http.happy_eyeballs_connection_attempt_delay"
 
 
 networkingSendOnDataFinished:
@@ -3978,6 +4003,45 @@ userCharacteristics:
         branch: user
         pref: toolkit.telemetry.user_characteristics_ping.current_version
       description: The current collection version of the user characteristics.
+
+mediaCapabilities:
+  description: Media Capabilities API features.
+  owner: media-alerts@mozilla.com, apehrson@mozilla.com, azebrowski@mozilla.com
+  hasExposure: false
+  variables:
+    webrtcEnabled:
+      description: >-
+        Whether or not to enable the WebRTC parts of the MediaCapabilities API.
+      type: boolean
+      setPref:
+        branch: default
+        pref: media.mediacapabilities.webrtc.enabled
+    webrtcAllowlist:
+      description: >-
+        Whether or not to enable the WebRTC parts of the MediaCapabilities API
+        only on specific domains.
+      type: string
+      setPref:
+        branch: default
+        pref: media.mediacapabilities.webrtc.enabled.allowlist
+    legacyEnabled:
+      description: >-
+        Enables legacy mode, which bypasses colorGamut, transferFunction,
+        and scalabilityMode validation, in the MediaCapabilities API,
+        for improved web compatibility.
+      type: boolean
+      setPref:
+        branch: default
+        pref: media.mediacapabilities.legacy.enabled
+    legacyAllowlist:
+      description: >-
+        Enables legacy mode, which bypasses colorGamut, transferFunction,
+        and scalabilityMode validation, in the MediaCapabilities API,
+        for improved web compatibility only on specific domains.
+      type: string
+      setPref:
+        branch: default
+        pref: media.mediacapabilities.legacy.allowlist
 
 migrationWizard:
   description: Prefs to control the Migration Wizard UI.
@@ -5387,6 +5451,18 @@ partitioned-cookie-attribute:
         branch: default
         pref: "network.cookie.CHIPS.affectsTCP"
 
+trackingProtectionExperimentation:
+  description: Experimental controls for tracking protection behavior
+  owner: bvandersloot@mozilla.com
+  hasExposure: false
+  variables:
+    deferAnnotationEnabled:
+      description: Whether to defer tracking protection classification annotation
+      type: boolean
+      setPref:
+        branch: default
+        pref: "privacy.trackingprotection.defer_annotation.enabled"
+
 auto-pip:
   description: "Automatic Picture-in-Picture"
   owner: mconley@mozilla.com
@@ -5786,6 +5862,17 @@ walletCustomSchemes:
       description: >-
         Comma separated lists of schemes
 
+macAppMenuSetAsDefault:
+  description: >-
+    Controls whether or not a Set as Default Browser menu item is added to macOS app menu
+  owner: rfambro@mozilla.com
+  hasExposure: false
+  variables:
+    shown:
+      type: boolean
+      description: >-
+        Whether or not the macOS app menu contains "Set as Default Browser" item
+
 smartWindow:
   description: >-
     Controls whether Smart Window can become the default browser window on
@@ -5801,3 +5888,21 @@ smartWindow:
       description: >-
         If true, Firefox opens as a Smart Window by default on startup for
         eligible users. Set to false (or unenroll) to disable the rollout.
+
+contentSharing:
+  description: Controls the content sharing feature, which allows users to share browser content.
+  owner: nbarrett@mozilla.com
+  hasExposure: false
+  variables:
+    enabled:
+      type: boolean
+      setPref:
+        branch: default
+        pref: browser.contentsharing.enabled
+      description: Whether the content sharing feature is enabled.
+    serverUrl:
+      type: string
+      setPref:
+        branch: default
+        pref: browser.contentsharing.server.url
+      description: The URL of the content sharing server.

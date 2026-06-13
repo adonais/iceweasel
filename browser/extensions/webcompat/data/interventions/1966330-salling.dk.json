@@ -6,12 +6,13 @@
       "matches": ["*://salling.dk/*"]
     }
   },
+  "css": {
+    "fix_mobile_filter_scrolling": "@media (max-width: 767px) { .overlay-mobile--bottom[class], .overlay-mobile--top[class] { max-height: 100%; } }"
+  },
   "interventions": [
     {
       "platforms": ["all"],
-      "content_scripts": {
-        "css": ["bug1966330-salling.dk-fix-mobile-filter-scrolling.css"]
-      }
+      "css": ["fix_mobile_filter_scrolling"]
     }
   ]
 }

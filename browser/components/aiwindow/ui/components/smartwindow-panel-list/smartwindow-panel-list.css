@@ -18,6 +18,7 @@ panel-list {
   --panel-section-header-color: var(--text-color-deemphasized);
   --panel-section-header-font-size: var(--font-size-small);
   --panel-item-padding: calc(var(--size-item-small) / 2);
+  --panel-section-header-padding-inline-start: calc(var(--size-item-small) / 2);
   --panel-item-icon-size: var(--icon-size-small);
   --panel-item-button-border-radius: var(--border-radius-medium);
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
@@ -47,7 +48,7 @@ panel-list {
 
     @media not (prefers-contrast) {
       --panel-list-border-color: light-dark(var(--color-violet-desaturated-20), var(--color-violet-desaturated-50));
-      --panel-list-color: light-dark(var(--color-violet-90), var(--color-neutral-0));
+      --panel-list-color: light-dark(var(--color-violet-90), var(--color-gray-0));
       --panel-section-header-color: light-dark(
         color-mix(in srgb, var(--color-violet-desaturated-90) 70%, transparent),
         color-mix(in srgb, var(--color-violet-desaturated-0) 70%, transparent)
@@ -75,17 +76,19 @@ panel-list[valign="top"] {
 panel-item.panel-section-header::part(button) {
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   color: var(--panel-section-header-color);
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   font-size: var(--panel-section-header-font-size);
   opacity: 1;
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-  padding: var(--panel-item-padding);
+  padding-block: var(--panel-item-padding);
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-  padding-inline-start: var(--panel-section-header-padding-inline-start, var(--panel-item-padding));
+  padding-inline: var(--panel-section-header-padding-inline-start) var(--panel-item-padding);
 }
 
 panel-item:not(.panel-section-header)::part(button) {
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   border-radius: var(--panel-item-button-border-radius);
+  cursor: pointer;
   margin-inline: var(--space-small);
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   max-width: calc(var(--panel-max-width) - var(--space-large));

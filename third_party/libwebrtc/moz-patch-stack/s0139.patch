@@ -1,44 +1,28 @@
-From: Michael Froman <mfroman@mozilla.com>
-Date: Thu, 2 Apr 2026 16:11:00 +0000
-Subject: Bug 2027501 - fix fast recovery retransmission logic. r=bwc
+From: Landry Breuil <landry@openbsd.org>
+Date: Wed, 15 Apr 2026 13:31:00 +0000
+Subject: Bug 2030612 - define AOM_EFLAG_FREEZE_INTERNAL_STATE if not defined
+ r=mjf
 
-Differential Revision: https://phabricator.services.mozilla.com/D291024
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/32071ccb68af0cd311916477dc57d92d0fcd72ef
+fixes build with system-av1/aom after bug 2029247
+
+Differential Revision: https://phabricator.services.mozilla.com/D293051
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/70d2379819582d44092dee15e1e45ddbc9cd3f22
 ---
- net/dcsctp/tx/outstanding_data.cc     | 3 ++-
- net/dcsctp/tx/retransmission_queue.cc | 8 ++++++++
- 2 files changed, 10 insertions(+), 1 deletion(-)
+ modules/video_coding/codecs/av1/libaom_av1_encoder.cc | 4 ++++
+ 1 file changed, 4 insertions(+)
 
-diff --git a/net/dcsctp/tx/outstanding_data.cc b/net/dcsctp/tx/outstanding_data.cc
-index 37ba07b822..3fce484fc8 100644
---- a/net/dcsctp/tx/outstanding_data.cc
-+++ b/net/dcsctp/tx/outstanding_data.cc
-@@ -256,7 +256,8 @@ void OutstandingData::NackBetweenAckBlocks(
-     UnwrappedTSN cur_block_first_acked =
-         UnwrappedTSN::AddTo(cumulative_tsn_ack, block.start);
-     for (UnwrappedTSN tsn = prev_block_last_acked.next_value();
--         tsn < cur_block_first_acked && tsn <= max_tsn_to_nack;
-+         tsn < cur_block_first_acked && tsn <= max_tsn_to_nack &&
-+         tsn < next_tsn();
-          tsn = tsn.next_value()) {
-       ack_info.has_packet_loss |=
-           NackItem(tsn, /*retransmit_now=*/false,
-diff --git a/net/dcsctp/tx/retransmission_queue.cc b/net/dcsctp/tx/retransmission_queue.cc
-index 9557a9be22..e3ed0e6da1 100644
---- a/net/dcsctp/tx/retransmission_queue.cc
-+++ b/net/dcsctp/tx/retransmission_queue.cc
-@@ -251,6 +251,14 @@ bool RetransmissionQueue::IsSackValid(const SackChunk& sack) const {
-   } else if (cumulative_tsn_ack > outstanding_data_.highest_outstanding_tsn()) {
-     return false;
-   }
-+
-+  for (const auto& block : sack.gap_ack_blocks()) {
-+    if (UnwrappedTSN::AddTo(cumulative_tsn_ack, block.end) >
-+        outstanding_data_.highest_outstanding_tsn()) {
-+      return false;
-+    }
-+  }
-+
-   return true;
- }
+diff --git a/modules/video_coding/codecs/av1/libaom_av1_encoder.cc b/modules/video_coding/codecs/av1/libaom_av1_encoder.cc
+index 7607daf886..ffc336b083 100644
+--- a/modules/video_coding/codecs/av1/libaom_av1_encoder.cc
++++ b/modules/video_coding/codecs/av1/libaom_av1_encoder.cc
+@@ -67,6 +67,10 @@
+ #define AOM_EFLAG_CALCULATE_PSNR (1 << 3)
+ #endif
  
++#ifndef AOM_EFLAG_FREEZE_INTERNAL_STATE
++#define AOM_EFLAG_FREEZE_INTERNAL_STATE (1 << 2)
++#endif
++
+ #if defined(WEBRTC_ENCODER_PSNR_STATS)
+ constexpr bool kEnablePsnrStats = true;
+ #else

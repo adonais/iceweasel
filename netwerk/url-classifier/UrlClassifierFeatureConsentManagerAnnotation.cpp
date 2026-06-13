@@ -11,6 +11,7 @@
 #include "mozilla/ScopedPrefs.h"
 #include "mozilla/net/UrlClassifierCommon.h"
 #include "nsIChannel.h"
+#include "nsILoadInfo.h"
 #include "nsIClassifiedChannel.h"
 #include "nsIWebProgressListener.h"
 #include "nsContentUtils.h"
@@ -102,6 +103,12 @@ UrlClassifierFeatureConsentManagerAnnotation::MaybeCreate(
   // We also don't need to annotate the channel if we are not blocking trackers
   if (!ScopedPrefs::BoolPrefScoped(
           ScopedPrefs::PRIVACY_TRACKINGPROTECTION_ENABLED, aChannel)) {
+    return nullptr;
+  }
+
+  RefPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
+  bool isThirdParty = loadInfo->GetIsThirdPartyContextToTopWindow();
+  if (!isThirdParty) {
     return nullptr;
   }
 

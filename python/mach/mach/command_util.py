@@ -185,6 +185,7 @@ MACH_COMMANDS = {
     "perf-data-review": MachCommandReference(
         "toolkit/components/glean/build_scripts/mach_commands.py"
     ),
+    "perfdocs": MachCommandReference("python/mozperftest/mozperftest/mach_commands.py"),
     "perftest": MachCommandReference("python/mozperftest/mozperftest/mach_commands.py"),
     "perftest-test": MachCommandReference(
         "python/mozperftest/mozperftest/mach_commands.py",

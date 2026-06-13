@@ -304,7 +304,7 @@ ia2AccessibleTable::get_selectedChildren(long aMaxChildren, long** aChildren,
   uint32_t maxCells = cellIndices.Length();
   if (maxCells == 0) return S_FALSE;
 
-  *aChildren = static_cast<LONG*>(moz_xmalloc(sizeof(LONG) * maxCells));
+  *aChildren = static_cast<LONG*>(::CoTaskMemAlloc(sizeof(LONG) * maxCells));
   *aNChildren = maxCells;
   for (uint32_t i = 0; i < maxCells; i++) (*aChildren)[i] = cellIndices[i];
 
@@ -511,7 +511,7 @@ ia2AccessibleTable::get_selectedColumns(long** aColumns, long* aNColumns) {
   uint32_t maxCols = colIndices.Length();
   if (maxCols == 0) return S_FALSE;
 
-  *aColumns = static_cast<LONG*>(moz_xmalloc(sizeof(LONG) * maxCols));
+  *aColumns = static_cast<LONG*>(::CoTaskMemAlloc(sizeof(LONG) * maxCols));
   *aNColumns = maxCols;
   for (uint32_t i = 0; i < maxCols; i++) (*aColumns)[i] = colIndices[i];
 
@@ -533,7 +533,7 @@ ia2AccessibleTable::get_selectedRows(long** aRows, long* aNRows) {
   uint32_t maxRows = rowIndices.Length();
   if (maxRows == 0) return S_FALSE;
 
-  *aRows = static_cast<LONG*>(moz_xmalloc(sizeof(LONG) * maxRows));
+  *aRows = static_cast<LONG*>(::CoTaskMemAlloc(sizeof(LONG) * maxRows));
   *aNRows = maxRows;
   for (uint32_t i = 0; i < maxRows; i++) (*aRows)[i] = rowIndices[i];
 

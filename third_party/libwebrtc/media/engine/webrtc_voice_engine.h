@@ -39,6 +39,7 @@
 #include "api/field_trials_view.h"
 #include "api/frame_transformer_interface.h"
 #include "api/media_types.h"
+#include "api/payload_type.h"
 #include "api/rtc_error.h"
 #include "api/rtp_headers.h"
 #include "api/rtp_parameters.h"
@@ -162,7 +163,6 @@ class WebRtcVoiceEngine final : public VoiceEngineInterface {
   scoped_refptr<AudioState> audio_state_ RTC_GUARDED_BY(worker_thread_checker_);
   const std::vector<Codec> legacy_send_codecs_;
   const std::vector<Codec> legacy_recv_codecs_;
-  bool is_dumping_aec_ RTC_GUARDED_BY(worker_thread_checker_) = false;
   bool initialized_ RTC_GUARDED_BY(worker_thread_checker_) = false;
 
   // Jitter buffer settings for new streams.
@@ -218,6 +218,8 @@ class WebRtcVoiceSendChannel final : public MediaChannelUtil,
 
   bool SetSenderParameters(const AudioSenderParameter& params) override;
   RtpParameters GetRtpSendParameters(uint32_t ssrc) const override;
+  absl::AnyInvocable<RtpParameters(uint32_t)> GetRtpSendParametersCallback()
+      const override;
   RTCError SetRtpSendParameters(uint32_t ssrc,
                                 const RtpParameters& parameters,
                                 SetParametersCallback callback) override;
@@ -248,6 +250,8 @@ class WebRtcVoiceSendChannel final : public MediaChannelUtil,
                              const NetworkRoute& network_route) override;
   void OnReadyToSend(bool ready) override;
   bool GetStats(VoiceMediaSendInfo* info) override;
+  absl::AnyInvocable<std::optional<VoiceMediaSendInfo>()> GetStatsCallback()
+      override;
   bool SetOptions(const AudioOptions& options) override;
 
   // Sets a frame transformer between encoder and packetizer, to transform
@@ -281,7 +285,7 @@ class WebRtcVoiceSendChannel final : public MediaChannelUtil,
 
   int max_send_bitrate_bps_ RTC_GUARDED_BY(worker_thread_) = 0;
   AudioOptions options_ RTC_GUARDED_BY(worker_thread_);
-  std::optional<int> dtmf_payload_type_ RTC_GUARDED_BY(worker_thread_);
+  PayloadType dtmf_payload_type_ RTC_GUARDED_BY(worker_thread_);
   int dtmf_payload_freq_ RTC_GUARDED_BY(worker_thread_) = -1;
   bool enable_non_sender_rtt_ RTC_GUARDED_BY(worker_thread_) = false;
   bool send_ RTC_GUARDED_BY(worker_thread_) = false;
@@ -304,8 +308,6 @@ class WebRtcVoiceSendChannel final : public MediaChannelUtil,
   // Per peer connection crypto options that last for the lifetime of the peer
   // connection.
   const CryptoOptions crypto_options_;
-  scoped_refptr<FrameTransformerInterface> unsignaled_frame_transformer_
-      RTC_GUARDED_BY(worker_thread_);
 
   // Callback invoked whenever the list of SSRCs changes.
   absl::AnyInvocable<void(const std::set<uint32_t>&)>
@@ -379,6 +381,8 @@ class WebRtcVoiceReceiveChannel final
   void OnPacketReceived(RtpPacketReceived packet) override;
   bool GetStats(VoiceMediaReceiveInfo* info,
                 bool get_and_clear_legacy_stats) override;
+  absl::AnyInvocable<std::optional<VoiceMediaReceiveInfo>()> GetStatsCallback(
+      bool get_and_clear_legacy_stats) override;
 
   // Set the audio sink for an existing stream.
   void SetRawAudioSink(uint32_t ssrc,
@@ -465,9 +469,6 @@ class WebRtcVoiceReceiveChannel final
       RTC_GUARDED_BY(worker_thread_);
 
   AudioReceiverParameters recv_params_ RTC_GUARDED_BY(worker_thread_);
-
-  std::optional<AudioSendStream::Config::SendCodecSpec> send_codec_spec_
-      RTC_GUARDED_BY(worker_thread_);
 
   // Per peer connection crypto options that last for the lifetime of the peer
   // connection.

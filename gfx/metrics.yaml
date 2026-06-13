@@ -351,7 +351,15 @@ gfx:
     notification_emails:
       - gfx-telemetry-alerts@mozilla.com
       - jnicol@mozilla.com
+      - perf-telemetry-alerts@mozilla.com
     expires: never
+    metadata:
+      monitor:
+        alert: False
+        lower_is_better: True
+        platforms:
+          - All
+
 
   scroll_present_latency:
     type: timing_distribution
@@ -371,6 +379,12 @@ gfx:
       - sefeng@mozilla.com
       - perf-telemetry-alerts@mozilla.com
     expires: never
+    metadata:
+      monitor:
+        alert: False
+        lower_is_better: True
+        platforms:
+          - All
 
   skipped_composites:
     type: counter
@@ -1085,6 +1099,12 @@ gfx.content:
       - gfx-telemetry-alerts@mozilla.com
       - jmuizelaar@mozilla.com
     expires: never
+    metadata:
+      monitor:
+        alert: False
+        lower_is_better: True
+        platforms:
+          - All
 
   small_paint_phase_weight_partial:
     type: labeled_custom_distribution
@@ -1401,8 +1421,13 @@ performance.interaction:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1580077#c10
     notification_emails:
       - perf-telemetry-alerts@mozilla.com
-      - vchin@mozilla.com
     expires: never
+    metadata:
+      monitor:
+        alert: False
+        lower_is_better: True
+        platforms:
+          - All
 
   mouseup_click_present_latency:
     type: timing_distribution
@@ -1421,6 +1446,12 @@ performance.interaction:
       - perf-telemetry-alerts@mozilla.com
       - sefeng@mozilla.com
     expires: never
+    metadata:
+      monitor:
+        alert: False
+        lower_is_better: True
+        platforms:
+          - All
 
 gfx.hdr:
   windows_display_colorspace_bitfield:

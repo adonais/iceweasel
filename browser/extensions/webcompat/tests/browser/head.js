@@ -199,7 +199,7 @@ async function testShimRuns(
   });
 
   const TrackingProtection =
-    tab.ownerGlobal.gProtectionsHandler.blockers.TrackingProtection;
+    tab.documentGlobal.gProtectionsHandler.blockers.TrackingProtection;
   ok(TrackingProtection, "TP is attached to the tab");
   ok(TrackingProtection.enabled, "TP is enabled");
 

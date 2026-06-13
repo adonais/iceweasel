@@ -24,8 +24,7 @@ import org.mozilla.fenix.theme.FirefoxTheme
 
 /**
  * This wrapper wraps the `AwesomeBar()` composable and exposes it as a `View` and `concept-awesomebar`
- * implementation to be integrated in the view hierarchy of `SearchDialogFragment` until more parts
- * of that screen have been refactored to use Jetpack Compose.
+ * implementation for host views that still need a `View`-based integration.
  */
 class AwesomeBarWrapper @JvmOverloads constructor(
     context: Context,

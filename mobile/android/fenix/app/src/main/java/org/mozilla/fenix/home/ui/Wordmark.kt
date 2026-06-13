@@ -5,7 +5,7 @@
 package org.mozilla.fenix.home.ui
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
@@ -23,6 +23,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.unit.dp
+import mozilla.components.compose.base.modifier.thenConditional
 import org.mozilla.fenix.R
 import org.mozilla.fenix.home.ui.HomepageTestTag.HOMEPAGE_WORDMARK_LOGO
 import org.mozilla.fenix.home.ui.HomepageTestTag.HOMEPAGE_WORDMARK_TEXT
@@ -36,7 +37,6 @@ internal var SemanticsPropertyReceiver.resourceId by ResourceId
 @Composable
 internal fun WordmarkLogo(
     onLogoClicked: () -> Unit,
-    onLogoLongClicked: () -> Unit,
     isSportsWidgetEnabled: Boolean,
 ) {
     val wordmarkResourceId = if (isSportsWidgetEnabled) R.attr.fenixWordmarkSportLogo else R.attr.fenixWordmarkLogo
@@ -52,17 +52,12 @@ internal fun WordmarkLogo(
                     contentDescription = sportsLogoContentDescription
                 }
             }
-            .then(
-                if (isSportsWidgetEnabled) {
-                    Modifier.combinedClickable(
-                        onClick = onLogoClicked,
-                        onLongClick = onLogoLongClicked,
-                        role = Role.Button,
-                    )
-                } else {
-                    Modifier
-                },
-            )
+            .thenConditional(
+                Modifier.clickable(
+                    onClick = onLogoClicked,
+                    role = Role.Button,
+                ),
+            ) { isSportsWidgetEnabled }
             .padding(end = 10.dp),
         painter = painterResource(
             getAttr(

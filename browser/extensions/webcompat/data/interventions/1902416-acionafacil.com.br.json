@@ -9,9 +9,7 @@
   "interventions": [
     {
       "platforms": ["all"],
-      "content_scripts": {
-        "js": ["bug1902416-www.acionafacil.com.br-prevent-unsupported-alert.js"]
-      }
+      "hide_alerts": ["chrome"]
     }
   ]
 }

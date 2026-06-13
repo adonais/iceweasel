@@ -718,17 +718,15 @@ INSTANTIATE_TEST_SUITE_P(AVX2, HBDTemporalFilterTest,
                                  Values(0, 1)));
 #endif  // HAVE_AVX2
 
-// av1_apply_temporal_filter_c works on 64x64 TF block now, the SIMD function
-// needs to be updated.
-// #if HAVE_NEON
-// HBDTemporalFilterFuncParam HBDtemporal_filter_test_neon[] = {
-//  HBDTemporalFilterFuncParam(&av1_highbd_apply_temporal_filter_c,
-//                             &av1_highbd_apply_temporal_filter_neon)
-//};
-// INSTANTIATE_TEST_SUITE_P(NEON, HBDTemporalFilterTest,
-//                         Combine(ValuesIn(HBDtemporal_filter_test_neon),
-//                                 Values(0, 1)));
-// #endif  // HAVE_NEON
+#if HAVE_NEON
+HBDTemporalFilterFuncParam HBDtemporal_filter_test_neon[] = {
+  HBDTemporalFilterFuncParam(&av1_highbd_apply_temporal_filter_c,
+                             &av1_highbd_apply_temporal_filter_neon)
+};
+INSTANTIATE_TEST_SUITE_P(NEON, HBDTemporalFilterTest,
+                         Combine(ValuesIn(HBDtemporal_filter_test_neon),
+                                 Values(0, 1)));
+#endif  // HAVE_NEON
 
 using HBDEstimateNoiseFunc = double (*)(const uint16_t *src, int height,
                                         int width, int stride, int bit_depth,

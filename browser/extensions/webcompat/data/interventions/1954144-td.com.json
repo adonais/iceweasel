@@ -6,12 +6,13 @@
       "matches": ["*://*.td.com/*"]
     }
   },
+  "css": {
+    "fix_scrollbars": ".overlay-video-modal .cmp-dialog__details { overflow: auto; scrollbar-width: thin; scrollbar-color: #616161 #fff; }"
+  },
   "interventions": [
     {
       "platforms": ["desktop"],
-      "content_scripts": {
-        "css": ["bug1954144-td.com-scrollbar-fix.css"]
-      }
+      "css": ["fix_scrollbars"]
     }
   ]
 }

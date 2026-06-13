@@ -16,6 +16,7 @@ import mozilla.components.lib.state.State
  * @property fileToRename FileItem if there is a file to rename.
  * @property renameFileError [RenameFileError] indicating if there is an error when renaming a file.
  * @property isChangeFileExtensionDialogVisible Indicates whether the dialog to change file extension is visible.
+ * @property itemToChangeExtension [FileItem] for which the change file extension dialog is currently shown.
  * @property dialogState The current [DialogState] indicating if a dialog is visible.
  * @property deletionSnackbarState A one-time event containing items deleted, used to trigger the Undo snackbar.
  * @param isSearchFieldRequested Indicates whether the search field is requested to be shown.
@@ -29,6 +30,7 @@ data class DownloadUIState(
     val fileToRename: FileItem? = null,
     val renameFileError: RenameFileError? = null,
     val isChangeFileExtensionDialogVisible: Boolean = false,
+    val itemToChangeExtension: FileItem? = null,
     val dialogState: DialogState = DialogState.None,
     val deletionSnackbarState: SnackbarState = SnackbarState.None,
     private val isSearchFieldRequested: Boolean = false,

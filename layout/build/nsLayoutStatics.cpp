@@ -197,11 +197,7 @@ nsresult nsLayoutStatics::Initialize() {
     return rv;
   }
 
-  rv = nsXULPopupManager::Init();
-  if (NS_FAILED(rv)) {
-    NS_ERROR("Could not initialize nsXULPopupManager");
-    return rv;
-  }
+  nsXULPopupManager::Init();
 
   rv = nsFocusManager::Init();
   if (NS_FAILED(rv)) {

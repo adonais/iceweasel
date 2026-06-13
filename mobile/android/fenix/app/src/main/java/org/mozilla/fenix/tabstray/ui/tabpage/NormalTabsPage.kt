@@ -7,6 +7,7 @@ package org.mozilla.fenix.tabstray.ui.tabpage
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -21,6 +22,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -28,10 +30,12 @@ import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
 import org.mozilla.fenix.R
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
+import org.mozilla.fenix.tabstray.controller.TabInteractionHandler
 import org.mozilla.fenix.tabstray.data.TabsTrayItem
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
 import org.mozilla.fenix.tabstray.ui.inactivetabs.InactiveTabsList
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.trackingprotection.TrackersBlockedCard
 import mozilla.components.ui.icons.R as iconsR
 
 private val EmptyPageWidth = 170.dp
@@ -45,6 +49,10 @@ private val EmptyPageWidth = 170.dp
  * @param selectionMode [TabsTrayState.Mode] indicating whether the Tab Manager is in single selection.
  * @param inactiveTabsExpanded Whether the Inactive Tabs section is expanded.
  * @param displayTabsInGrid Whether the normal and private tabs should be displayed in a grid.
+ * @param dragAndDropEnabled Whether the grid supports dragging and dropping for tab groups.
+ * @param tabInteractionHandler Handles tab interactions, such as moves and drag and drop.
+ * @param trackersBlockedCount The number of trackers blocked to display in the footer card.
+ * @param focusEnabled Whether the focus indicator is enabled.
  * @param onTabClose Invoked when the user clicks to close a tab.
  * @param onItemClick Invoked when the user clicks on a tab.
  * @param onItemLongClick Invoked when the user long clicks a tab.
@@ -59,14 +67,13 @@ private val EmptyPageWidth = 170.dp
  * close dialog's enable button.
  * @param onInactiveTabClick Invoked when the user clicks on an inactive tab.
  * @param onInactiveTabClose Invoked when the user clicks on an inactive tab's close button.
- * @param onMove Invoked after the drag and drop gesture completed. Swaps position of two tabs.
  * @param shouldShowInactiveTabsCFR Returns whether the inactive tabs CFR is displayed.
  * @param onInactiveTabsCFRShown Invoked when the inactive tabs CFR is displayed.
  * @param onInactiveTabsCFRClick Invoked when the inactive tabs CFR is clicked.
  * @param onInactiveTabsCFRDismiss Invoked when the inactive tabs CFR is dismissed.
- * @param onTabDragStart Invoked when a tab drag has been started.
- * @param onDeleteTabGroup Invoked when the user clicks on delete tab group.
- * @param editTabGroupClick Invoked when the user clicks to edit a tab group.
+ * @param onDeleteTabGroupClick Invoked when the user clicks on delete tab group.
+ * @param onEditTabGroupClick Invoked when the user clicks to edit a tab group.
+ * @param onCloseTabGroupClick Invoked when the user clicks to close a tab group.
  */
 @Composable
 @Suppress("LongParameterList")
@@ -77,6 +84,10 @@ internal fun NormalTabsPage(
     selectionMode: TabsTrayState.Mode,
     inactiveTabsExpanded: Boolean,
     displayTabsInGrid: Boolean,
+    dragAndDropEnabled: Boolean,
+    tabInteractionHandler: TabInteractionHandler,
+    trackersBlockedCount: Int? = null,
+    focusEnabled: Boolean,
     onTabClose: (TabsTrayItem.Tab) -> Unit,
     onItemClick: (TabsTrayItem) -> Unit,
     onItemLongClick: (TabsTrayItem) -> Unit,
@@ -88,14 +99,13 @@ internal fun NormalTabsPage(
     onEnableInactiveTabAutoCloseClick: () -> Unit,
     onInactiveTabClick: (TabsTrayItem.Tab) -> Unit,
     onInactiveTabClose: (TabsTrayItem.Tab) -> Unit,
-    onMove: (String, String?, Boolean) -> Unit,
     shouldShowInactiveTabsCFR: Boolean,
     onInactiveTabsCFRShown: () -> Unit,
     onInactiveTabsCFRClick: () -> Unit,
     onInactiveTabsCFRDismiss: () -> Unit,
-    onTabDragStart: () -> Unit,
-    onDeleteTabGroup: (TabsTrayItem.TabGroup) -> Unit,
-    editTabGroupClick: (TabsTrayItem.TabGroup) -> Unit,
+    onDeleteTabGroupClick: (TabsTrayItem.TabGroup) -> Unit,
+    onEditTabGroupClick: (TabsTrayItem.TabGroup) -> Unit,
+    onCloseTabGroupClick: (TabsTrayItem.TabGroup) -> Unit,
 ) {
     if (items.isNotEmpty() || inactiveTabs.isNotEmpty()) {
         var showAutoCloseDialog by remember { mutableStateOf(shouldShowInactiveTabsAutoCloseDialog) }
@@ -135,20 +145,23 @@ internal fun NormalTabsPage(
         TabLayout(
             tabs = items,
             displayTabsInGrid = displayTabsInGrid,
+            dragAndDropEnabled = dragAndDropEnabled,
             selectedItemIndex = selectedItemIndex,
             selectionMode = selectionMode,
+            trackersBlockedCount = trackersBlockedCount,
             modifier = Modifier.testTag(TabsTrayTestTag.NORMAL_TABS_LIST),
             onTabClose = onTabClose,
             onItemClick = onItemClick,
             onItemLongClick = onItemLongClick,
             header = optionalInactiveTabsHeader,
-            onTabDragStart = onTabDragStart,
-            onDeleteTabGroup = onDeleteTabGroup,
-            onMove = onMove,
-            editTabGroupClick = editTabGroupClick,
+            onDeleteTabGroupClick = onDeleteTabGroupClick,
+            onEditTabGroupClick = onEditTabGroupClick,
+            onCloseTabGroupClick = onCloseTabGroupClick,
+            tabInteractionHandler = tabInteractionHandler,
+            focusEnabled = focusEnabled,
         )
     } else {
-        EmptyNormalTabsPage()
+        EmptyNormalTabsPage(trackersBlockedCount = trackersBlockedCount)
     }
 }
 
@@ -156,31 +169,45 @@ internal fun NormalTabsPage(
  * UI for displaying the empty state of the Normal Tabs Page in the Tab Manager.
  *
  * @param modifier The [Modifier] to be applied to the layout.
+ * @param trackersBlockedCount The number of trackers blocked to display in the footer card.
  */
 @Composable
 private fun EmptyNormalTabsPage(
     modifier: Modifier = Modifier,
+    trackersBlockedCount: Int? = null,
 ) {
-    EmptyTabPage(
-        modifier = modifier.testTag(TabsTrayTestTag.EMPTY_NORMAL_TABS_LIST),
+    val bottomBarHeight = dimensionResource(id = R.dimen.browser_toolbar_height)
+
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .testTag(TabsTrayTestTag.EMPTY_NORMAL_TABS_LIST),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Column(
-            modifier = Modifier.width(EmptyPageWidth),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Icon(
-                painter = painterResource(id = iconsR.drawable.mozac_ic_tab_24),
-                contentDescription = null,
-                modifier = Modifier.size(72.dp),
-            )
+        EmptyTabPage(modifier = Modifier.weight(1f)) {
+            Column(
+                modifier = Modifier.width(EmptyPageWidth),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Icon(
+                    painter = painterResource(id = iconsR.drawable.mozac_ic_tab_24),
+                    contentDescription = null,
+                    modifier = Modifier.size(72.dp),
+                )
 
-            Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
-            Text(
-                text = stringResource(id = R.string.tab_manager_empty_normal_tabs_page_header),
-                textAlign = TextAlign.Center,
-                style = FirefoxTheme.typography.headline7,
-            )
+                Text(
+                    text = stringResource(id = R.string.tab_manager_empty_normal_tabs_page_header),
+                    textAlign = TextAlign.Center,
+                    style = FirefoxTheme.typography.headline7,
+                )
+            }
+        }
+
+        if (trackersBlockedCount != null) {
+            TrackersBlockedCard(trackersBlockedCount = trackersBlockedCount)
+            Spacer(modifier = Modifier.height(bottomBarHeight + 32.dp))
         }
     }
 }

@@ -33,6 +33,9 @@ if CONFIG["MOZ_ENABLE_VAAPI"]:
 if CONFIG["MOZ_ENABLE_V4L2"]:
     DIRS += ["v4l2test"]
 
+if CONFIG["MOZ_ENABLE_VULKAN_VIDEO"]:
+    DIRS += ["vulkantest"]
+
 EXPORTS += [
     "MozContainer.h",
     "nsAppShell.h",
@@ -58,6 +61,7 @@ EXPORTS.mozilla.widget += [
     "GSettings.h",
     "GtkCompositorWidget.h",
     "InProcessGtkCompositorWidget.h",
+    "nsGtkHtmlUtils.h",
     "va_drmcommon.h",
     "WaylandSurfaceLock.h",
     "WindowSurface.h",
@@ -89,6 +93,7 @@ UNIFIED_SOURCES += [
     "nsColorPicker.cpp",
     "nsDragService.cpp",
     "nsFilePicker.cpp",
+    "nsGtkHtmlUtils.cpp",
     "nsGtkKeyUtils.cpp",
     "nsImageToPixbuf.cpp",
     "nsLookAndFeel.cpp",

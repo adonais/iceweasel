@@ -129,6 +129,26 @@ export const MEMORIES_NON_SENSITIVE_SCHEMA = {
 };
 
 /**
+ * JSON schema for filtering low-quality memories
+ */
+export const MEMORIES_QUALITY_FILTER_SCHEMA = {
+  type: "array",
+  minItems: 1,
+  items: {
+    type: "object",
+    additionalProperties: false,
+    required: ["good_memories"],
+    properties: {
+      good_memories: {
+        type: "array",
+        minItems: 1,
+        items: { type: "string" },
+      },
+    },
+  },
+};
+
+/**
  * JSON schema for classifying message category and intent
  */
 export const MEMORIES_MESSAGE_CLASSIFY_SCHEMA = {

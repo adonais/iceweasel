@@ -50,11 +50,11 @@ class XMLHttpRequestString final {
 
   void CreateSnapshot(XMLHttpRequestStringSnapshot& aSnapshot);
 
- private:
   XMLHttpRequestString(const XMLHttpRequestString&) = delete;
   XMLHttpRequestString& operator=(const XMLHttpRequestString&) = delete;
   XMLHttpRequestString& operator=(const XMLHttpRequestString&&) = delete;
 
+ private:
   RefPtr<XMLHttpRequestStringBuffer> mBuffer;
 };
 
@@ -63,6 +63,13 @@ class MOZ_STACK_CLASS XMLHttpRequestStringWriterHelper final {
  public:
   explicit XMLHttpRequestStringWriterHelper(XMLHttpRequestString& aString);
   ~XMLHttpRequestStringWriterHelper();
+
+  XMLHttpRequestStringWriterHelper(const XMLHttpRequestStringWriterHelper&) =
+      delete;
+  XMLHttpRequestStringWriterHelper& operator=(
+      const XMLHttpRequestStringWriterHelper&) = delete;
+  XMLHttpRequestStringWriterHelper& operator=(
+      const XMLHttpRequestStringWriterHelper&&) = delete;
 
   /**
    * The existing length of the string. Do not call during BulkWrite().
@@ -73,13 +80,6 @@ class MOZ_STACK_CLASS XMLHttpRequestStringWriterHelper final {
       uint32_t aCapacity);
 
  private:
-  XMLHttpRequestStringWriterHelper(const XMLHttpRequestStringWriterHelper&) =
-      delete;
-  XMLHttpRequestStringWriterHelper& operator=(
-      const XMLHttpRequestStringWriterHelper&) = delete;
-  XMLHttpRequestStringWriterHelper& operator=(
-      const XMLHttpRequestStringWriterHelper&&) = delete;
-
   RefPtr<XMLHttpRequestStringBuffer> mBuffer;
   MutexAutoLock mLock;
 };
@@ -97,6 +97,9 @@ class XMLHttpRequestStringSnapshot final {
 
   XMLHttpRequestStringSnapshot& operator=(const XMLHttpRequestStringSnapshot&) =
       delete;
+  XMLHttpRequestStringSnapshot(const XMLHttpRequestStringSnapshot&) = delete;
+  XMLHttpRequestStringSnapshot& operator=(
+      const XMLHttpRequestStringSnapshot&&) = delete;
 
   void Reset() { ResetInternal(false /* isVoid */); }
 
@@ -111,10 +114,6 @@ class XMLHttpRequestStringSnapshot final {
   JSString* GetAsJSStringCopy(JSContext* aCx) const;
 
  private:
-  XMLHttpRequestStringSnapshot(const XMLHttpRequestStringSnapshot&) = delete;
-  XMLHttpRequestStringSnapshot& operator=(
-      const XMLHttpRequestStringSnapshot&&) = delete;
-
   void Set(XMLHttpRequestStringBuffer* aBuffer);
 
   void ResetInternal(bool aIsVoid);

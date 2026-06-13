@@ -722,12 +722,8 @@ class StencilModuleEntry {
   StencilModuleEntry() = default;
 
   StencilModuleEntry(const StencilModuleEntry& other)
-      : moduleRequest(other.moduleRequest),
-        localName(other.localName),
-        importName(other.importName),
-        exportName(other.exportName),
-        lineno(other.lineno),
-        column(other.column) {}
+
+      = default;
 
   StencilModuleEntry(StencilModuleEntry&& other) noexcept
       : moduleRequest(other.moduleRequest),
@@ -737,15 +733,7 @@ class StencilModuleEntry {
         lineno(other.lineno),
         column(other.column) {}
 
-  StencilModuleEntry& operator=(StencilModuleEntry& other) {
-    moduleRequest = other.moduleRequest;
-    localName = other.localName;
-    importName = other.importName;
-    exportName = other.exportName;
-    lineno = other.lineno;
-    column = other.column;
-    return *this;
-  }
+  StencilModuleEntry& operator=(StencilModuleEntry& other) = default;
 
   StencilModuleEntry& operator=(StencilModuleEntry&& other) noexcept {
     moduleRequest = other.moduleRequest;

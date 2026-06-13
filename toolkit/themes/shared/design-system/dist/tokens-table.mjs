@@ -245,6 +245,36 @@ export const tokensTable = {
       value: "var(--button-background-color-active)",
       name: "--button-background-color-selected",
     },
+    { value: "var(--background-color-box)", name: "--card-background-color" },
+    {
+      value: {
+        light: "var(--color-white)",
+        dark: "rgb(66, 65, 77)",
+        nativeTheme: "Field",
+        default: "light-dark(var(--color-white), rgb(66, 65, 77))",
+      },
+      name: "--panel-background-color",
+    },
+    {
+      value: {
+        light: "color-mix(in srgb, currentColor 12%, transparent)",
+        dark: "color-mix(in srgb, currentColor 17%, transparent)",
+        nativeTheme: "color-mix(in srgb, currentColor 17%, transparent)",
+        default:
+          "light-dark(color-mix(in srgb, currentColor 12%, transparent), color-mix(in srgb, currentColor 17%, transparent))",
+      },
+      name: "--panel-background-color-dimmed",
+    },
+    {
+      value: {
+        light: "color-mix(in srgb, currentColor 20%, transparent)",
+        dark: "color-mix(in srgb, currentColor 14%, transparent)",
+        nativeTheme: "color-mix(in srgb, currentColor 30%, transparent)",
+        default:
+          "light-dark(color-mix(in srgb, currentColor 20%, transparent), color-mix(in srgb, currentColor 14%, transparent))",
+      },
+      name: "--panel-background-color-dimmed-further",
+    },
     {
       value: { default: "var(--background-color-canvas)" },
       name: "--table-row-background-color",
@@ -266,6 +296,57 @@ export const tokensTable = {
       name: "--table-row-background-color-alternate",
     },
     {
+      value: {
+        light: "rgba(0, 0, 0, 0.05)",
+        dark: "var(--color-black-alpha-30)",
+        prefersContrast: "Field",
+        default: "light-dark(rgba(0, 0, 0, 0.05), var(--color-black-alpha-30))",
+      },
+      name: "--toolbar-field-background-color",
+    },
+    {
+      value: {
+        light: "var(--color-white)",
+        dark: "rgb(66, 65, 77)",
+        nativeTheme: "Field",
+        default: "light-dark(var(--color-white), rgb(66, 65, 77))",
+      },
+      name: "--toolbar-field-background-color-focus",
+    },
+    {
+      value: {
+        light: "#f9f9fb",
+        dark: "rgb(43, 42, 51)",
+        nativeTheme: "color-mix(in srgb, -moz-dialog 85%, var(--color-white))",
+        default: "light-dark(#f9f9fb, rgb(43, 42, 51))",
+      },
+      name: "--toolbar-background-color",
+    },
+    {
+      value: "color-mix(in srgb, currentColor 17%, transparent)",
+      name: "--toolbarbutton-background-color-hover",
+    },
+    {
+      value: "color-mix(in srgb, currentColor 30%, transparent)",
+      name: "--toolbarbutton-background-color-active",
+    },
+    {
+      value: {
+        light: "rgb(234, 234, 237)",
+        dark: "var(--color-gray-90)",
+        nativeTheme: "-moz-headerbar",
+        default: "light-dark(rgb(234, 234, 237), var(--color-gray-90))",
+      },
+      name: "--toolbox-background-color",
+    },
+    {
+      value: {
+        default: "var(--toolbox-background-color)",
+        nativeTheme: "-moz-headerbarinactive",
+      },
+      name: "--toolbox-background-color-inactive",
+    },
+    {
       value: { default: "transparent", forcedColors: "Canvas" },
       name: "--badge-background-color",
     },
@@ -281,6 +362,38 @@ export const tokensTable = {
     {
       value: "var(--background-color-information)",
       name: "--message-bar-background-color",
+    },
+    { value: "var(--border-color)", name: "--page-nav-hr-background-color" },
+    {
+      value: {
+        default: "color-mix(in lch, currentColor 8%, transparent)",
+        prefersContrast: "var(--background-color-canvas)",
+      },
+      name: "--promo-background-color",
+    },
+    {
+      value: {
+        light: "var(--color-violet-0)",
+        dark: "var(--color-violet-90)",
+        default: "light-dark(var(--color-violet-0), var(--color-violet-90))",
+      },
+      name: "--promo-background-color-vibrant",
+    },
+    {
+      value: "var(--color-accent-primary)",
+      name: "--reorderable-list-indicator-background-color",
+    },
+    {
+      value: "var(--button-background-color)",
+      name: "--select-background-color",
+    },
+    {
+      value: "var(--button-background-color-hover)",
+      name: "--select-background-color-hover",
+    },
+    {
+      value: "var(--button-background-color-disabled)",
+      name: "--select-background-color-disabled",
     },
     {
       value: "var(--button-background-color)",
@@ -335,8 +448,28 @@ export const tokensTable = {
       name: "--toggle-dot-background-color-on-pressed",
     },
     {
+      value: "var(--button-background-color-menu)",
+      name: "--box-button-background-color",
+    },
+    {
+      value: "var(--button-background-color-menu-hover)",
+      name: "--box-button-background-color-hover",
+    },
+    {
+      value: "var(--button-background-color-menu-active)",
+      name: "--box-button-background-color-active",
+    },
+    {
+      value: "var(--button-background-color-menu-disabled)",
+      name: "--box-button-background-color-disabled",
+    },
+    {
       value: "color-mix(in srgb, currentColor 11%, transparent)",
-      name: "--tab-hover-background-color",
+      name: "--tab-background-color-hover",
+    },
+    {
+      value: "var(--toolbar-background-color)",
+      name: "--tab-background-color-selected",
     },
   ],
   "border-color": [
@@ -547,6 +680,31 @@ export const tokensTable = {
       },
       name: "--card-border-color",
     },
+    { value: "var(--border-color-interactive)", name: "--input-border-color" },
+    {
+      value: {
+        light: "rgb(240, 240, 244)",
+        dark: "rgb(82, 82, 94)",
+        nativeTheme: "ThreeDShadow",
+        default: "light-dark(rgb(240, 240, 244), rgb(82, 82, 94))",
+      },
+      name: "--panel-border-color",
+    },
+    {
+      value: {
+        default: "var(--border-color-transparent)",
+        prefersContrast: "var(--input-border-color)",
+      },
+      name: "--toolbar-field-border-color",
+    },
+    {
+      value: {
+        default:
+          "color-mix(in srgb, var(--focus-outline-color) 50%, transparent)",
+        prefersContrast: "var(--focus-outline-color)",
+      },
+      name: "--toolbar-field-border-color-focus",
+    },
     { value: "var(--border-color)", name: "--badge-border-color" },
     {
       value: {
@@ -564,6 +722,26 @@ export const tokensTable = {
       },
       name: "--message-bar-border-color",
     },
+    {
+      value: "var(--border-color-transparent)",
+      name: "--page-nav-border-color",
+    },
+    {
+      value: {
+        default: "color-mix(in lch, currentColor 8%, transparent)",
+        prefersContrast: "var(--border-color)",
+      },
+      name: "--promo-border-color",
+    },
+    { value: "var(--color-violet-30)", name: "--promo-border-color-vibrant" },
+    {
+      value: "var(--button-border-color-hover)",
+      name: "--select-border-color-hover",
+    },
+    {
+      value: "var(--button-border-color-disabled)",
+      name: "--select-border-color-disabled",
+    },
     { value: "var(--border-color-interactive)", name: "--toggle-border-color" },
     {
       value: {
@@ -579,6 +757,11 @@ export const tokensTable = {
       },
       name: "--toggle-border-color-active",
     },
+    {
+      value: "var(--border-color-interactive)",
+      name: "--visual-picker-item-border-color",
+    },
+    { value: "var(--border-color)", name: "--box-border-color" },
   ],
   "border-radius": [
     { value: "9999px", name: "--border-radius-circle" },
@@ -588,12 +771,32 @@ export const tokensTable = {
     { value: "16px", name: "--border-radius-large" },
     { value: "var(--border-radius-medium)", name: "--button-border-radius" },
     { value: "var(--border-radius-large)", name: "--card-border-radius" },
+    {
+      value: "var(--border-radius-small)",
+      name: "--panel-menuitem-border-radius",
+    },
+    { value: "var(--border-radius-medium)", name: "--panel-border-radius" },
+    {
+      value: "var(--button-border-radius)",
+      name: "--toolbarbutton-border-radius",
+    },
     { value: "var(--border-radius-small)", name: "--badge-border-radius" },
     {
       value: "var(--border-radius-medium)",
       name: "--message-bar-border-radius",
     },
+    { value: "var(--border-radius-medium)", name: "--promo-border-radius" },
+    { value: "var(--button-border-radius)", name: "--select-border-radius" },
     { value: "var(--border-radius-circle)", name: "--toggle-border-radius" },
+    {
+      value: "var(--border-radius-medium)",
+      name: "--visual-picker-item-border-radius",
+    },
+    { value: "var(--border-radius-medium)", name: "--box-border-radius" },
+    {
+      value: "calc(var(--box-border-radius) - var(--box-border-width))",
+      name: "--box-border-radius-inner",
+    },
     {
       value: "var(--toolbarbutton-border-radius)",
       name: "--tab-border-radius",
@@ -601,9 +804,17 @@ export const tokensTable = {
   ],
   "border-width": [
     { value: "1px", name: "--border-width" },
+    { value: "var(--border-width)", name: "--card-border-width" },
     { value: "1px", name: "--badge-border-width" },
     { value: "var(--border-width)", name: "--message-bar-border-width" },
+    { value: "var(--border-width)", name: "--promo-border-width" },
     { value: "var(--border-width)", name: "--toggle-border-width" },
+    { value: "var(--border-width)", name: "--visual-picker-item-border-width" },
+    {
+      value: "calc(var(--border-width) * 3)",
+      name: "--visual-picker-item-border-width-checked",
+    },
+    { value: "var(--border-width)", name: "--box-border-width" },
   ],
   "box-shadow": [
     {
@@ -660,6 +871,10 @@ export const tokensTable = {
     },
     { value: "var(--box-shadow-level-2)", name: "--card-box-shadow" },
     { value: "var(--box-shadow-level-4)", name: "--card-box-shadow-hover" },
+    {
+      value: "0 0 var(--panel-box-shadow-margin) hsla(0, 0%, 0%, 0.2)",
+      name: "--panel-box-shadow",
+    },
     { value: "var(--box-shadow-level-3)", name: "--popup-box-shadow" },
     { value: "var(--box-shadow-level-1)", name: "--tab-box-shadow" },
   ],
@@ -870,6 +1085,10 @@ export const tokensTable = {
       name: "--button-attention-dot-color",
     },
     {
+      value: "var(--text-color-deemphasized)",
+      name: "--toolbarseparator-color",
+    },
+    {
       value: "var(--color-accent-attention)",
       name: "--tab-attention-dot-color",
     },
@@ -927,7 +1146,47 @@ export const tokensTable = {
     },
     { value: "2px", name: "--focus-outline-offset" },
     { value: "2px", name: "--focus-outline-width" },
+    { value: "var(--focus-outline)", name: "--card-focus-outline" },
     { value: "1px", name: "--link-focus-outline-offset" },
+    {
+      value: "var(--border-width) solid var(--toolbarbutton-outline-color)",
+      name: "--toolbarbutton-outline",
+    },
+    {
+      value: { default: "transparent", forcedColors: "ButtonText" },
+      name: "--toolbarbutton-outline-color",
+    },
+    {
+      value: {
+        default: "transparent",
+        prefersContrast: "currentColor",
+        forcedColors: "SelectedItem",
+      },
+      name: "--toolbarbutton-outline-color-hover",
+    },
+    {
+      value: {
+        default: "transparent",
+        prefersContrast: "currentColor",
+        forcedColors: "ButtonText",
+      },
+      name: "--toolbarbutton-outline-color-active",
+    },
+    {
+      value: {
+        default: "var(--toolbarbutton-outline-color-active)",
+        forcedColors: "SelectedItem",
+      },
+      name: "--toolbarbutton-outline-color-selected",
+    },
+    {
+      value: "calc(-1 * var(--border-width))",
+      name: "--toolbarbutton-outline-offset",
+    },
+    {
+      value: "var(--focus-outline-inset)",
+      name: "--page-nav-focus-outline-inset",
+    },
     {
       value: { default: "transparent", prefersContrast: "currentColor" },
       name: "--tab-hover-outline-color",
@@ -999,6 +1258,7 @@ export const tokensTable = {
     { value: "var(--font-size-large)", name: "--font-size-heading-medium" },
     { value: "var(--font-size-root)", name: "--button-font-size" },
     { value: "var(--font-size-small)", name: "--button-font-size-small" },
+    { value: "var(--button-font-size)", name: "--select-font-size" },
   ],
   "font-weight": [
     { value: "normal", name: "--font-weight" },
@@ -1006,6 +1266,8 @@ export const tokensTable = {
     { value: 700, name: "--font-weight-bold" },
     { value: "var(--font-weight-semibold)", name: "--font-weight-heading" },
     { value: "var(--font-weight-semibold)", name: "--button-font-weight" },
+    { value: "var(--button-font-weight)", name: "--select-font-weight" },
+    { value: "var(--font-weight)", name: "--select-option-font-weight" },
   ],
   size: [
     { value: "var(--dimension-40)", name: "--size-image-xsmall" },
@@ -1039,10 +1301,19 @@ export const tokensTable = {
       value: { brand: { default: "664px" } },
       name: "--page-main-content-width",
     },
+    { value: "initial", name: "--panel-width" },
     {
       value: "var(--size-item-large)",
       name: "--message-bar-container-min-height",
     },
+    { value: "var(--icon-size-large)", name: "--page-nav-heading-logo-size" },
+    { value: "var(--size-image-xlarge)", name: "--promo-image-size" },
+    {
+      value: "calc(2 * var(--size-image-xlarge))",
+      name: "--promo-image-size-large",
+    },
+    { value: "2px", name: "--reorderable-list-indicator-size" },
+    { value: "var(--button-min-height)", name: "--select-min-height" },
     { value: "var(--size-item-small)", name: "--toggle-height" },
     { value: "var(--size-item-large)", name: "--toggle-width" },
     {
@@ -1075,9 +1346,52 @@ export const tokensTable = {
       name: "--button-padding",
     },
     { value: 0, name: "--button-padding-icon" },
+    { value: "var(--space-large)", name: "--card-padding" },
+    { value: "var(--card-padding)", name: "--card-gap" },
+    { value: "var(--space-small)", name: "--card-gap-article" },
     { value: "var(--space-small)", name: "--checkbox-margin-inline" },
+    { value: { brand: { default: "64px" } }, name: "--page-space-block-start" },
+    {
+      value:
+        "var(--panel-menuitem-margin-block) var(--panel-menuitem-margin-inline)",
+      name: "--panel-menuitem-margin",
+    },
+    { value: "0px", name: "--panel-menuitem-margin-block" },
+    { value: "8px", name: "--panel-menuitem-margin-inline" },
+    {
+      value:
+        "var(--panel-menuitem-padding-block) var(--panel-menuitem-padding-inline)",
+      name: "--panel-menuitem-padding",
+    },
+    { value: "8px", name: "--panel-menuitem-padding-block" },
+    { value: "8px", name: "--panel-menuitem-padding-inline" },
+    { value: "4px", name: "--panel-box-shadow-margin" },
+    { value: "16px", name: "--panel-padding" },
+    { value: "4px", name: "--panel-padding-block" },
+    { value: "8px", name: "--toolbar-padding-inline" },
+    { value: "2px", name: "--toolbarbutton-padding-outer" },
+    { value: "1px", name: "--toolbarbutton-padding-outer-narrow" },
+    { value: "8px", name: "--toolbarbutton-padding-inner" },
+    { value: "7px", name: "--toolbarbutton-padding-inner-narrow" },
+    { value: "6px", name: "--toolbarbutton-padding-inner-compact" },
+    { value: "9px", name: "--toolbarbutton-padding-inner-touch" },
+    { value: "8px", name: "--toolbarbutton-padding-inner-touch-narrow" },
+    { value: "var(--space-small)", name: "--breadcrumb-gap" },
+    { value: "var(--space-xsmall)", name: "--page-nav-button-gap" },
+    { value: "var(--space-large)", name: "--page-nav-gap" },
+    {
+      value: "var(--page-space-block-start)",
+      name: "--page-nav-margin-block-start",
+    },
+    { value: "40px", name: "--page-nav-margin-inline-start" },
+    { value: "var(--space-medium)", name: "--promo-padding" },
+    {
+      value: "var(--reorderable-list-indicator-size)",
+      name: "--reorderable-list-indicator-margin",
+    },
     { value: "1px", name: "--toggle-dot-margin" },
     { value: "calc(-1 * var(--dimension-2))", name: "--toggle-inset" },
+    { value: "var(--space-large)", name: "--box-padding" },
     { value: "var(--dimension-4)", name: "--tab-block-margin" },
     { value: "6px", name: "--tab-close-button-padding" },
     { value: "5.5px", name: "--tab-icon-end-margin" },
@@ -1341,11 +1655,64 @@ export const tokensTable = {
     },
     {
       value: {
-        forcedColors: "var(--link-color)",
+        forcedColors: "VisitedText",
         brand: { default: "var(--link-color)" },
         platform: { default: "var(--link-color)" },
       },
       name: "--link-color-visited",
+    },
+    {
+      value: {
+        light: "var(--color-black)",
+        dark: "rgb(251, 251, 254)",
+        nativeTheme: "FieldText",
+        default: "light-dark(var(--color-black), rgb(251, 251, 254))",
+      },
+      name: "--panel-text-color",
+    },
+    {
+      value: {
+        light: "var(--color-gray-100)",
+        dark: "var(--color-gray-05)",
+        nativeTheme: "inherit",
+        prefersContrast: "FieldText",
+        default: "light-dark(var(--color-gray-100), var(--color-gray-05))",
+      },
+      name: "--toolbar-field-text-color",
+    },
+    {
+      value: {
+        light: "var(--color-black)",
+        dark: "var(--color-gray-05)",
+        nativeTheme: "FieldText",
+        default: "light-dark(var(--color-black), var(--color-gray-05))",
+      },
+      name: "--toolbar-field-text-color-focus",
+    },
+    {
+      value: {
+        light: "var(--color-gray-100)",
+        dark: "var(--color-gray-05)",
+        nativeTheme: "-moz-dialogtext",
+        default: "light-dark(var(--color-gray-100), var(--color-gray-05))",
+      },
+      name: "--toolbar-text-color",
+    },
+    {
+      value: {
+        light: "var(--color-gray-100)",
+        dark: "var(--color-gray-05)",
+        nativeTheme: "-moz-headerbartext",
+        default: "light-dark(var(--color-gray-100), var(--color-gray-05))",
+      },
+      name: "--toolbox-text-color",
+    },
+    {
+      value: {
+        default: "var(--toolbox-text-color)",
+        nativeTheme: "-moz-headerbarinactivetext",
+      },
+      name: "--toolbox-text-color-inactive",
     },
     {
       value: {
@@ -1363,12 +1730,75 @@ export const tokensTable = {
       },
       name: "--badge-text-color-filled",
     },
+    { value: "var(--link-color)", name: "--breadcrumb-link-color" },
+    { value: "var(--link-color-hover)", name: "--breadcrumb-link-color-hover" },
+    {
+      value: "var(--link-color-active)",
+      name: "--breadcrumb-link-color-active",
+    },
+    {
+      value: "var(--link-color-visited)",
+      name: "--breadcrumb-link-color-visited",
+    },
     { value: "var(--text-color)", name: "--message-bar-text-color" },
+    {
+      value: "var(--promo-message-text-color)",
+      name: "--promo-heading-text-color",
+    },
+    {
+      value: "var(--promo-message-text-color)",
+      name: "--promo-heading-text-color-vibrant",
+    },
+    { value: "var(--text-color)", name: "--promo-message-text-color" },
+    {
+      value: {
+        light: "var(--color-violet-80)",
+        dark: "var(--color-violet-0)",
+        default: "light-dark(var(--color-violet-80), var(--color-violet-0))",
+      },
+      name: "--promo-message-text-color-vibrant",
+    },
+    { value: "var(--text-color)", name: "--select-option-text-color" },
+    { value: "var(--button-text-color)", name: "--select-text-color" },
+    {
+      value: "var(--button-text-color-hover)",
+      name: "--select-text-color-hover",
+    },
+    {
+      value: "var(--button-text-color-disabled)",
+      name: "--select-text-color-disabled",
+    },
+    { value: "var(--button-text-color-menu)", name: "--box-button-text-color" },
+    {
+      value: "var(--button-text-color-menu-hover)",
+      name: "--box-button-text-color-hover",
+    },
+    {
+      value: "var(--button-text-color-menu-active)",
+      name: "--box-button-text-color-active",
+    },
+    {
+      value: "var(--button-text-color-menu-disabled)",
+      name: "--box-button-text-color-disabled",
+    },
   ],
   border: [
     {
       value: "var(--border-width) solid var(--button-border-color)",
       name: "--button-border",
+    },
+    {
+      value: "var(--card-border-width) solid var(--card-border-color)",
+      name: "--card-border",
+    },
+    {
+      value: "var(--promo-border-width) solid var(--promo-border-color)",
+      name: "--promo-border",
+    },
+    { value: "var(--button-border)", name: "--select-border" },
+    {
+      value: "var(--box-border-width) solid var(--box-border-color)",
+      name: "--box-border",
     },
   ],
   "icon-color": [
@@ -1420,15 +1850,64 @@ export const tokensTable = {
       name: "--icon-color-critical",
     },
     {
+      value: {
+        light: "var(--color-gray-70)",
+        dark: "var(--color-gray-05)",
+        nativeTheme: "currentColor",
+        default: "light-dark(var(--color-gray-70), var(--color-gray-05))",
+      },
+      name: "--toolbarbutton-icon-fill",
+    },
+    {
+      value: {
+        light: "var(--color-blue-60)",
+        dark: "var(--color-cyan-30)",
+        nativeTheme: "AccentColor",
+        default: "light-dark(var(--color-blue-60), var(--color-cyan-30))",
+      },
+      name: "--toolbarbutton-icon-fill-attention",
+    },
+    {
+      value: {
+        light: "var(--color-gray-20)",
+        dark: "var(--color-gray-90)",
+        nativeTheme: "AccentColorText",
+        default: "light-dark(var(--color-gray-20), var(--color-gray-90))",
+      },
+      name: "--toolbarbutton-icon-fill-attention-text",
+    },
+    {
       value: "var(--icon-color-information)",
       name: "--message-bar-icon-color",
     },
+    { value: "var(--button-icon-fill)", name: "--select-icon-fill" },
+    { value: "var(--icon-color)", name: "--box-icon-fill" },
+    { value: "var(--box-icon-fill)", name: "--box-icon-stroke" },
     { value: "var(--color-blue-50)", name: "--tab-loading-fill" },
   ],
   opacity: [
     {
-      value: { default: 0.5, forcedColors: 1 },
+      value: { default: "0.5", forcedColors: "1" },
       name: "--button-opacity-disabled",
+    },
+    {
+      value: { default: "0.6", prefersContrast: "1" },
+      name: "--opacity-deemphasized-strong",
+    },
+    {
+      value: { default: "0.8", prefersContrast: "1" },
+      name: "--opacity-deemphasized",
+    },
+    {
+      value: {
+        default: "var(--button-opacity-disabled)",
+        prefersContrast: 0.3,
+      },
+      name: "--toolbarbutton-opacity-disabled",
+    },
+    {
+      value: "var(--button-opacity-disabled)",
+      name: "--select-opacity-disabled",
     },
   ],
   "icon-size": [
@@ -1438,7 +1917,9 @@ export const tokensTable = {
     { value: "var(--dimension-20)", name: "--icon-size-medium" },
     { value: "var(--dimension-24)", name: "--icon-size-large" },
     { value: "var(--dimension-32)", name: "--icon-size-xlarge" },
+    { value: "var(--icon-size-xsmall)", name: "--breadcrumb-icon-size" },
     { value: "var(--icon-size)", name: "--message-bar-icon-size" },
+    { value: "var(--icon-size)", name: "--box-icon-size" },
   ],
   "table-background": [
     {
@@ -1482,8 +1963,367 @@ export const tokensTable = {
     },
   ],
   uncategorized: [
-    { value: "var(--toolbar-bgcolor)", name: "--tab-selected-bgcolor" },
-    { value: "var(--toolbar-color)", name: "--tab-selected-textcolor" },
+    { value: "var(--toolbar-text-color)", name: "--tab-selected-textcolor" },
+    {
+      value: {
+        light: "var(--color-blue-50)",
+        dark: "var(--color-blue-10)",
+        default: "light-dark(var(--color-blue-50), var(--color-blue-10))",
+      },
+      name: "--tab-group-blue",
+    },
+    {
+      value: {
+        light: "var(--color-white)",
+        dark: "var(--color-blue-60)",
+        default: "light-dark(var(--color-white), var(--color-blue-60))",
+      },
+      name: "--tab-group-blue-text",
+    },
+    {
+      value: {
+        dark: "var(--color-white)",
+        light: "var(--color-blue-60)",
+        default: "light-dark(var(--color-blue-60), var(--color-white))",
+      },
+      name: "--tab-group-blue-text-invert",
+    },
+    {
+      value: {
+        light: "var(--color-blue-60)",
+        dark: "var(--color-blue-20)",
+        default: "light-dark(var(--color-blue-60), var(--color-blue-20))",
+      },
+      name: "--tab-group-blue-hover",
+    },
+    {
+      value: {
+        light: "var(--color-blue-10)",
+        dark: "var(--color-blue-50)",
+        default: "light-dark(var(--color-blue-10), var(--color-blue-50))",
+      },
+      name: "--tab-group-blue-invert",
+    },
+    {
+      value: {
+        light: "var(--color-purple-50)",
+        dark: "var(--color-purple-10)",
+        default: "light-dark(var(--color-purple-50), var(--color-purple-10))",
+      },
+      name: "--tab-group-purple",
+    },
+    {
+      value: {
+        light: "var(--color-white)",
+        dark: "var(--color-purple-60)",
+        default: "light-dark(var(--color-white), var(--color-purple-60))",
+      },
+      name: "--tab-group-purple-text",
+    },
+    {
+      value: {
+        dark: "var(--color-white)",
+        light: "var(--color-purple-60)",
+        default: "light-dark(var(--color-purple-60), var(--color-white))",
+      },
+      name: "--tab-group-purple-text-invert",
+    },
+    {
+      value: {
+        light: "var(--color-purple-60)",
+        dark: "var(--color-purple-20)",
+        default: "light-dark(var(--color-purple-60), var(--color-purple-20))",
+      },
+      name: "--tab-group-purple-hover",
+    },
+    {
+      value: {
+        light: "var(--color-purple-10)",
+        dark: "var(--color-purple-50)",
+        default: "light-dark(var(--color-purple-10), var(--color-purple-50))",
+      },
+      name: "--tab-group-purple-invert",
+    },
+    {
+      value: {
+        light: "var(--color-cyan-50)",
+        dark: "var(--color-cyan-10)",
+        default: "light-dark(var(--color-cyan-50), var(--color-cyan-10))",
+      },
+      name: "--tab-group-cyan",
+    },
+    {
+      value: {
+        light: "var(--color-white)",
+        dark: "var(--color-cyan-60)",
+        default: "light-dark(var(--color-white), var(--color-cyan-60))",
+      },
+      name: "--tab-group-cyan-text",
+    },
+    {
+      value: {
+        dark: "var(--color-white)",
+        light: "var(--color-cyan-60)",
+        default: "light-dark(var(--color-cyan-60), var(--color-white))",
+      },
+      name: "--tab-group-cyan-text-invert",
+    },
+    {
+      value: {
+        light: "var(--color-cyan-60)",
+        dark: "var(--color-cyan-20)",
+        default: "light-dark(var(--color-cyan-60), var(--color-cyan-20))",
+      },
+      name: "--tab-group-cyan-hover",
+    },
+    {
+      value: {
+        light: "var(--color-cyan-10)",
+        dark: "var(--color-cyan-50)",
+        default: "light-dark(var(--color-cyan-10), var(--color-cyan-50))",
+      },
+      name: "--tab-group-cyan-invert",
+    },
+    {
+      value: {
+        light: "var(--color-orange-50)",
+        dark: "var(--color-orange-10)",
+        default: "light-dark(var(--color-orange-50), var(--color-orange-10))",
+      },
+      name: "--tab-group-orange",
+    },
+    {
+      value: {
+        light: "var(--color-white)",
+        dark: "var(--color-orange-60)",
+        default: "light-dark(var(--color-white), var(--color-orange-60))",
+      },
+      name: "--tab-group-orange-text",
+    },
+    {
+      value: {
+        dark: "var(--color-white)",
+        light: "var(--color-orange-60)",
+        default: "light-dark(var(--color-orange-60), var(--color-white))",
+      },
+      name: "--tab-group-orange-text-invert",
+    },
+    {
+      value: {
+        light: "var(--color-orange-60)",
+        dark: "var(--color-orange-20)",
+        default: "light-dark(var(--color-orange-60), var(--color-orange-20))",
+      },
+      name: "--tab-group-orange-hover",
+    },
+    {
+      value: {
+        light: "var(--color-orange-10)",
+        dark: "var(--color-orange-50)",
+        default: "light-dark(var(--color-orange-10), var(--color-orange-50))",
+      },
+      name: "--tab-group-orange-invert",
+    },
+    {
+      value: {
+        light: "var(--color-yellow-50)",
+        dark: "var(--color-yellow-10)",
+        default: "light-dark(var(--color-yellow-50), var(--color-yellow-10))",
+      },
+      name: "--tab-group-yellow",
+    },
+    {
+      value: {
+        light: "var(--color-white)",
+        dark: "var(--color-yellow-60)",
+        default: "light-dark(var(--color-white), var(--color-yellow-60))",
+      },
+      name: "--tab-group-yellow-text",
+    },
+    {
+      value: {
+        dark: "var(--color-white)",
+        light: "var(--color-yellow-60)",
+        default: "light-dark(var(--color-yellow-60), var(--color-white))",
+      },
+      name: "--tab-group-yellow-text-invert",
+    },
+    {
+      value: {
+        light: "var(--color-yellow-60)",
+        dark: "var(--color-yellow-20)",
+        default: "light-dark(var(--color-yellow-60), var(--color-yellow-20))",
+      },
+      name: "--tab-group-yellow-hover",
+    },
+    {
+      value: {
+        light: "var(--color-yellow-10)",
+        dark: "var(--color-yellow-50)",
+        default: "light-dark(var(--color-yellow-10), var(--color-yellow-50))",
+      },
+      name: "--tab-group-yellow-invert",
+    },
+    {
+      value: {
+        light: "var(--color-pink-50)",
+        dark: "var(--color-pink-10)",
+        default: "light-dark(var(--color-pink-50), var(--color-pink-10))",
+      },
+      name: "--tab-group-pink",
+    },
+    {
+      value: {
+        light: "var(--color-white)",
+        dark: "var(--color-pink-60)",
+        default: "light-dark(var(--color-white), var(--color-pink-60))",
+      },
+      name: "--tab-group-pink-text",
+    },
+    {
+      value: {
+        dark: "var(--color-white)",
+        light: "var(--color-pink-60)",
+        default: "light-dark(var(--color-pink-60), var(--color-white))",
+      },
+      name: "--tab-group-pink-text-invert",
+    },
+    {
+      value: {
+        light: "var(--color-pink-60)",
+        dark: "var(--color-pink-20)",
+        default: "light-dark(var(--color-pink-60), var(--color-pink-20))",
+      },
+      name: "--tab-group-pink-hover",
+    },
+    {
+      value: {
+        light: "var(--color-pink-10)",
+        dark: "var(--color-pink-50)",
+        default: "light-dark(var(--color-pink-10), var(--color-pink-50))",
+      },
+      name: "--tab-group-pink-invert",
+    },
+    {
+      value: {
+        light: "var(--color-green-50)",
+        dark: "var(--color-green-10)",
+        default: "light-dark(var(--color-green-50), var(--color-green-10))",
+      },
+      name: "--tab-group-green",
+    },
+    {
+      value: {
+        light: "var(--color-white)",
+        dark: "var(--color-green-60)",
+        default: "light-dark(var(--color-white), var(--color-green-60))",
+      },
+      name: "--tab-group-green-text",
+    },
+    {
+      value: {
+        dark: "var(--color-white)",
+        light: "var(--color-green-60)",
+        default: "light-dark(var(--color-green-60), var(--color-white))",
+      },
+      name: "--tab-group-green-text-invert",
+    },
+    {
+      value: {
+        light: "var(--color-green-60)",
+        dark: "var(--color-green-20)",
+        default: "light-dark(var(--color-green-60), var(--color-green-20))",
+      },
+      name: "--tab-group-green-hover",
+    },
+    {
+      value: {
+        light: "var(--color-green-10)",
+        dark: "var(--color-green-50)",
+        default: "light-dark(var(--color-green-10), var(--color-green-50))",
+      },
+      name: "--tab-group-green-invert",
+    },
+    {
+      value: {
+        light: "var(--color-red-50)",
+        dark: "var(--color-red-10)",
+        default: "light-dark(var(--color-red-50), var(--color-red-10))",
+      },
+      name: "--tab-group-red",
+    },
+    {
+      value: {
+        light: "var(--color-white)",
+        dark: "var(--color-red-60)",
+        default: "light-dark(var(--color-white), var(--color-red-60))",
+      },
+      name: "--tab-group-red-text",
+    },
+    {
+      value: {
+        dark: "var(--color-white)",
+        light: "var(--color-red-60)",
+        default: "light-dark(var(--color-red-60), var(--color-white))",
+      },
+      name: "--tab-group-red-text-invert",
+    },
+    {
+      value: {
+        light: "var(--color-red-60)",
+        dark: "var(--color-red-20)",
+        default: "light-dark(var(--color-red-60), var(--color-red-20))",
+      },
+      name: "--tab-group-red-hover",
+    },
+    {
+      value: {
+        light: "var(--color-red-10)",
+        dark: "var(--color-red-50)",
+        default: "light-dark(var(--color-red-10), var(--color-red-50))",
+      },
+      name: "--tab-group-red-invert",
+    },
+    {
+      value: {
+        light: "var(--color-gray-55)",
+        dark: "var(--color-gray-05)",
+        default: "light-dark(var(--color-gray-55), var(--color-gray-05))",
+      },
+      name: "--tab-group-gray",
+    },
+    {
+      value: {
+        light: "var(--color-white)",
+        dark: "var(--color-gray-65)",
+        default: "light-dark(var(--color-white), var(--color-gray-65))",
+      },
+      name: "--tab-group-gray-text",
+    },
+    {
+      value: {
+        dark: "var(--color-white)",
+        light: "var(--color-gray-65)",
+        default: "light-dark(var(--color-gray-65), var(--color-white))",
+      },
+      name: "--tab-group-gray-text-invert",
+    },
+    {
+      value: {
+        light: "var(--color-gray-65)",
+        dark: "var(--color-gray-10)",
+        default: "light-dark(var(--color-gray-65), var(--color-gray-10))",
+      },
+      name: "--tab-group-gray-hover",
+    },
+    {
+      value: {
+        light: "var(--color-gray-05)",
+        dark: "var(--color-gray-55)",
+        default: "light-dark(var(--color-gray-05), var(--color-gray-55))",
+      },
+      name: "--tab-group-gray-invert",
+    },
   ],
 };
 
@@ -2114,7 +2954,7 @@ export const variableLookupTable = {
   "button-icon-stroke": "var(--button-icon-fill)",
   "button-min-height": "var(--size-item-large)",
   "button-min-height-small": "var(--size-item-medium)",
-  "button-opacity-disabled": { default: 0.5, forcedColors: 1 },
+  "button-opacity-disabled": { default: "0.5", forcedColors: "1" },
   "button-padding": "var(--space-xsmall) var(--space-large)",
   "button-padding-icon": 0,
   "button-size-icon": "var(--button-min-height)",
@@ -2214,6 +3054,9 @@ export const variableLookupTable = {
     "var(--button-text-color-primary-active)",
   "button-text-color-selected": "var(--button-text-color-active)",
   "button-attention-dot-color": "var(--color-accent-attention)",
+  "card-background-color": "var(--background-color-box)",
+  "card-border": "var(--card-border-width) solid var(--card-border-color)",
+  "card-border-width": "var(--border-width)",
   "card-border-color": {
     light: "color-mix(in srgb, currentColor 10%, transparent)",
     dark: "color-mix(in srgb, currentColor 6%, transparent)",
@@ -2225,6 +3068,10 @@ export const variableLookupTable = {
   "card-border-radius": "var(--border-radius-large)",
   "card-box-shadow": "var(--box-shadow-level-2)",
   "card-box-shadow-hover": "var(--box-shadow-level-4)",
+  "card-focus-outline": "var(--focus-outline)",
+  "card-padding": "var(--space-large)",
+  "card-gap": "var(--card-padding)",
+  "card-gap-article": "var(--space-small)",
   "checkbox-margin-inline": "var(--space-small)",
   "checkbox-size": "var(--size-item-small)",
   "icon-color": {
@@ -2263,6 +3110,7 @@ export const variableLookupTable = {
   "icon-size-medium": "var(--dimension-20)",
   "icon-size-large": "var(--dimension-24)",
   "icon-size-xlarge": "var(--dimension-32)",
+  "input-border-color": "var(--border-color-interactive)",
   "input-text-min-height": "var(--button-min-height)",
   "link-color": {
     forcedColors: "LinkText",
@@ -2280,12 +3128,62 @@ export const variableLookupTable = {
     platform: { default: "color-mix(in srgb, black 20%, var(--link-color))" },
   },
   "link-color-visited": {
-    forcedColors: "var(--link-color)",
+    forcedColors: "VisitedText",
     brand: { default: "var(--link-color)" },
     platform: { default: "var(--link-color)" },
   },
   "link-focus-outline-offset": "1px",
+  "opacity-deemphasized-strong": { default: "0.6", prefersContrast: "1" },
+  "opacity-deemphasized": { default: "0.8", prefersContrast: "1" },
   "page-main-content-width": { brand: { default: "664px" } },
+  "page-space-block-start": { brand: { default: "64px" } },
+  "panel-menuitem-border-radius": "var(--border-radius-small)",
+  "panel-menuitem-margin":
+    "var(--panel-menuitem-margin-block) var(--panel-menuitem-margin-inline)",
+  "panel-menuitem-margin-block": "0px",
+  "panel-menuitem-margin-inline": "8px",
+  "panel-menuitem-padding":
+    "var(--panel-menuitem-padding-block) var(--panel-menuitem-padding-inline)",
+  "panel-menuitem-padding-block": "8px",
+  "panel-menuitem-padding-inline": "8px",
+  "panel-background-color": {
+    light: "var(--color-white)",
+    dark: "rgb(66, 65, 77)",
+    nativeTheme: "Field",
+    default: "light-dark(var(--color-white), rgb(66, 65, 77))",
+  },
+  "panel-background-color-dimmed": {
+    light: "color-mix(in srgb, currentColor 12%, transparent)",
+    dark: "color-mix(in srgb, currentColor 17%, transparent)",
+    nativeTheme: "color-mix(in srgb, currentColor 17%, transparent)",
+    default:
+      "light-dark(color-mix(in srgb, currentColor 12%, transparent), color-mix(in srgb, currentColor 17%, transparent))",
+  },
+  "panel-background-color-dimmed-further": {
+    light: "color-mix(in srgb, currentColor 20%, transparent)",
+    dark: "color-mix(in srgb, currentColor 14%, transparent)",
+    nativeTheme: "color-mix(in srgb, currentColor 30%, transparent)",
+    default:
+      "light-dark(color-mix(in srgb, currentColor 20%, transparent), color-mix(in srgb, currentColor 14%, transparent))",
+  },
+  "panel-border-color": {
+    light: "rgb(240, 240, 244)",
+    dark: "rgb(82, 82, 94)",
+    nativeTheme: "ThreeDShadow",
+    default: "light-dark(rgb(240, 240, 244), rgb(82, 82, 94))",
+  },
+  "panel-border-radius": "var(--border-radius-medium)",
+  "panel-box-shadow": "0 0 var(--panel-box-shadow-margin) hsla(0, 0%, 0%, 0.2)",
+  "panel-box-shadow-margin": "4px",
+  "panel-padding": "16px",
+  "panel-padding-block": "4px",
+  "panel-text-color": {
+    light: "var(--color-black)",
+    dark: "rgb(251, 251, 254)",
+    nativeTheme: "FieldText",
+    default: "light-dark(var(--color-black), rgb(251, 251, 254))",
+  },
+  "panel-width": "initial",
   "popup-box-shadow": "var(--box-shadow-level-3)",
   "table-background-color": {
     light: "#f8f8fa",
@@ -2324,6 +3222,128 @@ export const variableLookupTable = {
       default: "light-dark(rgba(0, 0, 0, 0.05), rgba(255, 255, 255, 0.05))",
     },
   },
+  "toolbar-padding-inline": "8px",
+  "toolbar-field-border-color": {
+    default: "var(--border-color-transparent)",
+    prefersContrast: "var(--input-border-color)",
+  },
+  "toolbar-field-border-color-focus": {
+    default: "color-mix(in srgb, var(--focus-outline-color) 50%, transparent)",
+    prefersContrast: "var(--focus-outline-color)",
+  },
+  "toolbar-field-background-color": {
+    light: "rgba(0, 0, 0, 0.05)",
+    dark: "var(--color-black-alpha-30)",
+    prefersContrast: "Field",
+    default: "light-dark(rgba(0, 0, 0, 0.05), var(--color-black-alpha-30))",
+  },
+  "toolbar-field-background-color-focus": {
+    light: "var(--color-white)",
+    dark: "rgb(66, 65, 77)",
+    nativeTheme: "Field",
+    default: "light-dark(var(--color-white), rgb(66, 65, 77))",
+  },
+  "toolbar-field-text-color": {
+    light: "var(--color-gray-100)",
+    dark: "var(--color-gray-05)",
+    nativeTheme: "inherit",
+    prefersContrast: "FieldText",
+    default: "light-dark(var(--color-gray-100), var(--color-gray-05))",
+  },
+  "toolbar-field-text-color-focus": {
+    light: "var(--color-black)",
+    dark: "var(--color-gray-05)",
+    nativeTheme: "FieldText",
+    default: "light-dark(var(--color-black), var(--color-gray-05))",
+  },
+  "toolbar-background-color": {
+    light: "#f9f9fb",
+    dark: "rgb(43, 42, 51)",
+    nativeTheme: "color-mix(in srgb, -moz-dialog 85%, var(--color-white))",
+    default: "light-dark(#f9f9fb, rgb(43, 42, 51))",
+  },
+  "toolbar-text-color": {
+    light: "var(--color-gray-100)",
+    dark: "var(--color-gray-05)",
+    nativeTheme: "-moz-dialogtext",
+    default: "light-dark(var(--color-gray-100), var(--color-gray-05))",
+  },
+  "toolbarbutton-padding-outer": "2px",
+  "toolbarbutton-padding-outer-narrow": "1px",
+  "toolbarbutton-padding-inner": "8px",
+  "toolbarbutton-padding-inner-narrow": "7px",
+  "toolbarbutton-padding-inner-compact": "6px",
+  "toolbarbutton-padding-inner-touch": "9px",
+  "toolbarbutton-padding-inner-touch-narrow": "8px",
+  "toolbarbutton-icon-fill": {
+    light: "var(--color-gray-70)",
+    dark: "var(--color-gray-05)",
+    nativeTheme: "currentColor",
+    default: "light-dark(var(--color-gray-70), var(--color-gray-05))",
+  },
+  "toolbarbutton-icon-fill-attention": {
+    light: "var(--color-blue-60)",
+    dark: "var(--color-cyan-30)",
+    nativeTheme: "AccentColor",
+    default: "light-dark(var(--color-blue-60), var(--color-cyan-30))",
+  },
+  "toolbarbutton-icon-fill-attention-text": {
+    light: "var(--color-gray-20)",
+    dark: "var(--color-gray-90)",
+    nativeTheme: "AccentColorText",
+    default: "light-dark(var(--color-gray-20), var(--color-gray-90))",
+  },
+  "toolbarbutton-opacity-disabled": {
+    default: "var(--button-opacity-disabled)",
+    prefersContrast: 0.3,
+  },
+  "toolbarbutton-border-radius": "var(--button-border-radius)",
+  "toolbarbutton-background-color-hover":
+    "color-mix(in srgb, currentColor 17%, transparent)",
+  "toolbarbutton-background-color-active":
+    "color-mix(in srgb, currentColor 30%, transparent)",
+  "toolbarbutton-outline":
+    "var(--border-width) solid var(--toolbarbutton-outline-color)",
+  "toolbarbutton-outline-color": {
+    default: "transparent",
+    forcedColors: "ButtonText",
+  },
+  "toolbarbutton-outline-color-hover": {
+    default: "transparent",
+    prefersContrast: "currentColor",
+    forcedColors: "SelectedItem",
+  },
+  "toolbarbutton-outline-color-active": {
+    default: "transparent",
+    prefersContrast: "currentColor",
+    forcedColors: "ButtonText",
+  },
+  "toolbarbutton-outline-color-selected": {
+    default: "var(--toolbarbutton-outline-color-active)",
+    forcedColors: "SelectedItem",
+  },
+  "toolbarbutton-outline-offset": "calc(-1 * var(--border-width))",
+  "toolbarseparator-color": "var(--text-color-deemphasized)",
+  "toolbox-background-color": {
+    light: "rgb(234, 234, 237)",
+    dark: "var(--color-gray-90)",
+    nativeTheme: "-moz-headerbar",
+    default: "light-dark(rgb(234, 234, 237), var(--color-gray-90))",
+  },
+  "toolbox-background-color-inactive": {
+    default: "var(--toolbox-background-color)",
+    nativeTheme: "-moz-headerbarinactive",
+  },
+  "toolbox-text-color": {
+    light: "var(--color-gray-100)",
+    dark: "var(--color-gray-05)",
+    nativeTheme: "-moz-headerbartext",
+    default: "light-dark(var(--color-gray-100), var(--color-gray-05))",
+  },
+  "toolbox-text-color-inactive": {
+    default: "var(--toolbox-text-color)",
+    nativeTheme: "-moz-headerbarinactivetext",
+  },
   "badge-text-color": {
     default: "var(--text-color-deemphasized)",
     forcedColors: "CanvasText",
@@ -2350,6 +3370,12 @@ export const variableLookupTable = {
   },
   "badge-border-radius": "var(--border-radius-small)",
   "badge-border-width": "1px",
+  "breadcrumb-gap": "var(--space-small)",
+  "breadcrumb-icon-size": "var(--icon-size-xsmall)",
+  "breadcrumb-link-color": "var(--link-color)",
+  "breadcrumb-link-color-hover": "var(--link-color-hover)",
+  "breadcrumb-link-color-active": "var(--link-color-active)",
+  "breadcrumb-link-color-visited": "var(--link-color-visited)",
   "message-bar-background-color": "var(--background-color-information)",
   "message-bar-border-color": {
     default: "oklch(from var(--message-bar-icon-color) l c h / 20%)",
@@ -2361,6 +3387,62 @@ export const variableLookupTable = {
   "message-bar-icon-color": "var(--icon-color-information)",
   "message-bar-icon-size": "var(--icon-size)",
   "message-bar-text-color": "var(--text-color)",
+  "page-nav-border-color": "var(--border-color-transparent)",
+  "page-nav-button-gap": "var(--space-xsmall)",
+  "page-nav-focus-outline-inset": "var(--focus-outline-inset)",
+  "page-nav-gap": "var(--space-large)",
+  "page-nav-heading-logo-size": "var(--icon-size-large)",
+  "page-nav-hr-background-color": "var(--border-color)",
+  "page-nav-margin-block-start": "var(--page-space-block-start)",
+  "page-nav-margin-inline-start": "40px",
+  "promo-background-color": {
+    default: "color-mix(in lch, currentColor 8%, transparent)",
+    prefersContrast: "var(--background-color-canvas)",
+  },
+  "promo-background-color-vibrant": {
+    light: "var(--color-violet-0)",
+    dark: "var(--color-violet-90)",
+    default: "light-dark(var(--color-violet-0), var(--color-violet-90))",
+  },
+  "promo-border": "var(--promo-border-width) solid var(--promo-border-color)",
+  "promo-border-color": {
+    default: "color-mix(in lch, currentColor 8%, transparent)",
+    prefersContrast: "var(--border-color)",
+  },
+  "promo-border-color-vibrant": "var(--color-violet-30)",
+  "promo-border-width": "var(--border-width)",
+  "promo-border-radius": "var(--border-radius-medium)",
+  "promo-heading-text-color": "var(--promo-message-text-color)",
+  "promo-heading-text-color-vibrant": "var(--promo-message-text-color)",
+  "promo-image-size": "var(--size-image-xlarge)",
+  "promo-image-size-large": "calc(2 * var(--size-image-xlarge))",
+  "promo-message-text-color": "var(--text-color)",
+  "promo-message-text-color-vibrant": {
+    light: "var(--color-violet-80)",
+    dark: "var(--color-violet-0)",
+    default: "light-dark(var(--color-violet-80), var(--color-violet-0))",
+  },
+  "promo-padding": "var(--space-medium)",
+  "reorderable-list-indicator-background-color": "var(--color-accent-primary)",
+  "reorderable-list-indicator-margin": "var(--reorderable-list-indicator-size)",
+  "reorderable-list-indicator-size": "2px",
+  "select-background-color": "var(--button-background-color)",
+  "select-background-color-hover": "var(--button-background-color-hover)",
+  "select-background-color-disabled": "var(--button-background-color-disabled)",
+  "select-border": "var(--button-border)",
+  "select-border-color-hover": "var(--button-border-color-hover)",
+  "select-border-color-disabled": "var(--button-border-color-disabled)",
+  "select-border-radius": "var(--button-border-radius)",
+  "select-font-size": "var(--button-font-size)",
+  "select-font-weight": "var(--button-font-weight)",
+  "select-icon-fill": "var(--button-icon-fill)",
+  "select-min-height": "var(--button-min-height)",
+  "select-opacity-disabled": "var(--button-opacity-disabled)",
+  "select-option-font-weight": "var(--font-weight)",
+  "select-option-text-color": "var(--text-color)",
+  "select-text-color": "var(--button-text-color)",
+  "select-text-color-hover": "var(--button-text-color-hover)",
+  "select-text-color-disabled": "var(--button-text-color-disabled)",
   "toggle-background-color": "var(--button-background-color)",
   "toggle-background-color-hover": "var(--button-background-color-hover)",
   "toggle-background-color-active": "var(--button-background-color-active)",
@@ -2404,17 +3486,43 @@ export const variableLookupTable = {
   "toggle-dot-transform-x":
     "calc(var(--toggle-width) - 2 * var(--toggle-dot-margin) - 2px - var(--toggle-dot-width))",
   "toggle-inset": "calc(-1 * var(--dimension-2))",
+  "visual-picker-item-border-color": "var(--border-color-interactive)",
+  "visual-picker-item-border-radius": "var(--border-radius-medium)",
+  "visual-picker-item-border-width": "var(--border-width)",
+  "visual-picker-item-border-width-checked": "calc(var(--border-width) * 3)",
+  "box-border": "var(--box-border-width) solid var(--box-border-color)",
+  "box-border-width": "var(--border-width)",
+  "box-border-color": "var(--border-color)",
+  "box-border-radius": "var(--border-radius-medium)",
+  "box-border-radius-inner":
+    "calc(var(--box-border-radius) - var(--box-border-width))",
+  "box-button-background-color": "var(--button-background-color-menu)",
+  "box-button-background-color-hover":
+    "var(--button-background-color-menu-hover)",
+  "box-button-background-color-active":
+    "var(--button-background-color-menu-active)",
+  "box-button-background-color-disabled":
+    "var(--button-background-color-menu-disabled)",
+  "box-button-text-color": "var(--button-text-color-menu)",
+  "box-button-text-color-hover": "var(--button-text-color-menu-hover)",
+  "box-button-text-color-active": "var(--button-text-color-menu-active)",
+  "box-button-text-color-disabled": "var(--button-text-color-menu-disabled)",
+  "box-icon-size": "var(--icon-size)",
+  "box-icon-fill": "var(--icon-color)",
+  "box-icon-stroke": "var(--box-icon-fill)",
+  "box-padding": "var(--space-large)",
   "tab-block-margin": "var(--dimension-4)",
   "tab-border-radius": "var(--toolbarbutton-border-radius)",
   "tab-box-shadow": "var(--box-shadow-level-1)",
   "tab-attention-dot-color": "var(--color-accent-attention)",
   "tab-close-button-padding": "6px",
-  "tab-hover-background-color":
-    "color-mix(in srgb, currentColor 11%, transparent)",
   "tab-hover-outline-color": {
     default: "transparent",
     prefersContrast: "currentColor",
   },
+  "tab-background-color-hover":
+    "color-mix(in srgb, currentColor 11%, transparent)",
+  "tab-background-color-selected": "var(--toolbar-background-color)",
   "tab-icon-end-margin": "5.5px",
   "tab-inline-padding": "var(--dimension-8)",
   "tab-inner-inline-margin": "var(--space-medium)",
@@ -2427,12 +3535,236 @@ export const variableLookupTable = {
   "tab-pinned-container-margin-inline-expanded": "var(--space-small)",
   "tab-pinned-expanded-background-width": "var(--dimension-40)",
   "tab-pinned-margin-inline-expanded": "var(--space-xsmall)",
-  "tab-selected-bgcolor": "var(--toolbar-bgcolor)",
   "tab-selected-outline-color": {
     default: "transparent",
     prefersContrast: "currentColor",
   },
-  "tab-selected-textcolor": "var(--toolbar-color)",
+  "tab-selected-textcolor": "var(--toolbar-text-color)",
   "tab-vertical-block-margin": "var(--dimension-2)",
   "tab-vertical-inline-padding": "var(--space-medium)",
+  "tab-group-blue": {
+    light: "var(--color-blue-50)",
+    dark: "var(--color-blue-10)",
+    default: "light-dark(var(--color-blue-50), var(--color-blue-10))",
+  },
+  "tab-group-blue-text": {
+    light: "var(--color-white)",
+    dark: "var(--color-blue-60)",
+    default: "light-dark(var(--color-white), var(--color-blue-60))",
+  },
+  "tab-group-blue-text-invert": {
+    dark: "var(--color-white)",
+    light: "var(--color-blue-60)",
+    default: "light-dark(var(--color-blue-60), var(--color-white))",
+  },
+  "tab-group-blue-hover": {
+    light: "var(--color-blue-60)",
+    dark: "var(--color-blue-20)",
+    default: "light-dark(var(--color-blue-60), var(--color-blue-20))",
+  },
+  "tab-group-blue-invert": {
+    light: "var(--color-blue-10)",
+    dark: "var(--color-blue-50)",
+    default: "light-dark(var(--color-blue-10), var(--color-blue-50))",
+  },
+  "tab-group-purple": {
+    light: "var(--color-purple-50)",
+    dark: "var(--color-purple-10)",
+    default: "light-dark(var(--color-purple-50), var(--color-purple-10))",
+  },
+  "tab-group-purple-text": {
+    light: "var(--color-white)",
+    dark: "var(--color-purple-60)",
+    default: "light-dark(var(--color-white), var(--color-purple-60))",
+  },
+  "tab-group-purple-text-invert": {
+    dark: "var(--color-white)",
+    light: "var(--color-purple-60)",
+    default: "light-dark(var(--color-purple-60), var(--color-white))",
+  },
+  "tab-group-purple-hover": {
+    light: "var(--color-purple-60)",
+    dark: "var(--color-purple-20)",
+    default: "light-dark(var(--color-purple-60), var(--color-purple-20))",
+  },
+  "tab-group-purple-invert": {
+    light: "var(--color-purple-10)",
+    dark: "var(--color-purple-50)",
+    default: "light-dark(var(--color-purple-10), var(--color-purple-50))",
+  },
+  "tab-group-cyan": {
+    light: "var(--color-cyan-50)",
+    dark: "var(--color-cyan-10)",
+    default: "light-dark(var(--color-cyan-50), var(--color-cyan-10))",
+  },
+  "tab-group-cyan-text": {
+    light: "var(--color-white)",
+    dark: "var(--color-cyan-60)",
+    default: "light-dark(var(--color-white), var(--color-cyan-60))",
+  },
+  "tab-group-cyan-text-invert": {
+    dark: "var(--color-white)",
+    light: "var(--color-cyan-60)",
+    default: "light-dark(var(--color-cyan-60), var(--color-white))",
+  },
+  "tab-group-cyan-hover": {
+    light: "var(--color-cyan-60)",
+    dark: "var(--color-cyan-20)",
+    default: "light-dark(var(--color-cyan-60), var(--color-cyan-20))",
+  },
+  "tab-group-cyan-invert": {
+    light: "var(--color-cyan-10)",
+    dark: "var(--color-cyan-50)",
+    default: "light-dark(var(--color-cyan-10), var(--color-cyan-50))",
+  },
+  "tab-group-orange": {
+    light: "var(--color-orange-50)",
+    dark: "var(--color-orange-10)",
+    default: "light-dark(var(--color-orange-50), var(--color-orange-10))",
+  },
+  "tab-group-orange-text": {
+    light: "var(--color-white)",
+    dark: "var(--color-orange-60)",
+    default: "light-dark(var(--color-white), var(--color-orange-60))",
+  },
+  "tab-group-orange-text-invert": {
+    dark: "var(--color-white)",
+    light: "var(--color-orange-60)",
+    default: "light-dark(var(--color-orange-60), var(--color-white))",
+  },
+  "tab-group-orange-hover": {
+    light: "var(--color-orange-60)",
+    dark: "var(--color-orange-20)",
+    default: "light-dark(var(--color-orange-60), var(--color-orange-20))",
+  },
+  "tab-group-orange-invert": {
+    light: "var(--color-orange-10)",
+    dark: "var(--color-orange-50)",
+    default: "light-dark(var(--color-orange-10), var(--color-orange-50))",
+  },
+  "tab-group-yellow": {
+    light: "var(--color-yellow-50)",
+    dark: "var(--color-yellow-10)",
+    default: "light-dark(var(--color-yellow-50), var(--color-yellow-10))",
+  },
+  "tab-group-yellow-text": {
+    light: "var(--color-white)",
+    dark: "var(--color-yellow-60)",
+    default: "light-dark(var(--color-white), var(--color-yellow-60))",
+  },
+  "tab-group-yellow-text-invert": {
+    dark: "var(--color-white)",
+    light: "var(--color-yellow-60)",
+    default: "light-dark(var(--color-yellow-60), var(--color-white))",
+  },
+  "tab-group-yellow-hover": {
+    light: "var(--color-yellow-60)",
+    dark: "var(--color-yellow-20)",
+    default: "light-dark(var(--color-yellow-60), var(--color-yellow-20))",
+  },
+  "tab-group-yellow-invert": {
+    light: "var(--color-yellow-10)",
+    dark: "var(--color-yellow-50)",
+    default: "light-dark(var(--color-yellow-10), var(--color-yellow-50))",
+  },
+  "tab-group-pink": {
+    light: "var(--color-pink-50)",
+    dark: "var(--color-pink-10)",
+    default: "light-dark(var(--color-pink-50), var(--color-pink-10))",
+  },
+  "tab-group-pink-text": {
+    light: "var(--color-white)",
+    dark: "var(--color-pink-60)",
+    default: "light-dark(var(--color-white), var(--color-pink-60))",
+  },
+  "tab-group-pink-text-invert": {
+    dark: "var(--color-white)",
+    light: "var(--color-pink-60)",
+    default: "light-dark(var(--color-pink-60), var(--color-white))",
+  },
+  "tab-group-pink-hover": {
+    light: "var(--color-pink-60)",
+    dark: "var(--color-pink-20)",
+    default: "light-dark(var(--color-pink-60), var(--color-pink-20))",
+  },
+  "tab-group-pink-invert": {
+    light: "var(--color-pink-10)",
+    dark: "var(--color-pink-50)",
+    default: "light-dark(var(--color-pink-10), var(--color-pink-50))",
+  },
+  "tab-group-green": {
+    light: "var(--color-green-50)",
+    dark: "var(--color-green-10)",
+    default: "light-dark(var(--color-green-50), var(--color-green-10))",
+  },
+  "tab-group-green-text": {
+    light: "var(--color-white)",
+    dark: "var(--color-green-60)",
+    default: "light-dark(var(--color-white), var(--color-green-60))",
+  },
+  "tab-group-green-text-invert": {
+    dark: "var(--color-white)",
+    light: "var(--color-green-60)",
+    default: "light-dark(var(--color-green-60), var(--color-white))",
+  },
+  "tab-group-green-hover": {
+    light: "var(--color-green-60)",
+    dark: "var(--color-green-20)",
+    default: "light-dark(var(--color-green-60), var(--color-green-20))",
+  },
+  "tab-group-green-invert": {
+    light: "var(--color-green-10)",
+    dark: "var(--color-green-50)",
+    default: "light-dark(var(--color-green-10), var(--color-green-50))",
+  },
+  "tab-group-red": {
+    light: "var(--color-red-50)",
+    dark: "var(--color-red-10)",
+    default: "light-dark(var(--color-red-50), var(--color-red-10))",
+  },
+  "tab-group-red-text": {
+    light: "var(--color-white)",
+    dark: "var(--color-red-60)",
+    default: "light-dark(var(--color-white), var(--color-red-60))",
+  },
+  "tab-group-red-text-invert": {
+    dark: "var(--color-white)",
+    light: "var(--color-red-60)",
+    default: "light-dark(var(--color-red-60), var(--color-white))",
+  },
+  "tab-group-red-hover": {
+    light: "var(--color-red-60)",
+    dark: "var(--color-red-20)",
+    default: "light-dark(var(--color-red-60), var(--color-red-20))",
+  },
+  "tab-group-red-invert": {
+    light: "var(--color-red-10)",
+    dark: "var(--color-red-50)",
+    default: "light-dark(var(--color-red-10), var(--color-red-50))",
+  },
+  "tab-group-gray": {
+    light: "var(--color-gray-55)",
+    dark: "var(--color-gray-05)",
+    default: "light-dark(var(--color-gray-55), var(--color-gray-05))",
+  },
+  "tab-group-gray-text": {
+    light: "var(--color-white)",
+    dark: "var(--color-gray-65)",
+    default: "light-dark(var(--color-white), var(--color-gray-65))",
+  },
+  "tab-group-gray-text-invert": {
+    dark: "var(--color-white)",
+    light: "var(--color-gray-65)",
+    default: "light-dark(var(--color-gray-65), var(--color-white))",
+  },
+  "tab-group-gray-hover": {
+    light: "var(--color-gray-65)",
+    dark: "var(--color-gray-10)",
+    default: "light-dark(var(--color-gray-65), var(--color-gray-10))",
+  },
+  "tab-group-gray-invert": {
+    light: "var(--color-gray-05)",
+    dark: "var(--color-gray-55)",
+    default: "light-dark(var(--color-gray-05), var(--color-gray-55))",
+  },
 };

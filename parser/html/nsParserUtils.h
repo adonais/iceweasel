@@ -8,7 +8,7 @@
 #include "nsIParserUtils.h"
 
 class nsParserUtils final : public nsIParserUtils {
-  ~nsParserUtils() {}
+  ~nsParserUtils() = default;
 
  public:
   NS_DECL_ISUPPORTS

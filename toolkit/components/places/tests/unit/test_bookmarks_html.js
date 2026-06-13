@@ -210,11 +210,11 @@ add_task(async function test_import_chromefavicon() {
   // 8. export to bookmarks.exported.html
   // 9. empty bookmarks db and continue
 
-  const PAGE_URI = NetUtil.newURI("http://example.com/chromefavicon_page");
-  const CHROME_FAVICON_URI = NetUtil.newURI(
+  const PAGE_URI = Services.io.newURI("http://example.com/chromefavicon_page");
+  const CHROME_FAVICON_URI = Services.io.newURI(
     "chrome://global/skin/icons/delete.svg"
   );
-  const CHROME_FAVICON_URI_2 = NetUtil.newURI(
+  const CHROME_FAVICON_URI_2 = Services.io.newURI(
     "chrome://global/skin/icons/error.svg"
   );
 

@@ -51,7 +51,11 @@ static RefPtr<nsIContent> GetMenuChildContent(
       });
 }
 
+// Global rather than per-instance: building a menu triggers DOM observer
+// callbacks on child/sibling nsMenuX instances, and we need to suppress those
+// across all instances to prevent re-entrant rebuilds.
 static bool gConstructingMenu = false;
+
 static bool gMenuMethodsSwizzled = false;
 
 // Protect against really deep menu nestings, for example from recursive

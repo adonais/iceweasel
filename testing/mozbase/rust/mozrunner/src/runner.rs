@@ -99,6 +99,12 @@ pub struct FirefoxProcess {
     profile: Option<Profile>,
 }
 
+impl FirefoxProcess {
+    pub fn pid(&self) -> u32 {
+        self.process.id()
+    }
+}
+
 impl RunnerProcess for FirefoxProcess {
     fn try_wait(&mut self) -> io::Result<Option<process::ExitStatus>> {
         self.process.try_wait()

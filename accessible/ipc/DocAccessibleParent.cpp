@@ -48,6 +48,9 @@ DocAccessibleParent::DocAccessibleParent()
 #if defined(XP_WIN)
       mEmulatedWindowHandle(nullptr),
 #endif  // defined(XP_WIN)
+#ifdef MOZ_WIDGET_COCOA
+      mFocusedAccBounds(Nothing()),
+#endif
       mTopLevel(false),
       mTopLevelInContentProcess(false),
       mShutdown(false),
@@ -219,8 +222,7 @@ mozilla::ipc::IPCResult DocAccessibleParent::ProcessShowEvent(
   xpcAccessibleGeneric* xpcAcc = GetXPCAccessible(root);
   xpcAccessibleDocument* doc = GetAccService()->GetXPCDocument(this);
   nsINode* node = nullptr;
-  RefPtr<xpcAccEvent> event =
-      new xpcAccEvent(type, xpcAcc, doc, node, aFromUser);
+  auto event = MakeRefPtr<xpcAccEvent>(type, xpcAcc, doc, node, aFromUser);
   nsCoreUtils::DispatchAccEvent(std::move(event));
 
   return IPC_OK();
@@ -469,8 +471,7 @@ void DocAccessibleParent::FireEvent(RemoteAccessible* aAcc,
   xpcAccessibleDocument* doc = GetAccService()->GetXPCDocument(this);
   nsINode* node = nullptr;
   bool fromUser = true;  // XXX fix me
-  RefPtr<xpcAccEvent> event =
-      new xpcAccEvent(aEventType, xpcAcc, doc, node, fromUser);
+  auto event = MakeRefPtr<xpcAccEvent>(aEventType, xpcAcc, doc, node, fromUser);
   nsCoreUtils::DispatchAccEvent(std::move(event));
 }
 
@@ -505,7 +506,7 @@ mozilla::ipc::IPCResult DocAccessibleParent::RecvStateChangeEvent(
   uint32_t state = nsAccUtils::To32States(aState, &extra);
   bool fromUser = true;     // XXX fix this
   nsINode* node = nullptr;  // XXX can we do better?
-  RefPtr<xpcAccStateChangeEvent> event = new xpcAccStateChangeEvent(
+  auto event = MakeRefPtr<xpcAccStateChangeEvent>(
       type, xpcAcc, doc, node, fromUser, state, extra, aEnabled);
   nsCoreUtils::DispatchAccEvent(std::move(event));
 
@@ -557,7 +558,7 @@ mozilla::ipc::IPCResult DocAccessibleParent::RecvCaretMoveEvent(
   nsINode* node = nullptr;
   bool fromUser = true;  // XXX fix me
   uint32_t type = nsIAccessibleEvent::EVENT_TEXT_CARET_MOVED;
-  RefPtr<xpcAccCaretMoveEvent> event = new xpcAccCaretMoveEvent(
+  auto event = MakeRefPtr<xpcAccCaretMoveEvent>(
       type, xpcAcc, doc, node, fromUser, aOffset, aIsSelectionCollapsed,
       aIsAtEndOfLine, aGranularity);
   nsCoreUtils::DispatchAccEvent(std::move(event));
@@ -587,7 +588,7 @@ mozilla::ipc::IPCResult DocAccessibleParent::ProcessTextChangeEvent(
   uint32_t type = aIsInsert ? nsIAccessibleEvent::EVENT_TEXT_INSERTED
                             : nsIAccessibleEvent::EVENT_TEXT_REMOVED;
   nsINode* node = nullptr;
-  RefPtr<xpcAccTextChangeEvent> event = new xpcAccTextChangeEvent(
+  auto event = MakeRefPtr<xpcAccTextChangeEvent>(
       type, xpcAcc, doc, node, aFromUser, aStart, aLen, aIsInsert, aStr);
   nsCoreUtils::DispatchAccEvent(std::move(event));
 
@@ -690,8 +691,8 @@ mozilla::ipc::IPCResult DocAccessibleParent::RecvSelectionEvent(
   }
   xpcAccessibleGeneric* xpcTarget = GetXPCAccessible(target);
   xpcAccessibleDocument* xpcDoc = GetAccService()->GetXPCDocument(this);
-  RefPtr<xpcAccEvent> event =
-      new xpcAccEvent(aType, xpcTarget, xpcDoc, nullptr, false);
+  auto event =
+      MakeRefPtr<xpcAccEvent>(aType, xpcTarget, xpcDoc, nullptr, false);
   nsCoreUtils::DispatchAccEvent(std::move(event));
 
   return IPC_OK();
@@ -731,9 +732,9 @@ mozilla::ipc::IPCResult DocAccessibleParent::RecvScrollingEvent(
   xpcAccessibleDocument* doc = GetAccService()->GetXPCDocument(this);
   nsINode* node = nullptr;
   bool fromUser = true;  // XXX: Determine if this was from user input.
-  RefPtr<xpcAccScrollingEvent> event =
-      new xpcAccScrollingEvent(aType, xpcAcc, doc, node, fromUser, aScrollX,
-                               aScrollY, aMaxScrollX, aMaxScrollY);
+  auto event = MakeRefPtr<xpcAccScrollingEvent>(aType, xpcAcc, doc, node,
+                                                fromUser, aScrollX, aScrollY,
+                                                aMaxScrollX, aMaxScrollY);
   nsCoreUtils::DispatchAccEvent(std::move(event));
 
   return IPC_OK();
@@ -835,7 +836,7 @@ mozilla::ipc::IPCResult DocAccessibleParent::RecvAnnouncementEvent(
 
   xpcAccessibleGeneric* xpcAcc = GetXPCAccessible(target);
   xpcAccessibleDocument* doc = GetAccService()->GetXPCDocument(this);
-  RefPtr<xpcAccAnnouncementEvent> event = new xpcAccAnnouncementEvent(
+  auto event = MakeRefPtr<xpcAccAnnouncementEvent>(
       nsIAccessibleEvent::EVENT_ANNOUNCEMENT, xpcAcc, doc, nullptr, false,
       aAnnouncement, aPriority);
   nsCoreUtils::DispatchAccEvent(std::move(event));
@@ -874,9 +875,9 @@ mozilla::ipc::IPCResult DocAccessibleParent::RecvTextSelectionChangeEvent(
   xpcAccessibleDocument* doc = nsAccessibilityService::GetXPCDocument(this);
   nsINode* node = nullptr;
   bool fromUser = true;  // XXX fix me
-  RefPtr<xpcAccEvent> event =
-      new xpcAccEvent(nsIAccessibleEvent::EVENT_TEXT_SELECTION_CHANGED, xpcAcc,
-                      doc, node, fromUser);
+  auto event =
+      MakeRefPtr<xpcAccEvent>(nsIAccessibleEvent::EVENT_TEXT_SELECTION_CHANGED,
+                              xpcAcc, doc, node, fromUser);
   nsCoreUtils::DispatchAccEvent(std::move(event));
 
   return IPC_OK();
@@ -921,6 +922,10 @@ mozilla::ipc::IPCResult DocAccessibleParent::RecvBindChildDoc(
   if (childDoc->IsShutdown()) {
     return IPC_FAIL(this, "Attempt to bind a shutdown child doc");
   }
+  if (childDoc->Manager() != Manager()) {
+    return IPC_FAIL(this,
+                    "Attempt to bind child doc from a different PBrowser");
+  }
 
   ipc::IPCResult result = AddChildDoc(childDoc, aID, false);
   MOZ_ASSERT(result);
@@ -939,7 +944,9 @@ ipc::IPCResult DocAccessibleParent::AddChildDoc(DocAccessibleParent* aChildDoc,
     return IPC_FAIL(this,
                     "Attempt to add child doc which already has a parent");
   }
-
+  if (aChildDoc->IsTopLevel()) {
+    return IPC_FAIL(this, "Attempt to add a top level doc as a child");
+  }
   if (aChildDoc->IsShutdown()) {
     return IPC_FAIL(this, "Attempt to add a shutdown child doc");
   }
@@ -1117,7 +1124,23 @@ void DocAccessibleParent::Destroy() {
   if (IsTopLevel()) {
     GetAccService()->RemoteDocShutdown(this);
   } else {
+    RemoteAccessible* outerDoc = RemoteParent();
     Unbind();
+    if (outerDoc) {
+      // When an iframe document is replaced (e.g. the src URL is changed),
+      // there may be a short delay between the removal of the old document
+      // handled here and the addition of the new document. This delay might be
+      // long enough that we reuse OS specific ids (e.g. MSAA) from the old
+      // document. Thus, we must notify clients when the old document is removed
+      // so they process the removal before any ids are reused. Otherwise, a
+      // client might assume the reused ids refer to Accessibles that have since
+      // been removed, potentially causing loops and other breakage in client
+      // tree caches such as screen reader virtual buffers. We then fire a
+      // second reorder event when the new document is received; see AddChildDoc
+      // and RecvRequestAckMutationEvents.
+      outerDoc->Document()->FireEvent(outerDoc,
+                                      nsIAccessibleEvent::EVENT_REORDER);
+    }
   }
 }
 
@@ -1235,6 +1258,11 @@ mozilla::ipc::IPCResult DocAccessibleParent::RecvFocusEvent(
 
   mFocus = aID;
   mCaretRect = aCaretRect;
+#ifdef MOZ_WIDGET_COCOA
+  if (PlatformShouldTrackFocusedAccLocation()) {
+    mFocusedAccBounds = Some(proxy->Bounds());
+  }
+#endif
   PlatformFocusEvent(proxy);
 
   if (!nsCoreUtils::AccEventObserversExist()) {
@@ -1245,8 +1273,8 @@ mozilla::ipc::IPCResult DocAccessibleParent::RecvFocusEvent(
   xpcAccessibleDocument* doc = GetAccService()->GetXPCDocument(this);
   nsINode* node = nullptr;
   bool fromUser = true;  // XXX fix me
-  RefPtr<xpcAccEvent> event = new xpcAccEvent(nsIAccessibleEvent::EVENT_FOCUS,
-                                              xpcAcc, doc, node, fromUser);
+  auto event = MakeRefPtr<xpcAccEvent>(nsIAccessibleEvent::EVENT_FOCUS, xpcAcc,
+                                       doc, node, fromUser);
   nsCoreUtils::DispatchAccEvent(std::move(event));
 
   return IPC_OK();

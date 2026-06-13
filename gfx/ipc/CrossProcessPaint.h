@@ -44,6 +44,8 @@ enum class CrossProcessPaintFlags {
   UseHighQualityScaling = 1 << 3,
   ForPrinting = 1 << 4,
 };
+constexpr auto kAllCrossProcessPaintFlags =
+    CrossProcessPaintFlags((1 << 5) - 1);
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(CrossProcessPaintFlags)
 

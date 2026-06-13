@@ -63,6 +63,7 @@ class DXVA2Manager {
                                    gfx::ColorRange aColorRange,
                                    gfx::ColorDepth aColorDepth,
                                    gfx::TransferFunction aTransferFunction,
+                                   const Maybe<gfx::HDRMetadata>& aHDRMetadata,
                                    uint32_t aWidth, uint32_t aHeight) {
     return S_OK;
   }
@@ -71,6 +72,7 @@ class DXVA2Manager {
                                    gfx::ColorRange aColorRange,
                                    gfx::ColorDepth aColorDepth,
                                    gfx::TransferFunction aTransferFunction,
+                                   const Maybe<gfx::HDRMetadata>& aHDRMetadata,
                                    uint32_t aWidth, uint32_t aHeight) {
     // Not implemented!
     MOZ_CRASH("ConfigureForSize not implemented on this manager.");

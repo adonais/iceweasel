@@ -261,7 +261,7 @@ The outer window for the frame associated with this ``JSWindowActorChild``.
 
 The ``nsIDocShell`` for the frame associated with this ``JSWindowActorChild``.
 
-See `JSWindowActor.webidl`_ for more detail on exactly what is exposed on both ``JSWindowActorParent`` and ``JSWindowActorChild`` implementations.
+See :searchfox:`JSWindowActor.webidl <dom/chrome-webidl/JSWindowActor.webidl>` for more detail on exactly what is exposed on both ``JSWindowActorParent`` and ``JSWindowActorChild`` implementations.
 
 How to port from message manager and framescripts to JSWindowActors
 -------------------------------------------------------------------
@@ -385,8 +385,8 @@ In the ``JS*ACTORS`` objects, each key is the name of the actor pair (example: `
 
 The full list of registration parameters can be found:
 
-- for JSProcessActor in file `JSProcessActor.webidl`_ as ``WindowActorOptions``, ``ProcessActorSidedOptions`` and ``ProcessActorChildOptions``.
-- for JSWindowActor in file `JSWindowActor.webidl`_ as ``WindowActorOptions``, ``WindowActorSidedOptions`` and ``WindowActorChildOptions``.
+- for JSProcessActor in file :searchfox:`JSProcessActor.webidl <dom/chrome-webidl/JSProcessActor.webidl>` as ``WindowActorOptions``, ``ProcessActorSidedOptions`` and ``ProcessActorChildOptions``.
+- for JSWindowActor in file :searchfox:`JSWindowActor.webidl <dom/chrome-webidl/JSWindowActor.webidl>` as ``WindowActorOptions``, ``WindowActorSidedOptions`` and ``WindowActorChildOptions``.
 
 Here's an example ``JSWindowActor`` registration pulled from ``BrowserGlue.sys.mjs``:
 
@@ -540,7 +540,5 @@ And more
 .. _Electrolysis Project: https://wiki.mozilla.org/Electrolysis
 .. _IPC Actors: https://developer.mozilla.org/en-US/docs/Mozilla/IPDL/Tutorial
 .. _Context Menu Fission Port: https://hg.mozilla.org/mozilla-central/rev/adc60720b7b8
-.. _JSProcessActor.webidl: https://searchfox.org/mozilla-central/source/dom/chrome-webidl/JSProcessActor.webidl
-.. _JSWindowActor.webidl: https://searchfox.org/mozilla-central/source/dom/chrome-webidl/JSWindowActor.webidl
-.. _BrowserElementParent.sys.mjs: https://searchfox.org/mozilla-central/source/toolkit/actors/BrowserElementParent.sys.mjs
+.. _BrowserElementParent.sys.mjs: :searchfox:`toolkit/actors/BrowserElementParent.sys.mjs`
 .. _Transferable: https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Transferable_objects

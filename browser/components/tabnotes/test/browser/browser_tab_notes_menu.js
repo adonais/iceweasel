@@ -29,7 +29,7 @@ let activateTabContextMenuItem = async (
   let submenuItem;
   let submenuItemHiddenPromise;
 
-  const win = selectedTab.ownerGlobal;
+  const win = selectedTab.documentGlobal;
   const tabContextMenu = win.document.getElementById("tabContextMenu");
   const contextMenuShown = BrowserTestUtils.waitForEvent(
     tabContextMenu,
@@ -491,7 +491,7 @@ add_task(async function test_ineligibleTabsDisableMenus() {
   );
   await BrowserTestUtils.browserLoaded(eligibleTab.linkedBrowser);
 
-  let ineligibleTab = BrowserTestUtils.addTab(gBrowser, "about:logo");
+  let ineligibleTab = BrowserTestUtils.addTab(gBrowser, "about:mozilla");
   await BrowserTestUtils.browserLoaded(ineligibleTab.linkedBrowser);
 
   info(

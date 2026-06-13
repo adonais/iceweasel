@@ -5,6 +5,7 @@ include("/dom/media/webrtc/third_party_build/webrtc.mozbuild")
 
 EXPORTS += [
     "nsIIPCSerializableInputStream.h",
+    "nsIIPCSerializableURI.h",
 ]
 
 EXPORTS.mozilla.ipc += [

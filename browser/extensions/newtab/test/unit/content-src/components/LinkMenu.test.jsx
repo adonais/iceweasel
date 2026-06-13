@@ -322,6 +322,7 @@ describe("<LinkMenu>", () => {
         url: FAKE_SITE.url,
         pocket_id: FAKE_SITE.pocket_id,
         forceBlock: FAKE_SITE.bookmarkGuid,
+        original_url: FAKE_SITE.original_url,
       },
       "newtab-menu-pin": { site: FAKE_SITE, index: FAKE_INDEX },
       "newtab-menu-unpin": { site: { url: FAKE_SITE.url } },

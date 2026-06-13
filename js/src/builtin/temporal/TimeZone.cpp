@@ -59,7 +59,7 @@ using namespace js;
 using namespace js::temporal;
 
 void js::temporal::TimeZoneValue::trace(JSTracer* trc) {
-  TraceNullableRoot(trc, &object_, "TimeZoneValue::object");
+  TraceRoot(trc, &object_, "TimeZoneValue::object");
 }
 
 /**
@@ -1192,16 +1192,7 @@ void js::temporal::TimeZoneObject::finalize(JS::GCContext* gcx, JSObject* obj) {
 }
 
 const JSClassOps TimeZoneObject::classOps_ = {
-    nullptr,                   // addProperty
-    nullptr,                   // delProperty
-    nullptr,                   // enumerate
-    nullptr,                   // newEnumerate
-    nullptr,                   // resolve
-    nullptr,                   // mayResolve
-    TimeZoneObject::finalize,  // finalize
-    nullptr,                   // call
-    nullptr,                   // construct
-    nullptr,                   // trace
+    .finalize = TimeZoneObject::finalize,
 };
 
 const JSClass TimeZoneObject::class_ = {

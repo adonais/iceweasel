@@ -8,9 +8,13 @@
 newtab-page-title = Tab Baru
 newtab-settings-button =
     .title = Ubahsuai laman Tab Baru Anda
+#  (developer note): @nova-cleanup(remove-string): Remove newtab-customize-panel-icon-button once Nova lands, will be using newtab-customize-panel-label instead
 newtab-customize-panel-icon-button =
     .title = Ubahsuai laman ini
+#  (developer note): @nova-cleanup(remove-string): Remove newtab-customize-panel-icon-button-label once Nova lands, will be using newtab-customize-panel-label instead
 newtab-customize-panel-icon-button-label = Sesuaikan
+newtab-customize-panel-label =
+    .label = Sesuaikan
 newtab-personalize-settings-icon-label =
     .title = Personalisasikan Tab Baru
     .aria-label = Pengaturan
@@ -616,6 +620,8 @@ newtab-widget-lists-label-beta =
     .label = Beta
 newtab-widget-task-list-menu-copy = Salin
 newtab-widget-lists-menu-edit = Sunting nama daftar
+newtab-widget-lists-menu-edit2 =
+    .aria-label = Sunting nama daftar
 newtab-widget-lists-menu-create = Buat daftar baru
 newtab-widget-lists-menu-delete = Hapus daftar ini
 newtab-widget-lists-menu-copy = Salin daftar ke papan klip
@@ -630,11 +636,14 @@ newtab-widget-lists-name-label-default =
 newtab-widget-lists-name-placeholder-default =
     .placeholder = Daftar tugas
 # The placeholder value of the name field for a newly created list
+newtab-widget-lists-name-placeholder-new2 =
+    .placeholder = Daftar baru
+    .aria-label = Sunting nama daftar
+# The placeholder value of the name field for a newly created list
 newtab-widget-lists-name-placeholder-new =
     .placeholder = Daftar baru
 
-## Strings for timer productivity widget
-## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown
+## Strings introduced by the Nova redesign of the Timer widget
 
 newtab-widget-timer-label-play =
     .label = Putar

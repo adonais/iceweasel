@@ -14,7 +14,7 @@
     {
       "platforms": ["mac", "linux"],
       "content_scripts": {
-        "js": ["bug1472075-bankofamerica.com-ua-change.js"]
+        "js": ["use_chrome_useragent.js", "use_chrome_vendor.js"]
       }
     }
   ]

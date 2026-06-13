@@ -3007,7 +3007,7 @@ class NavigationDelegateTest : BaseSessionTest() {
                 assertThat(
                     "Location should be replaced to replacedUrl",
                     url,
-                    equalTo("replacedUrl"),
+                    endsWith("/replacedUrl"),
                 )
             }
         })

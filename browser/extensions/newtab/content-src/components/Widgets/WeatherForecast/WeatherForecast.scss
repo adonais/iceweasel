@@ -5,8 +5,7 @@
   text-decoration: none;
   border-radius: var(--border-radius-large);
   padding: var(--space-medium);
-  // @backward-compat { version 150 } D281466/D283723 renamed design tokens; remove once Firefox 150 is on Release.
-  box-shadow: var(--card-box-shadow, var(--box-shadow-card));
+  box-shadow: var(--card-box-shadow);
   display: flex;
   flex-direction: column;
 

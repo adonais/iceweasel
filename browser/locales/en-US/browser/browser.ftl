@@ -267,7 +267,7 @@ search-one-offs-actions =
 
 ## QuickActions are shown in the urlbar as the user types a matching string
 ## The -cmd- strings are comma separated list of keywords that will match
-## the action.
+## the action. English commas should be used, i.e. ,
 
 # Opens the about:addons page in the home / recommendations section
 quickactions-addons = View add-ons
@@ -314,6 +314,13 @@ quickactions-library = Open Library
 # Opens about:logins
 quickactions-logins2 = Manage passwords
 quickactions-cmd-logins = logins, passwords
+
+# Mutes all tabs playing audio
+quickactions-mute = Mute tabs playing audio
+# List of words that would trigger the "mute tabs" action from the address bar.
+# Replace with idiomatic expressions in your language to silence something or
+# someone.
+quickactions-cmd-mute = mute, shush, sssssh
 
 # Opens the print dialog
 quickactions-print2 = Print page
@@ -444,9 +451,11 @@ identity-clear-site-data =
 identity-connection-not-secure-security-view = You are not securely connected to this site.
 identity-connection-verified = You are securely connected to this site.
 identity-ev-owner-label = Certificate issued to:
+identity-verifier-label = Verified by:
 # "qualified" here refers to the qualified website authentication certificate presented by the site.
 identity-etsi = Qualified as specified in Regulation (EU) 2024/1183.
 identity-description-custom-root2 = Mozilla does not recognize this certificate issuer. It may have been added from your operating system or by an administrator.
+identity-cert-exception-overridden = You have added a security exception for this site.
 identity-remove-cert-exception =
     .label = Remove Exception
     .accesskey = R
@@ -475,11 +484,6 @@ browser-window-close-button =
 # Clicking this button closes the window and returns to the tab where it was opened from
 browser-window-return-to-opener =
     .tooltiptext = Return
-
-## Tab actions
-
-# This label should be written in all capital letters if your locale supports them.
-browser-tab-audio-pip = PICTURE-IN-PICTURE
 
 ## Bookmarks toolbar items
 
@@ -865,6 +869,21 @@ urlbar-result-action-switch-to-tabgroup = Switch to { $group }
 #  $group (String): the name of the tab group to re-open
 urlbar-result-action-open-saved-tabgroup = Open { $group }
 
+## Used in the context menu in urlbar view.
+
+urlbar-view-context-menu-open-in-tab =
+  .label = Open in New Tab
+  .accesskey = w
+urlbar-view-context-menu-open-in-container-tab =
+  .label = Open in New Container Tab
+  .accesskey = i
+urlbar-view-context-menu-open-in-window =
+  .label = Open in New Window
+  .accesskey = N
+urlbar-view-context-menu-open-in-private-window =
+  .label = Open in New Private Window
+  .accesskey = P
+
 ## Labels shown above groups of urlbar results
 
 # A label shown above the "Firefox Suggest" (bookmarks/history) group in the
@@ -1091,6 +1110,10 @@ toolbar-button-synced-tabs =
   .label = Synced tabs
   .tooltiptext = Show tabs from other devices
 
+toolbar-button-send-tab =
+  .label = Send tab
+  .tooltiptext = Send current tab to another device
+
 # Variables
 # $shortcut (string) - Keyboard shortcut to open a new private browsing window
 toolbar-button-new-private-window =
@@ -1100,6 +1123,10 @@ toolbar-button-new-private-window =
 toolbar-button-share-tab =
   .label = Share
   .tooltiptext = Share this page
+
+toolbar-button-tab-groups =
+  .label = Tab groups
+  .tooltiptext = Show your tab groups
 
 ## EME notification panel
 
@@ -1119,6 +1146,8 @@ panel-save-update-password = Password
 # "More" item in macOS share menu
 menu-share-more =
     .label = More…
+menu-share-windows =
+    .label = More Options
 # Variables:
 #   $count (Number) - The number of links that will be copied.
 menu-share-copy-links =
@@ -1282,9 +1311,9 @@ unified-extensions-button-blocklisted =
 
 ## Private browsing reset button
 
-reset-pbm-toolbar-button =
-    .label = End Private Session
-    .tooltiptext = End Private Session
+reset-pbm-toolbar-button2 =
+    .label = Clear Private Session
+    .tooltiptext = Clear Private Session
 reset-pbm-panel-heading2 = Clear data and start a fresh private session?
 reset-pbm-panel-description2 = This deletes history, cookies, and all other site data without closing your Private Window.
 reset-pbm-panel-always-ask-checkbox =
@@ -1561,6 +1590,11 @@ trustpanel-cryptominer-not-blocking-tab-header = { $count ->
   *[other] { -brand-product-name } allowed { $count } cryptominers
 }
 trustpanel-cryptominer-tab-list-header = These sites are trying to cryptomine:
+# "account on this site" refers to the (breached) site the user is currently visiting, not a Mozilla Monitor account.
+trustpanel-breachalerts-anonymous-breached-header = Have an account on this site?
+trustpanel-breachalerts-anonymous-breached-description = { -brand-product-name } found that this site had a data breach in the last 12 months. Find out if you were affected.
+trustpanel-breachalerts-anonymous-breached-button-dismiss = Dismiss
+trustpanel-breachalerts-anonymous-breached-button-check-monitor = Start free scan
 
 ## Reduced Protection Infobar ("ReducedProtectionNotification.sys.mjs")
 
@@ -1568,3 +1602,5 @@ trustpanel-cryptominer-tab-list-header = These sites are trying to cryptomine:
 reduced-protection-infobar-message = <strong>Site looks broken?</strong> Reload the page to temporarily lower your tracking protection.
 reduced-protection-infobar-reload-button = Reload
   .accesskey = R
+reduced-protection-infobar-never-show-button = Don’t show again
+  .accesskey = D

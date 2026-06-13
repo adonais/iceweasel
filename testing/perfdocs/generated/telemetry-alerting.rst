@@ -6,7 +6,7 @@ Telemetry Probe Alerting and Monitoring
     :depth: 3
 
 .. note::
-  Telemetry Alerting was recently released in an **open beta** state, and we are actively looking for feedback and criticism of the system. If you hit any issues, have suggestions, or need to report something, please feel free to file bugs in the `Testing :: Performance component on Bugzilla <https://bugzilla.mozilla.org/enter_bug.cgi?product=Testing&component=Performance&status_whiteboard=[fxp]>`_. You can find links to `additional help`_ below.
+  Telemetry Alerting was recently (April 2026) released in an **open beta** state, and we are actively looking for feedback and criticism of the system. If you hit any issues, have suggestions, or need to report something, please feel free to file bugs in the `Testing :: Performance component on Bugzilla <https://bugzilla.mozilla.org/enter_bug.cgi?product=Testing&component=Performance&status_whiteboard=[fxp]>`_. You can find links to `additional help`_ below.
 
 This document provides information regarding telemetry alerting, and monitoring. The change detection aspect of the project exists in `mozdetect <https://github.com/gmierz/mozdetect>`_, and the alerting/monitoring aspect exists within `Treeherder <https://github.com/mozilla/treeherder/blob/b04b64185e189a2d9e4c088b4be98d898c658e00/treeherder/perf/auto_perf_sheriffing/sherlock.py>`_. Note that the alerting/monitoring may move out of Treeherder in the future.
 
@@ -19,7 +19,7 @@ Probe Setup
 .. note::
   Only Windows is currently available for platforms that can be alerted on due to a high number of false positives on Linux, and Mac. Follow `this bug <https://bugzilla.mozilla.org/show_bug.cgi?id=1998552>`_ for progress on this issue. Android is disabled due to other issues and will be looked at `here <https://bugzilla.mozilla.org/show_bug.cgi?id=1976760>`_. Only **timing_distribution** probes are supported with the existing change detection technique.
 
-To enable alerting or monitoring on a telemetry probe, the ``monitor`` field will need to be added to the ``metadata`` section of the probe definition. **This will only work for timing_distribution probes, other probe types are not supported.** `See this probe for an example <https://searchfox.org/mozilla-central/rev/38e462fe13ea42ae6cc391fb36e8b9e82e842b00/netwerk/metrics.yaml#1883-1888>`_. The following provides all possible fields that will be accepted in the ``monitor`` field:
+To enable alerting or monitoring on a telemetry probe, the ``monitor`` field will need to be added to the ``metadata`` section of the probe definition. **This will only work for timing_distribution probes, other probe types are not supported.** :searchfox:`See this probe for an example <mozilla-central/rev/38e462fe13ea42ae6cc391fb36e8b9e82e842b00:netwerk/metrics.yaml#1883-1888>`. The following provides all possible fields that will be accepted in the ``monitor`` field:
 
 .. code-block:: none
 

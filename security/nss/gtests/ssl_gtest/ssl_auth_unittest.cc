@@ -1438,6 +1438,48 @@ TEST_P(TlsConnectClientAuthStream13, PostHandshakeAuthDisjointSchemes) {
   ASSERT_EQ(nullptr, cert2.get());
 }
 
+// Regression test for Bug 2026089: repeated PHA CertificateRequests must not
+// overflow the negotiated[] extension tracking array.
+TEST_F(TlsConnectStreamTls13, PostHandshakeAuthRepeatedManyRounds) {
+  static const size_t kNumRequests = 60;
+  EnsureTlsSetup();
+
+  client_->SetupClientAuth();
+  client_->SetOption(SSL_ENABLE_POST_HANDSHAKE_AUTH, PR_TRUE);
+  size_t called = 0;
+  server_->SetAuthCertificateCallback(
+      [&called](TlsAgent*, PRBool, PRBool) -> SECStatus {
+        called++;
+        return SECSuccess;
+      });
+  Connect();
+
+  for (size_t i = 0; i < kNumRequests; i++) {
+    EXPECT_EQ(SECSuccess, SSL_SendCertificateRequest(server_->ssl_fd()))
+        << "CertificateRequest " << (i + 1)
+        << " unexpected error: " << PORT_ErrorToName(PORT_GetError());
+
+    server_->SendData(50);
+    client_->ReadBytes(50);
+    client_->SendData(50);
+    server_->ReadBytes(50);
+
+    EXPECT_EQ(i + 1, called);
+
+    size_t needed =
+        std::max(client_->received_bytes(), server_->received_bytes()) + 50;
+    SendReceive(needed);
+  }
+
+  client_->CheckClientAuthCallbacksCompleted(kNumRequests);
+
+  ScopedCERTCertificate cert(SSL_PeerCertificate(server_->ssl_fd()));
+  ASSERT_NE(nullptr, cert.get());
+  ScopedCERTCertificate localCert(SSL_LocalCertificate(client_->ssl_fd()));
+  ASSERT_NE(nullptr, localCert.get());
+  EXPECT_TRUE(SECITEM_ItemsAreEqual(&cert->derCert, &localCert->derCert));
+}
+
 static const SSLSignatureScheme kSignatureSchemeEcdsaSha384[] = {
     ssl_sig_ecdsa_secp384r1_sha384};
 static const SSLSignatureScheme kSignatureSchemeEcdsaSha256[] = {

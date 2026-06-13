@@ -881,10 +881,10 @@ class ThreadSafeCodeBlockMap {
 class JumpTables {
   using TablePointer = mozilla::UniquePtr<void*[], JS::FreePolicy>;
 
-  CompileMode mode_;
+  CompileMode mode_ = CompileMode::Once;
   TablePointer tiering_;
   TablePointer jit_;
-  size_t numFuncs_;
+  size_t numFuncs_ = 0;
 
   static_assert(
       JumpTableJitEntryOffset == 0,

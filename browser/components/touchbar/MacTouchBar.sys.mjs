@@ -257,16 +257,26 @@ export class TouchBarHelper {
     }
   }
 
+  get activeUrl() {
+    if (!TouchBarHelper.window) {
+      return "";
+    }
+    let tabbrowser = TouchBarHelper.window.gBrowser;
+    if (tabbrowser) {
+      return tabbrowser.selectedBrowser.currentURI.spec;
+    }
+    return "";
+  }
+
   get activeTitle() {
     if (!TouchBarHelper.window) {
       return "";
     }
-    let tabbrowser = TouchBarHelper.window.ownerGlobal.gBrowser;
-    let activeTitle;
+    let tabbrowser = TouchBarHelper.window.gBrowser;
     if (tabbrowser) {
-      activeTitle = tabbrowser.selectedBrowser.contentTitle;
+      return tabbrowser.selectedBrowser.contentTitle;
     }
-    return activeTitle;
+    return "";
   }
 
   get allItems() {
@@ -449,7 +459,6 @@ export class TouchBarHelper {
         gBuiltInInputs.Forward.disabled =
           !TouchBarHelper.window.gBrowser.canGoForward;
         if (subject.QueryInterface(Ci.nsIWebProgress)?.isTopLevel) {
-          this.activeUrl = data;
           // ReaderView button is disabled on every toplevel location change
           // since Reader View must determine if the new page can be Reader
           // Viewed.

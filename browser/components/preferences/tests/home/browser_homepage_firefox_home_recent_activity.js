@@ -18,7 +18,6 @@ const RECENT_ACTIVITY_DOWNLOADS_PREF =
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [
-      ["browser.settings-redesign.enabled", true],
       // Opening preferences initializes FxA code which sets this pref.
       // Track it to avoid test warnings.
       ["identity.fxaccounts.account.device.name", ""],
@@ -89,6 +88,11 @@ add_task(async function test_recent_activity_rows() {
   ok(select, "Recent Activity rows select exists");
   let nativeSelect = select.inputEl;
   ok(nativeSelect, "Recent Activity rows native select exists");
+
+  ok(
+    nativeSelect.getAttribute("aria-label"),
+    "Recent Activity rows select has an aria-label"
+  );
 
   let optionValues = [...nativeSelect.options].map(option =>
     Number(option.value)

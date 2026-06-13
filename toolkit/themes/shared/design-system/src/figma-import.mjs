@@ -32,19 +32,28 @@ const FIGMA_VALUE_MAP = {
   Value: "",
 };
 const TOKEN_VALUE_KEYS = new Set(["light", "dark", "forcedColors", "value"]);
-const FIGMA_IGNORES = new Set(["focus/outline"]);
+const FIGMA_IGNORES = new Set(["focus/outline", "focus/outline/inset"]);
 
-function transformValue(val, tokenNames) {
+function transformValue(val, tokenNames, figmaName) {
   if (typeof val === "number") {
-    // This is intended for opacity which is exported as a number between 0-100...
-    // Likely we need to handle other numbers that are px, etc too
-    return val / 100;
+    if (figmaName.includes("opacity")) {
+      // This is intended for opacity which is exported as a number between 0-100...
+      // Likely we need to handle other numbers that are px, etc too
+      return String(val / 100);
+    }
+    return val === 0 ? String(val) : `${val}px`;
   }
   if (typeof val !== "string") {
     return val;
   }
-  if (val === "rgba(0, 0, 0, 0)") {
+  if (/^rgba\(([^,]+, ?){3} ?0(\.0)?\)$/.test(val)) {
     return "transparent";
+  }
+  if (val === "semibold") {
+    return 600;
+  }
+  if (val === "bold") {
+    return 700;
   }
   let rgbaMatch = val.match(
     /^rgba\((\d?.?\d+), (\d?.?\d+), (\d?.?\d+), (\d?.?\d+)\)$/
@@ -55,6 +64,9 @@ function transformValue(val, tokenNames) {
       a = Math.round(parseFloat(a) * 100) / 100;
     }
     return `rgba(${r}, ${g}, ${b}, ${a})`;
+  }
+  if (val.startsWith("#")) {
+    return val.toLowerCase();
   }
   let varMatch = val.match(/^\{(.+)\}$/);
   if (!varMatch) {
@@ -144,7 +156,7 @@ function normalizeTokens(tokens, path) {
 }
 
 // Main
-const FIGMA_GROUPS = ["Surface", "Primitives", "Colors", "Theme"];
+const FIGMA_GROUPS = ["Surface", "Primitives", "Colors", "Theme", "Components"];
 const tokenFiles = getTokenFiles(TOKEN_DIRS);
 const exportData = JSON.parse(
   readFileSync(joinRelativePath("nova-export-clean-variables.json"), "utf8")
@@ -167,6 +179,19 @@ for (const prop in tokenFiles) {
   ]);
 }
 
+function matchesFigmaVar(resolvedPath, figmaVar) {
+  return (
+    // It must start with the same prefix
+    figmaVar.startsWith(resolvedPath) &&
+    // And match in length
+    (resolvedPath.length === figmaVar.length ||
+      // Or the next part of the name is another variant
+      // i.e. button/color matches button/color/hover
+      // i.e. color/neutral/10 does not match color/neutral/100
+      figmaVar[resolvedPath.length] === "/")
+  );
+}
+
 function walkUpdateNovaTokens(tokens, vars, tokenNames, path = []) {
   for (const tokenProp in tokens) {
     if (tokenProp === "comment") {
@@ -176,9 +201,13 @@ function walkUpdateNovaTokens(tokens, vars, tokenNames, path = []) {
       let resolvedPath = path.filter(p => p !== "@base").join("/");
       let newValue = {};
       for (const figmaVar in vars) {
-        if (figmaVar.startsWith(resolvedPath)) {
+        if (matchesFigmaVar(resolvedPath, figmaVar)) {
           const figmaName = figmaVar.slice(resolvedPath.length + 1);
-          const figmaValue = transformValue(vars[figmaVar], tokenNames);
+          const figmaValue = transformValue(
+            vars[figmaVar],
+            tokenNames,
+            resolvedPath
+          );
           if (!figmaName) {
             // Exact match, only one value.
             // We actually never hit this, values are set for each from Figma.

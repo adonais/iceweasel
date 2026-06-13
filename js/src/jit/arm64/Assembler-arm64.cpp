@@ -266,6 +266,7 @@ void Assembler::bind(Label* label, BufferOffset targetOffset) {
     ptrdiff_t relativeByteOffset =
         targetOffset.getOffset() - branchOffset.getOffset();
     Instruction* link = getInstructionAt(branchOffset);
+    MOZ_ASSERT(link->IsImmBranch() || link->IsPCRelAddressing());
 
     // This branch may still be registered for callbacks. Stop tracking it.
     vixl::ImmBranchType branchType = link->BranchType();

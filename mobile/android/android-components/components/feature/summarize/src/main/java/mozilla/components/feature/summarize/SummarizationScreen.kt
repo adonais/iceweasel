@@ -110,8 +110,8 @@ private fun SummarizationScreen(
     ApplyHaptics(state)
 
     val loadingAlpha by animateFloatAsState(
-        targetValue = if (state.isLoading) 1f else 0f,
-        animationSpec = if (state.isLoading) snap() else state.tween,
+        targetValue = if (state.isLoading && useGradient) 1f else 0f,
+        animationSpec = if (state.isLoading) state.tween else snap(),
         label = "gradientAlpha",
     )
 
@@ -126,9 +126,11 @@ private fun SummarizationScreen(
     }
 }
 
+private val useGradient get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
+
 private fun Modifier.summaryLoadingGradientCompat(loadingAlpha: Float): Modifier =
-    thenConditional(
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+    this.thenConditional(
+        if (useGradient) {
             Modifier.summaryLoadingGradient(loadingAlpha)
         } else {
             Modifier
@@ -168,6 +170,7 @@ private fun SummarizationScreenContent(
         is SummarizationState.Loading -> {
             SummarizingContent(
                 modifier = Modifier.height(252.dp),
+                useGradientColors = useGradient,
             )
         }
 
@@ -305,7 +308,11 @@ private class SummarizationStatePreviewProvider : PreviewParameterProvider<Summa
         SummarizationState.ShakeConsentRequired,
         SummarizationState.ShakeConsentWithDownloadRequired,
         SummarizationState.Error(SummarizationError.ContentTooLong),
-        SummarizationState.Error(SummarizationError.SummarizationFailed(PageMetadataExtractor.Exception())),
+        SummarizationState.Error(
+            SummarizationError.SummarizationFailed(
+                PageMetadataExtractor.Exception(NullPointerException()),
+            ),
+        ),
     )
 }
 

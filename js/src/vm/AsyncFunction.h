@@ -5,8 +5,11 @@
 #ifndef vm_AsyncFunction_h
 #define vm_AsyncFunction_h
 
+#include "mozilla/Attributes.h"  // MOZ_RAII
+
 #include "js/Class.h"
 #include "vm/GeneratorObject.h"
+#include "vm/JSContext.h"
 #include "vm/JSObject.h"
 #include "vm/PromiseObject.h"
 
@@ -319,6 +322,17 @@ class AsyncFunctionGeneratorObject : public AbstractGeneratorObject {
   PromiseObject* promise() {
     return &getFixedSlot(PROMISE_SLOT).toObject().as<PromiseObject>();
   }
+};
+
+// Track Async resumption depth for IsTopMostAsyncFunctionCall
+class MOZ_RAII AutoAsyncResumeDepth {
+  JSContext* cx_;
+
+ public:
+  explicit AutoAsyncResumeDepth(JSContext* cx) : cx_(cx) {
+    cx_->asyncResumeDepth++;
+  }
+  ~AutoAsyncResumeDepth() { cx_->asyncResumeDepth--; }
 };
 
 }  // namespace js

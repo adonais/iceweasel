@@ -1,4 +1,4 @@
-// |jit-test| skip-if: !WasmHelpers.isSingleStepProfilingEnabled
+// |jit-test| skip-if: !wasmJSPromiseIntegrationEnabled() || !WasmHelpers.isSingleStepProfilingEnabled
 
 // Copy of wasm/import-export.js test with WebAssembly.promising
 

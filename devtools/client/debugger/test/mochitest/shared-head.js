@@ -1846,6 +1846,8 @@ function assertBreakpointSnippet(dbg, index, expectedSnippet) {
 
 const selectors = {
   callStackBody: ".call-stack-pane .pane",
+  domMutationEmpty: ".dom-mutation-empty",
+  domMutationEmptyOpenInspectorButton: ".dom-mutation-empty button",
   domMutationItem: ".dom-mutation-list li",
   expressionNode: i =>
     `.expressions-list .expression-container:nth-child(${i}) .object-label`,
@@ -2518,7 +2520,7 @@ function hoverToken(tokenEl) {
     {
       type: "mouseover",
     },
-    tokenEl.ownerGlobal
+    tokenEl.documentGlobal
   );
 
   // This second event helps Popover to have :hover pseudoclass set on the token element
@@ -2528,7 +2530,7 @@ function hoverToken(tokenEl) {
     {
       type: "mousemove",
     },
-    tokenEl.ownerGlobal
+    tokenEl.documentGlobal
   );
 }
 
@@ -2575,7 +2577,7 @@ async function closePreviewForToken(
     {
       type: "mouseout",
     },
-    tokenEl.ownerGlobal
+    tokenEl.documentGlobal
   );
 
   // This second event helps Popover to have :hover pseudoclass removed on the token element
@@ -2592,7 +2594,7 @@ async function closePreviewForToken(
     {
       type: "mousemove",
     },
-    element.ownerGlobal
+    element.documentGlobal
   );
 
   info(`Waiting for preview to be closed (preview type=${previewType})`);
@@ -3485,7 +3487,7 @@ async function selectBlackBoxContextMenuItem(dbg, itemName) {
 function openOutlinePanel(dbg, waitForOutlineList = true) {
   info("Select the outline panel");
   const outlineTab = findElementWithSelector(dbg, ".outline-tab a");
-  EventUtils.synthesizeMouseAtCenter(outlineTab, {}, outlineTab.ownerGlobal);
+  EventUtils.synthesizeMouseAtCenter(outlineTab, {}, outlineTab.documentGlobal);
 
   if (!waitForOutlineList) {
     return Promise.resolve();

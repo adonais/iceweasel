@@ -27,6 +27,9 @@ export const IPProtectionActivator = {
   addHelpers(helpers) {
     extraHelpers.push(...helpers);
   },
+  removeHelpers() {
+    extraHelpers = [];
+  },
   setupHelpers() {
     IPProtectionService.setHelpers([...coreHelpers, ...extraHelpers]);
   },

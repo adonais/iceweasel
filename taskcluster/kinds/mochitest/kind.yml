@@ -158,7 +158,7 @@ tasks:
                         .*-wayland.*: []
                         windows.*-ccov.*: []
                         linux.*64(-shippable)?/.*: ['trunk']
-                        macosx.*64-aarch64(-shippable)?(-qr)?/.*: ['mozilla-central']
+                        macosx.*64-aarch64(-shippable)?(-qr)?/.*: ['trunk']
                         macosx.*64(-shippable)?(-qr)?/.*: ['trunk']
                         windows11-64-24h2(-shippable)?(-qr)?/.*: ['trunk']
                         linux.*64-ccov/opt: ['mozilla-central']
@@ -291,7 +291,6 @@ tasks:
         description: "Mochitest a11y run"
         treeherder-symbol: M(a11y)
         schedules-component: mochitest-a11y
-        test-manifest-loader: default  # ensure we don't run with manifest-scheduling
         loopback-video: true
         run-without-variant: false
         variants:
@@ -525,15 +524,12 @@ tasks:
         treeherder-symbol: M(mda-bc)
         schedules-component: mochitest-browser-media
         loopback-video: true
-        test-manifest-loader: null
         variants: ["wmf-media-engine"]
         run-on-projects:
             by-variant:
                 wmf-media-engine:
                     by-test-platform:
-                        .*-asan.*: []
-                        windows11-64.*/debug: []  # Bug 1805736
-                        windows1.*-64.*: ['autoland', 'mozilla-central']
+                        windows11.*: built-projects
                         default: []
                 default:
                     by-test-platform:
@@ -556,7 +552,6 @@ tasks:
             name: mochitest-browser-screenshots
         treeherder-symbol: M(ss)
         loopback-video: true
-        test-manifest-loader: null  # don't load tests in the taskgraph
         variants: ["no-fission"]
         run-on-projects:
             by-test-platform:
@@ -574,7 +569,6 @@ tasks:
         treeherder-symbol: M(tr8ns)
         schedules-component: mochitest-browser-translations
         loopback-video: true
-        test-manifest-loader: null
         run-on-projects:
             by-test-platform:
                 android.*: []
@@ -971,8 +965,7 @@ tasks:
                 wmf-media-engine:
                     by-test-platform:
                         .*hw-ref.*: []
-                        windows1.*-ccov.*: []
-                        windows1.*64.*: ['autoland', 'mozilla-central']
+                        windows11.*: built-projects
                         default: []
                 msix:
                     by-test-platform:
@@ -1072,7 +1065,7 @@ tasks:
             name: mochitest-valgrind-plain
         treeherder-symbol: M-V()
         run-on-projects: []
-        test-manifest-loader: null  # don't load tests in the taskgraph
+
         tier: 3
         loopback-video: true
         chunks: 40
@@ -1093,7 +1086,7 @@ tasks:
             by-test-platform:
                 windows.*/.*: win11-64-25h2-gpu
                 default: default
-        test-manifest-loader: null  # don't load tests in the taskgraph
+
         loopback-video: true
         max-run-time: 1800
         variants:
@@ -1138,7 +1131,7 @@ tasks:
             by-test-platform:
                 windows.*/.*: win11-64-25h2-gpu
                 default: default
-        test-manifest-loader: null  # don't load tests in the taskgraph
+
         loopback-video: true
         max-run-time: 2700
         variants:
@@ -1187,7 +1180,7 @@ tasks:
             by-test-platform:
                 android.*: 2
                 default: 1
-        test-manifest-loader: null  # don't load tests in the taskgraph
+
         loopback-video: true
         max-run-time: 1800
         variants:
@@ -1260,7 +1253,7 @@ tasks:
                         .*-tsan.*: []
                         default: built-projects
         chunks: 4
-        test-manifest-loader: null  # don't load tests in the taskgraph
+
         loopback-video: true
         max-run-time: 2700
         # Bug 1296733: llvmpipe with mesa 9.2.1 lacks thread safety

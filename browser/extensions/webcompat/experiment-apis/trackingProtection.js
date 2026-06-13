@@ -320,7 +320,7 @@ this.trackingProtection = class extends ExtensionAPI {
           let win = tabManager.get(tabId).window;
           let document = win.document;
 
-          let { gProtectionsHandler } = win.gBrowser.ownerGlobal;
+          let { gProtectionsHandler } = win.gBrowser.documentGlobal;
           let { displayName } = gProtectionsHandler.smartblockEmbedInfo.find(
             element => element.shimId == shimId
           );
@@ -338,6 +338,9 @@ this.trackingProtection = class extends ExtensionAPI {
             {
               id: "smartblock-placeholder-button-text",
               args: { websitehost: websiteHost },
+            },
+            {
+              id: "smartblock-placeholder-content-header",
             },
           ];
 

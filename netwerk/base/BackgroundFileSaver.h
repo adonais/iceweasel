@@ -377,6 +377,9 @@ class DigestOutputStream : public nsIOutputStream {
   // Constructor. Neither parameter may be null. The caller owns both.
   DigestOutputStream(nsIOutputStream* aStream, Digest& aDigest);
 
+  // Don't accidentally copy construct.
+  DigestOutputStream(const DigestOutputStream& d) = delete;
+
  private:
   virtual ~DigestOutputStream() = default;
 
@@ -384,9 +387,6 @@ class DigestOutputStream : public nsIOutputStream {
   nsCOMPtr<nsIOutputStream> mOutputStream;
   // Digest used to compute the hash, owned by the caller.
   Digest& mDigest;
-
-  // Don't accidentally copy construct.
-  DigestOutputStream(const DigestOutputStream& d) = delete;
 };
 
 }  // namespace net

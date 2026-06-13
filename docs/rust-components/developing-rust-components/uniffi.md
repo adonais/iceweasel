@@ -4,7 +4,7 @@ Firefox supports auto-generating JS bindings for Rust components using [UniFFI](
 
 ## How it works
 
-The [`uniffi-bindgen-gecko-js`](https://searchfox.org/mozilla-central/source/toolkit/components/uniffi-bindgen-gecko-js)
+The [`uniffi-bindgen-gecko-js`](https://searchfox.org/firefox-main/source/toolkit/components/uniffi-bindgen-gecko-js)
 tool, which lives in the Firefox source tree, generates 2 things:
   - JS bindings for your Rust crate.
   - C++ code that the JS bindings use to handle the low-level details, like calling into Rust.

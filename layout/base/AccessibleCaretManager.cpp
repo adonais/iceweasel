@@ -218,7 +218,7 @@ void AccessibleCaretManager::UpdateCarets(const UpdateCaretsHintSet& aHint) {
 
 bool AccessibleCaretManager::IsCaretDisplayableInCursorMode(
     nsIFrame** aOutFrame, int32_t* aOutOffset) const {
-  RefPtr<nsCaret> caret = mPresShell->GetCaret();
+  RefPtr<nsCaret> caret = mPresShell->GetOriginalCaret();
   if (!caret || !caret->IsVisible()) {
     return false;
   }

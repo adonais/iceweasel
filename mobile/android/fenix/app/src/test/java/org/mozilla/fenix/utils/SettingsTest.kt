@@ -398,19 +398,6 @@ class SettingsTest {
     }
 
     @Test
-    fun shouldShowCollectionsPlaceholderOnHome() {
-        // When
-        // Then
-        assertTrue(settings.showCollectionsPlaceholderOnHome)
-
-        // When
-        settings.showCollectionsPlaceholderOnHome = false
-
-        // Then
-        assertFalse(settings.showCollectionsPlaceholderOnHome)
-    }
-
-    @Test
     fun shouldSetOpenInAppOpened() {
         // When
         // Then
@@ -1041,7 +1028,6 @@ class SettingsTest {
     @Test
     fun `GIVEN top composable toolbar is enabled WHEN querying the toolbar height THEN get the height of the composable toolbar`() {
         val settings = spyk(settings)
-        every { settings.shouldUseComposableToolbar } returns true
         every { settings.toolbarPosition } returns ToolbarPosition.TOP
 
         assertEquals(64, settings.browserToolbarHeight)
@@ -1050,7 +1036,6 @@ class SettingsTest {
     @Test
     fun `GIVEN bottom composable toolbar is enabled and navigation bar is disabled WHEN querying the toolbar height THEN get the height of the composable toolbar`() {
         val settings = spyk(settings)
-        every { settings.shouldUseComposableToolbar } returns true
         every { settings.toolbarPosition } returns ToolbarPosition.BOTTOM
         every { settings.shouldUseExpandedToolbar } returns false
 
@@ -1063,7 +1048,6 @@ class SettingsTest {
             screenWidthDp = 599
         }
         val settings = spyk(settings)
-        every { settings.shouldUseComposableToolbar } returns true
         every { settings.toolbarPosition } returns ToolbarPosition.BOTTOM
         every { settings.shouldUseExpandedToolbar } returns true
 
@@ -1078,7 +1062,6 @@ class SettingsTest {
         }
         val settings = spyk(settings)
 
-        every { settings.shouldUseComposableToolbar } returns true
         every { settings.toolbarPosition } returns ToolbarPosition.BOTTOM
         every { settings.shouldUseExpandedToolbar } returns true
 
@@ -1093,7 +1076,6 @@ class SettingsTest {
         }
         val settings = spyk(settings)
 
-        every { settings.shouldUseComposableToolbar } returns true
         every { settings.toolbarPosition } returns ToolbarPosition.BOTTOM
         every { settings.shouldUseExpandedToolbar } returns true
 
@@ -1304,42 +1286,6 @@ class SettingsTest {
 
         val result = settings.termsOfUseAcceptedVersion
         assertEquals(0, result)
-    }
-
-    @Test
-    fun `GIVEN toolbar customization is disabled WHEN reading toolbarSimpleShortcut THEN NEW_TAB is returned regardless of stored key`() {
-        settings.shouldShowToolbarCustomization = false
-        settings.toolbarSimpleShortcutKey = ShortcutType.SHARE.value
-
-        val result = settings.toolbarSimpleShortcut
-        assertEquals(ShortcutType.NEW_TAB.value, result)
-    }
-
-    @Test
-    fun `GIVEN toolbar customization is enabled WHEN reading toolbarSimpleShortcut THEN stored key is returned`() {
-        settings.shouldShowToolbarCustomization = true
-        settings.toolbarSimpleShortcutKey = ShortcutType.SHARE.value
-
-        val result = settings.toolbarSimpleShortcut
-        assertEquals(ShortcutType.SHARE.value, result)
-    }
-
-    @Test
-    fun `GIVEN toolbar customization is disabled WHEN reading toolbarExpandedShortcut THEN BOOKMARK is returned regardless of stored key`() {
-        settings.shouldShowToolbarCustomization = false
-        settings.toolbarExpandedShortcutKey = ShortcutType.NEW_TAB.value
-
-        val result = settings.toolbarExpandedShortcut
-        assertEquals(ShortcutType.BOOKMARK.value, result)
-    }
-
-    @Test
-    fun `GIVEN toolbar customization is enabled WHEN reading toolbarExpandedShortcut THEN stored key is returned`() {
-        settings.shouldShowToolbarCustomization = true
-        settings.toolbarExpandedShortcutKey = ShortcutType.TRANSLATE.value
-
-        val result = settings.toolbarExpandedShortcut
-        assertEquals(ShortcutType.TRANSLATE.value, result)
     }
 
     @Test

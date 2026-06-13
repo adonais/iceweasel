@@ -31,7 +31,8 @@ class BufferTextureData : public TextureData {
       StereoMode aStereoMode, gfx::ColorDepth aColorDepth,
       gfx::YUVColorSpace aYUVColorSpace, gfx::ColorRange aColorRange,
       gfx::TransferFunction aTransferFunction,
-      gfx::ChromaSubsampling aSubsampling, TextureFlags aTextureFlags);
+      gfx::ChromaSubsampling aSubsampling, TextureFlags aTextureFlags,
+      const Maybe<gfx::HDRMetadata>& aHDRMetadata = Nothing());
 
   bool Lock(OpenMode aMode) override { return true; }
 

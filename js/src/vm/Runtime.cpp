@@ -269,7 +269,7 @@ void JSRuntime::destroyRuntime() {
 #endif
 }
 
-void JSRuntime::addTelemetry(JSMetric id, uint32_t sample) {
+void JSRuntime::addTelemetry(JSMetric id, const JSTelemetryData& sample) {
   if (telemetryCallback) {
     (*telemetryCallback)(id, sample);
   }
@@ -370,6 +370,11 @@ void JSRuntime::addSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf,
 
   rtSizes->wasmRuntime +=
       wasmInstances.lock()->sizeOfExcludingThis(mallocSizeOf);
+
+#ifdef ENABLE_WASM_JSPI
+  rtSizes->wasmContStacks +=
+      mainContextFromAnyThread()->wasm().contStacks().sizeOfNonHeap();
+#endif
 }
 
 static bool InvokeInterruptCallbacks(JSContext* cx) {
@@ -555,11 +560,31 @@ SharedScriptDataTableHolder& JSRuntime::scriptDataTableHolder() {
   return scriptDataTableHolder_;
 }
 
-bool JSRuntime::getHostDefinedData(JSContext* cx,
-                                   JS::MutableHandle<JSObject*> data) const {
+bool JSRuntime::getHostDefinedData(
+    JSContext* cx, JS::MutableHandle<JSObject*> incumbentGlobal,
+    JS::MutableHandle<JSObject*> optionalHostDefinedData) const {
   MOZ_ASSERT(cx->jobQueue);
 
-  return cx->jobQueue->getHostDefinedData(cx, data);
+  if (!cx->jobQueue->getHostDefinedData(cx, incumbentGlobal,
+                                        optionalHostDefinedData)) {
+    return false;
+  }
+
+  // incumbentGlobal is returned unwrapped. Callers will convert this to its
+  // Object.prototype representative and then wrap that into cx's compartment.
+  // It must therefore be a raw GlobalObject (or null), not a CCW.
+  //
+  // The intuition here would be that you would want to instead have a
+  // MutableHandle<GlobalObject*> outparam, however to reduce rooting
+  // costs, having two type-incompatible roots is probably the worse
+  // performance choice, and so instead we keep JSObject, as the
+  // final wrapped representative will have type JSObject.
+  MOZ_ASSERT_IF(incumbentGlobal, incumbentGlobal->is<GlobalObject>());
+
+  // optionalHostDefined data on the other hand should be same compartment,
+  // but will be wrapped as necessary.
+  cx->check(optionalHostDefinedData);
+  return true;
 }
 
 JS_PUBLIC_API JSObject*

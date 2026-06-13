@@ -51,6 +51,8 @@ ChromeUtils.defineLazyGetter(lazy, "console", function () {
 });
 
 const CHAT_ROLES = [MESSAGE_ROLE.USER, MESSAGE_ROLE.ASSISTANT];
+const RESTORABLE_ROLES = [...CHAT_ROLES, MESSAGE_ROLE.TOOL];
+const TABLES_PREF = "browser.smartwindow.allowTables";
 
 /**
  * A conversation containing messages.
@@ -378,11 +380,8 @@ export class ChatConversation extends EventEmitter {
   renderState() {
     return this.#messages.filter(message => {
       const { role, content } = message;
-      if (!CHAT_ROLES.includes(role)) {
+      if (!RESTORABLE_ROLES.includes(role)) {
         return false;
-      }
-      if (role !== MESSAGE_ROLE.ASSISTANT) {
-        return true;
       }
       const { type, body } = content ?? {};
       if (type === "function") {
@@ -414,10 +413,11 @@ export class ChatConversation extends EventEmitter {
    * @param {URL} pageUrl - The current page url when message was submitted
    * @param {number} turnIndex - The current conversation turn/cycle
    * @param {AssistantRoleOpts|ToolRoleOpts|UserRoleOpts} opts - Additional opts for the message
+   * @returns {ChatMessage|null} The newly created message, or null if validation fails
    */
   addMessage(role, content, pageUrl, turnIndex, opts = {}) {
     if (role < 0 || role > MESSAGE_ROLE.TOOL) {
-      return;
+      return null;
     }
 
     if (turnIndex < 0) {
@@ -452,6 +452,7 @@ export class ChatConversation extends EventEmitter {
     const newMessage = new ChatMessage(messageData);
 
     this.messages.push(newMessage);
+    return newMessage;
   }
 
   /**
@@ -484,6 +485,7 @@ export class ChatConversation extends EventEmitter {
    * @param {URL?} [pageUrl=null] - The current page url when message was submitted
    * @param {UserRoleOpts} [userOpts=new UserRoleOpts()] - User message options
    * @param {object} [userContext={}] - Contextual information for the user message, such as real time info and relevant memories
+   * @returns {ChatMessage} The newly created user message
    */
   addUserMessage(
     contentBody,
@@ -509,7 +511,7 @@ export class ChatConversation extends EventEmitter {
     const newTurnIndex =
       this.#messages.length === 1 ? currentTurn : currentTurn + 1;
 
-    this.addMessage(
+    return this.addMessage(
       MESSAGE_ROLE.USER,
       content,
       pageUrl,
@@ -524,6 +526,7 @@ export class ChatConversation extends EventEmitter {
    * @param {string} type - The assistant message type: text|function
    * @param {string} contentBody - The assistant message content
    * @param {AssistantRoleOpts} [assistantOpts=new AssistantRoleOpts()] - ChatMessage options specific to assistant messages
+   * @returns {ChatMessage} The newly created assistant message
    */
   addAssistantMessage(
     type,
@@ -535,7 +538,7 @@ export class ChatConversation extends EventEmitter {
       body: contentBody,
     };
 
-    this.addMessage(
+    return this.addMessage(
       MESSAGE_ROLE.ASSISTANT,
       content,
       null,
@@ -549,15 +552,22 @@ export class ChatConversation extends EventEmitter {
    *
    * @param {object} content - The tool call object to be saved as JSON
    * @param {ToolRoleOpts} [toolOpts=new ToolRoleOpts()] - Message opts for a tool role message
+   * @returns {ChatMessage} The newly created tool message
    */
   addToolCallMessage(content, toolOpts = new ToolRoleOpts()) {
-    this.addMessage(
+    const message = this.addMessage(
       MESSAGE_ROLE.TOOL,
       content,
       null,
       this.currentTurnIndex(),
       toolOpts
     );
+    // Emit tool messages so the renderer can display them
+    // in the action log
+    if (message) {
+      this.emit("chat-conversation:message-update", message);
+    }
+    return message;
   }
 
   /**
@@ -565,11 +575,12 @@ export class ChatConversation extends EventEmitter {
    *
    * @param {string} type - The assistant message type: text|injected_memories|injected_real_time_info
    * @param {string} contentBody - The system message object to be saved as JSON
+   * @returns {ChatMessage} The newly created system message
    */
   addSystemMessage(type, contentBody) {
     const content = { type, body: contentBody };
 
-    this.addMessage(
+    return this.addMessage(
       MESSAGE_ROLE.SYSTEM,
       content,
       null,
@@ -600,7 +611,20 @@ export class ChatConversation extends EventEmitter {
     this.removeSystemTimeMemoriesMessages();
 
     if (!this.messages.length) {
-      const systemPrompt = await engineInstance.loadPrompt(MODEL_FEATURES.CHAT);
+      const _systemPrompt = await engineInstance.loadPrompt(
+        MODEL_FEATURES.CHAT
+      );
+      let tableInstructions;
+      if (Services.prefs.getBoolPref(TABLES_PREF, false)) {
+        tableInstructions = await engineInstance.loadPrompt(
+          MODEL_FEATURES.ENABLE_TABLE_INSTRUCTIONS
+        );
+      } else {
+        tableInstructions = await engineInstance.loadPrompt(
+          MODEL_FEATURES.DISABLE_TABLE_INSTRUCTIONS
+        );
+      }
+      const systemPrompt = renderPrompt(_systemPrompt, { tableInstructions });
       this.addSystemMessage(SYSTEM_PROMPT_TYPE.TEXT, systemPrompt);
     }
 
@@ -943,5 +967,105 @@ export class ChatConversation extends EventEmitter {
       this.seenUrls.add(url);
     }
     this.emit("chat-conversation:seen-urls-updated", this.seenUrls);
+  }
+
+  /**
+   * Updates the tool UI data for a message with a new UI state
+   *
+   * @param {ChatMessage} message - The message to update
+   * @param {object} data - The update data containing updateData
+   * @param {string} nextUI - The next UI state to transition to
+   */
+  async updateToolUI(message, data, nextUI) {
+    message.toolUIData = {
+      ...message.toolUIData,
+      uiType: nextUI,
+      properties: {
+        ...message.toolUIData.properties,
+      },
+    };
+
+    // Add specific data based on the UI type
+    if (nextUI === "ai-action-result") {
+      message.toolUIData.properties.confirmedSelections = data.updateData;
+    }
+
+    // Emit event to trigger re-render
+    this.emit("chat-conversation:message-update", message);
+  }
+
+  /**
+   * Adds UI tool data to the current assistant message.
+   * Handles both initial addition and progressive updates.
+   *
+   * @param {string} toolCallId - The ID of the tool call
+   * @param {object} uiData - The UI data to attach to the message
+   * @returns {object} Result object with success status and message
+   */
+  addUIToolToCurrentMessage(toolCallId, uiData) {
+    // Get the last assistant text message to attach UI to
+    let currentMessage = this.messages
+      .filter(
+        m => m.role === MESSAGE_ROLE.ASSISTANT && m.content?.type === "text"
+      )
+      .at(-1);
+
+    if (!currentMessage) {
+      // Create a synthetic text message if the model only returned a tool call
+      // This ensures the UI has something to attach to
+      currentMessage = this.addAssistantMessage("text", "");
+
+      if (!currentMessage) {
+        return {
+          success: false,
+          message: "Failed to create assistant message for UI attachment",
+          dataAdded: null,
+        };
+      }
+    }
+
+    // Check if this is an update to existing toolUIData
+    const isUpdate =
+      currentMessage.toolUIData &&
+      currentMessage.toolUIData.toolCallId === toolCallId;
+
+    if (isUpdate) {
+      // Merge the new data with existing data for progressive updates
+      currentMessage.toolUIData = {
+        ...currentMessage.toolUIData,
+        ...uiData,
+        // Deep merge properties if they exist in both
+        properties: {
+          ...currentMessage.toolUIData.properties,
+          ...uiData.properties,
+        },
+        updateCount: (currentMessage.toolUIData.updateCount || 0) + 1,
+        lastUpdated: new Date().toISOString(),
+      };
+    } else {
+      // Set toolUIData as a new object (first call)
+      currentMessage.toolUIData = {
+        toolCallId,
+        timestamp: new Date().toISOString(),
+        updateCount: 0,
+        ...uiData,
+      };
+    }
+
+    // Emit update event so UI components react to the change
+    this.emit("chat-conversation:message-update", currentMessage);
+
+    // Re-emit complete event since the message was already marked complete before tool execution
+    // This forces the UI to re-render with the new toolUIData
+    this.emit("chat-conversation:message-complete", currentMessage);
+
+    return {
+      success: true,
+      message: isUpdate
+        ? "Tool UI data updated"
+        : "Tool UI data added to existing assistant message",
+      dataAdded: uiData,
+      isUpdate,
+    };
   }
 }

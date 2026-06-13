@@ -233,7 +233,7 @@ class WebGPUParent final : public PWebGPUParent, public SupportsWeakPtr {
 
   virtual ~WebGPUParent();
   void MaintainDevices();
-  void LoseDevice(const RawId aDeviceId, uint8_t aReason,
+  void LoseDevice(const RawId aDeviceId, dom::GPUDeviceLostReason aReason,
                   const nsACString& aMessage);
 
   UniquePtr<ffi::WGPUGlobal> mContext;

@@ -29,9 +29,9 @@
 using namespace mozilla;
 using namespace mozilla::dom;
 
-DOMParser::DOMParser(nsIGlobalObject* aOwner, nsIPrincipal* aDocPrincipal,
+DOMParser::DOMParser(nsIGlobalObject* aGlobal, nsIPrincipal* aDocPrincipal,
                      nsIURI* aDocumentURI)
-    : mOwner(aOwner),
+    : mGlobal(aGlobal),
       mPrincipal(aDocPrincipal),
       mDocumentURI(aDocumentURI),
       mForceEnableXULXBL(false),
@@ -48,7 +48,7 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(DOMParser)
   NS_INTERFACE_MAP_ENTRY(nsISupports)
 NS_INTERFACE_MAP_END
 
-NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(DOMParser, mOwner)
+NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(DOMParser, mGlobal)
 
 NS_IMPL_CYCLE_COLLECTING_ADDREF(DOMParser)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(DOMParser)
@@ -103,12 +103,12 @@ already_AddRefed<Document> DOMParser::ParseFromString(
     nsIPrincipal* aSubjectPrincipal, ErrorResult& aRv) {
   constexpr nsLiteralString sink = u"DOMParser parseFromString"_ns;
 
-  MOZ_ASSERT(mOwner);
-  nsCOMPtr<nsIGlobalObject> pinnedOwner = mOwner;
+  MOZ_ASSERT(mGlobal);
+  nsCOMPtr<nsIGlobalObject> pinnedGlobal = mGlobal;
   Maybe<nsAutoString> compliantStringHolder;
   const nsAString* compliantString =
       TrustedTypeUtils::GetTrustedTypesCompliantString(
-          aStr, sink, kTrustedTypesOnlySinkGroup, *pinnedOwner,
+          aStr, sink, kTrustedTypesOnlySinkGroup, *pinnedGlobal,
           aSubjectPrincipal, compliantStringHolder, aRv);
   if (aRv.Failed()) {
     return nullptr;
@@ -120,13 +120,13 @@ already_AddRefed<Document> DOMParser::ParseFromString(
 already_AddRefed<Document> DOMParser::ParseFromSafeString(const nsAString& aStr,
                                                           SupportedType aType,
                                                           ErrorResult& aRv) {
-  // Create the new document with the same principal as `mOwner`, even if it is
-  // the system principal. This will ensure that nodes from the returned
+  // Create the new document with the same principal as `mGlobal`, even if it
+  // is the system principal. This will ensure that nodes from the returned
   // document are in the same DocGroup as the owner global's document, allowing
   // nodes to be adopted.
   nsCOMPtr<nsIPrincipal> docPrincipal = mPrincipal;
-  if (mOwner && mOwner->PrincipalOrNull()) {
-    mPrincipal = mOwner->PrincipalOrNull();
+  if (mGlobal && mGlobal->PrincipalOrNull()) {
+    mPrincipal = mGlobal->PrincipalOrNull();
   }
 
   RefPtr<Document> ret = ParseFromStringInternal(aStr, aType, aRv);
@@ -311,13 +311,13 @@ already_AddRefed<DOMParser> DOMParser::CreateWithoutGlobal(ErrorResult& aRv) {
 
 already_AddRefed<Document> DOMParser::SetUpDocument(DocumentFlavor aFlavor,
                                                     ErrorResult& aRv) {
-  // We should really just use mOwner here, but Document gets confused
+  // We should really just use mGlobal here, but Document gets confused
   // if we pass it a scriptHandlingObject that doesn't QI to
   // nsIScriptGlobalObject, and test_isequalnode.js (an xpcshell test without
   // a window global) breaks. The correct solution is just to wean Document off
   // of nsIScriptGlobalObject, but that's a yak to shave another day.
   nsCOMPtr<nsIScriptGlobalObject> scriptHandlingObject =
-      do_QueryInterface(mOwner);
+      do_QueryInterface(mGlobal);
 
   // Try to inherit a style backend.
   NS_ASSERTION(mPrincipal, "Must have principal by now");

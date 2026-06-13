@@ -67,13 +67,11 @@ class nsCSSFrameConstructor final : public nsFrameManager {
                         PresShell* aPresShell);
   ~nsCSSFrameConstructor() { MOZ_ASSERT(mFCItemsInUse == 0); }
 
-  static void GetAlternateTextFor(const Element&, nsAString& aAltText);
-
- private:
   nsCSSFrameConstructor(const nsCSSFrameConstructor& aCopy) = delete;
   nsCSSFrameConstructor& operator=(const nsCSSFrameConstructor& aCopy) = delete;
 
- public:
+  static void GetAlternateTextFor(const Element&, nsAString& aAltText);
+
   /**
    * Whether insertion should be done synchronously or asynchronously.
    *
@@ -907,6 +905,19 @@ class nsCSSFrameConstructor final : public nsFrameManager {
     void InlineItemAdded() { ++mInlineCount; }
     void BlockItemAdded() { ++mBlockCount; }
 
+    // Not allocated from the heap!
+    void* operator new(size_t) = delete;
+    void* operator new[](size_t) = delete;
+#ifdef _MSC_VER /* Visual Studio */
+   private:
+    void operator delete(void*) { MOZ_CRASH("FrameConstructionItemList::del"); }
+
+   public:
+#else
+    void operator delete(void*) = delete;
+#endif
+    void operator delete[](void*) = delete;
+
     class Iterator {
      public:
       explicit Iterator(FrameConstructionItemList& aList)
@@ -1042,15 +1053,6 @@ class nsCSSFrameConstructor final : public nsFrameManager {
     }
 
    private:
-    // Not allocated from the heap!
-    void* operator new(size_t) = delete;
-    void* operator new[](size_t) = delete;
-#ifdef _MSC_VER /* Visual Studio */
-    void operator delete(void*) { MOZ_CRASH("FrameConstructionItemList::del"); }
-#else
-    void operator delete(void*) = delete;
-#endif
-    void operator delete[](void*) = delete;
     // Placement new is used by Reset().
     void* operator new(size_t, void* aPtr) { return aPtr; }
 
@@ -1126,6 +1128,21 @@ class nsCSSFrameConstructor final : public nsFrameManager {
       return aFCtor->AllocateFCItem();
     }
 
+    // Not allocated from the general heap - instead, use the new/Delete APIs
+    // that take a nsCSSFrameConstructor* (which manages our arena allocation).
+    void* operator new(size_t) = delete;
+    void* operator new[](size_t) = delete;
+#ifdef _MSC_VER /* Visual Studio */
+   private:
+    void operator delete(void*) { MOZ_CRASH("FrameConstructionItem::delete"); }
+
+   public:
+#else
+    void operator delete(void*) = delete;
+#endif
+    void operator delete[](void*) = delete;
+    FrameConstructionItem(const FrameConstructionItem& aOther) = delete;
+
     void Delete(nsCSSFrameConstructor* aFCtor) {
       mChildItems.Destroy(aFCtor);
       if (mIsGeneratedContent) {
@@ -1189,17 +1206,6 @@ class nsCSSFrameConstructor final : public nsFrameManager {
     bool mIsRenderedLegend : 1;
 
    private:
-    // Not allocated from the general heap - instead, use the new/Delete APIs
-    // that take a nsCSSFrameConstructor* (which manages our arena allocation).
-    void* operator new(size_t) = delete;
-    void* operator new[](size_t) = delete;
-#ifdef _MSC_VER /* Visual Studio */
-    void operator delete(void*) { MOZ_CRASH("FrameConstructionItem::delete"); }
-#else
-    void operator delete(void*) = delete;
-#endif
-    void operator delete[](void*) = delete;
-    FrameConstructionItem(const FrameConstructionItem& aOther) = delete;
     // Not allocated from the stack!
     ~FrameConstructionItem() {
       MOZ_COUNT_DTOR(FrameConstructionItem);

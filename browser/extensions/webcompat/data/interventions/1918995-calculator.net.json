@@ -6,12 +6,13 @@
       "matches": ["*://www.calculator.net/*"]
     }
   },
+  "css": {
+    "hide-copypaste-ui-for-buttons": "#sciout :has(.scinm) { user-select: none; }"
+  },
   "interventions": [
     {
       "platforms": ["android"],
-      "content_scripts": {
-        "css": ["bug1918995-calculator.net-hide-copypaste-ui-for-buttons.css"]
-      }
+      "css": ["hide-copypaste-ui-for-buttons"]
     }
   ]
 }

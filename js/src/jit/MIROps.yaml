@@ -1375,6 +1375,7 @@
     string: String
   result_type: String
   movable: true
+  folds_to: custom
   congruent_to: if_operands_equal
   # Strings are immutable, so there is no implicit dependency.
   alias_set: none
@@ -2587,8 +2588,8 @@
   guard: true
   movable: true
   congruent_to: if_operands_equal
-  alias_set:
-    load: ObjectFields
+  # A native object can never become a non-native object and vice versa.
+  alias_set: none
   generate_lir: true
   lir_result_type: none
   lir_temps: 1
@@ -2613,8 +2614,8 @@
   guard: true
   movable: true
   congruent_to: if_operands_equal
-  alias_set:
-    load: ObjectFields
+  # A proxy object can never become a non-proxy object and vice versa.
+  alias_set: none
   generate_lir: true
   lir_result_type: none
   lir_temps: 1
@@ -2640,8 +2641,8 @@
   movable: true
   congruent_to: if_operands_equal
   folds_to: custom
-  alias_set:
-    load: ObjectFields
+  # A proxy object can never become a non-proxy object and vice versa.
+  alias_set: none
   generate_lir: true
   lir_result_type: none
   lir_temps: 1
@@ -4556,6 +4557,89 @@
   alias_set: none
   generate_lir: true
   lir_temps: 2
+
+- name: DateNow
+  result_type: Double
+  alias_set: none
+  possibly_calls: true
+  generate_lir: true
+  lir_temps: 1
+
+- name: DateParse
+  operands:
+    string: String
+  result_type: Double
+  # Date.parse reads the current time zone, so there's actually load-dependency
+  # on the time zone. AliasSet doesn't have a flag to model this dependency and
+  # because it seems wasteful to use one of the few remaining bits for it, this
+  # instruction can neither be marked as movable nor implement congruentTo.
+  alias_set: none
+  folds_to: custom
+  possibly_calls: true
+  generate_lir: true
+  lir_temps: 1
+
+- name: TimeClip
+  operands:
+    time: Double
+  result_type: Double
+  movable: true
+  congruent_to: if_operands_equal
+  alias_set: none
+  folds_to: custom
+  generate_lir: true
+
+- name: LocalTimeToUTC
+  operands:
+    localTime: Int64
+  result_type: Double
+  type_policy: none
+  # Neither movable nor implements congruentTo, see DateParse.
+  alias_set: none
+  possibly_calls: true
+  generate_lir: true
+  lir_temps: 1
+
+- name: YearFromTime
+  operands:
+    utcTime: Double
+  result_type: Double
+  # Neither movable nor implements congruentTo, see DateParse.
+  alias_set: none
+  possibly_calls: true
+  generate_lir: true
+  lir_temps: 1
+
+- name: MonthFromTime
+  operands:
+    utcTime: Double
+  result_type: Double
+  # Neither movable nor implements congruentTo, see DateParse.
+  alias_set: none
+  possibly_calls: true
+  generate_lir: true
+  lir_temps: 1
+
+- name: DateFromTime
+  operands:
+    utcTime: Double
+  result_type: Double
+  # Neither movable nor implements congruentTo, see DateParse.
+  alias_set: none
+  possibly_calls: true
+  generate_lir: true
+  lir_temps: 1
+
+- name: NewDateObject
+  operands:
+    utcTime: Double
+  arguments:
+    templateObject: JSObject*
+  result_type: Object
+  alias_set: none
+  can_recover: true
+  generate_lir: true
+  lir_temps: 1
 
 - name: PostIntPtrConversion
   gen_boilerplate: false

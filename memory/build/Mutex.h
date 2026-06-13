@@ -67,7 +67,7 @@ struct MOZ_CAPABILITY("mutex") Mutex {
 
   // Although a constexpr constructor is provided, it will not initialise the
   // mutex and calling Init() is required.
-  constexpr Mutex() {}
+  constexpr Mutex() = default;
 
   // (Re-)initializes a mutex. Returns whether initialization succeeded.
   inline bool Init() {

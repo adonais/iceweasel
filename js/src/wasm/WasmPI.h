@@ -58,12 +58,14 @@ class Context;
 #ifdef ENABLE_WASM_JSPI
 
 JSFunction* WasmSuspendingFunctionCreate(JSContext* cx, HandleObject func,
-                                         const FuncType& type);
+                                         const FuncType& type,
+                                         const SharedTypeContext& typeContext);
 
 JSFunction* WasmPromisingFunctionCreate(JSContext* cx, HandleObject func);
 
 void* CreatePromise(Instance* instance);
-void* GetPromiseResults(Instance* instance, void* promiseRef);
+void* GetPromiseResults(Instance* instance, void* promiseRef,
+                        uint32_t typeIndex);
 int32_t AddPromiseReactions(Instance* instance, void* promiseRef, void* contRef,
                             void* reactionRef, void* promisingPromiseRef);
 void* PromiseResolve(Instance* instance, void* valueRef);

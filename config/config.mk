@@ -256,16 +256,6 @@ ifdef LIB
 export LIB
 endif
 
-ifdef MOZ_USING_CCACHE
-ifeq ($(CC_TYPE),clang)
-export CCACHE_CPP2=1
-endif
-endif
-
-ifdef CCACHE_PREFIX
-export CCACHE_PREFIX
-endif
-
 ifeq ($(OS_ARCH),WINNT)
 ifneq (,$(filter msvc clang-cl,$(CC_TYPE)))
 ifneq ($(TARGET_CPU),x86)

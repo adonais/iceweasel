@@ -96,13 +96,13 @@ bool OffscreenCanvasDisplayHelper::CanElementCaptureStream() const {
 }
 
 bool OffscreenCanvasDisplayHelper::UsingElementCaptureStream() const {
-  MutexAutoLock lock(mMutex);
-
-  if (NS_WARN_IF(!NS_IsMainThread())) {
-    MOZ_ASSERT_UNREACHABLE("Should not call off main-thread!");
-    return !!mCanvasElement;
+  // We know that if it has already been transferred to a DOM worker, then it
+  // must not be using captureStream.
+  if (!NS_IsMainThread()) {
+    return false;
   }
 
+  MutexAutoLock lock(mMutex);
   return mCanvasElement && mCanvasElement->UsingCaptureStream();
 }
 

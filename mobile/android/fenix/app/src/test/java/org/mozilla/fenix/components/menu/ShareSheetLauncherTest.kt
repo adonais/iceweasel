@@ -9,40 +9,22 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.net.Uri
 import android.service.chooser.ChooserAction
-import androidx.navigation.NavController
-import androidx.navigation.NavDirections
-import androidx.navigation.NavOptions
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.runs
 import io.mockk.slot
-import io.mockk.spyk
 import io.mockk.verify
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
-import kotlinx.coroutines.test.runTest
-import mozilla.components.browser.state.action.ShareResourceAction
-import mozilla.components.browser.state.state.BrowserState
-import mozilla.components.browser.state.state.ContentState
-import mozilla.components.browser.state.state.CustomTabConfig
-import mozilla.components.browser.state.state.CustomTabSessionState
-import mozilla.components.browser.state.state.ReaderState
-import mozilla.components.browser.state.state.content.ShareResourceState
-import mozilla.components.browser.state.state.createTab
-import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.engine.prompt.ShareData
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mozilla.fenix.R
 import org.mozilla.fenix.components.menu.share.QRCodeGenerator
 import org.mozilla.fenix.components.share.CacheHelper
+import org.mozilla.fenix.components.share.DefaultShareSheetLauncher
 import org.mozilla.fenix.components.share.ShareDelegate
-import org.mozilla.fenix.components.share.ShareSheetLauncherImpl
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
@@ -50,23 +32,11 @@ import org.robolectric.annotation.Config
 class ShareSheetLauncherTest {
 
     private val mockContext = mockk<Context>(relaxed = true)
-    private val mockNavController: NavController = mockk(relaxed = true) {
-        every { currentDestination?.id } returns R.id.menuDialogFragment
-        every { navigate(any<NavDirections>(), any<NavOptions>()) } just runs
-        every { context } returns mockContext
-    }
     private val mockShareDelegate: ShareDelegate = mockk(relaxed = true) {
         every { share(any(), any()) } just runs
         every { shareWithChooserActions(any(), any(), any()) } just runs
     }
 
-    private val contentTab = createTab(
-        id = "customTab1",
-        url = "content://www.mozilla.org",
-    )
-    private val browserStore = spyk(
-        BrowserStore(BrowserState(tabs = listOf(contentTab), selectedTabId = contentTab.id)),
-    )
     private val mockCacheHelper = mockk<CacheHelper> {
         every { saveBitmapToCache(any(), any(), any()) } returns Uri.parse("content://cacheDir/qr_code.png")
     }
@@ -77,10 +47,8 @@ class ShareSheetLauncherTest {
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     private val testDispatcher = UnconfinedTestDispatcher()
 
-    private val launcher = ShareSheetLauncherImpl(
-        browserStore = browserStore,
-        navController = mockNavController,
-        onDismiss = {},
+    private val launcher = DefaultShareSheetLauncher(
+        applicationContext = mockContext,
         qrCodeGenerator = mockQRCodeGenerator,
         cacheHelper = mockCacheHelper,
         scope = CoroutineScope(testDispatcher),
@@ -89,164 +57,25 @@ class ShareSheetLauncherTest {
         shareDelegate = mockShareDelegate,
     )
 
+    @Config(sdk = [33])
     @Test
-    fun `WHEN custom share sheet triggered AND non-content url provided THEN navigation updated`() = runTest {
-        launcher.showCustomShareSheet(
+    fun `WHEN native share sheet triggered on older API THEN share is invoked`() {
+        launcher.showSystemShareSheet(
             id = "123",
             url = "https://www.mozilla.org",
             title = "Mozilla",
             isCustomTab = false,
         )
-        verify {
-            mockNavController.navigate(any<NavDirections>(), any<NavOptions>())
-        }
-    }
 
-    @Test
-    fun `WHEN custom share sheet triggered AND content url provided THEN browser store updated`() = runTest {
-        launcher.showCustomShareSheet(
-            id = "123",
-            url = "content://www.mozilla.org",
-            title = "Mozilla",
-            isCustomTab = true,
-        )
-        verify {
-            browserStore.dispatch(any<ShareResourceAction.AddShareAction>())
-        }
-    }
-
-    @Config(sdk = [33])
-    @Test
-    fun `WHEN native share sheet triggered on older API THEN share is invoked`() {
-        val url = "https://www.mozilla.org"
-        val title = "Mozilla"
-        launcher.showNativeShareSheet(
-            id = "123",
-            longUrl = url,
-            title = title,
-            isCustomTab = false,
-        )
-        verify {
-            mockShareDelegate.share(any(), any())
-        }
-    }
-
-    @Test
-    fun `GIVEN reader view is active WHEN navigate to share action is dispatched THEN navigate to share sheet`() = runTest {
-        val title = "Mozilla"
-        val readerUrl = "moz-extension://1234"
-        val activeUrl = "https://mozilla.org"
-        val readerTab = createTab(
-            url = readerUrl,
-            readerState = ReaderState(active = true, activeUrl = activeUrl),
-            title = title,
-        )
-        val directionsSlot = slot<NavDirections>()
-        val optionsSlot = slot<NavOptions>()
-        launcher.showCustomShareSheet(
-            id = readerTab.id,
-            url = activeUrl,
-            title = title,
-            isCustomTab = false,
-        )
-
-        verify {
-            mockNavController.navigate(
-                capture(directionsSlot),
-                capture(optionsSlot),
-            )
-        }
-
-        val directions = directionsSlot.captured
-        val directionsBundle = directions.arguments
-        val shareData = directionsBundle.getParcelableArray("data", ShareData::class.java)?.firstOrNull()
-
-        assertEquals(R.id.action_global_shareFragment, directions.actionId)
-        assertNotNull(directionsBundle)
-        assertEquals(readerTab.id, directionsBundle.getString("sessionId"))
-        assertTrue(directionsBundle.getBoolean("showPage"))
-        assertNotNull(shareData)
-        assertEquals(activeUrl, shareData?.url)
-        assertEquals(title, shareData?.title)
-
-        assertEquals(R.id.browserFragment, optionsSlot.captured.popUpToId)
-        assertFalse(optionsSlot.captured.isPopUpToInclusive())
-    }
-
-    @Test
-    fun `GIVEN reader view is inactive WHEN navigate to share action is dispatched THEN navigate to share sheet`() = runTest {
-        val url = "https://www.mozilla.org"
-        val title = "Mozilla"
-        val tab = createTab(
-            url = url,
-            title = title,
-        )
-
-        val directionsSlot = slot<NavDirections>()
-        val optionsSlot = slot<NavOptions>()
-
-        launcher.showCustomShareSheet(
-            id = tab.id,
-            url = url,
-            title = title,
-            isCustomTab = false,
-        )
-
-        verify {
-            mockNavController.navigate(
-                capture(directionsSlot),
-                capture(optionsSlot),
-            )
-        }
-
-        val directions = directionsSlot.captured
-        val directionsBundle = directions.arguments
-        val shareData = directionsBundle.getParcelableArray("data", ShareData::class.java)?.firstOrNull()
-
-        assertEquals(R.id.action_global_shareFragment, directions.actionId)
-        assertNotNull(directionsBundle)
-        assertEquals(tab.id, directionsBundle.getString("sessionId"))
-        assertTrue(directionsBundle.getBoolean("showPage"))
-        assertNotNull(shareData)
-        assertEquals(url, shareData?.url)
-        assertEquals(title, shareData?.title)
-
-        assertEquals(R.id.browserFragment, optionsSlot.captured.popUpToId)
-        assertFalse(optionsSlot.captured.isPopUpToInclusive())
-    }
-
-    @Test
-    fun `GIVEN the current tab is a local PDF WHEN share menu item is pressed THEN trigger ShareResourceAction`() = runTest {
-        val id = "1"
-        val url = "content://pdf.pdf"
-        val title = "title"
-        val tab = createTab(
-            url = url,
-            id = id,
-        )
-        launcher.showCustomShareSheet(
-            id = tab.id,
-            url = url,
-            title = title,
-            isCustomTab = true,
-        )
-
-        verify {
-            browserStore.dispatch(
-                ShareResourceAction.AddShareAction(
-                    id,
-                    ShareResourceState.LocalResource(url),
-                ),
-            )
-        }
+        verify { mockShareDelegate.share(any(), any()) }
     }
 
     @Config(sdk = [33])
     @Test
     fun `GIVEN API level below 34 WHEN native share sheet triggered THEN basic share is used`() {
-        launcher.showNativeShareSheet(
+        launcher.showSystemShareSheet(
             id = "123",
-            longUrl = "https://www.mozilla.org",
+            url = "https://www.mozilla.org",
             title = "Mozilla",
         )
 
@@ -257,9 +86,9 @@ class ShareSheetLauncherTest {
     @Config(sdk = [34])
     @Test
     fun `GIVEN API level 34 and valid tab id WHEN native share sheet triggered THEN chooser actions share is used`() {
-        launcher.showNativeShareSheet(
+        launcher.showSystemShareSheet(
             id = "123",
-            longUrl = "https://www.mozilla.org",
+            url = "https://www.mozilla.org",
             title = "Mozilla",
         )
 
@@ -270,9 +99,9 @@ class ShareSheetLauncherTest {
     @Config(sdk = [34])
     @Test
     fun `GIVEN API level 34 and null tab id WHEN native share sheet triggered THEN basic share is used`() {
-        launcher.showNativeShareSheet(
+        launcher.showSystemShareSheet(
             id = null,
-            longUrl = "https://www.mozilla.org",
+            url = "https://www.mozilla.org",
             title = "Mozilla",
         )
 
@@ -283,9 +112,9 @@ class ShareSheetLauncherTest {
     @Config(sdk = [34])
     @Test
     fun `GIVEN a private tab WHEN native share sheet triggered THEN chooser actions share is still used`() {
-        launcher.showNativeShareSheet(
+        launcher.showSystemShareSheet(
             id = "123",
-            longUrl = "https://www.mozilla.org",
+            url = "https://www.mozilla.org",
             title = "Mozilla",
             isPrivate = true,
         )
@@ -300,9 +129,9 @@ class ShareSheetLauncherTest {
         val actionsSlot = slot<Array<ChooserAction>>()
         every { mockShareDelegate.shareWithChooserActions(any(), any(), capture(actionsSlot)) } just runs
 
-        launcher.showNativeShareSheet(
+        launcher.showSystemShareSheet(
             id = "123",
-            longUrl = "https://www.mozilla.org",
+            url = "https://www.mozilla.org",
             title = "Mozilla",
         )
 
@@ -310,64 +139,64 @@ class ShareSheetLauncherTest {
     }
 
     @Test
-    fun `GIVEN the current tab is a custom tab WHEN navigate to share action is dispatched THEN navigate to share sheet`() = runTest {
-        val url = "https://www.mozilla.org"
-        val title = "Mozilla"
-        val customTab = CustomTabSessionState(
-            content = ContentState(
-                url = url,
-                title = title,
-            ),
-            config = CustomTabConfig(),
+    fun `WHEN showSystemShareSheet is called with multiple items THEN share is invoked with urls joined by newlines`() {
+        val items = listOf(
+            ShareData(url = "https://mozilla.org", title = "Mozilla"),
+            ShareData(url = "https://firefox.com", title = "Firefox"),
         )
 
-        val directionsSlot = slot<NavDirections>()
-        val optionsSlot = slot<NavOptions>()
-        launcher.showCustomShareSheet(
-            id = customTab.id,
-            url = url,
-            title = title,
-            isCustomTab = true,
-        )
+        launcher.showSystemShareSheet(items = items)
+
         verify {
-            mockNavController.navigate(
-                capture(directionsSlot),
-                capture(optionsSlot),
+            mockShareDelegate.share(
+                text = "https://mozilla.org\nhttps://firefox.com",
+                subject = "Mozilla",
             )
         }
-
-        val directions = directionsSlot.captured
-        val directionsBundle = directions.arguments
-        val shareData = directionsBundle.getParcelableArray("data", ShareData::class.java)?.firstOrNull()
-
-        assertEquals(R.id.action_global_shareFragment, directions.actionId)
-        assertNotNull(directionsBundle)
-        assertEquals(customTab.id, directionsBundle.getString("sessionId"))
-        assertTrue(directionsBundle.getBoolean("showPage"))
-        assertNotNull(shareData)
-        assertEquals(url, shareData?.url)
-        assertEquals(title, shareData?.title)
-
-        assertEquals(R.id.externalAppBrowserFragment, optionsSlot.captured.popUpToId)
-        assertFalse(optionsSlot.captured.isPopUpToInclusive())
     }
 
     @Test
-    fun `WHEN null url is provided THEN handle gracefully`() = runTest {
-        val id = "123"
-        val title = "Mozilla"
+    fun `WHEN showSystemShareSheet is called with a single item THEN share is invoked with that url`() {
+        val items = listOf(ShareData(url = "https://mozilla.org", title = "Mozilla"))
 
-        // Triggering the custom share sheet with a null URL
-        launcher.showCustomShareSheet(
-            id = id,
-            url = null,
-            title = title,
-            isCustomTab = false,
+        launcher.showSystemShareSheet(items = items)
+
+        verify { mockShareDelegate.share(text = "https://mozilla.org", subject = "Mozilla") }
+    }
+
+    @Test
+    fun `WHEN showSystemShareSheet is called with items containing null urls THEN null urls are excluded from share text`() {
+        val items = listOf(
+            ShareData(url = "https://mozilla.org", title = "Mozilla"),
+            ShareData(url = null, title = "No URL"),
         )
 
-        // Verifying that navigation does not break
+        launcher.showSystemShareSheet(items = items)
+
+        verify { mockShareDelegate.share(text = "https://mozilla.org", subject = "Mozilla") }
+    }
+
+    @Test
+    fun `WHEN showSystemShareSheet is called with empty items THEN share is invoked with empty text`() {
+        launcher.showSystemShareSheet(items = emptyList())
+
+        verify { mockShareDelegate.share(text = "", subject = "") }
+    }
+
+    @Test
+    fun `WHEN showSystemShareSheet is called with multiple items and a subject THEN share is invoked with urls and subject`() {
+        val items = listOf(
+            ShareData(url = "https://mozilla.org", title = "Mozilla"),
+            ShareData(url = "https://firefox.com", title = "Firefox"),
+        )
+
+        launcher.showSystemShareSheet(items = items, subject = "My collection")
+
         verify {
-            mockNavController.navigate(any<NavDirections>(), any<NavOptions>())
+            mockShareDelegate.share(
+                text = "https://mozilla.org\nhttps://firefox.com",
+                subject = "My collection",
+            )
         }
     }
 }

@@ -268,7 +268,7 @@ class TextLeafRange final {
       : mStart(aStart), mEnd(aEnd) {}
   explicit TextLeafRange(const TextLeafPoint& aStart)
       : mStart(aStart), mEnd(aStart) {}
-  explicit TextLeafRange() {}
+  explicit TextLeafRange() = default;
 
   // Create a TextLeafRange spanning the entire leaf.
   static TextLeafRange FromAccessible(Accessible* aAcc) {
@@ -383,6 +383,11 @@ class TextLeafRange final {
           mSegmentStart(aOther.mSegmentStart),
           mSegmentEnd(aOther.mSegmentEnd) {}
 
+    Iterator() = delete;
+    Iterator(const Iterator&) = delete;
+    Iterator& operator=(const Iterator&) = delete;
+    Iterator& operator=(const Iterator&&) = delete;
+
     static Iterator BeginIterator(const TextLeafRange& aRange);
 
     static Iterator EndIterator(const TextLeafRange& aRange);
@@ -400,11 +405,6 @@ class TextLeafRange final {
 
    private:
     explicit Iterator(const TextLeafRange& aRange) : mRange(aRange) {}
-
-    Iterator() = delete;
-    Iterator(const Iterator&) = delete;
-    Iterator& operator=(const Iterator&) = delete;
-    Iterator& operator=(const Iterator&&) = delete;
 
     const TextLeafRange& mRange;
     TextLeafPoint mSegmentStart;

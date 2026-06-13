@@ -53,11 +53,9 @@ namespace mozilla {
 // They can be different so that we can continue to use 4KB pages on systems
 // with a larger page size. (WIP see Bug 1980047).
 //
-// On x86-64 they are both 4KiB.  However Apple Silicon has a 16KiB page size,
-// so gRealPageSize will be 16KiB, but in order to keep the number of
-// regions-per-run to 256 we want to limit gPageSize to 4KiB.  (4096 / 16 =
-// 256).  Other platforms with different gRealPageSizes might also have
-// different gRealPageSize and gPageSize.
+// For now they are the same on all platforms, since a lower logical page
+// size creates a performance regression due to smaller runs and more
+// frequent run allocation.
 //
 // gPageSize is always less than or equal to gRealPageSize.
 //
@@ -70,7 +68,7 @@ static const size_t gRealPageSize = 16_KiB;
 #  else
 static const size_t gRealPageSize = 4_KiB;
 #  endif
-static const size_t gPageSize = 4_KiB;
+static const size_t gPageSize = gRealPageSize;
 #else
 // When MALLOC_OPTIONS contains one or several `P`s, gPageSize will be
 // doubled for each `P`.  Likewise each 'p' will halve gPageSize.
@@ -118,7 +116,8 @@ void DefineGlobals();
 #endif
 
 // Max size class for bins.
-#define gMaxBinClass (kMaxQuantumWideClass)
+#define gMaxBinClass \
+  (gMaxSubPageClass ? gMaxSubPageClass : kMaxQuantumWideClass)
 
 // Return the smallest chunk multiple that is >= s.
 #define CHUNK_CEILING(s) (((s) + kChunkSizeMask) & ~kChunkSizeMask)
@@ -131,8 +130,12 @@ void DefineGlobals();
 #define QUANTUM_WIDE_CEILING(a) \
   (((a) + (kQuantumWideMask)) & ~(kQuantumWideMask))
 
+// Return the smallest sub page-size  that is >= a.
+#define SUBPAGE_CEILING(a) (std::bit_ceil(a))
+
 // Number of all the small-allocated classes
-#define NUM_SMALL_CLASSES (kNumQuantumClasses + kNumQuantumWideClasses)
+#define NUM_SMALL_CLASSES \
+  (kNumQuantumClasses + kNumQuantumWideClasses + gNumSubPageClasses)
 
 // Return the chunk address for allocation address a.
 static inline arena_chunk_t* GetChunkForPtr(const void* aPtr) {

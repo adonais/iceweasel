@@ -615,9 +615,6 @@ tags = "vertical-tabs"
 ["browser_tab_label_during_reload.js"]
 tags = "vertical-tabs"
 
-["browser_tab_label_picture_in_picture.js"]
-tags = "vertical-tabs"
-
 ["browser_tab_label_reader_mode.js"]
 tags = "vertical-tabs"
 
@@ -749,6 +746,9 @@ skip-if = [
 ]
 
 ["browser_undo_close_tabs_at_start.js"]
+
+["browser_url_prefilled_on_startup.js"]
+support-files = ["startup-delayed-redirect.sjs"]
 
 ["browser_viewSourceInTabOnViewSource.js"]
 

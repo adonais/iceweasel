@@ -47,22 +47,28 @@ EventLogAnalyzer::EventLogAnalyzer(const ParsedRtcEventLog& parsed_log,
   }
   neteq_simulator_ = std::make_unique<LazyNetEqSimulator>(parsed_log_, config_);
 
-  RTC_LOG(LS_INFO) << "Log is "
-                   << (parsed_log_.last_timestamp().ms() -
-                       parsed_log_.first_timestamp().ms()) /
-                          1000
-                   << " seconds long.";
+  if (parsed_log_.first_timestamp().IsFinite() &&
+      parsed_log_.last_timestamp().IsFinite()) {
+    RTC_LOG(LS_INFO) << "Log is "
+                     << (parsed_log_.last_timestamp().ms() -
+                         parsed_log_.first_timestamp().ms()) /
+                            1000
+                     << " seconds long.";
+  }
 }
 
 EventLogAnalyzer::EventLogAnalyzer(const ParsedRtcEventLog& parsed_log,
                                    const AnalyzerConfig& config)
     : parsed_log_(parsed_log), config_(config) {
   neteq_simulator_ = std::make_unique<LazyNetEqSimulator>(parsed_log_, config_);
-  RTC_LOG(LS_INFO) << "Log is "
-                   << (parsed_log_.last_timestamp().ms() -
-                       parsed_log_.first_timestamp().ms()) /
-                          1000
-                   << " seconds long.";
+  if (parsed_log_.first_timestamp().IsFinite() &&
+      parsed_log_.last_timestamp().IsFinite()) {
+    RTC_LOG(LS_INFO) << "Log is "
+                     << (parsed_log_.last_timestamp().ms() -
+                         parsed_log_.first_timestamp().ms()) /
+                            1000
+                     << " seconds long.";
+  }
 }
 
 EventLogAnalyzer::~EventLogAnalyzer() = default;
@@ -171,6 +177,9 @@ void EventLogAnalyzer::InitializeMapOfNamedGraphs(bool show_detector_state,
   });
   plots_.RegisterPlot("simulated_goog_cc", [this](Plot* plot) {
     this->CreateGoogCcSimulationGraph(plot);
+  });
+  plots_.RegisterPlot("simulated_scream_delay", [this](Plot* plot) {
+    this->CreateScreamSimulationDelayGraph(plot);
   });
   plots_.RegisterPlot("simulated_scream_bitrates", [this](Plot* plot) {
     this->CreateScreamSimulationBitrateGraph(plot);
@@ -401,6 +410,10 @@ void EventLogAnalyzer::CreateTotalOutgoingBitrateGraph(
 
 void EventLogAnalyzer::CreateGoogCcSimulationGraph(Plot* plot) const {
   webrtc::CreateGoogCcSimulationGraph(parsed_log_, config_, plot);
+}
+
+void EventLogAnalyzer::CreateScreamSimulationDelayGraph(Plot* plot) const {
+  webrtc::CreateScreamSimulationDelayGraph(parsed_log_, config_, plot);
 }
 
 void EventLogAnalyzer::CreateScreamSimulationBitrateGraph(Plot* plot) const {

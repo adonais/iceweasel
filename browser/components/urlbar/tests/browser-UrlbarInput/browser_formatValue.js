@@ -171,6 +171,16 @@ add_task(async function test_url_formatting_after_visiting_bookmarks() {
       ["browser.urlbar.formatting.enabled", true],
     ],
   });
+
+  // Add visits so that it can be autofilled.
+  await PlacesTestUtils.addVisits([
+    {
+      uri: "https://something.example.com/test",
+      transition: PlacesUtils.history.TRANSITION_TYPED,
+    },
+  ]);
+  await PlacesFrecencyRecalculator.recalculateAnyOutdatedFrecencies();
+
   await PlacesTestUtils.addBookmarkWithDetails({
     uri: "https://something.example.com/test",
   });
@@ -189,4 +199,29 @@ add_task(async function test_url_formatting_after_visiting_bookmarks() {
     "<something.>example.com</test>"
   );
   SpecialPowers.popPrefEnv();
+});
+
+add_task(async function test_fixup_replaced_hosts_not_rewritten() {
+  // When navigating to 0.0.0.0 or :: via a link the formatter must display
+  // the original host rather than the fixup-substituted 127.0.0.1 / ::1.
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.urlbar.formatting.enabled", true],
+      ["browser.urlbar.trimHttps", true],
+    ],
+  });
+
+  for (let [url, expected] of [
+    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    ["http://0.0.0.0:8080", "<http://>0.0.0.0<:8080>"],
+    ["https://0.0.0.0:8080", "0.0.0.0<:8080>"],
+    ["https://[::]:8080", "[::]<:8080>"],
+  ]) {
+    gURLBar.value = url;
+    gBrowser.selectedBrowser.focus();
+    await UrlbarTestUtils.checkFormatting(window, expected);
+  }
+
+  await SpecialPowers.popPrefEnv();
+  gURLBar.setURI();
 });

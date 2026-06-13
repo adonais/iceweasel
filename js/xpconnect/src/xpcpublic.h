@@ -65,8 +65,6 @@ class Exception;
 }  // namespace dom
 }  // namespace mozilla
 
-using xpcGCCallback = void (*)(JSGCStatus);
-
 namespace xpc {
 
 class Scriptability {
@@ -104,13 +102,6 @@ class Scriptability {
   // forbids script execution.
   bool mScriptBlockedByPolicy;
 };
-
-JSObject* TransplantObject(JSContext* cx, JS::Handle<JSObject*> origobj,
-                           JS::Handle<JSObject*> target);
-
-JSObject* TransplantObjectRetainingXrayExpandos(JSContext* cx,
-                                                JS::Handle<JSObject*> origobj,
-                                                JS::Handle<JSObject*> target);
 
 // If origObj has an xray waiver, nuke it before transplant.
 JSObject* TransplantObjectNukingXrayWaiver(JSContext* cx,
@@ -830,9 +821,6 @@ extern void GetCurrentRealmName(JSContext*, nsCString& name);
 
 nsCString GetFunctionName(JSContext* cx, JS::Handle<JSObject*> obj);
 
-void AddGCCallback(xpcGCCallback cb);
-void RemoveGCCallback(xpcGCCallback cb);
-
 // We need an exact page size only if we run the binary in automation.
 #if (defined(XP_DARWIN) && defined(__aarch64__)) || defined(__loongarch__)
 const size_t kAutomationPageSize = 16384;
@@ -950,6 +938,12 @@ bool IsNotUAWidget(JSContext* cx, JSObject* /* unused */);
  * chrome, XBL scopes, or UA Widget scopes.
  */
 bool IsChromeOrUAWidget(JSContext* cx, JSObject* /* unused */);
+
+/**
+ * A test for whether WebIDL methods that should only be visible to
+ * chrome or WorkerDebugger scopes.
+ */
+bool IsChromeOrWorkerDebugger(JSContext* cx, JSObject* /* unused */);
 
 /**
  * Same as IsChromeOrUAWidget but can be used in worker threads as well.

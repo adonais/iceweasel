@@ -32,9 +32,14 @@ import mozilla.components.service.mars.MozAdsUseCases
 import mozilla.components.support.locale.LocaleManager
 import mozilla.components.support.locale.LocaleUseCases
 import mozilla.components.support.utils.DefaultDownloadFileUtils
+import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.bookmarks.BookmarksUseCase
+import org.mozilla.fenix.components.share.DefaultShareSheetLauncher
+import org.mozilla.fenix.components.share.ShareSheetLauncher
 import org.mozilla.fenix.components.usecases.FenixBrowserUseCases
+import org.mozilla.fenix.components.usecases.ShareUseCases
+import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.home.mars.MARSUseCases
 import org.mozilla.fenix.pbmlock.PrivateBrowsingLockUseCases
 import org.mozilla.fenix.perf.StrictModeManager
@@ -162,6 +167,25 @@ class UseCases(
             searchUseCases = searchUseCases,
             homepageTitle = context.getString(R.string.tab_tray_homepage_tab),
             profiler = engine.value.profiler,
+        )
+    }
+
+    val shareSheetLauncher: ShareSheetLauncher by lazyMonitored {
+        DefaultShareSheetLauncher(
+            applicationContext = context.applicationContext,
+            homeActivityClass = HomeActivity::class.java,
+        )
+    }
+
+    /**
+     * Use cases for sharing content via the system share sheet or the in-app
+     * share fragment.
+     */
+    val shareUseCases by lazyMonitored {
+        ShareUseCases(
+            browserStore = store.value,
+            shareSheetLauncher = shareSheetLauncher,
+            settings = context.settings(),
         )
     }
 

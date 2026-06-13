@@ -863,10 +863,6 @@ void RetainedDisplayListBuilder::GetModifiedAndFramesWithProps(
     if (flags.contains(RetainedDisplayListData::FrameFlag::HasProps)) {
       aOutFramesWithProps->AppendElement(frame);
     }
-
-    if (flags.contains(RetainedDisplayListData::FrameFlag::HadWillChange)) {
-      Builder()->RemoveFromWillChangeBudgets(frame);
-    }
   }
 
   Data()->Clear();

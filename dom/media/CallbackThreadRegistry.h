@@ -9,8 +9,6 @@
 #include <mozilla/DataMutex.h>
 #include <nsTArray.h>
 
-#include <thread>
-
 namespace mozilla {
 
 // This class is a singleton that tracks various callback threads and makes
@@ -23,11 +21,10 @@ class CallbackThreadRegistry final {
  public:
   CallbackThreadRegistry();
 
-  ~CallbackThreadRegistry() {
-    // It would be nice to be able to assert that all threads have been
-    // unregistered, but we can't: it's legal to suspend an audio stream, so
-    // that the callback isn't called, and then immediately destroy it.
-  }
+  // It would be nice to be able to assert that all threads have been
+  // unregistered, but we can't: it's legal to suspend an audio stream, so
+  // that the callback isn't called, and then immediately destroy it.
+  ~CallbackThreadRegistry() = default;
 
   CallbackThreadRegistry(const CallbackThreadRegistry&) = delete;
   CallbackThreadRegistry& operator=(const CallbackThreadRegistry&) = delete;

@@ -23,6 +23,10 @@ namespace mozilla::dom {
  */
 class TimeoutHandler : public nsISupports, public JSHolderBase {
  public:
+  TimeoutHandler(const TimeoutHandler&) = delete;
+  TimeoutHandler& operator=(const TimeoutHandler&) = delete;
+  TimeoutHandler& operator=(const TimeoutHandler&&) = delete;
+
   MOZ_CAN_RUN_SCRIPT virtual bool Call(const char* /* unused */);
   // Append a UTF-8 string to aOutString that describes the callback function,
   // for use in logging or profiler markers.
@@ -42,11 +46,6 @@ class TimeoutHandler : public nsISupports, public JSHolderBase {
   // filename, line number and JS language version string of the
   // caller of setTimeout()
   const JSCallingLocation mCaller = {};
-
- private:
-  TimeoutHandler(const TimeoutHandler&) = delete;
-  TimeoutHandler& operator=(const TimeoutHandler&) = delete;
-  TimeoutHandler& operator=(const TimeoutHandler&&) = delete;
 };
 
 class ScriptTimeoutHandler : public TimeoutHandler {

@@ -118,7 +118,7 @@ already_AddRefed<TextureClient> YCbCrTextureClientAllocationHelper::Allocate(
       aKnowsCompositor, mData.mPictureRect, mYSize, mData.mYStride, mCbCrSize,
       mData.mCbCrStride, mData.mStereoMode, mData.mColorDepth,
       mData.mYUVColorSpace, mData.mColorRange, mData.mTransferFunction,
-      mData.mChromaSubsampling, mTextureFlags);
+      mData.mChromaSubsampling, mTextureFlags, mData.mHDRMetadata);
 }
 
 TextureClientRecycleAllocator::TextureClientRecycleAllocator(

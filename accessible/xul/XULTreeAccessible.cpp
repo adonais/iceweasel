@@ -455,8 +455,8 @@ void XULTreeAccessible::InvalidateCache(int32_t aRow, int32_t aCount) {
     XULTreeItemAccessibleBase* treeItem = mAccessibleCache.GetWeak(key);
 
     if (treeItem) {
-      RefPtr<AccEvent> event =
-          new AccEvent(nsIAccessibleEvent::EVENT_HIDE, treeItem);
+      auto event =
+          MakeRefPtr<AccEvent>(nsIAccessibleEvent::EVENT_HIDE, treeItem);
       nsEventShell::FireEvent(event);
 
       // Unbind from document, shutdown and remove from tree cache.
@@ -534,7 +534,7 @@ void XULTreeAccessible::TreeViewChanged(nsITreeView* aView) {
   // Fire reorder event on tree accessible on accessible tree (do not fire
   // show/hide events on tree items because it can be expensive to fire them for
   // each tree item.
-  RefPtr<AccReorderEvent> reorderEvent = new AccReorderEvent(this);
+  auto reorderEvent = MakeRefPtr<AccReorderEvent>(this);
   Document()->FireDelayedEvent(reorderEvent);
 
   // Clear cache.
@@ -552,7 +552,7 @@ void XULTreeAccessible::TreeViewChanged(nsITreeView* aView) {
 
 already_AddRefed<XULTreeItemAccessibleBase>
 XULTreeAccessible::CreateTreeItemAccessible(int32_t aRow) const {
-  RefPtr<XULTreeItemAccessibleBase> accessible = new XULTreeItemAccessible(
+  auto accessible = MakeRefPtr<XULTreeItemAccessible>(
       mContent, mDoc, const_cast<XULTreeAccessible*>(this), mTree, mTreeView,
       aRow);
 

@@ -688,7 +688,9 @@ void JSScript::resetScriptCounts() {
 void ScriptSourceObject::finalize(JS::GCContext* gcx, JSObject* obj) {
   MOZ_ASSERT(gcx->onMainThread());
   ScriptSourceObject* sso = &obj->as<ScriptSourceObject>();
-  sso->source()->Release();
+  if (sso->hasSource()) {
+    sso->source()->Release();
+  }
 
   // Clear the private value, calling the release hook if necessary.
   sso->setPrivate(gcx->runtime(), UndefinedValue());
@@ -697,16 +699,7 @@ void ScriptSourceObject::finalize(JS::GCContext* gcx, JSObject* obj) {
 }
 
 static const JSClassOps ScriptSourceObjectClassOps = {
-    nullptr,                       // addProperty
-    nullptr,                       // delProperty
-    nullptr,                       // enumerate
-    nullptr,                       // newEnumerate
-    nullptr,                       // resolve
-    nullptr,                       // mayResolve
-    ScriptSourceObject::finalize,  // finalize
-    nullptr,                       // call
-    nullptr,                       // construct
-    nullptr,                       // trace
+    .finalize = ScriptSourceObject::finalize,
 };
 
 const JSClass ScriptSourceObject::class_ = {
@@ -734,6 +727,18 @@ ScriptSourceObject* ScriptSourceObject::create(JSContext* cx,
 
   obj->initReservedSlot(STENCILS_SLOT, UndefinedValue());
 
+  return obj;
+}
+
+/* static */
+ScriptSourceObject* ScriptSourceObject::createForWasmModule(JSContext* cx) {
+  ScriptSourceObject* obj =
+      NewObjectWithGivenProto<ScriptSourceObject>(cx, nullptr);
+  if (!obj) {
+    return nullptr;
+  }
+
+  // Wasm modules have no ScriptSource, so we leave SOURCE_SLOT undefined.
   return obj;
 }
 
@@ -773,6 +778,7 @@ bool ScriptSourceObject::initFromOptions(
       source->getReservedSlot(ELEMENT_PROPERTY_SLOT).isMagic(JS_GENERIC_MAGIC));
   MOZ_ASSERT(source->getReservedSlot(INTRODUCTION_SCRIPT_SLOT)
                  .isMagic(JS_GENERIC_MAGIC));
+  MOZ_ASSERT(source->hasSource());
 
   if (!MaybeValidateFilename(cx, source, options)) {
     return false;
@@ -1148,12 +1154,21 @@ void ScriptSource::performDelayedConvertToCompressedSource(
 
 ScriptSource::GenericReader::GenericReader(ScriptSource* source)
     : PinnedUnitsBase(source) {
-  MOZ_ASSERT(source->hasSourceText());
-
   addReader();
 }
 
 ScriptSource::GenericReader::~GenericReader() {
+  if (!source_->hasSourceText()) {
+    // For script sources without text, the reader is added just to access the
+    // other fields.  There shouldn't be any pending compression, and we can
+    // just remove the reader.
+    auto guard = source_->readers_.lock();
+    MOZ_ASSERT(guard->pendingCompressed.empty());
+    MOZ_ASSERT(guard->count > 0);
+    guard->count--;
+    return;
+  }
+
   if (source_->hasSourceType<Utf8Unit>()) {
     removeReader<Utf8Unit>();
   } else {
@@ -3370,6 +3385,7 @@ BaseScript::BaseScript(uint8_t* stubEntry, JSFunction* function,
   MOZ_ASSERT(extent_.toStringStart <= extent_.sourceStart);
   MOZ_ASSERT(extent_.sourceStart <= extent_.sourceEnd);
   MOZ_ASSERT(extent_.sourceEnd <= extent_.toStringEnd);
+  MOZ_ASSERT(sourceObject->hasSource());
 }
 
 /* static */

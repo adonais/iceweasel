@@ -322,6 +322,7 @@ add_task(async function test_conversation_change_clears_loading_state() {
       ordinal: 0,
       content: { body: "Hello" },
     });
+    actor.setGeneratingOnChatContent(true);
 
     await SpecialPowers.spawn(browser, [], async () => {
       const chatContent = content.document.querySelector("ai-chat-content");
@@ -336,13 +337,11 @@ add_task(async function test_conversation_change_clears_loading_state() {
       );
     });
 
-    // A tab switch dispatches clear-conversation without a convId, which
-    // triggers #checkConversationState to detect the conversation change
-    // and reset assistantIsLoading and isSearching.
     await actor.dispatchMessageToChatContent({
       role: "clear-conversation",
       content: { body: "" },
     });
+    actor.setGeneratingOnChatContent(false);
 
     await SpecialPowers.spawn(browser, [], async () => {
       const chatContent = content.document.querySelector("ai-chat-content");

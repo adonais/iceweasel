@@ -22,7 +22,7 @@ namespace mozilla {
 class MacOSNotificationInfo;
 
 class MacOSNotificationCenter : public nsIAlertsService,
-                              public nsIAlertsDoNotDisturb {
+                                public nsIAlertsDoNotDisturb {
  public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIALERTSSERVICE

@@ -95,6 +95,8 @@ class MOZ_GSL_POINTER nsTDependentString : public nsTString<T> {
   explicit nsTDependentString(const self_type& aStr) : string_type() {
     Rebind(aStr, /* aStartPos = */ 0);
   }
+  nsTDependentString(const substring_tuple_type&) = delete;
+  self_type& operator=(const self_type& aStr) = delete;
 
   /**
    * allow this class to be bound to a different string...
@@ -116,11 +118,6 @@ class MOZ_GSL_POINTER nsTDependentString : public nsTString<T> {
                     DataFlags::TERMINATED | aExtraDataFlags, ClassFlags(0)) {
     this->AssertValidDependentString();
   }
-
- private:
-  // NOT USED
-  nsTDependentString(const substring_tuple_type&) = delete;
-  self_type& operator=(const self_type& aStr) = delete;
 };
 
 extern template class nsTDependentString<char>;

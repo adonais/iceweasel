@@ -6,7 +6,7 @@ Firefox can collect information about the rate of CAPTCHAs that users come acros
 
 ## Implementation Details
 
-In short, we use JSWindowActors and network interception to track the states of known CAPTCHAs. We then use Glean to record metrics into the separate ping CAPTCHA-detection. Finally, we then send the ping roughly every 24 hours. The implementation is located at [toolkit/components/captchadetection](https://searchfox.org/mozilla-central/source/toolkit/components/captchadetection) directory.
+In short, we use JSWindowActors and network interception to track the states of known CAPTCHAs. We then use Glean to record metrics into the separate ping CAPTCHA-detection. Finally, we then send the ping roughly every 24 hours. The implementation is located at [toolkit/components/captchadetection](https://searchfox.org/firefox-main/source/toolkit/components/captchadetection) directory.
 
 We only [enable the actor for CAPTCHA provider URLs](https://searchfox.org/mozilla-central/rev/dbef1a2f75798fb0136b7428d959c8feb09ad5d1/toolkit/modules/ActorManagerParent.sys.mjs#249-284). This allows us to not consume a lot of resources. This method, however, also restricts us to tracking only CAPTCHAs that embed themselves in an iframe. This is not the case for all CAPTCHAs, for example GeeTest.
 

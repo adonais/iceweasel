@@ -11,7 +11,6 @@
 #include <shellapi.h>
 
 #include <thread>
-#include <chrono>
 
 #ifdef ACCESSIBILITY
 #  include "mozilla/a11y/Compatibility.h"

@@ -771,6 +771,7 @@ struct PlanarYCbCrData {
   gfx::YUVColorSpace mYUVColorSpace = gfx::YUVColorSpace::Default;
   gfx::ColorSpace2 mColorPrimaries = gfx::ColorSpace2::UNKNOWN;
   gfx::TransferFunction mTransferFunction = gfx::TransferFunction::BT709;
+  Maybe<gfx::HDRMetadata> mHDRMetadata;
   gfx::ColorRange mColorRange = gfx::ColorRange::LIMITED;
   gfx::ChromaSubsampling mChromaSubsampling = gfx::ChromaSubsampling::FULL;
 

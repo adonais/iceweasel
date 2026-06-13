@@ -179,21 +179,21 @@ Code (note that most files in base and generic have useful one line
 descriptions at the top that show up when browsing a directory in
 searchfox):
 
-- [layout/base/](http://searchfox.org/mozilla-central/source/layout/base/)
+- [layout/base/](http://searchfox.org/firefox-main/source/layout/base/)
   contains objects that coordinate everything and a bunch of other
   miscellaneous things
-- [layout/generic/](http://searchfox.org/mozilla-central/source/layout/generic/)
+- [layout/generic/](http://searchfox.org/firefox-main/source/layout/generic/)
   contains the basic frame classes as well as support code for their
   reflow methods (`ReflowInput`, `ReflowOutput`, `nsReflowStatus`)
-- [layout/forms/](http://searchfox.org/mozilla-central/source/layout/forms/)
+- [layout/forms/](http://searchfox.org/firefox-main/source/layout/forms/)
   contains frame classes for HTML form controls
-- [layout/tables/](http://searchfox.org/mozilla-central/source/layout/tables/)
+- [layout/tables/](http://searchfox.org/firefox-main/source/layout/tables/)
   contains frame classes for CSS/HTML tables
-- [layout/mathml/](http://searchfox.org/mozilla-central/source/layout/mathml/)
+- [layout/mathml/](http://searchfox.org/firefox-main/source/layout/mathml/)
   contains frame classes for MathML
-- [layout/svg/](http://searchfox.org/mozilla-central/source/layout/svg/)
+- [layout/svg/](http://searchfox.org/firefox-main/source/layout/svg/)
   contains frame classes for SVG
-- [layout/xul/](http://searchfox.org/mozilla-central/source/layout/xul/)
+- [layout/xul/](http://searchfox.org/firefox-main/source/layout/xul/)
   contains frame classes for the XUL box model and for various XUL
   widgets
 
@@ -207,7 +207,7 @@ Further documentation:
 
 Frame construction is the process of creating frames, which is handled
 by
-[`nsCSSFrameConstructor`](http://searchfox.org/mozilla-central/source/layout/base/nsCSSFrameConstructor.h).
+[`nsCSSFrameConstructor`](http://searchfox.org/firefox-main/source/layout/base/nsCSSFrameConstructor.h).
 This is done when styles change in ways that require frames to be
 created or recreated or when nodes are inserted into the document. The
 content tree and the frame tree don't have quite the same shape, and the

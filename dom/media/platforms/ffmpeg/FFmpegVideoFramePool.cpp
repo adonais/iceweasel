@@ -122,6 +122,7 @@ void VideoFrameSurface<LIBAV_VER>::ReleaseVAAPIData(bool aForFrameRecycle) {
   }
 
   mHoldByFFmpeg = false;
+  mVulkanCopySlotIndex = -1;
 
   // Release dmabuf surface now as we're going to replace it.
   if (aForFrameRecycle) {
@@ -144,6 +145,20 @@ VideoFramePool<LIBAV_VER>::~VideoFramePool() {
   DMABUF_LOG("VideoFramePool::~VideoFramePool()");
   MutexAutoLock lock(mSurfaceLock);
   mDMABufSurfaces.Clear();
+}
+
+bool VideoFramePool<LIBAV_VER>::IsVulkanFrameSlotInUseByRenderer(
+    int32_t aSlotIndex) {
+  if (aSlotIndex < 0) {
+    return false;
+  }
+  MutexAutoLock lock(mSurfaceLock);
+  for (const auto& surface : mDMABufSurfaces) {
+    if (surface->mVulkanCopySlotIndex == aSlotIndex) {
+      return surface->IsUsedByRenderer();
+    }
+  }
+  return false;
 }
 
 void VideoFramePool<LIBAV_VER>::ReleaseUnusedVAAPIFrames() {
@@ -409,7 +424,12 @@ static Maybe<VADRMPRIMESurfaceDescriptor> FFmpegDescToVA(
   VADRMPRIMESurfaceDescriptor vaDesc{};
 
   if (aAVFrame->format != AV_PIX_FMT_DRM_PRIME) {
-    DMABUF_LOG("Got non-DRM-PRIME frame from FFmpeg V4L2");
+    AVHWDeviceType hwdeviceType =
+        ((AVHWDeviceContext*)((AVHWFramesContext*)aAVFrame->hw_frames_ctx->data)
+             ->device_ref->data)
+            ->type;
+    DMABUF_LOG("Got non-DRM-PRIME frame from FFmpeg AVHWDeviceType %d",
+               (int)hwdeviceType);
     return Nothing();
   }
 
@@ -425,6 +445,25 @@ static Maybe<VADRMPRIMESurfaceDescriptor> FFmpegDescToVA(
   // Native width and height before crop is applied
   unsigned int uncrop_width = aDesc.layers[0].planes[0].pitch;
   unsigned int uncrop_height = aAVFrame->height;
+
+  const unsigned int yPitch = uncrop_width;
+  unsigned int uvPitch = yPitch;
+#if defined(MOZ_ENABLE_VULKAN_VIDEO) && LIBAVCODEC_VERSION_MAJOR >= 59
+  // Vulkan can expose a distinct UV row stride (GPU drivers may require the
+  // correct UV pitch for EGL DMA-BUF import); VA-API/V4L2 paths keep both
+  // pitches equal to the historical behavior.
+  if (aAVFrame->hw_frames_ctx) {
+    AVHWDeviceType hwdeviceType =
+        ((AVHWDeviceContext*)((AVHWFramesContext*)aAVFrame->hw_frames_ctx->data)
+             ->device_ref->data)
+            ->type;
+    if ((hwdeviceType == AV_HWDEVICE_TYPE_VULKAN) &&
+        (aDesc.layers[0].nb_planes >= 2) &&
+        (aDesc.layers[0].planes[1].pitch > 0)) {
+      uvPitch = static_cast<unsigned int>(aDesc.layers[0].planes[1].pitch);
+    }
+  }
+#endif
 
   unsigned int offset = aDesc.layers[0].planes[0].offset;
 
@@ -454,12 +493,13 @@ static Maybe<VADRMPRIMESurfaceDescriptor> FFmpegDescToVA(
     vaDesc.layers[1].pitch[0] = uncrop_width / 2;
     vaDesc.layers[2].offset[0] = offset + uncrop_width * uncrop_height * 5 / 4;
     vaDesc.layers[2].pitch[0] = uncrop_width / 2;
-  } else if (aDesc.layers[0].format == DRM_FORMAT_NV12) {
+  } else if (aDesc.layers[0].format == DRM_FORMAT_NV12 &&
+             aDesc.nb_layers == 1) {
     vaDesc.fourcc = VA_FOURCC_NV12;
 
-    // V4L2 expresses NV12 as a single contiguous buffer containing both
-    // planes.  DMABufSurfaceYUV expects the two planes separately, so we have
-    // to split them out
+    // V4L2 and Vulkan express NV12 as a single contiguous buffer containing
+    // both planes.  DMABufSurfaceYUV expects the two planes separately, so we
+    // have to split them out
     MOZ_ASSERT(aDesc.nb_objects == 1);
     MOZ_ASSERT(aDesc.nb_layers == 1);
 
@@ -472,12 +512,73 @@ static Maybe<VADRMPRIMESurfaceDescriptor> FFmpegDescToVA(
     for (int i = 0; i < 2; i++) {
       vaDesc.layers[i].num_planes = 1;
       vaDesc.layers[i].object_index[0] = 0;
-      vaDesc.layers[i].pitch[0] = uncrop_width;
     }
+    vaDesc.layers[0].pitch[0] = yPitch;
+    vaDesc.layers[1].pitch[0] = uvPitch;
     vaDesc.layers[0].drm_format = DRM_FORMAT_R8;  // Y plane
     vaDesc.layers[0].offset[0] = offset;
     vaDesc.layers[1].drm_format = DRM_FORMAT_GR88;  // UV plane
-    vaDesc.layers[1].offset[0] = offset + uncrop_width * uncrop_height;
+    // Use actual UV offset if available (Vulkan), otherwise compute (V4L2)
+    vaDesc.layers[1].offset[0] = aDesc.layers[0].nb_planes >= 2
+                                     ? aDesc.layers[0].planes[1].offset
+                                     : offset + yPitch * uncrop_height;
+  } else if (aDesc.layers[0].format == DRM_FORMAT_P010 &&
+             aDesc.nb_layers == 1) {
+    vaDesc.fourcc = VA_FOURCC_P010;
+
+    MOZ_ASSERT(aDesc.nb_objects == 1);
+    MOZ_ASSERT(aDesc.nb_layers == 1);
+
+    vaDesc.num_objects = 1;
+    vaDesc.objects[0].drm_format_modifier = aDesc.objects[0].format_modifier;
+    vaDesc.objects[0].size = aDesc.objects[0].size;
+    vaDesc.objects[0].fd = aDesc.objects[0].fd;
+
+    vaDesc.num_layers = 2;
+    for (int i = 0; i < 2; i++) {
+      vaDesc.layers[i].num_planes = 1;
+      vaDesc.layers[i].object_index[0] = 0;
+    }
+    vaDesc.layers[0].pitch[0] = yPitch;
+    vaDesc.layers[1].pitch[0] = uvPitch;
+    vaDesc.layers[0].drm_format = DRM_FORMAT_R16;  // Y plane
+    vaDesc.layers[0].offset[0] = offset;
+    vaDesc.layers[1].drm_format = DRM_FORMAT_GR1616;  // UV plane
+    vaDesc.layers[1].offset[0] = aDesc.layers[0].nb_planes >= 2
+                                     ? aDesc.layers[0].planes[1].offset
+                                     : offset + yPitch * uncrop_height;
+  } else if (aDesc.nb_layers == 2 && aDesc.layers[0].format == DRM_FORMAT_R8 &&
+             aDesc.layers[1].format == DRM_FORMAT_GR88 &&
+             aDesc.nb_objects == 1) {
+    vaDesc.fourcc = VA_FOURCC_NV12;
+    vaDesc.num_objects = 1;
+    vaDesc.objects[0].drm_format_modifier = aDesc.objects[0].format_modifier;
+    vaDesc.objects[0].size = aDesc.objects[0].size;
+    vaDesc.objects[0].fd = aDesc.objects[0].fd;
+    vaDesc.num_layers = 2;
+    for (int i = 0; i < 2; i++) {
+      vaDesc.layers[i].num_planes = 1;
+      vaDesc.layers[i].object_index[0] = 0;
+      vaDesc.layers[i].drm_format = aDesc.layers[i].format;
+      vaDesc.layers[i].pitch[0] = aDesc.layers[i].planes[0].pitch;
+      vaDesc.layers[i].offset[0] = aDesc.layers[i].planes[0].offset;
+    }
+  } else if (aDesc.nb_layers == 2 && aDesc.layers[0].format == DRM_FORMAT_R16 &&
+             aDesc.layers[1].format == DRM_FORMAT_GR1616 &&
+             aDesc.nb_objects == 1) {
+    vaDesc.fourcc = VA_FOURCC_P010;
+    vaDesc.num_objects = 1;
+    vaDesc.objects[0].drm_format_modifier = aDesc.objects[0].format_modifier;
+    vaDesc.objects[0].size = aDesc.objects[0].size;
+    vaDesc.objects[0].fd = aDesc.objects[0].fd;
+    vaDesc.num_layers = 2;
+    for (int i = 0; i < 2; i++) {
+      vaDesc.layers[i].num_planes = 1;
+      vaDesc.layers[i].object_index[0] = 0;
+      vaDesc.layers[i].drm_format = aDesc.layers[i].format;
+      vaDesc.layers[i].pitch[0] = aDesc.layers[i].planes[0].pitch;
+      vaDesc.layers[i].offset[0] = aDesc.layers[i].planes[0].offset;
+    }
   } else {
     DMABUF_LOG("Don't know how to deal with FOURCC 0x%x",
                aDesc.layers[0].format);
@@ -511,7 +612,12 @@ VideoFramePool<LIBAV_VER>::GetVideoFrameSurface(AVDRMFrameDescriptor& aDesc,
                                        /* aRecycleSurface */ false);
   RefPtr<DMABufSurfaceYUV> surface = videoSurface->GetDMABufSurface();
 
-  DMABUF_LOG("Using V4L2 DMABufSurface UID %d", surface->GetUID());
+  AVHWDeviceType hwdeviceType =
+      ((AVHWDeviceContext*)((AVHWFramesContext*)aAVFrame->hw_frames_ctx->data)
+           ->device_ref->data)
+          ->type;
+  DMABUF_LOG("Using %s DMABufSurface UID %d",
+             aLib->av_hwdevice_get_type_name(hwdeviceType), surface->GetUID());
 
   bool copySurface = mTextureCopyWorks && ShouldCopySurface();
   if (!surface->UpdateYUVData(layerDesc.value(), crop_width, crop_height,

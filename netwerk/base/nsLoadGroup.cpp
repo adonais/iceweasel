@@ -211,6 +211,7 @@ nsLoadGroup::Cancel(nsresult status) {
 
   mStatus = NS_OK;
   mIsCanceling = false;
+  mCanceledReason.Truncate();
 
   return firstError;
 }

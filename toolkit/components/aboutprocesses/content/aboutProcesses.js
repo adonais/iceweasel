@@ -1202,13 +1202,13 @@ var Control = {
           // We've clicked on a tab, navigate.
           let { tab, tabbrowser } = target.parentNode.win.tab;
           tabbrowser.selectedTab = tab;
-          tabbrowser.ownerGlobal.focus();
+          tabbrowser.documentGlobal.focus();
           return;
         }
         if (target.classList.contains("extensions")) {
           // We've clicked on the extensions process, open or reuse window.
           let parentWin =
-            window.docShell.browsingContext.embedderElement.ownerGlobal;
+            window.docShell.browsingContext.embedderElement.documentGlobal;
           parentWin.BrowserAddonUI.openAddonsMgr();
           return;
         }

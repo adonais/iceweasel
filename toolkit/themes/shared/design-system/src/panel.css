@@ -3,45 +3,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 :root {
-  /* Panel */
-  --panel-background: Field;
-  --panel-border-color: ThreeDShadow;
-  --panel-border-radius: var(--border-radius-medium);
-  --panel-color: FieldText;
-  --panel-padding-block: var(--dimension-4);
-  --panel-padding: var(--dimension-16);
-  --panel-shadow-margin: var(--dimension-4);
-  --panel-shadow: 0 0 var(--panel-shadow-margin) hsla(0, 0%, 0%, 0.2);
-  --panel-width: initial;
-  --panel-dimmed: color-mix(in srgb, currentColor 17%, transparent);
-  --panel-dimmed-further: color-mix(in srgb, currentColor 30%, transparent);
-
-  /* Panel Header */
-  --panel-header-info-icon-padding: var(--dimension-4);
-  --panel-header-info-icon-full-width: calc(var(--icon-size-small) + (2 * var(--panel-header-info-icon-padding)));
-
-  /* Panel Menuitem */
-  --panel-menuitem-border-radius: var(--border-radius-small);
-  --panel-menuitem-margin-block: 0px;
-  --panel-menuitem-margin-inline: var(--dimension-8);
-  --panel-menuitem-margin: var(--panel-menuitem-margin-block) var(--panel-menuitem-margin-inline);
-  --panel-menuitem-padding-block: var(--dimension-8);
-  --panel-menuitem-padding-inline: var(--dimension-8);
-  --panel-menuitem-padding: var(--panel-menuitem-padding-block) var(--panel-menuitem-padding-inline);
-
   /* Compact mode */
   &[uidensity="compact"] {
     --panel-menuitem-margin-inline: var(--dimension-4);
     --panel-menuitem-padding-block: var(--dimension-4);
-  }
-}
-
-@media not ((forced-colors) or (-moz-native-theme)) {
-  :root:not([lwtheme]) {
-    --panel-background: light-dark(white, rgb(66, 65, 77));
-    --panel-border-color: light-dark(rgb(240, 240, 244), rgb(82, 82, 94));
-    --panel-color: light-dark(black, rgb(251, 251, 254));
-    --panel-dimmed: light-dark(color-mix(in srgb, currentColor 12%, transparent), color-mix(in srgb, currentColor 17%, transparent));
-    --panel-dimmed-further: light-dark(color-mix(in srgb, currentColor 20%, transparent), color-mix(in srgb, currentColor 14%, transparent));
   }
 }

@@ -45,7 +45,8 @@ def _download_zip(distdir, arch):
         dest,
         "--no-tests",
         "--no-process",
-        "--maven-zip",
+        "--artifact-filter",
+        "public/build/target.maven.zip",
     ])
     return mozpath.join(dest, "target.maven.zip")
 

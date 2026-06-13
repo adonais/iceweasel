@@ -27,9 +27,10 @@ struct ParamTraits<mozilla::a11y::role>
 
 template <>
 struct ParamTraits<mozilla::a11y::AccType>
-    : public ContiguousEnumSerializerInclusive<
-          mozilla::a11y::AccType, mozilla::a11y::AccType::eNoType,
-          mozilla::a11y::AccType::eLastAccType> {};
+    : public ContiguousEnumSerializerInclusive<mozilla::a11y::AccType,
+                                               mozilla::a11y::AccType::eNoType,
+                                               mozilla::a11y::kHighestAccType> {
+};
 
 template <>
 struct ParamTraits<mozilla::a11y::AccGenericType>

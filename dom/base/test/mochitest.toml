@@ -133,6 +133,7 @@ support-files = [
   "file_domwindowutils_animation.html",
   "file_domwindowutils_dynamic_toolbar.html",
   "file_focus_shadow_dom.html",
+  "file_focus_shadow_dom_oop_iframe_inner.html",
   "file_general_document.html",
   "file_history_document_open.html",
   "file_lock_orientation_with_pending_fullscreen.html",
@@ -360,6 +361,11 @@ skip-if = [
   "os == 'android'", # Bug 1525959
 ]
 
+["test_drag_drop_caret.html"]
+skip-if = [
+  "os == 'android'",
+]
+
 ["test_drag_drop_shadow_crossing_selection.html"]
 
 ["test_element.matches.html"]
@@ -419,6 +425,8 @@ skip-if = [
   "http3",
 ]
 
+["test_focus_hidden_overflow.html"]
+
 ["test_focus_keyboard_event.html"]
 skip-if = [
   "http2",
@@ -429,13 +437,13 @@ skip-if = [
 
 ["test_focus_scroll_padding_tab.html"]
 
-["test_focus_hidden_overflow.html"]
-
 ["test_focus_scrollable_fieldset.html"]
 
 ["test_focus_scrollable_input.html"]
 
 ["test_focus_shadow_dom.html"]
+
+["test_focus_shadow_dom_oop_iframe.html"]
 
 ["test_focus_shadow_dom_root.html"]
 
@@ -633,6 +641,9 @@ support-files = ["file_sandbox_and_document_uri.html"]
 ["test_screen_orientation.html"]
 
 ["test_script_loader_crossorigin_data_url.html"]
+
+["test_selection_change_null_presshell.html"]
+support-files = ["file_selection_change_null_presshell.html"]
 
 ["test_setInterval_from_start.html"]
 

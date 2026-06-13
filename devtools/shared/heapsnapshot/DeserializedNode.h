@@ -90,7 +90,7 @@ struct DeserializedNode {
         scriptFilename(filename),
         descriptiveTypeName(descriptiveName),
         owner(&owner) {}
-  virtual ~DeserializedNode() {}
+  virtual ~DeserializedNode() = default;
 
   DeserializedNode(DeserializedNode&& rhs)
       : id(rhs.id),

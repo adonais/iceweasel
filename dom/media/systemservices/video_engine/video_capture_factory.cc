@@ -6,6 +6,7 @@
 
 #include "VideoEngine.h"
 #include "desktop_capture_impl.h"
+#include "fake_video_capture/device_info_empty.h"
 #include "fake_video_capture/device_info_fake.h"
 #include "fake_video_capture/video_capture_fake.h"
 #include "mozilla/StaticPrefs_media.h"
@@ -51,7 +52,11 @@ VideoCaptureFactory::CreateDeviceInfo(
       return Some(StaticPrefs::media_getusermedia_camera_fake_force());
     });
     if (*mUseFakeCamera) {
-      deviceInfo.reset(new webrtc::videocapturemodule::DeviceInfoFake());
+      if (StaticPrefs::media_getusermedia_camera_fake_no_capabilities()) {
+        deviceInfo.reset(new webrtc::videocapturemodule::DeviceInfoEmpty());
+      } else {
+        deviceInfo.reset(new webrtc::videocapturemodule::DeviceInfoFake());
+      }
       return deviceInfo;
     }
 #if (defined(WEBRTC_LINUX) || defined(WEBRTC_BSD)) && !defined(WEBRTC_ANDROID)

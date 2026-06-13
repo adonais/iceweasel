@@ -12,12 +12,6 @@ const FINGERPRINTING_PREF = "privacy.trackingprotection.fingerprinting.enabled";
 const SUSPECT_FP_PREF = "privacy.fingerprintingProtection";
 const SUSPECT_FP_PBM_PREF = "privacy.fingerprintingProtection.pbmode";
 
-add_setup(async function () {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.settings-redesign.enabled", true]],
-  });
-});
-
 // Checks tracking protection toggle and scope dropdown interactions.
 add_task(async function test_custom_cookie_controls() {
   let defaults = Services.prefs.getDefaultBranch("");

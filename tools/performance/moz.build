@@ -7,7 +7,6 @@ UNIFIED_SOURCES += ["PageloadEvent.cpp", "PerfStats.cpp"]
 EXPORTS.mozilla += [
     "PageloadEvent.h",
     "Perfetto.h",
-    "PerfStats.h",
 ]
 
 DEFINES["MOZ_APP_VERSION_DISPLAY"] = CONFIG["MOZ_APP_VERSION_DISPLAY"]

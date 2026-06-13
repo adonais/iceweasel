@@ -6,12 +6,13 @@
       "matches": ["*://votermaps.org/*"]
     }
   },
+  "css": {
+    "center-map-icons": "svg { white-space: initial; }"
+  },
   "interventions": [
     {
       "platforms": ["all"],
-      "content_scripts": {
-        "css": ["bug1928605-votermaps.org-center-map-icons.css"]
-      }
+      "css": ["center-map-icons"]
     }
   ]
 }

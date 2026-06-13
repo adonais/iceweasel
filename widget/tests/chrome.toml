@@ -175,6 +175,11 @@ support-files = [
   "window_mouse_scroll_win_2.html",
 ]
 
+["test_native_anchored_menus.xhtml"]
+run-if = [
+  "os == 'mac'", # Cocoa widget test
+]
+
 ["test_native_context_menus.xhtml"]
 run-if = [
   "os == 'mac'", # Cocoa widget test
@@ -183,6 +188,11 @@ run-if = [
 ["test_native_key_bindings_mac.html"]
 run-if = [
   "os == 'mac'", # Cocoa widget test
+]
+
+["test_rtl_native_key_bindings_gtk.html"]
+run-if = [
+  "os == 'linux'", # GTK widget test
 ]
 
 ["test_native_menus.xhtml"]

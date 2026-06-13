@@ -116,7 +116,7 @@ enum RequestDestination {
   "",
   "audio", "audioworklet", "document", "embed", "font", "frame", "iframe",
   "image", "json", "manifest", "object", "paintworklet", "report", "script",
-  "sharedworker", "style",  "track", "video", "worker", "xslt"
+  "sharedworker", "style", "text", "track", "video", "worker", "xslt"
 };
 
 enum RequestMode { "same-origin", "no-cors", "cors", "navigate" };

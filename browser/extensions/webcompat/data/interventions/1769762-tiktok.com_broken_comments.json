@@ -10,7 +10,7 @@
     {
       "platforms": ["all"],
       "content_scripts": {
-        "js": ["bug1769762-tiktok.com-plugins-shim.js"]
+        "js": ["clear_navigator_plugins.js"]
       }
     }
   ]

@@ -9,6 +9,21 @@ const TOKEN_LABELS = {
   FOLLOWUP: "followup",
 };
 
+// Deterministic fallback normalization for follow-up suggestions. Token/tag
+// extraction can leave whitespace artifacts ("sentence ."), and the model
+// sometimes emits a trailing period or other terminal punctuation that we
+// don't want to render in the suggestion chips.
+function normalizeFollowUp(value) {
+  if (!value) {
+    return "";
+  }
+  return value
+    .replace(/[.!?…]+\s*$/u, "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .replace(/ ([.,!?…;:])/g, "$1");
+}
+
 /**
  * @import { ContextWebsite } from "chrome://browser/content/urlbar/SmartbarInput.mjs"
  */
@@ -60,6 +75,7 @@ export class ChatMessage {
   followUpSuggestions; // transient value
   pageHistoryDeleted;
   tokens;
+  toolUIData;
 
   /**
    * @param {object} param
@@ -108,6 +124,7 @@ export class ChatMessage {
    * the only message of the revision branch set to true.
    * @param {?boolean} param.pageHistoryDeleted - Whether pageUrl was removed due
    * to a history removal action like Forget This Site or Delete Page
+   * @param {?object} param.toolUIData - Tool UI data to render with this message
    */
   constructor({
     ordinal,
@@ -130,6 +147,7 @@ export class ChatMessage {
     revisionRootMessageId = id,
     isActiveBranch = true,
     pageHistoryDeleted = false,
+    toolUIData = null,
   }) {
     this.id = id;
     this.createdDate = createdDate;
@@ -151,6 +169,7 @@ export class ChatMessage {
     this.webSearchQueries = webSearchQueries;
     this.followUpSuggestions = followUpSuggestions;
     this.pageHistoryDeleted = pageHistoryDeleted;
+    this.toolUIData = toolUIData;
     this.tokens = {
       search: [],
       existing_memory: [],
@@ -167,8 +186,16 @@ export class ChatMessage {
    */
   addTokens(tokens) {
     tokens.forEach(({ key, value }) => {
+      let storedValue = value;
+      if (key == TOKEN_LABELS.FOLLOWUP) {
+        storedValue = normalizeFollowUp(value);
+        if (!storedValue) {
+          return;
+        }
+      }
+
       if (Array.isArray(this.tokens[key])) {
-        this.tokens[key].push(value);
+        this.tokens[key].push(storedValue);
       }
 
       switch (key) {
@@ -179,7 +206,7 @@ export class ChatMessage {
           this.webSearchQueries.push(value);
           break;
         case TOKEN_LABELS.FOLLOWUP:
-          this.followUpSuggestions.push(value);
+          this.followUpSuggestions.push(storedValue);
       }
     });
   }

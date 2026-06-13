@@ -29,10 +29,16 @@ enum RTCBundlePolicy {
     "max-bundle"
 };
 
+enum RTCRtcpMuxPolicy {
+    "require",
+    "negotiate"
+};
+
 dictionary RTCConfiguration {
     sequence<RTCIceServer> iceServers = [];
     RTCIceTransportPolicy  iceTransportPolicy = "all";
     RTCBundlePolicy bundlePolicy = "balanced";
+    RTCRtcpMuxPolicy rtcpMuxPolicy = "require";
     DOMString? peerIdentity = null;
     sequence<RTCCertificate> certificates = [];
 

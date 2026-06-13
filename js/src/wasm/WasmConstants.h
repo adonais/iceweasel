@@ -225,6 +225,10 @@ enum class Trap {
   Limit
 };
 
+#ifdef JS_JITSPEW
+const char* NameOfTrap(Trap t);
+#endif
+
 enum class DefinitionKind {
   Function = 0x00,
   Table = 0x01,
@@ -1251,14 +1255,6 @@ static const unsigned MaxHandlers = 16;
 // At sizeof(int64) bytes per slot this works out to about 480KiB.
 
 static const unsigned MaxFrameSize = 512 * 1024;
-
-// The wasm usable size of a continuation stack.
-static const size_t ContJitStackSize = 0x100000;
-
-// Size of additional space at the top of a continuation stack.
-// The space is allocated to C++ handlers such as error/trap handlers,
-// or stack snapshots utilities.
-static const size_t ContRedZoneSize = 0x8000;
 
 // Asserted by Decoder::readVarU32.
 

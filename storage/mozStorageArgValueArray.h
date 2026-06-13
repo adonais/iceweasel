@@ -20,7 +20,7 @@ class ArgValueArray final : public mozIStorageValueArray {
   NS_DECL_MOZISTORAGEVALUEARRAY
 
  private:
-  ~ArgValueArray() {}
+  ~ArgValueArray() = default;
 
   uint32_t mArgc;
   sqlite3_value** mArgv;

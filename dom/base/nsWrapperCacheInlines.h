@@ -67,36 +67,4 @@ inline void nsWrapperCache::MarkWrapperLive() {
   GetWrapper();
 }
 
-template <typename T>
-inline void nsWrapperCache::UpdateWrapperForNewGlobal(T* aScriptObjectHolder,
-                                                      JSObject* aNewWrapper) {
-  // If the new wrapper is in a different zone we must ensure the
-  // DropJSObjects/HoldJSObjects are called to move the holder to the new zone.
-
-  bool preserving = PreservingWrapper();
-  bool zoneChanged =
-      preserving && (JS::GetObjectZone(GetWrapperPreserveColor()) !=
-                     JS::GetObjectZone(aNewWrapper));
-
-  if (zoneChanged) {
-    ReleaseWrapper(aScriptObjectHolder);
-  } else if (preserving) {
-    SetPreservingWrapper(false);
-  }
-
-  JSObject* oldWrapper = mWrapper;
-  SetWrapper(aNewWrapper);
-
-  if (zoneChanged) {
-    PreserveWrapper(aScriptObjectHolder);
-  } else if (preserving) {
-    SetPreservingWrapper(true);
-    if (!JS::ObjectIsTenured(mWrapper)) {
-      // SetWrapper doesn't fire a write barrier; add one so minor GC can
-      // update mWrapper if the new wrapper is tenured.
-      JS::HeapObjectPostWriteBarrier(&mWrapper, oldWrapper, mWrapper);
-    }
-  }
-}
-
 #endif /* nsWrapperCache_h_ */

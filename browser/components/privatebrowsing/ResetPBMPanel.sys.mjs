@@ -36,7 +36,7 @@ export const ResetPBMPanel = {
     // Populate _widgetConfig during init to defer (lazy) CustomizableUI import.
     this._widgetConfig ??= {
       id: "reset-pbm-toolbar-button",
-      l10nId: "reset-pbm-toolbar-button",
+      l10nId: "reset-pbm-toolbar-button2",
       type: "view",
       viewId: "reset-pbm-panel",
       defaultArea: lazy.CustomizableUI.AREA_NAVBAR,
@@ -62,7 +62,7 @@ export const ResetPBMPanel = {
    */
   async onViewShowing(event) {
     let panelview = event.target;
-    let triggeringWindow = panelview.ownerGlobal;
+    let triggeringWindow = panelview.documentGlobal;
 
     // We may skip the confirmation panel if disabled via pref.
     if (!this._shouldConfirmClear) {
@@ -135,7 +135,7 @@ export const ResetPBMPanel = {
     if (!this._enabled) {
       throw new Error("Not initialized.");
     }
-    let triggeringWindow = button.ownerGlobal;
+    let triggeringWindow = button.documentGlobal;
 
     // Write the checkbox state to pref. Only do this when the user
     // confirms.

@@ -63,10 +63,11 @@ void HighlightRegistry::MaybeAddRangeToHighlightSelection(
     return;
   }
   MOZ_ASSERT(frameSelection->GetPresShell());
-  if (!frameSelection->GetPresShell()->GetDocument() ||
-      frameSelection->GetPresShell()->GetDocument() !=
-          aRange.GetComposedDocOfContainers()) {
-    // ranges that belong to a different document must not be added.
+  Document* rangeDoc = aRange.GetComposedDocOfContainers();
+  if (rangeDoc && rangeDoc != frameSelection->GetPresShell()->GetDocument()) {
+    // Ranges in a different document must not be added. Detached ranges
+    // (rangeDoc == null) are allowed so they are found by the painting code
+    // once their nodes enter the document.
     return;
   }
   for (auto const& iter : mHighlightsOrdered) {

@@ -25,7 +25,7 @@ class ScriptedNotificationObserver : public imgINotificationObserver {
   NS_DECL_CYCLE_COLLECTION_CLASS(ScriptedNotificationObserver)
 
  private:
-  virtual ~ScriptedNotificationObserver() {}
+  virtual ~ScriptedNotificationObserver() = default;
   nsCOMPtr<imgIScriptedNotificationObserver> mInner;
 };
 

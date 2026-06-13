@@ -129,7 +129,7 @@ xpcAccessibleHyperText::GetTextAttributes(
 
   RefPtr<AccAttributes> attributes = Intl()->TextAttributes(
       aIncludeDefAttrs, aOffset, aStartOffset, aEndOffset);
-  RefPtr<nsPersistentProperties> props = new nsPersistentProperties();
+  auto props = MakeRefPtr<nsPersistentProperties>();
   nsAutoString unused;
   for (auto iter : *attributes) {
     nsAutoString name;
@@ -154,7 +154,7 @@ xpcAccessibleHyperText::GetDefaultTextAttributes(
   if (!mIntl) return NS_ERROR_FAILURE;
 
   RefPtr<AccAttributes> attributes = Intl()->DefaultTextAttributes();
-  RefPtr<nsPersistentProperties> props = new nsPersistentProperties();
+  auto props = MakeRefPtr<nsPersistentProperties>();
   nsAutoString unused;
   for (auto iter : *attributes) {
     nsAutoString name;

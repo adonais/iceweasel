@@ -208,7 +208,8 @@ txStylesheetSink::OnDataAvailable(nsIRequest* aRequest,
     }
   }
 
-  return mListener->OnDataAvailable(aRequest, aInputStream, aOffset, aCount);
+  nsCOMPtr<nsIStreamListener> listener = mListener;
+  return listener->OnDataAvailable(aRequest, aInputStream, aOffset, aCount);
 }
 
 NS_IMETHODIMP
@@ -263,7 +264,8 @@ txStylesheetSink::OnStartRequest(nsIRequest* aRequest) {
     }
   }
 
-  return mListener->OnStartRequest(aRequest);
+  nsCOMPtr<nsIStreamListener> listener = mListener;
+  return listener->OnStartRequest(aRequest);
 }
 
 NS_IMETHODIMP
@@ -295,7 +297,8 @@ txStylesheetSink::OnStopRequest(nsIRequest* aRequest, nsresult aStatusCode) {
     mCompiler->cancel(result, nullptr, spec.get());
   }
 
-  nsresult rv = mListener->OnStopRequest(aRequest, aStatusCode);
+  nsCOMPtr<nsIStreamListener> listener = mListener;
+  nsresult rv = listener->OnStopRequest(aRequest, aStatusCode);
   mListener = nullptr;
   mParser = nullptr;
   return rv;

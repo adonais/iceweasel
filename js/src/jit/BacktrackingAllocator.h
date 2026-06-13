@@ -535,9 +535,6 @@ class VirtualRegister {
   // If true, the |ranges_| vector is guaranteed to be sorted.
   bool rangesSorted_ = true;
 
-  void operator=(const VirtualRegister&) = delete;
-  VirtualRegister(const VirtualRegister&) = delete;
-
 #ifdef DEBUG
   void assertRangesSorted() const;
 #else
@@ -551,6 +548,9 @@ class VirtualRegister {
 
  public:
   VirtualRegister() = default;
+
+  void operator=(const VirtualRegister&) = delete;
+  VirtualRegister(const VirtualRegister&) = delete;
 
   void init(LNode* ins, LDefinition* def, bool isTemp) {
     MOZ_ASSERT(!ins_);

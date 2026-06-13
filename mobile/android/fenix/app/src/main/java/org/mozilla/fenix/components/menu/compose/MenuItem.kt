@@ -25,7 +25,6 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -52,6 +51,7 @@ import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import mozilla.components.compose.base.button.IconButton
 import mozilla.components.compose.base.modifier.thenConditional
 import mozilla.components.compose.base.theme.surfaceDimVariant
 import org.mozilla.fenix.R
@@ -280,8 +280,9 @@ internal fun WebExtensionMenuItem(
                     VerticalDivider()
 
                     IconButton(
-                        modifier = Modifier.size(24.dp),
                         onClick = onSettingsClick,
+                        contentDescription = null,
+                        modifier = Modifier.size(24.dp),
                     ) {
                         Icon(
                             painter = painterResource(iconsR.drawable.mozac_ic_settings_24),

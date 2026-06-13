@@ -17,7 +17,6 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import mozilla.components.browser.state.search.SearchEngine
 import mozilla.components.browser.state.state.availableSearchEngines
@@ -51,6 +50,7 @@ import org.mozilla.fenix.home.topsites.interactor.TopSiteInteractor
 import org.mozilla.fenix.settings.SupportUtils
 import org.mozilla.fenix.utils.Settings
 import java.lang.ref.WeakReference
+import androidx.appcompat.R as appcompatR
 import mozilla.components.ui.icons.R as iconsR
 
 /**
@@ -180,7 +180,7 @@ class DefaultTopSiteController(
                     val urlText = urlEditText.text.toString()
 
                     if (urlText.isUrl()) {
-                        viewLifecycleScope.launch(Dispatchers.IO) {
+                        viewLifecycleScope.launch {
                             updateTopSite(
                                 topSite = topSite,
                                 title = titleEditText.text.toString(),
@@ -191,7 +191,7 @@ class DefaultTopSiteController(
                         dialog.dismiss()
                     } else {
                         val criticalColor = ColorStateList.valueOf(
-                            activity.getColorFromAttr(R.attr.textCritical),
+                            activity.getColorFromAttr(appcompatR.attr.colorError),
                         )
                         urlLayout.setErrorIconTintList(criticalColor)
                         urlLayout.setErrorTextColor(criticalColor)
@@ -216,7 +216,7 @@ class DefaultTopSiteController(
     }
 
     @VisibleForTesting
-    internal fun updateTopSite(topSite: TopSite, title: String, url: String) {
+    internal suspend fun updateTopSite(topSite: TopSite, title: String, url: String) {
         if (topSite is TopSite.Frecent) {
             topSitesUseCases.addPinnedSites(
                 title = title,
@@ -238,7 +238,7 @@ class DefaultTopSiteController(
             SupportUtils.GOOGLE_URL -> TopSites.googleTopSiteRemoved.record(NoExtras())
         }
 
-        viewLifecycleScope.launch(Dispatchers.IO) {
+        viewLifecycleScope.launch {
             with(activity.components.useCases.topSitesUseCase) {
                 removeTopSites(topSite)
             }
@@ -352,19 +352,19 @@ class DefaultTopSiteController(
     }
 
     private fun sendMarsTopSiteCallback(url: String) {
-        viewLifecycleScope.launch(Dispatchers.IO) {
+        viewLifecycleScope.launch {
             marsUseCases.recordInteraction(url)
         }
     }
 
     private fun sendMozAdsClickInteraction(clickUrl: String) {
-        viewLifecycleScope.launch(Dispatchers.IO) {
+        viewLifecycleScope.launch {
             mozAdsUseCases.recordClickInteraction(clickUrl = clickUrl)
         }
     }
 
     private fun sendMozAdsImpressionInteraction(impressionUrl: String) {
-        viewLifecycleScope.launch(Dispatchers.IO) {
+        viewLifecycleScope.launch {
             mozAdsUseCases.recordImpressionInteraction(impressionUrl = impressionUrl)
         }
     }

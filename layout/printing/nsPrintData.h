@@ -38,10 +38,10 @@ class nsPrintData {
   bool mOnStartSent;
   bool mIsAborted;  // tells us the document is being aborted
 
- private:
   nsPrintData() = delete;
   nsPrintData& operator=(const nsPrintData& aOther) = delete;
 
+ private:
   ~nsPrintData();  // non-virtual
 };
 

@@ -481,7 +481,7 @@ export class FeatureCallout {
       case "popupshowing":
         // If another panel is showing, close the tour.
         if (
-          event.target.ownerGlobal === this.win &&
+          event.target.documentGlobal === this.win &&
           event.target !== this._container &&
           event.target.localName === "panel" &&
           event.target.id !== "ctrlTab-panel" &&
@@ -804,7 +804,7 @@ export class FeatureCallout {
 
     // %triggerTab%
     if (this.browser && normalizedSelector.includes("%triggerTab%")) {
-      const triggerTab = this.browser.ownerGlobal.gBrowser?.getTabForBrowser(
+      const triggerTab = this.browser.documentGlobal.gBrowser?.getTabForBrowser(
         this.browser
       );
       if (!triggerTab) {
@@ -819,7 +819,7 @@ export class FeatureCallout {
 
     // %triggeredTabBookmark%
     if (normalizedSelector.includes("%triggeredTabBookmark%")) {
-      const gBrowser = this.browser?.ownerGlobal?.gBrowser;
+      const gBrowser = this.browser?.documentGlobal?.gBrowser;
       const tab = gBrowser?.getTabForBrowser(this.browser);
       const url = this.browser?.currentURI?.spec;
       const label = tab?.label;
@@ -990,7 +990,7 @@ export class FeatureCallout {
         case "end": {
           // Inline arrow, i.e. arrow is on one of the left/right edges.
           let isRTL =
-            this.ownerGlobal.getComputedStyle(this).direction === "rtl";
+            this.documentGlobal.getComputedStyle(this).direction === "rtl";
           let isRight = isRTL ^ (positionParts[1] === "start");
           let side = isRight ? "end" : "start";
           arrowPosition = `inline-${side}`;
@@ -1056,6 +1056,7 @@ export class FeatureCallout {
             type="arrow"
             consumeoutsideclicks="never"
             norolluponanchor="true"
+            nonnative=""
             position="${panel_position.panel_position_string}"
             ${hide_arrow ? "" : 'show-arrow=""'}
             ${autohide ? "" : 'noautohide="true"'}
@@ -1601,10 +1602,16 @@ export class FeatureCallout {
       handleActorMessage(`AWPage:${name}`, data, this.browser);
     const telemetryMessageHandler = getActionHandler("TELEMETRY_EVENT");
     const AWSendEventTelemetry = data => {
-      if (this.config?.metrics !== "block") {
-        return telemetryMessageHandler(data);
+      if (this.config?.metrics === "block") {
+        return null;
       }
-      return null;
+      if (this.config?.write_in_microsurvey) {
+        if (!data.event_context) {
+          data.event_context = {};
+        }
+        data.event_context.write_in_microsurvey = true;
+      }
+      return telemetryMessageHandler(data);
     };
     this._windowFuncs = {
       AWGetFeatureConfig: () => this.config,
@@ -2035,7 +2042,7 @@ export class FeatureCallout {
       if (doc !== this.doc) {
         let windowIndex = [
           ...Services.wm.getEnumerator("navigator:browser"),
-        ].indexOf(target.ownerGlobal);
+        ].indexOf(target.documentGlobal);
         source = `window${windowIndex + 1}: ${source}`;
       }
     }
@@ -2527,8 +2534,8 @@ export class FeatureCallout {
         // show through the callout background. Put the Menu color behind the
         // panel-background.
         background:
-          "Menu linear-gradient(var(--panel-background), var(--panel-background))",
-        color: "var(--panel-color)",
+          "Menu linear-gradient(var(--panel-background-color), var(--panel-background-color))",
+        color: "var(--panel-text-color)",
         border: "var(--panel-border-color)",
         "accent-color": "var(--focus-outline-color)",
         // Button Background
@@ -2575,15 +2582,15 @@ export class FeatureCallout {
         "icon-success-color": "var(--color-accent-attention)",
         // Dismiss Button
         "dismiss-button-background":
-          "Menu linear-gradient(var(--panel-background), var(--panel-background))",
+          "Menu linear-gradient(var(--panel-background-color), var(--panel-background-color))",
         "dismiss-button-background-hover":
-          "Menu linear-gradient(color-mix(in srgb, currentColor 14%, var(--panel-background)))",
+          "Menu linear-gradient(color-mix(in srgb, currentColor 14%, var(--panel-background-color)))",
         "dismiss-button-background-active":
-          "Menu linear-gradient(color-mix(in srgb, currentColor 21%, var(--panel-background)))",
+          "Menu linear-gradient(color-mix(in srgb, currentColor 21%, var(--panel-background-color)))",
       },
       hcm: {
-        background: "var(--panel-background)",
-        "dismiss-button-background": "var(--panel-background)",
+        background: "var(--panel-background-color)",
+        "dismiss-button-background": "var(--panel-background-color)",
         "dismiss-button-background-hover":
           "color-mix(in srgb, currentColor 14%, SelectedItem)",
         "dismiss-button-background-active":

@@ -13,17 +13,15 @@
 
 #include "HeadlessSound.h"
 #include "nsSound.h"
-#include "nsIURL.h"
-#include "nsNetUtil.h"
-#include "nsIChannel.h"
-#include "nsContentUtils.h"
 #include "nsCRT.h"
 #include "nsIObserverService.h"
 
 #include "mozilla/Logging.h"
+#include "mozilla/Services.h"
 #include "prtime.h"
 
 #include "nsNativeCharsetUtils.h"
+#include "nsIThread.h"
 #include "nsThreadUtils.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "gfxPlatform.h"
@@ -131,7 +129,7 @@ already_AddRefed<nsISound> nsSound::GetInstance() {
 #  define SND_PURGE 0
 #endif
 
-NS_IMPL_ISUPPORTS(nsSound, nsISound, nsIStreamLoaderObserver, nsIObserver)
+NS_IMPL_ISUPPORTS(nsSound, nsISound, nsIObserver)
 
 nsSound::nsSound() : mInited(false) {}
 
@@ -162,68 +160,6 @@ NS_IMETHODIMP nsSound::Beep() {
   ::MessageBeep(0);
 
   return NS_OK;
-}
-
-NS_IMETHODIMP nsSound::OnStreamComplete(nsIStreamLoader* aLoader,
-                                        nsISupports* context, nsresult aStatus,
-                                        uint32_t dataLen, const uint8_t* data) {
-  MOZ_ASSERT(mPlayerThread, "player thread should not be null ");
-  // print a load error on bad status
-  if (NS_FAILED(aStatus)) {
-#ifdef DEBUG
-    if (aLoader) {
-      nsCOMPtr<nsIRequest> request;
-      nsCOMPtr<nsIChannel> channel;
-      aLoader->GetRequest(getter_AddRefs(request));
-      if (request) channel = do_QueryInterface(request);
-      if (channel) {
-        nsCOMPtr<nsIURI> uri;
-        channel->GetURI(getter_AddRefs(uri));
-        if (uri) {
-          nsAutoCString uriSpec;
-          uri->GetSpec(uriSpec);
-          MOZ_LOG(gWin32SoundLog, LogLevel::Info,
-                  ("Failed to load %s\n", uriSpec.get()));
-        }
-      }
-    }
-#endif
-    return aStatus;
-  }
-
-  PurgeLastSound();
-
-  if (data && dataLen > 0) {
-    MOZ_ASSERT(!mSoundPlayer, "mSoundPlayer should be null");
-    mSoundPlayer = new nsSoundPlayer(data, dataLen);
-    MOZ_ASSERT(mSoundPlayer, "Could not create player");
-
-    nsresult rv = mPlayerThread->Dispatch(mSoundPlayer, NS_DISPATCH_NORMAL);
-    if (NS_WARN_IF(FAILED(rv))) {
-      return rv;
-    }
-  }
-
-  return NS_OK;
-}
-
-NS_IMETHODIMP nsSound::Play(nsIURL* aURL) {
-  nsresult rv;
-
-#ifdef DEBUG_SOUND
-  char* url;
-  aURL->GetSpec(&url);
-  MOZ_LOG(gWin32SoundLog, LogLevel::Info, ("%s\n", url));
-#endif
-
-  nsCOMPtr<nsIStreamLoader> loader;
-  rv = NS_NewStreamLoader(
-      getter_AddRefs(loader), aURL,
-      this,  // aObserver
-      nsContentUtils::GetSystemPrincipal(),
-      nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL,
-      nsIContentPolicy::TYPE_OTHER);
-  return rv;
 }
 
 nsresult nsSound::CreatePlayerThread() {

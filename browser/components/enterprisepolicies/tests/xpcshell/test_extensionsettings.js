@@ -120,6 +120,48 @@ add_task(async function test_extensionsettings() {
   );
 });
 
+add_task(async function test_force_installed_updates_disabled() {
+  await setupPolicyEngineWithJson({
+    policies: {
+      ExtensionSettings: {
+        "force@mozilla.com": {
+          installation_mode: "force_installed",
+          install_url: "https://example.com/test.xpi",
+        },
+        "force_explicit@mozilla.com": {
+          installation_mode: "force_installed",
+          install_url: "https://example.com/test.xpi",
+          updates_disabled: true,
+        },
+        "normal@mozilla.com": {
+          installation_mode: "normal_installed",
+          install_url: "https://example.com/test.xpi",
+        },
+      },
+    },
+  });
+
+  equal(
+    Services.policies.getExtensionSettings("force@mozilla.com")
+      .updates_disabled,
+    false,
+    "force_installed with no updates_disabled should default to false"
+  );
+  equal(
+    Services.policies.getExtensionSettings("force_explicit@mozilla.com")
+      .updates_disabled,
+    true,
+    "force_installed with explicit updates_disabled: true should be respected"
+  );
+  ok(
+    !(
+      "updates_disabled" in
+      Services.policies.getExtensionSettings("normal@mozilla.com")
+    ),
+    "non-force_installed should not synthesize updates_disabled"
+  );
+});
+
 add_task(async function test_addon_blocked() {
   await setupPolicyEngineWithJson({
     policies: {
@@ -162,7 +204,7 @@ add_task(async function test_addon_allowed() {
   await assertManagementAPIInstallType(install.addon.id, "normal");
   equal(install.addon.appDisabled, false, "Addon should not be disabled");
   equal(
-    install.addon.isInstalledByEnterprisePolicy,
+    Services.policies.isAddonRequiredByPolicy(install.addon.id),
     false,
     "Addon should NOT be marked as installed by enterprise policy"
   );

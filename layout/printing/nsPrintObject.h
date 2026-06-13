@@ -74,9 +74,9 @@ class nsPrintObject final {
   // nsPrintObject.
   float mShrinkRatio = 1.0;
 
- private:
   nsPrintObject& operator=(const nsPrintObject& aOther) = delete;
 
+ private:
   bool mPrintingIsEnabled = false;
 };
 

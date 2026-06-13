@@ -167,7 +167,7 @@ void DecoderTemplate<DecoderType>::Configure(const ConfigType& aConfig,
   // Audio encoders are all software, no need to do anything.
   // This is incomplete and will be implemented fully in bug 1967793
   if constexpr (std::is_same_v<ConfigType, VideoDecoderConfig>) {
-    ApplyResistFingerprintingIfNeeded(config, GetOwnerGlobal());
+    ApplyResistFingerprintingIfNeeded(config, GetRelevantGlobal());
   }
 
   mState = CodecState::Configured;

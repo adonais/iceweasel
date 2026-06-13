@@ -2693,8 +2693,11 @@ BigInt* JSStructuredCloneReader::readBigInt(uint32_t data) {
   if (!result) {
     return nullptr;
   }
-  if (!in.readArray(result->digits().data(), length)) {
-    return nullptr;
+  {
+    auto digits = result->unguardedDigits();
+    if (!in.readArray(digits.data(), length)) {
+      return nullptr;
+    }
   }
   return JS::BigInt::destructivelyTrimHighZeroDigits(context(), result);
 }
@@ -4055,8 +4058,8 @@ bool JSStructuredCloneReader::readObjectField(HandleObject obj,
   // corrupt or malicious data.
   if (id.isString() && obj->is<PlainObject>() &&
       MOZ_LIKELY(!obj->as<PlainObject>().contains(context(), id))) {
-    return AddDataPropertyToPlainObject(context(), obj.as<PlainObject>(), id,
-                                        val);
+    return AddDataPropertyToNativeObjectNoHooks(context(),
+                                                obj.as<PlainObject>(), id, val);
   }
 
   // Fast path for adding an array element. The index shouldn't exceed the
@@ -4457,8 +4460,8 @@ JS_PUBLIC_API bool JS_ReadTypedArray(JSStructuredCloneReader* r,
   return false;
 }
 
-JS_PUBLIC_API bool JS_WriteUint32Pair(JSStructuredCloneWriter* w, uint32_t tag,
-                                      uint32_t data) {
+JS_PUBLIC_API bool JS_WriteUint32PairUnchecked(JSStructuredCloneWriter* w,
+                                               uint32_t tag, uint32_t data) {
   return w->output().writePair(tag, data);
 }
 

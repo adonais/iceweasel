@@ -27,10 +27,7 @@ struct AtomHasher {
   static inline HashNumber hash(const Lookup& l);
   static MOZ_ALWAYS_INLINE bool match(const WeakHeapPtr<JSAtom*>& entry,
                                       const Lookup& lookup);
-  static void rekey(WeakHeapPtr<JSAtom*>& k,
-                    const WeakHeapPtr<JSAtom*>& newKey) {
-    k = newKey;
-  }
+  static void rekey(WeakHeapPtr<JSAtom*>& k, JSAtom* newKey) { k = newKey; }
 };
 
 struct js::AtomHasher::Lookup {
@@ -40,12 +37,12 @@ struct js::AtomHasher::Lookup {
     const char* utf8Bytes;
   };
   enum { TwoByteChar, Latin1, UTF8 } type;
-  size_t length;
-  size_t byteLength;
-  const JSAtom* atom; /* Optional. */
+  size_t length = 0;
+  size_t byteLength = 0;
+  const JSAtom* atom = nullptr; /* Optional. */
   JS::AutoCheckCannotGC nogc;
 
-  HashNumber hash;
+  HashNumber hash = 0;
 
   MOZ_ALWAYS_INLINE Lookup(const char* utf8Bytes, size_t byteLen, size_t length,
                            HashNumber hash)

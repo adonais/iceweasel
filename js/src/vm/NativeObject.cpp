@@ -304,16 +304,6 @@ bool NativeObject::setUniqueId(JSRuntime* runtime, uint64_t uid) {
   return true;
 }
 
-bool NativeObject::setOrUpdateUniqueId(JSContext* cx, uint64_t uid) {
-  if (!hasDynamicSlots() && !allocateSlots(cx->nursery(), 0)) {
-    ReportOutOfMemory(cx);
-    return false;
-  }
-
-  getSlotsHeader()->setUniqueId(uid);
-  return true;
-}
-
 bool NativeObject::growSlots(JSContext* cx, uint32_t oldCapacity,
                              uint32_t newCapacity) {
   MOZ_ASSERT(newCapacity > oldCapacity);
@@ -1214,8 +1204,7 @@ static MOZ_ALWAYS_INLINE bool PreserveAnyUnpreservedWrapper(
     return true;
   }
 
-  JS::Value objectWrapperSlot =
-      JS::GetReservedSlot(obj, JS_OBJECT_WRAPPER_SLOT);
+  JS::Value objectWrapperSlot = obj->getReservedSlot(JS_OBJECT_WRAPPER_SLOT);
   if (objectWrapperSlot.isUndefined() || !objectWrapperSlot.toPrivate()) {
     return true;
   }
@@ -1409,8 +1398,10 @@ static MOZ_ALWAYS_INLINE bool AddOrChangeProperty(
     }
     if (edResult == DenseElementResult::Success) {
       obj->setDenseElement(index, desc.value());
-      if (!CallAddPropertyHookDense(cx, obj, index, desc.value())) {
-        return false;
+      if constexpr (AddOrChange == IsAddOrChange::Add) {
+        if (!CallAddPropertyHookDense(cx, obj, index, desc.value())) {
+          return false;
+        }
       }
       return true;
     }
@@ -1486,16 +1477,29 @@ static MOZ_ALWAYS_INLINE bool AddOrChangeProperty(
       }
       if (edResult == DenseElementResult::Success) {
         MOZ_ASSERT(!desc.isAccessorDescriptor());
-        return CallAddPropertyHookDense(cx, obj, index, desc.value());
+        if constexpr (AddOrChange == IsAddOrChange::Add) {
+          if (!CallAddPropertyHookDense(cx, obj, index, desc.value())) {
+            return false;
+          }
+        }
+        return true;
       }
     }
   }
 
-  if (desc.isDataDescriptor()) {
-    return CallAddPropertyHook(cx, obj, id, desc.value());
+  if constexpr (AddOrChange == IsAddOrChange::Add) {
+    if (desc.isDataDescriptor()) {
+      if (!CallAddPropertyHook(cx, obj, id, desc.value())) {
+        return false;
+      }
+    } else {
+      if (!CallAddPropertyHook(cx, obj, id, UndefinedHandleValue)) {
+        return false;
+      }
+    }
   }
 
-  return CallAddPropertyHook(cx, obj, id, UndefinedHandleValue);
+  return true;
 }
 
 // Versions of AddOrChangeProperty optimized for adding a plain data property.
@@ -2914,6 +2918,32 @@ bool js::NativeDeleteProperty(JSContext* cx, Handle<NativeObject*> obj,
   return SuppressDeletedProperty(cx, obj, id);
 }
 
+#ifdef DEBUG
+void NativeObject::assertHasNoNonWritableOrAccessorPropExclProto() const {
+  // Check the most recent MaxCount properties to not slow down debug builds too
+  // much.
+  static constexpr size_t MaxCount = 8;
+
+  size_t count = 0;
+  PropertyName* protoName = runtimeFromMainThread()->commonNames->proto_;
+
+  for (ShapePropertyIter<NoGC> iter(shape()); !iter.done(); iter++) {
+    // __proto__ is always allowed.
+    if (iter->key().isAtom(protoName)) {
+      continue;
+    }
+
+    MOZ_ASSERT(iter->isDataProperty());
+    MOZ_ASSERT(iter->writable());
+
+    count++;
+    if (count > MaxCount) {
+      return;
+    }
+  }
+}
+#endif
+
 bool js::CopyDataPropertiesNative(JSContext* cx, Handle<PlainObject*> target,
                                   Handle<NativeObject*> from,
                                   Handle<PlainObject*> excludedItems,
@@ -2981,7 +3011,7 @@ bool js::CopyDataPropertiesNative(JSContext* cx, Handle<PlainObject*> target,
       MOZ_ASSERT(!target->containsPure(key),
                  "didn't expect to find an existing property");
 
-      if (!AddDataPropertyToPlainObject(cx, target, key, value)) {
+      if (!AddDataPropertyToNativeObjectNoHooks(cx, target, key, value)) {
         return false;
       }
     } else {

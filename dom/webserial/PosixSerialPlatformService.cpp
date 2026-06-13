@@ -1,5 +1,3 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim:set ts=2 sw=2 sts=2 et cindent: */
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -16,6 +14,7 @@
 
 #include "SerialLogging.h"
 #include "mozilla/AsyncPlatformPipes.h"
+#include "mozilla/SyncRunnable.h"
 #include "nsDirectoryServiceDefs.h"
 #include "nsIFile.h"
 #include "nsString.h"
@@ -64,13 +63,44 @@ constexpr size_t kDeviceNameBufferSize = 256;
 static bool IsRealSerialPort(const char* aDevpath) {
   int fd = open(aDevpath, O_RDWR | O_NONBLOCK | O_NOCTTY);
   if (fd < 0) {
+    MOZ_LOG(gWebSerialLog, LogLevel::Debug,
+            ("IsRealSerialPort: open(%s, O_RDWR|O_NONBLOCK|O_NOCTTY) failed: "
+             "errno=%d (%s)",
+             aDevpath, errno, strerror(errno)));
     return false;
   }
   int status;
   bool isReal = ioctl(fd, TIOCMGET, &status) == 0;
+  if (isReal) {
+    MOZ_LOG(gWebSerialLog, LogLevel::Debug,
+            ("IsRealSerialPort: %s accepted (TIOCMGET status=0x%x)", aDevpath,
+             status));
+  } else {
+    MOZ_LOG(gWebSerialLog, LogLevel::Debug,
+            ("IsRealSerialPort: TIOCMGET on %s failed: errno=%d (%s)", aDevpath,
+             errno, strerror(errno)));
+  }
   close(fd);
   return isReal;
 }
+
+#ifdef XP_MACOSX
+// macOS exposes built-in serial ports used for WiFi debugging and kernel
+// debugging via IOKit. They are not useful targets for WebSerial, so
+// hide them from enumeration. Bluetooth ports are intentionally not filtered.
+static bool IsMacOSSystemSerialPort(const char* aDevicePath) {
+  static constexpr const char* kSystemPortPaths[] = {
+      "/dev/tty.wlan-debug",
+      "/dev/tty.debug-console",
+  };
+  for (const char* p : kSystemPortPaths) {
+    if (strcmp(aDevicePath, p) == 0) {
+      return true;
+    }
+  }
+  return false;
+}
+#endif
 
 PosixSerialPlatformService::PosixSerialPlatformService()
 #ifdef XP_LINUX
@@ -100,9 +130,57 @@ void PosixSerialPlatformService::Shutdown() {
   MOZ_LOG(gWebSerialLog, LogLevel::Info,
           ("PosixSerialPlatformService[%p]::Shutdown (closing %u open ports)",
            this, mOpenPorts.Count()));
-  StopMonitoring();
-  mOpenPorts.Clear();
+
   SerialPlatformService::Shutdown();
+
+#ifdef XP_LINUX
+  if (mMonitorSourceID) {
+    g_source_remove(mMonitorSourceID);
+    mMonitorSourceID = 0;
+  }
+#elif defined(XP_MACOSX)
+  if (mAddedIterator) {
+    IOObjectRelease(mAddedIterator);
+    mAddedIterator = 0;
+  }
+
+  if (mRemovedIterator) {
+    IOObjectRelease(mRemovedIterator);
+    mRemovedIterator = 0;
+  }
+
+  if (mNotificationPort) {
+    CFRunLoopSourceRef runLoopSource =
+        IONotificationPortGetRunLoopSource(mNotificationPort);
+    if (runLoopSource) {
+      CFRunLoopRemoveSource(CFRunLoopGetMain(), runLoopSource,
+                            kCFRunLoopDefaultMode);
+      MOZ_LOG(gWebSerialLog, LogLevel::Debug,
+              ("PosixSerialPlatformService[%p]::Shutdown removed run "
+               "loop source from main run loop",
+               this));
+    }
+    IONotificationPortDestroy(mNotificationPort);
+    mNotificationPort = nullptr;
+  }
+#endif
+
+  RefPtr<PosixSerialPlatformService> self = this;
+  SyncRunnable::DispatchToThread(
+      IOThread(), NS_NewRunnableFunction(
+                      "PosixSerialPlatformService::Shutdown:IOCleanup", [self] {
+                        self->mOpenPorts.Clear();
+#ifdef XP_LINUX
+                        if (self->mMonitor && self->mUdevLib) {
+                          self->mUdevLib->udev_monitor_unref(self->mMonitor);
+                          self->mMonitor = nullptr;
+                        }
+                        self->mUdevLib = nullptr;
+#endif
+                      }));
+
+  MOZ_LOG(gWebSerialLog, LogLevel::Info,
+          ("PosixSerialPlatformService[%p]::Shutdown complete", this));
 }
 
 nsresult PosixSerialPlatformService::EnumeratePortsImpl(
@@ -1082,41 +1160,6 @@ nsresult PosixSerialPlatformService::InitializeMacOS() {
 }
 #endif
 
-void PosixSerialPlatformService::StopMonitoring() {
-#ifdef XP_LINUX
-  ShutdownUdev();
-#elif defined(XP_MACOSX)
-  if (mAddedIterator) {
-    IOObjectRelease(mAddedIterator);
-    mAddedIterator = 0;
-  }
-
-  if (mRemovedIterator) {
-    IOObjectRelease(mRemovedIterator);
-    mRemovedIterator = 0;
-  }
-
-  if (mNotificationPort) {
-    CFRunLoopSourceRef runLoopSource =
-        IONotificationPortGetRunLoopSource(mNotificationPort);
-    if (runLoopSource) {
-      CFRunLoopRemoveSource(CFRunLoopGetMain(), runLoopSource,
-                            kCFRunLoopDefaultMode);
-      MOZ_LOG(gWebSerialLog, LogLevel::Debug,
-              ("PosixSerialPlatformService[%p]::StopMonitoring removed run "
-               "loop source from main run loop",
-               this));
-    }
-    IONotificationPortDestroy(mNotificationPort);
-    mNotificationPort = nullptr;
-  }
-
-  MOZ_LOG(gWebSerialLog, LogLevel::Info,
-          ("PosixSerialPlatformService[%p]::StopMonitoring monitoring stopped",
-           this));
-#endif
-}
-
 #ifdef XP_LINUX
 nsresult PosixSerialPlatformService::InitializeUdev() {
   mUdevLib = MakeUnique<udev_lib>();
@@ -1192,25 +1235,6 @@ nsresult PosixSerialPlatformService::InitializeUdev() {
            "initialized",
            this));
   return NS_OK;
-}
-
-void PosixSerialPlatformService::ShutdownUdev() {
-  if (mMonitorSourceID) {
-    g_source_remove(mMonitorSourceID);
-    mMonitorSourceID = 0;
-  }
-
-  if (mMonitor && mUdevLib) {
-    mUdevLib->udev_monitor_unref(mMonitor);
-    mMonitor = nullptr;
-  }
-
-  mUdevLib = nullptr;
-
-  MOZ_LOG(gWebSerialLog, LogLevel::Info,
-          ("PosixSerialPlatformService[%p]::ShutdownUdev udev monitoring "
-           "shutdown",
-           this));
 }
 
 gboolean PosixSerialPlatformService::OnUdevMonitor(GIOChannel* source,
@@ -1355,6 +1379,14 @@ bool PosixSerialPlatformService::ExtractDeviceInfo(
   char devicePath[PATH_MAX];
   if (!CFStringGetCString((CFStringRef)pathRef, devicePath, sizeof(devicePath),
                           kCFStringEncodingUTF8)) {
+    return false;
+  }
+
+  if (IsMacOSSystemSerialPort(devicePath)) {
+    MOZ_LOG(gWebSerialLog, LogLevel::Debug,
+            ("PosixSerialPlatformService[%p]::ExtractDeviceInfo filtering "
+             "macOS system port: %s",
+             this, devicePath));
     return false;
   }
 

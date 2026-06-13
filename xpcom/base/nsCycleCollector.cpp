@@ -3620,14 +3620,15 @@ void nsCycleCollector::CleanupAfterCollection() {
 #endif
 
   if (NS_IsMainThread()) {
-    glean::cycle_collector::time.AccumulateRawDuration(interval);
+    glean::cycle_collector::time.ProcessGet().AccumulateRawDuration(interval);
     glean::cycle_collector::visited_ref_counted.AccumulateSingleSample(
         mResults.mVisitedRefCounted);
     glean::cycle_collector::visited_gced.AccumulateSingleSample(
         mResults.mVisitedGCed);
     glean::cycle_collector::collected.AccumulateSingleSample(mWhiteNodeCount);
   } else {
-    glean::cycle_collector::worker_time.AccumulateRawDuration(interval);
+    glean::cycle_collector::worker_time.ProcessGet().AccumulateRawDuration(
+        interval);
     glean::cycle_collector::worker_visited_ref_counted.AccumulateSingleSample(
         mResults.mVisitedRefCounted);
     glean::cycle_collector::worker_visited_gced.AccumulateSingleSample(

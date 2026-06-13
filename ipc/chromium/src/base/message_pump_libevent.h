@@ -50,7 +50,7 @@ class MessagePumpLibevent : public MessagePump {
   // a File Descriptor.
   class Watcher {
    public:
-    virtual ~Watcher() {}
+    virtual ~Watcher() = default;
     // Called from MessageLoop::Run when an FD can be read from/written to
     // without blocking
     virtual void OnFileCanReadWithoutBlocking(int fd) = 0;

@@ -290,7 +290,8 @@ void MediaTransportHandlerIPC::RemoveTransportsExcept(
                                         aTransportIds.end());
   mInitPromise->Then(
       mThread, __func__,
-      [=, this, self = RefPtr<MediaTransportHandlerIPC>(this)](bool /*dummy*/) {
+      [this, self = RefPtr<MediaTransportHandlerIPC>(this),
+       transportIds = std::move(transportIds)](bool /*dummy*/) {
         if (mChild) {
           mChild->SendRemoveTransportsExcept(transportIds);
         }
@@ -412,21 +413,19 @@ mozilla::ipc::IPCResult MediaTransportChild::RecvOnAlpnNegotiated(
 }
 
 mozilla::ipc::IPCResult MediaTransportChild::RecvOnGatheringStateChange(
-    const string& transportId, const int& state) {
+    const string& transportId, const RTCIceGathererState& state) {
   MutexAutoLock lock(mMutex);
   if (mUser) {
-    mUser->OnGatheringStateChange(transportId,
-                                  static_cast<dom::RTCIceGathererState>(state));
+    mUser->OnGatheringStateChange(transportId, state);
   }
   return ipc::IPCResult::Ok();
 }
 
 mozilla::ipc::IPCResult MediaTransportChild::RecvOnConnectionStateChange(
-    const string& transportId, const int& state) {
+    const string& transportId, const RTCIceTransportState& state) {
   MutexAutoLock lock(mMutex);
   if (mUser) {
-    mUser->OnConnectionStateChange(
-        transportId, static_cast<dom::RTCIceTransportState>(state));
+    mUser->OnConnectionStateChange(transportId, state);
   }
   return ipc::IPCResult::Ok();
 }
@@ -451,21 +450,19 @@ mozilla::ipc::IPCResult MediaTransportChild::RecvOnEncryptedSending(
 }
 
 mozilla::ipc::IPCResult MediaTransportChild::RecvOnStateChange(
-    const string& transportId, const int& state) {
+    const string& transportId, const TransportLayer::State& state) {
   MutexAutoLock lock(mMutex);
   if (mUser) {
-    mUser->OnStateChange(transportId,
-                         static_cast<TransportLayer::State>(state));
+    mUser->OnStateChange(transportId, state);
   }
   return ipc::IPCResult::Ok();
 }
 
 mozilla::ipc::IPCResult MediaTransportChild::RecvOnRtcpStateChange(
-    const string& transportId, const int& state) {
+    const string& transportId, const TransportLayer::State& state) {
   MutexAutoLock lock(mMutex);
   if (mUser) {
-    mUser->OnRtcpStateChange(transportId,
-                             static_cast<TransportLayer::State>(state));
+    mUser->OnRtcpStateChange(transportId, state);
   }
   return ipc::IPCResult::Ok();
 }

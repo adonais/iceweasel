@@ -39,6 +39,7 @@ var _XPCSHELL_PROCESS;
 // Register the testing-common resource protocol early, to have access to its
 // modules.
 let _Services = Services;
+let _Cc = Cc;
 _register_modules_protocol_handler();
 
 let { AppConstants: _AppConstants } = ChromeUtils.importESModule(
@@ -518,12 +519,12 @@ function _initDebugging(port) {
 function _do_upload_profile() {
   let name = _TEST_NAME.replace(/.*\//, "");
   let filename = `profile_${name}.json`;
-  let path = Services.env.get("MOZ_UPLOAD_DIR");
+  let path = _Services.env.get("MOZ_UPLOAD_DIR");
   let profilePath = PathUtils.join(path, filename);
   let done = false;
   (async function _save_profile() {
     const { profile } =
-      await Services.profiler.getProfileDataAsGzippedArrayBuffer();
+      await _Services.profiler.getProfileDataAsGzippedArrayBuffer();
     await IOUtils.write(profilePath, new Uint8Array(profile));
     _testLogger.testStatus(
       _TEST_NAME,
@@ -617,12 +618,12 @@ function _execute_test() {
 
   let timer;
   if (
-    Services.profiler.IsActive() &&
-    !Services.env.exists("MOZ_PROFILER_SHUTDOWN") &&
-    Services.env.exists("MOZ_UPLOAD_DIR") &&
-    Services.env.exists("MOZ_TEST_TIMEOUT_INTERVAL")
+    _Services.profiler.IsActive() &&
+    !_Services.env.exists("MOZ_PROFILER_SHUTDOWN") &&
+    _Services.env.exists("MOZ_UPLOAD_DIR") &&
+    _Services.env.exists("MOZ_TEST_TIMEOUT_INTERVAL")
   ) {
-    timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
+    timer = _Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
     timer.initWithCallback(
       function upload_test_timeout_profile() {
         ChromeUtils.addProfilerMarker(
@@ -632,7 +633,7 @@ function _execute_test() {
         );
         _do_upload_profile();
       },
-      parseInt(Services.env.get("MOZ_TEST_TIMEOUT_INTERVAL")) * 1000 * 0.9, // Keep 10% of the time to gather the profile.
+      parseInt(_Services.env.get("MOZ_TEST_TIMEOUT_INTERVAL")) * 1000 * 0.9, // Keep 10% of the time to gather the profile.
       timer.TYPE_ONE_SHOT
     );
   }
@@ -783,9 +784,9 @@ function _execute_test() {
   if (
     !_passed &&
     runningInParent &&
-    Services.env.exists("MOZ_UPLOAD_DIR") &&
-    !Services.env.exists("MOZ_PROFILER_SHUTDOWN") &&
-    Services.profiler.IsActive()
+    _Services.env.exists("MOZ_UPLOAD_DIR") &&
+    !_Services.env.exists("MOZ_PROFILER_SHUTDOWN") &&
+    _Services.profiler.IsActive()
   ) {
     if (_EXPECTED != "pass") {
       _testLogger.error(
@@ -1003,14 +1004,17 @@ function do_note_exception(ex, text) {
 
 function do_report_result(passed, text, stack, todo) {
   // Match names like head.js, head_foo.js, and foo_head.js, but not
-  // test_headache.js
+  // test_headache.js. Stack may be a pre-formatted string (e.g., for uncaught
+  // Promise rejections, where the original frame is stringified eagerly because
+  // the context may be gone by the time the rejection is reported); in that
+  // case stack.filename is undefined and the loop is skipped.
   while (/(\/head(_.+)?|head)\.js$/.test(stack.filename) && stack.caller) {
     stack = stack.caller;
   }
 
-  let name = _gRunningTest ? _gRunningTest.name : stack.name;
+  let name = _gRunningTest ? _gRunningTest.name : (stack.name ?? "");
   let message;
-  if (name) {
+  if (name && stack.lineNumber) {
     message = "[" + name + " : " + stack.lineNumber + "] " + text;
   } else {
     message = text;

@@ -2,14 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-:host([layout="medium-icon"]) {
-  --box-icon-size: var(--icon-size-large);
-}
-
-:host([layout="large-icon"]) {
-  --box-icon-size: var(--icon-size-xlarge);
-}
-
 :host([layout$="-icon"]) {
   .text-content.has-icon.has-description {
     grid-template-areas:
@@ -21,6 +13,11 @@
 :host([static]) {
   /* Indent static items the width of the handle button + gap */
   padding-inline-start: calc(var(--button-size-icon) + var(--space-small));
+}
+
+:host(:focus-visible) {
+  outline: var(--focus-outline);
+  outline-offset: var(--focus-outline-inset);
 }
 
 .text-content {
@@ -86,6 +83,10 @@ slot[name="actions-start"] {
       This cannot be disabled, hence the color should remain the default. */
   fill: var(--box-item-handle-icon-color);
   flex-shrink: 0;
+}
+
+.actions {
+  word-wrap: normal;
 }
 
 .actions:has(> slot:not(:has-slotted)) {

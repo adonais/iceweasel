@@ -467,6 +467,7 @@ bool HttpBackgroundChannelParent::OnSetClassifierMatchedTrackingInfo(
 }
 
 nsISerialEventTarget* HttpBackgroundChannelParent::GetBackgroundTarget() {
+  MutexAutoLock lock(mBgThreadMutex);
   MOZ_ASSERT(mBackgroundThread);
   return mBackgroundThread.get();
 }

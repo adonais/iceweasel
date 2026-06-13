@@ -10,7 +10,6 @@
 #include "mozjemalloc_types.h"
 
 #include "RadixTree.h"
-#include "RedBlackTree.h"
 
 #include "mozilla/DoublyLinkedList.h"
 
@@ -29,8 +28,9 @@ enum ChunkType {
 
 // Each element of the chunk map corresponds to one page within the chunk.
 struct arena_chunk_map_t {
-  // Linkage for run trees. Used for arena_t's tree or available runs.
-  RedBlackTreeNode<arena_chunk_map_t> link;
+  // Linkage for run lists. Used for arena_t's available runs (see
+  // ArenaAvailRuns.h).
+  mozilla::DoublyLinkedListElement<arena_chunk_map_t> link;
 
   // Run address (or size) and various flags are stored together.  The bit
   // layout looks like (assuming 32-bit system):

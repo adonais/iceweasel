@@ -125,7 +125,7 @@ class WriteRunnable final : public Runnable {
       return NS_OK;
     }
 
-    int32_t written = PR_Write(fd, mData, mLength);
+    int32_t written = mLength <= INT32_MAX ? PR_Write(fd, mData, mLength) : -1;
     if (NS_WARN_IF(written < 0 || uint32_t(written) != mLength)) {
       mBlobStorage->CloseFD();
       return mBlobStorage->EventTarget()->Dispatch(

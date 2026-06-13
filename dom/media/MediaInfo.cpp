@@ -134,6 +134,21 @@ nsCString VideoInfo::ToString() const {
   }
   rv.AppendPrintf(", color range: %s",
                   ColorRangeStrings[static_cast<int>(mColorRange)]);
+  if (mHDRMetadata) {
+    if (const auto& s = mHDRMetadata->mSmpte2086) {
+      rv.AppendPrintf(
+          ", smpte2086 R(%.4f,%.4f) G(%.4f,%.4f)"
+          " B(%.4f,%.4f) WP(%.4f,%.4f) lum(%.4f,%.4f)",
+          s->displayPrimaryRed.x, s->displayPrimaryRed.y,
+          s->displayPrimaryGreen.x, s->displayPrimaryGreen.y,
+          s->displayPrimaryBlue.x, s->displayPrimaryBlue.y, s->whitePoint.x,
+          s->whitePoint.y, s->maxLuminance, s->minLuminance);
+    }
+    if (const auto& cll = mHDRMetadata->mContentLightLevel) {
+      rv.AppendPrintf(", MaxCLL=%u MaxFALL=%u", cll->maxContentLightLevel,
+                      cll->maxFrameAverageLightLevel);
+    }
+  }
   if (mImageRect) {
     rv.AppendPrintf(", image rect: %dx%d", mImageRect->Width(),
                     mImageRect->Height());

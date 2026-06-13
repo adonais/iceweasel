@@ -48,7 +48,7 @@ export class FindBarParent extends JSWindowActorParent {
       }
     };
 
-    let findPromise = browser.ownerGlobal.gFindBarPromise;
+    let findPromise = browser.documentGlobal.gFindBarPromise;
     if (findPromise) {
       findPromise.then(respondToMessage);
     } else {

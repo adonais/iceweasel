@@ -50,8 +50,7 @@ void nsEventShell::FireEvent(uint32_t aEventType, LocalAccessible* aAccessible,
                              EIsFromUserInput aIsFromUserInput) {
   NS_ENSURE_TRUE_VOID(aAccessible);
 
-  RefPtr<AccEvent> event =
-      new AccEvent(aEventType, aAccessible, aIsFromUserInput);
+  auto event = MakeRefPtr<AccEvent>(aEventType, aAccessible, aIsFromUserInput);
 
   FireEvent(event);
 }

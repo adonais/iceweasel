@@ -51,6 +51,11 @@ fun TabsTrayState.initializeTabGroupForm() = TabGroupFormState(
     tabGroupId = null,
     name = "",
     nextTabGroupNumber = tabGroupState.groups.size + 1,
+    theme = tabGroupState.groups
+        .maxByOrNull { it.lastModified }
+        ?.theme
+        ?.next()
+        ?: TabGroupTheme.default,
     edited = false,
 )
 

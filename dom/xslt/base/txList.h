@@ -26,6 +26,8 @@ class txList : public txObject {
    **/
   ~txList();
 
+  txList(const txList& aOther) = delete;
+
   /**
    * Returns the number of items in this txList
    **/
@@ -59,8 +61,6 @@ class txList : public txObject {
   ListItem* remove(ListItem* sItem);
 
  private:
-  txList(const txList& aOther);  // not implemented
-
   ListItem* firstItem;
   ListItem* lastItem;
   int32_t itemCount;

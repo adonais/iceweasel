@@ -4,6 +4,10 @@
 
 ## Chrome
 
+main-context-menu-open-link-new-smart-window =
+    .label = Open Link in New Smart Window
+    .accesskey = S
+
 appmenuitem-new-ai-window =
     .label = New Smart Window
     .value = New Smart Window
@@ -35,10 +39,19 @@ toolbar-button-ai-window-toggle =
 
 ai-window-toggleview-switch-classic =
     .label = Classic Window
+    .value = Classic Window
+
+ai-window-toggleview-switch-classic-description =
+    .label = Standard browsing
+    .value = Standard browsing
 
 ai-window-toggleview-switch-ai =
     .label = Smart Window
     .value = Smart Window
+
+ai-window-toggleview-switch-ai-description =
+    .label = Ask as you browse
+    .value = Ask as you browse
 
 ai-window-toggleview-switch-private =
     .label = Private Window
@@ -129,6 +142,13 @@ aiwindow-firstrun-memories-checkbox-chats = Chats in Smart Window
 aiwindow-firstrun-memories-checkbox-browsing = Browsing across { -brand-product-name }
 aiwindow-firstrun-memories-update-settings = Update in settings anytime.
 aiwindow-firstrun-memories-no-create = Got it. Smart Window won’t create memories. Update in settings anytime.
+
+## Firstrun set as default onboarding
+
+aiwindow-firstrun-default-title = Make Smart Window your go-to
+aiwindow-firstrun-default-subtitle = Browse, search, and ask in one place. You can still open Private and Classic Windows when you want.
+aiwindow-firstrun-default-checkbox-label = Always open { -brand-product-name } in Smart Window
+aiwindow-firstrun-default-checkbox-description = Switch in settings anytime
 
 ## Ask Toolbar Button
 
@@ -225,3 +245,50 @@ item-history-downloads-and-chat =
     .accesskey = B
 
 item-history-downloads-and-chat-description = Clears site, download, and chat history
+
+## Natural Language Interactions
+
+smart-window-confirm-select-all =
+    .aria-label = Select all
+    .label = Select all
+
+smart-window-confirm-deselect-all =
+    .aria-label = Deselect all
+    .label = Deselect all
+
+smart-window-close-confirm =
+    .tooltiptext = Close confirm
+    .aria-label = Close confirm
+
+smart-window-confirm-close-tab = Close
+
+# Variables
+#   $count (number) - Number of tabs to close
+smart-window-confirm-close-tabs =
+    { $count ->
+        [one] Close { $count } tab
+       *[other] Close { $count } tabs
+    }
+
+## Smart Window new tab promo
+
+smart-window-default-promo-heading = Make Smart Window your default?
+smart-window-default-promo-message = { -brand-short-name } will open in Smart Window every time.
+smart-window-default-promo-primary-button = Set as default
+smart-window-default-promo-additional-button = Not now
+
+## Feedback modal
+
+aiwindow-feedback-modal-title = Share feedback
+aiwindow-feedback-what-worked-well = What worked well? No personal info, please.
+aiwindow-feedback-choose-any = Choose any that apply
+aiwindow-feedback-add-details = Add details if you’d like. No personal info, please.
+aiwindow-feedback-disclaimer = Submitting shares your feedback and a few details, like { -brand-shorter-name } version and model used, to help improve Smart Window. <a data-l10n-name="learn-more">Learn more</a>
+aiwindow-feedback-submit = Submit
+aiwindow-feedback-cancel = Cancel
+aiwindow-feedback-reason-incorrect-or-misleading = Incorrect or misleading
+aiwindow-feedback-reason-doesnt-address-my-request = Doesn’t address my request
+aiwindow-feedback-reason-lacks-personalization = Lacks personalization or context
+aiwindow-feedback-reason-performance-or-usability = Performance or usability issue
+aiwindow-feedback-reason-harmful-or-offensive = Harmful or offensive
+aiwindow-feedback-reason-other = Other

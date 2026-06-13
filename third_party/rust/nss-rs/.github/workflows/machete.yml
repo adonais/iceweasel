@@ -1,0 +1,16 @@
+name: Machete
+on:
+  workflow_dispatch:
+  pull_request:
+  merge_group:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  machete:
+    uses: mozilla/actions/.github/workflows/machete.yml@25cb84d060946c0ad6d2c3f79da479b16d180d71 # v1.1.0

@@ -4,16 +4,12 @@
 
 package org.mozilla.fenix.ui
 
-import androidx.compose.ui.test.junit4.AndroidComposeTestRule
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
-import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.AppAndSystemHelper.openAppFromExternalLink
 import org.mozilla.fenix.helpers.FenixTestRule
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
-import org.mozilla.fenix.helpers.HomeActivityTestRule
 import org.mozilla.fenix.helpers.RetryTestRule
 import org.mozilla.fenix.helpers.RetryableComposeTestRule
 import org.mozilla.fenix.helpers.TestAssetHelper.getGenericAsset
@@ -23,6 +19,7 @@ import org.mozilla.fenix.helpers.perf.DetectMemoryLeaksRule
 import org.mozilla.fenix.ui.robots.browserScreen
 import org.mozilla.fenix.ui.robots.homeScreen
 import org.mozilla.fenix.ui.robots.navigationToolbar
+import androidx.compose.ui.test.junit4.v2.AndroidComposeTestRule as AndroidComposeTestRuleV2
 
 /**
  *  Tests for verifying the Homepage settings menu
@@ -30,28 +27,29 @@ import org.mozilla.fenix.ui.robots.navigationToolbar
  */
 class SettingsHomepageTest {
     @get:Rule(order = 0)
-    val retryTestRule = RetryTestRule(3)
-
-    @get:Rule(order = 1)
     val fenixTestRule: FenixTestRule = FenixTestRule()
 
     private val mockWebServer get() = fenixTestRule.mockWebServer
 
+    @get:Rule(order = 1)
+    val retryTestRule = RetryTestRule(3)
+
     @get:Rule(order = 2)
-    val retryableComposeTestRule = RetryableComposeTestRule<HomeActivity, HomeActivityIntentTestRule> {
-        AndroidComposeTestRule(
+    val retryableComposeTestRule = RetryableComposeTestRule {
+        AndroidComposeTestRuleV2(
             HomeActivityIntentTestRule.withDefaultSettingsOverrides(),
         ) { it.activity }
     }
 
+    private val composeTestRule get() = retryableComposeTestRule.current
+
     @get:Rule(order = 3)
-    val memoryLeaksRule = DetectMemoryLeaksRule()
+    val memoryLeaksRule = DetectMemoryLeaksRule(composeTestRule = { composeTestRule })
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/1564843
-    @Ignore("Failing, see https://bugzilla.mozilla.org/show_bug.cgi?id=2028550")
     @Test
     fun verifyHomepageSettingsTest() {
-        homeScreen(retryableComposeTestRule.current) {
+        homeScreen(composeTestRule) {
         }.openThreeDotMenu {
         }.clickSettingsButton {
         }.openHomepageSubMenu {
@@ -69,7 +67,7 @@ class SettingsHomepageTest {
         )
         val genericURL = mockWebServer.getGenericAsset(1)
 
-        homeScreen(retryableComposeTestRule.current) {
+        homeScreen(composeTestRule) {
             defaultTopSites.forEach { item ->
                 verifyExistingTopSitesTabs(item)
             }
@@ -78,13 +76,13 @@ class SettingsHomepageTest {
         }.openHomepageSubMenu {
             clickShortcutsButton()
         }.goBack {
-        }.goBack(retryableComposeTestRule.current) {
+        }.goBack(composeTestRule) {
             defaultTopSites.forEach { item ->
                 verifyNotExistingTopSiteItem(item)
             }
         }
         // Disabling the "Shortcuts" homepage setting option should remove the "Add to shortcuts" from main menu option
-        navigationToolbar(retryableComposeTestRule.current) {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(genericURL.url) {
         }.openThreeDotMenu {
             clickTheMoreButton()
@@ -95,12 +93,12 @@ class SettingsHomepageTest {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/1565003
     @Test
     fun verifyRecentlyVisitedOptionTest() {
-        retryableComposeTestRule.current.activityRule.applySettingsExceptions {
+        composeTestRule.activityRule.applySettingsExceptions {
             it.isRecentTabsFeatureEnabled = false
         }
         val genericURL = mockWebServer.getGenericAsset(1)
 
-        navigationToolbar(retryableComposeTestRule.current) {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(genericURL.url) {
         }.goToHomescreen {
             verifyRecentlyVisitedSectionIsDisplayed(true)
@@ -109,7 +107,7 @@ class SettingsHomepageTest {
         }.openHomepageSubMenu {
             clickRecentlyVisited()
         }.goBack {
-        }.goBack(retryableComposeTestRule.current) {
+        }.goBack(composeTestRule) {
             verifyRecentlyVisitedSectionIsDisplayed(false)
         }
     }
@@ -120,7 +118,7 @@ class SettingsHomepageTest {
     fun jumpBackInOptionTest() {
         val genericURL = mockWebServer.getGenericAsset(1)
 
-        navigationToolbar(retryableComposeTestRule.current) {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(genericURL.url) {
         }.goToHomescreen {
             verifyJumpBackInSectionIsDisplayed()
@@ -129,7 +127,7 @@ class SettingsHomepageTest {
         }.openHomepageSubMenu {
             clickJumpBackInButton()
         }.goBack {
-        }.goBack(retryableComposeTestRule.current) {
+        }.goBack(composeTestRule) {
             verifyJumpBackInSectionIsNotDisplayed()
         }
     }
@@ -140,7 +138,7 @@ class SettingsHomepageTest {
     fun recentBookmarksOptionTest() {
         val genericURL = mockWebServer.getGenericAsset(1)
 
-        navigationToolbar(retryableComposeTestRule.current) {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(genericURL.url) {
         }.openThreeDotMenu {
         }.clickBookmarkThisPageButton {
@@ -151,7 +149,7 @@ class SettingsHomepageTest {
         }.openHomepageSubMenu {
             clickRecentBookmarksButton()
         }.goBack {
-        }.goBack(retryableComposeTestRule.current) {
+        }.goBack(composeTestRule) {
             verifyBookmarksSectionIsDisplayed(exists = false)
         }
     }
@@ -162,7 +160,7 @@ class SettingsHomepageTest {
     fun verifyOpeningScreenOptionsTest() {
         val genericURL = mockWebServer.getGenericAsset(1)
 
-        navigationToolbar(retryableComposeTestRule.current) {
+        navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(genericURL.url) {
         }.openThreeDotMenu {
         }.clickSettingsButton {
@@ -173,9 +171,9 @@ class SettingsHomepageTest {
             verifySelectedOpeningScreenOption("Homepage")
         }
 
-        restartApp(retryableComposeTestRule.current.activityRule)
+        restartApp(composeTestRule.activityRule)
 
-        homeScreen(retryableComposeTestRule.current) {
+        homeScreen(composeTestRule) {
             verifyHomeScreen()
         }.openThreeDotMenu {
         }.clickSettingsButton {
@@ -187,9 +185,9 @@ class SettingsHomepageTest {
             verifySettingsOptionSummary("Homepage", "Open on last tab")
         }
 
-        restartApp(retryableComposeTestRule.current.activityRule)
+        restartApp(composeTestRule.activityRule)
 
-        browserScreen(retryableComposeTestRule.current) {
+        browserScreen(composeTestRule) {
             verifyUrl(genericURL.url.toString())
         }
     }
@@ -199,25 +197,25 @@ class SettingsHomepageTest {
     fun verifyOpeningScreenAfterLaunchingExternalLinkTest() {
         val genericPage = mockWebServer.getGenericAsset(1)
 
-        homeScreen(retryableComposeTestRule.current) {
+        homeScreen(composeTestRule) {
         }.openThreeDotMenu {
         }.clickSettingsButton {
         }.openHomepageSubMenu {
             clickOpeningScreenOption("Homepage")
-        }.goBackToHomeScreen(retryableComposeTestRule.current) {
+        }.goBackToHomeScreen(composeTestRule) {
         }
 
-        retryableComposeTestRule.current.activityRule.applySettingsExceptions {
+        composeTestRule.activityRule.applySettingsExceptions {
             it.isTermsOfServiceAccepted = true
 
-            with(retryableComposeTestRule.current.activityRule) {
+            with(composeTestRule.activityRule) {
                 finishActivity()
                 mDevice.waitForIdle()
-                openAppFromExternalLink(retryableComposeTestRule.current, genericPage.url.toString())
+                openAppFromExternalLink(composeTestRule, genericPage.url.toString())
             }
         }
 
-        browserScreen(retryableComposeTestRule.current) {
+        browserScreen(composeTestRule) {
             verifyPageContent(genericPage.content)
         }
     }

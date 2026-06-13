@@ -117,6 +117,10 @@ class JujutsuRepository(Repository):
         # drop down to git semantics.)
         return self._resolve_to_change(self.HEAD_REVSET)
 
+    @property
+    def head_rev(self):
+        return self._resolve_to_commit(self.HEAD_REVSET)
+
     def is_cinnabar_repo(self) -> bool:
         return self._git.is_cinnabar_repo()
 
@@ -340,6 +344,15 @@ class JujutsuRepository(Repository):
             cmd.extend(paths)
         self._run(*cmd, **run_kwargs)
 
+    def add_note(
+        self,
+        note: str,
+        content: str,
+        commit: Optional[str] = None,
+    ):
+        commit = commit or self.head_rev
+        self._git.add_note(note, content, commit)
+
     def push(
         self,
         remote: Optional[str] = None,
@@ -352,29 +365,7 @@ class JujutsuRepository(Repository):
         if dest_branch and not ref:
             raise ValueError("Cannot specify dest_branch without specifying ref")
 
-        args = ["git", "push"]
-        if remote:
-            if remote.startswith("git@"):
-                if remote.endswith(".git"):
-                    remote = remote[:-4]
-
-                for line in self._run("git", "remote", "list").strip().splitlines():
-                    name, url = line.split(" ", 1)
-                    if url.endswith(".git"):
-                        url = url[:-4]
-
-                    if url == remote:
-                        remote = name
-                        break
-                else:
-                    raise ValueError(f"No remote configured for '{remote}'")
-
-            args.extend(["--remote", remote])
-        if ref:
-            args.extend(["-r", ref])
-        if dest_branch:
-            args.extend(["-b", dest_branch])
-        self._run(*args)
+        self._git.push(remote, ref=ref, dest_branch=dest_branch, force=force)
 
     def push_to_try(
         self,
@@ -464,7 +455,13 @@ class JujutsuRepository(Repository):
         ]
         return [
             self._git._run(
-                "format-patch", node, "-1", "--always", "--stdout", encoding=None
+                "format-patch",
+                node,
+                "-1",
+                "--always",
+                "--stdout",
+                "--no-base",  # in case the user's gitconfig has format.useAutoBase=true
+                encoding=None,
             )
             for node in nodes
         ]

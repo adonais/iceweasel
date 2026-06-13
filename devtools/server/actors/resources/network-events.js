@@ -70,7 +70,9 @@ class NetworkEventWatcher {
     // Boolean to know if we keep previous document network events or not.
     this.persist = false;
     this.listener = new lazy.NetworkObserver({
-      decodeResponseBodies: true,
+      // The responses will be decoded lazily when the Response details are
+      // requested by the UI.
+      decodeResponseBodies: false,
       responseBodyLimit: lazy.responseBodyLimit,
       ignoreChannelFunction: this.shouldIgnoreChannel.bind(this),
       onNetworkEvent: this.onNetworkEvent.bind(this),
@@ -381,7 +383,9 @@ class NetworkEventWatcher {
 
         break;
       case NETWORK_EVENT_TYPES.RESPONSE_CONTENT:
-        resourceUpdates.contentSize = updateResource.contentSize;
+        if (updateResource.contentSize !== undefined) {
+          resourceUpdates.contentSize = updateResource.contentSize;
+        }
         resourceUpdates.transferredSize = updateResource.transferredSize;
         resourceUpdates.mimeType = updateResource.mimeType;
         break;

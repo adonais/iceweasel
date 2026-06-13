@@ -70,7 +70,7 @@
           Ci.nsIFile
         );
         dummyFile.initWithPath(mockCustomParentDir);
-        MockFilePicker.init(window.browsingContext);
+        MockFilePicker.init();
         let filePickerShownPromise = new Promise(resolve => {
           MockFilePicker.showCallback = () => {
             ok(true, "Filepicker shown");
@@ -186,7 +186,7 @@
           Ci.nsIFile
         );
         dummyFile.initWithPath(mockCustomParentDir);
-        MockFilePicker.init(window.browsingContext);
+        MockFilePicker.init();
         MockFilePicker.showCallback = () => {
           ok(true, "Filepicker shown");
           MockFilePicker.setFiles([dummyFile]);

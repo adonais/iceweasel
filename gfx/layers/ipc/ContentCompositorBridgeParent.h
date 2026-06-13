@@ -24,8 +24,10 @@ class ContentCompositorBridgeParent final : public CompositorBridgeParentBase {
   friend class CompositorBridgeParent;
 
  public:
-  explicit ContentCompositorBridgeParent(CompositorManagerParent* aManager)
-      : CompositorBridgeParentBase(aManager), mDestroyCalled(false) {}
+  explicit ContentCompositorBridgeParent(CompositorManagerParent* aManager,
+                                         uint32_t aNamespace)
+      : CompositorBridgeParentBase(aManager, aNamespace),
+        mDestroyCalled(false) {}
 
   void ActorDestroy(ActorDestroyReason aWhy) override;
 
@@ -128,13 +130,11 @@ class ContentCompositorBridgeParent final : public CompositorBridgeParentBase {
   void DidCompositeLocked(LayersId aId, const VsyncId& aVsyncId,
                           TimeStamp& aCompositeStart, TimeStamp& aCompositeEnd);
 
-  PTextureParent* AllocPTextureParent(
+  already_AddRefed<PTextureParent> AllocPTextureParent(
       const SurfaceDescriptor& aSharedData, ReadLockDescriptor& aReadLock,
       const LayersBackend& aLayersBackend, const TextureFlags& aFlags,
       const uint64_t& aSerial,
       const wr::MaybeExternalImageId& aExternalImageId) override;
-
-  bool DeallocPTextureParent(PTextureParent* actor) override;
 
   bool IsSameProcess() const override;
 
@@ -144,17 +144,15 @@ class ContentCompositorBridgeParent final : public CompositorBridgeParentBase {
     return nullptr;
   }
 
-  PAPZCTreeManagerParent* AllocPAPZCTreeManagerParent(
+  already_AddRefed<PAPZCTreeManagerParent> AllocPAPZCTreeManagerParent(
       const LayersId& aLayersId) override;
-  bool DeallocPAPZCTreeManagerParent(PAPZCTreeManagerParent* aActor) override;
 
-  PAPZParent* AllocPAPZParent(const LayersId& aLayersId) override;
-  bool DeallocPAPZParent(PAPZParent* aActor) override;
+  already_AddRefed<PAPZParent> AllocPAPZParent(
+      const LayersId& aLayersId) override;
 
-  PWebRenderBridgeParent* AllocPWebRenderBridgeParent(
+  already_AddRefed<PWebRenderBridgeParent> AllocPWebRenderBridgeParent(
       const wr::PipelineId& aPipelineId, const LayoutDeviceIntSize& aSize,
       const WindowKind& aWindowKind) override;
-  bool DeallocPWebRenderBridgeParent(PWebRenderBridgeParent* aActor) override;
   // Nothing to do as content WebRenderBridgeParents are fully initialized at
   // construction time.
   void EnsureWebRenderBridgeParentInitialized() override {}
@@ -162,6 +160,10 @@ class ContentCompositorBridgeParent final : public CompositorBridgeParentBase {
   void ObserveLayersUpdate(LayersId aLayersId, bool aActive) override;
 
   bool IsRemote() const override { return true; }
+
+  void ScheduleRenderOnCompositorThread(wr::RenderReasons aReasons) override {
+    MOZ_ASSERT_UNREACHABLE("Unused for content!");
+  }
 
  private:
   // Private destructor, to discourage deletion outside of Release():

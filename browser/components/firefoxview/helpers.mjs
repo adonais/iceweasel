@@ -97,7 +97,7 @@ export function navigateToLink(
   { forceNewTab = true } = {}
 ) {
   let currentWindow =
-    e.target.ownerGlobal.browsingContext.embedderWindowGlobal.browsingContext
+    e.target.documentGlobal.browsingContext.embedderWindowGlobal.browsingContext
       .window;
   if (currentWindow.openTrustedLinkIn) {
     const originalEvent = e.detail.originalEvent;

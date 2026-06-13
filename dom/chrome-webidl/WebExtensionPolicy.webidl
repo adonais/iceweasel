@@ -108,6 +108,17 @@ interface WebExtensionPolicy {
   attribute MatchPatternSet allowedOrigins;
 
   /**
+   * An ordered list of guards matching URLs this extension can't access.
+   */
+  [Cached, Frozen, Pure]
+  attribute sequence<ExtensionGuardSet> guardSets;
+
+  /**
+   * Returns the source of the first matching guard or null if none.
+   */
+  ExtensionGuardSource? checkGuarded(URI uri);
+
+  /**
    * The set of content scripts active for this extension.
    */
   [Cached, Frozen, Pure]

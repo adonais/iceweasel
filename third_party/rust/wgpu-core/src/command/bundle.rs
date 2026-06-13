@@ -697,10 +697,10 @@ fn set_index_buffer(
     buffer.same_device(&state.device)?;
     buffer.check_usage(wgt::BufferUsages::INDEX)?;
 
-    if !offset.is_multiple_of(u64::try_from(index_format.byte_size()).unwrap()) {
+    if !offset.is_multiple_of(u64::from(index_format.byte_size())) {
         return Err(RenderCommandError::UnalignedIndexBuffer {
             offset,
-            alignment: index_format.byte_size(),
+            alignment: index_format.byte_size() as usize,
         }
         .into());
     }
@@ -1499,9 +1499,9 @@ impl State {
         self.commands
             .extend(entries.map(|(i, bind_group, dynamic_offsets)| {
                 self.buffer_memory_init_actions
-                    .extend_from_slice(&bind_group.used_buffer_ranges);
+                    .extend_from_slice(&bind_group.buffer_init_actions);
                 self.texture_memory_init_actions
-                    .extend_from_slice(&bind_group.used_texture_ranges);
+                    .extend_from_slice(&bind_group.texture_init_actions);
 
                 self.flat_dynamic_offsets.extend_from_slice(dynamic_offsets);
 

@@ -26,8 +26,8 @@ describe("settings ai features", () => {
     async function runPolicyTest(doc, name, pref, settingId) {
       try {
         Services.prefs.lockPref(pref);
-        doc.ownerGlobal.Preferences.getSetting(settingId).emit("change");
-        await new Promise(r => doc.ownerGlobal.requestAnimationFrame(r));
+        doc.documentGlobal.Preferences.getSetting(settingId).emit("change");
+        await new Promise(r => doc.documentGlobal.requestAnimationFrame(r));
 
         const control = doc.getElementById(settingId);
         Assert.ok(control, `${name} control exists`);

@@ -20,7 +20,7 @@ registerCleanupFunction(() => {
 // Bug 1895789 to standarize contextmenu helpers in BrowserTestUtils
 async function openContextMenu({ menuId, browser }) {
   const tab = gBrowser.getTabForBrowser(browser);
-  const win = tab.ownerGlobal;
+  const win = tab.documentGlobal;
 
   const contextMenu = win.document.getElementById(menuId);
   if (!contextMenu) {
@@ -44,7 +44,7 @@ async function openContextMenu({ menuId, browser }) {
     EventUtils.synthesizeMouseAtCenter(
       aichatEl,
       { type: "contextmenu", button: 2 },
-      aichatEl.ownerGlobal
+      aichatEl.documentGlobal
     );
   } else {
     BrowserTestUtils.synthesizeMouse(

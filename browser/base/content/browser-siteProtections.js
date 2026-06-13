@@ -2999,7 +2999,7 @@ var gProtectionsHandler = {
           where: message.content.cta_where || "tabshifted",
         },
       },
-      window.browser
+      window.gBrowser.selectedBrowser
     );
 
     // Only send telemetry for non private browsing windows

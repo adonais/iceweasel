@@ -18,7 +18,7 @@ class nsLocalHandlerApp : public nsILocalHandlerApp {
   NS_DECL_NSIHANDLERAPP
   NS_DECL_NSILOCALHANDLERAPP
 
-  nsLocalHandlerApp() {}
+  nsLocalHandlerApp() = default;
 
   nsLocalHandlerApp(const char16_t* aName, nsIFile* aExecutable)
       : mName(aName), mExecutable(aExecutable) {}
@@ -27,7 +27,7 @@ class nsLocalHandlerApp : public nsILocalHandlerApp {
       : mName(aName), mExecutable(aExecutable) {}
 
  protected:
-  virtual ~nsLocalHandlerApp() {}
+  virtual ~nsLocalHandlerApp() = default;
 
   virtual std::function<nsresult(nsString&)>
   GetPrettyNameOnNonMainThreadCallback();

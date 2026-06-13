@@ -33,7 +33,6 @@
 #include "api/environment/environment.h"
 #include "api/make_ref_counted.h"
 #include "api/media_stream_interface.h"
-#include "api/media_stream_track.h"
 #include "api/media_types.h"
 #include "api/peer_connection_interface.h"
 #include "api/rtp_parameters.h"
@@ -49,11 +48,7 @@
 #include "api/units/data_rate.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
-#include "api/video/recordable_encoded_frame.h"
 #include "api/video/video_content_type.h"
-#include "api/video/video_frame.h"
-#include "api/video/video_sink_interface.h"
-#include "api/video/video_source_interface.h"
 #include "api/video/video_timing.h"
 #include "api/video_codecs/scalability_mode.h"
 #include "call/call.h"
@@ -73,10 +68,14 @@
 #include "pc/media_stream.h"
 #include "pc/peer_connection_internal.h"
 #include "pc/rtp_sender.h"
+#include "pc/rtp_transceiver.h"
 #include "pc/sctp_data_channel.h"
 #include "pc/stream_collection.h"
+#include "pc/test/fake_audio_track.h"
 #include "pc/test/fake_data_channel_controller.h"
 #include "pc/test/fake_peer_connection_for_stats.h"
+#include "pc/test/fake_video_track.h"
+#include "pc/test/fake_video_track_source.h"
 #include "pc/test/mock_data_channel.h"
 #include "pc/test/mock_rtp_receiver_internal.h"
 #include "pc/test/mock_rtp_sender_internal.h"
@@ -104,6 +103,9 @@
 #include "test/time_controller/simulated_time_controller.h"
 
 using ::testing::_;
+using ::testing::IsEmpty;
+using ::testing::Not;
+using ::testing::NotNull;
 using ::testing::Return;
 
 namespace webrtc {
@@ -202,129 +204,26 @@ class MockStatsCollectorCallback : public RTCStatsCollectorCallback {
               (override));
 };
 
-class FakeAudioProcessor : public AudioProcessorInterface {
- public:
-  FakeAudioProcessor() {}
-  ~FakeAudioProcessor() override {}
-
- private:
-  AudioProcessorInterface::AudioProcessorStatistics GetStats(
-      bool has_recv_streams) override {
-    AudioProcessorStatistics stats;
-    stats.apm_statistics.echo_return_loss = 2.0;
-    stats.apm_statistics.echo_return_loss_enhancement = 3.0;
-    return stats;
+// Helper functions to create fake tracks for stats tests.
+scoped_refptr<AudioTrackInterface> CreateFakeAudioTrackForStats(
+    const std::string& id,
+    MediaStreamTrackInterface::TrackState state,
+    bool create_fake_audio_processor) {
+  scoped_refptr<FakeAudioProcessor> processor = nullptr;
+  if (create_fake_audio_processor) {
+    processor = make_ref_counted<FakeAudioProcessor>();
+    processor->stats.apm_statistics.echo_return_loss = 2.0;
+    processor->stats.apm_statistics.echo_return_loss_enhancement = 3.0;
   }
-};
+  return FakeAudioTrack::Create(id, state, processor);
+}
 
-class FakeAudioTrackForStats : public MediaStreamTrack<AudioTrackInterface> {
- public:
-  static scoped_refptr<FakeAudioTrackForStats> Create(
-      const std::string& id,
-      MediaStreamTrackInterface::TrackState state,
-      bool create_fake_audio_processor) {
-    auto audio_track_stats = make_ref_counted<FakeAudioTrackForStats>(id);
-    audio_track_stats->set_state(state);
-    if (create_fake_audio_processor) {
-      audio_track_stats->processor_ = make_ref_counted<FakeAudioProcessor>();
-    }
-    return audio_track_stats;
-  }
-
-  explicit FakeAudioTrackForStats(const std::string& id)
-      : MediaStreamTrack<AudioTrackInterface>(id) {}
-
-  std::string kind() const override {
-    return MediaStreamTrackInterface::kAudioKind;
-  }
-  AudioSourceInterface* GetSource() const override { return nullptr; }
-  void AddSink(AudioTrackSinkInterface* sink) override {}
-  void RemoveSink(AudioTrackSinkInterface* sink) override {}
-  bool GetSignalLevel(int* level) override { return false; }
-  scoped_refptr<AudioProcessorInterface> GetAudioProcessor() override {
-    return processor_;
-  }
-
- private:
-  scoped_refptr<FakeAudioProcessor> processor_;
-};
-
-class FakeVideoTrackSourceForStats : public VideoTrackSourceInterface {
- public:
-  static scoped_refptr<FakeVideoTrackSourceForStats> Create(int input_width,
-                                                            int input_height) {
-    return make_ref_counted<FakeVideoTrackSourceForStats>(input_width,
-                                                          input_height);
-  }
-
-  FakeVideoTrackSourceForStats(int input_width, int input_height)
-      : input_width_(input_width), input_height_(input_height) {}
-  ~FakeVideoTrackSourceForStats() override {}
-
-  // VideoTrackSourceInterface
-  bool is_screencast() const override { return false; }
-  std::optional<bool> needs_denoising() const override { return false; }
-  bool GetStats(VideoTrackSourceInterface::Stats* stats) override {
-    stats->input_width = input_width_;
-    stats->input_height = input_height_;
-    return true;
-  }
-  // MediaSourceInterface (part of VideoTrackSourceInterface)
-  MediaSourceInterface::SourceState state() const override {
-    return MediaSourceInterface::SourceState::kLive;
-  }
-  bool remote() const override { return false; }
-  // NotifierInterface (part of MediaSourceInterface)
-  void RegisterObserver(ObserverInterface* observer) override {}
-  void UnregisterObserver(ObserverInterface* observer) override {}
-  // webrtc::VideoSourceInterface<VideoFrame> (part of
-  // VideoTrackSourceInterface)
-  void AddOrUpdateSink(VideoSinkInterface<VideoFrame>* sink,
-                       const VideoSinkWants& wants) override {}
-  void RemoveSink(VideoSinkInterface<VideoFrame>* sink) override {}
-  bool SupportsEncodedOutput() const override { return false; }
-  void GenerateKeyFrame() override {}
-  void AddEncodedSink(
-      VideoSinkInterface<RecordableEncodedFrame>* sink) override {}
-  void RemoveEncodedSink(
-      VideoSinkInterface<RecordableEncodedFrame>* sink) override {}
-
- private:
-  int input_width_;
-  int input_height_;
-};
-
-class FakeVideoTrackForStats : public MediaStreamTrack<VideoTrackInterface> {
- public:
-  static scoped_refptr<FakeVideoTrackForStats> Create(
-      const std::string& id,
-      MediaStreamTrackInterface::TrackState state,
-      scoped_refptr<VideoTrackSourceInterface> source) {
-    auto video_track =
-        make_ref_counted<FakeVideoTrackForStats>(id, std::move(source));
-    video_track->set_state(state);
-    return video_track;
-  }
-
-  FakeVideoTrackForStats(const std::string& id,
-                         scoped_refptr<VideoTrackSourceInterface> source)
-      : MediaStreamTrack<VideoTrackInterface>(id), source_(source) {}
-
-  std::string kind() const override {
-    return MediaStreamTrackInterface::kVideoKind;
-  }
-
-  void AddOrUpdateSink(VideoSinkInterface<VideoFrame>* sink,
-                       const VideoSinkWants& wants) override {}
-  void RemoveSink(VideoSinkInterface<VideoFrame>* sink) override {}
-
-  VideoTrackSourceInterface* GetSource() const override {
-    return source_.get();
-  }
-
- private:
-  scoped_refptr<VideoTrackSourceInterface> source_;
-};
+scoped_refptr<VideoTrackInterface> CreateFakeVideoTrackForStats(
+    const std::string& id,
+    MediaStreamTrackInterface::TrackState state,
+    scoped_refptr<VideoTrackSourceInterface> source) {
+  return FakeVideoTrack::Create(id, state, source);
+}
 
 scoped_refptr<MediaStreamTrackInterface> CreateFakeTrack(
     MediaType media_type,
@@ -332,11 +231,11 @@ scoped_refptr<MediaStreamTrackInterface> CreateFakeTrack(
     MediaStreamTrackInterface::TrackState track_state,
     bool create_fake_audio_processor = false) {
   if (media_type == MediaType::AUDIO) {
-    return FakeAudioTrackForStats::Create(track_id, track_state,
-                                          create_fake_audio_processor);
+    return CreateFakeAudioTrackForStats(track_id, track_state,
+                                        create_fake_audio_processor);
   } else {
     RTC_DCHECK_EQ(media_type, MediaType::VIDEO);
-    return FakeVideoTrackForStats::Create(track_id, track_state, nullptr);
+    return CreateFakeVideoTrackForStats(track_id, track_state, nullptr);
   }
 }
 
@@ -472,6 +371,7 @@ class RTCStatsCollectorWrapper {
     });
     EXPECT_CALL(*sender, AttachmentId()).WillRepeatedly(Return(attachment_id));
     EXPECT_CALL(*sender, Stop()).WillRepeatedly(Return());
+    EXPECT_CALL(*sender, SetSendCodecs(_)).WillRepeatedly(Return());
     RTC_ALLOW_PLAN_B_DEPRECATION_BEGIN();
     pc_->AddSender(sender);
     RTC_ALLOW_PLAN_B_DEPRECATION_END();
@@ -988,6 +888,70 @@ TEST_P(RTCStatsCollectorTest, MultipleCallbacksWithInvalidatedCacheInBetween) {
   EXPECT_NE(c.get(), b.get());
 }
 
+TEST_P(RTCStatsCollectorTest, StatsPreservedWhenChannelClearedConcurrently) {
+  VoiceMediaInfo voice_media_info;
+  voice_media_info.receivers.emplace_back();
+  voice_media_info.receivers[0].add_ssrc(1);
+  voice_media_info.receivers[0].packets_received = 123;
+
+  RTC_ALLOW_PLAN_B_DEPRECATION_BEGIN();
+  pc_->AddVoiceChannel("AudioMid", "TransportName", voice_media_info);
+  RTC_ALLOW_PLAN_B_DEPRECATION_END();
+  auto remote_receiver = stats_->SetupRemoteTrackAndReceiver(
+      MediaType::AUDIO, "RemoteAudioTrackID", "RemoteStreamId", 1);
+  auto local_sender = stats_->SetupLocalTrackAndSender(
+      MediaType::AUDIO, "LocalAudioTrackID", 2,
+      /*add_stream=*/true, /*attachment_id=*/2);
+
+  EXPECT_CALL(*local_sender, SetSendCodecs(_)).WillRepeatedly(Return());
+  EXPECT_CALL(*local_sender, SetMediaChannel(_)).WillRepeatedly(Return());
+  EXPECT_CALL(*local_sender, DetachTrackAndGetStopTask()).WillRepeatedly([] {
+    return nullptr;
+  });
+  EXPECT_CALL(*remote_receiver, SetMediaChannel(_)).WillRepeatedly(Return());
+
+  scoped_refptr<const RTCStatsReport> report;
+  bool stats_obtained = false;
+  stats_->stats_collector().GetStatsReport(
+      RTCStatsObtainer::Create(&report, [&] {
+        stats_obtained = true;
+        main_thread_.Quit();
+      }));
+
+  auto transceivers = pc_->GetTransceiversInternal();
+  ASSERT_FALSE(transceivers.empty());
+  auto* transceiver = transceivers[0]->internal();
+  EXPECT_TRUE(transceiver->HasChannel());
+
+  auto network_task = transceiver->GetClearChannelNetworkTask();
+  pc_->network_thread()->BlockingCall([&]() { std::move(network_task)(); });
+
+  auto delete_worker_task =
+      transceiver->GetDeleteChannelWorkerTask(/*stop_senders=*/false);
+  // Now the state of the transceiver is that on the signaling thread,
+  // there is no channel. However, the work of actually deleting the channels
+  // belongs to the worker thread task, which hasn't run yet.
+  // Let's post the execution of that task so that it ends up running
+  // *after* the task that the `stats_collector` has queued up for
+  // gathering the stats from the channel. The stats collector should
+  // be able to get the stats safely even though technically the
+  // transceiver by now, doesn't have a channel.
+  EXPECT_FALSE(transceiver->HasChannel());
+  Event worker_task_done;
+  pc_->worker_thread()->PostTask([&]() {
+    std::move(delete_worker_task)();
+    worker_task_done.Set();
+  });
+
+  main_thread_.Run();
+
+  EXPECT_TRUE(report);
+  auto inbound_rtps = report->GetStatsOfType<RTCInboundRtpStreamStats>();
+  EXPECT_EQ(inbound_rtps.size(), 1u);
+  // Wait for the cleanup task to complete.
+  worker_task_done.Wait(Event::kForever);
+}
+
 TEST_P(RTCStatsCollectorTest, ToJsonProducesParseableJson) {
   ExampleStatsGraph graph = SetupExampleStatsGraphForSelectorTests();
   scoped_refptr<const RTCStatsReport> report =
@@ -1003,6 +967,34 @@ TEST_P(RTCStatsCollectorTest, ToJsonProducesParseableJson) {
 
   // A very brief sanity check on the result.
   EXPECT_EQ(report->size(), json_value.size());
+}
+
+TEST_P(RTCStatsCollectorTest, ProduceRTPStreamStatsWithStoppedTransceiver) {
+  const char kTransportName[] = "transport";
+  const char kMid[] = "VideoMid";
+
+  VideoMediaInfo video_media_info;
+  video_media_info.senders.emplace_back();
+  video_media_info.senders[0].add_ssrc(1);
+
+  RTC_ALLOW_PLAN_B_DEPRECATION_BEGIN();
+  pc_->AddVideoChannel(kMid, kTransportName, video_media_info);
+  RTC_ALLOW_PLAN_B_DEPRECATION_END();
+
+  // Get the transceiver and set it to stopped.
+  std::vector<scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>>
+      transceivers = pc_->GetTransceiversInternal();
+  ASSERT_THAT(transceivers, Not(IsEmpty()));
+  scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>> transceiver =
+      transceivers[0];
+  ASSERT_TRUE(transceiver);
+  transceiver->internal()->set_current_direction(
+      RtpTransceiverDirection::kStopped);
+
+  // This should not crash.
+  scoped_refptr<const RTCStatsReport> report =
+      stats_->GetStatsReport(main_thread_);
+  EXPECT_THAT(report, NotNull());
 }
 
 TEST_P(RTCStatsCollectorTest, CollectRTCCertificateStatsSingle) {
@@ -2816,7 +2808,7 @@ TEST_P(RTCStatsCollectorTest, CollectRTCOutboundRtpStreamStats_Video) {
   auto stats_of_my_type = report->GetStatsOfType<RTCOutboundRtpStreamStats>();
   ASSERT_EQ(2U, stats_of_my_type.size());
   std::string id_of_first_ssrc;
-  for (const auto* outbound_rtp : stats_of_my_type) {
+  for (const RTCOutboundRtpStreamStats* outbound_rtp : stats_of_my_type) {
     if (outbound_rtp->ssrc.value_or(0) == 1) {
       id_of_first_ssrc = outbound_rtp->id();
       break;
@@ -2876,7 +2868,7 @@ TEST_P(RTCStatsCollectorTest, CollectRTCOutboundRtpStreamStats_Video) {
   // Find the sub-stats for the second simulcast outbound RTP stream and verify
   // that its `media_source_id` is set.
   std::string id_of_second_ssrc;
-  for (const auto* outbound_rtp : stats_of_my_type) {
+  for (const RTCOutboundRtpStreamStats* outbound_rtp : stats_of_my_type) {
     if (outbound_rtp->ssrc.value_or(0) == 2) {
       id_of_second_ssrc = outbound_rtp->id();
       break;
@@ -3287,9 +3279,9 @@ TEST_P(RTCStatsCollectorTest, RTCVideoSourceStatsCollectedForSenderWithTrack) {
   pc_->AddVideoChannel("VideoMid", "TransportName", video_media_info);
   RTC_ALLOW_PLAN_B_DEPRECATION_END();
 
-  auto video_source = FakeVideoTrackSourceForStats::Create(kVideoSourceWidth,
-                                                           kVideoSourceHeight);
-  auto video_track = FakeVideoTrackForStats::Create(
+  auto video_source = FakeVideoTrackSource::Create(false);
+  video_source->SetSize(kVideoSourceWidth, kVideoSourceHeight);
+  auto video_track = CreateFakeVideoTrackForStats(
       "LocalVideoTrackID", MediaStreamTrackInterface::kLive, video_source);
   scoped_refptr<MockRtpSenderInternal> sender =
       CreateMockSender(MediaType::VIDEO, video_track, kSsrc, kAttachmentId, {});
@@ -3339,9 +3331,9 @@ TEST_P(RTCStatsCollectorTest,
   pc_->AddVideoChannel("VideoMid", "TransportName", video_media_info);
   RTC_ALLOW_PLAN_B_DEPRECATION_END();
 
-  auto video_source = FakeVideoTrackSourceForStats::Create(kVideoSourceWidth,
-                                                           kVideoSourceHeight);
-  auto video_track = FakeVideoTrackForStats::Create(
+  auto video_source = FakeVideoTrackSource::Create(false);
+  video_source->SetSize(kVideoSourceWidth, kVideoSourceHeight);
+  auto video_track = CreateFakeVideoTrackForStats(
       "LocalVideoTrackID", MediaStreamTrackInterface::kLive, video_source);
   scoped_refptr<MockRtpSenderInternal> sender = CreateMockSender(
       MediaType::VIDEO, video_track, kNoSsrc, kAttachmentId, {});
@@ -3378,7 +3370,7 @@ TEST_P(RTCStatsCollectorTest,
   pc_->AddVideoChannel("VideoMid", "TransportName", video_media_info);
   RTC_ALLOW_PLAN_B_DEPRECATION_END();
 
-  auto video_track = FakeVideoTrackForStats::Create(
+  auto video_track = CreateFakeVideoTrackForStats(
       "LocalVideoTrackID", MediaStreamTrackInterface::kLive,
       /*source=*/nullptr);
   scoped_refptr<MockRtpSenderInternal> sender =

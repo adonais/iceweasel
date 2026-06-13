@@ -26,12 +26,6 @@ class PlainObject : public NativeObject {
  public:
   static const JSClass class_;
 
- private:
-#ifdef DEBUG
-  void assertHasNoNonWritableOrAccessorPropExclProto() const;
-#endif
-
- public:
   static inline js::PlainObject* createWithShape(JSContext* cx,
                                                  JS::Handle<SharedShape*> shape,
                                                  gc::AllocKind kind,
@@ -49,16 +43,6 @@ class PlainObject : public NativeObject {
 
   /* Return the allocKind we would use if we were to tenure this object. */
   inline gc::AllocKind allocKindForTenure() const;
-
-  bool hasNonWritableOrAccessorPropExclProto() const {
-    if (hasFlag(ObjectFlag::HasNonWritableOrAccessorPropExclProto)) {
-      return true;
-    }
-#ifdef DEBUG
-    assertHasNoNonWritableOrAccessorPropExclProto();
-#endif
-    return false;
-  }
 };
 
 // Specializations of 7.3.23 CopyDataProperties(...) for NativeObjects.

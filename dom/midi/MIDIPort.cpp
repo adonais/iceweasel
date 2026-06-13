@@ -154,7 +154,7 @@ already_AddRefed<Promise> MIDIPort::Open(ErrorResult& aError) {
   if (mOpeningPromise) {
     return do_AddRef(mOpeningPromise);
   }
-  RefPtr<Promise> p = Promise::Create(GetOwnerGlobal(), aError);
+  RefPtr<Promise> p = Promise::Create(GetRelevantGlobal(), aError);
   if (aError.Failed()) {
     return nullptr;
   }
@@ -169,7 +169,7 @@ already_AddRefed<Promise> MIDIPort::Close(ErrorResult& aError) {
   if (mClosingPromise) {
     return do_AddRef(mClosingPromise);
   }
-  RefPtr<Promise> p = Promise::Create(GetOwnerGlobal(), aError);
+  RefPtr<Promise> p = Promise::Create(GetRelevantGlobal(), aError);
   if (aError.Failed()) {
     return nullptr;
   }

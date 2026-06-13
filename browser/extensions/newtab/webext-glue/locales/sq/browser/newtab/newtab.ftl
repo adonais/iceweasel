@@ -8,9 +8,13 @@
 newtab-page-title = Skedë e Re
 newtab-settings-button =
     .title = Personalizoni faqen tuaj Skedë e Re
+#  (developer note): @nova-cleanup(remove-string): Remove newtab-customize-panel-icon-button once Nova lands, will be using newtab-customize-panel-label instead
 newtab-customize-panel-icon-button =
     .title = Përshtateni këtë faqe
+#  (developer note): @nova-cleanup(remove-string): Remove newtab-customize-panel-icon-button-label once Nova lands, will be using newtab-customize-panel-label instead
 newtab-customize-panel-icon-button-label = Përshtateni
+newtab-customize-panel-label =
+    .label = Përshtateni
 newtab-personalize-settings-icon-label =
     .title = Personalizoni Skedën e Re
     .aria-label = Rregullime
@@ -668,10 +672,16 @@ newtab-widget-lists-label-beta =
 newtab-widget-lists-completed-list = Të plotësuara ({ $number })
 newtab-widget-task-list-menu-copy = Kopjoje
 newtab-widget-lists-menu-edit = Përpunoni emër liste
+newtab-widget-lists-menu-edit2 =
+    .aria-label = Përpunoni emër liste
 newtab-widget-lists-menu-create = Krijoni një listë të re
 newtab-widget-lists-menu-delete = Fshije këtë listë
 newtab-widget-lists-menu-copy = Kopjoje listën në të papastër
 newtab-widget-lists-menu-learn-more = Mësoni më tepër
+newtab-widget-lists-button-add-item = Shtoni një objekt
+newtab-widget-lists-input-add-an-item2 =
+    .placeholder = Shtoni një objekt
+    .aria-label = Shtoni një objekt
 newtab-widget-lists-input-add-an-item =
     .placeholder = Shtoni një objekt
 newtab-widget-lists-input-error = Ju lutemi, që të shtohet një objekt, përfshini tekst.
@@ -688,6 +698,10 @@ newtab-widget-lists-name-label-default =
 newtab-widget-lists-name-placeholder-default =
     .placeholder = Listë punësh
 # The placeholder value of the name field for a newly created list
+newtab-widget-lists-name-placeholder-new2 =
+    .placeholder = Listë e re
+    .aria-label = Përpunoni emër liste
+# The placeholder value of the name field for a newly created list
 newtab-widget-lists-name-placeholder-new =
     .placeholder = Listë e re
 newtab-widget-section-title = Widget-e
@@ -702,10 +716,10 @@ newtab-widget-section-maximize =
 newtab-widget-section-minimize =
     .title = Minimizoji widget-et
     .aria-label = Tkurri krejt widget-et sa madhësia kompakte
+newtab-widget-section-menu-manage = Administroni widget-e
 newtab-widget-section-feedback = Tregonani si ju duket
 
-## Strings for timer productivity widget
-## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown
+## Strings introduced by the Nova redesign of the Timer widget
 
 newtab-widget-timer-notification-title = Kohëmatës
 newtab-widget-timer-notification-focus = Koha për i përqendruar mbaroi. Punë e paqme. Ju duhet një pushim?

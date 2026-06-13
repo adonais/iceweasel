@@ -926,8 +926,9 @@ void nsInlineFrame::UpdateStyleOfOwnedAnonBoxesForIBSplit(
 
     nsIFrame* nextInline = blockFrame->GetProperty(nsIFrame::IBSplitSibling());
     if (MOZ_UNLIKELY(!nextInline)) {
-      MOZ_ASSERT_UNREACHABLE("There should always a be trailing inline "
-                             "in an IB split");
+      MOZ_ASSERT_UNREACHABLE(
+          "There should always a be trailing inline "
+          "in an IB split");
       // Gracefully bail so that nextInline usage below doesn't
       // null-deref.  (We can stop worrying about this when we remove
       // IB split siblings in bug 2031448.)
@@ -1066,7 +1067,11 @@ void nsFirstLineFrame::Reflow(nsPresContext* aPresContext,
   ReflowFrames(aPresContext, aReflowInput, irs, aReflowOutput, aStatus);
   aReflowInput.mLineLayout->SetInFirstLine(false);
 
-  ReflowAbsoluteFrames(aPresContext, aReflowOutput, aReflowInput, aStatus);
+  // If we could be an abspos containing block, then this is where we would call
+  // ReflowAbsoluteFrames. But we can't be, per bug 2036239 comment 1.
+  MOZ_ASSERT(!IsAbsoluteContainer(),
+             "None of the properties that apply to ::first-line could make it "
+             "an abspos containing block!");
 
   // Note: the line layout code will properly compute our overflow state for us
 }

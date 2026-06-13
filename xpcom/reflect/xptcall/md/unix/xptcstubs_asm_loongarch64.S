@@ -32,7 +32,7 @@ SharedStub:
     fst.d     $fa6, $sp, 112
     fst.d     $fa7, $sp, 120
     st.d      $ra, $sp, 136
-    .cfi_offset 1, 136
+    .cfi_rel_offset 1, 136
 
     /* methodIndex is passed from stub */
     move      $a1, $t6

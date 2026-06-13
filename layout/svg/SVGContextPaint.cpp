@@ -324,7 +324,7 @@ already_AddRefed<gfxPattern> SVGEmbeddingContextPaint::GetFillPattern(
   // fill opacities we don't try to cache the gfxPattern that we create.
   DeviceColor fill = *mFill;
   fill.a *= aFillOpacity;
-  return do_AddRef(new gfxPattern(fill));
+  return MakeAndAddRef<gfxPattern>(fill);
 }
 
 already_AddRefed<gfxPattern> SVGEmbeddingContextPaint::GetStrokePattern(
@@ -335,7 +335,7 @@ already_AddRefed<gfxPattern> SVGEmbeddingContextPaint::GetStrokePattern(
   }
   DeviceColor stroke = *mStroke;
   stroke.a *= aStrokeOpacity;
-  return do_AddRef(new gfxPattern(stroke));
+  return MakeAndAddRef<gfxPattern>(stroke);
 }
 
 uint32_t SVGEmbeddingContextPaint::Hash() const {

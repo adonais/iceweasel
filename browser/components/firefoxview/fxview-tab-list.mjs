@@ -836,10 +836,13 @@ export class VirtualList extends MozLitElement {
     this.items = [];
     this.subListItems = [];
     this.itemHeightEstimate = FXVIEW_ROW_HEIGHT_PX;
-    this.maxRenderCountEstimate = Math.max(
-      40,
-      2 * Math.ceil(window.innerHeight / this.itemHeightEstimate)
-    );
+    this.maxRenderCountEstimate =
+      this.itemHeightEstimate > 0
+        ? Math.max(
+            40,
+            2 * Math.ceil(window.innerHeight / this.itemHeightEstimate)
+          )
+        : 0;
     this.isSubList = false;
     this.isVisible = false;
     this.getItemHeight = null;
@@ -978,10 +981,13 @@ export class VirtualList extends MozLitElement {
   }
 
   recalculateAfterWindowResize() {
-    this.maxRenderCountEstimate = Math.max(
-      40,
-      2 * Math.ceil(window.innerHeight / this.itemHeightEstimate)
-    );
+    this.maxRenderCountEstimate =
+      this.itemHeightEstimate > 0
+        ? Math.max(
+            40,
+            2 * Math.ceil(window.innerHeight / this.itemHeightEstimate)
+          )
+        : 0;
   }
 
   firstUpdated() {

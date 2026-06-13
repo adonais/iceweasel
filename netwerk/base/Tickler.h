@@ -30,7 +30,6 @@
 #  define MOZ_USE_WIFI_TICKLER
 #endif
 
-#include "mozilla/Attributes.h"
 #include "nsISupports.h"
 #include <stdint.h>
 
@@ -79,20 +78,20 @@ class Tickler final : public SupportsThreadSafeWeakPtr<Tickler> {
 
   friend class SupportsThreadSafeWeakPtr<Tickler>;
   friend class TicklerTimer;
-  Mutex mLock MOZ_UNANNOTATED;
-  nsCOMPtr<nsIThread> mThread;
-  nsCOMPtr<nsITimer> mTimer;
-  nsCOMPtr<nsIPrefBranch> mPrefs;
+  Mutex mLock;
+  nsCOMPtr<nsIThread> mThread MOZ_GUARDED_BY(mLock);
+  nsCOMPtr<nsITimer> mTimer MOZ_GUARDED_BY(mLock);
+  nsCOMPtr<nsIPrefBranch> mPrefs MOZ_GUARDED_BY(mLock);
 
-  bool mActive;
-  bool mCanceled;
-  bool mEnabled;
-  uint32_t mDelay;
-  TimeDuration mDuration;
-  PRFileDesc* mFD;
+  bool mActive MOZ_GUARDED_BY(mLock);
+  bool mCanceled MOZ_GUARDED_BY(mLock);
+  bool mEnabled MOZ_GUARDED_BY(mLock);
+  uint32_t mDelay MOZ_GUARDED_BY(mLock);
+  TimeDuration mDuration MOZ_GUARDED_BY(mLock);
+  PRFileDesc* mFD MOZ_GUARDED_BY(mLock);
 
-  TimeStamp mLastTickle;
-  PRNetAddr mAddr;
+  TimeStamp mLastTickle MOZ_GUARDED_BY(mLock);
+  PRNetAddr mAddr;  // written on main thread before concurrent use
 
   // These functions may be called from any thread
   void PostCheckTickler();

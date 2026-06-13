@@ -9,9 +9,11 @@
 #include "AssertAssignmentChecker.h"
 #include "CanRunScriptChecker.h"
 #include "DanglingOnTemporaryChecker.h"
+#include "EnumSerializerChecker.h"
 #include "ExplicitImplicitChecker.h"
 #include "ExplicitOperatorBoolChecker.h"
 #ifdef TARGET_IS_WINDOWS
+#include "EmptyBasesChecker.h"
 #include "LoadLibraryUsageChecker.h"
 #include "FopenUsageChecker.h"
 #endif
@@ -43,5 +45,6 @@
 #include "RefCountedThisInsideConstructorChecker.h"
 #include "ScopeChecker.h"
 #include "SprintfLiteralChecker.h"
+#include "SupportsWeakPtrCycleCollectionChecker.h"
 #include "TrivialCtorDtorChecker.h"
 #include "TrivialDtorChecker.h"

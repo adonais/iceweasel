@@ -82,9 +82,11 @@ class HarBuilder {
     // Build pages.
     this.buildPages(harLog.log);
 
-    // Build entries.
-    for (const request of this.#items) {
-      const entry = await this.buildEntry(harLog.log, request);
+    // Build entries in parallel.
+    const entries = await Promise.all(
+      this.#items.map(request => this.buildEntry(harLog.log, request))
+    );
+    for (const entry of entries) {
       if (entry) {
         harLog.log.entries.push(entry);
       }

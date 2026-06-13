@@ -314,7 +314,6 @@ class JitRuntime {
   [[nodiscard]] bool initialize(JSContext* cx);
 
   static void TraceAtomZoneRoots(JSTracer* trc);
-  [[nodiscard]] static bool MarkJitcodeGlobalTableIteratively(GCMarker* marker);
   static void TraceWeakJitcodeGlobalTable(JSRuntime* rt, JSTracer* trc);
 
   const BaselineICFallbackCode& baselineICFallbackCode() const {

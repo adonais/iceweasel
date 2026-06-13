@@ -416,9 +416,14 @@ export class ContileIntegration {
    *   An array of the tile objects
    */
   _filterBlockedSponsors(tiles) {
-    const blocklist = JSON.parse(
-      Services.prefs.getStringPref(TOP_SITES_BLOCKED_SPONSORS_PREF, "[]")
-    );
+    let blocklist;
+    try {
+      blocklist = JSON.parse(
+        Services.prefs.getStringPref(TOP_SITES_BLOCKED_SPONSORS_PREF, "[]")
+      );
+    } catch (e) {
+      blocklist = [];
+    }
     return tiles.filter(
       tile => !blocklist.includes(lazy.NewTabUtils.shortURL(tile))
     );
@@ -1088,9 +1093,14 @@ export class TopSitesFeed {
     this._useRemoteSetting = true;
     let remoteSettingData = await this._getRemoteConfig();
 
-    const sponsoredBlocklist = JSON.parse(
-      Services.prefs.getStringPref(TOP_SITES_BLOCKED_SPONSORS_PREF, "[]")
-    );
+    let sponsoredBlocklist;
+    try {
+      sponsoredBlocklist = JSON.parse(
+        Services.prefs.getStringPref(TOP_SITES_BLOCKED_SPONSORS_PREF, "[]")
+      );
+    } catch (e) {
+      sponsoredBlocklist = [];
+    }
 
     for (let siteData of remoteSettingData) {
       let hostname = lazy.NewTabUtils.shortURL(siteData);

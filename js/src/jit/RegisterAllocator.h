@@ -186,7 +186,7 @@ class InstructionDataMap {
   FixedList<LNode*> insData_;
 
  public:
-  InstructionDataMap() {}
+  InstructionDataMap() = default;
 
   [[nodiscard]] bool init(MIRGenerator* gen, uint32_t numInstructions) {
     if (!insData_.init(gen->alloc(), numInstructions)) {
@@ -206,9 +206,6 @@ class InstructionDataMap {
 
 // Common superclass for register allocators.
 class RegisterAllocator {
-  void operator=(const RegisterAllocator&) = delete;
-  RegisterAllocator(const RegisterAllocator&) = delete;
-
  protected:
   // Context
   MIRGenerator* mir;
@@ -272,6 +269,9 @@ class RegisterAllocator {
 #endif
     MOZ_ASSERT(!regs.has(FramePointer));
   }
+
+  void operator=(const RegisterAllocator&) = delete;
+  RegisterAllocator(const RegisterAllocator&) = delete;
 };
 
 static inline AnyRegister GetFixedRegister(const LDefinition* def,

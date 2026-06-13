@@ -22,10 +22,8 @@ class MOZ_RAII AutoProfilerStyleMarker {
     if (!mActive) {
       return;
     }
-    MOZ_ASSERT(!ServoTraversalStatistics::sActive,
-               "Nested AutoProfilerStyleMarker");
-    ServoTraversalStatistics::sSingleton = ServoTraversalStatistics();
-    ServoTraversalStatistics::sActive = true;
+    mPreviousSingleton = ServoTraversalStatistics::sSingleton;
+    ServoTraversalStatistics::sSingleton = &mStats;
 
     mStartTime = TimeStamp::Now();
   }
@@ -68,17 +66,14 @@ class MOZ_RAII AutoProfilerStyleMarker {
       }
     };
 
-    ServoTraversalStatistics::sActive = false;
+    ServoTraversalStatistics::sSingleton = mPreviousSingleton;
     profiler_add_marker("Styles", geckoprofiler::category::LAYOUT,
                         {MarkerTiming::IntervalUntilNowFrom(mStartTime),
                          MarkerStack::TakeBacktrace(std::move(mCause)),
                          MarkerInnerWindowId(mInnerWindowID)},
-                        StyleMarker{},
-                        ServoTraversalStatistics::sSingleton.mElementsTraversed,
-                        ServoTraversalStatistics::sSingleton.mElementsStyled,
-                        ServoTraversalStatistics::sSingleton.mElementsMatched,
-                        ServoTraversalStatistics::sSingleton.mStylesShared,
-                        ServoTraversalStatistics::sSingleton.mStylesReused);
+                        StyleMarker{}, mStats.mElementsTraversed,
+                        mStats.mElementsStyled, mStats.mElementsMatched,
+                        mStats.mStylesShared, mStats.mStylesReused);
   }
 
  private:
@@ -86,6 +81,8 @@ class MOZ_RAII AutoProfilerStyleMarker {
   TimeStamp mStartTime;
   UniquePtr<ProfileChunkedBuffer> mCause;
   Maybe<uint64_t> mInnerWindowID;
+  ServoTraversalStatistics mStats;
+  ServoTraversalStatistics* mPreviousSingleton = nullptr;
 };
 
 }  // namespace mozilla

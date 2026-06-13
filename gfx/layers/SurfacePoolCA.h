@@ -7,7 +7,6 @@
 
 #include <IOSurface/IOSurfaceRef.h>
 
-#include <deque>
 #include <unordered_map>
 
 #include "mozilla/DataMutex.h"

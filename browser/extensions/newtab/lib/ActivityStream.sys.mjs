@@ -46,6 +46,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   RemoteRenderer: "resource://newtab/lib/RemoteRenderer.sys.mjs",
   SectionsFeed: "resource://newtab/lib/SectionsManager.sys.mjs",
   SectionsLayoutFeed: "resource://newtab/lib/SectionsLayoutFeed.sys.mjs",
+  SportsFeed: "resource://newtab/lib/Widgets/SportsFeed.sys.mjs",
   StartupCacheInit: "resource://newtab/lib/StartupCacheInit.sys.mjs",
   Store: "resource://newtab/lib/Store.sys.mjs",
   SystemTickFeed: "resource://newtab/lib/SystemTickFeed.sys.mjs",
@@ -242,8 +243,13 @@ function getDefaultWidgetSize() {
  * explicit one-time migration step.
  *
  * This sets a default pref, not a user pref. Users who change their size via
- * the UI are fully migrated (their choice becomes a user pref). Users who never
- * touch the UI remain dependent on this function at every startup.
+ * the UI are fully migrated (their choice becomes a user pref — see the
+ * sentinel approach documented in WidgetsRegistry.mjs). Users who never touch
+ * the UI remain dependent on this function at every startup.
+ *
+ * widgets.weather.size uses getValue here instead of value: "" (the approach
+ * used by other widget size prefs) because the correct initial value depends
+ * on the user's prior weather configuration and cannot be a static default.
  *
  * - No forecast system pref → user had the classic weather widget → "small" (sidebar)
  * - Forecast enabled + display !== "detailed" → user switched to simple weather → "small"
@@ -252,8 +258,8 @@ function getDefaultWidgetSize() {
  */
 // @nova-cleanup(remove-pref): Replace this function with a _migratePref call
 // that writes the computed size as a user pref for widgets.weather.size, then
-// change widgets.weather.size in PREFS_CONFIG from getValue: getWeatherWidgetSize
-// to getValue: getDefaultWidgetSize.
+// change widgets.weather.size in PREFS_CONFIG to value: "" (consistent with
+// other widget size prefs; new users fall through to defaultSize in the registry).
 function getWeatherWidgetSize() {
   const forecastSystemEnabled = Services.prefs.getBoolPref(
     "browser.newtabpage.activity-stream.widgets.system.weatherForecast.enabled",
@@ -532,6 +538,20 @@ export const PREFS_CONFIG = new Map([
         "Temporary measure for trainhopping. This adds the Merino endpoint for the hourly forecasts to display in Weather Forecast widget",
       value:
         "https://merino.services.mozilla.com/api/v1/weather/hourly-forecasts",
+    },
+  ],
+  [
+    "sports.worldCup.teamsEndpoint",
+    {
+      title: "The Merino endpoint for fetching available World Cup teams data",
+      value: "https://merino.services.mozilla.com/api/v1/wcs/teams",
+    },
+  ],
+  [
+    "sports.worldCup.matchesEndpoint",
+    {
+      title: "The Merino endpoint for fetching World Cup match data",
+      value: "https://merino.services.mozilla.com/api/v1/wcs/matches",
     },
   ],
   [
@@ -1266,6 +1286,20 @@ export const PREFS_CONFIG = new Map([
     },
   ],
   [
+    "widgets.clocks.enabled",
+    {
+      title: "Enables the clock widget",
+      value: true,
+    },
+  ],
+  [
+    "widgets.system.clocks.enabled",
+    {
+      title: "Enables the clock widget experiment in Nimbus",
+      value: false,
+    },
+  ],
+  [
     "widgets.defaultSize",
     {
       title: "Default size for widgets (medium or large)",
@@ -1276,14 +1310,72 @@ export const PREFS_CONFIG = new Map([
     "widgets.lists.size",
     {
       title: "Size of the lists widget (medium or large)",
-      getValue: getDefaultWidgetSize,
+      value: "",
     },
   ],
   [
     "widgets.focusTimer.size",
     {
       title: "Size of the focus timer widget (medium or large)",
+      value: "",
+    },
+  ],
+  [
+    "widgets.sportsWidget.enabled",
+    {
+      title: "Enables the sports widget",
+      value: true,
+    },
+  ],
+  [
+    "widgets.system.sportsWidget.enabled",
+    {
+      title: "Enables the sports widget experiment in Nimbus",
+      value: false,
+    },
+  ],
+  [
+    "widgets.sportsWidget.size",
+    {
+      title: "Size of the sports widget (medium or large)",
+      value: "",
+    },
+  ],
+  [
+    "widgets.sportsWidget.live.enabled",
+    {
+      title: "Enables live scores in the sports widget",
+      value: false,
+    },
+  ],
+  [
+    "widgets.sportsWidget.interaction",
+    {
+      title:
+        "Boolean flag for determining if a user has interacted with the sports widget",
+      value: false,
+    },
+  ],
+  [
+    "widgets.clocks.size",
+    {
+      title: "Size of the clock widget (small, medium, or large)",
       getValue: getDefaultWidgetSize,
+    },
+  ],
+  [
+    "widgets.clocks.hourFormat",
+    {
+      title:
+        "User override for clock widget hour format ('12', '24', or empty string to use locale default)",
+      value: "",
+    },
+  ],
+  [
+    "widgets.clocks.zones",
+    {
+      title: "Saved clock widget time zones",
+      value: "",
     },
   ],
   [
@@ -1298,6 +1390,14 @@ export const PREFS_CONFIG = new Map([
     {
       title: "Shows a toast when all widgets are hidden via the X button",
       value: false,
+    },
+  ],
+  [
+    "widgets.order",
+    {
+      title:
+        "Widget display order as a comma-separated list of widget IDs. Empty string means use the default registry order.",
+      value: "",
     },
   ],
   [
@@ -1807,6 +1907,12 @@ const FEEDS_DATA = [
     name: "listsfeed",
     factory: () => new lazy.ListsFeed(),
     title: "Handles the data for the Todo list widget",
+    value: true,
+  },
+  {
+    name: "sportsfeed",
+    factory: () => new lazy.SportsFeed(),
+    title: "Handles persistent state for the Sports widget",
     value: true,
   },
   {

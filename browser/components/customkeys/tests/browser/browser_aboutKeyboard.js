@@ -809,3 +809,49 @@ addAboutKbTask(async function testFunctionKey(tab) {
     );
   });
 });
+
+// Test that the Meta (super) key works on Linux.
+if (isLinux) {
+  addAboutKbTask(async function testMetaKeyLinux(tab) {
+    await SpecialPowers.spawn(tab, [], async () => {
+      content.downloadsRow = content.document.querySelector(
+        '.key[data-id="key_openDownloads"]'
+      );
+      ok(
+        !content.downloadsRow.classList.contains("customized"),
+        "key_openDownloads is not customized"
+      );
+      info("Clicking Change for key_openDownloads");
+      content.input = content.downloadsRow.querySelector(".new");
+      let focused = ContentTaskUtils.waitForEvent(content.input, "focus");
+      content.change = content.downloadsRow.querySelector(".change");
+      content.change.click();
+      await focused;
+      ok(true, "New key input got focus");
+      content.selected = ContentTaskUtils.waitForEvent(content.input, "select");
+    });
+    info("Pressing Meta (super) key");
+    EventUtils.synthesizeKey("KEY_Meta", {}, window);
+    await SpecialPowers.spawn(tab, [], async () => {
+      await content.selected;
+      is(content.input.value, "Win+", "Input shows Meta modifier");
+      content.focused = ContentTaskUtils.waitForEvent(content.change, "focus");
+    });
+    info("Pressing Meta+Y");
+    EventUtils.synthesizeKey("Y", { metaKey: true }, window);
+    await SpecialPowers.spawn(tab, [], async () => {
+      await content.focused;
+      ok(true, "Change button got focus");
+      ok(
+        content.downloadsRow.classList.contains("customized"),
+        "key_openDownloads is customized"
+      );
+      is(
+        content.downloadsRow.children[1].textContent,
+        "Win+Y",
+        "Key is the customized key"
+      );
+    });
+    CustomKeys.resetAll();
+  });
+}

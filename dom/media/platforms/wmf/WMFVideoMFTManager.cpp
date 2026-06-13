@@ -373,7 +373,8 @@ MediaResult WMFVideoMFTManager::InitInternal() {
                 DefaultColorSpace({mImageSize.width, mImageSize.height})),
             mColorRange, mColorDepth,
             mVideoInfo.mTransferFunction.refOr(gfx::TransferFunction::BT709),
-            mVideoInfo.ImageRect().width, mVideoInfo.ImageRect().height),
+            mVideoInfo.mHDRMetadata, mVideoInfo.ImageRect().width,
+            mVideoInfo.ImageRect().height),
         MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
                     RESULT_DETAIL("Fail to configure image size for "
                                   "DXVA2Manager.")));
@@ -875,7 +876,8 @@ WMFVideoMFTManager::Output(int64_t aStreamOffset, RefPtr<MediaData>& aOutData) {
                 DefaultColorSpace({mImageSize.width, mImageSize.height})),
             mColorRange, mColorDepth,
             mVideoInfo.mTransferFunction.refOr(gfx::TransferFunction::BT709),
-            mVideoInfo.ImageRect().width, mVideoInfo.ImageRect().height);
+            mVideoInfo.mHDRMetadata, mVideoInfo.ImageRect().width,
+            mVideoInfo.ImageRect().height);
         NS_ENSURE_TRUE(SUCCEEDED(hr), hr);
       } else {
         // The stride may have changed, recheck for it.

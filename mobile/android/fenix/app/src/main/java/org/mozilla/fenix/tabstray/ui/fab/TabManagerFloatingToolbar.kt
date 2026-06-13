@@ -21,7 +21,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -42,6 +41,7 @@ import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.button.FloatingActionButton
 import mozilla.components.compose.base.button.FloatingActionButtonDefaults
+import mozilla.components.compose.base.button.IconButton
 import mozilla.components.compose.base.button.TextButton
 import mozilla.components.compose.base.menu.DropdownMenu
 import mozilla.components.compose.base.menu.MenuItem
@@ -187,12 +187,13 @@ private fun FloatingToolbarActions(
             if (state.searchIconVisible) {
                 IconButton(
                     onClick = onSearchClicked,
+                    contentDescription = stringResource(id = R.string.tab_manager_open_tab_search),
                     modifier = Modifier.testTag(TabsTrayTestTag.TAB_SEARCH_ICON),
                     enabled = state.searchIconEnabled,
                 ) {
                     Icon(
                         painter = painterResource(iconsR.drawable.mozac_ic_search_24),
-                        contentDescription = stringResource(id = R.string.tab_manager_open_tab_search),
+                        contentDescription = null,
                     )
                 }
             }
@@ -202,11 +203,12 @@ private fun FloatingToolbarActions(
                     onMenuShown()
                     showBottomAppBarMenu = true
                 },
+                contentDescription = stringResource(id = R.string.open_tabs_menu),
                 modifier = Modifier.testTag(TabsTrayTestTag.THREE_DOT_BUTTON),
             ) {
                 Icon(
                     painter = painterResource(iconsR.drawable.mozac_ic_ellipsis_vertical_24),
-                    contentDescription = stringResource(id = R.string.open_tabs_menu),
+                    contentDescription = null,
                 )
 
                 DropdownMenu(
@@ -423,9 +425,6 @@ private class TabManagerFloatingToolbarParameterProvider :
             TabManagerFloatingToolbarPreviewModel(
                 state = TabsTrayState(
                     selectedPage = Page.NormalTabs,
-                    config = TabsTrayState.TabsTrayConfig(
-                        tabSearchEnabled = false,
-                    ),
                     normalTabsState = TabsTrayState.NormalTabsState(
                         items = listOf(createTab(url = "url")),
                     ),
@@ -434,9 +433,6 @@ private class TabManagerFloatingToolbarParameterProvider :
             TabManagerFloatingToolbarPreviewModel(
                 state = TabsTrayState(
                     selectedPage = Page.NormalTabs,
-                    config = TabsTrayState.TabsTrayConfig(
-                        tabSearchEnabled = true,
-                    ),
                     normalTabsState = TabsTrayState.NormalTabsState(
                         items = emptyList(),
                     ),
@@ -445,9 +441,6 @@ private class TabManagerFloatingToolbarParameterProvider :
             TabManagerFloatingToolbarPreviewModel(
                 state = TabsTrayState(
                     selectedPage = Page.PrivateTabs,
-                    config = TabsTrayState.TabsTrayConfig(
-                        tabSearchEnabled = true,
-                    ),
                     privateBrowsing = TabsTrayState.PrivateBrowsingState(
                         tabs = listOf(createTab(url = "url")),
                     ),
@@ -456,9 +449,6 @@ private class TabManagerFloatingToolbarParameterProvider :
             TabManagerFloatingToolbarPreviewModel(
                 state = TabsTrayState(
                     selectedPage = Page.PrivateTabs,
-                    config = TabsTrayState.TabsTrayConfig(
-                        tabSearchEnabled = true,
-                    ),
                     privateBrowsing = TabsTrayState.PrivateBrowsingState(
                         tabs = emptyList(),
                     ),
@@ -467,18 +457,12 @@ private class TabManagerFloatingToolbarParameterProvider :
             TabManagerFloatingToolbarPreviewModel(
                 state = TabsTrayState(
                     selectedPage = Page.SyncedTabs,
-                    config = TabsTrayState.TabsTrayConfig(
-                        tabSearchEnabled = true,
-                    ),
                 ),
                 isSignedIn = true,
             ),
             TabManagerFloatingToolbarPreviewModel(
                 state = TabsTrayState(
                     selectedPage = Page.SyncedTabs,
-                    config = TabsTrayState.TabsTrayConfig(
-                        tabSearchEnabled = true,
-                    ),
                 ),
                 isSignedIn = false,
             ),

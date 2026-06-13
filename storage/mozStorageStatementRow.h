@@ -33,7 +33,7 @@ class StatementRow final : public nsISupports, public nsWrapperCache {
   nsPIDOMWindowInner* GetParentObject() const { return mWindow; }
 
  private:
-  ~StatementRow() {}
+  ~StatementRow() = default;
 
   nsCOMPtr<nsPIDOMWindowInner> mWindow;
   Statement* mStatement;

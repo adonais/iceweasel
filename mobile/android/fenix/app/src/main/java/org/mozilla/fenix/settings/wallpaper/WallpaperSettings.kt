@@ -313,7 +313,7 @@ private fun WallpaperThumbnailItem(
 
 @Composable
 private fun Modifier.edgeToEdgeGradientConditional(predicate: () -> Boolean): Modifier =
-    thenConditional(
+    this.thenConditional(
         Modifier.background(
             brush =
                 Brush.verticalGradient(

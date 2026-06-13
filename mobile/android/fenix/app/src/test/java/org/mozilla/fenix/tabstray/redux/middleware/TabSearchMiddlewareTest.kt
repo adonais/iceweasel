@@ -14,6 +14,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mozilla.fenix.tabstray.data.TabGroupTheme
 import org.mozilla.fenix.tabstray.data.TabsTrayItem
 import org.mozilla.fenix.tabstray.redux.action.TabSearchAction
 import org.mozilla.fenix.tabstray.redux.state.Page
@@ -23,6 +24,45 @@ import org.mozilla.fenix.tabstray.redux.store.TabsTrayStore
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(AndroidJUnit4::class)
 class TabSearchMiddlewareTest {
+
+    @Test
+    fun `WHEN SearchQueryChanged on NormalTabs THEN search results include matching tabs inside tab groups`() = runTest {
+        val matchingTabInGroup = TabsTrayItem.Tab(tab = createTab(url = "mozilla.org", title = "Inside Group"))
+        val nonMatchingTabInGroup = TabsTrayItem.Tab(tab = createTab(url = "example.com", title = "Other"))
+
+        val tabGroup = TabsTrayItem.TabGroup(
+            id = "group-id",
+            title = "Group Title",
+            theme = TabGroupTheme.Yellow,
+            tabs = mutableListOf(matchingTabInGroup, nonMatchingTabInGroup),
+            closed = false,
+        )
+
+        val otherNormalTab = TabsTrayItem.Tab(tab = createTab(url = "mozilla.com", title = "Standalone"))
+
+        val store = TabsTrayStore(
+            middlewares = listOf(
+                TabSearchMiddleware(
+                    scope = this,
+                    mainScope = this,
+                ),
+            ),
+            initialState = TabsTrayState(
+                selectedPage = Page.NormalTabs,
+                normalTabsState = TabsTrayState.NormalTabsState(
+                    items = listOf(tabGroup, otherNormalTab),
+                ),
+            ),
+        )
+
+        store.dispatch(TabSearchAction.SearchQueryChanged("mozilla"))
+        advanceUntilIdle()
+
+        val expectedSearchResults = listOf(matchingTabInGroup, otherNormalTab)
+        assertEquals(expectedSearchResults.size, store.state.tabSearchState.searchResults.size)
+        assertTrue(store.state.tabSearchState.searchResults.contains(matchingTabInGroup))
+        assertTrue(store.state.tabSearchState.searchResults.contains(otherNormalTab))
+    }
 
     @Test
     fun `WHEN SearchQueryChanged on NormalTabs THEN search results include matching normal and inactive tabs`() = runTest {

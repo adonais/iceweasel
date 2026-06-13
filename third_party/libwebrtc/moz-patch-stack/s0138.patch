@@ -1,158 +1,33 @@
-From: Jan Grulich <jgrulich@redhat.com>
-Date: Tue, 31 Mar 2026 15:05:00 +0000
-Subject: Bug 2023103 - WebRTC backport: PipeWire capture: fix camera
- capability enumeration race and duplicates r=pehrsons
+From: Michael Froman <mfroman@mozilla.com>
+Date: Wed, 8 Apr 2026 10:58:00 -0500
+Subject: Bug 2030139 - (fix-bb3693c382) fix linux builds for constexpr
+ containing std::string
 
-Don't enumerate capabilities without actual format changes. Push the new
-discovered capabilities into a pending list and swap pending list into
-actual capabilities only after all params from the enumeration have been
-received to ensure capabilities are never empty while enumerating.
-
-This is a simple backport of an WebRTC upstream change.
-
-Upstream commit: 4487631837501e9ff44195f4a718f0b743c8e5d9
-
-Differential Revision: https://phabricator.services.mozilla.com/D290868
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/a905d52a7522c83288771bdd918cac0b4c8143d4
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/cab51cf0d4e9e67e9f5b053128d05e859d47b7c2
 ---
- modules/portal/pipewire.sigs                  |  6 +++
- .../video_capture/linux/pipewire_session.cc   | 41 ++++++++++++++++---
- .../video_capture/linux/pipewire_session.h    |  5 +++
- 3 files changed, 46 insertions(+), 6 deletions(-)
+ modules/portal/pipewire_utils.cc | 9 +++++++++
+ 1 file changed, 9 insertions(+)
 
-diff --git a/modules/portal/pipewire.sigs b/modules/portal/pipewire.sigs
-index cab90280ef..f922048548 100644
---- a/modules/portal/pipewire.sigs
-+++ b/modules/portal/pipewire.sigs
-@@ -54,5 +54,11 @@ pw_context *pw_context_new(pw_loop *main_loop, pw_properties *props, size_t user
- pw_core * pw_context_connect(pw_context *context, pw_properties *properties, size_t user_data_size);
- pw_core * pw_context_connect_fd(pw_context *context, int fd, pw_properties *properties, size_t user_data_size);
+diff --git a/modules/portal/pipewire_utils.cc b/modules/portal/pipewire_utils.cc
+index 850726cc58..7008696b7d 100644
+--- a/modules/portal/pipewire_utils.cc
++++ b/modules/portal/pipewire_utils.cc
+@@ -28,9 +28,18 @@
  
-+// node.h
-+struct pw_node_info * pw_node_info_update(struct pw_node_info *info, const struct pw_node_info *update);
-+void pw_node_info_free(struct pw_node_info *info);
-+
- // proxy.h
- void pw_proxy_destroy(struct pw_proxy *proxy);
-+void pw_proxy_add_listener(struct pw_proxy *proxy, struct spa_hook *listener, const struct pw_proxy_events *events, void *data);
-+int pw_proxy_sync(struct pw_proxy *proxy, int seq);
-diff --git a/modules/video_capture/linux/pipewire_session.cc b/modules/video_capture/linux/pipewire_session.cc
-index d2108586b1..b61440463d 100644
---- a/modules/video_capture/linux/pipewire_session.cc
-+++ b/modules/video_capture/linux/pipewire_session.cc
-@@ -29,6 +29,7 @@
- #include <cstring>
- #include <memory>
- #include <optional>
-+#include <utility>
+ namespace webrtc {
  
- #include "absl/strings/string_view.h"
- #include "common_video/libyuv/include/webrtc_libyuv.h"
-@@ -76,7 +77,9 @@ VideoType PipeWireRawFormatToVideoType(uint32_t id) {
- void PipeWireNode::PipeWireNodeDeleter::operator()(
-     PipeWireNode* node) const noexcept {
-   spa_hook_remove(&node->node_listener_);
-+  spa_hook_remove(&node->proxy_listener_);
-   pw_proxy_destroy(node->proxy_);
-+  pw_node_info_free(node->info_);
- }
++#if defined(__GNUC__) && defined(WEBRTC_MOZILLA_BUILD)
++// Mozilla linux builds are using -std=gnu++20, which doesn't approve
++// of using std::string in a constexpr.  PipewireVersion now contains
++// std::string as of libwebrtc commit d167fe9296.
++static const PipeWireVersion kReentrantDeinitMinVersion = {.major = 0,
++                                                           .minor = 3,
++                                                           .micro = 49};
++#else
+ constexpr PipeWireVersion kReentrantDeinitMinVersion = {.major = 0,
+                                                         .minor = 3,
+                                                         .micro = 49};
++#endif
  
- // static
-@@ -106,6 +109,13 @@ PipeWireNode::PipeWireNode(PipeWireSession* session,
-   };
- 
-   pw_node_add_listener(reinterpret_cast<pw_node*>(proxy_), &node_listener_, &node_events, this);
-+
-+  static const pw_proxy_events proxy_events{
-+      .version = PW_VERSION_PROXY_EVENTS,
-+      .done = OnProxyDone,
-+  };
-+
-+  pw_proxy_add_listener(proxy_, &proxy_listener_, &proxy_events, this);
- }
- 
- // static
-@@ -113,6 +123,12 @@ RTC_NO_SANITIZE("cfi-icall")
- void PipeWireNode::OnNodeInfo(void* data, const pw_node_info* info) {
-   PipeWireNode* that = static_cast<PipeWireNode*>(data);
- 
-+  that->info_ = pw_node_info_update(that->info_, info);
-+  if (!that->info_)
-+    return;
-+
-+  info = that->info_;
-+
-   if (info->change_mask & PW_NODE_CHANGE_MASK_PROPS) {
-     const char* vid_str;
-     const char* pid_str;
-@@ -134,18 +150,20 @@ void PipeWireNode::OnNodeInfo(void* data, const pw_node_info* info) {
- 
-   if (info->change_mask & PW_NODE_CHANGE_MASK_PARAMS) {
-     for (uint32_t i = 0; i < info->n_params; i++) {
-+      if (info->params[i].user == 0)
-+        continue;
-+      info->params[i].user = 0;
-+
-       uint32_t id = info->params[i].id;
-       if (id == SPA_PARAM_EnumFormat &&
-           info->params[i].flags & SPA_PARAM_INFO_READ) {
--        RTC_LOG(LS_INFO)
--            << "Clearing existing capabilities before re-enumeration for "
--            << that->display_name_;
--        that->capabilities_.clear();
-+        that->pending_capabilities_.clear();
-         pw_node_enum_params(reinterpret_cast<pw_node*>(that->proxy_), 0, id, 0, UINT32_MAX, nullptr);
-+        that->sync_seq_ = pw_proxy_sync(that->proxy_, that->sync_seq_);
-+        that->session_->PipeWireSync();
-         break;
-       }
-     }
--    that->session_->PipeWireSync();
-   }
- }
- 
-@@ -213,7 +231,18 @@ void PipeWireNode::OnNodeParam(void* data,
-                       << cap.width << "x" << cap.height << "@" << cap.maxFPS
-                       << ")";
- 
--  that->capabilities_.push_back(cap);
-+  that->pending_capabilities_.push_back(cap);
-+}
-+
-+// static
-+void PipeWireNode::OnProxyDone(void* data, int seq) {
-+  PipeWireNode* that = static_cast<PipeWireNode*>(data);
-+
-+  if (seq != that->sync_seq_)
-+    return;
-+
-+  that->capabilities_ = std::move(that->pending_capabilities_);
-+  that->pending_capabilities_.clear();
- }
- 
- // static
-diff --git a/modules/video_capture/linux/pipewire_session.h b/modules/video_capture/linux/pipewire_session.h
-index 29998822fc..0eebcc0f6a 100644
---- a/modules/video_capture/linux/pipewire_session.h
-+++ b/modules/video_capture/linux/pipewire_session.h
-@@ -73,15 +73,20 @@ class PipeWireNode {
-                           uint32_t next,
-                           const spa_pod* param);
-   static bool ParseFormat(const spa_pod* param, VideoCaptureCapability* cap);
-+  static void OnProxyDone(void* data, int seq);
- 
-   struct pw_proxy* proxy_;
-   struct spa_hook node_listener_;
-+  struct spa_hook proxy_listener_;
-   PipeWireSession* session_;
-   uint32_t id_;
-   std::string display_name_;
-   std::string unique_id_;
-   std::string model_id_;
-+  struct pw_node_info* info_ = nullptr;
-+  int sync_seq_ = 0;
-   std::vector<VideoCaptureCapability> capabilities_;
-+  std::vector<VideoCaptureCapability> pending_capabilities_;
- };
- 
- class CameraPortalNotifier : public CameraPortal::PortalNotifier {
+ PipeWireVersion PipeWireVersion::Parse(const std::string_view& version) {
+   std::vector<std::string_view> parsed_version = split(version, '.');

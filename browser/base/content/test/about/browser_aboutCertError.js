@@ -61,8 +61,11 @@ add_task(async function checkReturnToAboutHome() {
         info("Felt Privacy enabled - using net-error-card");
 
         await SpecialPowers.spawn(bc, [useFrame], async function (subFrame) {
-          const netErrorCard =
-            content.document.querySelector("net-error-card").wrappedJSObject;
+          const netErrorCard = await ContentTaskUtils.waitForCondition(
+            () =>
+              content.document.querySelector("net-error-card")?.wrappedJSObject,
+            "Waiting for net-error-card"
+          );
           await netErrorCard.getUpdateComplete();
           const returnButton = netErrorCard.returnButton;
 
@@ -729,7 +732,10 @@ add_task(async function testCertificateTransparency_feltPrivacyTrue() {
     const message = await SpecialPowers.spawn(bc, [], async function () {
       const doc = content.document;
 
-      const netErrorCard = doc.querySelector("net-error-card").wrappedJSObject;
+      const netErrorCard = await ContentTaskUtils.waitForCondition(
+        () => doc.querySelector("net-error-card")?.wrappedJSObject,
+        "Waiting for net-error-card"
+      );
       await netErrorCard.getUpdateComplete();
 
       netErrorCard.advancedButton.scrollIntoView();
@@ -829,8 +835,11 @@ async function assertNetErrorPage({
       bc,
       [expectedHostname, expectedErrorCode],
       async function (hostname, errorCode) {
-        const netErrorCard =
-          content.document.querySelector("net-error-card").wrappedJSObject;
+        const netErrorCard = await ContentTaskUtils.waitForCondition(
+          () =>
+            content.document.querySelector("net-error-card")?.wrappedJSObject,
+          "Waiting for net-error-card"
+        );
         await netErrorCard.getUpdateComplete();
 
         // Assert Error Card Basics
@@ -1041,8 +1050,10 @@ async function assertViewSourceNetErrorPage({
   const loaded = BrowserTestUtils.browserLoaded(browser, false, expectedUrl);
 
   await SpecialPowers.spawn(browser, [], async function () {
-    const netErrorCard =
-      content.document.querySelector("net-error-card").wrappedJSObject;
+    const netErrorCard = await ContentTaskUtils.waitForCondition(
+      () => content.document.querySelector("net-error-card")?.wrappedJSObject,
+      "Waiting for net-error-card"
+    );
     await netErrorCard.getUpdateComplete();
     // Advanced button
     const advancedButton = netErrorCard.advancedButton;
@@ -1219,8 +1230,10 @@ add_task(async function checkSandboxedIframe_feltPrivacyToTrue() {
 
   let bc = browser.browsingContext.children[0];
   await SpecialPowers.spawn(bc, [], async function () {
-    const netErrorCard =
-      content.document.querySelector("net-error-card").wrappedJSObject;
+    const netErrorCard = await ContentTaskUtils.waitForCondition(
+      () => content.document.querySelector("net-error-card")?.wrappedJSObject,
+      "Waiting for net-error-card"
+    );
     await netErrorCard.getUpdateComplete();
 
     // Assert Error Card Basics

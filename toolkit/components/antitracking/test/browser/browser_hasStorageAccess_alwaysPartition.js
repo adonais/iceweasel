@@ -213,10 +213,6 @@ var testCases = [
         allowList: false,
         callback,
         extraPrefs: [
-          [
-            "privacy.partition.always_partition_third_party_non_cookie_storage",
-            true,
-          ],
           // Testing Storage Access API grants constrained to secure contexts
           ["dom.storage_access.dont_grant_insecure_contexts", true],
         ],

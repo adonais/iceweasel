@@ -245,7 +245,7 @@ add_task(async function slow_load_guaranteed() {
 
   // Simulate a tab that was in search mode, loaded a SERP, then was switched
   // away from before setURI was called.
-  backgroundTab.ownerGlobal.gURLBar.searchMode = { engineName };
+  backgroundTab.documentGlobal.gURLBar.searchMode = { engineName };
   let loadPromise = BrowserTestUtils.browserLoaded(backgroundTab.linkedBrowser);
   BrowserTestUtils.startLoadingURIString(
     backgroundTab.linkedBrowser,

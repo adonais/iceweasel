@@ -3,8 +3,7 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/.
  *
  * The origin of this IDL file is
- * http://www.w3.org/TR/css3-animations/#animation-events-
- * http://dev.w3.org/csswg/css3-animations/#animation-events-
+ * https://drafts.csswg.org/css-animations-1/#interface-animationevent
  *
  * Copyright © 2012 W3C® (MIT, ERCIM, Keio), All Rights Reserved. W3C
  * liability, trademark and document use rules apply.
@@ -17,10 +16,12 @@ interface AnimationEvent : Event {
   readonly attribute DOMString animationName;
   readonly attribute float     elapsedTime;
   readonly attribute DOMString pseudoElement;
+  readonly attribute CSSAnimation? animation;
 };
 
 dictionary AnimationEventInit : EventInit {
   DOMString animationName = "";
   float elapsedTime = 0;
   DOMString pseudoElement = "";
+  CSSAnimation? animation = null;
 };

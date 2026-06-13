@@ -60,6 +60,13 @@ FINAL_TARGET_FILES.prerendered += [
 # external UI components maintained by other teams that have the ability to
 # "train-hop" with the rest of newtab.
 FINAL_TARGET_FILES.data.data.content["external-components"][
+    "asrouter-newtab-multistage"
+] += [
+    "../../../components/asrouter/content/components/asrouter-newtab-multistage/asrouter-newtab-multistage.bundle.js",
+    "../../../components/asrouter/content/components/asrouter-newtab-multistage/asrouter-newtab-multistage.css",
+]
+
+FINAL_TARGET_FILES.data.data.content["external-components"][
     "asrouter-newtab-message"
 ] += [
     "../../../components/asrouter/content/components/asrouter-newtab-message/asrouter-newtab-message.css",

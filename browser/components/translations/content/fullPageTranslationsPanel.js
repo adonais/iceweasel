@@ -10,6 +10,8 @@
 
 ChromeUtils.defineESModuleGetters(this, {
   PageActions: "resource:///modules/PageActions.sys.mjs",
+  TranslationsFeature:
+    "chrome://global/content/translations/TranslationsFeature.sys.mjs",
   TranslationsUtils:
     "chrome://global/content/translations/TranslationsUtils.mjs",
   TranslationsPanelShared:
@@ -873,14 +875,44 @@ var FullPageTranslationsPanel = new (class {
    *
    * @param {Event} event
    */
-  onChangeFromLanguage(event) {
-    const { target } = event;
-    if (target?.value) {
+  async onChangeFromLanguage(event) {
+    try {
+      const { target } = event;
+
+      if (!target?.value) {
+        return;
+      }
+
       TranslationsParent.telemetry()
         .fullPagePanel()
         .onChangeFromLanguage(target.value);
+
+      const selectedFrom = target.value;
+
+      // Compute only if "to" Language is not set
+      if (this.elements.toMenuList.value) {
+        return;
+      }
+
+      let toValue = await TranslationsParent.getTopPreferredSupportedToLang({
+        excludeLangTags: [selectedFrom], // Avoid same-to-same language translation
+      });
+
+      // Re-check in case the user selected a "to" language while awaiting top preferred to language computation.
+      if (this.elements.toMenuList.value) {
+        return;
+      }
+
+      if (TranslationsUtils.langTagsMatch(selectedFrom, toValue)) {
+        toValue = "";
+      }
+
+      this.elements.toMenuList.value = toValue;
+    } catch (error) {
+      this.console?.error(error);
+    } finally {
+      this.onChangeLanguages();
     }
-    this.onChangeLanguages();
   }
 
   /**
@@ -930,7 +962,8 @@ var FullPageTranslationsPanel = new (class {
     TranslationsParent.telemetry().fullPagePanel().onAboutTranslations();
     PanelMultiView.hidePopup(this.elements.panel);
     const window =
-      gBrowser.selectedBrowser.browsingContext.top.embedderElement.ownerGlobal;
+      gBrowser.selectedBrowser.browsingContext.top.embedderElement
+        .documentGlobal;
     window.openTrustedLinkIn(
       "https://support.mozilla.org/kb/website-translation",
       "tab",
@@ -1297,7 +1330,8 @@ var FullPageTranslationsPanel = new (class {
   openManageLanguages() {
     TranslationsParent.telemetry().fullPagePanel().onManageLanguages();
     const window =
-      gBrowser.selectedBrowser.browsingContext.top.embedderElement.ownerGlobal;
+      gBrowser.selectedBrowser.browsingContext.top.embedderElement
+        .documentGlobal;
     window.openTrustedLinkIn("about:preferences#general-translations", "tab");
   }
 
@@ -1426,7 +1460,7 @@ var FullPageTranslationsPanel = new (class {
 
     if (TranslationsParent.isFullPageTranslationsRestrictedForPage(gBrowser)) {
       this.buttonElements.button.hidden = true;
-    } else if (!TranslationsParent.AIFeature.isEnabled) {
+    } else if (!TranslationsFeature.isEnabled) {
       // When the Translations feature is disabled, no actor instance is created, therefore no
       // event will be dispatched to update button visibility. We need to handle it here instead.
       this.buttonElements.button.hidden = true;
@@ -1581,7 +1615,7 @@ var FullPageTranslationsPanel = new (class {
 
         if (
           // Only show the button if the Translations feature is enabled.
-          TranslationsParent.AIFeature.isEnabled &&
+          TranslationsFeature.isEnabled &&
           // We've already requested to translate this page, so always show the icon.
           (requestedLanguagePair ||
             // There was an error translating, so always show the icon. This can happen

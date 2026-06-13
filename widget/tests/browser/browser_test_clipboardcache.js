@@ -66,7 +66,7 @@ function getClipboardCacheFDCount() {
 
 async function testCopyPaste(isPrivate) {
   let win = await BrowserTestUtils.openNewBrowserWindow({ private: isPrivate });
-  let tab = await BrowserTestUtils.openNewForegroundTab(win);
+  let tab = await BrowserTestUtils.openNewForegroundTab(win.gBrowser);
   let browser = tab.linkedBrowser;
 
   // Sanitize environment

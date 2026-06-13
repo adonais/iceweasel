@@ -3,9 +3,14 @@ avoid-blacklist-and-whitelist:
     description: "Use words like 'skip', 'select', 'allow' or 'deny' instead"
     level: error
     include: ['.']
-    type: regex
-    payload: (black|white)[-_]?list
-    ignore-case: true
+    type: external
+    payload: mozcheck:lint
+    check: rejected-words
+    check-config:
+        regex-pattern: (black|white)[-_]?list
+        ignore-case: true
+    support-files:
+        - 'tools/lint/mozcheck/**'
     # Based on codespell with idl and webidl added.
     extensions:
         - js
@@ -48,6 +53,7 @@ avoid-blacklist-and-whitelist:
         - browser/components/migration/ChromeMigrationUtils.sys.mjs
         - browser/components/migration/ChromeProfileMigrator.sys.mjs
         - browser/components/preferences/config/privacy.mjs
+        - browser/components/preferences/config/permissions-data.mjs
         - browser/components/preferences/privacy.inc.xhtml
         - browser/components/preferences/privacy.js
         - browser/components/resistfingerprinting/test/mochitest/test_bug1354633_media_error.html
@@ -155,7 +161,6 @@ avoid-blacklist-and-whitelist:
         - layout/tools/reftest/selftest/conftest.py
         - mobile/android/android-components/docs/changelog.md
         - mobile/android/app/geckoview-prefs.js
-        - mobile/android/fenix/app/src/main/java/org/mozilla/fenix/ext/Bitmap.kt
         - mobile/android/fenix/app/src/main/java/org/mozilla/fenix/perf/StrictModeManager.kt
         - mobile/android/fenix/app/src/main/java/org/mozilla/fenix/translations/preferences/downloadlanguages/DownloadLanguagesFeature.kt
         - mobile/android/fenix/app/src/test/java/org/mozilla/fenix/translations/preferences/downloadlanguages/DownloadLanguagesFeatureTest.kt
@@ -278,6 +283,8 @@ avoid-blacklist-and-whitelist:
         - toolkit/mozapps/extensions/test/xpinstall/head.js
         - tools/fuzzing/messagemanager/MessageManagerFuzzer.cpp
         - tools/fuzzing/messagemanager/MessageManagerFuzzer.h
+        - tools/lint/mozcheck/src/batch.rs
+        - tools/lint/mozcheck/src/rejected_words.rs
         - tools/lint/rejected-words.yml
         - widget/android/GfxInfo.cpp
         - widget/GfxInfoBase.cpp
@@ -301,9 +308,14 @@ avoid-gobbledygook:
     description: "American English colloquialism. Use 'nonsense' instead."
     level: error
     include: ['.']
-    type: regex
-    payload: \b(gobbledy)?-?gook
-    ignore-case: true
+    type: external
+    payload: mozcheck:lint
+    check: rejected-words
+    check-config:
+        regex-pattern: \b(gobbledy)?-?gook
+        ignore-case: true
+    support-files:
+        - 'tools/lint/mozcheck/**'
     exclude:
         - extensions/spellcheck/locales/en-US/hunspell/dictionary-sources/orig/en_US-custom.dic
         - extensions/spellcheck/locales/en-US/hunspell/dictionary-sources/utf8/en-US-utf8.dic

@@ -2121,6 +2121,15 @@ function rstrictconstantcompareboolean_ne(i) {
     return i;
 }
 
+let uceFault_new_date_object = eval(`(${uceFault})`.replace('uceFault', 'uceFault_new_date_object'));
+function rnew_date_object(i) {
+    var x = new Date(i);
+    if (uceFault_new_date_object(i) || uceFault_new_date_object(i))
+        assertEq(x.getTime(), i);
+    assertRecoveredOnBailout(x, true);
+    return i;
+}
+
 for (j = 100 - max; j < 100; j++) {
     with({}){} // Do not Ion-compile this loop.
     let i = j < 2 ? (Math.abs(j) % 50) + 2 : j;
@@ -2336,6 +2345,7 @@ for (j = 100 - max; j < 100; j++) {
     rstrictconstantcompareint32_ne(i);
     rstrictconstantcompareboolean_eq(i);
     rstrictconstantcompareboolean_ne(i);
+    rnew_date_object(i);
 }
 
 // Test that we can refer multiple time to the same recover instruction, as well

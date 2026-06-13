@@ -216,6 +216,7 @@ skip-if = [
 skip-if = [
   "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'", # Bug 1857059
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # Bug 1776965
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 2034604
 ]
 
 ["test_group_touchevents-6.html"]

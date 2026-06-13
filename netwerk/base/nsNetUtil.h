@@ -1144,7 +1144,8 @@ enum ASDestination : uint8_t {
   DESTINATION_WORKER,
   DESTINATION_XSLT,
   DESTINATION_FETCH,
-  DESTINATION_JSON
+  DESTINATION_JSON,
+  DESTINATION_TEXT
 };
 
 void ParseAsValue(const nsAString& aValue, nsAttrValue& aResult);

@@ -1,0 +1,58 @@
+{
+  "padding": {
+    "inline": {
+      "value": "6px"
+    }
+  },
+  "field": {
+    "border": {
+      "color": {
+        "@base": {
+          "value": {
+            "light": "{color.gray.20}",
+            "dark": "{color.gray.60}",
+            "forcedColors": "ButtonText"
+          }
+        },
+        "focus": {
+          "value": {
+            "default": "#ffffff",
+            "forcedColors": "SelectedItem"
+          }
+        }
+      }
+    },
+    "background": {
+      "color": {
+        "@base": {
+          "value": "{toolbar.background.color}"
+        },
+        "focus": {
+          "value": "{background.color.box.@base}"
+        }
+      }
+    },
+    "text": {
+      "color": {
+        "@base": {
+          "value": {
+            "light": "{color.violet-desaturated.70}",
+            "dark": "{color.violet-desaturated.10}",
+            "forcedColors": "{text.color.@base}"
+          }
+        },
+        "focus": {
+          "value": "{toolbar.field.text.color.@base}"
+        }
+      }
+    }
+  },
+  "background": {
+    "color": {
+      "value": {
+        "default": "{background.color.box.@base}",
+        "forcedColors": "Canvas"
+      }
+    }
+  }
+}

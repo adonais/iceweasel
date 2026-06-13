@@ -34,8 +34,13 @@ are listed in the order they fire.
 | `browser-window-before-initial-xul-layout-document-preparation` | Before XUL layout; before the tab bar visibility update. |
 | `browser-window-before-initial-xul-layout` | Before XUL layout; after the tab bar visibility update and document icon are set. |
 | `browser-window-domcontentloaded-before-tabbrowser` | During `DOMContentLoaded`, before the `Tabbrowser` is created. |
-| `browser-window-domcontentloaded` | During `DOMContentLoaded`, after the `Tabbrowser` is created. |
+| `browser-window-domcontentloaded-tabbrowser` | During `DOMContentLoaded`, creates the `Tabbrowser`. **Internal category - do not add consumers here.** |
+| `browser-window-domcontentloaded` | During `DOMContentLoaded`, after the `Tabbrowser` is created. Preferred entry point for `DOMContentLoaded` initialization. |
 | `browser-window-delayed-startup` | After the window's first paint, for code that can run after the window is visible. |
+| `browser-window-unload-begin` | At the very start of window unload, before checking whether the window finished loading. Runs even if the window never fully loaded. |
+| `browser-window-unload` | During window unload, before `Tabbrowser` is destroyed. |
+| `browser-window-unload-tabbrowser` | During window unload, destroys the `Tabbrowser`. |
+| `browser-window-final-unload` | During window unload, after `Tabbrowser` is destroyed. |
 
 Other useful points in startup are:
 - `BrowserGlue`'s `_onWindowsRestored`, and/or the observer service's

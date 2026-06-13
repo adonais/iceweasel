@@ -89,6 +89,8 @@ tags = "remote-settings searchmain"
 
 ["test_getSubmission_params_prefNimbus_invalid.js"]
 
+["test_hideOneOffButton.js"]
+
 ["test_identifiers.js"]
 
 ["test_ignorelist.js"]
@@ -175,6 +177,8 @@ support-files = [
 
 ["test_reload_engines_locales.js"]
 
+["test_reload_engines_webextensions.js"]
+
 ["test_remove_engine_notification_box.js"]
 
 ["test_remove_profile_engine.js"]
@@ -260,15 +264,15 @@ support-files = [
 
 ["test_sort_orders.js"]
 
-["test_telemetry_event_default.js"]
+["test_telemetry_default.js"]
+
+["test_telemetry_installed_engine_counts.js"]
 
 ["test_userEngine.js"]
 
 ["test_userInstalledConfigEngine.js"]
 
 ["test_validate_engines.js"]
-
-["test_validate_manifests.js"]
 
 ["test_webextensions_install.js"]
 support-files = [
@@ -286,8 +290,6 @@ support-files = ["settings/v1-migrate-to-webextension.json"]
 ["test_webextensions_startup_duplicate.js"]
 
 ["test_webextensions_startup_remove.js"]
-
-["test_webextensions_uninstall_appProvided.js"]
 
 ["test_webextensions_upgrade.js"]
 

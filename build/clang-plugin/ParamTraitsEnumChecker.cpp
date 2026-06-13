@@ -14,9 +14,6 @@ void ParamTraitsEnumChecker::registerMatchers(MatchFinder *AstMatcher) {
               // ContiguousEnumSerializer) as these are the recommended way to
               // serialize enums.
               isDerivedFrom("EnumSerializer"),
-              // Exclude ParamTraits_IsEnumCase, which is an alternative to
-              // EnumSerializer.
-              isDerivedFrom("ParamTraits_IsEnumCase"),
               // Exclude nsresult specifically, which has a legitimate
               // ParamTraitsMozilla specialization.
               hasTemplateArgument(

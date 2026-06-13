@@ -52,6 +52,14 @@ struct StyleSizeOverrides {
   bool mApplyOverridesVerbatim = false;
 };
 
+// Defines container types that force fragmentation boundaries.
+// This supports CSS fragmentation behavior such as 'break-before: page'.
+enum class BreakType : uint8_t {
+  Auto,
+  Column,
+  Page,
+};
+
 }  // namespace mozilla
 
 #endif  // mozilla_LayoutStructs_h

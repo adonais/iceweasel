@@ -109,7 +109,7 @@ this.sessions = class extends ExtensionAPIPersistent {
     function getTabParams(key, id) {
       let encodedKey = getEncodedKey(extension.id, key);
       let tab = tabTracker.getTab(id);
-      if (!context.canAccessWindow(tab.ownerGlobal)) {
+      if (!context.canAccessWindow(tab.documentGlobal)) {
         throw new ExtensionError(`Invalid tab ID: ${id}`);
       }
       return { encodedKey, tab };
@@ -135,10 +135,8 @@ this.sessions = class extends ExtensionAPIPersistent {
       sessions: {
         async getRecentlyClosed(filter) {
           await SessionStore.promiseInitialized;
-          let maxResults =
-            filter.maxResults == undefined
-              ? this.MAX_SESSION_RESULTS
-              : filter.maxResults;
+          // TODO bug 1764376: should be at most MAX_SESSION_RESULTS
+          let maxResults = filter.maxResults ?? Infinity;
           return getRecentlyClosed(maxResults, extension);
         },
 

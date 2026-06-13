@@ -20,10 +20,11 @@ class GeckoContentController;
  */
 class APZChild final : public PAPZChild {
  public:
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(APZChild, final);
+
   using APZStateChange = GeckoContentController_APZStateChange;
 
   explicit APZChild(RefPtr<GeckoContentController> aController);
-  virtual ~APZChild();
 
   mozilla::ipc::IPCResult RecvLayerTransforms(
       nsTArray<MatrixMessage>&& aTransforms);
@@ -62,6 +63,8 @@ class APZChild final : public PAPZChild {
   mozilla::ipc::IPCResult RecvDestroy();
 
  private:
+  virtual ~APZChild();
+
   void EnsureAPZTaskRunnable() {
     if (!mAPZTaskRunnable) {
       mAPZTaskRunnable = new APZTaskRunnable(mController);

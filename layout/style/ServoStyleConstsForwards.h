@@ -41,7 +41,6 @@ class nsIContent;
 class nsCSSPropertyIDSet;
 class nsPresContext;
 class nsStaticAtom;
-class nsSimpleContentList;
 class imgRequestProxy;
 struct nsCSSValueSharedList;
 struct AnchorPosResolutionParams;
@@ -50,7 +49,7 @@ class gfxFontFeatureValueSet;
 struct GeckoFontMetrics;
 namespace mozilla {
 
-// Forward declaration for `StyleLengthPercentageUnion::AsCalc`, which
+// Forward declaration for `StyleLengthPercentage::AsCalc`, which
 // references the type below in the generated code.
 struct StyleCalcLengthPercentage;
 
@@ -140,11 +139,14 @@ enum SheetParsingMode : uint8_t;
 namespace dom {
 enum class IterationCompositeOperation : uint8_t;
 enum class CallerType : uint32_t;
+class SimpleContentList;
 
 class Element;
 class Document;
 
 }  // namespace dom
+
+using StyleSimpleContentList = dom::SimpleContentList;
 
 // Replacement for a Rust Box<T> for a non-dynamically-sized-type.
 //
@@ -211,6 +213,7 @@ using StyleDomStyleSheet = StyleSheet;
 
 using StyleRawGeckoNode = nsINode;
 using StyleRawGeckoElement = dom::Element;
+using StyleRawShadowRoot = dom::ShadowRoot;
 using StyleDocument = dom::Document;
 using StyleComputedValues = ComputedStyle;
 using StyleIterationCompositeOperation = dom::IterationCompositeOperation;

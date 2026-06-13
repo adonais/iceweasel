@@ -252,7 +252,8 @@ NS_IMETHODIMP WebrtcTCPSocket::OnProxyAvailable(nsICancelable* aRequest,
       return rv;
     }
 
-    if (mProxyType == "http" || mProxyType == "https") {
+    if (mProxyType == "http" || mProxyType == "https" ||
+        mProxyType == "masque") {
       rv = OpenWithHttpProxy();
       if (NS_WARN_IF(NS_FAILED(rv))) {
         CloseWithReason(rv);

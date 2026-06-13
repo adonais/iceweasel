@@ -638,6 +638,33 @@ static MOZ_ALWAYS_INLINE T* js_pod_realloc(T* prior, size_t oldSize,
   return js_pod_arena_realloc<T>(js::MallocArena, prior, oldSize, newSize);
 }
 
+// Prevent implicit narrowing: reject integer types wider than size_t, for all
+// allocation functions
+template <class T, std::integral N>
+  requires(sizeof(N) > sizeof(size_t))
+static T* js_pod_arena_malloc(arena_id_t arena, N numElems) = delete;
+
+template <class T, std::integral N>
+  requires(sizeof(N) > sizeof(size_t))
+static T* js_pod_malloc(N numElems) = delete;
+
+template <class T, std::integral N>
+  requires(sizeof(N) > sizeof(size_t))
+static T* js_pod_arena_calloc(arena_id_t arena, N numElems) = delete;
+
+template <class T, std::integral N>
+  requires(sizeof(N) > sizeof(size_t))
+static T* js_pod_calloc(N numElems) = delete;
+
+template <class T, std::integral N>
+  requires(sizeof(N) > sizeof(size_t))
+static T* js_pod_arena_realloc(arena_id_t arena, T* prior, N oldSize,
+                               N newSize) = delete;
+
+template <class T, std::integral N>
+  requires(sizeof(N) > sizeof(size_t))
+static T* js_pod_realloc(T* prior, N oldSize, N newSize) = delete;
+
 namespace JS {
 
 template <typename T>

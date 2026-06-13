@@ -11,8 +11,8 @@
   inset-inline-end: 10px;
   z-index: 3;
   padding: 12px;
-  background-color: var(--panel-background);
-  color: var(--panel-color);
+  background-color: var(--panel-background-color);
+  color: var(--panel-text-color);
   border-radius: var(--panel-border-radius);
 }
 

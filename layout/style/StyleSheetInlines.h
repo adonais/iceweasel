@@ -6,18 +6,17 @@
 #define mozilla_StyleSheetInlines_h
 
 #include "mozilla/StyleSheet.h"
+#include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/Document.h"
-#include "nsIGlobalObject.h"
-#include "nsINode.h"
 
 namespace mozilla {
 
 dom::ParentObject StyleSheet::GetParentObject() const {
-  if (mRelevantGlobal) {
-    return dom::ParentObject(mRelevantGlobal);
-  }
-  if (IsConstructed()) {
+  if (mConstructorDocument) {
     return dom::ParentObject(mConstructorDocument.get());
+  }
+  if (mDocumentOrShadowRoot) {
+    return dom::ParentObject(&mDocumentOrShadowRoot->AsNode());
   }
   if (mOwningNode) {
     return dom::ParentObject(mOwningNode);

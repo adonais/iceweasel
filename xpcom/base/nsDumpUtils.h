@@ -121,7 +121,8 @@ class FifoWatcher : public FdWatcher {
   static mozilla::StaticRefPtr<FifoWatcher> sSingleton;
 
   explicit FifoWatcher(nsCString aPath)
-      : mDirPath(aPath), mFifoInfoLock("FifoWatcher.mFifoInfoLock") {}
+      : mDirPath(std::move(aPath)),
+        mFifoInfoLock("FifoWatcher.mFifoInfoLock") {}
 
   mozilla::Mutex mFifoInfoLock;  // protects mFifoInfo
   FifoInfoArray mFifoInfo MOZ_GUARDED_BY(mFifoInfoLock);

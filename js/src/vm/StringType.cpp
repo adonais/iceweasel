@@ -2549,7 +2549,7 @@ static JSString* NewStringFromBuffer(JSContext* cx, BufferT&& buffer,
   } else {
     // Note: |buffer| is either a StringBuffer* or a RefPtr<StringBuffer>, so
     // ensure we have a RefPtr.
-    RefPtr<mozilla::StringBuffer> bufferRef(std::move(buffer));
+    RefPtr<mozilla::StringBuffer> bufferRef(std::forward<BufferT>(buffer));
     Rooted<JSString::OwnedChars<CharT>> owned(cx, std::move(bufferRef), length);
     str = JSLinearString::new_<CanGC, CharT>(cx, &owned, gc::Heap::Default);
   }
@@ -2591,7 +2591,8 @@ static JSString* NewStringFromUTF8Buffer(JSContext* cx, BufferT&& buffer,
   JS::SmallestEncoding encoding = JS::FindSmallestEncoding(utf8);
   if (encoding == JS::SmallestEncoding::ASCII) {
     // ASCII case can use the string buffer as Latin1 buffer.
-    return NewStringFromBuffer<Latin1Char>(cx, std::move(buffer), length);
+    return NewStringFromBuffer<Latin1Char>(cx, std::forward<BufferT>(buffer),
+                                           length);
   }
 
   // Non-ASCII case cannot use the string buffer.

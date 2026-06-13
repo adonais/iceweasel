@@ -379,7 +379,7 @@
       await openNode("detailsOpen6", "summaryOpen6", true);
 
       // Test delayed editable state change
-      var doc = document.getElementById("iframe").contentDocument;
+      const doc = document.getElementById("iframe").contentDocument;
       await makeEditableDoc(doc);
 
       // invalid state change

@@ -342,7 +342,7 @@ export const NET_ERRORS = [
     category: "net",
     bodyTitleL10nId: "neterror-dns-not-found-title",
     introContent: {
-      dataL10nId: "fp-neterror-offline-intro",
+      dataL10nId: "fp-neterror-offline-intro-2",
       dataL10nArgs: { hostname: null },
     },
     descriptionParts: DESCRIPTION_PARTS_MAP.dnsNotFoundDescription,
@@ -537,6 +537,7 @@ export const NET_ERRORS = [
     },
     customNetError: {
       titleL10nId: "contentEncodingError-title",
+      showResponseStatus: true,
       whatCanYouDoL10nId: "certerror-bad-cert-domain-what-can-you-do-about-it",
     },
     hasNoUserFix: false,
@@ -634,8 +635,8 @@ export const NET_ERRORS = [
     hasNoUserFix: true,
   },
   {
-    id: "mitm",
-    errorCode: "mitm",
+    id: "MOZILLA_PKIX_ERROR_MITM_DETECTED",
+    errorCode: "MOZILLA_PKIX_ERROR_MITM_DETECTED",
     category: "cert",
     bodyTitleL10nId: "certerror-mitm-title",
     introContent: {

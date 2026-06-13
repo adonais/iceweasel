@@ -55,7 +55,7 @@
   width: var(--size-item-small);
   height: var(--size-item-small);
   flex-shrink: 0;
-  opacity: 0.5;
+  opacity: var(--opacity-deemphasized-strong);
 
   @media (forced-colors) {
     opacity: 1;

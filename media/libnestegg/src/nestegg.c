@@ -123,6 +123,8 @@
 #define ID_RANGE                    0x55b9
 #define ID_TRANSFER_CHARACTERISTICS 0x55ba
 #define ID_PRIMARIES                0x55bb
+#define ID_MAX_CLL                  0x55bc
+#define ID_MAX_FALL                 0x55bd
 #define ID_MASTERING_METADATA       0x55d0
 
 /* MasteringMetadata Elements */
@@ -162,6 +164,7 @@ enum ebml_type_enum {
 #define LIMIT_BINARY                (1 << 24)
 #define LIMIT_BLOCK                 (1 << 30)
 #define LIMIT_FRAME                 (1 << 28)
+#define IO_BUFFER_SIZE              8192
 
 /* Field Flags */
 #define DESC_FLAG_NONE              0
@@ -300,6 +303,8 @@ struct colour {
   struct ebml_type range;
   struct ebml_type transfer_characteristics;
   struct ebml_type primaries;
+  struct ebml_type max_cll;
+  struct ebml_type max_fall;
   struct mastering_metadata mastering_metadata;
 };
 
@@ -440,9 +445,19 @@ struct block_additional {
   struct block_additional * next;
 };
 
+/* Internal I/O wrapper. */
+typedef struct {
+  nestegg_io * io;
+  unsigned char buf[IO_BUFFER_SIZE];
+  size_t buf_offset;
+  size_t buf_fill;
+  int64_t max_offset; /* <= 0: no limit */
+  int poisoned; /* logical position is unknown until a successful seek */
+} ne_io;
+
 /* Public (opaque) Structures */
 struct nestegg {
-  nestegg_io * io;
+  ne_io io;
   nestegg_log log;
   struct pool_ctx * alloc_pool;
   uint64_t last_id;
@@ -471,6 +486,7 @@ struct nestegg_packet {
   int64_t reference_block;
   int read_reference_block;
   uint8_t keyframe;
+  int64_t end_offset;
 };
 
 /* Element Descriptor */
@@ -549,6 +565,8 @@ static struct ebml_element_desc ne_colour_elements[] = {
   E_FIELD(ID_RANGE, TYPE_UINT, struct colour, range),
   E_FIELD(ID_TRANSFER_CHARACTERISTICS, TYPE_UINT, struct colour, transfer_characteristics),
   E_FIELD(ID_PRIMARIES, TYPE_UINT, struct colour, primaries),
+  E_FIELD(ID_MAX_CLL, TYPE_UINT, struct colour, max_cll),
+  E_FIELD(ID_MAX_FALL, TYPE_UINT, struct colour, max_fall),
   E_SINGLE_MASTER(ID_MASTERING_METADATA, TYPE_MASTER, struct colour, mastering_metadata),
   E_LAST
 };
@@ -719,22 +737,205 @@ ne_alloc(size_t size)
 }
 
 static int
-ne_io_read(nestegg_io * io, void * buffer, size_t length)
+ne_io_seek(ne_io * io, int64_t offset, int whence)
 {
-  return io->read(buffer, length, io->userdata);
+  int r;
+  assert(whence == NESTEGG_SEEK_SET);
+  r = io->io->seek(offset, whence, io->io->userdata);
+  io->buf_offset = 0;
+  io->buf_fill = 0;
+  io->poisoned = r != 0;
+  return r;
+}
+
+static int64_t
+ne_io_tell(ne_io * io)
+{
+  int64_t pos;
+
+  if (io->poisoned)
+    return -1;
+  pos = io->io->tell(io->io->userdata);
+  if (pos < 0)
+    return -1;
+  assert(io->buf_fill >= io->buf_offset);
+  return pos - (int64_t) (io->buf_fill - io->buf_offset);
+}
+
+static size_t
+ne_io_clamp_request(size_t request, int64_t remaining)
+{
+  assert(remaining > 0);
+  /* Compare in 64 bits so large remaining values are not truncated on
+     32-bit builds before deciding whether to clamp the request. */
+  if ((uint64_t) remaining < (uint64_t) request)
+    return (size_t) remaining;
+  return request;
 }
 
 static int
-ne_io_seek(nestegg_io * io, int64_t offset, int whence)
+ne_io_read_from_buffer(ne_io * io, unsigned char * out, size_t length)
 {
-  return io->seek(offset, whence, io->userdata);
+  memcpy(out, io->buf + io->buf_offset, length);
+  io->buf_offset += length;
+  assert(io->buf_fill >= io->buf_offset);
+  return 1;
 }
 
 static int
-ne_io_read_skip(nestegg_io * io, size_t length)
+ne_io_rewind_to_logical_pos(ne_io * io)
+{
+  int64_t pos = ne_io_tell(io);
+  if (pos < 0)
+    return -1;
+  return ne_io_seek(io, pos, NESTEGG_SEEK_SET);
+}
+
+static int
+ne_io_read_direct(ne_io * io, unsigned char * out, size_t length)
+{
+  int64_t saved_pos = ne_io_tell(io);
+  int64_t pos;
+  int64_t r;
+
+  if (saved_pos < 0)
+    return -1;
+  pos = saved_pos;
+  while (length > 0) {
+    size_t request = length;
+    if (io->max_offset > 0) {
+      int64_t remaining = io->max_offset - pos;
+      if (remaining <= 0) {
+        if (ne_io_seek(io, saved_pos, NESTEGG_SEEK_SET) != 0)
+          return -1;
+        return 0;
+      }
+      request = ne_io_clamp_request(request, remaining);
+    }
+    r = io->io->read(out, request, io->io->userdata);
+    if (r <= 0) {
+      if (ne_io_seek(io, saved_pos, NESTEGG_SEEK_SET) != 0)
+        return -1;
+      return r == 0 ? 0 : -1;
+    }
+    if ((size_t) r > request) {
+      ne_io_seek(io, saved_pos, NESTEGG_SEEK_SET);
+      return -1;
+    }
+    out += r;
+    length -= r;
+    pos += r;
+  }
+
+  return 1;
+}
+
+static int
+ne_io_fill_buffer(ne_io * io, size_t length)
+{
+  int64_t saved_pos;
+  int64_t pos;
+  int64_t r;
+  int io_error = 0;
+
+  io->buf_offset = 0;
+  io->buf_fill = 0;
+
+  saved_pos = ne_io_tell(io);
+  if (saved_pos < 0)
+    return -1;
+  pos = saved_pos;
+  while (io->buf_fill < length) {
+    size_t request = IO_BUFFER_SIZE - io->buf_fill;
+    if (io->max_offset > 0) {
+      int64_t remaining = io->max_offset - pos;
+      if (remaining <= 0)
+        break;
+      request = ne_io_clamp_request(request, remaining);
+    }
+    r = io->io->read(io->buf + io->buf_fill, request, io->io->userdata);
+    if (r <= 0) {
+      if (io->buf_fill == 0)
+        return r == 0 ? 0 : -1;
+      if (r < 0)
+        io_error = 1;
+      break;
+    }
+    if ((size_t) r > request) {
+      ne_io_seek(io, saved_pos, NESTEGG_SEEK_SET);
+      return -1;
+    }
+    io->buf_fill += r;
+    assert(io->buf_fill <= IO_BUFFER_SIZE);
+    pos += r;
+  }
+
+  if (length > io->buf_fill) {
+    if (ne_io_seek(io, saved_pos, NESTEGG_SEEK_SET) != 0)
+      return -1;
+    return io_error ? -1 : 0;
+  }
+  if (io_error) {
+    /* The underlying stream position is unknown after the failed
+       read.  Poison the IO so that ne_io_tell returns -1 until
+       a successful seek re-establishes the position invariant.
+       The buffered data is still valid and will be served below,
+       but any caller that needs a position must seek first. */
+    io->poisoned = 1;
+  }
+
+  return 1;
+}
+
+static int
+ne_io_read(ne_io * io, void * buffer, size_t length)
+{
+  size_t buffered;
+  unsigned char * out = buffer;
+
+  /* Fast path: request satisfied entirely from the buffer.
+     This is safe even when poisoned because the buffered bytes
+     were read before the error and are still valid. */
+  buffered = io->buf_fill - io->buf_offset;
+  if (length <= buffered)
+    return ne_io_read_from_buffer(io, out, length);
+
+  if (io->poisoned)
+    return -1;
+
+  /* The buffer cannot satisfy the full request.  Seek back to the
+     logical position (before any buffered-but-unconsumed bytes),
+     invalidate the buffer, and read from the callback directly.
+     This avoids partially draining the buffer and then failing,
+     which would violate the all-or-nothing read contract. */
+  if (buffered > 0) {
+    if (ne_io_rewind_to_logical_pos(io) != 0)
+      return -1;
+  }
+
+  /* Large reads bypass the buffer.  Save the position so we can
+     rewind on failure to preserve the all-or-nothing contract. */
+  if (length >= IO_BUFFER_SIZE)
+    return ne_io_read_direct(io, out, length);
+
+  /* Refill the buffer, looping to handle short reads.  Cap the
+     request to max_offset to avoid reading past the parse fence.
+     Save position so we can rewind on failure, matching the
+     all-or-nothing contract of the large-read path above. */
+  {
+    int r = ne_io_fill_buffer(io, length);
+    if (r != 1)
+      return r;
+  }
+
+  return ne_io_read_from_buffer(io, out, length);
+}
+
+static int
+ne_io_read_skip(ne_io * io, size_t length)
 {
   size_t get;
-  unsigned char buf[8192];
+  unsigned char buf[IO_BUFFER_SIZE];
   int r = 1;
 
   while (length > 0) {
@@ -748,14 +949,8 @@ ne_io_read_skip(nestegg_io * io, size_t length)
   return r;
 }
 
-static int64_t
-ne_io_tell(nestegg_io * io)
-{
-  return io->tell(io->userdata);
-}
-
 static int
-ne_bare_read_vint(nestegg_io * io, uint64_t * value, uint64_t * length, enum vint_mask maskflag)
+ne_bare_read_vint(ne_io * io, uint64_t * value, uint64_t * length, enum vint_mask maskflag)
 {
   int r;
   unsigned char b;
@@ -792,19 +987,19 @@ ne_bare_read_vint(nestegg_io * io, uint64_t * value, uint64_t * length, enum vin
 }
 
 static int
-ne_read_id(nestegg_io * io, uint64_t * value, uint64_t * length)
+ne_read_id(ne_io * io, uint64_t * value, uint64_t * length)
 {
   return ne_bare_read_vint(io, value, length, MASK_NONE);
 }
 
 static int
-ne_read_vint(nestegg_io * io, uint64_t * value, uint64_t * length)
+ne_read_vint(ne_io * io, uint64_t * value, uint64_t * length)
 {
   return ne_bare_read_vint(io, value, length, MASK_FIRST_BIT);
 }
 
 static int
-ne_read_svint(nestegg_io * io, int64_t * value, uint64_t * length)
+ne_read_svint(ne_io * io, int64_t * value, uint64_t * length)
 {
   int r;
   uint64_t uvalue;
@@ -826,7 +1021,7 @@ ne_read_svint(nestegg_io * io, int64_t * value, uint64_t * length)
 }
 
 static int
-ne_read_uint(nestegg_io * io, uint64_t * val, uint64_t length)
+ne_read_uint(ne_io * io, uint64_t * val, uint64_t length)
 {
   unsigned char b;
   int r;
@@ -848,7 +1043,7 @@ ne_read_uint(nestegg_io * io, uint64_t * val, uint64_t length)
 }
 
 static int
-ne_read_int(nestegg_io * io, int64_t * val, uint64_t length)
+ne_read_int(ne_io * io, int64_t * val, uint64_t length)
 {
   int r;
   uint64_t uval, base;
@@ -875,7 +1070,7 @@ ne_read_int(nestegg_io * io, int64_t * val, uint64_t length)
 }
 
 static int
-ne_read_float(nestegg_io * io, double * val, uint64_t length)
+ne_read_float(ne_io * io, double * val, uint64_t length)
 {
   union {
     uint64_t u;
@@ -917,7 +1112,7 @@ ne_read_string(nestegg * ctx, char ** val, uint64_t length)
   if (!str)
     return -1;
   if (length) {
-    r = ne_io_read(ctx->io, (unsigned char *) str, length);
+    r = ne_io_read(&ctx->io, (unsigned char *) str, length);
     if (r != 1)
       return r;
   }
@@ -935,7 +1130,7 @@ ne_read_binary(nestegg * ctx, struct ebml_binary * val, uint64_t length)
   if (!val->data)
     return -1;
   val->length = length;
-  return ne_io_read(ctx->io, val->data, length);
+  return ne_io_read(&ctx->io, val->data, length);
 }
 
 static int
@@ -1043,7 +1238,7 @@ ne_ctx_pop(nestegg * ctx)
 static int
 ne_ctx_save(nestegg * ctx, struct saved_state * s)
 {
-  s->stream_offset = ne_io_tell(ctx->io);
+  s->stream_offset = ne_io_tell(&ctx->io);
   if (s->stream_offset < 0)
     return -1;
   s->last_id = ctx->last_id;
@@ -1057,9 +1252,13 @@ ne_ctx_restore(nestegg * ctx, struct saved_state * s)
 {
   int r;
 
+  /* A failed restore leaves the logical stream position unknown, so any
+     cached lookahead must be discarded as well. */
+  ctx->last_valid = 0;
+
   if (s->stream_offset < 0)
     return -1;
-  r = ne_io_seek(ctx->io, s->stream_offset, NESTEGG_SEEK_SET);
+  r = ne_io_seek(&ctx->io, s->stream_offset, NESTEGG_SEEK_SET);
   if (r != 0)
     return -1;
   ctx->last_id = s->last_id;
@@ -1081,11 +1280,11 @@ ne_peek_element(nestegg * ctx, uint64_t * id, uint64_t * size)
     return 1;
   }
 
-  r = ne_read_id(ctx->io, &ctx->last_id, NULL);
+  r = ne_read_id(&ctx->io, &ctx->last_id, NULL);
   if (r != 1)
     return r;
 
-  r = ne_read_vint(ctx->io, &ctx->last_size, NULL);
+  r = ne_read_vint(&ctx->io, &ctx->last_size, NULL);
   if (r != 1)
     return r;
 
@@ -1173,7 +1372,7 @@ ne_read_simple(nestegg * ctx, struct ebml_element_desc * desc, size_t length)
   if (storage->read) {
     ctx->log(ctx, NESTEGG_LOG_DEBUG, "element %llx (%s) already read, skipping %u",
              desc->id, desc->name, length);
-    return ne_io_read_skip(ctx->io, length);
+    return ne_io_read_skip(&ctx->io, length);
   }
 
   storage->type = desc->type;
@@ -1183,10 +1382,10 @@ ne_read_simple(nestegg * ctx, struct ebml_element_desc * desc, size_t length)
 
   switch (desc->type) {
   case TYPE_UINT:
-    r = ne_read_uint(ctx->io, &storage->v.u, length);
+    r = ne_read_uint(&ctx->io, &storage->v.u, length);
     break;
   case TYPE_FLOAT:
-    r = ne_read_float(ctx->io, &storage->v.f, length);
+    r = ne_read_float(&ctx->io, &storage->v.f, length);
     break;
   case TYPE_STRING:
     r = ne_read_string(ctx, &storage->v.s, length);
@@ -1218,10 +1417,17 @@ ne_parse(nestegg * ctx, struct ebml_element_desc * top_level, int64_t max_offset
   assert(ctx->ancestor);
 
   for (;;) {
-    if (max_offset > 0 && ne_io_tell(ctx->io) >= max_offset) {
-      /* Reached end of offset allowed for parsing - return gracefully */
-      r = 1;
-      break;
+    if (max_offset > 0) {
+      int64_t offset = ne_io_tell(&ctx->io);
+      if (offset < 0) {
+        r = -1;
+        break;
+      }
+      if (offset >= max_offset) {
+        /* Reached end of offset allowed for parsing - return gracefully */
+        r = 1;
+        break;
+      }
     }
     r = ne_peek_element(ctx, &id, &size);
     if (r != 1)
@@ -1244,7 +1450,7 @@ ne_parse(nestegg * ctx, struct ebml_element_desc * top_level, int64_t max_offset
 
       if (element->flags & DESC_FLAG_OFFSET) {
         data_offset = (int64_t *) (ctx->ancestor->data + element->data_offset);
-        *data_offset = ne_io_tell(ctx->io);
+        *data_offset = ne_io_tell(&ctx->io);
         if (*data_offset < 0) {
           r = -1;
           break;
@@ -1280,7 +1486,7 @@ ne_parse(nestegg * ctx, struct ebml_element_desc * top_level, int64_t max_offset
 
       if (id != ID_VOID && id != ID_CRC32)
         ctx->log(ctx, NESTEGG_LOG_DEBUG, "unknown element %llx", id);
-      r = ne_io_read_skip(ctx->io, size);
+      r = ne_io_read_skip(&ctx->io, size);
       if (r != 1)
         break;
     }
@@ -1291,6 +1497,58 @@ ne_parse(nestegg * ctx, struct ebml_element_desc * top_level, int64_t max_offset
       ne_ctx_pop(ctx);
 
   return r;
+}
+
+static int
+ne_peek_element_id(nestegg * ctx, void * userdata)
+{
+  uint64_t * id = userdata;
+  return ne_peek_element(ctx, id, NULL);
+}
+
+struct ne_parse_args {
+  struct ebml_element_desc * top_level;
+  int64_t max_offset;
+};
+
+static int
+ne_parse_call(nestegg * ctx, void * userdata)
+{
+  struct ne_parse_args * args = userdata;
+  return ne_parse(ctx, args->top_level, args->max_offset);
+}
+
+static int
+ne_with_io_limit(nestegg * ctx,
+                 int64_t max_offset,
+                 int (* callback)(nestegg * ctx, void * userdata),
+                 void * userdata)
+{
+  int r;
+  int64_t saved_max_offset = ctx->io.max_offset;
+
+  ctx->io.max_offset = max_offset;
+  r = callback(ctx, userdata);
+  ctx->io.max_offset = saved_max_offset;
+
+  return r;
+}
+
+static int
+ne_peek_element_with_io_limit(nestegg * ctx, uint64_t * id, int64_t max_offset)
+{
+  return ne_with_io_limit(ctx, max_offset, ne_peek_element_id, id);
+}
+
+static int
+ne_parse_with_io_limit(nestegg * ctx,
+                       struct ebml_element_desc * top_level,
+                       int64_t max_offset)
+{
+  struct ne_parse_args args;
+  args.top_level = top_level;
+  args.max_offset = max_offset;
+  return ne_with_io_limit(ctx, max_offset, ne_parse_call, &args);
 }
 
 static int
@@ -1343,7 +1601,7 @@ ne_read_block_encryption(nestegg * ctx, struct track_entry const * entry,
 }
 
 static int
-ne_read_xiph_lace_value(nestegg_io * io, uint64_t * value, size_t * consumed)
+ne_read_xiph_lace_value(ne_io * io, uint64_t * value, size_t * consumed)
 {
   int r;
   uint64_t lace;
@@ -1369,7 +1627,7 @@ ne_read_xiph_lace_value(nestegg_io * io, uint64_t * value, size_t * consumed)
 }
 
 static int
-ne_read_xiph_lacing(nestegg_io * io, size_t block, size_t * read, uint64_t n, uint64_t * sizes)
+ne_read_xiph_lacing(ne_io * io, size_t block, size_t * read, uint64_t n, uint64_t * sizes)
 {
   int r;
   size_t i = 0;
@@ -1392,7 +1650,7 @@ ne_read_xiph_lacing(nestegg_io * io, size_t block, size_t * read, uint64_t n, ui
 }
 
 static int
-ne_read_ebml_lacing(nestegg_io * io, size_t block, size_t * read, uint64_t n, uint64_t * sizes)
+ne_read_ebml_lacing(ne_io * io, size_t block, size_t * read, uint64_t n, uint64_t * sizes)
 {
   int r;
   uint64_t lace, sum, length;
@@ -1564,7 +1822,7 @@ ne_read_block(nestegg * ctx, uint64_t block_id, uint64_t block_size, nestegg_pac
   if (block_size > LIMIT_BLOCK)
     return -1;
 
-  r = ne_read_vint(ctx->io, &track_number, &length);
+  r = ne_read_vint(&ctx->io, &track_number, &length);
   if (r != 1)
     return r;
 
@@ -1573,13 +1831,13 @@ ne_read_block(nestegg * ctx, uint64_t block_id, uint64_t block_size, nestegg_pac
 
   consumed += length;
 
-  r = ne_read_int(ctx->io, &timecode, 2);
+  r = ne_read_int(&ctx->io, &timecode, 2);
   if (r != 1)
     return r;
 
   consumed += 2;
 
-  r = ne_read_uint(ctx->io, &flags, 1);
+  r = ne_read_uint(&ctx->io, &flags, 1);
   if (r != 1)
     return r;
 
@@ -1604,7 +1862,7 @@ ne_read_block(nestegg * ctx, uint64_t block_id, uint64_t block_size, nestegg_pac
   case LACING_XIPH:
   case LACING_FIXED:
   case LACING_EBML:
-    r = ne_read_uint(ctx->io, &frames, 1);
+    r = ne_read_uint(&ctx->io, &frames, 1);
     if (r != 1)
       return r;
     consumed += 1;
@@ -1625,7 +1883,7 @@ ne_read_block(nestegg * ctx, uint64_t block_id, uint64_t block_size, nestegg_pac
   case LACING_XIPH:
     if (frames == 1)
       return -1;
-    r = ne_read_xiph_lacing(ctx->io, block_size, &consumed, frames, frame_sizes);
+    r = ne_read_xiph_lacing(&ctx->io, block_size, &consumed, frames, frame_sizes);
     if (r != 1)
       return r;
     break;
@@ -1638,7 +1896,7 @@ ne_read_block(nestegg * ctx, uint64_t block_id, uint64_t block_size, nestegg_pac
   case LACING_EBML:
     if (frames == 1)
       return -1;
-    r = ne_read_ebml_lacing(ctx->io, block_size, &consumed, frames, frame_sizes);
+    r = ne_read_ebml_lacing(&ctx->io, block_size, &consumed, frames, frame_sizes);
     if (r != 1)
       return r;
     break;
@@ -1709,7 +1967,7 @@ ne_read_block(nestegg * ctx, uint64_t block_id, uint64_t block_size, nestegg_pac
     }
     /* Parse encryption */
     if (encoding_type == NESTEGG_ENCODING_ENCRYPTION) {
-      r = ne_io_read(ctx->io, &signal_byte, SIGNAL_BYTE_SIZE);
+      r = ne_io_read(&ctx->io, &signal_byte, SIGNAL_BYTE_SIZE);
       if (r != 1) {
         ne_free_frame(f);
         nestegg_free_packet(pkt);
@@ -1729,7 +1987,7 @@ ne_read_block(nestegg * ctx, uint64_t block_id, uint64_t block_size, nestegg_pac
           nestegg_free_packet(pkt);
           return -1;
         }
-        r = ne_io_read(ctx->io, f->frame_encryption->iv, IV_SIZE);
+        r = ne_io_read(&ctx->io, f->frame_encryption->iv, IV_SIZE);
         if (r != 1) {
           ne_free_frame(f);
           nestegg_free_packet(pkt);
@@ -1739,7 +1997,7 @@ ne_read_block(nestegg * ctx, uint64_t block_id, uint64_t block_size, nestegg_pac
         encryption_size = SIGNAL_BYTE_SIZE + IV_SIZE;
 
         if ((signal_byte & PARTITIONED_BIT_MASK) == PACKET_PARTITIONED) {
-          r = ne_io_read(ctx->io, &f->frame_encryption->num_partitions, NUM_PACKETS_SIZE);
+          r = ne_io_read(&ctx->io, &f->frame_encryption->num_partitions, NUM_PACKETS_SIZE);
           if (r != 1) {
             ne_free_frame(f);
             nestegg_free_packet(pkt);
@@ -1751,7 +2009,7 @@ ne_read_block(nestegg * ctx, uint64_t block_id, uint64_t block_size, nestegg_pac
 
           for (j = 0; j < f->frame_encryption->num_partitions; ++j) {
             uint64_t value = 0;
-            r = ne_read_uint(ctx->io, &value, PACKET_OFFSET_SIZE);
+            r = ne_read_uint(&ctx->io, &value, PACKET_OFFSET_SIZE);
             if (r != 1) {
               break;
             }
@@ -1786,7 +2044,7 @@ ne_read_block(nestegg * ctx, uint64_t block_id, uint64_t block_size, nestegg_pac
       return -1;
     }
     f->length = data_size;
-    r = ne_io_read(ctx->io, f->data, data_size);
+    r = ne_io_read(&ctx->io, f->data, data_size);
     if (r != 1) {
       ne_free_frame(f);
       nestegg_free_packet(pkt);
@@ -1818,9 +2076,17 @@ ne_read_block_additions(nestegg * ctx, uint64_t block_size, struct block_additio
 
   assert(*pkt_block_additional == NULL);
 
-  block_additions_end = ne_io_tell(ctx->io) + block_size;
+  block_additions_end = ne_io_tell(&ctx->io);
+  if (block_additions_end < 0)
+    return -1;
+  block_additions_end += block_size;
 
-  while (ne_io_tell(ctx->io) < block_additions_end) {
+  while (1) {
+    int64_t pos = ne_io_tell(&ctx->io);
+    if (pos < 0)
+      return -1;
+    if (pos >= block_additions_end)
+      break;
     add_id = 1;
     data = NULL;
     has_data = 0;
@@ -1834,15 +2100,25 @@ ne_read_block_additions(nestegg * ctx, uint64_t block_size, struct block_additio
       if (id != ID_VOID && id != ID_CRC32)
         ctx->log(ctx, NESTEGG_LOG_DEBUG,
                  "unknown element %llx in BlockAdditions", id);
-      r = ne_io_read_skip(ctx->io, size);
+      r = ne_io_read_skip(&ctx->io, size);
       if (r != 1)
         return r;
       continue;
     }
 
-    block_more_end = ne_io_tell(ctx->io) + size;
+    block_more_end = ne_io_tell(&ctx->io);
+    if (block_more_end < 0)
+      return -1;
+    block_more_end += size;
 
-    while (ne_io_tell(ctx->io) < block_more_end) {
+    while (1) {
+      int64_t pos = ne_io_tell(&ctx->io);
+      if (pos < 0) {
+        free(data);
+        return -1;
+      }
+      if (pos >= block_more_end)
+        break;
       r = ne_read_element(ctx, &id, &size);
       if (r != 1) {
         free(data);
@@ -1850,7 +2126,7 @@ ne_read_block_additions(nestegg * ctx, uint64_t block_size, struct block_additio
       }
 
       if (id == ID_BLOCK_ADD_ID) {
-        r = ne_read_uint(ctx->io, &add_id, size);
+        r = ne_read_uint(&ctx->io, &add_id, size);
         if (r != 1) {
           free(data);
           return r;
@@ -1880,7 +2156,7 @@ ne_read_block_additions(nestegg * ctx, uint64_t block_size, struct block_additio
           data = ne_alloc(data_size);
           if (!data)
             return -1;
-          r = ne_io_read(ctx->io, data, data_size);
+          r = ne_io_read(&ctx->io, data, data_size);
           if (r != 1) {
             free(data);
             return r;
@@ -1891,7 +2167,7 @@ ne_read_block_additions(nestegg * ctx, uint64_t block_size, struct block_additio
         if (id != ID_VOID && id != ID_CRC32)
           ctx->log(ctx, NESTEGG_LOG_DEBUG,
                    "unknown element %llx in BlockMore", id);
-        r = ne_io_read_skip(ctx->io, size);
+        r = ne_io_read_skip(&ctx->io, size);
         if (r != 1) {
           free(data);
           return r;
@@ -2042,7 +2318,7 @@ ne_init_cue_points(nestegg * ctx, int64_t max_offset)
       return -1;
 
     /* Seek and set up parser state for segment-level element (Cues). */
-    r = ne_io_seek(ctx->io, ctx->segment_offset + seek_pos, NESTEGG_SEEK_SET);
+    r = ne_io_seek(&ctx->io, ctx->segment_offset + seek_pos, NESTEGG_SEEK_SET);
     if (r != 0)
       return -1;
     ctx->last_valid = 0;
@@ -2063,7 +2339,7 @@ ne_init_cue_points(nestegg * ctx, int64_t max_offset)
       return -1;
     /* parser will run until end of cues element. */
     ctx->log(ctx, NESTEGG_LOG_DEBUG, "seek: parsing cue elements");
-    r = ne_parse(ctx, ne_cues_elements, max_offset);
+    r = ne_parse_with_io_limit(ctx, ne_cues_elements, max_offset);
     while (ctx->ancestor)
       ne_ctx_pop(ctx);
 
@@ -2090,7 +2366,7 @@ struct io_buffer {
   int64_t offset;
 };
 
-static int
+static int64_t
 ne_buffer_read(void * buffer, size_t length, void * userdata)
 {
   struct io_buffer * iob = userdata;
@@ -2105,7 +2381,7 @@ ne_buffer_read(void * buffer, size_t length, void * userdata)
   memcpy(buffer, iob->buffer + iob->offset, length);
   iob->offset += length;
 
-  return 1;
+  return (int64_t) length;
 }
 
 static int
@@ -2145,19 +2421,19 @@ ne_context_new(nestegg ** context, nestegg_io io, nestegg_log callback)
 {
   nestegg * ctx;
 
-  if (!(io.read && io.seek && io.tell))
+  if (!(io.seek && io.tell && io.read))
     return -1;
 
   ctx = ne_alloc(sizeof(*ctx));
   if (!ctx)
     return -1;
 
-  ctx->io = ne_alloc(sizeof(*ctx->io));
-  if (!ctx->io) {
+  ctx->io.io = ne_alloc(sizeof(*ctx->io.io));
+  if (!ctx->io.io) {
     nestegg_destroy(ctx);
     return -1;
   }
-  *ctx->io = io;
+  memcpy(ctx->io.io, &io, sizeof(io));
   ctx->log = callback;
   ctx->alloc_pool = ne_pool_init();
   if (!ctx->alloc_pool) {
@@ -2183,7 +2459,7 @@ ne_match_doc_type(nestegg_io io, int64_t max_offset, const char* doc_type)
   if (ne_context_new(&ctx, io, NULL) != 0)
     return -1;
 
-  r = ne_peek_element(ctx, &id, NULL);
+  r = ne_peek_element_with_io_limit(ctx, &id, max_offset);
   if (r != 1) {
     nestegg_destroy(ctx);
     return 0;
@@ -2202,7 +2478,7 @@ ne_match_doc_type(nestegg_io io, int64_t max_offset, const char* doc_type)
   /* we don't check the return value of ne_parse, that might fail because
      max_offset is not on a valid element end point. We only want to check
      the EBML ID and that the doctype is equal to given doc type. */
-  ne_parse(ctx, NULL, max_offset);
+  ne_parse_with_io_limit(ctx, NULL, max_offset);
   while (ctx->ancestor)
     ne_ctx_pop(ctx);
 
@@ -2240,7 +2516,7 @@ nestegg_init(nestegg ** context, nestegg_io io, nestegg_log callback, int64_t ma
   if (ne_context_new(&ctx, io, callback) != 0)
     return -1;
 
-  r = ne_peek_element(ctx, &id, NULL);
+  r = ne_peek_element_with_io_limit(ctx, &id, max_offset);
   if (r != 1) {
     nestegg_destroy(ctx);
     return -1;
@@ -2258,7 +2534,7 @@ nestegg_init(nestegg ** context, nestegg_io io, nestegg_log callback, int64_t ma
     return -1;
   }
 
-  r = ne_parse(ctx, NULL, max_offset);
+  r = ne_parse_with_io_limit(ctx, NULL, max_offset);
   while (ctx->ancestor)
     ne_ctx_pop(ctx);
 
@@ -2318,7 +2594,7 @@ nestegg_destroy(nestegg * ctx)
   assert(ctx->ancestor == NULL);
   if (ctx->alloc_pool)
     ne_pool_destroy(ctx->alloc_pool);
-  free(ctx->io);
+  free(ctx->io.io);
   free(ctx);
 }
 
@@ -2442,7 +2718,7 @@ nestegg_offset_seek(nestegg * ctx, uint64_t offset)
     return -1;
 
   /* Seek and set up parser state for segment-level element (Cluster). */
-  r = ne_io_seek(ctx->io, offset, NESTEGG_SEEK_SET);
+  r = ne_io_seek(&ctx->io, offset, NESTEGG_SEEK_SET);
   if (r != 0)
     return -1;
   ctx->last_valid = 0;
@@ -2652,20 +2928,25 @@ nestegg_track_codec_data(nestegg * ctx, unsigned int track, unsigned int item,
     unsigned int i;
     int r;
 
-    nestegg_io io;
+    nestegg_io buf_io;
+    ne_io buf_io_ctx;
     struct io_buffer userdata;
     userdata.buffer = codec_private.data;
     userdata.length = codec_private.length;
     userdata.offset = 0;
 
-    io.read = ne_buffer_read;
-    io.seek = ne_buffer_seek;
-    io.tell = ne_buffer_tell;
-    io.userdata = &userdata;
+    buf_io.read = ne_buffer_read;
+    buf_io.seek = ne_buffer_seek;
+    buf_io.tell = ne_buffer_tell;
+    buf_io.userdata = &userdata;
+
+    memset(&buf_io_ctx, 0, sizeof(buf_io_ctx));
+    buf_io_ctx.io = &buf_io;
+    buf_io_ctx.max_offset = codec_private.length;
 
     total = 0;
 
-    r = ne_read_uint(&io, &count, 1);
+    r = ne_read_uint(&buf_io_ctx, &count, 1);
     if (r != 1)
       return r;
     total += 1;
@@ -2673,7 +2954,7 @@ nestegg_track_codec_data(nestegg * ctx, unsigned int track, unsigned int item,
 
     if (count > 3)
       return -1;
-    r = ne_read_xiph_lacing(&io, codec_private.length, &total, count, sizes);
+    r = ne_read_xiph_lacing(&buf_io_ctx, codec_private.length, &total, count, sizes);
     if (r != 1)
       return r;
 
@@ -2773,6 +3054,14 @@ nestegg_track_video_params(nestegg * ctx, unsigned int track,
   value = 2;
   ne_get_uint(entry->video.colour.primaries, &value);
   params->primaries = value;
+
+  value = 0;
+  ne_get_uint(entry->video.colour.max_cll, &value);
+  params->max_cll = value;
+
+  value = 0;
+  ne_get_uint(entry->video.colour.max_fall, &value);
+  params->max_fall = value;
 
   value = 0;
   ne_get_uint(entry->video.projection.type, &value);
@@ -3032,12 +3321,12 @@ nestegg_read_packet(nestegg * ctx, nestegg_packet ** pkt)
         if (id == ID_SIMPLE_BLOCK || id == ID_BLOCK_GROUP)
           return -1;
 
-        r = ne_io_read_skip(ctx->io, size);
+        r = ne_io_read_skip(&ctx->io, size);
         if (r != 1)
           return r;
       }
 
-      r = ne_read_uint(ctx->io, &ctx->cluster_timecode, size);
+      r = ne_read_uint(&ctx->io, &ctx->cluster_timecode, size);
       if (r != 1)
         return r;
       ctx->read_cluster_timecode = 1;
@@ -3047,6 +3336,12 @@ nestegg_read_packet(nestegg * ctx, nestegg_packet ** pkt)
       r = ne_read_block(ctx, id, size, pkt);
       if (r != 1)
         return r;
+      (*pkt)->end_offset = ne_io_tell(&ctx->io);
+      if ((*pkt)->end_offset < 0) {
+        nestegg_free_packet(*pkt);
+        *pkt = NULL;
+        return -1;
+      }
 
       read_block = 1;
       break;
@@ -3061,10 +3356,24 @@ nestegg_read_packet(nestegg * ctx, nestegg_packet ** pkt)
       struct block_additional * block_additional = NULL;
       uint64_t tc_scale;
 
-      block_group_end = ne_io_tell(ctx->io) + size;
+      block_group_end = ne_io_tell(&ctx->io);
+      if (block_group_end < 0)
+        return -1;
+      block_group_end += size;
 
       /* Read the entire BlockGroup manually. */
-      while (ne_io_tell(ctx->io) < block_group_end) {
+      while (1) {
+        int64_t pos = ne_io_tell(&ctx->io);
+        if (pos < 0) {
+          ne_free_block_additions(block_additional);
+          if (*pkt) {
+            nestegg_free_packet(*pkt);
+            *pkt = NULL;
+          }
+          return -1;
+        }
+        if (pos >= block_group_end)
+          break;
         r = ne_read_element(ctx, &id, &size);
         if (r != 1) {
           ne_free_block_additions(block_additional);
@@ -3096,7 +3405,7 @@ nestegg_read_packet(nestegg * ctx, nestegg_packet ** pkt)
           break;
         }
         case ID_BLOCK_DURATION: {
-          r = ne_read_uint(ctx->io, &block_duration, size);
+          r = ne_read_uint(&ctx->io, &block_duration, size);
           if (r != 1) {
             ne_free_block_additions(block_additional);
             if (*pkt) {
@@ -3119,7 +3428,7 @@ nestegg_read_packet(nestegg * ctx, nestegg_packet ** pkt)
           break;
         }
         case ID_DISCARD_PADDING: {
-          r = ne_read_int(ctx->io, &discard_padding, size);
+          r = ne_read_int(&ctx->io, &discard_padding, size);
           if (r != 1) {
             ne_free_block_additions(block_additional);
             if (*pkt) {
@@ -3153,7 +3462,7 @@ nestegg_read_packet(nestegg * ctx, nestegg_packet ** pkt)
           break;
         }
         case ID_REFERENCE_BLOCK: {
-          r = ne_read_int(ctx->io, &reference_block, size);
+          r = ne_read_int(&ctx->io, &reference_block, size);
           if (r != 1) {
             ne_free_block_additions(block_additional);
             if (*pkt) {
@@ -3170,7 +3479,7 @@ nestegg_read_packet(nestegg * ctx, nestegg_packet ** pkt)
           if (id != ID_VOID && id != ID_CRC32)
             ctx->log(ctx, NESTEGG_LOG_DEBUG,
                      "read_packet: unknown element %llx in BlockGroup", id);
-          r = ne_io_read_skip(ctx->io, size);
+          r = ne_io_read_skip(&ctx->io, size);
           if (r != 1) {
             ne_free_block_additions(block_additional);
             if (*pkt) {
@@ -3184,6 +3493,13 @@ nestegg_read_packet(nestegg * ctx, nestegg_packet ** pkt)
 
       assert(read_block == (*pkt != NULL));
       if (*pkt) {
+        (*pkt)->end_offset = ne_io_tell(&ctx->io);
+        if ((*pkt)->end_offset < 0) {
+          ne_free_block_additions(block_additional);
+          nestegg_free_packet(*pkt);
+          *pkt = NULL;
+          return -1;
+        }
         (*pkt)->duration = block_duration;
         (*pkt)->read_duration = read_block_duration;
         (*pkt)->discard_padding = discard_padding;
@@ -3202,7 +3518,7 @@ nestegg_read_packet(nestegg * ctx, nestegg_packet ** pkt)
     }
     default:
       ctx->log(ctx, NESTEGG_LOG_DEBUG, "read_packet: unknown element %llx", id);
-      r = ne_io_read_skip(ctx->io, size);
+      r = ne_io_read_skip(&ctx->io, size);
       if (r != 1)
         return r;
     }
@@ -3226,7 +3542,8 @@ nestegg_read_last_packet(nestegg * context, unsigned int track,
   *packet = NULL;
 
   /* Save and restore the parser state later. */
-  ne_ctx_save(context, &saved);
+  if (ne_ctx_save(context, &saved) != 0)
+    return -1;
 
   for (;;) {
     nestegg_packet * pkt = NULL;
@@ -3244,7 +3561,8 @@ nestegg_read_last_packet(nestegg * context, unsigned int track,
         nestegg_free_packet(last_packet);
         last_packet = NULL;
       }
-      ne_ctx_restore(context, &saved);
+      if (ne_ctx_restore(context, &saved) != 0)
+        return -1;
       return -1;
     }
 
@@ -3273,7 +3591,11 @@ nestegg_read_last_packet(nestegg * context, unsigned int track,
     }
   }
 
-  ne_ctx_restore(context, &saved);
+  if (ne_ctx_restore(context, &saved) != 0) {
+    if (last_packet)
+      nestegg_free_packet(last_packet);
+    return -1;
+  }
 
   if (!last_packet) {
     return -1;
@@ -3343,6 +3665,13 @@ nestegg_packet_reference_block(nestegg_packet * pkt, int64_t * reference_block)
   if (!pkt->read_reference_block)
     return -1;
   *reference_block = pkt->reference_block;
+  return 0;
+}
+
+int
+nestegg_packet_end_offset(nestegg_packet * pkt, int64_t * end_offset)
+{
+  *end_offset = pkt->end_offset;
   return 0;
 }
 
@@ -3530,18 +3859,18 @@ ne_read_block_lacing(nestegg * ctx, uint64_t block_size, uint64_t* frames_out)
   if (block_size > LIMIT_BLOCK)
     return -1;
 
-  r = ne_read_vint(ctx->io, &track_number, &length);
+  r = ne_read_vint(&ctx->io, &track_number, &length);
   if (r != 1)
     return r;
 
   if (track_number == 0)
     return -1;
 
-  r = ne_read_int(ctx->io, &timecode, 2);
+  r = ne_read_int(&ctx->io, &timecode, 2);
   if (r != 1)
     return r;
 
-  r = ne_read_uint(ctx->io, &flags, 1);
+  r = ne_read_uint(&ctx->io, &flags, 1);
   if (r != 1)
     return r;
 
@@ -3555,7 +3884,7 @@ ne_read_block_lacing(nestegg * ctx, uint64_t block_size, uint64_t* frames_out)
   case LACING_XIPH:
   case LACING_FIXED:
   case LACING_EBML:
-    r = ne_read_uint(ctx->io, &frames, 1);
+    r = ne_read_uint(&ctx->io, &frames, 1);
     if (r != 1)
       return r;
     frames += 1;
@@ -3574,7 +3903,7 @@ ne_read_block_lacing(nestegg * ctx, uint64_t block_size, uint64_t* frames_out)
     return -1;
   remaining = block_size - header_bytes;
   if (remaining) {
-    r = ne_io_read_skip(ctx->io, remaining);
+    r = ne_io_read_skip(&ctx->io, remaining);
     if (r != 1)
       return r;
   }
@@ -3605,9 +3934,17 @@ ne_sum_block_or_group(nestegg * ctx, uint64_t id, uint64_t size, uint64_t * fram
 
   if (id == ID_BLOCK_GROUP) {
     int64_t group_end;
-    group_end = ne_io_tell(ctx->io) + (int64_t) size;
-    while (ne_io_tell(ctx->io) < group_end) {
+    group_end = ne_io_tell(&ctx->io);
+    if (group_end < 0)
+      return -1;
+    group_end += (int64_t) size;
+    while (1) {
       uint64_t gid, gsize;
+      int64_t pos = ne_io_tell(&ctx->io);
+      if (pos < 0)
+        return -1;
+      if (pos >= group_end)
+        break;
       r = ne_read_element(ctx, &gid, &gsize);
       if (r != 1)
         return r;
@@ -3620,7 +3957,7 @@ ne_sum_block_or_group(nestegg * ctx, uint64_t id, uint64_t size, uint64_t * fram
           return r;
         *frames_out += frames;
       } else {
-        r = ne_io_read_skip(ctx->io, gsize);
+        r = ne_io_read_skip(&ctx->io, gsize);
         if (r != 1)
           return r;
       }
@@ -3629,7 +3966,7 @@ ne_sum_block_or_group(nestegg * ctx, uint64_t id, uint64_t size, uint64_t * fram
   }
 
   /* Not a block-like element: skip its payload. */
-  r = ne_io_read_skip(ctx->io, size);
+  r = ne_io_read_skip(&ctx->io, size);
   if (r != 1)
     return r;
 
@@ -3678,7 +4015,7 @@ ne_read_cluster_frames_count(nestegg * ctx, uint64_t * frames_out)
 
     if (id != ID_CLUSTER) {
       /* Not a Cluster: consume and keep scanning. */
-      r = ne_io_read_skip(ctx->io, size);
+      r = ne_io_read_skip(&ctx->io, size);
       if (r != 1)
         return r;
       continue;
@@ -3728,10 +4065,18 @@ ne_read_cluster_frames_count(nestegg * ctx, uint64_t * frames_out)
     }
 
     /* Known-sized Cluster: read until cluster_end. */
-    cluster_end = ne_io_tell(ctx->io) + (int64_t) size;
+    cluster_end = ne_io_tell(&ctx->io);
+    if (cluster_end < 0)
+      return -1;
+    cluster_end += (int64_t) size;
 
-    while (ne_io_tell(ctx->io) < cluster_end) {
+    while (1) {
       uint64_t cid, csize;
+      int64_t pos = ne_io_tell(&ctx->io);
+      if (pos < 0)
+        return -1;
+      if (pos >= cluster_end)
+        break;
       r = ne_read_element(ctx, &cid, &csize);
       if (r != 1)
         return r;
@@ -3759,7 +4104,8 @@ nestegg_read_total_frames_count(nestegg * context, uint64_t * frames_out)
   if (!context || !frames_out)
     return -1;
 
-  ne_ctx_save(context, &saved);
+  if (ne_ctx_save(context, &saved) != 0)
+    return -1;
 
   totalFrames = 0;
   for (;;) {
@@ -3771,13 +4117,15 @@ nestegg_read_total_frames_count(nestegg * context, uint64_t * frames_out)
       break;
     }
     if (r < 0) {
-      ne_ctx_restore(context, &saved);
+      if (ne_ctx_restore(context, &saved) != 0)
+        return -1;
       return -1;
     }
     totalFrames += clusterFrames;
   }
 
-  ne_ctx_restore(context, &saved);
+  if (ne_ctx_restore(context, &saved) != 0)
+    return -1;
 
   *frames_out = totalFrames;
   return 0;

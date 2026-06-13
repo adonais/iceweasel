@@ -18,8 +18,7 @@
 namespace mozilla {
 namespace layers {
 
-APZCTreeManagerChild::APZCTreeManagerChild()
-    : mCompositorSession(nullptr), mIPCOpen(false) {}
+APZCTreeManagerChild::APZCTreeManagerChild() : mCompositorSession(nullptr) {}
 
 APZCTreeManagerChild::~APZCTreeManagerChild() = default;
 
@@ -34,12 +33,13 @@ void APZCTreeManagerChild::SetCompositorSession(
   }
 }
 
-void APZCTreeManagerChild::SetInputBridge(APZInputBridgeChild* aInputBridge) {
+void APZCTreeManagerChild::SetInputBridge(
+    RefPtr<APZInputBridgeChild>&& aInputBridge) {
   // The input bridge only exists from the UI process to the GPU process.
   MOZ_ASSERT(XRE_IsParentProcess());
   MOZ_ASSERT(!mInputBridge);
 
-  mInputBridge = aInputBridge;
+  mInputBridge = std::move(aInputBridge);
 }
 
 void APZCTreeManagerChild::Destroy() {
@@ -78,7 +78,7 @@ void APZCTreeManagerChild::UpdateZoomConstraints(
     const ScrollableLayerGuid& aGuid,
     const Maybe<ZoomConstraints>& aConstraints) {
   MOZ_ASSERT(NS_IsMainThread());
-  if (mIPCOpen) {
+  if (CanSend()) {
     SendUpdateZoomConstraints(aGuid, aConstraints);
   }
 }
@@ -127,21 +127,6 @@ APZInputBridge* APZCTreeManagerChild::InputBridge() {
   MOZ_ASSERT(mInputBridge);
 
   return mInputBridge.get();
-}
-
-void APZCTreeManagerChild::AddIPDLReference() {
-  MOZ_ASSERT(mIPCOpen == false);
-  mIPCOpen = true;
-  AddRef();
-}
-
-void APZCTreeManagerChild::ReleaseIPDLReference() {
-  mIPCOpen = false;
-  Release();
-}
-
-void APZCTreeManagerChild::ActorDestroy(ActorDestroyReason aWhy) {
-  mIPCOpen = false;
 }
 
 mozilla::ipc::IPCResult APZCTreeManagerChild::RecvNotifyPinchGesture(

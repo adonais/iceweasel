@@ -103,7 +103,7 @@ add_task(async function pip_bookmark_disabled() {
 });
 
 async function withContextMenu(browser, fn) {
-  const win = browser.ownerGlobal;
+  const win = browser.documentGlobal;
   const contextMenu = win.document.getElementById("contentAreaContextMenu");
   const popupShown = BrowserTestUtils.waitForEvent(contextMenu, "popupshown");
   BrowserTestUtils.synthesizeMouse(

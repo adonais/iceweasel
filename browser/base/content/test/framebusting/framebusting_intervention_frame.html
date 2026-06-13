@@ -3,44 +3,41 @@
   <head>
     <meta charset="UTF-8" />
     <title>Framebusting Intervention - Frame</title>
-    <form method="post" target="_top"></form>
-    <a target="_top"></a>
   </head>
   <body>
+    <form id="form" method="post" target="_top"></form>
+    <a id="link" target="_top"></a>
     <script>
-      const form = document.querySelector("form");
-      const link = document.querySelector("a");
+      const form = document.getElementById("form");
+      const link = document.getElementById("link");
       const params = new URLSearchParams(location.search);
 
       if (self != top) {
         try {
-          switch (params.get("initiator")) {
-            case "":
+          switch (params.get("variant")) {
             case null:
-              window.top.location = window.location;
+            case "top":
+              top.location = self.location;
               break;
             case "open":
-              window.top.open(window.location);
+              self.open(self.location, "_top");
               break;
             case "form":
-              form.action = window.location;
+              form.action = self.location;
               form.submit();
               break;
             case "link":
-              link.href = window.location;
+              link.href = self.location;
               link.click();
               break;
             case "mailto":
-              window.top.location = "mailto:example@example.com";
+              top.location = "mailto:example@example.com";
               break;
             default:
-              throw Error("Bad query")
+              throw Error("Invalid variant!");
           }
-
-          window.top.postMessage("no-exception", "https://example.net");
-        } catch (e) {
-          if (!(e instanceof DOMException)) throw e;
-          window.top.postMessage("exception", "https://example.net");
+        } catch (err) {
+          if (err.name !== "SecurityError") throw err;
         }
       }
     </script>

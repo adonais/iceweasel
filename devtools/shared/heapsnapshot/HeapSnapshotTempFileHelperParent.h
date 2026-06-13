@@ -14,7 +14,7 @@ class HeapSnapshotTempFileHelperParent
     : public PHeapSnapshotTempFileHelperParent {
   friend class PHeapSnapshotTempFileHelperParent;
 
-  explicit HeapSnapshotTempFileHelperParent() {}
+  explicit HeapSnapshotTempFileHelperParent() = default;
   void ActorDestroy(ActorDestroyReason why) override {}
   mozilla::ipc::IPCResult RecvOpenHeapSnapshotTempFile(
       OpenHeapSnapshotTempFileResponse* outResponse);

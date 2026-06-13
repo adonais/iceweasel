@@ -145,6 +145,8 @@ tags = "devtools-compat-data"
 
 ["browser_inspector-anonymous.js"]
 
+["browser_inspector-comments.js"]
+
 ["browser_inspector-iframe.js"]
 
 ["browser_inspector-insert.js"]

@@ -30,7 +30,7 @@ class AudioCaptureTrack : public ProcessedMediaTrack {
  protected:
   AudioMixer mMixer;
   bool mStarted;
-  bool mTrackCreated;
+  bool mTrackCreated = false;
 };
 }  // namespace mozilla
 

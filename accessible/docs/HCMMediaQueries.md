@@ -129,7 +129,9 @@ In general, it is best to do overriding at the `:root` level, even if additional
 }
 
 @media (not (forced-colors)) {
-  /* BAD: These rules are generic and should be outside of a @media block */
+  /* BAD: Element-level styling should not be placed in media query blocks.
+   * See "Scoping token overrides with @media (not (forced-colors))" below
+   * for when this pattern IS appropriate. */
   .destroyButton {
     color: var(--light-grey-20);
     background-color: var(--red-60);
@@ -137,6 +139,45 @@ In general, it is best to do overriding at the `:root` level, even if additional
 }
 /*...*/
 ```
+
+## Scoping token overrides with `@media (not (forced-colors))`
+
+When you introduce a custom override for a CSS variable that **already has a `@media (forced-colors)` value in the design system token layer**, wrapping your override in `@media (not (forced-colors))` prevents it from replacing that value. When forced-colors is active, the scoped declaration does not apply at all, leaving the token layer's system-color value as the only one in effect — no extra forced-colors handling required.
+
+Consider a variable that already has a forced-colors override in the token layer:
+
+```css
+:root {
+  --page-background: #f0f0f0;
+
+  @media (forced-colors) {
+    --page-background: Canvas;
+  }
+}
+```
+
+A component author later adds a dark-mode-aware override:
+
+```text
+/* BAD: replaces the token layer's Canvas value for forced-colors users */
+:root {
+  --page-background: light-dark(#f0f0f0, #1a1a1a);
+}
+
+/* GOOD: only applies when forced-colors is not active, so forced-colors
+ * users still get the Canvas value from the token layer above */
+@media (not (forced-colors)) {
+  :root {
+    --page-background: light-dark(#f0f0f0, #1a1a1a);
+  }
+}
+```
+
+When choosing between `@media (not (forced-colors))` and `@media (not (prefers-contrast))` you need to consider a few things:
+- Do defaults exist for the tokens you're overriding in *both* the prefers-contrast layer and the forced-colors layer? Or are defaults only specified in a single layer? Remember: the goal of this override strategy is to reveal the defeault token values.
+- Do your new token values increase contrast? If so, they could be more valuable to `prefers-contrast` users than the existing token defaults. You should consider exempting `forced-colors` users only.
+
+In most cases, `(not (forced-colors))` is the right choice: it leaves the existing token layer's forced-colors handling in effect, while users who have only a contrast preference (and no active forced-colors mode) continue to benefit from non-system-color visual enhancements.
 
 ## Putting it all together!
 

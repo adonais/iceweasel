@@ -1,26 +1,87 @@
-From: Michael Froman <mfroman@mozilla.com>
-Date: Wed, 16 Jul 2025 21:08:00 +0300
-Subject: Bug 1974813 - turn off rust in libwebrtc since we don't use any
- libwebrtc rust code. r=ng?
+From: Michael Froman <mjfroman@mac.com>
+Date: Mon, 15 Sep 2025 14:53:58 -0500
+Subject: Bug 1973648 - move applicable libwebrtc changes to our new
+ libwebrtc_overrides location. r=ng
 
-Note: no moz.build changes are caused by this change.
-
-Differential Revision: https://phabricator.services.mozilla.com/D257316
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/14ee98c4832a55bf32116c925540ab0f53e46cd3
+Differential Revision: https://phabricator.services.mozilla.com/D258499
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/19164e58323d59c1f66f7fcf671b8d0b6366f708
 ---
- .gn | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ call/call.cc                     | 13 -------------
+ call/call.h                      | 16 ++--------------
+ modules/desktop_capture/BUILD.gn |  5 +++++
+ 3 files changed, 7 insertions(+), 27 deletions(-)
 
-diff --git a/.gn b/.gn
-index e03aab02cf..87e2c7af7b 100644
---- a/.gn
-+++ b/.gn
-@@ -89,7 +89,7 @@ default_args = {
-   use_fuzztest_wrapper = false
+diff --git a/call/call.cc b/call/call.cc
+index df8786c886..c23eeb3b54 100644
+--- a/call/call.cc
++++ b/call/call.cc
+@@ -482,19 +482,6 @@ class Call final : public webrtc::Call,
+ };
+ }  // namespace internal
  
-   # Enable Rust in WebRTC
--  enable_rust = true
-+  enable_rust = false # Mozilla
-   enable_rust_cxx = true
-   enable_chromium_prelude = true
+-std::string Call::Stats::ToString(int64_t time_ms) const {
+-  char buf[1024];
+-  SimpleStringBuilder ss(buf);
+-  ss << "Call stats: " << time_ms << ", {";
+-  ss << "send_bw_bps: " << send_bandwidth_bps << ", ";
+-  ss << "recv_bw_bps: " << recv_bandwidth_bps << ", ";
+-  ss << "max_pad_bps: " << max_padding_bitrate_bps << ", ";
+-  ss << "pacer_delay_ms: " << pacer_delay_ms << ", ";
+-  ss << "rtt_ms: " << rtt_ms;
+-  ss << '}';
+-  return ss.str();
+-}
+-
+ std::unique_ptr<Call> Call::Create(CallConfig config) {
+   auto transport_send = std::make_unique<RtpTransportControllerSend>(
+       config.ExtractTransportConfig());
+diff --git a/call/call.h b/call/call.h
+index 636c0f9737..752dbfbfe5 100644
+--- a/call/call.h
++++ b/call/call.h
+@@ -27,6 +27,7 @@
+ #include "api/video/video_stream_encoder_settings.h"
+ #include "call/audio_receive_stream.h"
+ #include "call/audio_send_stream.h"
++#include "call/call_basic_stats.h"
+ #include "call/call_config.h"
+ #include "call/flexfec_receive_stream.h"
+ #include "call/packet_receiver.h"
+@@ -52,20 +53,7 @@ namespace webrtc {
+ 
+ class Call {
+  public:
+-  struct Stats {
+-    std::string ToString(int64_t time_ms) const;
+-
+-    int send_bandwidth_bps = 0;       // Estimated available send bandwidth.
+-    int max_padding_bitrate_bps = 0;  // Cumulative configured max padding.
+-    int recv_bandwidth_bps = 0;       // Estimated available receive bandwidth.
+-    int64_t pacer_delay_ms = 0;
+-    int64_t rtt_ms = -1;
+-    std::optional<int64_t> ccfb_messages_received = std::nullopt;
+-    flat_map<uint32_t, SentCongestionControllerFeedbackStats>
+-        sent_ccfb_stats_per_ssrc;
+-    flat_map<uint32_t, ReceivedCongestionControlFeedbackStats>
+-        received_ccfb_stats_per_ssrc;
+-  };
++  using Stats = CallBasicStats;
+ 
+   static std::unique_ptr<Call> Create(CallConfig config);
+ 
+diff --git a/modules/desktop_capture/BUILD.gn b/modules/desktop_capture/BUILD.gn
+index 6ca070fce7..82be9d5882 100644
+--- a/modules/desktop_capture/BUILD.gn
++++ b/modules/desktop_capture/BUILD.gn
+@@ -402,6 +402,11 @@ rtc_library("desktop_capture") {
+     ]
+     if (build_with_mozilla) {
+       libs -= [ "Xtst" ]
++      # Mozilla provides custom impl of x_error_trap.*
++      sources -= [
++        "linux/x11/x_error_trap.cc",
++        "linux/x11/x_error_trap.h",
++      ]
+     }
+   }
  

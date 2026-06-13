@@ -19,11 +19,11 @@ class CoalescedMouseData final : public CoalescedInputData<WidgetMouseEvent> {
 
   ~CoalescedMouseData() { MOZ_COUNT_DTOR(mozilla::dom::CoalescedMouseData); }
 
-  void Coalesce(const WidgetMouseEvent& aEvent,
+  void Coalesce(const WidgetMouseEvent& aMouseOrPointerEvent,
                 const ScrollableLayerGuid& aGuid,
                 const uint64_t& aInputBlockId);
 
-  bool CanCoalesce(const WidgetMouseEvent& aEvent,
+  bool CanCoalesce(const WidgetMouseEvent& aMouseMoveEvent,
                    const ScrollableLayerGuid& aGuid,
                    const uint64_t& aInputBlockId,
                    const nsRefreshDriver* aRefreshDriver);

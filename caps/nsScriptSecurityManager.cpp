@@ -1483,11 +1483,12 @@ nsScriptSecurityManager::CanCreateWrapper(JSContext* cx, const nsIID& aIID,
   nsresult rv;
   nsAutoString errorMsg;
   if (originUTF16.IsEmpty()) {
-    AutoTArray<nsString, 1> formatStrings = {classInfoUTF16};
+    AutoTArray<nsString, 1> formatStrings = {std::move(classInfoUTF16)};
     rv = bundle->FormatStringFromName("CreateWrapperDenied", formatStrings,
                                       errorMsg);
   } else {
-    AutoTArray<nsString, 2> formatStrings = {classInfoUTF16, originUTF16};
+    AutoTArray<nsString, 2> formatStrings = {std::move(classInfoUTF16),
+                                             std::move(originUTF16)};
     rv = bundle->FormatStringFromName("CreateWrapperDeniedForOrigin",
                                       formatStrings, errorMsg);
   }

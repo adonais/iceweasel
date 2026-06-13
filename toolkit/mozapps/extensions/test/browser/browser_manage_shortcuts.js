@@ -32,7 +32,7 @@ async function loadShortcutsView() {
   ok(!shortcutsLink.hidden, "The shortcuts link is visible");
 
   let loaded = waitForViewLoad(win);
-  shortcutsLink.click();
+  await triggerPageOptionsAction(win, "manage-shortcuts");
   await loaded;
 
   is(

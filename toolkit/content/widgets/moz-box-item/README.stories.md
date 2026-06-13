@@ -10,7 +10,7 @@
 
 ## Code
 
-The source for `moz-box-item` can be found under [toolkit/content/widgets/moz-box-item/](https://searchfox.org/mozilla-central/source/toolkit/content/widgets/moz-box-item)
+The source for `moz-box-item` can be found under [toolkit/content/widgets/moz-box-item/](https://searchfox.org/firefox-main/source/toolkit/content/widgets/moz-box-item)
 
 ## How to use `moz-box-item`
 

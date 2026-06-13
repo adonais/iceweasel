@@ -46,6 +46,9 @@ class XrayTraits {
  public:
   constexpr XrayTraits() = default;
 
+  XrayTraits(XrayTraits&) = delete;
+  const XrayTraits& operator=(XrayTraits&) = delete;
+
   static JSObject* getTargetObject(JSObject* wrapper) {
     JSObject* target =
         js::UncheckedUnwrap(wrapper, /* stopAtWindowProxy = */ false);
@@ -100,11 +103,8 @@ class XrayTraits {
   virtual JSObject* createHolder(JSContext* cx, JSObject* wrapper) = 0;
 
   JSObject* getExpandoChain(JS::HandleObject obj);
-  JSObject* detachExpandoChain(JS::HandleObject obj);
   bool setExpandoChain(JSContext* cx, JS::HandleObject obj,
                        JS::HandleObject chain);
-  bool cloneExpandoChain(JSContext* cx, JS::HandleObject dst,
-                         JS::HandleObject srcChain);
 
  protected:
   static const JSClass HolderClass;
@@ -133,9 +133,6 @@ class XrayTraits {
                                 JS::HandleObject exclusiveWrapper,
                                 JS::HandleObject exclusiveWrapperGlobal,
                                 nsIPrincipal* origin);
-
-  XrayTraits(XrayTraits&) = delete;
-  const XrayTraits& operator=(XrayTraits&) = delete;
 };
 
 void ExpandoObjectFinalize(JS::GCContext* gcx, JSObject* obj);

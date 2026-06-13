@@ -261,7 +261,7 @@ class nsFrameLoader final : public nsStubMutationObserver,
 
   bool IsNetworkCreated() const { return mNetworkCreated; }
 
-  nsIContent* GetParentObject() const;
+  nsISupports* GetParentObject() const;
 
   /**
    * MessageManagerCallback methods that we override.
@@ -441,7 +441,7 @@ class nsFrameLoader final : public nsStubMutationObserver,
    * If we are an IPC frame, set mRemoteFrame. Otherwise, create and
    * initialize mDocShell.
    */
-  nsresult MaybeCreateDocShell();
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult MaybeCreateDocShell();
   nsresult EnsureMessageManager();
   nsresult ReallyLoadFrameScripts();
   nsDocShell* GetDocShell() const { return mDocShell; }

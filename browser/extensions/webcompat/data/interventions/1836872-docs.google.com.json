@@ -6,13 +6,14 @@
       "matches": ["*://docs.google.com/document/*"]
     }
   },
+  "css": {
+    "fix_inaccessible_menus": "/* font family sub-menus */ [class='goog-menu goog-menu-vertical'], /* font style sub-menus */ .goog-menu.apps-menu-hide-mnemonics { margin-inline-start: -20px; } /* sort options on recent docs page (bz2009417) */ .docsshared-menu-bubble [class='goog-menu goog-menu-vertical'], .goog-menu.apps-menu-hide-mnemonics { margin-inline-start: auto; }"
+  },
   "interventions": [
     {
       "platforms": ["desktop"],
       "max_version": 150,
-      "content_scripts": {
-        "css": ["bug1836872-docs.google.com-font-submenus-inaccessible.css"]
-      }
+      "css": ["fix_inaccessible_menus"]
     },
     {
       "platforms": ["desktop"],
@@ -20,9 +21,7 @@
       "pref_check": {
         "layout.css.fake-webkit-scrollbar.enabled": false
       },
-      "content_scripts": {
-        "css": ["bug1836872-docs.google.com-font-submenus-inaccessible.css"]
-      }
+      "css": ["fix_inaccessible_menus"]
     }
   ]
 }

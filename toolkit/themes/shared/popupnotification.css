@@ -31,14 +31,10 @@ popupnotificationcontent {
 .popup-notification-header-container,
 .popup-notification-footer-container {
   display: flex;
-  /* Panel variables will be tokenized in Bug 2017979 */
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   max-width: calc(2 * var(--panel-padding) + var(--icon-size) + var(--panel-border-radius) + var(--popup-notification-body-width));
 }
 
 .popup-notification-body-container {
-  /* Panel variables will be tokenized in Bug 2017979 */
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   padding: var(--panel-padding);
 }
 
@@ -53,7 +49,7 @@ popupnotificationcontent {
 }
 
 .popup-notification-body {
-  /* Panel variables will be tokenized in Bug 2017979 */
+  /* this variable here uses --panel-padding, a space token, as part of calculation */
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   width: var(--popup-notification-body-width);
   flex: 1 auto;
@@ -131,7 +127,7 @@ popupnotificationcontent {
 }
 
 .popup-notification-checkbox > .checkbox-label-box > .checkbox-label {
-  opacity: 0.7;
+  opacity: var(--opacity-deemphasized);
 }
 
 .popup-notification-learnmore-link {

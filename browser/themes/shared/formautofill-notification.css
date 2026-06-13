@@ -210,3 +210,24 @@
 #address-edit-email-input {
   width: 12em;
 }
+
+.credit-card-capture-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-large);
+}
+
+.cc-icon {
+  height: var(--icon-size-small);
+  margin-inline-end: var(--space-small);
+}
+
+.payments-doorhanger-description {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xsmall);
+
+  > .line-two {
+    color: var(--text-color-deemphasized);
+  }
+}

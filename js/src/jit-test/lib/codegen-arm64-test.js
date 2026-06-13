@@ -6,7 +6,7 @@ load(libdir + "codegen-test-common.js");
 // End of prologue
 var arm64_prefix = `
 mov     x29, sp
-mov     x28, sp(
+mov     x20, sp(
 str     x23, \\[x29, #16\\])?
 `;
 

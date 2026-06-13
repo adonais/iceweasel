@@ -6,12 +6,13 @@
       "matches": ["*://*.cnn.com/*"]
     }
   },
+  "css": {
+    "fix_blank_pages_when_printing": "@media print { .header__wrapper-outer { height: initial !important; top: initial !important; margin-bottom: initial !important; } }"
+  },
   "interventions": [
     {
       "platforms": ["all"],
-      "content_scripts": {
-        "css": ["bug1836105-cnn.com-fix-blank-pages-when-printing.css"]
-      }
+      "css": ["fix_blank_pages_when_printing"]
     }
   ]
 }

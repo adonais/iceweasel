@@ -5,7 +5,7 @@
 package org.mozilla.fenix.onboarding.view
 
 import androidx.annotation.DrawableRes
-import org.mozilla.fenix.compose.LinkTextState
+import mozilla.components.compose.base.LinkTextState
 import org.mozilla.fenix.nimbus.MarketingCardVariant
 
 /**

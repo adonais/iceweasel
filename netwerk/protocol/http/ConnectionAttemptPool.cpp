@@ -75,6 +75,7 @@ nsresult ConnectionAttemptPool::StartConnectionEstablishment(
 void ConnectionAttemptPool::InsertIntoConnectionAttempts(
     ConnectionAttempt* sock) {
   mAttempts.AppendElement(sock);
+  ++mUnconnectedCount;
   gHttpHandler->ConnMgr()->IncreaseNumDnsAndConnectSockets();
 }
 
@@ -86,6 +87,10 @@ void ConnectionAttemptPool::RemoveConnectionAttempt(ConnectionAttempt* sock,
   }
 
   if (mAttempts.RemoveElement(sock)) {
+    if (!sock->HasConnected()) {
+      MOZ_ASSERT(mUnconnectedCount > 0);
+      --mUnconnectedCount;
+    }
     gHttpHandler->ConnMgr()->DecreaseNumDnsAndConnectSockets();
   }
 
@@ -101,23 +106,31 @@ void ConnectionAttemptPool::RemoveConnectionAttempt(ConnectionAttempt* sock,
 }
 
 uint32_t ConnectionAttemptPool::UnconnectedConnectionAttempts() const {
-  uint32_t unconnectedConns = 0;
+#ifdef DEBUG
+  uint32_t computed = 0;
   for (uint32_t i = 0; i < mAttempts.Length(); ++i) {
     if (!mAttempts[i]->HasConnected()) {
-      ++unconnectedConns;
+      ++computed;
     }
   }
-  return unconnectedConns;
+  MOZ_ASSERT(mUnconnectedCount == computed);
+#endif
+  return mUnconnectedCount;
 }
 
-void ConnectionAttemptPool::CloseAllConnectionAttempts(
-    bool aReenqueueTransaction) {
+void ConnectionAttemptPool::OnConnectionAttemptConnected() {
+  MOZ_ASSERT(mUnconnectedCount > 0);
+  --mUnconnectedCount;
+}
+
+void ConnectionAttemptPool::CloseAllConnectionAttempts() {
   for (const auto& sock : mAttempts) {
-    sock->Abandon(aReenqueueTransaction);
+    sock->Abandon();
     gHttpHandler->ConnMgr()->DecreaseNumDnsAndConnectSockets();
   }
 
   mAttempts.Clear();
+  mUnconnectedCount = 0;
 
   RefPtr<ConnectionEntry> entry(mEntry);
   if (entry) {

@@ -4,6 +4,8 @@
 
 #include "PeerConnectionCtx.h"
 
+#include <span>
+
 #include "PeerConnectionImpl.h"
 #include "WebrtcGlobalChild.h"
 #include "WebrtcGlobalInformation.h"
@@ -110,8 +112,7 @@ class DummyAudioProcessing : public AudioProcessing {
     MOZ_CRASH("Unexpected call");
     return kNoError;
   }
-  bool GetLinearAecOutput(
-      webrtc::ArrayView<std::array<float, 160>>) const override {
+  bool GetLinearAecOutput(std::span<std::array<float, 160>>) const override {
     MOZ_CRASH("Unexpected call");
     return false;
   }
@@ -441,7 +442,7 @@ void PeerConnectionCtx::UpdateNetworkState(bool online) {
   if (ctx->mPeerConnections.empty()) {
     return;
   }
-  for (auto pc : ctx->mPeerConnections) {
+  for (const auto& pc : ctx->mPeerConnections) {
     pc.second->UpdateNetworkState(online);
   }
 }

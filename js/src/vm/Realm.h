@@ -59,8 +59,8 @@ struct NativeIterator;
  * is erroneously included in the measurement; see bug 562553.
  */
 class DtoaCache {
-  double dbl;
-  int base;
+  double dbl = 0.0;
+  int base = 0;
   JSLinearString* str;  // if str==nullptr, dbl and base are not valid
 
  public:
@@ -248,9 +248,6 @@ class ObjectRealm {
   js::UniquePtr<NonSyntacticLexialEnvironmentsMap>
       nonSyntacticLexicalEnvironments_;
 
-  ObjectRealm(const ObjectRealm&) = delete;
-  void operator=(const ObjectRealm&) = delete;
-
  public:
   // Map from array buffers to views sharing that storage.
   JS::WeakCache<js::InnerViewTable> innerViews;
@@ -268,6 +265,9 @@ class ObjectRealm {
   static inline ObjectRealm& get(const JSObject* obj);
 
   explicit ObjectRealm(JS::Zone* zone);
+
+  ObjectRealm(const ObjectRealm&) = delete;
+  void operator=(const ObjectRealm&) = delete;
 
   void finishRoots();
   void trace(JSTracer* trc);
@@ -482,12 +482,12 @@ class JS::Realm : public JS::shadow::Realm {
   void updateDebuggerObservesFlag(unsigned flag);
   void restoreDebugModeBitsOnOOM(uint32_t bits);
 
-  Realm(const Realm&) = delete;
-  void operator=(const Realm&) = delete;
-
  public:
   Realm(JS::Compartment* comp, const JS::RealmOptions& options);
   ~Realm();
+
+  Realm(const Realm&) = delete;
+  void operator=(const Realm&) = delete;
 
   void init(JSContext* cx, JSPrincipals* principals);
   void destroy(JS::GCContext* gcx);
@@ -937,26 +937,25 @@ class AutoRealm {
   inline AutoRealm(JSContext* cx, const T& target);
   inline ~AutoRealm();
 
+  AutoRealm(const AutoRealm&) = delete;
+  AutoRealm& operator=(const AutoRealm&) = delete;
+
   JSContext* context() const { return cx_; }
   JS::Realm* origin() const { return origin_; }
 
  protected:
   inline AutoRealm(JSContext* cx, JS::Realm* target);
-
- private:
-  AutoRealm(const AutoRealm&) = delete;
-  AutoRealm& operator=(const AutoRealm&) = delete;
 };
 
 class MOZ_RAII AutoAllocInAtomsZone {
   JSContext* const cx_;
   JS::Realm* const origin_;
-  AutoAllocInAtomsZone(const AutoAllocInAtomsZone&) = delete;
-  AutoAllocInAtomsZone& operator=(const AutoAllocInAtomsZone&) = delete;
 
  public:
   inline explicit AutoAllocInAtomsZone(JSContext* cx);
   inline ~AutoAllocInAtomsZone();
+  AutoAllocInAtomsZone(const AutoAllocInAtomsZone&) = delete;
+  AutoAllocInAtomsZone& operator=(const AutoAllocInAtomsZone&) = delete;
 };
 
 // During GC we sometimes need to enter a realm when we may have been allocating
@@ -964,12 +963,12 @@ class MOZ_RAII AutoAllocInAtomsZone {
 class MOZ_RAII AutoMaybeLeaveAtomsZone {
   JSContext* const cx_;
   bool wasInAtomsZone_;
-  AutoMaybeLeaveAtomsZone(const AutoMaybeLeaveAtomsZone&) = delete;
-  AutoMaybeLeaveAtomsZone& operator=(const AutoMaybeLeaveAtomsZone&) = delete;
 
  public:
   inline explicit AutoMaybeLeaveAtomsZone(JSContext* cx);
   inline ~AutoMaybeLeaveAtomsZone();
+  AutoMaybeLeaveAtomsZone(const AutoMaybeLeaveAtomsZone&) = delete;
+  AutoMaybeLeaveAtomsZone& operator=(const AutoMaybeLeaveAtomsZone&) = delete;
 };
 
 // Enter a realm directly. Only use this where there's no target GC thing
@@ -993,7 +992,6 @@ class AutoFunctionOrCurrentRealm {
   inline AutoFunctionOrCurrentRealm(JSContext* cx, js::HandleObject fun);
   ~AutoFunctionOrCurrentRealm() = default;
 
- private:
   AutoFunctionOrCurrentRealm(const AutoFunctionOrCurrentRealm&) = delete;
   AutoFunctionOrCurrentRealm& operator=(const AutoFunctionOrCurrentRealm&) =
       delete;
@@ -1016,9 +1014,6 @@ class ErrorCopier {
 class MOZ_RAII AutoSetNewObjectMetadata {
   JSContext* cx_;
 
-  AutoSetNewObjectMetadata(const AutoSetNewObjectMetadata& aOther) = delete;
-  void operator=(const AutoSetNewObjectMetadata& aOther) = delete;
-
   void setPendingMetadata();
 
  public:
@@ -1036,6 +1031,9 @@ class MOZ_RAII AutoSetNewObjectMetadata {
       setPendingMetadata();
     }
   }
+
+  AutoSetNewObjectMetadata(const AutoSetNewObjectMetadata& aOther) = delete;
+  void operator=(const AutoSetNewObjectMetadata& aOther) = delete;
 };
 
 } /* namespace js */

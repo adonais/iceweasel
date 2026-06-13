@@ -25,7 +25,7 @@ int32_t nsHTMLTags::gTableRefCount;
 nsHTMLTags::TagStringHash* nsHTMLTags::gTagTable;
 nsHTMLTags::TagAtomHash* nsHTMLTags::gTagAtomTable;
 
-#define NS_HTMLTAG_NAME_MAX_LENGTH 10
+#define NS_HTMLTAG_NAME_MAX_LENGTH 15
 
 // static
 nsresult nsHTMLTags::AddRefTable(void) {

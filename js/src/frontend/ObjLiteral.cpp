@@ -188,7 +188,7 @@ JSObject* InterpretObjLiteralObj(
     InterpretObjLiteralValue(cx, atomCache, insn, &propVal);
 
     if constexpr (kind == PropertySetKind::UniqueNames) {
-      if (!AddDataPropertyToPlainObject(cx, obj, propId, propVal)) {
+      if (!AddDataPropertyToNativeObjectNoHooks(cx, obj, propId, propVal)) {
         return nullptr;
       }
     } else {

@@ -18,10 +18,9 @@ export const ReducedProtectionNotification = {
   _prefObserved: false,
   // Store per browsingContext whether we encountered blocked resources to only show the
   // ReducedProtectionNotification when a reload really would unblock resources
-  _blockedTrackers: new WeakMap(),
-  // We show the notification when the page loads and let it disappear again when the user
-  // initiated a navigation
-  _pendingNotification: new WeakMap(),
+  _blockedTrackers: new WeakSet(),
+  // Track browsers where the user triggered a reload that should show the notification.
+  _pendingNotification: new WeakSet(),
   // Per tab we only want to show the infobar at maximum once per host to not annoy users.
   // Keep track of hosts, where this infobar already appeared per tab.
   _shownHosts: new WeakMap(),
@@ -50,12 +49,18 @@ export const ReducedProtectionNotification = {
     lazy.EveryWindow.registerCallback(
       "reduced-protection-notification",
       win => {
-        if (lazy.PrivateBrowsingUtils.isWindowPrivate(win)) {
+        if (
+          lazy.PrivateBrowsingUtils.isWindowPrivate(win) &&
+          !lazy.PrivateBrowsingUtils.permanentPrivateBrowsing
+        ) {
           win.gBrowser?.addTabsProgressListener(this);
         }
       },
       win => {
-        if (lazy.PrivateBrowsingUtils.isWindowPrivate(win)) {
+        if (
+          lazy.PrivateBrowsingUtils.isWindowPrivate(win) &&
+          !lazy.PrivateBrowsingUtils.permanentPrivateBrowsing
+        ) {
           win.gBrowser?.removeTabsProgressListener(this);
         }
       }
@@ -69,9 +74,18 @@ export const ReducedProtectionNotification = {
     }
     lazy.EveryWindow.unregisterCallback("reduced-protection-notification");
     this._initialized = false;
-    this._blockedTrackers = new WeakMap();
-    this._pendingNotification = new WeakMap();
+    this._blockedTrackers = new WeakSet();
+    this._pendingNotification = new WeakSet();
     this._shownHosts = new WeakMap();
+  },
+
+  markUserReload(aBrowser) {
+    if (this._blockedTrackers.has(aBrowser)) {
+      const host = aBrowser.currentURI?.host;
+      if (host && !this._shownHosts.get(aBrowser)?.has(host)) {
+        this._pendingNotification.add(aBrowser);
+      }
+    }
   },
 
   onContentBlockingEvent(aBrowser, aWebProgress, aRequest, aEvent) {
@@ -79,55 +93,29 @@ export const ReducedProtectionNotification = {
       return;
     }
     if (aEvent & Ci.nsIWebProgressListener.STATE_BLOCKED_TRACKING_CONTENT) {
-      this._blockedTrackers.set(aBrowser, true);
+      this._blockedTrackers.add(aBrowser);
     }
   },
 
-  onStateChange(aBrowser, aWebProgress, aRequest, aStateFlags) {
+  onLocationChange(aBrowser, aWebProgress, aRequest, aLocation, aFlags) {
     if (!aWebProgress.isTopLevel) {
       return;
     }
-
-    const START_MASK =
-      Ci.nsIWebProgressListener.STATE_START |
-      Ci.nsIWebProgressListener.STATE_IS_NETWORK;
-    const isStart = (aStateFlags & START_MASK) === START_MASK;
-
-    const STOP_MASK =
-      Ci.nsIWebProgressListener.STATE_STOP |
-      Ci.nsIWebProgressListener.STATE_IS_NETWORK;
-    const isStop = (aStateFlags & STOP_MASK) === STOP_MASK;
-
-    const isReload =
-      (aWebProgress.loadType & Ci.nsIDocShell.LOAD_CMD_RELOAD) !== 0;
-    const isAddressBarNavigation =
-      (aWebProgress.loadType & Ci.nsIDocShell.LOAD_CMD_NORMAL) !== 0;
-
-    if (isStart) {
-      if (isAddressBarNavigation) {
-        this._shownHosts.delete(aBrowser);
-      }
-
-      if (isReload && this._blockedTrackers.get(aBrowser)) {
-        this._pendingNotification.set(aBrowser, true);
-        this._blockedTrackers.delete(aBrowser);
-      }
-
-      this.hideNotification(aBrowser);
-    } else if (isStop && this._pendingNotification.get(aBrowser)) {
-      this._pendingNotification.delete(aBrowser);
-      this.showNotification(aBrowser);
+    // Don't do anything when staying on the same page (e.g. clicking an an anchor link)
+    if (aFlags & Ci.nsIWebProgressListener.LOCATION_CHANGE_SAME_DOCUMENT) {
+      return;
     }
-  },
 
-  hideNotification(aBrowser) {
-    const notificationBox = aBrowser
-      .getTabBrowser()
-      ?.readNotificationBox(aBrowser);
-    const notification =
-      notificationBox?.getNotificationWithValue(NOTIFICATION_VALUE);
-    if (notification) {
-      notificationBox.removeNotification(notification);
+    // We only want to show the notification if we blocked trackers and
+    // user initiated reload through browser UI
+    const blockedTrackers = this._blockedTrackers.delete(aBrowser);
+    const isPending = this._pendingNotification.delete(aBrowser);
+    if (
+      aFlags & Ci.nsIWebProgressListener.LOCATION_CHANGE_RELOAD &&
+      isPending &&
+      blockedTrackers
+    ) {
+      this.showNotification(aBrowser).catch(e => console.error(e));
     }
   },
 
@@ -152,20 +140,24 @@ export const ReducedProtectionNotification = {
       return;
     }
 
-    const doc = tabbrowser.ownerDocument;
-    const [buttonLabel] = await doc.l10n.formatValues([
-      { id: "reduced-protection-infobar-reload-button" },
-    ]);
-
-    const notification = await notificationBox.appendNotification(
+    await notificationBox.appendNotification(
       NOTIFICATION_VALUE,
       {
+        label: { "l10n-id": "reduced-protection-infobar-message" },
         priority: notificationBox.PRIORITY_INFO_LOW,
       },
       [
         {
-          label: buttonLabel,
+          "l10n-id": "reduced-protection-infobar-never-show-button",
           callback: () => {
+            Glean.privacyReducedPageProtection.disableClicked.add(1);
+            Services.prefs.setBoolPref(PREF, false);
+          },
+        },
+        {
+          "l10n-id": "reduced-protection-infobar-reload-button",
+          callback: () => {
+            Glean.privacyReducedPageProtection.reloadClicked.add(1);
             const scopedPrefs = aBrowser.browsingContext.scopedPrefs;
             if (scopedPrefs) {
               const bc = aBrowser.browsingContext;
@@ -188,12 +180,8 @@ export const ReducedProtectionNotification = {
         },
       ]
     );
-    notification.persistence = -1;
 
-    const msgSpan = doc.createElementNS("http://www.w3.org/1999/xhtml", "span");
-    msgSpan.setAttribute("slot", "message");
-    doc.l10n.setAttributes(msgSpan, "reduced-protection-infobar-message");
-    notification.appendChild(msgSpan);
+    Glean.privacyReducedPageProtection.bannerShown.add(1);
 
     if (!this._shownHosts.has(aBrowser)) {
       this._shownHosts.set(aBrowser, new Set());

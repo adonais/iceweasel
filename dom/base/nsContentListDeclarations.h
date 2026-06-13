@@ -10,12 +10,13 @@
 #include "nsCOMPtr.h"
 #include "nsStringFwd.h"
 
-class nsContentList;
 class nsAtom;
 class nsIContent;
 class nsINode;
 
 namespace mozilla::dom {
+class CachableElementsByNameNodeList;
+class ContentList;
 class Element;
 }  // namespace mozilla::dom
 
@@ -46,12 +47,11 @@ using nsFuncStringContentListDataAllocator = void* (*)(nsINode * aRootNode,
 // elements in HTML documents and aTagname against everything else.
 // For any other value of aMatchNameSpaceId, the list will match
 // aTagname against all elements.
-already_AddRefed<nsContentList> NS_GetContentList(nsINode* aRootNode,
-                                                  int32_t aMatchNameSpaceId,
-                                                  const nsAString& aTagname);
+already_AddRefed<mozilla::dom::ContentList> NS_GetContentList(
+    nsINode* aRootNode, int32_t aMatchNameSpaceId, const nsAString& aTagname);
 
 template <class ListType>
-already_AddRefed<nsContentList> GetFuncStringContentList(
+already_AddRefed<mozilla::dom::ContentList> GetFuncStringContentList(
     nsINode* aRootNode, nsContentListMatchFunc aFunc,
     nsContentListDestroyFunc aDestroyFunc,
     nsFuncStringContentListDataAllocator aDataAllocator,

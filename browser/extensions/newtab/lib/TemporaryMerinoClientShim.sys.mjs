@@ -643,6 +643,84 @@ export class TemporaryMerinoClientShim {
   }
 
   /**
+   * Fetch the list of available sports teams from the Merino WCS endpoint.
+   *
+   * @param {object} options
+   *   Options object
+   * @param {string} options.source
+   *   The source that is requesting this fetch.
+   * @param {string} options.endpointUrl
+   *   The teams endpoint URL.
+   * @returns {Promise<Array|null>}
+   *   Array of team objects, or null if the endpoint is not configured or an
+   *   error occurs.
+   */
+  async fetchSportsTeams({ source, endpointUrl }) {
+    if (!endpointUrl) {
+      return null;
+    }
+    let url = URL.parse(endpointUrl);
+    if (!url) {
+      this.#lazy.logger.error("Invalid sports teams endpoint URL", endpointUrl);
+      return null;
+    }
+    if (source) {
+      url.searchParams.set("source", source);
+    }
+    try {
+      const response = await fetch(url);
+
+      // The `data` variable has the teams response we'll be reading
+      const data = /** @type {any} */ (await response.json());
+      this.#lazy.logger.debug("fetchSportsTeams response", data);
+      return data;
+    } catch (e) {
+      this.#lazy.logger.error("Sports teams fetch error", e);
+      return null;
+    }
+  }
+
+  /**
+   * Fetch upcoming matches from the Merino WCS endpoint.
+   *
+   * @param {object} options
+   *   Options object
+   * @param {string} options.source
+   *   The source that is requesting this fetch.
+   * @param {string} options.endpointUrl
+   *   The matches endpoint URL.
+   * @returns {Promise<Array|null>}
+   *   Array of match objects, or null if the endpoint is not configured or an
+   *   error occurs.
+   */
+  async fetchSportsMatches({ source, endpointUrl }) {
+    if (!endpointUrl) {
+      return null;
+    }
+    let url = URL.parse(endpointUrl);
+    if (!url) {
+      this.#lazy.logger.error(
+        "Invalid sports matches endpoint URL",
+        endpointUrl
+      );
+      return null;
+    }
+    if (source) {
+      url.searchParams.set("source", source);
+    }
+    try {
+      const response = await fetch(url);
+      // The `data` variable has the matches response we'll be reading
+      const data = /** @type {any} */ (await response.json());
+      this.#lazy.logger.debug("fetchSportsMatches response", data);
+      return data;
+    } catch (e) {
+      this.#lazy.logger.error("Sports matches fetch error", e);
+      return null;
+    }
+  }
+
+  /**
    * Resets the Merino session ID and related state.
    */
   resetSession() {

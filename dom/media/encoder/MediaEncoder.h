@@ -83,7 +83,7 @@ class DriftCompensator;
  *    contains at least `timeslice` worth of data it notifies the
  *    DataAvailableEvent that was connected in step 2.
  *    => void OnBlob(RefPtr<BlobImpl> aBlob) {
- *    =>   DispatchBlobEvent(Blob::Create(GetOwnerGlobal(), aBlob));
+ *    =>   DispatchBlobEvent(Blob::Create(GetRelevantGlobal(), aBlob));
  *    => };
  *
  * 5) To stop encoding, there are multiple options:

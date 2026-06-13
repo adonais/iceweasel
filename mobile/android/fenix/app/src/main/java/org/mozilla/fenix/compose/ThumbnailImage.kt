@@ -115,11 +115,11 @@ fun ThumbnailImage(
         }
     } else {
         trace(TabsTrayTraceTag.TRACE_THUMBNAIL_IMAGE_CREATION) {
-            var state by remember { mutableStateOf(ThumbnailImageState(null, false)) }
+            var state by remember(request) { mutableStateOf(ThumbnailImageState(null, false)) }
             val scope = rememberCoroutineScope()
             val storage = components.core.thumbnailStorage
 
-            DisposableEffect(Unit) {
+            DisposableEffect(request) {
                 if (!state.hasLoaded) {
                     scope.launch {
                         val thumbnailBitmap = storage.loadThumbnail(request).await()

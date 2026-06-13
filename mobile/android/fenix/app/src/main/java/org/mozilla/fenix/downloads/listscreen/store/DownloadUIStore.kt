@@ -90,11 +90,21 @@ private fun downloadStateReducer(
         is DownloadUIAction.RenameFileClicked -> state.copy(fileToRename = action.item)
         is DownloadUIAction.RenameFileConfirmed -> state
         is DownloadUIAction.RenameFileDismissed ->
-            state.copy(fileToRename = null, renameFileError = null, isChangeFileExtensionDialogVisible = false)
+            state.copy(
+                fileToRename = null,
+                renameFileError = null,
+                isChangeFileExtensionDialogVisible = false,
+                itemToChangeExtension = null,
+            )
+
         is DownloadUIAction.RenameFileFailed -> state.copy(renameFileError = action.error)
         is DownloadUIAction.RenameFileFailureDismissed -> state.copy(renameFileError = null)
         is DownloadUIAction.FileExtensionChangedByUser -> state
-        is DownloadUIAction.ShowChangeFileExtensionDialog -> state.copy(isChangeFileExtensionDialogVisible = true)
+        is DownloadUIAction.ShowChangeFileExtensionDialog -> state.copy(
+            isChangeFileExtensionDialogVisible = true,
+            itemToChangeExtension = action.item,
+        )
+
         is DownloadUIAction.CloseChangeFileExtensionDialog -> state.copy(isChangeFileExtensionDialogVisible = false)
         is DownloadUIAction.UndoPendingDeletion -> state
         is DownloadUIAction.PauseDownload -> state
@@ -104,6 +114,7 @@ private fun downloadStateReducer(
         is DownloadUIAction.NavigationIconClicked -> state
         is DownloadUIAction.SettingsIconClicked -> state
 
+        is DownloadUIAction.RequestDeleteMultiple -> state
         is DownloadUIAction.RequestDelete -> state
         is DownloadUIAction.ShowDeleteDialog ->
             state.copy(dialogState = DownloadUIState.DialogState.DeleteConfirmation(action.items))

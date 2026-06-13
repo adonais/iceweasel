@@ -69,7 +69,7 @@ export class BackupUIChild extends JSWindowActorChild {
 
       for (let widget of widgets) {
         if (widget.isConnected && widget.nodeName == targetNodeName) {
-          const win = widget.ownerGlobal;
+          const win = widget.documentGlobal;
           // Using Cu.cloneInto here allows us to embed components that use this event
           // in non-parent-processes such as about:welcome
           const detail = Cu.cloneInto({ path, filename, iconURL }, win, {
@@ -93,11 +93,12 @@ export class BackupUIChild extends JSWindowActorChild {
         backupFile,
       });
     } else if (event.type == "BackupUI:RestoreFromBackupFile") {
-      let { backupFile, backupPassword, restoreType } = event.detail;
+      let { backupFile, backupPassword, restoreType, source } = event.detail;
       let result = await this.sendQuery("RestoreFromBackupFile", {
         backupFile,
         backupPassword,
         restoreType,
+        source,
       });
 
       if (result.success) {
@@ -136,6 +137,8 @@ export class BackupUIChild extends JSWindowActorChild {
       this.sendAsyncMessage("FlushEmbeddedComponentPersistentData");
     } else if (event.type == "BackupUI:ErrorBarDismissed") {
       this.sendAsyncMessage("ErrorBarDismissed");
+    } else if (event.type == "BackupUI:FindBackupsInWellKnownLocations") {
+      this.sendAsyncMessage("FindBackupsInWellKnownLocations", event.detail);
     }
   }
 
@@ -151,11 +154,11 @@ export class BackupUIChild extends JSWindowActorChild {
         this.#inittedWidgets
       );
       for (let widget of widgets) {
-        if (!widget.isConnected || !widget.ownerGlobal) {
+        if (!widget.isConnected || !widget.documentGlobal) {
           continue;
         }
 
-        const state = Cu.cloneInto(message.data.state, widget.ownerGlobal);
+        const state = Cu.cloneInto(message.data.state, widget.documentGlobal);
 
         const waivedWidget = Cu.waiveXrays(widget);
         waivedWidget.backupServiceState = state;

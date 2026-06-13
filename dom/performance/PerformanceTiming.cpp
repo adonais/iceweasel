@@ -180,6 +180,8 @@ PerformanceTimingData::PerformanceTimingData(nsITimedChannel* aChannel,
     aChannel->GetConnectEnd(&mConnectEnd);
     aChannel->GetRequestStart(&mRequestStart);
     aChannel->GetResponseStart(&mResponseStart);
+    aChannel->GetFirstInterimResponseStart(&mFirstInterimResponseStart);
+    aChannel->GetFinalResponseHeadersStart(&mFinalResponseHeadersStart);
     aChannel->GetCacheReadStart(&mCacheReadStart);
     aChannel->GetResponseEnd(&mResponseEnd);
     aChannel->GetCacheReadEnd(&mCacheReadEnd);
@@ -739,6 +741,7 @@ DOMHighResTimeStamp PerformanceTimingData::ResponseStartHighRes(
   if (!StaticPrefs::dom_enable_performance() || !IsInitialized()) {
     return mZeroTime;
   }
+
   if (mResponseStart.IsNull() ||
       (!mCacheReadStart.IsNull() && mCacheReadStart < mResponseStart)) {
     mResponseStart = mCacheReadStart;
@@ -753,6 +756,34 @@ DOMHighResTimeStamp PerformanceTimingData::ResponseStartHighRes(
 
 DOMTimeMilliSec PerformanceTiming::ResponseStart() {
   return static_cast<int64_t>(mTimingData->ResponseStartHighRes(mPerformance));
+}
+
+DOMHighResTimeStamp PerformanceTimingData::FirstInterimResponseStartHighRes(
+    Performance* aPerformance) {
+  MOZ_ASSERT(aPerformance);
+
+  if (!StaticPrefs::dom_enable_performance() || !IsInitialized()) {
+    return mZeroTime;
+  }
+  if (mFirstInterimResponseStart.IsNull()) {
+    return 0;
+  }
+  return TimeStampToReducedDOMHighResOrFetchStart(aPerformance,
+                                                  mFirstInterimResponseStart);
+}
+
+DOMHighResTimeStamp PerformanceTimingData::FinalResponseHeadersStartHighRes(
+    Performance* aPerformance) {
+  MOZ_ASSERT(aPerformance);
+
+  if (!StaticPrefs::dom_enable_performance() || !IsInitialized()) {
+    return mZeroTime;
+  }
+  if (mFinalResponseHeadersStart.IsNull()) {
+    return 0;
+  }
+  return TimeStampToReducedDOMHighResOrFetchStart(aPerformance,
+                                                  mFinalResponseHeadersStart);
 }
 
 DOMHighResTimeStamp PerformanceTimingData::ResponseEndHighRes(

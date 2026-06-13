@@ -4,8 +4,11 @@
 
 package org.mozilla.fenix.downloads.listscreen.store
 
+import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
@@ -15,6 +18,7 @@ import mozilla.components.browser.state.state.content.DownloadState
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.feature.downloads.DownloadsUseCases
 import mozilla.components.lib.publicsuffixlist.PublicSuffixList
+import mozilla.components.lib.state.Store
 import mozilla.components.support.utils.FakeDateTimeProvider
 import mozilla.components.support.utils.FakeDownloadFileUtils
 import org.junit.Assert.assertEquals
@@ -34,6 +38,7 @@ import java.io.File
 import java.nio.file.Files
 import java.time.LocalDate
 import java.time.ZoneId
+import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.milliseconds
 
 class DownloadUIStoreTest {
@@ -351,7 +356,7 @@ class DownloadUIStoreTest {
 
         assertEquals(expectedUIStateBeforeDeleteAction, store.state)
 
-        store.dispatch(DownloadUIAction.RequestDelete(setOf(fileItem1)))
+        store.dispatch(DownloadUIAction.RequestDelete(fileItem1))
         assertEquals(store.state.pendingDeletionIds, deleteItemSet)
         assertEquals(expectedUIStateAfterDeleteAction, store.state)
 
@@ -369,7 +374,7 @@ class DownloadUIStoreTest {
 
         testDispatcher.scheduler.advanceUntilIdle()
 
-        store.dispatch(DownloadUIAction.RequestDelete(setOf(fileItem1)))
+        store.dispatch(DownloadUIAction.RequestDeleteMultiple(setOf(fileItem1)))
 
         assertEquals(emptySet<String>(), store.state.pendingDeletionIds)
         assertEquals(DownloadUIState.DialogState.DeleteConfirmation(setOf(fileItem1)), store.state.dialogState)
@@ -392,7 +397,7 @@ class DownloadUIStoreTest {
         store.dispatch(DownloadUIAction.AddItemForRemoval(fileItem2))
 
         val itemsToDelete = setOf(fileItem1, fileItem2)
-        store.dispatch(DownloadUIAction.RequestDelete(itemsToDelete))
+        store.dispatch(DownloadUIAction.RequestDeleteMultiple(itemsToDelete))
         assertEquals(emptySet<String>(), store.state.pendingDeletionIds)
         assertEquals(DownloadUIState.DialogState.DeleteConfirmation(itemsToDelete), store.state.dialogState)
 
@@ -430,7 +435,7 @@ class DownloadUIStoreTest {
 
         assertEquals(expectedUIStateBeforeDeleteAction, store.state)
 
-        store.dispatch(DownloadUIAction.RequestDelete(setOf(fileItem1)))
+        store.dispatch(DownloadUIAction.RequestDeleteMultiple(setOf(fileItem1)))
         testDispatcher.scheduler.runCurrent()
 
         assertEquals(expectedUIStateAfterDeleteAction, store.state)
@@ -476,7 +481,7 @@ class DownloadUIStoreTest {
 
         assertEquals(expectedUIStateBeforeDeleteAction, store.state)
 
-        store.dispatch(DownloadUIAction.RequestDelete(setOf(fileItem1)))
+        store.dispatch(DownloadUIAction.RequestDeleteMultiple(setOf(fileItem1)))
         assertEquals(expectedUIStateAfterDeleteActionWithPendingDelete, store.state)
 
         testDispatcher.scheduler.advanceTimeBy(testDelay.milliseconds)
@@ -517,12 +522,12 @@ class DownloadUIStoreTest {
 
         assertEquals(expectedUIStateBeforeDeleteAction, store.state)
 
-        store.dispatch(DownloadUIAction.RequestDelete(setOf(fileItem2)))
+        store.dispatch(DownloadUIAction.RequestDeleteMultiple(setOf(fileItem2)))
         testDispatcher.scheduler.runCurrent()
 
         assertEquals(expectedUIStateAfterFirstDeleteAction, store.state)
 
-        store.dispatch(DownloadUIAction.RequestDelete(setOf(fileItem1)))
+        store.dispatch(DownloadUIAction.RequestDeleteMultiple(setOf(fileItem1)))
         testDispatcher.scheduler.runCurrent()
 
         assertEquals(expectedUIStateAfterSecondDeleteAction, store.state)
@@ -1233,6 +1238,47 @@ class DownloadUIStoreTest {
     }
 
     @Test
+    fun `WHEN the RequestDelete action is dispatched on an complete download THEN download is deleted`() =
+        runTest(testDispatcher) {
+            every { publicSuffixList.getPublicSuffixPlusOne(any()) } returns CompletableDeferred("mozilla.com")
+            val removeDownloadUseCases: DownloadsUseCases.RemoveDownloadUseCase = mockk()
+            coEvery { removeDownloadUseCases(any(), any()) } returns Unit
+
+            val store = provideDownloadUIStore(
+                initialState = BrowserState(downloads = mapOf("1" to downloadState1)),
+                removeDownloadUseCases = removeDownloadUseCases,
+                getDeleteBehavior = { DeleteDownloadBehavior.DELETE_FROM_DEVICE },
+            )
+
+            store.dispatch(DownloadUIAction.RequestDelete(fileItem1))
+
+            testDispatcher.scheduler.advanceTimeBy(testDelay.milliseconds)
+
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            coVerify { removeDownloadUseCases("1", true) }
+        }
+
+    @Test
+    fun `WHEN the RequestDelete action is dispatched on an failed download THEN removeDownloadUseCases is invoked`() =
+        runTest(testDispatcher) {
+            val removeDownloadUseCases: DownloadsUseCases.RemoveDownloadUseCase = mockk()
+            coEvery { removeDownloadUseCases(any(), any()) } returns Unit
+
+            val store = provideDownloadUIStore(
+                initialState = BrowserState(downloads = mapOf("1" to downloadState1)),
+                removeDownloadUseCases = removeDownloadUseCases,
+                getDeleteBehavior = { DeleteDownloadBehavior.DELETE_FROM_DEVICE },
+            )
+
+            store.dispatch(DownloadUIAction.RequestDelete(fileItem1.copy(status = FileItem.Status.Failed)))
+
+            testDispatcher.scheduler.advanceTimeBy(testDelay.milliseconds)
+
+            verify { removeDownloadUseCases("1", true) }
+        }
+
+    @Test
     fun `WHEN the RetryDownload action is dispatched on a failed download THEN the state remains the same`() = runTest(testDispatcher) {
         val fileItems = listOf(
             fileItem(
@@ -1585,6 +1631,49 @@ class DownloadUIStoreTest {
     }
 
     @Test
+    fun `GIVEN itemToChangeExtension is already set WHEN FileExtensionChangedByUser THEN change file extension dialog is not shown`() = runTest(testDispatcher) {
+        val browserStore = BrowserStore(
+            initialState = BrowserState(
+                downloads = mapOf(
+                    "1" to downloadState1.copy(
+                        fileName = "original.pdf",
+                    ),
+                ),
+            ),
+        )
+
+        val store = DownloadUIStore(
+            initialState = DownloadUIState(
+                items = listOf(fileItem1),
+                mode = DownloadUIState.Mode.Normal,
+                pendingDeletionIds = emptySet(),
+                fileToRename = fileItem1.copy(fileName = "original.pdf"),
+                isChangeFileExtensionDialogVisible = false,
+                itemToChangeExtension = fileItem1,
+            ),
+            middleware = listOf(
+                DownloadUIRenameMiddleware(
+                    browserStore = browserStore,
+                    scope = testScope,
+                    downloadFileUtils = FakeDownloadFileUtils(),
+                    mainDispatcher = testDispatcher,
+                ),
+            ),
+        )
+
+        store.dispatch(
+            DownloadUIAction.FileExtensionChangedByUser(
+                item = store.state.fileToRename!!,
+                newName = "original.doc",
+            ),
+        )
+
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertFalse(store.state.isChangeFileExtensionDialogVisible)
+    }
+
+    @Test
     fun `GIVEN rename dialog shown WHEN proposed extension changes letter case THEN change file extension dialog is not shown`() = runTest(testDispatcher) {
         val browserStore = BrowserStore(
             initialState = BrowserState(
@@ -1710,15 +1799,49 @@ class DownloadUIStoreTest {
         assertFalse(store.state.isChangeFileExtensionDialogVisible)
     }
 
+    @Test
+    fun `WHEN RequestDelete is called for a non-completed item THEN CancelDownload is dispatched`() = runTest {
+        val removeDownloadUseCase: DownloadsUseCases.RemoveDownloadUseCase = mockk(relaxed = true)
+        val itemId = "test_id"
+
+        val middleware = DownloadDeleteMiddleware(
+            removeDownloadUseCase = removeDownloadUseCase,
+            dispatcher = StandardTestDispatcher(testScheduler),
+            deleteBehaviorProvider = { DeleteDownloadBehavior.DELETE_FROM_DEVICE },
+        )
+
+        val dispatchedActions = mutableListOf<DownloadUIAction>()
+        val store = mockk<Store<DownloadUIState, DownloadUIAction>>(relaxed = true)
+        every { store.dispatch(any()) } answers { dispatchedActions.add(firstArg()) }
+
+        middleware.invoke(
+            store = store,
+            next = { },
+            action = DownloadUIAction.RequestDelete(
+                item = fileItem1.copy(id = itemId, status = FileItem.Status.Failed),
+            ),
+        )
+
+        verify { removeDownloadUseCase(itemId, true) }
+
+        val hasCancelAction = dispatchedActions.any {
+            it is DownloadUIAction.CancelDownload && it.downloadId == itemId
+        }
+
+        assertTrue(hasCancelAction, "Expected CancelDownload action to be dispatched")
+    }
+
     private fun provideDownloadUIStore(
         initialState: BrowserState = BrowserState(),
+        browserStore: BrowserStore = BrowserStore(initialState = initialState),
+        removeDownloadUseCases: DownloadsUseCases.RemoveDownloadUseCase = DownloadsUseCases.RemoveDownloadUseCase(
+            browserStore,
+        ),
         getDeleteBehavior: () -> DeleteDownloadBehavior = { DeleteDownloadBehavior.ASK_WHEN_DELETING },
     ): DownloadUIStore {
-        val browserStore = BrowserStore(initialState = initialState)
-
         val deleteMiddleware = DownloadDeleteMiddleware(
             testDelay,
-            DownloadsUseCases.RemoveDownloadUseCase(browserStore),
+            removeDownloadUseCases,
             testDispatcher,
             getDeleteBehavior,
         )

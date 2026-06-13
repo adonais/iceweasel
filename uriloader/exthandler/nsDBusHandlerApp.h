@@ -14,10 +14,10 @@ class nsDBusHandlerApp : public nsIDBusHandlerApp {
   NS_DECL_NSIHANDLERAPP
   NS_DECL_NSIDBUSHANDLERAPP
 
-  nsDBusHandlerApp() {}
+  nsDBusHandlerApp() = default;
 
  protected:
-  virtual ~nsDBusHandlerApp() {}
+  virtual ~nsDBusHandlerApp() = default;
 
   nsString mName;
   nsString mDetailedDescription;

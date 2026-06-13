@@ -9,9 +9,7 @@
   "interventions": [
     {
       "platforms": ["desktop"],
-      "content_scripts": {
-        "js": ["bug1898951-hexagame.io-prevent-unsupported-alert.js"]
-      }
+      "hide_alerts": ["chrome"]
     }
   ]
 }

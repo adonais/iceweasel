@@ -2,7 +2,7 @@
    http://creativecommons.org/publicdomain/zero/1.0/ */
 
 /**
- * @import { PanelList } from "chrome://global/content/elements/panel-list.mjs"
+ * @import { PanelList,  PanelItem } from "chrome://global/content/elements/panel-list.mjs"
  */
 
 import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
@@ -113,10 +113,18 @@ class UrlbarInputTestUtils {
    * @param {ChromeWindow} win The window containing the urlbar
    */
   async promiseSearchComplete(win) {
-    let waitForQuery = () => {
-      return this.promisePopupOpen(win, () => {}).then(
-        () => this.#urlbar(win).lastQueryContextPromise
-      );
+    let waitForQuery = async () => {
+      await this.promisePopupOpen(win, () => {});
+      // Re-read `lastQueryContextPromise` after each await in case the query
+      // was restarted (e.g., by the `reopenOnBlur` mechanism in
+      // `promiseAutocompleteResultPopup`), and wait for the latest query.
+      let promise;
+      let context;
+      do {
+        promise = this.#urlbar(win).lastQueryContextPromise;
+        context = await promise;
+      } while (this.#urlbar(win).lastQueryContextPromise !== promise);
+      return context;
     };
     /** @type {UrlbarQueryContext} */
     let context = await waitForQuery();
@@ -1279,25 +1287,12 @@ class UrlbarInputTestUtils {
     { backspace, clickClose, waitForSearch = true } = {}
   ) {
     let urlbar = this.#urlbar(window);
-    // If the Urlbar is not extended, ignore the clickClose parameter. The close
-    // button is not clickable in this state. This state might be encountered on
-    // Linux, where prefers-reduced-motion is enabled in automation.
-    if (!urlbar.hasAttribute("breakout-extend") && clickClose) {
-      if (waitForSearch) {
-        let searchPromise = UrlbarTestUtils.promiseSearchComplete(window);
-        urlbar.searchMode = null;
-        await searchPromise;
-      } else {
-        urlbar.searchMode = null;
-      }
-      return;
-    }
-
     if (!backspace && !clickClose) {
       backspace = true;
     }
 
     if (backspace) {
+      urlbar.focus();
       let urlbarValue = urlbar.value;
       urlbar.selectionStart = urlbar.selectionEnd = 0;
       if (waitForSearch) {
@@ -1590,6 +1585,10 @@ class UrlbarInputTestUtils {
     if (openFn) {
       await openFn();
     } else {
+      button.focus();
+      await lazy.BrowserTestUtils.waitForCondition(
+        () => !button.hasAttribute("aria-hidden")
+      );
       button.click();
     }
     await Promise.all([promisePanelOpen, rebuildPromise]);
@@ -1608,6 +1607,28 @@ class UrlbarInputTestUtils {
       this.searchModeSwitcherPopup(win),
       "hidden"
     );
+  }
+
+  /**
+   * @param {ChromeWindow} win
+   *   The search mode switcher's window.
+   * @param {string} selector
+   *   A CSS selector for the panel-item that should be activated.
+   * @returns {Promise<void>}
+   *   Resolved when the search mode switcher popup is hidden.
+   */
+  async activateSearchModeSwitcherItem(win, selector) {
+    this.info("Opening search mode switcher.");
+    let panelList = await this.openSearchModeSwitcher(win);
+    let panelItem = /**@type {PanelItem}*/ (panelList.querySelector(selector));
+    if (!panelItem || panelItem.localName != "panel-item") {
+      throw new Error("No matches for selector");
+    }
+    this.info("Clicking panel-item.");
+    let popupHidden = this.searchModeSwitcherPopupClosed(win);
+    panelItem.click();
+    await popupHidden;
+    this.info("Search mode switcher closed.");
   }
 
   /**
@@ -1660,7 +1681,11 @@ class UrlbarInputTestUtils {
     let target = menupopup.querySelector(targetSelector);
     let selected;
     for (let i = 0; i < menupopup.children.length; i++) {
-      this.EventUtils.synthesizeKey("KEY_ArrowDown", {}, menupopup.ownerGlobal);
+      this.EventUtils.synthesizeKey(
+        "KEY_ArrowDown",
+        {},
+        menupopup.documentGlobal
+      );
       await lazy.BrowserTestUtils.waitForCondition(() => {
         let current = menupopup.querySelector("[_moz-menuactive]");
         if (selected != current) {
@@ -1710,28 +1735,28 @@ class UrlbarInputTestUtils {
       fromX,
       rect.height / 2,
       { type: "mousemove" },
-      target.ownerGlobal
+      target.documentGlobal
     );
     this.EventUtils.synthesizeMouse(
       target,
       fromX,
       rect.height / 2,
       { type: "mousedown" },
-      target.ownerGlobal
+      target.documentGlobal
     );
     this.EventUtils.synthesizeMouse(
       target,
       toX,
       rect.height / 2,
       { type: "mousemove" },
-      target.ownerGlobal
+      target.documentGlobal
     );
     this.EventUtils.synthesizeMouse(
       target,
       toX,
       rect.height / 2,
       { type: "mouseup" },
-      target.ownerGlobal
+      target.documentGlobal
     );
     return promise;
   }

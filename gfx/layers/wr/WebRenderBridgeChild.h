@@ -94,7 +94,7 @@ class WebRenderBridgeChild final : public PWebRenderBridgeChild,
    * to be sent from the parent side.
    */
   void Destroy(bool aIsSync);
-  bool IPCOpen() const { return mIPCOpen && !mDestroyed; }
+  bool IPCOpen() const { return CanSend() && !mDestroyed; }
   bool GetSentDisplayList() const { return mSentDisplayList; }
   bool IsDestroyed() const { return mDestroyed; }
 
@@ -207,17 +207,6 @@ class WebRenderBridgeChild final : public PWebRenderBridgeChild,
   mozilla::ipc::IPCResult RecvWrReleasedImages(
       nsTArray<wr::ExternalImageKeyPair>&& aPairs);
 
-  void AddIPDLReference() {
-    MOZ_ASSERT(mIPCOpen == false);
-    mIPCOpen = true;
-    AddRef();
-  }
-  void ReleaseIPDLReference() {
-    MOZ_ASSERT(mIPCOpen == true);
-    mIPCOpen = false;
-    Release();
-  }
-
   bool AddOpDestroy(const OpDestroy& aOp);
 
   nsTArray<OpDestroy> mDestroyedActors;
@@ -231,7 +220,6 @@ class WebRenderBridgeChild final : public PWebRenderBridgeChild,
   wr::PipelineId mPipelineId;
   WebRenderLayerManager* mManager;
 
-  bool mIPCOpen;
   bool mDestroyed;
   // True iff we have called SendSetDisplayList and haven't called
   // SendClearCachedResources since that call.

@@ -16,6 +16,8 @@ import mozilla.components.concept.fetch.MutableHeaders
 import mozilla.components.concept.fetch.Request
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
+import java.io.IOException
+import java.io.InputStream
 import java.util.Locale
 import java.util.concurrent.TimeUnit
 import kotlin.math.max
@@ -36,7 +38,20 @@ class LensImageUploader(
      */
     suspend fun upload(imageUri: Uri): String? = withContext(Dispatchers.IO) {
         val bitmap = decodeBitmap(imageUri) ?: return@withContext null
+        uploadBitmap(bitmap)
+    }
 
+    /**
+     * Fetches the image at [imageUrl], then scales, compresses, and uploads it to Google Lens.
+     *
+     * @return The Lens results URL on success, or null on failure.
+     */
+    suspend fun uploadFromUrl(imageUrl: String): String? = withContext(Dispatchers.IO) {
+        val bitmap = fetchBitmap(imageUrl) ?: return@withContext null
+        uploadBitmap(bitmap)
+    }
+
+    private fun uploadBitmap(bitmap: Bitmap): String? {
         val scaled = scaleBitmap(bitmap)
         val scaledWidth = scaled.width
         val scaledHeight = scaled.height
@@ -88,10 +103,10 @@ class LensImageUploader(
             cookiePolicy = Request.CookiePolicy.INCLUDE,
             connectTimeout = Pair(CONNECT_TIMEOUT_MS.toLong(), TimeUnit.MILLISECONDS),
             readTimeout = Pair(READ_TIMEOUT_MS.toLong(), TimeUnit.MILLISECONDS),
-            useCaches = false,
+            useCaches = true,
         )
 
-        client.fetch(request).use { response ->
+        return client.fetch(request).use { response ->
             if (response.status in SUCCESS_RANGE && response.url != uploadUrl) {
                 response.url
             } else {
@@ -104,6 +119,69 @@ class LensImageUploader(
         return context.contentResolver.openInputStream(uri)?.use { inputStream ->
             BitmapFactory.decodeStream(inputStream)
         }
+    }
+
+    private fun fetchBitmap(imageUrl: String): Bitmap? {
+        val request = Request(
+            url = imageUrl,
+            method = Request.Method.GET,
+            headers = MutableHeaders("User-Agent" to userAgent),
+            cookiePolicy = Request.CookiePolicy.INCLUDE,
+            connectTimeout = Pair(CONNECT_TIMEOUT_MS.toLong(), TimeUnit.MILLISECONDS),
+            readTimeout = Pair(READ_TIMEOUT_MS.toLong(), TimeUnit.MILLISECONDS),
+            useCaches = true,
+        )
+
+        return try {
+            client.fetch(request).use { response ->
+                if (response.status !in SUCCESS_RANGE) return@use null
+                val bytes = response.body.useStream { readAtMost(it, MAX_DOWNLOAD_BYTES) }
+                    ?: return@use null
+                decodeSampledBitmap(bytes)
+            }
+        } catch (_: IOException) {
+            null
+        }
+    }
+
+    /**
+     * Reads up to [max] bytes from [stream] and returns them, or null if the stream carries more
+     * than [max] bytes. Guards against oversized remote responses before decoding.
+     */
+    private fun readAtMost(stream: InputStream, max: Int): ByteArray? {
+        val out = ByteArrayOutputStream()
+        val buffer = ByteArray(READ_BUFFER_BYTES)
+        var total = 0
+        while (true) {
+            val read = stream.read(buffer)
+            if (read < 0) return out.toByteArray()
+            total += read
+            if (total > max) return null
+            out.write(buffer, 0, read)
+        }
+    }
+
+    /**
+     * Decodes [bytes] into a Bitmap, subsampling so neither dimension exceeds
+     * [MAX_IMAGE_DIMENSION] and avoiding a full-resolution allocation for oversized images.
+     */
+    private fun decodeSampledBitmap(bytes: ByteArray): Bitmap? {
+        val boundsOptions = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeByteArray(bytes, 0, bytes.size, boundsOptions)
+        if (boundsOptions.outWidth <= 0 || boundsOptions.outHeight <= 0) return null
+
+        val decodeOptions = BitmapFactory.Options().apply {
+            inSampleSize = computeSampleSize(boundsOptions.outWidth, boundsOptions.outHeight)
+        }
+        return BitmapFactory.decodeByteArray(bytes, 0, bytes.size, decodeOptions)
+    }
+
+    private fun computeSampleSize(width: Int, height: Int): Int {
+        var sampleSize = 1
+        while (max(width, height) / sampleSize > MAX_IMAGE_DIMENSION) {
+            sampleSize *= 2
+        }
+        return sampleSize
     }
 
     private fun scaleBitmap(bitmap: Bitmap): Bitmap {
@@ -127,6 +205,10 @@ class LensImageUploader(
         private const val JPEG_QUALITY = 85
         private const val CONNECT_TIMEOUT_MS = 15_000
         private const val READ_TIMEOUT_MS = 30_000
+
+        /** Hard cap on the bytes read from a remote image. Images above this are discarded. */
+        private const val MAX_DOWNLOAD_BYTES = 20 * 1024 * 1024
+        private const val READ_BUFFER_BYTES = 8 * 1024
         private val SUCCESS_RANGE = 200..299
     }
 }

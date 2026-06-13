@@ -7,14 +7,14 @@
 const { IPProtectionService, IPProtectionStates } = ChromeUtils.importESModule(
   "moz-src:///toolkit/components/ipprotection/IPProtectionService.sys.mjs"
 );
-const { IPPProxyManager, IPPProxyStates } = ChromeUtils.importESModule(
+const { ERRORS, IPPProxyManager, IPPProxyStates } = ChromeUtils.importESModule(
   "moz-src:///toolkit/components/ipprotection/IPPProxyManager.sys.mjs"
 );
 const { IPPSignInWatcher } = ChromeUtils.importESModule(
   "moz-src:///toolkit/components/ipprotection/fxa/IPPSignInWatcher.sys.mjs"
 );
 const { ProxyPass, ProxyUsage, Entitlement } = ChromeUtils.importESModule(
-  "moz-src:///toolkit/components/ipprotection/GuardianClient.sys.mjs"
+  "moz-src:///toolkit/components/ipprotection/GuardianTypes.sys.mjs"
 );
 const { RemoteSettings } = ChromeUtils.importESModule(
   "resource://services-settings/remote-settings.sys.mjs"
@@ -25,10 +25,6 @@ const { IPProtectionActivator } = ChromeUtils.importESModule(
 const { IPPFxaAuthProvider } = ChromeUtils.importESModule(
   "moz-src:///toolkit/components/ipprotection/fxa/IPPFxaAuthProvider.sys.mjs"
 );
-const { IPPEnrollAndEntitleManager } = ChromeUtils.importESModule(
-  "moz-src:///toolkit/components/ipprotection/fxa/IPPEnrollAndEntitleManager.sys.mjs"
-);
-
 IPProtectionActivator.addHelpers(IPPFxaAuthProvider.helpers);
 IPProtectionActivator.setupHelpers();
 IPProtectionActivator.setAuthProvider(IPPFxaAuthProvider);
@@ -78,7 +74,6 @@ async function putServerInRemoteSettings(
 
 const defaultStubOptions = {
   signedIn: true,
-  isLinkedToGuardian: true,
   validProxyPass: true,
   entitlement: createTestEntitlement(),
   proxyUsage: new ProxyUsage(
@@ -98,17 +93,13 @@ function setupStubs(
   const options = { ...defaultStubOptions, ...aOptions };
   sandbox.stub(IPPSignInWatcher, "isSignedIn").get(() => options.signedIn);
   sandbox
-    .stub(IPPEnrollAndEntitleManager, "isLinkedToGuardian")
-    .resolves(options.isLinkedToGuardian);
-  sandbox.stub(IPProtectionService.guardian, "fetchUserInfo").resolves({
-    status: 200,
-    error: null,
+    .stub(IPPFxaAuthProvider, "getEntitlement")
+    .resolves({ entitlement: options.entitlement });
+  sandbox.stub(IPPFxaAuthProvider, "enrollAndEntitle").resolves({
+    isEnrolledAndEntitled: true,
     entitlement: options.entitlement,
   });
-  sandbox.stub(IPProtectionService.guardian, "enrollWithFxa").resolves({
-    ok: true,
-  });
-  sandbox.stub(IPProtectionService.guardian, "fetchProxyPass").resolves({
+  sandbox.stub(IPPFxaAuthProvider, "fetchProxyPass").resolves({
     status: 200,
     error: undefined,
     pass: new ProxyPass(
@@ -119,7 +110,7 @@ function setupStubs(
     usage: options.proxyUsage,
   });
   sandbox
-    .stub(IPProtectionService.guardian, "fetchProxyUsage")
+    .stub(IPPFxaAuthProvider, "fetchProxyUsage")
     .resolves(options.proxyUsage);
 }
 

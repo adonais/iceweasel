@@ -3723,6 +3723,10 @@ GeneralParser<ParseHandler, Unit>::functionStmt(uint32_t toStringStart,
     return errorResult();
   }
 
+  if (name == TaggedParserAtomIndex::WellKnown::arguments()) {
+    pc_->numberOfArgumentsNames++;
+  }
+
   // Note the declared name and check for early errors.
   DeclarationKind kind;
   if (declaredInStmt) {

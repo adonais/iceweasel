@@ -105,6 +105,8 @@ subsuite = "mozbuild"
 
 ["test_manifest.py"]
 
+["test_testing.py"]
+
 ["test_mozconfig.py"]
 
 ["test_mozinfo.py"]

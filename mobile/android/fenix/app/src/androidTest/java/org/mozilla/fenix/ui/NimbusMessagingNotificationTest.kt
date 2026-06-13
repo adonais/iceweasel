@@ -5,7 +5,6 @@
 package org.mozilla.fenix.ui
 
 import android.content.Context
-import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import mozilla.components.service.nimbus.messaging.FxNimbusMessaging
 import org.json.JSONObject
 import org.junit.Before
@@ -19,6 +18,7 @@ import org.mozilla.fenix.helpers.TestHelper
 import org.mozilla.fenix.helpers.TestHelper.mDevice
 import org.mozilla.fenix.nimbus.FxNimbus
 import org.mozilla.fenix.ui.robots.notificationShade
+import androidx.compose.ui.test.junit4.v2.AndroidComposeTestRule as AndroidComposeTestRuleV2
 
 /**
  * A UI test for testing the notification surface for Nimbus Messaging.
@@ -30,9 +30,9 @@ class NimbusMessagingNotificationTest {
     @get:Rule(order = 0)
     val fenixTestRule: FenixTestRule = FenixTestRule()
 
-    @get:Rule
+    @get:Rule(order = 1)
     val composeTestRule =
-        AndroidComposeTestRule(
+        AndroidComposeTestRuleV2(
             HomeActivityIntentTestRule.withDefaultSettingsOverrides(skipOnboarding = true),
         ) { it.activity }
 

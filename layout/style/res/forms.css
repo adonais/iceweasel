@@ -496,9 +496,13 @@ input[type="color"] {
 }
 
 /* https://github.com/whatwg/html/issues/9976 */
-input:not([type="image" i], [type="range" i], [type="checkbox" i], [type="radio" i]) {
+input:not([type="range" i], [type="checkbox" i], [type="radio" i]) {
   overflow: clip !important;
   overflow-clip-margin: 0 !important;
+}
+
+input[type="image" i] {
+  overflow-clip-margin: content-box !important;
 }
 
 button,
@@ -528,16 +532,14 @@ input:where([type="reset"], [type="button"], [type="submit"], [type="color"]):ac
 
 :is(:disabled, :disabled:active)::file-selector-button,
 button:is(:disabled, :disabled:active),
-input:where([type="reset"], [type="button"], [type="submit"], [type="color"]):is(:disabled, :disabled:active),
-select:is(:disabled, :disabled:active) > button {
+input:where([type="reset"], [type="button"], [type="submit"], [type="color"]):is(:disabled, :disabled:active) {
   border-style: outset;
   cursor: unset;
 }
 
 :is(:disabled, :disabled:active)::file-selector-button,
 button:is(:disabled, :disabled:active),
-input:where([type="reset"], [type="button"], [type="submit"]):is(:disabled, :disabled:active),
-select:is(:disabled, :disabled:active) > button {
+input:where([type="reset"], [type="button"], [type="submit"]):is(:disabled, :disabled:active) {
   color: GrayText;
   background-color: -moz-ButtonDisabledFace;
 }

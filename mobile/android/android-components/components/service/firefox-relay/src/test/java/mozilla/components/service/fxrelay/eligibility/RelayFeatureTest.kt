@@ -17,7 +17,6 @@ import mozilla.components.concept.sync.FxAEntryPoint
 import mozilla.components.concept.sync.OAuthAccount
 import mozilla.components.concept.sync.Profile
 import mozilla.components.concept.sync.StatePersistenceCallback
-import mozilla.components.concept.sync.UserData
 import mozilla.components.service.fxrelay.EmailMask
 import mozilla.components.service.fxrelay.FxRelay
 import mozilla.components.service.fxrelay.MaskSource
@@ -337,9 +336,9 @@ class RelayFeatureTest {
         ): AuthFlowUrl? = null
 
         override fun getCurrentDeviceId(): String? = null
-        override fun getSessionToken(): String? = null
+        override suspend fun handleWebChannelLogin(jsonPayload: String) = Unit
+        override fun getSignedInUserForWebChannel(): String? = null
         override suspend fun getProfile(ignoreCache: Boolean): Profile? = null
-        override suspend fun setUserData(userData: UserData) = Unit
         override suspend fun completeOAuthFlow(code: String, state: String) = false
         override suspend fun getAccessToken(singleScope: String): AccessTokenInfo? = null
         override fun authErrorDetected() = Unit

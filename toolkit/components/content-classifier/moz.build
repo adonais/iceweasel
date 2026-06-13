@@ -5,6 +5,13 @@
 with Files("**"):
     BUG_COMPONENT = ("Core", "Privacy: Anti-Tracking")
 
+XPIDL_SOURCES += [
+    "nsIContentClassifierRemoteSettingsClient.idl",
+    "nsIContentClassifierService.idl",
+]
+
+XPIDL_MODULE = "content-classifier"
+
 UNIFIED_SOURCES += [
     "ContentClassifierService.cpp",
 ]
@@ -17,6 +24,14 @@ LOCAL_INCLUDES += [
     "/netwerk/base",
     "/netwerk/protocol/http",
     "/netwerk/url-classifier",
+]
+
+EXTRA_JS_MODULES += [
+    "ContentClassifierRemoteSettingsClient.sys.mjs",
+]
+
+XPCOM_MANIFESTS += [
+    "components.conf",
 ]
 
 BROWSER_CHROME_MANIFESTS += [

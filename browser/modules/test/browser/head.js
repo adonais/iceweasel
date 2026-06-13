@@ -170,7 +170,11 @@ function clickSecondaryAction(actionIndex) {
     // secondary action (index 0) is the button shown directly in the panel.
     let actionMenuItem =
       popupNotification.querySelectorAll("menuitem")[actionIndex - 1];
-    popupNotification.menupopup.activateItem(actionMenuItem);
+    if (popupNotification.menupopup.isNativeMenu) {
+      popupNotification.menupopup.activateItem(actionMenuItem);
+    } else {
+      await EventUtils.synthesizeMouseAtCenter(actionMenuItem, {});
+    }
     await removePromise;
   })();
 }

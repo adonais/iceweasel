@@ -65,11 +65,35 @@ def flavor_for_test(test):
     # test      = mobile/android/fenix/app/src/androidTest/java/org/mozilla/fenix/components/MenuItemTest.kt
     # returns   = android
 
-    android_prefix = os.path.join("src", "androidTest", "java")
-    if android_prefix in os.path.normpath(test):
-        return "android"
-    else:
-        return "unit"
+    for lang in ("java", "kotlin"):
+        android_prefix = os.path.join("src", "androidTest", lang)
+        if android_prefix in os.path.normpath(test):
+            return "android"
+    return "unit"
+
+
+def submodule_for_test(test, subdir):
+    """Get the nested sub-module name for a test, or None if in root module."""
+    # mobile/android/fenix/app/longfox/src/... -> "longfox"
+    # mobile/android/fenix/app/src/...         -> None
+    after_subdir = (
+        os.path
+        .normpath(test)
+        .split(os.path.normpath(subdir))[-1]
+        .removeprefix(os.path.sep)
+    )
+    first = after_subdir.split(os.path.sep)[0]
+    if first == "src":
+        return None
+    return first
+
+
+def source_dir_for_test(test, base="test"):
+    """Return src/<base>/kotlin or src/<base>/java depending on the test path."""
+    kotlin_path = os.path.join("src", base, "kotlin")
+    if kotlin_path in os.path.normpath(test):
+        return kotlin_path
+    return os.path.join("src", base, "java")
 
 
 @Command(
@@ -157,37 +181,74 @@ def run_android_test(
         prefix = os.path.join(subdir, "components")
         return project_for_ac(test, prefix, test_path)
 
+    def append_unit_test_args(task, tests, source_base="test"):
+        gradle_command.append(task)
+        gradle_command.append("--rerun")
+        for t in tests:
+            gradle_command.append("--tests")
+            gradle_command.append(
+                classname_for_test(t, source_dir_for_test(t, source_base))
+            )
+
+    def append_android_test_args(task, tests, source_base="androidTest"):
+        gradle_command.append(task)
+        for t in tests:
+            name = classname_for_test(t, source_dir_for_test(t, source_base))
+            gradle_command.append(
+                f"-Pandroid.testInstrumentationRunnerArguments.class={name}"
+            )
+
     # Tests based on 'testUnitTest' family of tasks
     gradle_unittest = f"test{gradle_variant}UnitTest"
     if unit_tests:
-        test_path = os.path.join("src", "test", "java")
         if subproject == "android-components":
+            test_path = os.path.join("src", "test", "java")
             for p in dict.fromkeys(project_name(t, test_path) for t in unit_tests):
-                gradle_command.append(f":components:{p}:{gradle_unittest}")
+                component_tests = [
+                    t for t in unit_tests if project_name(t, test_path) == p
+                ]
+                append_unit_test_args(
+                    f":components:{p}:{gradle_unittest}", component_tests
+                )
         else:
-            gradle_command.append(gradle_unittest)
+            gradle_project = os.path.basename(subdir)
+            tests_by_module = {}
+            for t in unit_tests:
+                sm = submodule_for_test(t, subdir)
+                tests_by_module.setdefault(sm, []).append(t)
 
-        # Compute the class names from file names
-        gradle_command.append("--rerun")
-        for t in unit_tests:
-            gradle_command.append("--tests")
-            gradle_command.append(classname_for_test(t, test_path))
+            for sm, module_tests in tests_by_module.items():
+                task_prefix = (
+                    f":{gradle_project}:{sm}:" if sm else f":{gradle_project}:"
+                )
+                append_unit_test_args(f"{task_prefix}{gradle_unittest}", module_tests)
 
     # Tests based on 'connectedAndroidTest' family of tasks
     gradle_androidtest = f"connected{gradle_variant}AndroidTest"
     if android_tests:
-        test_path = os.path.join("src", "androidTest", "java")
         if subproject == "android-components":
+            test_path = os.path.join("src", "androidTest", "java")
             for p in dict.fromkeys(project_name(t, test_path) for t in android_tests):
-                gradle_command.append(f":components:{p}:{gradle_androidtest}")
+                component_tests = [
+                    t for t in android_tests if project_name(t, test_path) == p
+                ]
+                append_android_test_args(
+                    f":components:{p}:{gradle_androidtest}", component_tests
+                )
         else:
-            gradle_command.append(gradle_androidtest)
+            gradle_project = os.path.basename(subdir)
+            tests_by_module = {}
+            for t in android_tests:
+                sm = submodule_for_test(t, subdir)
+                tests_by_module.setdefault(sm, []).append(t)
 
-        for t in android_tests:
-            name = classname_for_test(t, test_path)
-            gradle_command.append(
-                f"-Pandroid.testInstrumentationRunnerArguments.class={name}"
-            )
+            for sm, module_tests in tests_by_module.items():
+                task_prefix = (
+                    f":{gradle_project}:{sm}:" if sm else f":{gradle_project}:"
+                )
+                append_android_test_args(
+                    f"{task_prefix}{gradle_androidtest}", module_tests
+                )
 
     # If no tests specified, run whole suite based on flavor
     if not tests:

@@ -451,6 +451,7 @@ SharedSurface_D3D11Interop::ToSurfaceDescriptor() {
       mData.dxgiHandle, /* gpuProcessTextureId */ Nothing(),
       /* arrayIndex */ 0, format, mDesc.size, mDesc.colorSpace,
       gfx::ColorRange::FULL, mDesc.transferFunction,
+      /* hdrMetadata */ Nothing(),
       /* hasKeyedMutex */ true,
       /* fencesHolderId */ Nothing()));
 }

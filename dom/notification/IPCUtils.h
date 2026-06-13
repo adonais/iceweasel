@@ -5,18 +5,15 @@
 #ifndef DOM_NOTIFICATION_IPCUTILS_H_
 #define DOM_NOTIFICATION_IPCUTILS_H_
 
-#include "ipc/EnumSerializer.h"
-#include "ipc/IPCMessageUtils.h"
+#include "mozilla/dom/BindingIPCUtils.h"
 #include "mozilla/dom/NotificationBinding.h"
 
 namespace IPC {
 
-using NotificationDirection = mozilla::dom::NotificationDirection;
 template <>
-struct ParamTraits<NotificationDirection>
-    : public ContiguousEnumSerializerInclusive<NotificationDirection,
-                                               NotificationDirection::Auto,
-                                               NotificationDirection::Rtl> {};
+struct ParamTraits<mozilla::dom::NotificationDirection>
+    : public mozilla::dom::WebIDLEnumSerializer<
+          mozilla::dom::NotificationDirection> {};
 
 }  // namespace IPC
 

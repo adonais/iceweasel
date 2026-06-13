@@ -132,6 +132,7 @@ ScriptLoadHandler::ScriptLoadHandler(
       mSRIDataVerifier(std::move(aSRIDataVerifier)),
       mSRIStatus(NS_OK) {
   MOZ_ASSERT(aRequest->IsUnknownDataType());
+  MOZ_ASSERT(!aRequest->IsRetrievedFromMemoryCache());
   MOZ_ASSERT(aRequest->IsFetching());
 }
 
@@ -184,11 +185,11 @@ ScriptLoadHandler::OnIncrementalData(nsIIncrementalStreamLoader* aLoader,
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
-  if (mRequest->IsSerializedStencil() && firstTime) {
+  if (mRequest->IsRetrievedAsSerializedStencil() && firstTime) {
     PerfStats::RecordMeasurementStart(PerfStats::Metric::JSBC_IO_Read);
   }
 
-  if (mRequest->IsTextSource()) {
+  if (mRequest->IsFetchedAsTextSource()) {
 #ifdef NIGHTLY_BUILD
     // If we have a resource hasher, update it with the new data.
     if (mResourceHasher) {
@@ -223,7 +224,7 @@ ScriptLoadHandler::OnIncrementalData(nsIIncrementalStreamLoader* aLoader,
 
     *aConsumedLength = aDataLength;
   } else {
-    MOZ_ASSERT(mRequest->IsSerializedStencil());
+    MOZ_ASSERT(mRequest->IsRetrievedAsSerializedStencil());
     if (!mRequest->SRIAndSerializedStencil().append(aData, aDataLength)) {
       return NS_ERROR_OUT_OF_MEMORY;
     }
@@ -350,6 +351,7 @@ nsresult ScriptLoadHandler::MaybeDecodeSRI(uint32_t* sriLength) {
 
 nsresult ScriptLoadHandler::EnsureKnownDataType(nsIChannel* aChannel) {
   MOZ_ASSERT(mRequest->IsUnknownDataType());
+  MOZ_ASSERT(!mRequest->IsRetrievedFromMemoryCache());
   MOZ_ASSERT(mRequest->IsFetching());
 
 #ifdef NIGHTLY_BUILD
@@ -515,13 +517,13 @@ nsresult ScriptLoadHandler::DoOnStreamComplete(nsIChannel* aChannel,
       NS_ENSURE_SUCCESS(rv, rv);
     }
 
-    if (mRequest->IsSerializedStencil() && !firstMessage) {
+    if (mRequest->IsRetrievedAsSerializedStencil() && !firstMessage) {
       // if firstMessage, then entire stream is in aData, and PerfStats would
       // measure 0 time
       PerfStats::RecordMeasurementEnd(PerfStats::Metric::JSBC_IO_Read);
     }
 
-    if (mRequest->IsTextSource()) {
+    if (mRequest->IsFetchedAsTextSource()) {
       DebugOnly<bool> encoderSet = EnsureDecoder(aChannel, aData, aDataLength,
                                                  /* aEndOfStream = */ true);
       MOZ_ASSERT(encoderSet);
@@ -542,7 +544,7 @@ nsresult ScriptLoadHandler::DoOnStreamComplete(nsIChannel* aChannel,
         return NS_ERROR_OUT_OF_MEMORY;
       }
     } else {
-      MOZ_ASSERT(mRequest->IsSerializedStencil());
+      MOZ_ASSERT(mRequest->IsRetrievedAsSerializedStencil());
       JS::TranscodeBuffer& buf = mRequest->SRIAndSerializedStencil();
       if (!buf.append(aData, aDataLength)) {
         return NS_ERROR_OUT_OF_MEMORY;

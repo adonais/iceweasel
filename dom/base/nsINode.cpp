@@ -43,6 +43,7 @@
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/CharacterData.h"
 #include "mozilla/dom/ChildIterator.h"
+#include "mozilla/dom/ContentList.h"
 #include "mozilla/dom/CustomElementRegistry.h"
 #include "mozilla/dom/DebuggerNotificationBinding.h"
 #include "mozilla/dom/Document.h"
@@ -77,7 +78,6 @@
 #include "nsCOMArray.h"
 #include "nsChildContentList.h"
 #include "nsContentCreatorFunctions.h"
-#include "nsContentList.h"
 #include "nsContentUtils.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsDOMAttributeMap.h"
@@ -109,6 +109,7 @@
 #include "nsRange.h"
 #include "nsString.h"
 #include "nsStyleConsts.h"
+#include "nsTHashMap.h"
 #include "nsTextNode.h"
 #include "nsUnicharUtils.h"
 #include "nsWindowSizes.h"
@@ -142,9 +143,11 @@ STATIC_ASSERT_CONSTANT_EQ(NOTATION_NODE);
 
 #undef STATIC_ASSERT_CONSTANT_EQ
 
+#ifdef DEBUG
 static bool ShouldUseNACScope(const nsINode* aNode) {
   return aNode->IsInNativeAnonymousSubtree();
 }
+#endif
 
 static bool ShouldUseUAWidgetScope(const nsINode* aNode) {
   return aNode->HasBeenInUAWidget();
@@ -275,7 +278,127 @@ void nsINode::SetNamespacePrefix(nsAtom* aPrefix) {
       nsINode::ELEMENT_NODE);
 }
 
+// Cache for parents with many children. Speeds up index-based child lookups
+// (GetChildAt) and reverse lookups (ComputeIndexOf) using a lazily-populated
+// contiguous array, with a hashmap for O(1) reverse lookups on large lists.
+class ChildIndexCache {
+ public:
+  // Minimum child count for using the array cache for either lookup.
+  static constexpr uint32_t kThreshold = 32;
+  // Minimum child count for using the hashmap for ComputeIndexOf lookups.
+  static constexpr uint32_t kHashMapThreshold = 128;
+
+  static nsIContent* GetChildAt(const nsINode* aParent, uint32_t aIndex) {
+    MOZ_ASSERT(aParent->GetChildCount() > aIndex,
+               "Caller should have checked bounds");
+    auto& entry =
+        sCache.LookupOrInsertWith(aParent, [&] { return MakeEntry(aParent); });
+    if (aIndex < entry.mChildren.Length()) {
+      return entry.mChildren[aIndex];
+    }
+    PopulateTo(entry, aParent, aIndex);
+    return entry.mChildren[aIndex];
+  }
+
+  static uint32_t ComputeIndexOf(const nsINode* aParent,
+                                 const nsIContent* aChild) {
+    MOZ_ASSERT(aChild->GetParentNode() == aParent,
+               "Child is not actually a child of parent");
+    auto& entry =
+        sCache.LookupOrInsertWith(aParent, [&] { return MakeEntry(aParent); });
+
+    // Only use the hash map if the parent has enough children to make it
+    // worthwhile, otherwise scanning the array is likely faster and doesn't use
+    // extra memory.
+    const bool useHashMap = aParent->GetChildCount() >= kHashMapThreshold;
+
+    if (useHashMap) {
+      // First check if the child is already in the cache.
+      if (auto result = entry.mIndexMap.MaybeGet(aChild)) {
+        return *result;
+      }
+    }
+
+    // Scan the already-populated array portion, building hashmap entries as
+    // we go for children that haven't been indexed yet.
+    // If the hashmap is not used (child count below hashmap threshold), this is
+    // the main O(n) lookup loop.
+    for (auto index :
+         IntegerRange(entry.mIndexMap.Count(), entry.mChildren.Length())) {
+      if (useHashMap) {
+        entry.mIndexMap.InsertOrUpdate(entry.mChildren[index], index);
+      }
+      if (entry.mChildren[index] == aChild) {
+        return index;
+      }
+    }
+
+    // Extend the child array frontier, continuing to build the hashmap.
+    nsIContent* current = entry.mChildren.IsEmpty()
+                              ? aParent->GetFirstChild()
+                              : entry.mChildren.LastElement()->GetNextSibling();
+    while (current) {
+      const uint32_t index = entry.mChildren.Length();
+      entry.mChildren.AppendElement(current);
+      if (useHashMap) {
+        entry.mIndexMap.InsertOrUpdate(current, index);
+      }
+      if (current == aChild) {
+        return index;
+      }
+      current = current->GetNextSibling();
+    }
+    MOZ_ASSERT_UNREACHABLE("Child is not actually a child of parent");
+    return 0;
+  }
+
+  static void Invalidate(const nsINode* aParent) {
+    auto entry = sCache.Lookup(aParent);
+    if (entry) {
+      entry.Data().mChildren.ClearAndRetainStorage();
+      entry.Data().mIndexMap.Clear();
+    }
+  }
+
+  static void Remove(const nsINode* aParent) { sCache.Remove(aParent); }
+
+ private:
+  struct Entry {
+    nsTArray<nsIContent*> mChildren;
+    nsTHashMap<const nsIContent*, uint32_t> mIndexMap;
+  };
+
+  static void PopulateTo(Entry& aEntry, const nsINode* aParent,
+                         uint32_t aIndex) {
+    if (aEntry.mChildren.Capacity() < aParent->GetChildCount()) {
+      aEntry.mChildren.SetCapacity(aParent->GetChildCount());
+    }
+    nsIContent* current =
+        aEntry.mChildren.IsEmpty()
+            ? aParent->GetFirstChild()
+            : aEntry.mChildren.LastElement()->GetNextSibling();
+    while (current) {
+      aEntry.mChildren.AppendElement(current);
+      if (aEntry.mChildren.Length() - 1 == aIndex) {
+        return;
+      }
+      current = current->GetNextSibling();
+    }
+  }
+
+  static Entry MakeEntry(const nsINode* aParent) {
+    Entry entry;
+    entry.mChildren.SetCapacity(aParent->GetChildCount());
+    return entry;
+  }
+
+  static nsTHashMap<const nsINode*, Entry> sCache;
+};
+
+nsTHashMap<const nsINode*, ChildIndexCache::Entry> ChildIndexCache::sCache;
+
 nsINode::~nsINode() {
+  ChildIndexCache::Remove(this);
   MOZ_ASSERT(!HasSlots(), "LastRelease was not called?");
   MOZ_ASSERT(mSubtreeRoot == this, "Didn't restore state properly?");
 }
@@ -783,7 +906,7 @@ nsFrameSelection* nsINode::GetFrameSelection() const {
   return const_cast<nsFrameSelection*>(presShell->ConstFrameSelection());
 }
 
-nsINodeList* nsINode::ChildNodes() {
+NodeList* nsINode::ChildNodes() {
   nsSlots* slots = Slots();
   if (!slots->mChildNodes) {
     slots->mChildNodes = IsAttr() ? new nsAttrChildContentList(this)
@@ -920,6 +1043,9 @@ void nsINode::LastRelease() {
 
     if (Element* element = Element::FromNode(this)) {
       element->ClearAttributes();
+      if (MOZ_UNLIKELY(element->HasFlag(ELEMENT_HAS_EDIT_CONTEXT))) {
+        element->ClearEditContext();
+      }
     }
   }
 
@@ -1557,21 +1683,26 @@ EventListenerManager* nsINode::GetExistingListenerManager() const {
 }
 
 Nullable<WindowProxyHolder> nsINode::GetDocumentGlobalForBindings() {
-  return OwnerDoc()->GetOwnerGlobalForBindings();
-}
-
-nsPIDOMWindowOuter* nsINode::GetOwnerGlobalForBindingsInternal() {
-  // FIXME(bz): This cast is a bit bogus.  See
-  // https://bugzilla.mozilla.org/show_bug.cgi?id=1515709
-  auto* window = static_cast<nsGlobalWindowInner*>(GetOwnerGlobal());
-  return window ? nsPIDOMWindowOuter::GetFromCurrentInner(window) : nullptr;
+  nsIGlobalObject* global = GetDocumentGlobal();
+  if (!global) {
+    return {};
+  }
+  auto* win = nsGlobalWindowInner::Cast(global->GetAsInnerWindow());
+  if (!win) {
+    return {};
+  }
+  auto* bc = win->GetBrowsingContext();
+  if (!bc) {
+    return {};
+  }
+  return WindowProxyHolder(bc);
 }
 
 nsIGlobalObject* nsINode::GetDocumentGlobal() const {
-  return OwnerDoc()->GetOwnerGlobal();
+  return OwnerDoc()->GetRelevantGlobal();
 }
 
-nsIGlobalObject* nsINode::GetOwnerGlobal() const {
+nsIGlobalObject* nsINode::GetRelevantGlobal() const {
   if (auto* wrapper = GetWrapperPreserveColor()) {
     if (auto* global = xpc::NativeGlobal(wrapper);
         global && global->IsInnerWindow()) {
@@ -1684,35 +1815,6 @@ static void AdoptNodeIntoOwnerDoc(nsINode* aParent, nsINode* aNode,
 #endif  // DEBUG
 }
 
-static nsresult UpdateGlobalsInSubtree(nsIContent* aRoot) {
-  MOZ_ASSERT(ShouldUseNACScope(aRoot));
-  // Start off with no global so we don't fire any error events on failure.
-  AutoJSAPI jsapi;
-  jsapi.Init();
-
-  JSContext* cx = jsapi.cx();
-
-  ErrorResult rv;
-  JS::Rooted<JSObject*> reflector(cx);
-  for (nsIContent* cur = aRoot; cur; cur = cur->GetNextNode(aRoot)) {
-    if ((reflector = cur->GetWrapper())) {
-      JSAutoRealm ar(cx, reflector);
-      UpdateReflectorGlobal(cx, reflector, rv);
-      rv.WouldReportJSException();
-      if (rv.Failed()) {
-        // We _could_ consider BlastSubtreeToPieces here, but it's not really
-        // needed.  Having some nodes in here accessible to content while others
-        // are not is probably OK.  We just need to fail out of the actual
-        // insertion, so they're not in the DOM.  Returning a failure here will
-        // do that.
-        return rv.StealNSResult();
-      }
-    }
-  }
-
-  return NS_OK;
-}
-
 void nsINode::InsertChildBefore(
     nsIContent* aKid, nsIContent* aBeforeThis, bool aNotify, ErrorResult& aRv,
     nsINode* aOldParent, MutationEffectOnScript aMutationEffectOnScript) {
@@ -1747,16 +1849,9 @@ void nsINode::InsertChildBefore(
 
   nsIContent* parent = IsContent() ? AsContent() : nullptr;
 
-  // XXXbz Do we even need this code anymore?
-  bool wasInNACScope = ShouldUseNACScope(aKid);
   BindContext context(*this);
   context.SetIsMove(aOldParent != nullptr);
   aRv = aKid->BindToTree(context, *this);
-  if (!aRv.Failed() && !wasInNACScope && ShouldUseNACScope(aKid)) {
-    MOZ_ASSERT(ShouldUseNACScope(this),
-               "Why does the kid need to use an the anonymous content scope?");
-    aRv = UpdateGlobalsInSubtree(aKid);
-  }
   if (aRv.Failed()) {
     DisconnectChild(aKid);
     aKid->UnbindFromTree();
@@ -1866,6 +1961,7 @@ void nsINode::InsertChildToChildList(nsIContent* aKid,
   MOZ_ASSERT(aNextSibling);
 
   RemoveFromCache(this);
+  ChildIndexCache::Invalidate(this);
 
   nsIContent* previousSibling = aNextSibling->mPreviousOrLastSibling;
   aNextSibling->mPreviousOrLastSibling = aKid;
@@ -1887,6 +1983,7 @@ void nsINode::DisconnectChild(nsIContent* aKid) {
   MOZ_ASSERT(GetChildCount() > 0);
 
   RemoveFromCache(this);
+  ChildIndexCache::Invalidate(this);
 
   nsIContent* previousSibling = aKid->GetPreviousSibling();
   nsCOMPtr<nsIContent> ref = aKid;
@@ -1912,6 +2009,10 @@ void nsINode::DisconnectChild(nsIContent* aKid) {
 nsIContent* nsINode::GetChildAt_Deprecated(uint32_t aIndex) const {
   if (aIndex >= GetChildCount()) {
     return nullptr;
+  }
+
+  if (GetChildCount() >= ChildIndexCache::kThreshold && NS_IsMainThread()) {
+    return ChildIndexCache::GetChildAt(this, aIndex);
   }
 
   nsIContent* child = mFirstChild;
@@ -1965,6 +2066,14 @@ Maybe<uint32_t> nsINode::ComputeIndexOf(const nsINode* aPossibleChild) const {
   if (aPossibleChild == GetLastChild()) {
     MOZ_ASSERT(GetChildCount());
     return Some(GetChildCount() - 1);
+  }
+  if (aPossibleChild->IsRootOfNativeAnonymousSubtree()) {
+    return Nothing();
+  }
+  const nsIContent* contentChild = nsIContent::FromNode(aPossibleChild);
+  if (contentChild && GetChildCount() >= ChildIndexCache::kThreshold &&
+      NS_IsMainThread()) {
+    return Some(ChildIndexCache::ComputeIndexOf(this, contentChild));
   }
 
   if (MaybeCachesComputedIndex()) {
@@ -2268,17 +2377,17 @@ static bool MatchAttribute(Element* aElement, int32_t aNamespaceID,
   return false;
 }
 
-already_AddRefed<nsIHTMLCollection> nsINode::GetElementsByAttribute(
+already_AddRefed<HTMLCollection> nsINode::GetElementsByAttribute(
     const nsAString& aAttribute, const nsAString& aValue) {
   RefPtr<nsAtom> attrAtom(NS_Atomize(aAttribute));
-  RefPtr<nsContentList> list = new nsContentList(
+  RefPtr<ContentList> list = new ContentList(
       this, MatchAttribute, nsContentUtils::DestroyMatchString,
       new nsString(aValue), true, attrAtom, kNameSpaceID_Unknown);
 
   return list.forget();
 }
 
-already_AddRefed<nsIHTMLCollection> nsINode::GetElementsByAttributeNS(
+already_AddRefed<HTMLCollection> nsINode::GetElementsByAttributeNS(
     const nsAString& aNamespaceURI, const nsAString& aAttribute,
     const nsAString& aValue, ErrorResult& aRv) {
   RefPtr<nsAtom> attrAtom(NS_Atomize(aAttribute));
@@ -2293,9 +2402,9 @@ already_AddRefed<nsIHTMLCollection> nsINode::GetElementsByAttributeNS(
     }
   }
 
-  RefPtr<nsContentList> list = new nsContentList(
-      this, MatchAttribute, nsContentUtils::DestroyMatchString,
-      new nsString(aValue), true, attrAtom, nameSpaceId);
+  RefPtr<ContentList> list =
+      new ContentList(this, MatchAttribute, nsContentUtils::DestroyMatchString,
+                      new nsString(aValue), true, attrAtom, nameSpaceId);
   return list.forget();
 }
 
@@ -3421,12 +3530,12 @@ Element* nsINode::QuerySelector(const nsACString& aSelector,
       Servo_SelectorList_QueryFirst(this, list, useInvalidation));
 }
 
-already_AddRefed<nsINodeList> nsINode::QuerySelectorAll(
+already_AddRefed<NodeList> nsINode::QuerySelectorAll(
     const nsACString& aSelector, ErrorResult& aResult) {
   AUTO_PROFILER_LABEL_DYNAMIC_NSCSTRING_RELEVANT_FOR_JS(
       "querySelectorAll", LAYOUT_SelectorQuery, aSelector);
 
-  RefPtr<nsSimpleContentList> contentList = new nsSimpleContentList(this);
+  RefPtr<SimpleContentList> contentList = new SimpleContentList(this);
   const StyleSelectorList* list = ParseSelectorList(aSelector, aResult);
   if (!list) {
     return contentList.forget();
@@ -3925,7 +4034,11 @@ already_AddRefed<nsINode> nsINode::CloneAndAdopt(
           // FIXME: Do we need to copy other stuff to the static doc ShadowRoot?
           init.mMode = originalShadowRoot->Mode();
           RefPtr<ShadowRoot> newShadowRoot =
-              clone->AsElement()->AttachShadowWithoutNameChecks(init);
+              clone->AsElement()->AttachShadowWithoutNameChecks(
+                  init, false,
+                  originalShadowRoot->HasCustomSlotDispatch()
+                      ? Element::CustomSlotDispatch::Yes
+                      : Element::CustomSlotDispatch::No);
           newShadowRoot->CloneInternalDataFrom(originalShadowRoot);
           for (nsIContent* origChild = originalShadowRoot->GetFirstChild();
                origChild; origChild = origChild->GetNextSibling()) {

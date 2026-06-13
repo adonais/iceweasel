@@ -15,7 +15,7 @@ They are also run when using the "devtools" preset: `./mach try --preset devtool
 
 ### Node tests try job definition
 
-The definition of those try jobs can be found at [taskcluster/kinds/source-test/node.yml](https://searchfox.org/mozilla-central/source/taskcluster/kinds/source-test/node.yml).
+The definition of those try jobs can be found at [taskcluster/kinds/source-test/node.yml](https://searchfox.org/firefox-main/source/taskcluster/kinds/source-test/node.yml).
 
 The definition also contains the list of files that will trigger the node test jobs. Currently the the devtools tests run when any file is modified under `devtools/client` or `devtools/shared`.
 
@@ -61,7 +61,7 @@ For example, if you need to update snapshots in a specific panel, first locate t
 
 ## TypeScript
 
-The "performance" suite performs TypeScript checks. The TypeScript usage in the performance panel is documented at [devtools/client/performance-new/typescript.md](https://searchfox.org/mozilla-central/source/devtools/client/performance-new/typescript.md) ([see rendered version on GitHub](https://github.com/mozilla/gecko-dev/blob/master/devtools/client/performance-new/typescript.md)).
+The "performance" suite performs TypeScript checks. The TypeScript usage in the performance panel is documented at [devtools/client/performance-new/typescript.md](https://searchfox.org/firefox-main/source/devtools/client/performance-new/typescript.md) ([see rendered version on GitHub](https://github.com/mozilla/gecko-dev/blob/master/devtools/client/performance-new/typescript.md)).
 
 ## devtools-bundle
 

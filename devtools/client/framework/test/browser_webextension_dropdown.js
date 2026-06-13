@@ -48,6 +48,8 @@ add_task(async function runTest() {
   );
   ok(browser, "found extension panel browser");
 
+  await SimpleTest.promiseFocus(browser);
+
   info("Waiting for menu");
   await SpecialPowers.spawn(browser, [], async function () {
     const menu = content.document.getElementById("menu");

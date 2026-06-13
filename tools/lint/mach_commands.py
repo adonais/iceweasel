@@ -214,7 +214,14 @@ def prettier(command_context, paths, extra_args=[], **kwargs):
 @Command(
     "format",
     category="devenv",
-    description="Format files, alternative to 'lint --fix' ",
+    description=(
+        "Format files, alternative to 'lint --fix'. "
+        "Runs the following formatters: "
+        + ", ".join(sorted(VALID_FORMATTERS))
+        + " (plus "
+        + ", ".join(sorted(VALID_ANDROID_FORMATTERS))
+        + " on Android, unless --skip-android is passed)."
+    ),
     parser=setup_argument_parser,
 )
 @CommandArgument(

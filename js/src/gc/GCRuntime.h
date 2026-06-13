@@ -152,7 +152,7 @@ class BackgroundMarkTask : public GCParallelTask {
   bool isOverBudget() { return budget.isOverBudget(); }
 
  private:
-  bool isConcurrent;
+  bool isConcurrent = false;
   JS::SliceBudget budget;
   JS::SliceBudget::InterruptRequestFlag interruptRequest;
   friend class GCRuntime;
@@ -536,7 +536,7 @@ class GCRuntime {
   void setHostCleanupFinalizationRegistryCallback(
       JSHostCleanupFinalizationRegistryCallback callback, void* data);
   void callHostCleanupFinalizationRegistryCallback(JSFunction* doCleanup,
-                                                   JSObject* hostDefinedData);
+                                                   JSObject* incumbentGlobal);
   [[nodiscard]] bool addWeakPointerZonesCallback(
       JSWeakPointerZonesCallback callback, void* data);
   void removeWeakPointerZonesCallback(JSWeakPointerZonesCallback callback);

@@ -22,21 +22,11 @@ import mozilla.components.ui.colors.PhotonColors
 @Suppress("LongParameterList")
 @Stable
 class AcornColors(
-    layer2: Color,
     layer3: Color,
-    layerAccent: Color,
-    layerAccentNonOpaque: Color,
     layerGradientStart: Color,
     layerGradientEnd: Color,
-    layerWarning: Color,
-    layerCritical: Color,
-    layerInformation: Color,
-    actionWarning: Color,
-    actionCritical: Color,
-    actionInformation: Color,
     formDefault: Color,
     textOnColorPrimary: Color,
-    iconPrimaryInactive: Color,
     iconOnColor: Color,
     ripple: Color,
     tabActive: Color,
@@ -52,20 +42,8 @@ class AcornColors(
 ) {
     // Layers
 
-    // Card background, Menu background, Dialog, Banner
-    var layer2 by mutableStateOf(layer2)
-        private set
-
     // Search
     var layer3 by mutableStateOf(layer3)
-        private set
-
-    // App Bar Top (edit), Text Cursor, Selected Tab Check
-    var layerAccent by mutableStateOf(layerAccent)
-        private set
-
-    // Selected tab
-    var layerAccentNonOpaque by mutableStateOf(layerAccentNonOpaque)
         private set
 
     // Tooltip
@@ -74,32 +52,6 @@ class AcornColors(
 
     // Tooltip
     var layerGradientEnd by mutableStateOf(layerGradientEnd)
-        private set
-
-    // Warning background
-    var layerWarning by mutableStateOf(layerWarning)
-        private set
-
-    // Error Background
-    var layerCritical by mutableStateOf(layerCritical)
-        private set
-
-    // Info background
-    var layerInformation by mutableStateOf(layerInformation)
-        private set
-
-    // Actions
-
-    // Warning button
-    var actionWarning by mutableStateOf(actionWarning)
-        private set
-
-    // Error button
-    var actionCritical by mutableStateOf(actionCritical)
-        private set
-
-    // Info button
-    var actionInformation by mutableStateOf(actionInformation)
         private set
 
     // Checkbox default, Radio button default
@@ -113,10 +65,6 @@ class AcornColors(
         private set
 
     // Icon
-
-    // Inactive tab
-    var iconPrimaryInactive by mutableStateOf(iconPrimaryInactive)
-        private set
 
     // Icon inverted (on color)
     var iconOnColor by mutableStateOf(iconOnColor)
@@ -193,21 +141,11 @@ class AcornColors(
      */
     @Suppress("LongMethod")
     fun update(other: AcornColors) {
-        layer2 = other.layer2
         layer3 = other.layer3
-        layerAccent = other.layerAccent
-        layerAccentNonOpaque = other.layerAccentNonOpaque
         layerGradientStart = other.layerGradientStart
         layerGradientEnd = other.layerGradientEnd
-        layerWarning = other.layerWarning
-        layerCritical = other.layerCritical
-        layerInformation = other.layerInformation
-        actionWarning = other.actionWarning
-        actionCritical = other.actionCritical
-        actionInformation = other.actionInformation
         formDefault = other.formDefault
         textOnColorPrimary = other.textOnColorPrimary
-        iconPrimaryInactive = other.iconPrimaryInactive
         iconOnColor = other.iconOnColor
         ripple = other.ripple
         tabActive = other.tabActive
@@ -227,21 +165,11 @@ class AcornColors(
      */
     @Suppress("LongMethod")
     fun copy(
-        layer2: Color = this.layer2,
         layer3: Color = this.layer3,
-        layerAccent: Color = this.layerAccent,
-        layerAccentNonOpaque: Color = this.layerAccentNonOpaque,
         layerGradientStart: Color = this.layerGradientStart,
         layerGradientEnd: Color = this.layerGradientEnd,
-        layerWarning: Color = this.layerWarning,
-        layerCritical: Color = this.layerCritical,
-        layerInformation: Color = this.layerInformation,
-        actionWarning: Color = this.actionWarning,
-        actionCritical: Color = this.actionCritical,
-        actionInformation: Color = this.actionInformation,
         formDefault: Color = this.formDefault,
         textOnColorPrimary: Color = this.textOnColorPrimary,
-        iconPrimaryInactive: Color = this.iconPrimaryInactive,
         iconOnColor: Color = this.iconOnColor,
         ripple: Color = this.ripple,
         tabActive: Color = this.tabActive,
@@ -255,21 +183,11 @@ class AcornColors(
         onWarningContainer: Color = this.onWarningContainer,
         surfaceDimVariant: Color = this.surfaceDimVariant,
     ): AcornColors = AcornColors(
-        layer2 = layer2,
         layer3 = layer3,
-        layerAccent = layerAccent,
-        layerAccentNonOpaque = layerAccentNonOpaque,
         layerGradientStart = layerGradientStart,
         layerGradientEnd = layerGradientEnd,
-        layerWarning = layerWarning,
-        layerCritical = layerCritical,
-        layerInformation = layerInformation,
-        actionWarning = actionWarning,
-        actionCritical = actionCritical,
-        actionInformation = actionInformation,
         formDefault = formDefault,
         textOnColorPrimary = textOnColorPrimary,
-        iconPrimaryInactive = iconPrimaryInactive,
         iconOnColor = iconOnColor,
         ripple = ripple,
         tabActive = tabActive,
@@ -286,21 +204,11 @@ class AcornColors(
 }
 
 val darkColorPalette = AcornColors(
-    layer2 = PhotonColors.DarkGrey30,
     layer3 = PhotonColors.DarkGrey80,
-    layerAccent = PhotonColors.Violet40,
-    layerAccentNonOpaque = PhotonColors.Violet50A32,
     layerGradientStart = PhotonColors.Violet70,
     layerGradientEnd = PhotonColors.Violet60,
-    layerWarning = PhotonColors.Yellow70A77,
-    layerCritical = PhotonColors.Pink80,
-    layerInformation = PhotonColors.Blue50,
-    actionWarning = PhotonColors.Yellow40A41,
-    actionCritical = PhotonColors.Pink70A69,
-    actionInformation = PhotonColors.Blue60,
     formDefault = PhotonColors.LightGrey05,
     textOnColorPrimary = PhotonColors.LightGrey05,
-    iconPrimaryInactive = PhotonColors.LightGrey05A60,
     iconOnColor = PhotonColors.LightGrey05,
     ripple = PhotonColors.White,
     tabActive = PhotonColors.DarkGrey30,
@@ -316,21 +224,11 @@ val darkColorPalette = AcornColors(
 )
 
 val lightColorPalette = AcornColors(
-    layer2 = PhotonColors.White,
     layer3 = PhotonColors.LightGrey20,
-    layerAccent = PhotonColors.Ink20,
-    layerAccentNonOpaque = PhotonColors.Violet70A12,
     layerGradientStart = PhotonColors.Violet70,
     layerGradientEnd = PhotonColors.Violet60,
-    layerWarning = PhotonColors.Yellow20,
-    layerCritical = PhotonColors.Red10,
-    layerInformation = PhotonColors.Blue50A44,
-    actionWarning = PhotonColors.Yellow60A40,
-    actionCritical = PhotonColors.Red30,
-    actionInformation = PhotonColors.Blue50,
     formDefault = PhotonColors.DarkGrey90,
     textOnColorPrimary = PhotonColors.LightGrey05,
-    iconPrimaryInactive = PhotonColors.DarkGrey90A60,
     iconOnColor = PhotonColors.LightGrey05,
     ripple = PhotonColors.Black,
     tabActive = PhotonColors.LightGrey10,
@@ -346,7 +244,6 @@ val lightColorPalette = AcornColors(
 )
 
 val privateColorPalette = darkColorPalette.copy(
-    layer2 = PhotonColors.Violet90,
     layer3 = PhotonColors.Ink90,
     tabActive = PhotonColors.Purple60,
     tabInactive = PhotonColors.Ink90,

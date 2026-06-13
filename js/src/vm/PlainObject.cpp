@@ -63,32 +63,6 @@ SharedShape* js::ThisShapeForFunction(JSContext* cx, Handle<JSFunction*> callee,
   return res;
 }
 
-#ifdef DEBUG
-void PlainObject::assertHasNoNonWritableOrAccessorPropExclProto() const {
-  // Check the most recent MaxCount properties to not slow down debug builds too
-  // much.
-  static constexpr size_t MaxCount = 8;
-
-  size_t count = 0;
-  PropertyName* protoName = runtimeFromMainThread()->commonNames->proto_;
-
-  for (ShapePropertyIter<NoGC> iter(shape()); !iter.done(); iter++) {
-    // __proto__ is always allowed.
-    if (iter->key().isAtom(protoName)) {
-      continue;
-    }
-
-    MOZ_ASSERT(iter->isDataProperty());
-    MOZ_ASSERT(iter->writable());
-
-    count++;
-    if (count > MaxCount) {
-      return;
-    }
-  }
-}
-#endif
-
 // static
 PlainObject* PlainObject::createWithTemplateFromDifferentRealm(
     JSContext* cx, Handle<PlainObject*> templateObject) {
@@ -302,7 +276,7 @@ static PlainObject* NewPlainObjectWithProperties(
       }
     }
 
-    if (!AddDataPropertyToPlainObject(cx, obj, key, value)) {
+    if (!AddDataPropertyToNativeObjectNoHooks(cx, obj, key, value)) {
       return nullptr;
     }
   }

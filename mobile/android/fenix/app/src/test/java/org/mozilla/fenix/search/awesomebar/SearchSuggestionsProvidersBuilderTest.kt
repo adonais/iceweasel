@@ -7,6 +7,7 @@ package org.mozilla.fenix.search.awesomebar
 import androidx.core.net.toUri
 import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.test.TestScope
 import mozilla.components.browser.state.search.SearchEngine
 import mozilla.components.browser.state.search.SearchEngineProvider
 import mozilla.components.feature.awesomebar.provider.BookmarksStorageSuggestionProvider
@@ -27,7 +28,6 @@ import mozilla.components.feature.syncedtabs.SyncedTabsStorageSuggestionProvider
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -41,6 +41,8 @@ import org.mozilla.fenix.search.SearchEngineSource
 import org.mozilla.fenix.search.awesomebar.SearchSuggestionsProvidersBuilder.SearchProviderState
 import org.mozilla.fenix.utils.Settings
 import org.robolectric.RobolectricTestRunner
+import kotlin.test.assertIs
+import kotlin.test.assertNotNull
 
 @RunWith(RobolectricTestRunner::class)
 class SearchSuggestionsProvidersBuilderTest {
@@ -66,6 +68,7 @@ class SearchSuggestionsProvidersBuilderTest {
 
         builder = SearchSuggestionsProvidersBuilder(
             components = components,
+            scope = TestScope(),
             browsingModeManager = browsingModeManager,
             includeSelectedTab = false,
             loadUrlUseCase = mockk(),
@@ -1154,8 +1157,8 @@ class SearchSuggestionsProvidersBuilderTest {
         )
 
         assertNotNull(result)
-        assertTrue(result is CombinedHistorySuggestionProvider)
-        assertNotNull((result as CombinedHistorySuggestionProvider).resultsUriFilter)
+        assertIs<CombinedHistorySuggestionProvider>(result)
+        assertNotNull(result.resultsUriFilter)
         assertEquals(SearchSuggestionsProvidersBuilder.METADATA_SUGGESTION_LIMIT, result.getMaxNumberOfSuggestions())
     }
 
@@ -1175,8 +1178,8 @@ class SearchSuggestionsProvidersBuilderTest {
         )
 
         assertNotNull(result)
-        assertTrue(result is HistoryStorageSuggestionProvider)
-        assertNotNull((result as HistoryStorageSuggestionProvider).resultsUriFilter)
+        assertIs<HistoryStorageSuggestionProvider>(result)
+        assertNotNull(result.resultsUriFilter)
         assertEquals(SearchSuggestionsProvidersBuilder.METADATA_SUGGESTION_LIMIT, result.getMaxNumberOfSuggestions())
     }
 
@@ -1195,7 +1198,7 @@ class SearchSuggestionsProvidersBuilderTest {
 
         val result = builder.getSearchTermSuggestionsProvider(searchEngineSource)
 
-        assertTrue(result is SearchTermSuggestionsProvider)
+        assertIs<SearchTermSuggestionsProvider>(result)
     }
 
     @Test
@@ -1209,8 +1212,8 @@ class SearchSuggestionsProvidersBuilderTest {
 
         val result = builder.getSearchTermSuggestionsProvider(searchEngineSource)
 
-        assertTrue(result is SearchTermSuggestionsProvider)
-        assertEquals("Test search", result?.groupTitle())
+        assertIs<SearchTermSuggestionsProvider>(result)
+        assertEquals("Test search", result.groupTitle())
     }
 
     @Test
@@ -1222,8 +1225,8 @@ class SearchSuggestionsProvidersBuilderTest {
 
         val result = builder.getSearchTermSuggestionsProvider(searchEngineSource)
 
-        assertTrue(result is SearchTermSuggestionsProvider)
-        assertNull(result?.groupTitle())
+        assertIs<SearchTermSuggestionsProvider>(result)
+        assertNull(result.groupTitle())
     }
 
     @Test
@@ -1237,8 +1240,8 @@ class SearchSuggestionsProvidersBuilderTest {
 
         val result = builder.getSearchTermSuggestionsProvider(searchEngineSource)
 
-        assertTrue(result is SearchTermSuggestionsProvider)
-        assertNull(result?.groupTitle())
+        assertIs<SearchTermSuggestionsProvider>(result)
+        assertNull(result.groupTitle())
     }
 
     @Test

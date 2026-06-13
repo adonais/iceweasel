@@ -6076,8 +6076,8 @@ mozilla::ipc::IPCResult Snapshot::RecvLoadValueAndMoreItems(
         }
 
         LSItemInfo* itemInfo = aItemInfos->AppendElement();
-        itemInfo->key() = key;
-        itemInfo->value() = value;
+        itemInfo->key() = std::move(key);
+        itemInfo->value() = std::move(value);
       }
 
       mNextLoadIndex++;

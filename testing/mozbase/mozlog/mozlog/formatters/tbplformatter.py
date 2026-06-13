@@ -392,7 +392,7 @@ class TbplFormatter(BaseFormatter):
     def mozleak_object(self, data):
         return "TEST-INFO | leakcheck | %s leaked %d %s\n" % (
             data["process"],
-            data["bytes"],
+            data["count"],
             data["name"],
         )
 

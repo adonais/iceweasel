@@ -65,7 +65,7 @@ add_task(async function test_scotchbonnet_disabled() {
   let popup = await SearchbarTestUtils.openSearchModeSwitcher(window);
   Assert.ok(true, "Can still open search mode switcher");
   let popupHidden = SearchbarTestUtils.searchModeSwitcherPopupClosed(window);
-  popup.querySelector("panel-item[data-engine-id=engine2]").button.click();
+  popup.querySelector("panel-item[data-engine-id=engine2]").click();
   await popupHidden;
   await SearchbarTestUtils.assertSearchMode(window, {
     engineName: "engine2",

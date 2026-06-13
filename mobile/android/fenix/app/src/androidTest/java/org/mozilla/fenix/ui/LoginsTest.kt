@@ -6,7 +6,6 @@ package org.mozilla.fenix.ui
 
 import android.os.Build
 import android.view.autofill.AutofillManager
-import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import androidx.core.net.toUri
 import androidx.test.filters.SdkSuppress
 import org.junit.Before
@@ -35,6 +34,7 @@ import org.mozilla.fenix.ui.robots.clickPageObject
 import org.mozilla.fenix.ui.robots.homeScreen
 import org.mozilla.fenix.ui.robots.navigationToolbar
 import org.mozilla.fenix.ui.robots.setPageObjectText
+import androidx.compose.ui.test.junit4.v2.AndroidComposeTestRule as AndroidComposeTestRuleV2
 
 /**
  * Tests for verifying:
@@ -48,14 +48,14 @@ class LoginsTest {
 
     private val mockWebServer get() = fenixTestRule.mockWebServer
 
-    @get:Rule
+    @get:Rule(order = 1)
     val composeTestRule =
-        AndroidComposeTestRule(
+        AndroidComposeTestRuleV2(
             HomeActivityIntentTestRule.withDefaultSettingsOverrides(),
         ) { it.activity }
 
-    @get:Rule
-    val memoryLeaksRule = DetectMemoryLeaksRule()
+    @get:Rule(order = 2)
+    val memoryLeaksRule = DetectMemoryLeaksRule(composeTestRule = { composeTestRule })
 
     @Before
     fun setUp() {
@@ -214,7 +214,6 @@ class LoginsTest {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/1508171
     @SmokeTest
     @Test
-    @SkipLeaks
     fun verifyUpdatedLoginIsSavedTest() {
         val saveLoginTest = mockWebServer.saveLoginAsset
 

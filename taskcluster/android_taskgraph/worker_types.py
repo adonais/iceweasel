@@ -2,38 +2,42 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+from typing import Optional
 
+import msgspec
 from gecko_taskgraph.transforms.task import payload_builder
-from taskgraph.util.schema import taskref_or_string
-from voluptuous import Any, Optional, Required
+from taskgraph.util.schema import Schema, taskref_or_string_msgspec
 
 
-@payload_builder(
-    "scriptworker-beetmover",
-    schema={
-        Required("action"): str,
-        Required("version"): str,
-        Required("artifact-map"): [
-            {
-                Required("paths"): {
-                    Any(str): {
-                        Required("destinations"): [str],
-                    },
-                },
-                Required("taskId"): taskref_or_string,
-            }
-        ],
-        Required("beetmover-application-name"): str,
-        Required("bucket"): str,
-        Required("upstream-artifacts"): [
-            {
-                Required("taskId"): taskref_or_string,
-                Required("taskType"): str,
-                Required("paths"): [str],
-            }
-        ],
-    },
-)
+class ArtifactMapPathSchema(Schema, forbid_unknown_fields=False, kw_only=True):
+    destinations: list[str]
+
+
+class ArtifactMapEntrySchema(
+    msgspec.Struct, kw_only=True, rename="camel", forbid_unknown_fields=False
+):
+    task_id: taskref_or_string_msgspec
+    paths: dict[str, ArtifactMapPathSchema]
+
+
+class BeetmoverUpstreamArtifactSchema(
+    msgspec.Struct, kw_only=True, rename="camel", forbid_unknown_fields=False
+):
+    task_id: taskref_or_string_msgspec
+    task_type: str
+    paths: list[str]
+
+
+class ScriptworkerBeetmoverSchema(Schema, forbid_unknown_fields=False, kw_only=True):
+    action: str
+    version: str
+    artifact_map: list[ArtifactMapEntrySchema]
+    beetmover_application_name: str
+    bucket: str
+    upstream_artifacts: list[BeetmoverUpstreamArtifactSchema]
+
+
+@payload_builder("scriptworker-beetmover", schema=ScriptworkerBeetmoverSchema)
 def build_scriptworker_beetmover_payload(config, task, task_def):
     worker = task["worker"]
 
@@ -59,24 +63,25 @@ def build_scriptworker_beetmover_payload(config, task, task_def):
     ])
 
 
-@payload_builder(
-    "scriptworker-pushapk",
-    schema={
-        Required("upstream-artifacts"): [
-            {
-                Required("taskId"): taskref_or_string,
-                Required("taskType"): str,
-                Required("paths"): [str],
-            }
-        ],
-        Optional("certificate-alias"): str,
-        Optional("target-store"): str,
-        Required("channel"): str,
-        Required("commit"): bool,
-        Required("product"): str,
-        Required("dep"): bool,
-    },
-)
+class PushApkUpstreamArtifactSchema(
+    msgspec.Struct, kw_only=True, rename="camel", forbid_unknown_fields=False
+):
+    task_id: taskref_or_string_msgspec
+    task_type: str
+    paths: list[str]
+
+
+class ScriptworkerPushApkSchema(Schema, forbid_unknown_fields=False, kw_only=True):
+    upstream_artifacts: list[PushApkUpstreamArtifactSchema]
+    certificate_alias: Optional[str] = None
+    target_store: Optional[str] = None
+    channel: str
+    commit: bool
+    product: str
+    dep: bool
+
+
+@payload_builder("scriptworker-pushapk", schema=ScriptworkerPushApkSchema)
 def build_push_apk_payload(config, task, task_def):
     worker = task["worker"]
 

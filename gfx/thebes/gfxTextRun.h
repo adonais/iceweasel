@@ -1381,8 +1381,8 @@ class gfxFontGroup final : public gfxTextRunFactory {
   eFontPrefLang mLastPrefLang = eFontPrefLang_Western;  // lang group for last
                                                         // pref font
   eFontPrefLang mPageLang;
-  bool mLastPrefFirstFont;  // is this the first font in the list of pref fonts
-                            // for this lang group?
+  bool mLastPrefFirstFont = false;  // is this the first font in the list of
+                                    // pref fonts for this lang group?
 
   bool mSkipDrawing = false;  // hide text while waiting for a font
                               // download to complete (or fallback
@@ -1505,8 +1505,8 @@ class gfxMissingFontRecorder {
 
   ~gfxMissingFontRecorder() {
 #ifdef DEBUG
-    for (uint32_t i = 0; i < kNumScriptBitsWords; i++) {
-      NS_ASSERTION(mMissingFonts[i] == 0,
+    for (uint32_t mMissingFont : mMissingFonts) {
+      NS_ASSERTION(mMissingFont == 0,
                    "failed to flush the missing-font recorder");
     }
 #endif

@@ -9,18 +9,17 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.spyk
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.mozilla.fenix.FenixApplication
-import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.components.Core
 import org.mozilla.fenix.ext.application
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.utils.Settings
 import org.mozilla.fenix.wallpapers.Wallpaper
+import kotlin.test.assertNotNull
 
 class HomeFragmentTest {
 
@@ -48,26 +47,6 @@ class HomeFragmentTest {
     }
 
     @Test
-    fun `GIVEN the user is in normal mode WHEN checking if should enable wallpaper THEN return true`() {
-        val activity: HomeActivity = mockk {
-            every { themeManager.currentTheme.isPrivate } returns false
-        }
-        every { homeFragment.activity } returns activity
-
-        assertTrue(homeFragment.shouldEnableWallpaper())
-    }
-
-    @Test
-    fun `GIVEN the user is in private mode WHEN checking if should enable wallpaper THEN return false`() {
-        val activity: HomeActivity = mockk {
-            every { themeManager.currentTheme.isPrivate } returns true
-        }
-        every { homeFragment.activity } returns activity
-
-        assertFalse(homeFragment.shouldEnableWallpaper())
-    }
-
-    @Test
     fun `WHEN isMicrosurveyEnabled is true GIVEN a call to initializeMicrosurveyFeature THEN messagingFeature is initialized`() {
         assertNull(homeFragment.messagingFeatureMicrosurvey.get())
 
@@ -83,54 +62,6 @@ class HomeFragmentTest {
         homeFragment.initializeMicrosurveyFeature(isMicrosurveyEnabled = false)
 
         assertNull(homeFragment.messagingFeatureMicrosurvey.get())
-    }
-
-    @Test
-    fun `GIVEN canShowCFR and shouldShowCFR are true WHEN maybeShowEncourageSearchCfr is called THEN the cfr is shown and exposure recorded`() {
-        var cfrShown = false
-        var exposureRecorded = false
-
-        homeFragment.maybeShowEncourageSearchCfr(
-            canShowCfr = true,
-            shouldShowCFR = true,
-            showCfr = { cfrShown = true },
-            recordExposure = { exposureRecorded = true },
-        )
-
-        assertTrue(cfrShown)
-        assertTrue(exposureRecorded)
-    }
-
-    @Test
-    fun `GIVEN canShowCFR is false WHEN maybeShowEncourageSearchCfr is called THEN the cfr is not shown and exposure is not recorded`() {
-        var cfrShown = false
-        var exposureRecorded = false
-
-        homeFragment.maybeShowEncourageSearchCfr(
-            canShowCfr = false,
-            shouldShowCFR = true,
-            showCfr = { cfrShown = true },
-            recordExposure = { exposureRecorded = true },
-        )
-
-        assertFalse(cfrShown)
-        assertFalse(exposureRecorded)
-    }
-
-    @Test
-    fun `GIVEN exposureRecorded is false WHEN maybeShowEncourageSearchCfr is called THEN the cfr is not shown and exposure is not recorded`() {
-        var cfrShown = false
-        var exposureRecorded = false
-
-        homeFragment.maybeShowEncourageSearchCfr(
-            canShowCfr = true,
-            shouldShowCFR = false,
-            showCfr = { cfrShown = true },
-            recordExposure = { exposureRecorded = true },
-        )
-
-        assertFalse(cfrShown)
-        assertFalse(exposureRecorded)
     }
 
     @Test

@@ -6,6 +6,7 @@
 
 :host,
 :root {
+  --urlbar-background-shadow: 0 2px 14px rgba(0, 0, 0, 0.13);
   --urlbar-container-min-width: 310px;
 
   /* Usually we wouldn't need snapping border widths manually, but we use this
@@ -108,7 +109,7 @@ toolbar[inactive="true"] .urlbar,
   min-width: 1px;
   min-height: var(--urlbar-min-height);
   text-shadow: none;
-  color: var(--toolbar-field-color);
+  color: var(--toolbar-field-text-color);
 
   /**
    * System colors and widgets are set based on toolbar color. Since toolbar
@@ -137,8 +138,11 @@ toolbar[inactive="true"] .urlbar,
 #searchbar {
   background-color: var(--toolbar-field-background-color);
   background-clip: border-box;
-  border: var(--urlbar-container-border-width) solid var(--toolbar-field-border-color);
   border-radius: var(--urlbar-border-radius);
+}
+
+#searchbar {
+  border: var(--urlbar-container-border-width) solid var(--toolbar-field-border-color);
 }
 
 .urlbar-input-container,
@@ -223,21 +227,19 @@ toolbar[inactive="true"] .urlbar,
   }
 }
 
-[focused]:not([suppress-focus-border]) > .urlbar-background,
 #searchbar:focus-within {
   outline: var(--focus-outline);
 
   /* We used --focus-outline above to inherit its width and style properties,
      but we still want to use the theme's border-color.
-     --toolbar-field-focus-border-color is set equal to --focus-outline-color
+     --toolbar-field-border-color-focus is set equal to --focus-outline-color
      on :root, but LWT themes can override this value. */
-  outline-color: var(--toolbar-field-focus-border-color);
+  outline-color: var(--toolbar-field-border-color-focus);
   border-color: transparent;
 }
 
 [open] > .urlbar-background {
-  border-color: var(--panel-border-color);
-  box-shadow: 0 2px 14px rgba(0, 0, 0, 0.13);
+  box-shadow: var(--urlbar-background-shadow);
 
   /* The border moves outwards in the open state, so increase the radius
      accordingly. */
@@ -253,14 +255,87 @@ toolbar[inactive="true"] .urlbar,
   }
 }
 
+/* stylelint-disable-next-line media-query-no-invalid */
+@media not -moz-pref("browser.nova.enabled") {
+  .urlbar-background {
+    border: var(--urlbar-container-border-width) solid var(--toolbar-field-border-color);
+  }
+
+  [open] > .urlbar-background {
+    border-color: var(--panel-border-color);
+  }
+
+  [focused]:not([suppress-focus-border]) > .urlbar-background {
+    outline: var(--focus-outline);
+
+    /* We used --focus-outline above to inherit its width and style properties,
+       but we still want to use the theme's border-color.
+       --toolbar-field-border-color-focus is set equal to --focus-outline-color
+       on :root, but LWT themes can override this value. */
+    outline-color: var(--toolbar-field-border-color-focus);
+    border-color: transparent;
+  }
+}
+
 .urlbar:is([focused], [open]),
 #searchbar:focus-within {
-  color: var(--toolbar-field-focus-color);
+  color: var(--toolbar-field-text-color-focus);
 }
 
 .urlbar:is([focused], [open]) > .urlbar-background,
 #searchbar:focus-within {
-  background-color: var(--toolbar-field-focus-background-color);
+  background-color: var(--toolbar-field-background-color-focus);
+}
+
+/* stylelint-disable-next-line media-query-no-invalid */
+@media -moz-pref("browser.nova.enabled") {
+  .urlbar:not(moz-smartbar)[breakout] {
+    --urlbar-input-container-top: calc((var(--urlbar-container-height) - var(--urlbar-height)) / 2);
+    --urlbar-background-inset: calc(var(--urlbar-height) / 2 - var(--border-radius-xxlarge));
+    --urlbar-container-border-width-breakout: calc(2 * var(--urlbar-container-border-width));
+
+    > .urlbar-background {
+      display: none;
+    }
+
+    > .urlbar-input-container {
+      height: var(--urlbar-height);
+      margin-block-start: var(--urlbar-input-container-top);
+      background-color: var(--toolbar-field-background-color);
+      border: var(--urlbar-container-border-width) solid var(--toolbar-field-border-color);
+      border-radius: var(--border-radius-xlarge);
+      padding: calc(var(--urlbar-container-border-width-breakout) - var(--urlbar-container-border-width));
+    }
+
+    &[breakout-extend] {
+      height: auto;
+    }
+
+    &[breakout-extend] > .urlbar-input-container {
+      padding: 0;
+      border-width: var(--urlbar-container-border-width-breakout);
+    }
+
+    &[breakout-extend][focused] > .urlbar-input-container {
+      border-color: var(--focus-outline-color);
+    }
+
+    &[breakout-extend] > .urlbar-background {
+      display: block;
+      inset-inline: var(--urlbar-background-inset);
+      inset-block-start: calc(var(--urlbar-background-inset) + var(--urlbar-input-container-top));
+      inset-block-end: var(--urlbar-background-inset);
+      box-shadow: var(--urlbar-background-shadow);
+      background-color: var(--toolbar-field-background-color);
+      border-radius: var(--border-radius-xxlarge);
+    }
+
+    &[breakout-extend][open] > .urlbar-background {
+      /* Rely on the height of urlbar, but compensate for the row's transparent
+         border (gutter). */
+      inset-block-end: var(--urlbarView-row-gutter);
+    }
+  }
 }
 
 .urlbar-input::placeholder,
@@ -341,35 +416,38 @@ toolbar[inactive="true"] .urlbar,
   display: none;
 }
 
-.urlbar[breakout][breakout-extend] {
-  height: auto;
-  margin-left: calc(-1 * var(--urlbar-margin-inline));
-  width: calc(var(--urlbar-width) + 2 * var(--urlbar-margin-inline));
-
-  > .urlbar-input-container {
-    height: var(--urlbar-container-height);
-    padding-block: calc((var(--urlbar-container-height) - var(--urlbar-height)) / 2 + var(--urlbar-container-padding));
-    padding-inline: calc(var(--urlbar-margin-inline) + var(--urlbar-container-padding));
+/* stylelint-disable-next-line media-query-no-invalid */
+@media not -moz-pref("browser.nova.enabled") {
+  @keyframes urlbar-grow {
+    0% {
+      transform: scaleX(0.99) scaleY(0.98);
+    }
+    100% {
+      transform: scale(1);
+    }
   }
-}
 
-@keyframes urlbar-grow {
-  0% {
-    transform: scaleX(0.99) scaleY(0.98);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
+  .urlbar[breakout][breakout-extend] {
+    height: auto;
+    margin-left: calc(-1 * var(--urlbar-margin-inline));
+    width: calc(var(--urlbar-width) + 2 * var(--urlbar-margin-inline));
 
-[breakout][breakout-extend] > .urlbar-background {
-  animation-name: urlbar-grow;
-  animation-duration: 0s;
-  animation-timing-function: var(--animation-easing-function);
+    > .urlbar-input-container {
+      height: var(--urlbar-container-height);
+      padding-block: calc((var(--urlbar-container-height) - var(--urlbar-height)) / 2 + var(--urlbar-container-padding));
+      padding-inline: calc(var(--urlbar-margin-inline) + var(--urlbar-container-padding));
+    }
 
-  @media (prefers-reduced-motion: no-preference) {
-    [breakout-extend-animate] > & {
-      animation-duration: 150ms;
+    > .urlbar-background {
+      animation-name: urlbar-grow;
+      animation-duration: 0s;
+      animation-timing-function: var(--animation-easing-function);
+
+      @media (prefers-reduced-motion: no-preference) {
+        [breakout-extend-animate] > & {
+          animation-duration: 150ms;
+        }
+      }
     }
   }
 }
@@ -396,15 +474,15 @@ toolbar[inactive="true"] .urlbar,
   /* We leave a base width plus whatever space the download and unified extensions
    * buttons will need when they *both* appear. Normally, for each button, this
    * should be 16px for the icon, plus 2 * 2px padding plus the
-   * toolbarbutton-inner-padding. We're adding 4px to ensure things like rounding
+   * toolbarbutton-padding-inner. We're adding 4px to ensure things like rounding
    * on hidpi don't accidentally result in the buttons going into overflow.
    */
-  width: calc(var(--urlbar-container-min-width) + 2 * (24px + 2 * var(--toolbarbutton-inner-padding)));
+  width: calc(var(--urlbar-container-min-width) + 2 * (24px + 2 * var(--toolbarbutton-padding-inner)));
 
   /* When the download button OR the unified extensions button is shown, we leave
    * the base width plus the space needed for a single button as described above. */
   #nav-bar:is([downloadsbuttonshown], [unifiedextensionsbuttonshown]) & {
-    width: calc(var(--urlbar-container-min-width) + 24px + 2 * var(--toolbarbutton-inner-padding));
+    width: calc(var(--urlbar-container-min-width) + 24px + 2 * var(--toolbarbutton-padding-inner));
   }
 
   /* When both the download and unified extensions buttons are visible, we use
@@ -545,13 +623,6 @@ toolbar[inactive="true"] .urlbar,
   }
 }
 
-/* stylelint-disable-next-line media-query-no-invalid */
-@media -moz-pref("browser.urlbar.unifiedSearchButton.always") {
-  .urlbar[searchmode] .searchmode-switcher-title {
-    order: 1;
-  }
-}
-
 #urlbar-search-mode-indicator-title {
   padding-inline: 0 3px;
 }
@@ -652,14 +723,14 @@ toolbar[inactive="true"] .urlbar,
   &:not([disabled]):hover {
     background-color: var(--urlbar-box-background-color-hover);
     color: var(--urlbar-box-text-color-hover);
-    outline-color: var(--toolbarbutton-hover-outline-color);
+    outline-color: var(--toolbarbutton-outline-color-hover);
   }
 
   &:not([disabled])[open],
   &:not([disabled]):hover:active {
     background-color: var(--urlbar-box-background-color-active);
     color: var(--urlbar-box-text-color-hover);
-    outline-color: var(--toolbarbutton-active-outline-color);
+    outline-color: var(--toolbarbutton-outline-color-active);
   }
 }
 
@@ -1196,7 +1267,9 @@ toolbar[inactive="true"] .urlbar,
   --button-background-color: var(--urlbar-box-background-color);
   /* stylelint-disable-next-line media-query-no-invalid */
   @media -moz-pref("browser.urlbar.unifiedSearchButton.always") {
-    --button-background-color: transparent;
+    .urlbar[pageproxystate="valid"] & {
+      --button-icon-content: url("chrome://global/skin/icons/search-glass.svg");
+    }
   }
 
   > .searchmode-switcher-content {
@@ -1239,8 +1312,11 @@ toolbar[inactive="true"] .urlbar,
   white-space: nowrap;
   max-width: var(--search-engine-name-max-width);
 
-  .urlbar:not(#searchbar-new)[searchmode] & {
-    display: block;
+  /* stylelint-disable-next-line media-query-no-invalid */
+  @media not -moz-pref("browser.urlbar.unifiedSearchButton.always") {
+    .urlbar:not(#searchbar-new)[searchmode] & {
+      display: block;
+    }
   }
 }
 
@@ -1271,16 +1347,15 @@ toolbar[inactive="true"] .urlbar,
     transition: 300ms transform ease-in-out;
   }
 
+  /* stylelint-disable-next-line media-query-no-invalid */
+  @media -moz-pref("browser.urlbar.unifiedSearchButton.always") {
+    margin-inline-start: calc(var(--space-xsmall) * -1);
+  }
+
   .urlbar[searchmode] & {
     /* stylelint-disable-next-line media-query-no-invalid */
     @media not -moz-pref("browser.urlbar.unifiedSearchButton.always") {
       display: none;
-    }
-
-    /* stylelint-disable-next-line media-query-no-invalid */
-    @media -moz-pref("browser.urlbar.unifiedSearchButton.always") {
-      order: 2;
-      margin-inline-start: 0;
     }
   }
 

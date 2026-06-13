@@ -31,8 +31,8 @@ Note that nsIPrefBranch also supports a `Complex` type.
 
 DevTools relies on Services.pref to handle preferences. You can access the API docs for
 this service at:
-* [Source for nsIPrefBranch](https://searchfox.org/mozilla-central/source/modules/libpref/nsIPrefBranch.idl)
-* [Source for nsIPrefService](https://searchfox.org/mozilla-central/source/modules/libpref/nsIPrefService.idl)
+* [Source for nsIPrefBranch](https://searchfox.org/firefox-main/source/modules/libpref/nsIPrefBranch.idl)
+* [Source for nsIPrefService](https://searchfox.org/firefox-main/source/modules/libpref/nsIPrefService.idl)
 
 ### Services.pref.get* and Services.pref.set*
 

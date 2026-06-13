@@ -35,7 +35,6 @@ add_task(async function test_site_exclusion_feature_pref_disabled() {
   );
 
   let content = await openPanel({
-    isSignedOut: false,
     isProtectionEnabled: true,
     siteData: {
       isExclusion: false,
@@ -73,13 +72,11 @@ add_task(async function test_site_exclusion_feature_pref_disabled() {
  */
 add_task(async function test_site_exclusion_toggle_with_siteData() {
   setupService({
-    isSignedIn: true,
-    isEnrolledAndEntitled: true,
+    isReady: true,
   });
-  await IPPEnrollAndEntitleManager.refetchEntitlement();
+  await IPPFxaAuthProvider.checkForUpgrade();
 
   let content = await openPanel({
-    isSignedOut: false,
     isProtectionEnabled: false,
     siteData: {
       isExclusion: false,
@@ -105,7 +102,6 @@ add_task(async function test_site_exclusion_toggle_with_siteData() {
 
   // Turn VPN on
   await setPanelState({
-    isSignedOut: false,
     isProtectionEnabled: true,
     siteData: {
       isExclusion: false,
@@ -131,13 +127,11 @@ add_task(async function test_site_exclusion_toggle_with_siteData() {
  */
 add_task(async function test_site_exclusion_toggle_no_siteData() {
   setupService({
-    isSignedIn: true,
-    isEnrolledAndEntitled: true,
+    isReady: true,
   });
-  await IPPEnrollAndEntitleManager.refetchEntitlement();
+  await IPPFxaAuthProvider.checkForUpgrade();
 
   let content = await openPanel({
-    isSignedOut: false,
     isProtectionEnabled: false,
     siteData: null,
   });
@@ -159,13 +153,11 @@ add_task(async function test_site_exclusion_toggle_no_siteData() {
  */
 add_task(async function test_site_exclusion_VPN_error() {
   setupService({
-    isSignedIn: true,
-    isEnrolledAndEntitled: true,
+    isReady: true,
   });
-  await IPPEnrollAndEntitleManager.refetchEntitlement();
+  await IPPFxaAuthProvider.checkForUpgrade();
 
   let content = await openPanel({
-    isSignedOut: false,
     isProtectionEnabled: true,
     siteData: {
       isExclusion: false,
@@ -190,7 +182,6 @@ add_task(async function test_site_exclusion_VPN_error() {
 
   // Turn VPN on
   await setPanelState({
-    isSignedOut: false,
     isProtectionEnabled: true,
     siteData: {
       isExclusion: false,
@@ -213,13 +204,11 @@ add_task(async function test_site_exclusion_VPN_error() {
  */
 add_task(async function test_site_exclusion_toggle_pressed_isExclusion() {
   setupService({
-    isSignedIn: true,
-    isEnrolledAndEntitled: true,
+    isReady: true,
   });
-  await IPPEnrollAndEntitleManager.refetchEntitlement();
+  await IPPFxaAuthProvider.checkForUpgrade();
 
   let content = await openPanel({
-    isSignedOut: false,
     isProtectionEnabled: true,
     siteData: {
       isExclusion: false,
@@ -256,7 +245,6 @@ add_task(async function test_site_exclusion_toggle_pressed_isExclusion() {
 
   // Set isExclusion to true
   await setPanelState({
-    isSignedOut: false,
     isProtectionEnabled: true,
     siteData: {
       isExclusion: true,
@@ -283,10 +271,9 @@ add_task(
     Services.perms.removeByType(PERM_NAME);
 
     setupService({
-      isSignedIn: true,
-      isEnrolledAndEntitled: true,
+      isReady: true,
     });
-    await IPPEnrollAndEntitleManager.refetchEntitlement();
+    await IPPFxaAuthProvider.checkForUpgrade();
 
     let setExclusionSpy = sandbox.spy(IPPExceptionsManager, "setExclusion");
     sandbox.stub(IPPProxyManager, "state").value(IPPProxyStates.ACTIVE);
@@ -298,7 +285,6 @@ add_task(
     );
 
     let content = await openPanel({
-      isSignedOut: false,
       isProtectionEnabled: true,
       siteData: {
         isExclusion: false,
@@ -388,10 +374,9 @@ add_task(
     Services.perms.removeByType(PERM_NAME);
 
     setupService({
-      isSignedIn: true,
-      isEnrolledAndEntitled: true,
+      isReady: true,
     });
-    await IPPEnrollAndEntitleManager.refetchEntitlement();
+    await IPPFxaAuthProvider.checkForUpgrade();
 
     sandbox.stub(IPPProxyManager, "state").value(IPPProxyStates.ACTIVE);
 
@@ -416,7 +401,6 @@ add_task(
     );
 
     let content = await openPanel({
-      isSignedOut: false,
       isProtectionEnabled: true,
     });
 
@@ -484,10 +468,9 @@ add_task(async function test_site_exclusion_updates_on_navigation_same_tab() {
   Services.perms.removeByType(PERM_NAME);
 
   setupService({
-    isSignedIn: true,
-    isEnrolledAndEntitled: true,
+    isReady: true,
   });
-  await IPPEnrollAndEntitleManager.refetchEntitlement();
+  await IPPFxaAuthProvider.checkForUpgrade();
 
   sandbox.stub(IPPProxyManager, "state").value(IPPProxyStates.ACTIVE);
 
@@ -511,7 +494,6 @@ add_task(async function test_site_exclusion_updates_on_navigation_same_tab() {
   );
 
   let content = await openPanel({
-    isSignedOut: false,
     isProtectionEnabled: true,
   });
 
@@ -574,10 +556,9 @@ add_task(async function test_site_exclusion_updates_on_tab_switch() {
   Services.perms.removeByType(PERM_NAME);
 
   setupService({
-    isSignedIn: true,
-    isEnrolledAndEntitled: true,
+    isReady: true,
   });
-  await IPPEnrollAndEntitleManager.refetchEntitlement();
+  await IPPFxaAuthProvider.checkForUpgrade();
 
   sandbox.stub(IPPProxyManager, "state").value(IPPProxyStates.ACTIVE);
 
@@ -712,10 +693,9 @@ add_task(async function test_site_exclusion_toggle_privileged_page() {
   const ABOUT_PAGE = "about:about";
 
   setupService({
-    isSignedIn: true,
-    isEnrolledAndEntitled: true,
+    isReady: true,
   });
-  await IPPEnrollAndEntitleManager.refetchEntitlement();
+  await IPPFxaAuthProvider.checkForUpgrade();
 
   let panel = IPProtection.getPanel(window);
   sandbox.stub(panel, "_isPrivilegedPage").returns(true);
@@ -723,7 +703,6 @@ add_task(async function test_site_exclusion_toggle_privileged_page() {
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, ABOUT_PAGE);
 
   let content = await openPanel({
-    isSignedOut: false,
     isProtectionEnabled: true,
   });
 

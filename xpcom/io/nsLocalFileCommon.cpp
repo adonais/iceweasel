@@ -17,6 +17,8 @@
 
 #ifdef XP_WIN
 #  include <string.h>
+#else
+#  include <limits.h>
 #endif
 
 // Extensions that should be considered 'executable', ie will not allow users
@@ -187,27 +189,20 @@ nsLocalFile::InitWithFile(nsIFile* aFile) {
 }
 #endif
 
-#define kMaxFilenameLength 255
-#define kMaxExtensionLength 100
-#define kMaxSequenceNumberLength 5  // "-9999"
-// requirement: kMaxExtensionLength <
-//                kMaxFilenameLength - kMaxSequenceNumberLength
+// Maximum path and filename lengths, leaving space for a terminating null
+// character, a dash, and a four-digit sequence, e.g. "-9999\0"
+#ifdef XP_WIN
+static constexpr int32_t kMaxUniquePathLength = MAX_PATH - 6;
+#else
+static constexpr int32_t kMaxUniquePathLength = PATH_MAX - 6;
+#endif
+
+// 255 - "-NNNN"
+static constexpr int32_t kMaxUniqueFilenameLength = 250;
 
 NS_IMETHODIMP
 nsLocalFile::CreateUnique(uint32_t aType, uint32_t aAttributes) {
   nsresult rv;
-  bool longName;
-
-#ifdef XP_WIN
-  nsAutoString pathName, leafName, rootName, suffix;
-  rv = GetPath(pathName);
-#else
-  nsAutoCString pathName, leafName, rootName, suffix;
-  rv = GetNativePath(pathName);
-#endif
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
 
   auto FailedBecauseExists = [&](nsresult aRv) {
     if (aRv == NS_ERROR_FILE_ACCESS_DENIED) {
@@ -217,13 +212,15 @@ nsLocalFile::CreateUnique(uint32_t aType, uint32_t aAttributes) {
     return aRv == NS_ERROR_FILE_ALREADY_EXISTS;
   };
 
-  longName =
-      (pathName.Length() + kMaxSequenceNumberLength > kMaxFilenameLength);
-  if (!longName) {
-    rv = Create(aType, aAttributes);
-    if (!FailedBecauseExists(rv)) {
-      return rv;
-    }
+#ifdef XP_WIN
+  nsAutoString path, leafName, rootName, suffix;
+  rv = GetPath(path);
+#else
+  nsAutoCString path, leafName, rootName, suffix;
+  rv = GetNativePath(path);
+#endif
+  if (NS_FAILED(rv)) {
+    return rv;
   }
 
 #ifdef XP_WIN
@@ -242,6 +239,19 @@ nsLocalFile::CreateUnique(uint32_t aType, uint32_t aAttributes) {
   const int32_t lastDot = leafName.RFindChar('.');
 #endif
 
+  int32_t pathHeadroom =
+      kMaxUniquePathLength - static_cast<int32_t>(path.Length());
+  int32_t leafHeadroom =
+      kMaxUniqueFilenameLength - static_cast<int32_t>(leafName.Length());
+
+  // If there is no need for truncation see if we can just create the file as is
+  if (pathHeadroom >= 0 && leafHeadroom >= 0) {
+    rv = Create(aType, aAttributes);
+    if (!FailedBecauseExists(rv)) {
+      return rv;
+    }
+  }
+
   if (lastDot == kNotFound) {
     rootName = leafName;
   } else {
@@ -249,10 +259,15 @@ nsLocalFile::CreateUnique(uint32_t aType, uint32_t aAttributes) {
     rootName = Substring(leafName, 0, lastDot);  // strip suffix and dot
   }
 
-  if (longName) {
-    int32_t maxRootLength =
-        (kMaxFilenameLength - (pathName.Length() - leafName.Length()) -
-         suffix.Length() - kMaxSequenceNumberLength);
+  // A negative number means it's already over the limit so we need to trim
+  // characters from the root to make room.
+  if (pathHeadroom < 0 || leafHeadroom < 0) {
+    int32_t maxRootPerPathLimit =
+        static_cast<int32_t>(rootName.Length()) + pathHeadroom;
+    int32_t maxRootPerLeafLimit =
+        static_cast<int32_t>(rootName.Length()) + leafHeadroom;
+
+    int32_t maxRootLength = std::min(maxRootPerPathLimit, maxRootPerLeafLimit);
 
     // We cannot create an item inside a directory whose name is too long.
     // Also, ensure that at least one character remains after we truncate

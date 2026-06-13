@@ -3,7 +3,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include <stdlib.h>
-#include <stdio.h>
 #include "nsUpdateDriver.h"
 
 #include "nsDebug.h"
@@ -808,12 +807,12 @@ nsUpdateProcessor::ProcessUpdate() {
 
   // Copy the parameters to the StagedUpdateInfo structure shared with the
   // worker thread.
-  mInfo.mGREDir = greDir;
-  mInfo.mAppDir = appDir;
-  mInfo.mUpdateRoot = updRoot;
+  mInfo.mGREDir = std::move(greDir);
+  mInfo.mAppDir = std::move(appDir);
+  mInfo.mUpdateRoot = std::move(updRoot);
   mInfo.mArgc = 0;
   mInfo.mArgv = nullptr;
-  mInfo.mAppVersion = appVersion;
+  mInfo.mAppVersion = std::move(appVersion);
 
   MOZ_ASSERT(NS_IsMainThread(), "not main thread");
   nsCOMPtr<nsIRunnable> r =

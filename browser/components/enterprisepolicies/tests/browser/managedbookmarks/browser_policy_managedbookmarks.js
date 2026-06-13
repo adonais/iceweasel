@@ -3,6 +3,10 @@
 
 "use strict";
 
+const { getMozRemoteImageURL } = ChromeUtils.importESModule(
+  "moz-src:///toolkit/modules/FaviconUtils.sys.mjs"
+);
+
 add_task(async function test_policy_managedbookmarks() {
   let managedBookmarksMenu =
     window.document.getElementById("managed-bookmarks");
@@ -97,6 +101,38 @@ add_task(async function test_policy_managedbookmarks() {
     subFolder.menupopup.children[1].link,
     "https://bookmark6.example.com/",
     "Bookmark should have correct label"
+  );
+
+  managedBookmarksMenu.open = false;
+  await popupHiddenPromise;
+});
+
+add_task(async function test_managedbookmarks_favicon() {
+  let managedBookmarksMenu =
+    window.document.getElementById("managed-bookmarks");
+
+  let popupShownPromise = BrowserTestUtils.waitForEvent(
+    managedBookmarksMenu.menupopup,
+    "popupshown",
+    false
+  );
+  let popupHiddenPromise = BrowserTestUtils.waitForEvent(
+    managedBookmarksMenu.menupopup,
+    "popuphidden",
+    false
+  );
+  managedBookmarksMenu.open = true;
+  await popupShownPromise;
+
+  let bookmark7 = managedBookmarksMenu.menupopup.children[4];
+  let expectedFavicon = getMozRemoteImageURL(
+    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVQI12NgAAIABQAABjE+ibYAAAAASUVORK5CYII=",
+    { size: 16 }
+  );
+  is(
+    bookmark7.getAttribute("image"),
+    expectedFavicon,
+    "Bookmark with explicit favicon should use a moz-remote-image: wrapping it"
   );
 
   managedBookmarksMenu.open = false;

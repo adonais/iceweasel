@@ -77,6 +77,8 @@ class GfxTextureWasteTracker {
     MOZ_COUNT_CTOR(GfxTextureWasteTracker);
   }
 
+  GfxTextureWasteTracker(const GfxTextureWasteTracker& aRef) = delete;
+
   void Update(int32_t aPixelArea, int32_t aBytesPerPixel) {
     GfxTexturesReporter::UpdateWasteAmount(-mBytes);
     mBytes = aPixelArea * aBytesPerPixel;
@@ -89,8 +91,6 @@ class GfxTextureWasteTracker {
   }
 
  private:
-  GfxTextureWasteTracker(const GfxTextureWasteTracker& aRef);
-
   int32_t mBytes;
 };
 

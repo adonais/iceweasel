@@ -341,7 +341,7 @@ In the future, this section will be populated dynamically. If you are wondering 
 Adding a New Category
 ---------------------
 
-It's very easy to add a new category if needed, and you can do so by modifying the `PerfParser categories attribute here <https://searchfox.org/mozilla-central/source/tools/tryselect/selectors/perf.py#179>`_. The following is an example of a complex category that gives a good idea of what you have available::
+It's very easy to add a new category if needed, and you can do so by modifying the :searchfox:`PerfParser categories attribute here <tools/tryselect/selectors/perf.py#179>`. The following is an example of a complex category that gives a good idea of what you have available::
 
      "Resource Usage": {
          "query": {

@@ -547,104 +547,6 @@ export class GeckoDriver {
     lazy.cookie.add(newCookie, { restrictToHost: hostname, protocol });
   }
 
-  addCredential(cmd) {
-    const {
-      authenticatorId,
-      credentialId,
-      isResidentCredential,
-      rpId,
-      privateKey,
-      userHandle,
-      signCount,
-    } = cmd.parameters;
-
-    lazy.assert.string(
-      authenticatorId,
-      lazy.pprint`Expected "authenticatorId" to be a string, got ${authenticatorId}`
-    );
-    lazy.assert.string(
-      credentialId,
-      lazy.pprint`Expected "credentialId" to be a string, got ${credentialId}`
-    );
-    lazy.assert.boolean(
-      isResidentCredential,
-      lazy.pprint`Expected "isResidentCredential" to be a boolean, got ${isResidentCredential}`
-    );
-    lazy.assert.string(
-      rpId,
-      lazy.pprint`Expected "rpId" to be a string, got ${rpId}`
-    );
-    lazy.assert.string(
-      privateKey,
-      lazy.pprint`Expected "privateKey" to be a string, got ${privateKey}`
-    );
-    if (userHandle) {
-      lazy.assert.string(
-        userHandle,
-        lazy.pprint`Expected "userHandle" to be a string, got ${userHandle}`
-      );
-    }
-    lazy.assert.number(
-      signCount,
-      lazy.pprint`Expected "signCount" to be a number, got ${signCount}`
-    );
-
-    lazy.webauthn.addCredential(
-      authenticatorId,
-      credentialId,
-      isResidentCredential,
-      rpId,
-      privateKey,
-      userHandle,
-      signCount
-    );
-  }
-
-  addVirtualAuthenticator(cmd) {
-    const {
-      protocol,
-      transport,
-      hasResidentKey,
-      hasUserVerification,
-      isUserConsenting,
-      isUserVerified,
-    } = cmd.parameters;
-
-    lazy.assert.string(
-      protocol,
-      lazy.pprint`Expected "protocol" to be a string, got ${protocol}`
-    );
-    lazy.assert.string(
-      transport,
-      lazy.pprint`Expected "transport" to be a string, got ${transport}`
-    );
-    lazy.assert.boolean(
-      hasResidentKey,
-      lazy.pprint`Expected "hasResidentKey" to be a boolean, got ${hasResidentKey}`
-    );
-    lazy.assert.boolean(
-      hasUserVerification,
-      lazy.pprint`Expected "hasUserVerification" to be a boolean, got ${hasUserVerification}`
-    );
-    lazy.assert.boolean(
-      isUserConsenting,
-      lazy.pprint`Expected "isUserConsenting" to be a boolean, got ${isUserConsenting}`
-    );
-    lazy.assert.boolean(
-      isUserVerified,
-      lazy.pprint`Expected "isUserVerified" to be a boolean, got ${isUserVerified}`
-    );
-
-    return lazy.webauthn.addVirtualAuthenticator(
-      protocol,
-      transport,
-      hasResidentKey,
-      hasUserVerification,
-      isUserConsenting,
-      isUserVerified
-    );
-  }
-
   /**
    * Clear the text of an element.
    *
@@ -897,6 +799,8 @@ export class GeckoDriver {
       this.#promptListener.stopListening();
       this.#promptListener = null;
     }
+
+    lazy.Addon.cleanupTemporaryAddonFiles();
 
     try {
       Services.obs.removeObserver(this.#observer, TOPIC_BROWSER_READY);
@@ -1318,41 +1222,6 @@ export class GeckoDriver {
   }
 
   /**
-   * Implements the GenerateTestReport functionality of the Reporting API.
-   *
-   * @see https://w3c.github.io/reporting/#generate-test-report-command *
-   *
-   * @param {object} cmd
-   * @param {string} cmd.parameters.message
-   *     The message contents of the report being generated.
-   * @param {string=} cmd.parameters.group
-   *     The name of the reporting endpoint that the report should be sent to.
-   *     @see https://www.w3.org/TR/reporting-1/#endpoint
-   *
-   * @throws {InvalidArgumentError}
-   *     If a message argument wasn't passed in the parameters.
-   */
-
-  async generateTestReport(cmd) {
-    const { message, group = "default" } = cmd.parameters;
-
-    lazy.assert.open(this.getBrowsingContext());
-    await this.#handleUserPrompts();
-
-    lazy.assert.string(
-      message,
-      lazy.pprint(`Expected "message" to be a string, got ${message}`)
-    );
-
-    lazy.assert.string(
-      group,
-      lazy.pprint(`Expected "group" to be a string, got ${group}`)
-    );
-
-    await this.#getActor().generateTestReport(message, group);
-  }
-
-  /**
    * Gets the properties for this accessibility node.
    *
    * @param {object} cmd
@@ -1493,6 +1362,7 @@ export class GeckoDriver {
    */
   getCommandHandler(name) {
     const handler = GeckoDriver.#commandHandlers[name];
+
     if (handler === undefined) {
       throw new lazy.error.UnknownCommandError(name);
     }
@@ -1588,17 +1458,6 @@ export class GeckoDriver {
 
     let { hostname, pathname } = this._getCurrentURL({ top: false });
     return [...lazy.cookie.iter(hostname, this.getBrowsingContext(), pathname)];
-  }
-
-  getCredentials(cmd) {
-    const { authenticatorId } = cmd.parameters;
-
-    lazy.assert.string(
-      authenticatorId,
-      lazy.pprint`Expected "authenticatorId" to be a string, got ${authenticatorId}`
-    );
-
-    return lazy.webauthn.getCredentials(authenticatorId);
   }
 
   /**
@@ -1889,14 +1748,6 @@ export class GeckoDriver {
     let webEl = lazy.WebElement.fromUUID(id).toJSON();
 
     return this.#getActor().getElementValueOfCssProperty(webEl, prop);
-  }
-
-  getGlobalPrivacyControl() {
-    const gpc = Services.prefs.getBoolPref(
-      "privacy.globalprivacycontrol.enabled",
-      true
-    );
-    return { gpc };
   }
 
   /**
@@ -2532,9 +2383,7 @@ export class GeckoDriver {
 
     await lazy.navigate.waitForNavigationCompleted(
       this,
-      () => {
-        lazy.navigate.navigateTo(browsingContext, validURL);
-      },
+      () => lazy.navigate.navigateTo(browsingContext, validURL),
       { loadEventExpected }
     );
 
@@ -3036,9 +2885,9 @@ export class GeckoDriver {
     // Switch to the top-level browsing context before navigating
     this.currentSession.contentBrowsingContext = browsingContext;
 
-    await lazy.navigate.waitForNavigationCompleted(this, () => {
-      lazy.navigate.refresh(browsingContext);
-    });
+    await lazy.navigate.waitForNavigationCompleted(this, () =>
+      lazy.navigate.refresh(browsingContext)
+    );
   }
 
   /**
@@ -3139,43 +2988,6 @@ export class GeckoDriver {
 
     // Process async follow-up tasks in content before the reply is sent.
     await this.#actionsHelper.finalizeAction(browsingContext);
-  }
-
-  removeAllCredentials(cmd) {
-    const { authenticatorId } = cmd.parameters;
-
-    lazy.assert.string(
-      authenticatorId,
-      lazy.pprint`Expected "authenticatorId" to be a string, got ${authenticatorId}`
-    );
-
-    lazy.webauthn.removeAllCredentials(authenticatorId);
-  }
-
-  removeCredential(cmd) {
-    const { authenticatorId, credentialId } = cmd.parameters;
-
-    lazy.assert.string(
-      authenticatorId,
-      lazy.pprint`Expected "authenticatorId" to be a string, got ${authenticatorId}`
-    );
-    lazy.assert.string(
-      credentialId,
-      lazy.pprint`Expected "credentialId" to be a string, got ${credentialId}`
-    );
-
-    lazy.webauthn.removeCredential(authenticatorId, credentialId);
-  }
-
-  removeVirtualAuthenticator(cmd) {
-    const { authenticatorId } = cmd.parameters;
-
-    lazy.assert.string(
-      authenticatorId,
-      lazy.pprint`Expected "authenticatorId" to be a string, got ${authenticatorId}`
-    );
-
-    lazy.webauthn.removeVirtualAuthenticator(authenticatorId);
   }
 
   /** Run a reftest. */
@@ -3333,61 +3145,6 @@ export class GeckoDriver {
     this.context = value;
   }
 
-  setGlobalPrivacyControl(cmd) {
-    const { gpc } = cmd.parameters;
-    if (typeof gpc != "boolean") {
-      throw new lazy.error.InvalidArgumentError(
-        "Value of `gpc` should be of type 'boolean'"
-      );
-    }
-    Services.prefs.setBoolPref("privacy.globalprivacycontrol.enabled", gpc);
-    return { gpc };
-  }
-
-  /**
-   * @see https://www.w3.org/TR/permissions/#webdriver-command-set-permission
-   */
-  async setPermission(cmd) {
-    const { descriptor, state, oneRealm = false } = cmd.parameters;
-    const browsingContext = lazy.assert.open(this.getBrowsingContext());
-
-    lazy.permissions.validateDescriptor(descriptor);
-    lazy.permissions.validateState(state);
-
-    let params;
-    try {
-      params =
-        await this.#curBrowser.window.navigator.permissions.parseSetParameters({
-          descriptor,
-          state,
-        });
-    } catch (err) {
-      throw new lazy.error.InvalidArgumentError(
-        `setPermission: ${err.message}`
-      );
-    }
-
-    lazy.assert.boolean(
-      oneRealm,
-      lazy.pprint`Expected "oneRealm" to be a boolean, got ${oneRealm}`
-    );
-
-    let origin = browsingContext.currentURI.prePath;
-
-    // storage-access is a special case.
-    if (descriptor.name === "storage-access") {
-      origin = browsingContext.top.currentURI.prePath;
-
-      params = {
-        type: lazy.permissions.getStorageAccessPermissionsType(
-          browsingContext.currentWindowGlobal.documentURI
-        ),
-      };
-    }
-
-    lazy.permissions.set(params, state, origin);
-  }
-
   /**
    * Set the current browser orientation.
    *
@@ -3486,21 +3243,6 @@ export class GeckoDriver {
 
     this.#reftest = new lazy.reftest.Runner(this);
     this.#reftest.setup(urlCount, screenshot, isPrint, cacheScreenshots);
-  }
-
-  setUserVerified(cmd) {
-    const { authenticatorId, isUserVerified } = cmd.parameters;
-
-    lazy.assert.string(
-      authenticatorId,
-      lazy.pprint`Expected "authenticatorId" to be a string, got ${authenticatorId}`
-    );
-    lazy.assert.boolean(
-      isUserVerified,
-      lazy.pprint`Expected "isUserVerified" to be a boolean, got ${isUserVerified}`
-    );
-
-    lazy.webauthn.setUserVerified(authenticatorId, isUserVerified);
   }
 
   /**
@@ -3883,6 +3625,417 @@ export class GeckoDriver {
     lazy.assert.hasSystemAccess();
 
     this.currentSession.unregisterChromeHandler(id);
+  }
+
+  // Commands from external specifications.
+
+  /**
+   * Returns the do-not-sell-or-share preference for the current session.
+   *
+   * @see https://w3c.github.io/gpc/#get-global-privacy-control
+   */
+  gpc_getGlobalPrivacyControl() {
+    const gpc = Services.prefs.getBoolPref(
+      "privacy.globalprivacycontrol.enabled",
+      true
+    );
+
+    return { gpc };
+  }
+
+  /**
+   * Modifies the do-not-sell-or-share preference for the current session.
+   *
+   * @see https://w3c.github.io/gpc/#set-global-privacy-control
+   */
+  gpc_setGlobalPrivacyControl(cmd) {
+    const { gpc } = cmd.parameters;
+
+    if (typeof gpc != "boolean") {
+      throw new lazy.error.InvalidArgumentError(
+        "Value of `gpc` should be of type 'boolean'"
+      );
+    }
+
+    Services.prefs.setBoolPref("privacy.globalprivacycontrol.enabled", gpc);
+
+    return { gpc };
+  }
+
+  /**
+   * Simulates user modification of a PermissionDescriptor's permission state.
+   *
+   * @see https://www.w3.org/TR/permissions/#webdriver-command-set-permission
+   */
+  async permissions_setPermission(cmd) {
+    const { descriptor, oneRealm = false, state } = cmd.parameters;
+    const browsingContext = lazy.assert.open(this.getBrowsingContext());
+
+    lazy.permissions.validateDescriptor(descriptor);
+    lazy.permissions.validateState(state);
+
+    let params;
+    try {
+      params =
+        await this.#curBrowser.window.navigator.permissions.parseSetParameters({
+          descriptor,
+          state,
+        });
+    } catch (err) {
+      throw new lazy.error.InvalidArgumentError(
+        `setPermission: ${err.message}`
+      );
+    }
+
+    lazy.assert.boolean(
+      oneRealm,
+      lazy.pprint`Expected "oneRealm" to be a boolean, got ${oneRealm}`
+    );
+
+    let origin = browsingContext.currentURI.prePath;
+
+    // storage-access is a special case.
+    if (descriptor.name === "storage-access") {
+      origin = browsingContext.top.currentURI.prePath;
+
+      params = {
+        type: lazy.permissions.getStorageAccessPermissionsType(
+          browsingContext.currentWindowGlobal.documentURI
+        ),
+      };
+    }
+
+    lazy.permissions.set(params, state, origin);
+  }
+
+  /**
+   * Implements the GenerateTestReport functionality of the Reporting API.
+   *
+   * @see https://w3c.github.io/reporting/#generate-test-report-command *
+   *
+   * @param {object} cmd
+   * @param {string} cmd.parameters.message
+   *     The message contents of the report being generated.
+   * @param {string=} cmd.parameters.group
+   *     The name of the reporting endpoint that the report should be sent to.
+   *     @see https://www.w3.org/TR/reporting-1/#endpoint
+   *
+   * @throws {InvalidArgumentError}
+   *     If a message argument wasn't passed in the parameters.
+   */
+  async reporting_generateTestReport(cmd) {
+    const { message, group = "default" } = cmd.parameters;
+
+    lazy.assert.open(this.getBrowsingContext());
+    await this.#handleUserPrompts();
+
+    lazy.assert.string(
+      message,
+      lazy.pprint(`Expected "message" to be a string, got ${message}`)
+    );
+
+    lazy.assert.string(
+      group,
+      lazy.pprint(`Expected "group" to be a string, got ${group}`)
+    );
+
+    await this.#getActor().generateTestReport(message, group);
+  }
+
+  /**
+   * Add a credential to a virtual authenticator.
+   *
+   * @param {object} cmd
+   * @param {object} cmd.parameters
+   * @param {string} cmd.parameters.authenticatorId
+   *     The ID of the virtual authenticator to add the credential to.
+   * @param {object} cmd.parameters.credentials
+   *     The credential to add.
+   * @param {string} cmd.parameters.credentials.credentialId
+   *     A probabilistically-unique byte sequence identifying a public key
+   *     credential source and its authentication assertions, encoded using
+   *     Base64url Encoding.
+   * @param {boolean} cmd.parameters.credentials.isResidentCredential
+   *     If true, a client-side discoverable credential is created. If false,
+   *     a server-side credential is created instead.
+   * @param {string} cmd.parameters.credentials.rpId
+   *     The Relying Party ID the credential is scoped to.
+   * @param {string} cmd.parameters.credentials.privateKey
+   *     An asymmetric key package containing a single private key per RFC5958,
+   *     encoded using Base64url Encoding.
+   * @param {string} [cmd.parameters.credentials.userHandle]
+   *     The userHandle associated with the credential, encoded using Base64url
+   *     Encoding.
+   * @param {number} cmd.parameters.credentials.signCount
+   *     The initial value for a signature counter associated with the public
+   *     key credential source.
+   *
+   * @see https://www.w3.org/TR/webauthn-3/#sctn-automation-add-credential
+   */
+  webAuthn_addCredential(cmd) {
+    const { authenticatorId, credentials } = cmd.parameters;
+    const {
+      credentialId,
+      isResidentCredential,
+      rpId,
+      privateKey,
+      userHandle,
+      signCount,
+    } = credentials;
+
+    lazy.assert.string(
+      authenticatorId,
+      lazy.pprint`Expected "authenticatorId" to be a string, got ${authenticatorId}`
+    );
+
+    // Bug 1976492: Check for valid authenticator id and raise invalid argument
+
+    lazy.assert.string(
+      credentialId,
+      lazy.pprint`Expected "credentialId" to be a string, got ${credentialId}`
+    );
+
+    lazy.assert.boolean(
+      isResidentCredential,
+      lazy.pprint`Expected "isResidentCredential" to be a boolean, got ${isResidentCredential}`
+    );
+
+    lazy.assert.string(
+      rpId,
+      lazy.pprint`Expected "rpId" to be a string, got ${rpId}`
+    );
+
+    lazy.assert.string(
+      privateKey,
+      lazy.pprint`Expected "privateKey" to be a string, got ${privateKey}`
+    );
+
+    if (userHandle) {
+      lazy.assert.string(
+        userHandle,
+        lazy.pprint`Expected "userHandle" to be a string, got ${userHandle}`
+      );
+    }
+
+    lazy.assert.number(
+      signCount,
+      lazy.pprint`Expected "signCount" to be a number, got ${signCount}`
+    );
+
+    lazy.webauthn.addCredential(authenticatorId, {
+      credentialId,
+      isResidentCredential,
+      rpId,
+      privateKey,
+      userHandle,
+      signCount,
+    });
+  }
+
+  /**
+   * Add a virtual authenticator.
+   *
+   * @param {object} cmd
+   * @param {object} cmd.parameters
+   * @param {ProtocolType} cmd.parameters.protocol
+   *     The protocol this authenticator speaks.
+   * @param {TransportType} cmd.parameters.transport
+   *     The transport this authenticator uses.
+   * @param {boolean=} cmd.parameters.hasResidentKey
+   *     Whether the authenticator supports client-side discoverable credentials.
+   *     Defaults to false.
+   * @param {boolean=} cmd.parameters.hasUserVerification
+   *     Whether the authenticator supports user verification. Defaults to false.
+   * @param {boolean=} cmd.parameters.isUserConsenting
+   *     Whether the authenticator will simulate user consent for all operations.
+   *     Defaults to false.
+   * @param {boolean=} cmd.parameters.isUserVerified
+   *     Whether the authenticator simulates always passing user verification.
+   *     Defaults to false.
+   *
+   * @returns {string}
+   *     The ID of the added virtual authenticator.
+   *
+   * @see https://www.w3.org/TR/webauthn-3/#sctn-automation-add-virtual-authenticator
+   */
+  webAuthn_addVirtualAuthenticator(cmd) {
+    const {
+      protocol,
+      transport,
+      hasResidentKey = false,
+      hasUserVerification = false,
+      isUserConsenting = true,
+      isUserVerified = false,
+    } = cmd.parameters;
+
+    const protocolTypes = Object.values(lazy.webauthn.ProtocolType);
+    lazy.assert.that(
+      value => protocolTypes.includes(value),
+      lazy.pprint`Expected "protocol" to be one of ${protocolTypes}, got ${protocol}`
+    )(protocol);
+
+    const transportTypes = Object.values(lazy.webauthn.TransportType);
+    lazy.assert.that(
+      value => transportTypes.includes(value),
+      lazy.pprint`Expected "protocol" to be one of ${transportTypes}, got ${transport}`
+    )(transport);
+
+    lazy.assert.boolean(
+      hasResidentKey,
+      lazy.pprint`Expected "hasResidentKey" to be a boolean, got ${hasResidentKey}`
+    );
+    lazy.assert.boolean(
+      hasUserVerification,
+      lazy.pprint`Expected "hasUserVerification" to be a boolean, got ${hasUserVerification}`
+    );
+    lazy.assert.boolean(
+      isUserConsenting,
+      lazy.pprint`Expected "isUserConsenting" to be a boolean, got ${isUserConsenting}`
+    );
+    lazy.assert.boolean(
+      isUserVerified,
+      lazy.pprint`Expected "isUserVerified" to be a boolean, got ${isUserVerified}`
+    );
+
+    return lazy.webauthn.addVirtualAuthenticator({
+      protocol,
+      transport,
+      hasResidentKey,
+      hasUserVerification,
+      isUserConsenting,
+      isUserVerified,
+    });
+  }
+
+  /**
+   * Get credentials stored in a virtual authenticator.
+   *
+   * @param {object} cmd
+   * @param {object} cmd.parameters
+   * @param {string} cmd.parameters.authenticatorId
+   *     The ID of the virtual authenticator to retrieve credentials from.
+   *
+   * @returns {object}
+   *     The credentials stored on the virtual authenticator.
+   *
+   * @see https://www.w3.org/TR/webauthn-3/#sctn-automation-get-credentials
+   */
+  webAuthn_getCredentials(cmd) {
+    const { authenticatorId } = cmd.parameters;
+
+    lazy.assert.string(
+      authenticatorId,
+      lazy.pprint`Expected "authenticatorId" to be a string, got ${authenticatorId}`
+    );
+
+    // Bug 1976492: Check for valid authenticator id and raise invalid argument
+
+    return lazy.webauthn.getCredentials(authenticatorId);
+  }
+
+  /**
+   * Remove a credential from a virtual authenticator.
+   *
+   * @param {object} cmd
+   * @param {object} cmd.parameters
+   * @param {string} cmd.parameters.authenticatorId
+   *     The ID of the virtual authenticator to remove the credential from.
+   * @param {string} cmd.parameters.credentialId
+   *     The ID of the credential to remove.
+   *
+   * @see https://www.w3.org/TR/webauthn-3/#sctn-automation-remove-credential
+   */
+  webAuthn_removeCredential(cmd) {
+    const { authenticatorId, credentialId } = cmd.parameters;
+
+    lazy.assert.string(
+      authenticatorId,
+      lazy.pprint`Expected "authenticatorId" to be a string, got ${authenticatorId}`
+    );
+    // Bug 1976492: Check for valid authenticator id and raise invalid argument
+
+    lazy.assert.string(
+      credentialId,
+      lazy.pprint`Expected "credentialId" to be a string, got ${credentialId}`
+    );
+
+    lazy.webauthn.removeCredential(authenticatorId, credentialId);
+  }
+
+  /**
+   * Remove all credentials from a virtual authenticator.
+   *
+   * @param {object} cmd
+   * @param {object} cmd.parameters
+   * @param {string} cmd.parameters.authenticatorId
+   *     The ID of the virtual authenticator to remove all credentials from.
+   *
+   * @see https://www.w3.org/TR/webauthn-3/#sctn-automation-remove-all-credentials
+   */
+  webAuthn_removeAllCredentials(cmd) {
+    const { authenticatorId } = cmd.parameters;
+
+    lazy.assert.string(
+      authenticatorId,
+      lazy.pprint`Expected "authenticatorId" to be a string, got ${authenticatorId}`
+    );
+
+    // Bug 1976492: Check for valid authenticator id and raise invalid argument
+
+    lazy.webauthn.removeAllCredentials(authenticatorId);
+  }
+
+  /**
+   * Remove a virtual authenticator.
+   *
+   * @param {object} cmd
+   * @param {object} cmd.parameters
+   * @param {string} cmd.parameters.authenticatorId
+   *     The ID of the virtual authenticator to remove.
+   *
+   * @see https://www.w3.org/TR/webauthn-3/#sctn-automation-remove-virtual-authenticator
+   */
+  webAuthn_removeVirtualAuthenticator(cmd) {
+    const { authenticatorId } = cmd.parameters;
+
+    lazy.assert.string(
+      authenticatorId,
+      lazy.pprint`Expected "authenticatorId" to be a string, got ${authenticatorId}`
+    );
+
+    // Bug 1976492: Check for valid authenticator id and raise invalid argument
+
+    lazy.webauthn.removeVirtualAuthenticator(authenticatorId);
+  }
+
+  /**
+   * Set the user verified flag on a virtual authenticator.
+   *
+   * @param {object} cmd
+   * @param {object} cmd.parameters
+   * @param {string} cmd.parameters.authenticatorId
+   *     The ID of the virtual authenticator to update.
+   * @param {boolean} cmd.parameters.isUserVerified
+   *     The value to set the "isUserVerified" bit to on the authenticator.
+   *
+   * @see https://www.w3.org/TR/webauthn-3/#sctn-automation-set-user-verified
+   */
+  webAuthn_setUserVerified(cmd) {
+    const { authenticatorId, isUserVerified } = cmd.parameters;
+
+    lazy.assert.string(
+      authenticatorId,
+      lazy.pprint`Expected "authenticatorId" to be a string, got ${authenticatorId}`
+    );
+
+    lazy.assert.boolean(
+      isUserVerified,
+      lazy.pprint`Expected "isUserVerified" to be a boolean, got ${isUserVerified}`
+    );
+
+    // Bug 1976492: Check for valid authenticator id and raise invalid argument
+
+    lazy.webauthn.setUserVerified(authenticatorId, isUserVerified);
   }
 
   /**
@@ -4306,7 +4459,6 @@ export class GeckoDriver {
     "WebDriver:Refresh": GeckoDriver.prototype.refresh,
     "WebDriver:ReleaseActions": GeckoDriver.prototype.releaseActions,
     "WebDriver:SendAlertText": GeckoDriver.prototype.sendKeysToDialog,
-    "WebDriver:SetPermission": GeckoDriver.prototype.setPermission,
     "WebDriver:SetTimeouts": GeckoDriver.prototype.setTimeouts,
     "WebDriver:SetWindowRect": GeckoDriver.prototype.setWindowRect,
     "WebDriver:SwitchToFrame": GeckoDriver.prototype.switchToFrame,
@@ -4316,22 +4468,33 @@ export class GeckoDriver {
 
     // External commands for Global Privacy Control
     "GPC:GetGlobalPrivacyControl":
-      GeckoDriver.prototype.getGlobalPrivacyControl,
+      GeckoDriver.prototype.gpc_getGlobalPrivacyControl,
     "GPC:SetGlobalPrivacyControl":
-      GeckoDriver.prototype.setGlobalPrivacyControl,
+      GeckoDriver.prototype.gpc_setGlobalPrivacyControl,
+
+    // External commands for Permissions
+    // @backward-compat { version 150 } Rename "WebDriver:SetPermission" to
+    // "Permissions:SetPermission" in geckodriver after Firefox 150 is no
+    // longer supported.
+    "WebDriver:SetPermission": GeckoDriver.prototype.permissions_setPermission,
+    "Permissions:SetPermission":
+      GeckoDriver.prototype.permissions_setPermission,
 
     // External commands for Reporting API test generation of reports
-    "Reporting:GenerateTestReport": GeckoDriver.prototype.generateTestReport,
+    "Reporting:GenerateTestReport":
+      GeckoDriver.prototype.reporting_generateTestReport,
 
     // External commands for WebAuthn
-    "WebAuthn:AddCredential": GeckoDriver.prototype.addCredential,
+    "WebAuthn:AddCredential": GeckoDriver.prototype.webAuthn_addCredential,
     "WebAuthn:AddVirtualAuthenticator":
-      GeckoDriver.prototype.addVirtualAuthenticator,
-    "WebAuthn:GetCredentials": GeckoDriver.prototype.getCredentials,
-    "WebAuthn:RemoveAllCredentials": GeckoDriver.prototype.removeAllCredentials,
-    "WebAuthn:RemoveCredential": GeckoDriver.prototype.removeCredential,
+      GeckoDriver.prototype.webAuthn_addVirtualAuthenticator,
+    "WebAuthn:GetCredentials": GeckoDriver.prototype.webAuthn_getCredentials,
+    "WebAuthn:RemoveCredential":
+      GeckoDriver.prototype.webAuthn_removeCredential,
+    "WebAuthn:RemoveAllCredentials":
+      GeckoDriver.prototype.webAuthn_removeAllCredentials,
     "WebAuthn:RemoveVirtualAuthenticator":
-      GeckoDriver.prototype.removeVirtualAuthenticator,
-    "WebAuthn:SetUserVerified": GeckoDriver.prototype.setUserVerified,
+      GeckoDriver.prototype.webAuthn_removeVirtualAuthenticator,
+    "WebAuthn:SetUserVerified": GeckoDriver.prototype.webAuthn_setUserVerified,
   };
 }

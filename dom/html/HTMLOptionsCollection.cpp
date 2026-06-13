@@ -10,14 +10,44 @@
 
 namespace mozilla::dom {
 
-HTMLOptionsCollection::HTMLOptionsCollection(HTMLSelectElement* aSelect)
-    : mSelect(aSelect) {}
+bool HTMLOptionsCollection::IsValidOption(const HTMLOptionElement& aOption,
+                                          const HTMLSelectElement& aRoot) {
+  auto* parent = aOption.GetParent();
+  if (parent == &aRoot) {
+    return true;
+  }
+  return parent->IsHTMLElement(nsGkAtoms::optgroup) &&
+         parent->GetParent() == &aRoot;
+}
+
+static bool MatchOption(Element* aElement, int32_t aNamespaceID, nsAtom* aAtom,
+                        void* aData) {
+  auto* option = HTMLOptionElement::FromNode(aElement);
+  if (!option) {
+    return false;
+  }
+  auto* root = static_cast<HTMLSelectElement*>(aData);
+  return HTMLOptionsCollection::IsValidOption(*option, *root);
+}
+
+HTMLOptionsCollection::HTMLOptionsCollection(HTMLSelectElement* aRoot,
+                                             bool aFromParser)
+    : ContentList(aRoot, MatchOption, nullptr, aRoot,
+                  /* aDeep = */ true, /* aMatchAtom = */ nullptr,
+                  /* aMatchNameSpaceId = */ kNameSpaceID_None,
+                  /* aFuncMayDependOnAttr = */ false,
+                  /* aLiveList = */ true, aFromParser) {}
+
+HTMLSelectElement* HTMLOptionsCollection::Select() const {
+  return static_cast<HTMLSelectElement*>(mRootNode);
+}
 
 nsresult HTMLOptionsCollection::GetOptionIndex(Element* aOption,
                                                int32_t aStartIndex,
                                                bool aForward, int32_t* aIndex) {
-  // NOTE: aIndex shouldn't be set if the returned value isn't NS_OK.
+  BringSelfUpToDate(true);
 
+  // NOTE: aIndex shouldn't be set if the returned value isn't NS_OK.
   int32_t index;
 
   // Make the common case fast
@@ -43,30 +73,13 @@ nsresult HTMLOptionsCollection::GetOptionIndex(Element* aOption,
 
   return NS_ERROR_FAILURE;
 }
-
-NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(HTMLOptionsCollection, mElements, mSelect)
-
-// nsISupports
-
-// QueryInterface implementation for HTMLOptionsCollection
-NS_INTERFACE_TABLE_HEAD(HTMLOptionsCollection)
-  NS_WRAPPERCACHE_INTERFACE_TABLE_ENTRY
-  NS_INTERFACE_TABLE(HTMLOptionsCollection, nsIHTMLCollection)
-  NS_INTERFACE_TABLE_TO_MAP_SEGUE_CYCLE_COLLECTION(HTMLOptionsCollection)
-NS_INTERFACE_MAP_END
-
-NS_IMPL_CYCLE_COLLECTING_ADDREF(HTMLOptionsCollection)
-NS_IMPL_CYCLE_COLLECTING_RELEASE(HTMLOptionsCollection)
-
 JSObject* HTMLOptionsCollection::WrapObject(JSContext* aCx,
                                             JS::Handle<JSObject*> aGivenProto) {
   return HTMLOptionsCollection_Binding::Wrap(aCx, this, aGivenProto);
 }
 
-uint32_t HTMLOptionsCollection::Length() { return mElements.Length(); }
-
 void HTMLOptionsCollection::SetLength(uint32_t aLength, ErrorResult& aError) {
-  mSelect->SetLength(aLength, aError);
+  Select()->SetLength(aLength, aError);
 }
 
 void HTMLOptionsCollection::IndexedSetter(uint32_t aIndex,
@@ -75,14 +88,14 @@ void HTMLOptionsCollection::IndexedSetter(uint32_t aIndex,
   // if the new option is null, just remove this option.  Note that it's safe
   // to pass a too-large aIndex in here.
   if (!aOption) {
-    mSelect->Remove(aIndex);
+    Select()->Remove(aIndex);
 
     // We're done.
     return;
   }
 
   // Now we're going to be setting an option in our collection
-  if (aIndex > mElements.Length()) {
+  if (aIndex > Length()) {
     // Fill our array with blank options up to (but not including, since we're
     // about to change it) aIndex, for compat with other browsers.
     SetLength(aIndex, aError);
@@ -94,7 +107,7 @@ void HTMLOptionsCollection::IndexedSetter(uint32_t aIndex,
   NS_ASSERTION(aIndex <= mElements.Length(), "SetLength lied");
 
   if (aIndex == mElements.Length()) {
-    mSelect->AppendChild(*aOption, aError);
+    Select()->AppendChild(*aOption, aError);
     return;
   }
 
@@ -115,81 +128,19 @@ void HTMLOptionsCollection::IndexedSetter(uint32_t aIndex,
 }
 
 int32_t HTMLOptionsCollection::SelectedIndex() {
-  return mSelect->SelectedIndex();
+  return Select()->SelectedIndex();
 }
 
 void HTMLOptionsCollection::SetSelectedIndex(int32_t aSelectedIndex) {
-  mSelect->SetSelectedIndex(aSelectedIndex);
+  Select()->SetSelectedIndex(aSelectedIndex);
 }
 
-Element* HTMLOptionsCollection::GetElementAt(uint32_t aIndex) {
-  return ItemAsOption(aIndex);
+void HTMLOptionsCollection::Add(
+    const HTMLOptionElementOrHTMLOptGroupElement& aElement,
+    const Nullable<HTMLElementOrLong>& aBefore, ErrorResult& aError) {
+  Select()->Add(aElement, aBefore, aError);
 }
 
-HTMLOptionElement* HTMLOptionsCollection::NamedGetter(const nsAString& aName,
-                                                      bool& aFound) {
-  if (aName.IsEmpty()) {
-    aFound = false;
-    return nullptr;
-  }
-  uint32_t count = mElements.Length();
-  for (uint32_t i = 0; i < count; i++) {
-    HTMLOptionElement* content = mElements.ElementAt(i);
-    if (content && (content->AttrValueIs(kNameSpaceID_None, nsGkAtoms::name,
-                                         aName, eCaseMatters) ||
-                    content->AttrValueIs(kNameSpaceID_None, nsGkAtoms::id,
-                                         aName, eCaseMatters))) {
-      aFound = true;
-      return content;
-    }
-  }
-
-  aFound = false;
-  return nullptr;
-}
-
-nsINode* HTMLOptionsCollection::GetParentObject() { return mSelect; }
-
-DocGroup* HTMLOptionsCollection::GetDocGroup() const {
-  return mSelect ? mSelect->GetDocGroup() : nullptr;
-}
-
-void HTMLOptionsCollection::GetSupportedNames(nsTArray<nsString>& aNames) {
-  AutoTArray<nsAtom*, 8> atoms;
-  for (uint32_t i = 0; i < mElements.Length(); ++i) {
-    HTMLOptionElement* content = mElements.ElementAt(i);
-    if (content) {
-      // Note: HasName means the names is exposed on the document,
-      // which is false for options, so we don't check it here.
-      const nsAttrValue* val = content->GetParsedAttr(nsGkAtoms::name);
-      if (val && val->Type() == nsAttrValue::eAtom) {
-        nsAtom* name = val->GetAtomValue();
-        if (!atoms.Contains(name)) {
-          atoms.AppendElement(name);
-        }
-      }
-      if (content->HasID()) {
-        nsAtom* id = content->GetID();
-        if (!atoms.Contains(id)) {
-          atoms.AppendElement(id);
-        }
-      }
-    }
-  }
-
-  uint32_t atomsLen = atoms.Length();
-  nsString* names = aNames.AppendElements(atomsLen);
-  for (uint32_t i = 0; i < atomsLen; ++i) {
-    atoms[i]->ToString(names[i]);
-  }
-}
-
-void HTMLOptionsCollection::Add(const HTMLOptionOrOptGroupElement& aElement,
-                                const Nullable<HTMLElementOrLong>& aBefore,
-                                ErrorResult& aError) {
-  mSelect->Add(aElement, aBefore, aError);
-}
-
-void HTMLOptionsCollection::Remove(int32_t aIndex) { mSelect->Remove(aIndex); }
+void HTMLOptionsCollection::Remove(int32_t aIndex) { Select()->Remove(aIndex); }
 
 }  // namespace mozilla::dom

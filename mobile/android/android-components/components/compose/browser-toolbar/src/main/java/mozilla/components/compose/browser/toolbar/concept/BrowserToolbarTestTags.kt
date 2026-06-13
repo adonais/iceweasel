@@ -58,4 +58,9 @@ object BrowserToolbarTestTags {
      * Test tag for the horizontal divider.
      */
     const val ADDRESSBAR_EDIT_MODE_HORIZONTAL_DIVIDER = "ADDRESSBAR_EDIT_MODE_HORIZONTAL_DIVIDER"
+
+    /**
+     * Test tag for the navigation bar.
+     */
+    const val NAVIGATION_BAR = "navigation_bar"
 }

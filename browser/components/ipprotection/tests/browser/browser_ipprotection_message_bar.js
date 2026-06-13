@@ -694,8 +694,7 @@ add_task(async function test_remove_warning_after_sign_out() {
   const maxBytes = BANDWIDTH.MAX_IN_GB * BANDWIDTH.BYTES_IN_GB;
 
   setupService({
-    isSignedIn: true,
-    isEnrolledAndEntitled: true,
+    isReady: true,
   });
 
   IPProtectionService.updateState();
@@ -731,7 +730,7 @@ add_task(async function test_remove_warning_after_sign_out() {
     () => !content.shadowRoot.querySelector("ipprotection-message-bar")
   );
 
-  setupService({ isSignedIn: false });
+  setupService({ isReady: false });
   IPProtectionService.updateState();
 
   await content.updateComplete;
@@ -969,7 +968,7 @@ add_task(async function test_panel_dismissed_state_persists_through_sign_out() {
     set: [["browser.ipProtection.bandwidth.enabled", true]],
   });
 
-  setupService({ isSignedIn: true, isEnrolledAndEntitled: true });
+  setupService({ isReady: true });
   IPProtectionService.updateState();
 
   const maxBytes = BANDWIDTH.MAX_IN_GB * BANDWIDTH.BYTES_IN_GB;
@@ -985,11 +984,11 @@ add_task(async function test_panel_dismissed_state_persists_through_sign_out() {
 
   await dismissPanelWarning(content);
 
-  setupService({ isSignedIn: false });
+  setupService({ isReady: false });
   IPProtectionService.updateState();
   await content.updateComplete;
 
-  setupService({ isSignedIn: true, isEnrolledAndEntitled: true });
+  setupService({ isReady: true });
   IPProtectionService.updateState();
 
   dispatchUsageAtThreshold(maxBytes, BANDWIDTH.SECOND_THRESHOLD);

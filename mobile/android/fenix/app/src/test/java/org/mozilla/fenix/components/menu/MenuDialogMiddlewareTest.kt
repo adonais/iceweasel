@@ -36,7 +36,6 @@ import mozilla.components.support.test.middleware.CaptureActionsMiddleware
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -60,6 +59,7 @@ import org.mozilla.fenix.summarization.eligibility.SummarizationEligibilityCheck
 import org.mozilla.fenix.utils.LastSavedFolderCache
 import org.mozilla.fenix.utils.Settings
 import org.robolectric.RobolectricTestRunner
+import kotlin.test.assertNotNull
 
 @RunWith(RobolectricTestRunner::class)
 class MenuDialogMiddlewareTest {
@@ -71,7 +71,7 @@ class MenuDialogMiddlewareTest {
         spyk(AddBookmarksUseCase(storage = bookmarksStorage))
 
     private val addonManager: AddonManager = mockk(relaxed = true)
-    private val onDeleteAndQuit: () -> Unit = mockk()
+    private val onDeleteAndQuit: () -> Unit = { error("onDeleteAndQuit should not be invoked") }
 
     private lateinit var alertDialogBuilder: MaterialAlertDialogBuilder
     private lateinit var pinnedSiteStorage: PinnedSiteStorage
@@ -500,7 +500,7 @@ class MenuDialogMiddlewareTest {
         store.dispatch(MenuAction.AddShortcut)
         testScheduler.advanceUntilIdle()
 
-        verify { addPinnedSiteUseCase.invoke(url = url, title = title) }
+        coVerify { addPinnedSiteUseCase.invoke(url = url, title = title) }
         verify {
             appStore.dispatch(
                 AppAction.ShortcutAction.ShortcutAdded,
@@ -551,7 +551,7 @@ class MenuDialogMiddlewareTest {
         store.dispatch(MenuAction.AddShortcut)
         testScheduler.advanceUntilIdle()
 
-        verify(exactly = 0) { addPinnedSiteUseCase.invoke(url = url, title = title) }
+        coVerify(exactly = 0) { addPinnedSiteUseCase.invoke(url = url, title = title) }
         verify(exactly = 0) {
             appStore.dispatch(
                 AppAction.ShortcutAction.ShortcutAdded,
@@ -593,7 +593,7 @@ class MenuDialogMiddlewareTest {
         store.dispatch(MenuAction.RemoveShortcut)
         testScheduler.advanceUntilIdle()
 
-        verify(exactly = 0) { removePinnedSiteUseCase.invoke(topSite = topSite) }
+        coVerify(exactly = 0) { removePinnedSiteUseCase.invoke(topSite = topSite) }
         assertFalse(dismissedWasCalled)
     }
 
@@ -632,7 +632,7 @@ class MenuDialogMiddlewareTest {
         store.dispatch(MenuAction.RemoveShortcut)
         testScheduler.advanceUntilIdle()
 
-        verify { removePinnedSiteUseCase.invoke(topSite = topSite) }
+        coVerify { removePinnedSiteUseCase.invoke(topSite = topSite) }
         assertTrue(dismissedWasCalled)
     }
 
@@ -683,7 +683,7 @@ class MenuDialogMiddlewareTest {
         store.dispatch(MenuAction.AddShortcut)
         testScheduler.advanceUntilIdle()
 
-        verify(exactly = 0) { addPinnedSiteUseCase.invoke(url = url, title = title) }
+        coVerify(exactly = 0) { addPinnedSiteUseCase.invoke(url = url, title = title) }
         verify(exactly = 0) {
             appStore.dispatch(
                 AppAction.ShortcutAction.ShortcutAdded,

@@ -316,11 +316,23 @@ void MacroAssembler::abs32(Register src, Register dest) {
 }
 
 void MacroAssembler::absFloat32(FloatRegister src, FloatRegister dest) {
+  if (src != dest) {
+    if (!HasAVX()) {
+      moveFloat32(src, dest);
+      src = dest;
+    }
+  }
   float clearSignMask = mozilla::BitwiseCast<float>(INT32_MAX);
   vandpsSimd128(SimdConstant::SplatX4(clearSignMask), src, dest);
 }
 
 void MacroAssembler::absDouble(FloatRegister src, FloatRegister dest) {
+  if (src != dest) {
+    if (!HasAVX()) {
+      moveDouble(src, dest);
+      src = dest;
+    }
+  }
   double clearSignMask = mozilla::BitwiseCast<double>(INT64_MAX);
   vandpdSimd128(SimdConstant::SplatX2(clearSignMask), src, dest);
 }

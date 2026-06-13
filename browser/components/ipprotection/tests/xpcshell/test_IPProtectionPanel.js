@@ -16,7 +16,6 @@ const { IPProtectionServerlist } = ChromeUtils.importESModule(
 class FakeIPProtectionPanelElement {
   constructor() {
     this.state = {
-      isSignedOut: true,
       isProtectionEnabled: false,
     };
     this.isConnected = false;
@@ -217,16 +216,10 @@ add_task(async function test_updateComponentState() {
  */
 add_task(async function test_IPProtectionPanel_signedIn() {
   let sandbox = sinon.createSandbox();
-  sandbox.stub(IPPSignInWatcher, "isSignedIn").get(() => true);
+  sandbox.stub(IPPFxaAuthProvider, "isReady").get(() => true);
   sandbox
-    .stub(IPPEnrollAndEntitleManager, "isEnrolledAndEntitled")
-    .get(() => true);
-  sandbox.stub(IPPEnrollAndEntitleManager, "isLinkedToGuardian").resolves(true);
-  sandbox.stub(IPProtectionService.guardian, "fetchUserInfo").resolves({
-    status: 200,
-    error: null,
-    entitlement: createTestEntitlement({ subscribed: true }),
-  });
+    .stub(IPPFxaAuthProvider, "getEntitlement")
+    .resolves({ entitlement: createTestEntitlement() });
 
   let ipProtectionPanel = new IPProtectionPanel();
   let fakeElement = new FakeIPProtectionPanelElement();
@@ -244,15 +237,15 @@ add_task(async function test_IPProtectionPanel_signedIn() {
   await signedInEventPromise;
 
   Assert.equal(
-    ipProtectionPanel.state.isSignedOut,
+    ipProtectionPanel.state.unauthenticated,
     false,
-    "isSignedOut should be false in the IPProtectionPanel state"
+    "unauthenticated should be false in the IPProtectionPanel state"
   );
 
   Assert.equal(
-    fakeElement.state.isSignedOut,
+    fakeElement.state.unauthenticated,
     false,
-    "isSignedOut should be false in the fake elements state"
+    "unauthenticated should be false in the fake elements state"
   );
 
   sandbox.restore();
@@ -263,7 +256,7 @@ add_task(async function test_IPProtectionPanel_signedIn() {
  */
 add_task(async function test_IPProtectionPanel_signedOut() {
   let sandbox = sinon.createSandbox();
-  sandbox.stub(IPPSignInWatcher, "isSignedIn").get(() => false);
+  sandbox.stub(IPPFxaAuthProvider, "isReady").get(() => false);
 
   let ipProtectionPanel = new IPProtectionPanel();
   let fakeElement = new FakeIPProtectionPanelElement();
@@ -282,15 +275,15 @@ add_task(async function test_IPProtectionPanel_signedOut() {
   await signedOutEventPromise;
 
   Assert.equal(
-    ipProtectionPanel.state.isSignedOut,
+    ipProtectionPanel.state.unauthenticated,
     true,
-    "isSignedOut should be true in the IPProtectionPanel state"
+    "unauthenticated should be true in the IPProtectionPanel state"
   );
 
   Assert.equal(
-    fakeElement.state.isSignedOut,
+    fakeElement.state.unauthenticated,
     true,
-    "isSignedOut should be true in the fake elements state"
+    "unauthenticated should be true in the fake elements state"
   );
 
   sandbox.restore();
@@ -307,17 +300,12 @@ add_task(async function test_IPProtectionPanel_started_stopped() {
   fakeElement.isConnected = true;
 
   let sandbox = sinon.createSandbox();
-  sandbox.stub(IPPSignInWatcher, "isSignedIn").get(() => true);
+  sandbox.stub(IPPFxaAuthProvider, "isReady").get(() => true);
+  sandbox.stub(IPPFxaAuthProvider, "aboutToStart").resolves(null);
   sandbox
-    .stub(IPPEnrollAndEntitleManager, "isEnrolledAndEntitled")
-    .get(() => true);
-  sandbox.stub(IPPEnrollAndEntitleManager, "isLinkedToGuardian").resolves(true);
-  sandbox.stub(IPProtectionService.guardian, "fetchUserInfo").resolves({
-    status: 200,
-    error: null,
-    entitlement: createTestEntitlement({ subscribed: true }),
-  });
-  sandbox.stub(IPProtectionService.guardian, "fetchProxyPass").resolves({
+    .stub(IPPFxaAuthProvider, "getEntitlement")
+    .resolves({ entitlement: createTestEntitlement() });
+  sandbox.stub(IPPFxaAuthProvider, "fetchProxyPass").resolves({
     status: 200,
     error: undefined,
     pass: new ProxyPass(createProxyPassToken()),
@@ -327,9 +315,6 @@ add_task(async function test_IPProtectionPanel_started_stopped() {
       "2026-02-01T00:00:00.000Z"
     ),
   });
-  sandbox
-    .stub(IPProtectionService.guardian, "enrollWithFxa")
-    .resolves({ ok: true });
 
   IPProtectionService.updateState();
 
@@ -437,6 +422,8 @@ add_task(async function test_IPProtectionPanel_usage_zero_remaining() {
   let sandbox = sinon.createSandbox();
   setupStubs(sandbox);
 
+  Services.prefs.setBoolPref("browser.ipProtection.bandwidth.enabled", true);
+
   let ipProtectionPanel = new IPProtectionPanel();
   let fakeElement = new FakeIPProtectionPanelElement();
   ipProtectionPanel.components.add(fakeElement);
@@ -472,6 +459,7 @@ add_task(async function test_IPProtectionPanel_usage_zero_remaining() {
 
   ipProtectionPanel.uninit();
   Services.prefs.clearUserPref("browser.ipProtection.bandwidthThreshold");
+  Services.prefs.clearUserPref("browser.ipProtection.bandwidth.enabled");
   sandbox.restore();
 });
 
@@ -570,6 +558,8 @@ add_task(async function test_bandwidth_used_threshold_events() {
   Services.fog.initializeFOG();
   Services.fog.testResetFOG();
 
+  Services.prefs.setBoolPref("browser.ipProtection.bandwidth.enabled", true);
+
   let ipProtectionPanel = new IPProtectionPanel();
 
   // 40% used (60% remaining) - no thresholds crossed
@@ -600,6 +590,7 @@ add_task(async function test_bandwidth_used_threshold_events() {
 
   ipProtectionPanel.uninit();
   Services.prefs.clearUserPref("browser.ipProtection.bandwidthThreshold");
+  Services.prefs.clearUserPref("browser.ipProtection.bandwidth.enabled");
   Services.fog.testResetFOG();
 });
 
@@ -608,6 +599,8 @@ add_task(async function test_bandwidth_used_threshold_events() {
  */
 add_task(async function test_bandwidth_thresholds_not_repeated_same_period() {
   Services.fog.testResetFOG();
+
+  Services.prefs.setBoolPref("browser.ipProtection.bandwidth.enabled", true);
 
   let ipProtectionPanel = new IPProtectionPanel();
 
@@ -627,6 +620,7 @@ add_task(async function test_bandwidth_thresholds_not_repeated_same_period() {
 
   ipProtectionPanel.uninit();
   Services.prefs.clearUserPref("browser.ipProtection.bandwidthThreshold");
+  Services.prefs.clearUserPref("browser.ipProtection.bandwidth.enabled");
   Services.fog.testResetFOG();
 });
 
@@ -635,6 +629,8 @@ add_task(async function test_bandwidth_thresholds_not_repeated_same_period() {
  */
 add_task(async function test_bandwidth_thresholds_reset_on_new_period() {
   Services.fog.testResetFOG();
+
+  Services.prefs.setBoolPref("browser.ipProtection.bandwidth.enabled", true);
 
   let ipProtectionPanel = new IPProtectionPanel();
 
@@ -656,5 +652,60 @@ add_task(async function test_bandwidth_thresholds_reset_on_new_period() {
 
   ipProtectionPanel.uninit();
   Services.prefs.clearUserPref("browser.ipProtection.bandwidthThreshold");
+  Services.prefs.clearUserPref("browser.ipProtection.bandwidth.enabled");
+  Services.fog.testResetFOG();
+});
+
+/**
+ * Tests that an unlimited UsageChanged event clears the bandwidth tracking
+ * prefs and resets the bandwidthUsage state.
+ */
+add_task(async function test_bandwidth_unlimited_usage_clears_tracking() {
+  Services.fog.initializeFOG();
+  Services.fog.testResetFOG();
+
+  Services.prefs.setBoolPref("browser.ipProtection.bandwidth.enabled", true);
+  Services.prefs.setIntPref("browser.ipProtection.bandwidthThreshold", 75);
+  Services.prefs.setStringPref(
+    "browser.ipProtection.bandwidthResetDate",
+    "3026-03-01T00:00:00.000Z"
+  );
+
+  let ipProtectionPanel = new IPProtectionPanel();
+  ipProtectionPanel.setState({
+    bandwidthUsage: { max: 1000000, remaining: 200000, reset: null },
+  });
+
+  IPPProxyManager.dispatchEvent(
+    new CustomEvent("IPPProxyManager:UsageChanged", {
+      bubbles: true,
+      composed: true,
+      detail: { usage: new ProxyUsage(null, null, null, true) },
+    })
+  );
+
+  Assert.strictEqual(
+    ipProtectionPanel.state.bandwidthUsage,
+    null,
+    "bandwidthUsage state should be reset for unlimited usage"
+  );
+  Assert.ok(
+    !Services.prefs.prefHasUserValue("browser.ipProtection.bandwidthThreshold"),
+    "bandwidthThreshold pref should be cleared for unlimited usage"
+  );
+  Assert.ok(
+    !Services.prefs.prefHasUserValue("browser.ipProtection.bandwidthResetDate"),
+    "bandwidthResetDate pref should be cleared for unlimited usage"
+  );
+  Assert.equal(
+    Glean.ipprotection.bandwidthUsedThreshold.testGetValue(),
+    null,
+    "No threshold telemetry should be recorded for unlimited usage"
+  );
+
+  ipProtectionPanel.uninit();
+  Services.prefs.clearUserPref("browser.ipProtection.bandwidth.enabled");
+  Services.prefs.clearUserPref("browser.ipProtection.bandwidthThreshold");
+  Services.prefs.clearUserPref("browser.ipProtection.bandwidthResetDate");
   Services.fog.testResetFOG();
 });

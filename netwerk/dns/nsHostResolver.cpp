@@ -1513,42 +1513,45 @@ nsHostResolver::LookupStatus nsHostResolver::CompleteLookupLocked(
   // previous lookup result expired and we're reresolving it or we get
   // a late second TRR response.
   if (!mShutdown) {
-    MutexAutoLock lock(addrRec->addr_info_lock);
+    // Use a raw pointer so MOZ_REQUIRES(rec->addr_info_lock) on
+    // PrepareRecordExpirationAddrRecord can be verified by the analyzer.
+    auto* rawPtr = addrRec.get();
+    MutexAutoLock lock(rawPtr->addr_info_lock);
     RefPtr<AddrInfo> old_addr_info;
-    bool isDifferentRRSet = different_rrset(addrRec->addr_info, newRRSet);
+    bool isDifferentRRSet = different_rrset(rawPtr->addr_info, newRRSet);
     if (isDifferentRRSet) {
-      LOG(("nsHostResolver record %p new gencnt\n", addrRec.get()));
-      old_addr_info = addrRec->addr_info;
-      addrRec->addr_info = std::move(newRRSet);
-      addrRec->addr_info_gencnt++;
-      addrRec->mLastUpdate = TimeStamp::NowLoRes();
+      LOG(("nsHostResolver record %p new gencnt\n", rawPtr));
+      old_addr_info = rawPtr->addr_info;
+      rawPtr->addr_info = std::move(newRRSet);
+      rawPtr->addr_info_gencnt++;
+      rawPtr->mLastUpdate = TimeStamp::NowLoRes();
     } else {
-      if (addrRec->addr_info && newRRSet) {
-        auto builder = addrRec->addr_info->Build();
+      if (rawPtr->addr_info && newRRSet) {
+        auto builder = rawPtr->addr_info->Build();
         builder.SetTTL(newRRSet->TTL());
         // Update trr timings
         builder.SetTrrFetchDuration(newRRSet->GetTrrFetchDuration());
         builder.SetTrrFetchDurationNetworkOnly(
             newRRSet->GetTrrFetchDurationNetworkOnly());
 
-        addrRec->addr_info = builder.Finish();
-        addrRec->addr_info_gencnt++;
+        rawPtr->addr_info = builder.Finish();
+        rawPtr->addr_info_gencnt++;
       }
       old_addr_info = std::move(newRRSet);
     }
-    addrRec->negative = !addrRec->addr_info;
+    rawPtr->negative = !rawPtr->addr_info;
 
-    if (addrRec->addr_info && StaticPrefs::network_dns_preferIPv6() &&
-        addrRec->addr_info->Addresses().Length() > 1 &&
-        addrRec->addr_info->Addresses()[0].IsIPAddrV4()) {
+    if (rawPtr->addr_info && StaticPrefs::network_dns_preferIPv6() &&
+        rawPtr->addr_info->Addresses().Length() > 1 &&
+        rawPtr->addr_info->Addresses()[0].IsIPAddrV4()) {
       // Sort IPv6 addresses first.
-      auto builder = addrRec->addr_info->Build();
+      auto builder = rawPtr->addr_info->Build();
       builder.SortAddresses(NetAddrIPv6FirstComparator());
-      addrRec->addr_info = builder.Finish();
-      addrRec->addr_info_gencnt++;
+      rawPtr->addr_info = builder.Finish();
+      rawPtr->addr_info_gencnt++;
     }
 
-    PrepareRecordExpirationAddrRecord(addrRec.get());
+    PrepareRecordExpirationAddrRecord(rawPtr);
   }
 
   if (LOG_ENABLED()) {

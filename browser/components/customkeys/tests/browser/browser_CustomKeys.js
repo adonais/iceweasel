@@ -13,6 +13,12 @@ add_setup(async function () {
   // there is a race condition where they sometimes won't be handled again in
   // the parent process afterward.
   const tab = await BrowserTestUtils.openNewForegroundTab(gBrowser);
+  // This test exercises the legacy bookmarks sidebar panel; opt out of the
+  // updated bookmarks panel so the expected document/element ids are present.
+  // TODO(Bug 2039395): adapt this test to the new bookmarks sidebar panel and remove this sidebar.updateBookmarks.enabled pushPrefEnv)
+  await SpecialPowers.pushPrefEnv({
+    set: [["sidebar.updatedBookmarks.enabled", false]],
+  });
   registerCleanupFunction(function () {
     CustomKeys.resetAll();
     BrowserTestUtils.removeTab(tab);

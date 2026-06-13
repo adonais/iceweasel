@@ -25,7 +25,7 @@ class RevocableStore {
     RevocableStore* store() const { return store_; }
 
    protected:
-    ~StoreRef() {}
+    ~StoreRef() = default;
 
    private:
     RevocableStore* store_;

@@ -236,6 +236,11 @@ class JitActivation : public Activation {
   void finishWasmTrap();
   bool isWasmTrapping() const { return !!wasmTrapData_; }
   const wasm::TrapData& wasmTrapData() { return *wasmTrapData_; }
+  void setWasmTrapFaultInfo(uint32_t memoryIndex, uint64_t offset) {
+    MOZ_ASSERT(isWasmTrapping());
+    wasmTrapData_->faultInfo =
+        mozilla::Some(wasm::TrapData::FaultInfo{memoryIndex, offset});
+  }
 };
 
 // A filtering of the ActivationIterator to only stop at JitActivations.

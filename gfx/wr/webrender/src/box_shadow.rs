@@ -4,15 +4,13 @@
 use api::{BorderRadius, BoxShadowClipMode, ClipMode, ColorF, ColorU, PropertyBinding};
 use api::units::*;
 use crate::border::{BorderRadiusAu};
-use crate::clip::{ClipItemKey, ClipItemKeyKind, ClipItemEntry, ClipNodeId};
+use crate::clip::{ClipItemEntry, ClipItemKey, ClipItemKeyKind, ClipNodeId};
 use crate::intern::{Handle as InternHandle, InternDebug, Internable};
 use crate::prim_store::{InternablePrimitive, PrimKey, PrimTemplate, PrimTemplateCommonData};
-use crate::prim_store::{PrimitiveInstanceKind, PrimitiveStore, RectKey};
+use crate::prim_store::{PrimitiveKind, PrimitiveStore, VectorKey};
 use crate::prim_store::rectangle::RectanglePrim;
 use crate::scene_building::{SceneBuilder, IsVisible};
 use crate::spatial_tree::SpatialNodeIndex;
-use crate::gpu_types::BoxShadowStretchMode;
-use crate::render_task_graph::RenderTaskId;
 use crate::internal_types::LayoutPrimitiveInfo;
 
 pub type BoxShadowKey = PrimKey<BoxShadow>;
@@ -38,13 +36,14 @@ pub struct BoxShadow {
     pub color: ColorU,
     pub blur_radius: Au,
     pub clip_mode: BoxShadowClipMode,
-    pub inner_shadow_rect: RectKey,
-    pub outer_shadow_rect: RectKey,
     pub shadow_radius: BorderRadiusAu,
-    /// The element rect (prim_info.rect) in local space. Used to clip the
-    /// element analytically in the shader (clip-out for outset, clip-in for inset).
-    pub element_rect: RectKey,
     pub element_radius: BorderRadiusAu,
+    /// `box-shadow` offset of the shadow relative to the element, in
+    /// local space.
+    pub box_offset: VectorKey,
+    /// Signed spread radius. Positive for Outset, negative for Inset
+    /// (matches the convention in `add_box_shadow`).
+    pub spread_amount: Au,
 }
 
 impl IsVisible for BoxShadow {
@@ -67,10 +66,9 @@ impl InternablePrimitive for BoxShadow {
         _key: BoxShadowKey,
         data_handle: BoxShadowDataHandle,
         _prim_store: &mut PrimitiveStore,
-    ) -> PrimitiveInstanceKind {
-        PrimitiveInstanceKind::BoxShadow {
+    ) -> PrimitiveKind {
+        PrimitiveKind::BoxShadow {
             data_handle,
-            render_task: None,
         }
     }
 }
@@ -82,11 +80,10 @@ pub struct BoxShadowData {
     pub color: ColorF,
     pub blur_radius: f32,
     pub clip_mode: BoxShadowClipMode,
-    pub inner_shadow_rect: LayoutRect,
-    pub outer_shadow_rect: LayoutRect,
     pub shadow_radius: BorderRadius,
-    pub element_rect: LayoutRect,
     pub element_radius: BorderRadius,
+    pub box_offset: LayoutVector2D,
+    pub spread_amount: f32,
 }
 
 impl From<BoxShadow> for BoxShadowData {
@@ -95,11 +92,10 @@ impl From<BoxShadow> for BoxShadowData {
             color: shadow.color.into(),
             blur_radius: shadow.blur_radius.to_f32_px(),
             clip_mode: shadow.clip_mode,
-            inner_shadow_rect: shadow.inner_shadow_rect.into(),
-            outer_shadow_rect: shadow.outer_shadow_rect.into(),
             shadow_radius: shadow.shadow_radius.into(),
-            element_rect: shadow.element_rect.into(),
             element_radius: shadow.element_radius.into(),
+            box_offset: shadow.box_offset.into(),
+            spread_amount: shadow.spread_amount.to_f32_px(),
         }
     }
 }
@@ -120,38 +116,6 @@ impl From<BoxShadowKey> for BoxShadowTemplate {
             kind: shadow.kind.into(),
         }
     }
-}
-
-#[derive(Debug, Clone, MallocSizeOf)]
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-pub struct BoxShadowClipSource {
-    // Parameters that define the shadow and are constant.
-    pub shadow_radius: BorderRadius,
-    pub blur_radius: f32,
-    pub clip_mode: BoxShadowClipMode,
-    pub stretch_mode_x: BoxShadowStretchMode,
-    pub stretch_mode_y: BoxShadowStretchMode,
-
-    // The current cache key (in device-pixels), and handles
-    // to the cached clip region and blurred texture.
-    pub cache_key: Option<(DeviceIntSize, BoxShadowCacheKey)>,
-    pub render_task: Option<RenderTaskId>,
-
-    // Local-space size of the required render task size.
-    pub shadow_rect_alloc_size: LayoutSize,
-
-    // Local-space size of the required render task size without any downscaling
-    // applied. This is needed to stretch the shadow properly.
-    pub original_alloc_size: LayoutSize,
-
-    // The minimal shadow rect for the parameters above,
-    // used when drawing the shadow rect to be blurred.
-    pub minimal_shadow_rect: LayoutRect,
-
-    // Local space rect for the shadow to be drawn or
-    // stretched in the shadow primitive.
-    pub prim_shadow_rect: LayoutRect,
 }
 
 // The blur shader samples BLUR_SAMPLE_SCALE * blur_radius surrounding texels.
@@ -201,9 +165,9 @@ impl<'a> SceneBuilder<'a> {
         }
 
         // Inset shadows get smaller as spread radius increases.
-        let (spread_amount, prim_clip_mode) = match clip_mode {
-            BoxShadowClipMode::Outset => (spread_radius, ClipMode::ClipOut),
-            BoxShadowClipMode::Inset => (-spread_radius, ClipMode::Clip),
+        let spread_amount = match clip_mode {
+            BoxShadowClipMode::Outset => spread_radius,
+            BoxShadowClipMode::Inset => -spread_radius,
         };
 
         // Ensure the blur radius is somewhat sensible.
@@ -235,13 +199,12 @@ impl<'a> SceneBuilder<'a> {
                     clips.push(ClipItemEntry {
                         key: ClipItemKey {
                             kind: ClipItemKeyKind::rounded_rect(
-                                prim_info.rect.size(),
                                 border_radius,
                                 ClipMode::ClipOut,
                             ),
                         },
                         spatial_node_index,
-                        clip_rect_origin: prim_info.rect.min,
+                        clip_rect: prim_info.rect,
                     });
 
                     (shadow_rect, shadow_radius)
@@ -251,13 +214,12 @@ impl<'a> SceneBuilder<'a> {
                         clips.push(ClipItemEntry {
                             key: ClipItemKey {
                                 kind: ClipItemKeyKind::rounded_rect(
-                                    shadow_rect.size(),
                                     shadow_radius,
                                     ClipMode::ClipOut,
                                 ),
                             },
                             spatial_node_index,
-                            clip_rect_origin: shadow_rect.min,
+                            clip_rect: shadow_rect,
                         });
                     }
 
@@ -268,13 +230,12 @@ impl<'a> SceneBuilder<'a> {
             clips.push(ClipItemEntry {
                 key: ClipItemKey {
                     kind: ClipItemKeyKind::rounded_rect(
-                        final_prim_rect.size(),
                         clip_radius,
                         ClipMode::Clip,
                     ),
                 },
                 spatial_node_index,
-                clip_rect_origin: final_prim_rect.min,
+                clip_rect: final_prim_rect,
             });
 
             self.add_primitive(
@@ -286,8 +247,9 @@ impl<'a> SceneBuilder<'a> {
                     color: PropertyBinding::Value(color.into()),
                 },
             );
-        } else if self.config.use_quad_box_shadow {
-            // New quad path for box-shadows with a valid blur radius.
+        } else {
+            // Box-shadows with a valid blur radius use the quad primitive
+            // path; element clipping is handled analytically in the shader.
             let blur_offset = (BLUR_SAMPLE_SCALE * blur_radius).ceil();
 
             // Get the local rect of where the shadow will be drawn,
@@ -311,11 +273,10 @@ impl<'a> SceneBuilder<'a> {
                             color: color.into(),
                             blur_radius: Au::from_f32_px(blur_radius),
                             clip_mode,
-                            inner_shadow_rect: shadow_rect.into(),
-                            outer_shadow_rect: dest_rect.into(),
                             shadow_radius: shadow_radius.into(),
-                            element_rect: prim_info.rect.into(),
                             element_radius: border_radius.into(),
+                            box_offset: (*box_offset).into(),
+                            spread_amount: Au::from_f32_px(spread_amount),
                         },
                     );
                 }
@@ -339,99 +300,14 @@ impl<'a> SceneBuilder<'a> {
                             color: color.into(),
                             blur_radius: Au::from_f32_px(blur_radius),
                             clip_mode,
-                            inner_shadow_rect: shadow_rect.into(),
-                            outer_shadow_rect: dest_rect.into(),
                             shadow_radius: shadow_radius.into(),
-                            element_rect: prim_info.rect.into(),
                             element_radius: border_radius.into(),
+                            box_offset: (*box_offset).into(),
+                            spread_amount: Au::from_f32_px(spread_amount),
                         },
                     );
                 }
             }
-        } else {
-            self.add_box_shadow_legacy(
-                spatial_node_index, clip_node_id, prim_info,
-                shadow_rect, color, blur_radius, shadow_radius,
-                border_radius, clip_mode, prim_clip_mode,
-            );
         }
-    }
-
-    /// Legacy clip-mask path, used when `use_quad_box_shadow` is not set.
-    /// Renders the blur as a RectanglePrim with a BoxShadow clip item.
-    #[allow(clippy::too_many_arguments)]
-    fn add_box_shadow_legacy(
-        &mut self,
-        spatial_node_index: SpatialNodeIndex,
-        clip_node_id: ClipNodeId,
-        prim_info: &LayoutPrimitiveInfo,
-        shadow_rect: LayoutRect,
-        color: ColorF,
-        blur_radius: f32,
-        shadow_radius: BorderRadius,
-        border_radius: BorderRadius,
-        clip_mode: BoxShadowClipMode,
-        prim_clip_mode: ClipMode,
-    ) {
-        let blur_offset = (BLUR_SAMPLE_SCALE * blur_radius).ceil();
-        let dest_rect = shadow_rect.inflate(blur_offset, blur_offset);
-
-        let mut extra_clips = vec![ClipItemEntry {
-            key: ClipItemKey {
-                kind: ClipItemKeyKind::rounded_rect(
-                    prim_info.rect.size(),
-                    border_radius,
-                    prim_clip_mode,
-                ),
-            },
-            spatial_node_index,
-            clip_rect_origin: prim_info.rect.min,
-        }];
-
-        let shadow_clip_source = ClipItemEntry {
-            key: ClipItemKey {
-                kind: ClipItemKeyKind::box_shadow(
-                    shadow_rect,
-                    shadow_radius,
-                    dest_rect,
-                    blur_radius,
-                    clip_mode,
-                ),
-            },
-            spatial_node_index,
-            clip_rect_origin: shadow_rect.min,
-        };
-
-        let legacy_prim_info = match clip_mode {
-            BoxShadowClipMode::Outset => {
-                if shadow_rect.is_empty() {
-                    return;
-                }
-                extra_clips.push(shadow_clip_source);
-                LayoutPrimitiveInfo::with_clip_rect(dest_rect, prim_info.clip_rect)
-            }
-            BoxShadowClipMode::Inset => {
-                if border_radius.is_zero() && shadow_rect
-                    .inflate(-blur_radius, -blur_radius)
-                    .contains_box(&prim_info.rect)
-                {
-                    return;
-                }
-                if !shadow_rect.is_empty() {
-                    extra_clips.push(shadow_clip_source);
-                }
-                prim_info.clone()
-            }
-        };
-
-        self.add_primitive(
-            spatial_node_index,
-            clip_node_id,
-            &legacy_prim_info,
-            extra_clips,
-            RectanglePrim {
-                color: PropertyBinding::Value(color.into()),
-            },
-        );
     }
 }

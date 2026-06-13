@@ -344,6 +344,8 @@ class nsFrameList {
         : mStart(aList.FirstChild()), mEnd(nullptr) {}
     Slice(nsIFrame* aStart, nsIFrame* aEnd) : mStart(aStart), mEnd(aEnd) {}
 
+    void operator delete(void*) = delete;
+
     iterator begin() const { return iterator(mStart); }
     const_iterator cbegin() const { return begin(); }
     iterator end() const { return iterator(mEnd); }
@@ -413,8 +415,6 @@ class nsFrameList {
   const_reverse_iterator crend() const { return rend(); }
 
  private:
-  void operator delete(void*) = delete;
-
   static const nsFrameList sEmptyList;
 
 #ifdef DEBUG_FRAME_LIST

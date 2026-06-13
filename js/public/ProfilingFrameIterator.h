@@ -66,7 +66,7 @@ class MOZ_NON_PARAM JS_PUBLIC_API ProfilingFrameIterator {
   // profiler uses this to skip native frames between the activation and
   // endStackAddress_.
   void* endStackAddress_ = nullptr;
-  Kind kind_;
+  Kind kind_ = Kind::JSJit;
 
   static const unsigned StorageSpace = 9 * sizeof(void*);
   alignas(void*) unsigned char storage_[StorageSpace];

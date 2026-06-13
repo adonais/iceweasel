@@ -6,12 +6,13 @@
       "matches": ["*://*.pexels.com/photo/*"]
     }
   },
+  "css": {
+    "nudge_thanks_popup_onscreen": "[class*=Modal_overlay][class*=Modal_positionContentCenter]:has([class*=after-open]) { justify-content: unset; }"
+  },
   "interventions": [
     {
       "platforms": ["all"],
-      "content_scripts": {
-        "css": ["bug1947105-pexels.com-nudge-thanks-popup-onscreen.css"]
-      }
+      "css": ["nudge_thanks_popup_onscreen"]
     }
   ]
 }

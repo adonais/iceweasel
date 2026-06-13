@@ -511,6 +511,11 @@ AST_MATCHER(CXXMethodDecl, isNonVirtual) {
   return Decl && !Decl->isVirtual();
 }
 
+AST_MATCHER(CXXMethodDecl, hasMethodDefinition) {
+  const CXXMethodDecl *Decl = Node.getCanonicalDecl();
+  return Decl && Decl->isDefined();
+}
+
 AST_MATCHER(FunctionDecl, isMozMustReturnFromCaller) {
   const FunctionDecl *Decl = Node.getCanonicalDecl();
   return Decl &&

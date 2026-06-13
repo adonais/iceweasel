@@ -22,7 +22,7 @@ class TaskbarProgress final : public nsIGtkTaskbarProgress {
 
   // We track the progress value so we can avoid updating the X window property
   // unnecessarily.
-  unsigned long mCurrentProgress;
+  unsigned long mCurrentProgress = 0;
 
   RefPtr<nsWindow> mPrimaryWindow;
 };

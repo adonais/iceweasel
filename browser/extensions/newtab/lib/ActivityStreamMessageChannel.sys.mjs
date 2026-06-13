@@ -276,7 +276,11 @@ export class ActivityStreamMessageChannel {
 
   setRenderLayers(browser) {
     if (this.isPreloadedBrowser(browser)) {
-      const win = browser.ownerGlobal;
+      /**
+       * @backward-compat { version 152 }
+       * Get rid of the documentGlobal fallback once 152 makes it to release.
+       */
+      const win = browser.documentGlobal || browser.ownerGlobal;
       if (!win || win.closed) {
         return;
       }
@@ -319,7 +323,11 @@ export class ActivityStreamMessageChannel {
 
       const cleanup = () => {
         const b = browserRef.deref();
-        const w = b?.ownerGlobal;
+        /**
+         * @backward-compat { version 152 }
+         * Get rid of the documentGlobal fallback once 152 makes it to release.
+         */
+        const w = b?.documentGlobal || b?.ownerGlobal;
         w?.removeEventListener("sizemodechange", onSizeModeChange);
         w?.removeEventListener("occlusionstatechange", onOcclusionStateChange);
         if (b) {
@@ -327,7 +335,11 @@ export class ActivityStreamMessageChannel {
         }
       };
 
-      const win = browser.ownerGlobal;
+      /**
+       * @backward-compat { version 152 }
+       * Get rid of the documentGlobal fallback once 152 makes it to release.
+       */
+      const win = browser.documentGlobal || browser.ownerGlobal;
       win.addEventListener("sizemodechange", onSizeModeChange);
       win.addEventListener("occlusionstatechange", onOcclusionStateChange);
       win.addEventListener("unload", cleanup, { once: true });
@@ -355,7 +367,11 @@ export class ActivityStreamMessageChannel {
     const listeners = this._renderLayersListeners.get(browser);
     if (listeners) {
       const { onSizeModeChange, onOcclusionStateChange, cleanup } = listeners;
-      const win = browser.ownerGlobal;
+      /**
+       * @backward-compat { version 152 }
+       * Get rid of the documentGlobal fallback once 152 makes it to release.
+       */
+      const win = browser.documentGlobal || browser.ownerGlobal;
 
       if (win && !win.closed) {
         win.removeEventListener("sizemodechange", onSizeModeChange);
@@ -393,6 +409,12 @@ export class ActivityStreamMessageChannel {
     // and should only be used in feeds (not reducers)
     action._target = {
       browser: tabDetails.browser,
+      /**
+       * @backward-compat { version 152 }
+       * Get rid of the documentGlobal fallback once 152 makes it to release.
+       */
+      window:
+        tabDetails.browser.documentGlobal || tabDetails.browser.ownerGlobal,
     };
 
     this.onActionFromContent(action, tabDetails.portID);

@@ -426,6 +426,8 @@ bool BaselineCompiler::finishCompile(JSContext* cx) {
     code->setHasBytecodeMap();
   }
 
+  script->jitScript()->setIonThreshold(handler.baseWarmUpThreshold());
+
   script->jitScript()->setBaselineScript(script, baselineScript.release());
 
   perfSpewer_.saveProfile(cx, script, code);
@@ -1667,7 +1669,13 @@ bool BaselineCompilerCodeGen::emitWarmUpCounterIncrement() {
 
   uint32_t warmUpThreshold = OptimizationInfo::warmUpThresholdForPC(
       script, pc, handler.baseWarmUpThreshold());
-  masm.branch32(Assembler::LessThan, countReg, Imm32(warmUpThreshold), &done);
+  int32_t delta = warmUpThreshold - handler.baseWarmUpThreshold();
+  masm.load32(Address(scriptReg, ICScript::offsetOfIonThreshold()),
+              R1.scratchReg());
+  if (delta != 0) {
+    masm.add32(Imm32(delta), R1.scratchReg());
+  }
+  masm.branch32(Assembler::LessThan, countReg, R1.scratchReg(), &done);
 
   // Don't trigger Warp compilations from trial-inlined scripts.
   Address depthAddr(scriptReg, ICScript::offsetOfDepth());
@@ -2580,9 +2588,11 @@ template <typename Handler>
 bool BaselineCodeGen<Handler>::emitCheckThis(ValueOperand val, bool reinit) {
   Label thisOK;
   if (reinit) {
-    masm.branchTestMagic(Assembler::Equal, val, &thisOK);
+    masm.branchTestMagicValue(Assembler::Equal, val, JS_UNINITIALIZED_LEXICAL,
+                              &thisOK);
   } else {
-    masm.branchTestMagic(Assembler::NotEqual, val, &thisOK);
+    masm.branchTestMagicValue(Assembler::NotEqual, val,
+                              JS_UNINITIALIZED_LEXICAL, &thisOK);
   }
 
   prepareVMCall();
@@ -2620,7 +2630,8 @@ bool BaselineCodeGen<Handler>::emit_CheckReturn() {
   }
   masm.bind(&checkThis);
   masm.branchTestUndefined(Assembler::NotEqual, R1, &returnBad);
-  masm.branchTestMagic(Assembler::NotEqual, R0, &done);
+  masm.branchTestMagicValue(Assembler::NotEqual, R0, JS_UNINITIALIZED_LEXICAL,
+                            &done);
   masm.bind(&returnBad);
 
   prepareVMCall();
@@ -3261,7 +3272,8 @@ static void MarkElementsNonPackedIfHoleValue(MacroAssembler& masm,
                                              Register elements,
                                              ValueOperand val) {
   Label notHole;
-  masm.branchTestMagic(Assembler::NotEqual, val, &notHole);
+  masm.branchTestMagicValue(Assembler::NotEqual, val, JS_ELEMENTS_HOLE,
+                            &notHole);
   {
     Address elementsFlags(elements, ObjectElements::offsetOfFlags());
     masm.or32(Imm32(ObjectElements::NON_PACKED), elementsFlags);
@@ -5844,11 +5856,11 @@ bool BaselineCodeGen<Handler>::emit_MoreIter() {
 }
 
 template <typename Handler>
-bool BaselineCodeGen<Handler>::emitIsMagicValue() {
+bool BaselineCodeGen<Handler>::emitIsMagicValue(JSWhyMagic why) {
   frame.syncStack(0);
 
   Label isMagic, done;
-  masm.branchTestMagic(Assembler::Equal, frame.addressOfStackValue(-1),
+  masm.branchTestMagic(Assembler::Equal, frame.addressOfStackValue(-1), why,
                        &isMagic);
   masm.moveValue(BooleanValue(false), R0);
   masm.jump(&done);
@@ -5863,7 +5875,7 @@ bool BaselineCodeGen<Handler>::emitIsMagicValue() {
 
 template <typename Handler>
 bool BaselineCodeGen<Handler>::emit_IsNoIter() {
-  return emitIsMagicValue();
+  return emitIsMagicValue(JS_NO_ITER_VALUE);
 }
 
 template <typename Handler>
@@ -5915,7 +5927,7 @@ bool BaselineCodeGen<Handler>::emit_OptimizeGetIterator() {
 
 template <typename Handler>
 bool BaselineCodeGen<Handler>::emit_IsGenClosing() {
-  return emitIsMagicValue();
+  return emitIsMagicValue(JS_GENERATOR_CLOSING);
 }
 
 template <typename Handler>

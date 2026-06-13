@@ -228,7 +228,7 @@ ExternalTextureSourceClient::Create(
   // If source is not origin-clean, throw a SecurityError and return.
   // https://www.w3.org/TR/webgpu/#dom-gpudevice-importexternaltexture
   if (!sfeResult.mCORSUsed) {
-    const nsIGlobalObject* const global = aDevice->GetOwnerGlobal();
+    const nsIGlobalObject* const global = aDevice->GetRelevantGlobal();
     nsIPrincipal* const dstPrincipal =
         global ? global->PrincipalOrNull() : nullptr;
     if (!sfeResult.mPrincipal || !dstPrincipal ||

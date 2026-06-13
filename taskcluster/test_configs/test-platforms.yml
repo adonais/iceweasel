@@ -274,7 +274,6 @@ windows11-64-24h2/opt:
             default: build-signing-win64/opt
     test-sets:
         - windows11-24h2-tests
-        - talos-xperf
         - windows-talos
         - browsertime
         - windows-talos-webgl
@@ -287,7 +286,6 @@ windows11-64-24h2-shippable/opt:
             default: build-signing-win64-shippable/opt
     test-sets:
         - windows11-24h2-tests
-        - talos-xperf
         - talos-profiling
         - windows-talos
         - browsertime
@@ -419,6 +417,30 @@ macosx1500-aarch64/opt:
     test-sets:
         - macosx1500-aarch64-tests
 
+macosx1500-aarch64-vms/debug:
+    build-platform: macosx64-aarch64/debug
+    build-signing-label: repackage-macosx64-aarch64/debug
+    test-sets:
+        - macosx1500-aarch64-vms-tests
+
+macosx1500-aarch64-vms/opt:
+    build-platform: macosx64-aarch64/opt
+    build-signing-label: repackage-macosx64-aarch64/opt
+    test-sets:
+        - macosx1500-aarch64-vms-tests
+
+macosx1500-aarch64-vms-shippable/opt:
+    build-platform: macosx64-shippable/opt
+    build-signing-label: repackage-macosx64-shippable/opt
+    test-sets:
+        - macosx1500-aarch64-vms-tests
+
+macosx1500-aarch64-vms-devedition/opt:
+    build-platform: macosx64-aarch64-devedition/opt
+    build-signing-label: repackage-macosx64-devedition/opt
+    test-sets:
+        - macosx1500-aarch64-vms-tests
+
 
 macosx1500-aarch64-shippable/opt:
     build-platform: macosx64-shippable/opt
@@ -429,6 +451,12 @@ macosx1500-aarch64-shippable/opt:
         - macosx1500-64-perftests
         - macosx1500-aarch64-tests
         - web-platform-tests-backlog
+
+macosx1500-aarch64-devedition/opt:
+    build-platform: macosx64-aarch64-devedition/opt
+    build-signing-label: repackage-macosx64-devedition/opt
+    test-sets:
+        - macosx1500-aarch64-tests
 
 macosx1470-64-nightlyasrelease/opt:
     build-platform: macosx64-nightlyasrelease/opt

@@ -23,10 +23,6 @@
     :members:
     :exclude-members: RemoteSettingsConfig
 ```
-```{js:autoclass} RustRemoteSettings.sys.RemoteSettingsConfig2
-    :members:
-    :exclude-members: RemoteSettingsConfig2
-```
 ```{js:autoclass} RustRemoteSettings.sys.RemoteSettingsContext
     :members:
     :exclude-members: RemoteSettingsContext
@@ -39,10 +35,6 @@
     :members:
     :exclude-members: RemoteSettingsRecord
 ```
-```{js:autoclass} RustRemoteSettings.sys.RemoteSettingsResponse
-    :members:
-    :exclude-members: RemoteSettingsResponse
-```
 ```{js:autoclass} RustRemoteSettings.sys.RemoteSettingsServer
     :members:
     :exclude-members: RemoteSettingsServer
@@ -50,4 +42,8 @@
 ```{js:autoclass} RustRemoteSettings.sys.RemoteSettingsService
     :members:
     :exclude-members: RemoteSettingsService
+```
+```{js:autoclass} RustRemoteSettings.sys.SyncStatus
+    :members:
+    :exclude-members: SyncStatus
 ```

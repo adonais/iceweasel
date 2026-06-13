@@ -10,7 +10,7 @@ async function openContextMenu(doc = document) {
     0,
     0,
     { type: "contextmenu" },
-    doc.ownerGlobal.gBrowser.selectedBrowser
+    doc.documentGlobal.gBrowser.selectedBrowser
   );
   await promise;
 }
@@ -164,12 +164,12 @@ add_task(async function test_hidden_in_smart_window() {
   const aiWindowDoc = {
     documentElement: { hasAttribute: attr => attr === "ai-window" },
   };
-  const buildMenu = async ownerGlobal => {
+  const buildMenu = async documentGlobal => {
     let hidden = null;
     await GenAI.buildAskChatMenu(menu, {
       browser: {
         browsingContext: { currentURI: { spec: "https://example.com" } },
-        ownerGlobal,
+        documentGlobal,
       },
       selectionInfo: {},
       showItem: (item, show) => {
@@ -183,14 +183,14 @@ add_task(async function test_hidden_in_smart_window() {
 
   Assert.ok(
     await buildMenu({ document: aiWindowDoc }),
-    "Menu hidden when ownerGlobal is the Smart Window"
+    "Menu hidden when documentGlobal is the Smart Window"
   );
   Assert.ok(
     await buildMenu({
       document: { documentElement: { hasAttribute: () => false } },
       browsingContext: { topChromeWindow: { document: aiWindowDoc } },
     }),
-    "Menu hidden when ownerGlobal is a sidebar sub-window inside a Smart Window"
+    "Menu hidden when documentGlobal is a sidebar sub-window inside a Smart Window"
   );
 
   await SpecialPowers.popPrefEnv();

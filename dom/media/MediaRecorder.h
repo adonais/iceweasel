@@ -55,6 +55,9 @@ class MediaRecorder final : public DOMEventTargetHelper,
 
   explicit MediaRecorder(nsPIDOMWindowInner* aOwnerWindow);
 
+  MediaRecorder& operator=(const MediaRecorder& x) = delete;
+  MediaRecorder(const MediaRecorder& x) = delete;  // prevent bad usage
+
   static nsTArray<RefPtr<Session>> GetSessions();
 
   // nsWrapperCache
@@ -119,7 +122,6 @@ class MediaRecorder final : public DOMEventTargetHelper,
  protected:
   virtual ~MediaRecorder();
 
-  MediaRecorder& operator=(const MediaRecorder& x) = delete;
   // Create dataavailable event with Blob data and it runs in main thread
   nsresult CreateAndDispatchBlobEvent(BlobImpl* aBlobImpl);
   // Creating a simple event to notify UA simple event.
@@ -127,7 +129,6 @@ class MediaRecorder final : public DOMEventTargetHelper,
   // Creating a error event with message.
   void NotifyError(nsresult aRv);
 
-  MediaRecorder(const MediaRecorder& x) = delete;  // prevent bad usage
   // Remove session pointer.
   void RemoveSession(Session* aSession);
   // Create DOMExceptions capturing the JS stack for async errors. These are

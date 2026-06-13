@@ -35,6 +35,7 @@ BROWSER_CHROME_MANIFESTS += [
     "content/test/linkHandling/browser.toml",
     "content/test/menubar/browser.toml",
     "content/test/metaTags/browser.toml",
+    "content/test/mousepostracker/browser.toml",
     "content/test/notificationbox/browser.toml",
     "content/test/outOfProcess/browser.toml",
     "content/test/pageActions/browser.toml",

@@ -8,10 +8,10 @@
  */
 
 /**
- * @import {Query} from "UrlbarProvidersManager.sys.mjs"
+ * @import {Query} from "./UrlbarProvidersManager.sys.mjs"
  * @import {SearchEngine} from "moz-src:///toolkit/components/search/SearchEngine.sys.mjs"
  * @import {SmartbarInput} from "chrome://browser/content/urlbar/SmartbarInput.mjs"
- * @import {UrlbarSearchStringTokenData} from "UrlbarTokenizer.sys.mjs"
+ * @import {UrlbarSearchStringTokenData} from "./UrlbarTokenizer.sys.mjs"
  */
 
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
@@ -1327,6 +1327,183 @@ export var UrlbarUtils = {
   },
 
   /**
+   * @typedef {object} BackspaceInfo
+   * @property {number?} count
+   *   How many times the origin or URL had its autofill cleared.
+   * @property {number?} blockedAt
+   *   How long ago the origin or URL was blocked from backspacing.
+   */
+
+  /**
+   * LRU map tracking adaptive autofill backspace dismissals through their
+   * lifecycle: pre-block (counting backspaces toward the threshold) and
+   * post-block (timestamp used by re-integration telemetry to measure how
+   * long until the user returned to the same destination).
+   *
+   * Keyed by "<scope>:<host>" where scope is "origin" or "page" and host
+   * has any leading "www." stripped, matching how blockOriginAutofill
+   * applies the underlying SQL block. The two scopes for the same host
+   * live as independent entries.
+   *
+   * Insertion order is maintained as an LRU: entries past
+   * _BACKSPACE_BLOCKS_MAX are evicted. State does not survive
+   * restart.
+   *
+   * Re-integration after restart, or more than _BACKSPACE_BLOCK_MAX_AGE_HOURS
+   * after the block, does not record a sample.
+   *
+   * @type {Map<string, BackspaceInfo>}
+   */
+  _backspaceBlocks: new Map(),
+
+  // Resolves with the most recent recordAutofillBackspace() call's DB write
+  // (if any). Tests can await this to sequence on the block before reading
+  // from the database.
+  _lastRecordAutofillBackspacePromise: Promise.resolve(),
+
+  // Maximum age of a tracked block, in hours.
+  _BACKSPACE_BLOCK_MAX_AGE_HOURS: 24,
+
+  // Maximum number of blocked origins that can be stored at one time.
+  _BACKSPACE_BLOCKS_MAX: 512,
+
+  /**
+   * Computes the map key used to record a backspace block for the given URL.
+   * The key is in the form of the scope (origin or page), followed by colon,
+   * and the URL's host with a leading "www." stripped, mirroring how
+   * blockOriginAutofill applies the underlying block in SQL.
+   *
+   * @param {string} url
+   *   The URL whose key is being computed.
+   * @returns {?string}
+   *   The scope and normalized host key, or null if the URL is unparseable.
+   *
+   * @example
+   * // Returns "origin:example.com"
+   * _backspaceBlockKey("https://www.example.com/");
+   *
+   * @example
+   * // Returns "page:example.com"
+   * _backspaceBlockKey("https://example.com/some/path");
+   */
+  _backspaceBlockKey(url) {
+    let origin = parseOriginParts(url);
+    if (!origin) {
+      return null;
+    }
+    let basehost = origin.host.replace(/^www\./, "");
+    let scope = /** @type {"origin" | "page"} */ (
+      this.isOriginUrl(url) ? "origin" : "page"
+    );
+    return `${scope}:${basehost}`;
+  },
+
+  /**
+   * Records a backspace in the LRU map for the autofill URL. Increments
+   * (or creates) the entry's count and when the count reaches the
+   * `autoFill.backspaceThreshold` pref calls blockAutofill and records the
+   * entry's blockedAt so re-integration telemetry can sample the unblock
+   * delay later.
+   *
+   * @param {string} url
+   *   The autofill result URL whose backspace is being recorded.
+   * @returns {Promise<void>}
+   *   Resolves after the threshold-triggered blockAutofill DB write completes.
+   *   Resolves immediately when the URL is unparseable or the count is still
+   *   below threshold (no DB write in either case). Tests can await this to
+   *   sequence on the block.
+   */
+  async recordAutofillBackspace(url) {
+    let key = this._backspaceBlockKey(url);
+    if (!key) {
+      return;
+    }
+
+    let entry = this._backspaceBlocks.get(key) ?? {
+      count: 0,
+      blockedAt: null,
+    };
+    if (entry.blockedAt) {
+      delete entry.blockedAt;
+    }
+    let newCount = (entry.count ?? 0) + 1;
+
+    if (newCount >= lazy.UrlbarPrefs.get("autoFill.backspaceThreshold")) {
+      delete entry.count;
+      entry.blockedAt = Date.now();
+      await this.blockAutofill(
+        url,
+        Date.now() + lazy.UrlbarPrefs.get("autoFill.backspaceBlockDurationMs")
+      ).catch(console.error);
+    } else {
+      entry.count = newCount;
+    }
+
+    // Remove and reinsert so this entry is treated as most-recent under the
+    // Map's insertion-order semantics, which we rely on below to expire the
+    // least-recently-used entry.
+    this._backspaceBlocks.delete(key);
+    this._backspaceBlocks.set(key, entry);
+
+    // Least recently used are expired.
+    if (this._backspaceBlocks.size > this._BACKSPACE_BLOCKS_MAX) {
+      let oldestKey = this._backspaceBlocks.keys().next().value;
+      this._backspaceBlocks.delete(oldestKey);
+    }
+  },
+
+  /**
+   * Retrieves and deletes the recorded backspace block for the given URL, if
+   * any. Only the timestamp matching the URL's level (origin vs. url) is
+   * returned and removed; any other-level timestamp for the same host is
+   * preserved. If the matching timestamp is older than
+   * BACKSPACE_BLOCK_MAX_AGE_HOURS, this returns null. (The timestamp is
+   * removed either way.)
+   *
+   * @param {string} url
+   *   The URL whose block is being cleared.
+   * @returns {?{blockedAt: number, level: "origin" | "url"}}
+   *   The matching timestamp and level if a fresh block existed,
+   *   null otherwise.
+   */
+  getBackspaceBlock(url) {
+    let key = this._backspaceBlockKey(url);
+    if (!key) {
+      return null;
+    }
+
+    let entry = this._backspaceBlocks.get(key);
+    if (!entry?.blockedAt) {
+      return null;
+    }
+
+    // Consume the timestamp so a later call returns null for this URL.
+    this._backspaceBlocks.delete(key);
+
+    // If the timestamp is too old, don't report it.
+    let ageHours = (Date.now() - entry.blockedAt) / (60 * 60 * 1000);
+    if (ageHours > this._BACKSPACE_BLOCK_MAX_AGE_HOURS) {
+      return null;
+    }
+    /** @type {"origin" | "url"} */
+    let level = this.isOriginUrl(url) ? "origin" : "url";
+    return { blockedAt: entry.blockedAt, level };
+  },
+
+  /**
+   * Clears the in-progress backspace count for the URL's scope.
+   *
+   * @param {string} url
+   *   A URL belonging to the scope being cleared.
+   */
+  clearAutofillBackspaceEntryForUrl(url) {
+    let key = this._backspaceBlockKey(url);
+    if (key) {
+      this._backspaceBlocks.delete(key);
+    }
+  },
+
+  /**
    * Returns whether a URL is an origin URL, i.e. it has no path beyond "/",
    * no query string, and no hash.
    *
@@ -2042,9 +2219,12 @@ export var UrlbarUtils = {
     return "unknown";
   },
 
-  searchEngagementTelemetryAction(result) {
+  searchEngagementTelemetryAction(result, pickedActionKey = null) {
     if (result.providerName != "UrlbarProviderGlobalActions") {
       return result.payload.action?.key ?? "none";
+    }
+    if (pickedActionKey) {
+      return pickedActionKey;
     }
     return result.payload.actionsResults.map(({ key }) => key).join(",");
   },
@@ -2357,9 +2537,9 @@ export var UrlbarUtils = {
    *   The result.
    *
    * @typedef {object} ParseDateResult
-   * @property {typeof Temporal.ZonedDateTime} zonedNow
+   * @property {Temporal.ZonedDateTime} zonedNow
    *   The "now" date as a `ZonedDateTime`.
-   * @property {typeof Temporal.ZonedDateTime} zonedDate
+   * @property {Temporal.ZonedDateTime} zonedDate
    *   The passed-in date as a `ZonedDateTime`.
    * @property {boolean} isFuture
    *   Whether the date is in the future.

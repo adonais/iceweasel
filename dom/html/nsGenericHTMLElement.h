@@ -38,8 +38,10 @@ class EventListenerManager;
 class PresState;
 namespace dom {
 class BooleanOrUnrestrictedDoubleOrString;
+class EditContext;
 class ElementInternals;
 class HTMLFormElement;
+class NodeList;
 class OwningBooleanOrUnrestrictedDoubleOrString;
 class TogglePopoverOptionsOrBoolean;
 enum class FetchPriority : uint8_t;
@@ -297,6 +299,10 @@ class nsGenericHTMLElement : public nsGenericHTMLElementBase {
     SetHTMLAttr(nsGkAtoms::autocorrect, aAutocorrect ? u"on"_ns : u"off"_ns,
                 aError);
   }
+
+  mozilla::dom::EditContext* GetEditContext() const;
+  MOZ_CAN_RUN_SCRIPT void SetEditContext(mozilla::dom::EditContext* aContext,
+                                         mozilla::ErrorResult& aRv);
 
   /**
    * Determine whether an attribute is an event (onclick, etc.)
@@ -691,8 +697,8 @@ class nsGenericHTMLElement : public nsGenericHTMLElementBase {
   static bool MatchLabelsElement(Element* aElement, int32_t aNamespaceID,
                                  nsAtom* aAtom, void* aData);
 
-  already_AddRefed<nsINodeList> LabelsForBindings();
-  already_AddRefed<nsINodeList> LabelsInternal();
+  already_AddRefed<mozilla::dom::NodeList> LabelsForBindings();
+  already_AddRefed<mozilla::dom::NodeList> LabelsInternal();
 
   static bool LegacyTouchAPIEnabled(JSContext* aCx, JSObject* aObj);
 
@@ -1466,6 +1472,7 @@ NS_DECLARE_NS_NEW_HTML_ELEMENT(Pre)
 NS_DECLARE_NS_NEW_HTML_ELEMENT(Progress)
 NS_DECLARE_NS_NEW_HTML_ELEMENT(Script)
 NS_DECLARE_NS_NEW_HTML_ELEMENT(Select)
+NS_DECLARE_NS_NEW_HTML_ELEMENT(SelectedContent)
 NS_DECLARE_NS_NEW_HTML_ELEMENT(Slot)
 NS_DECLARE_NS_NEW_HTML_ELEMENT(Source)
 NS_DECLARE_NS_NEW_HTML_ELEMENT(Span)

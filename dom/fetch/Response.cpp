@@ -32,7 +32,7 @@ NS_IMPL_RELEASE_INHERITED(Response, FetchBody<Response>)
 NS_IMPL_CYCLE_COLLECTION_CLASS(Response)
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(Response, FetchBody<Response>)
-  NS_IMPL_CYCLE_COLLECTION_UNLINK(mOwner)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mGlobal)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mHeaders)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mSignalImpl)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mFetchStreamReader)
@@ -40,7 +40,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(Response, FetchBody<Response>)
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(Response, FetchBody<Response>)
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mOwner)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mGlobal)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mHeaders)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mSignalImpl)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mFetchStreamReader)
@@ -384,7 +384,7 @@ already_AddRefed<Response> Response::Clone(JSContext* aCx, ErrorResult& aRv) {
                                     : InternalResponse::eCloneInputStream);
 
   RefPtr<Response> response =
-      new Response(mOwner, ir.clonePtr(), GetSignalImpl());
+      new Response(mGlobal, ir.clonePtr(), GetSignalImpl());
 
   if (body) {
     // Maybe we have a body, but we receive null from MaybeTeeReadableStreamBody
@@ -425,7 +425,7 @@ already_AddRefed<Response> Response::CloneUnfiltered(JSContext* aCx,
                                     : InternalResponse::eCloneInputStream);
 
   SafeRefPtr<InternalResponse> ir = clone->Unfiltered();
-  RefPtr<Response> ref = new Response(mOwner, ir.clonePtr(), GetSignalImpl());
+  RefPtr<Response> ref = new Response(mGlobal, ir.clonePtr(), GetSignalImpl());
 
   if (body) {
     // Maybe we have a body, but we receive null from MaybeTeeReadableStreamBody
@@ -451,7 +451,7 @@ SafeRefPtr<InternalResponse> Response::GetInternalResponse() const {
 
 Headers* Response::Headers_() {
   if (!mHeaders) {
-    mHeaders = new Headers(mOwner, mInternalResponse->Headers());
+    mHeaders = new Headers(mGlobal, mInternalResponse->Headers());
   }
 
   return mHeaders;

@@ -9,7 +9,7 @@ import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.longfox.LongFoxFeatureApi
 
 /**
- * Wire up clicks on the home screen logo to the long fox feature, if enabled.
+ * Controller for launching the LongFox feature.
  */
 class LogoController(
     private val longFoxFeature: LongFoxFeatureApi,
@@ -18,9 +18,9 @@ class LogoController(
 ) {
 
     /**
-     * When the logo is long clicked, decide whether to launch the LongFox feature.
+     * When the longfox entry point text is clicked, launch the LongFox feature.
      */
-    fun handleLogoLongClicked() {
+    fun handleLongfoxEntryPointClicked() {
         if (container != null && longFoxEnabled) longFoxFeature.start(container = container)
     }
 }

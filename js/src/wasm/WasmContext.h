@@ -17,10 +17,8 @@
 #ifndef wasm_context_h
 #define wasm_context_h
 
-#include "mozilla/Vector.h"
-
 #ifdef ENABLE_WASM_JSPI
-#  include "gc/Barrier.h"
+#  include "wasm/WasmStacks.h"
 #endif  // ENABLE_WASM_JSPI
 
 #include "js/NativeStackLimits.h"
@@ -34,35 +32,7 @@ namespace js::wasm {
 struct Handlers;
 class ContObject;
 class ContStack;
-using ContStackVector = mozilla::Vector<ContStack*, 0, SystemAllocPolicy>;
-
-#ifdef ENABLE_WASM_JSPI
-
-// A stack target describes a stack that can be switched to using the
-// stack-switching feature. There is one for the 'main stack' and one for each
-// continuation stack.
-//
-// StackTarget is declared here to break a cyle with WasmStacks.h.
-struct StackTarget {
-  // The continuation stack, if any. This is a weak self-reference, as
-  // it's only non-null when stored on the same ContStack.
-  ContStack* stack = nullptr;
-
-  // The limit that jit code should use on this stack. This will be constant
-  // over the lifetime of the stack.
-  JS::NativeStackLimit jitLimit = JS::NativeStackLimitMin;
-
-  // The Win32 TIB stack base and limit fields. With lazy commit these may
-  // change as the stack grows.
-#  if defined(_WIN32)
-  void* tibStackBase = nullptr;
-  void* tibStackLimit = nullptr;
-#  endif
-
-  bool isMainStack() const { return !stack; }
-};
-
-#endif  // ENABLE_WASM_JSPI
+class ContStackArena;
 
 // wasm::Context lives in JSContext and contains the wasm-related per-context
 // state.
@@ -95,13 +65,13 @@ class Context {
 #  endif
 
   ContStack* currentStack() { return currentStack_; }
+  Handlers* baseHandlers() { return baseHandlers_; }
   bool onContStack() const { return currentStack_ != nullptr; }
-  const ContStackVector& stacks() const { return stacks_; }
+  ContStackAllocator& contStacks() { return contStacks_; }
+  const ContStackAllocator& contStacks() const { return contStacks_; }
 
   const StackTarget& mainStackTarget() const { return mainStackTarget_; }
 
-  // Perform a linear search to find the stack that matches stack address. This
-  // can be slow if there are many continuations.
   ContStack* findStackForAddress(JSContext* cx, uintptr_t stackAddress);
 #endif  // ENABLE_WASM_JSPI
 
@@ -146,12 +116,8 @@ class Context {
   // fields.
   Handlers* baseHandlers_;
 
-  // All of the allocated continuation stacks. These are non-owning pointers
-  // managed by ContStack.
-  ContStackVector stacks_;
-
-  // Let ContStack::registerSelf/unregisterSelf mutate the vector.
-  friend ContStack;
+  // Allocator for all ContStack objects owned by this context.
+  ContStackAllocator contStacks_;
 #endif
 };
 

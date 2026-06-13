@@ -82,20 +82,20 @@ export class SportsSuggestions extends RealtimeSuggestProvider {
       {
         name: `home-team-score-${index}`,
         tag: "span",
-        classList: ["urlbarView-sports-score"],
+        classList: ["urlbarView-sports-score", "urlbarView-sports-score-home"],
       },
       {
         tag: "span",
         classList: ["urlbarView-realtime-description-separator-dot"],
       },
       {
-        name: `away-team-name-${index}`,
-        tag: "span",
-      },
-      {
         name: `away-team-score-${index}`,
         tag: "span",
-        classList: ["urlbarView-sports-score"],
+        classList: ["urlbarView-sports-score", "urlbarView-sports-score-away"],
+      },
+      {
+        name: `away-team-name-${index}`,
+        tag: "span",
       },
     ];
   }

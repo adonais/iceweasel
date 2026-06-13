@@ -10,6 +10,7 @@ import android.os.Bundle
 import androidx.annotation.VisibleForTesting
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
+import mozilla.components.feature.ipprotection.IPProtectionFxaAuthFlow.Companion.INTENT_ON_COMPLETE
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.settings
@@ -37,6 +38,9 @@ class AuthIntentReceiverActivity : Activity() {
 
             intent.setClassName(applicationContext, AuthCustomTabActivity::class.java.name)
             intent.putExtra(HomeActivity.OPEN_TO_BROWSER, true)
+
+            // Forward the intent onward for the account manager to handle it.
+            intent.putExtra(INTENT_ON_COMPLETE, intent.getBooleanExtra(INTENT_ON_COMPLETE, false))
 
             startActivity(intent)
 

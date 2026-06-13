@@ -136,6 +136,11 @@ window.addEventListener("AboutLoginsChromeToContent", event => {
       handleAllLogins(event.detail.value.logins);
       handleSyncState(event.detail.value.syncState);
       gElements.loginList.setSortDirection(event.detail.value.selectedSort);
+      if (!event.detail.value.importVisible) {
+        gElements.menuButton.shadowRoot.querySelector(
+          ".menuitem-import-browser"
+        ).hidden = true;
+      }
       document.documentElement.classList.add("initialized");
       gElements.loginList.classList.add("initialized");
       break;

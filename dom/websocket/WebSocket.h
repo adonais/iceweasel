@@ -39,6 +39,9 @@ class WebSocket final : public DOMEventTargetHelper {
   enum { CONNECTING = 0, OPEN = 1, CLOSING = 2, CLOSED = 3 };
 
  public:
+  WebSocket(const WebSocket& x) = delete;  // prevent bad usage
+  WebSocket& operator=(const WebSocket& x) = delete;
+
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(WebSocket, DOMEventTargetHelper)
   virtual bool IsCertainlyAliveForCC() const override;
@@ -148,9 +151,6 @@ class WebSocket final : public DOMEventTargetHelper {
   void DontKeepAliveAnyMore();
 
  private:
-  WebSocket(const WebSocket& x) = delete;  // prevent bad usage
-  WebSocket& operator=(const WebSocket& x) = delete;
-
   void Send(nsIInputStream* aMsgStream, const nsACString& aMsgString,
             uint32_t aMsgLength, bool aIsBinary, ErrorResult& aRv);
 

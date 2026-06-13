@@ -86,7 +86,7 @@ class SyncLoadContext : public JS::loader::LoadContextBase {
  public:
   // The result of compiling a module script. These fields are used temporarily
   // before being passed to the module loader.
-  nsresult mRv;
+  nsresult mRv = NS_OK;
 
   // The exception thrown during compiling a module script. These fields are
   // used temporarily before being passed to the module loader.

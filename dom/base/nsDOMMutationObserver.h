@@ -13,7 +13,6 @@
 #include "mozilla/dom/Nullable.h"
 #include "nsCOMArray.h"
 #include "nsClassHashtable.h"
-#include "nsContentList.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsGlobalWindowInner.h"
 #include "nsIMutationObserver.h"
@@ -30,6 +29,8 @@ using mozilla::dom::MutationObservingInfo;
 namespace mozilla::dom {
 class Animation;
 class Element;
+class NodeList;
+class SimpleContentList;
 }  // namespace mozilla::dom
 
 class nsDOMMutationRecord final : public nsISupports, public nsWrapperCache {
@@ -37,6 +38,7 @@ class nsDOMMutationRecord final : public nsISupports, public nsWrapperCache {
 
  public:
   using AnimationArray = nsTArray<RefPtr<mozilla::dom::Animation>>;
+  using NodeList = mozilla::dom::NodeList;
 
   nsDOMMutationRecord(nsAtom* aType, nsISupports* aOwner);
 
@@ -56,9 +58,9 @@ class nsDOMMutationRecord final : public nsISupports, public nsWrapperCache {
 
   nsINode* GetTarget() const { return mTarget; }
 
-  nsINodeList* AddedNodes();
+  NodeList* AddedNodes();
 
-  nsINodeList* RemovedNodes();
+  NodeList* RemovedNodes();
 
   nsINode* GetPreviousSibling() const { return mPreviousSibling; }
 
@@ -86,8 +88,8 @@ class nsDOMMutationRecord final : public nsISupports, public nsWrapperCache {
   RefPtr<nsAtom> mAttrName;
   nsString mAttrNamespace;
   nsString mPrevValue;
-  RefPtr<nsSimpleContentList> mAddedNodes;
-  RefPtr<nsSimpleContentList> mRemovedNodes;
+  RefPtr<mozilla::dom::SimpleContentList> mAddedNodes;
+  RefPtr<mozilla::dom::SimpleContentList> mRemovedNodes;
   nsCOMPtr<nsINode> mPreviousSibling;
   nsCOMPtr<nsINode> mNextSibling;
   AnimationArray mAddedAnimations;

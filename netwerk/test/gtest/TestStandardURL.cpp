@@ -433,6 +433,23 @@ TEST(TestStandardURL, ParseIPv4Num)
   uint32_t number;
   mozilla::net::IPv4Parser::ParseIPv4Number("0x10"_ns, 16, number, 255);
   ASSERT_EQ(number, (uint32_t)16);
+
+  // Inputs whose mathematical value exceeds 0xFFFFFFFF must be rejected,
+  // even when they wrap modulo 2^64 back into the valid uint32_t range.
+  // 18446744073709551616 == 2^64             => wraps to 0
+  // 18446744075840258049 == 2^64 + 0x7F000001 => wraps to 127.0.0.1
+  nsCString wrapResult;
+  ASSERT_EQ(NS_ERROR_FAILURE,
+            Test_NormalizeIPv4("18446744073709551616"_ns, wrapResult));
+  ASSERT_EQ(NS_ERROR_FAILURE,
+            Test_NormalizeIPv4("18446744075840258049"_ns, wrapResult));
+
+  ASSERT_EQ(NS_ERROR_FAILURE,
+            mozilla::net::IPv4Parser::ParseIPv4Number10(
+                "18446744075840258049"_ns, number, 0xffffffffu));
+  ASSERT_EQ(NS_ERROR_FAILURE,
+            mozilla::net::IPv4Parser::ParseIPv4Number("18446744075840258049"_ns,
+                                                      10, number, 0xffffffffu));
 }
 
 TEST(TestStandardURL, CoalescePath)

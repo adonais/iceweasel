@@ -21,6 +21,7 @@ const CONTROLLED_BY_OTHER = "controlled_by_other_extensions";
 const NOT_CONTROLLABLE = "not_controllable";
 
 const HOMEPAGE_URL_PREF = "browser.startup.homepage";
+const SPOTLIGHT_SUBCATEGORY = "homeOverride";
 
 const getHomePageURL = () => {
   return Services.prefs.getStringPref(HOMEPAGE_URL_PREF);
@@ -51,6 +52,7 @@ async function assertPreferencesShown(_spotlight) {
         spotlight,
         "The correct section is spotlighted."
       );
+      await new Promise(r => content.setTimeout(r, 2000));
     }
   );
 
@@ -397,7 +399,7 @@ add_task(async function test_doorhanger_homepage_button() {
   // Click Manage.
   let popupHidden = promisePopupHidden(panel);
   // Ensures the preferences tab opens, checks the spotlight, and then closes it
-  let spotlightShown = assertPreferencesShown("homeOverride");
+  let spotlightShown = assertPreferencesShown(SPOTLIGHT_SUBCATEGORY);
   popupnotification.secondaryButton.click();
   await popupHidden;
   await spotlightShown;
@@ -421,7 +423,7 @@ add_task(async function test_doorhanger_homepage_button() {
   // Click manage again.
   popupHidden = promisePopupHidden(panel);
   // Ensures the preferences tab opens, checks the spotlight, and then closes it
-  spotlightShown = assertPreferencesShown("homeOverride");
+  spotlightShown = assertPreferencesShown(SPOTLIGHT_SUBCATEGORY);
   popupnotification.secondaryButton.click();
   await popupHidden;
   await spotlightShown;

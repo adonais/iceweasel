@@ -245,6 +245,12 @@ smartwindow-footer {
   justify-content: center;
 }
 
+smartwindow-promo {
+  grid-area: footer;
+  max-width: 580px;
+  margin-block-end: calc(var(--space-small) + 20px);
+}
+
 .sr-only {
   clip: rect(0, 0, 0, 0);
   clip-path: inset(50%);

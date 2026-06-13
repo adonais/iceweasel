@@ -75,8 +75,10 @@ enum : uint32_t {
   // https://dom.spec.whatwg.org/#shadowroot-available-to-element-internals
   SHADOW_ROOT_IS_AVAILABLE_TO_ELEMENT_INTERNALS = SHADOW_ROOT_FLAG_BIT(6),
 
-  // Whether this is the <details> internal shadow tree
-  SHADOW_ROOT_IS_DETAILS_SHADOW_TREE = SHADOW_ROOT_FLAG_BIT(7),
+  // Whether the host element overrides slot dispatch (GetSlotNameFor,
+  // OnChildBeforeSlotted, OnChildUnslotted). When unset, the common-case
+  // default logic is inlined to avoid virtual calls.
+  SHADOW_ROOT_HAS_CUSTOM_SLOT_DISPATCH = SHADOW_ROOT_FLAG_BIT(7),
 
   // 2-bit field encoding the shadow root's custom element registry state.
   // See CustomElementRegistryState for the possible values.
@@ -101,6 +103,8 @@ class ShadowRoot final : public DocumentFragment, public DocumentOrShadowRoot {
   using IsClonable = Element::ShadowRootClonable;
   using IsSerializable = Element::ShadowRootSerializable;
 
+  using CustomSlotDispatch = Element::CustomSlotDispatch;
+
  public:
   NS_IMPL_FROMNODE_HELPER(ShadowRoot, IsShadowRoot());
 
@@ -112,6 +116,7 @@ class ShadowRoot final : public DocumentFragment, public DocumentOrShadowRoot {
              Element::DelegatesFocus aDelegatesFocus,
              SlotAssignmentMode aSlotAssignment, IsClonable aClonable,
              IsSerializable aIsSerializable, Declarative aDeclarative,
+             CustomSlotDispatch aCustomSlotDispatch,
              already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
 
   void AddSizeOfExcludingThis(nsWindowSizes&, size_t* aNodeSize) const final;
@@ -138,6 +143,9 @@ class ShadowRoot final : public DocumentFragment, public DocumentOrShadowRoot {
                                             : ShadowRootMode::Open;
   }
   bool DelegatesFocus() const { return HasFlag(SHADOW_ROOT_DELEGATES_FOCUS); }
+  bool HasCustomSlotDispatch() const {
+    return HasFlag(SHADOW_ROOT_HAS_CUSTOM_SLOT_DISPATCH);
+  }
   SlotAssignmentMode SlotAssignment() const {
     return HasFlag(SHADOW_ROOT_SLOT_ASSIGNMENT_MANUAL)
                ? SlotAssignmentMode::Manual
@@ -202,10 +210,6 @@ class ShadowRoot final : public DocumentFragment, public DocumentOrShadowRoot {
     InsertSheetAt(SheetCount(), aSheet);
   }
 
-  bool IsDetailsShadowTree() const {
-    return HasFlag(SHADOW_ROOT_IS_DETAILS_SHADOW_TREE);
-  }
-
   /**
    * Represents the insertion point in a slot for a given node.
    */
@@ -234,21 +238,13 @@ class ShadowRoot final : public DocumentFragment, public DocumentOrShadowRoot {
    */
   void GetSlotNameFor(const nsIContent&, nsAString&) const;
 
-  /**
-   * Re-assign the current main summary if it has changed.
-   *
-   * Must be called only if IsDetailsShadowTree() is true.
-   */
-  enum class SummaryChangeReason { Deletion, Insertion };
-  void MaybeReassignMainSummary(SummaryChangeReason);
-
  public:
   void AddSlot(HTMLSlotElement* aSlot);
   void RemoveSlot(HTMLSlotElement* aSlot);
   bool HasSlots() const { return !mSlotMap.IsEmpty(); };
-  HTMLSlotElement* GetDefaultSlot() const {
-    SlotArray* list = mSlotMap.Get(u""_ns);
-    return list ? (*list).AsSpan()[0] : nullptr;
+  HTMLSlotElement* GetFirstNamedSlot(const nsAString& aName) const {
+    SlotArray* list = mSlotMap.Get(aName);
+    return list ? list->ElementAt(0) : nullptr;
   }
 
   void PartAdded(const Element&);

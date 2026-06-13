@@ -84,8 +84,8 @@ class nsHTTPCompressConv : public nsIStreamConverter,
  private:
   virtual ~nsHTTPCompressConv();
 
-  nsCOMPtr<nsIStreamListener>
-      mListener;  // this guy gets the converted data via his OnDataAvailable ()
+  nsCOMPtr<nsIStreamListener> mListener
+      MOZ_GUARDED_BY(mMutex);  // gets converted data via OnDataAvailable()
   Atomic<CompressMode, Relaxed> mMode{HTTP_COMPRESS_IDENTITY};
 
   unsigned char* mOutBuffer{nullptr};
@@ -129,7 +129,7 @@ class nsHTTPCompressConv : public nsIStreamConverter,
   Atomic<bool, Relaxed> mIsPrivateBrowsing{false};
   nsCString mSite;
 
-  mutable mozilla::Mutex mMutex MOZ_UNANNOTATED{"nsHTTPCompressConv"};
+  mutable mozilla::Mutex mMutex{"nsHTTPCompressConv"};
 };
 
 }  // namespace net

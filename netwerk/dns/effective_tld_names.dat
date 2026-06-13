@@ -5,8 +5,8 @@
 // Please pull this list from, and only from https://publicsuffix.org/list/public_suffix_list.dat,
 // rather than any other VCS sites. Pulling from any other URL is not guaranteed to be supported.
 
-// VERSION: 2026-05-07_00-57-25_UTC
-// COMMIT: ee780bcf233174cb23ba8575d54c4154d47508e1
+// VERSION: 2026-06-09_14-00-32_UTC
+// COMMIT: 303b81a2140a3192d336f22af389a28daf6efab6
 
 // Instructions on pulling and using this list can be found at https://publicsuffix.org/list/.
 
@@ -1403,6 +1403,7 @@ video.hu
 // id : https://www.iana.org/domains/root/db/id.html
 id
 ac.id
+ai.id
 biz.id
 co.id
 desa.id
@@ -6157,7 +6158,6 @@ k12.mo.us
 k12.ms.us
 k12.mt.us
 k12.nc.us
-// k12.nd.us - Bug 1028347 - Removed at request of Travis Rosso <trossow@nd.gov>
 k12.ne.us
 k12.nh.us
 k12.nj.us
@@ -6239,8 +6239,6 @@ cc.mt.us
 lib.mt.us
 cc.nc.us
 lib.nc.us
-cc.nd.us
-lib.nd.us
 cc.ne.us
 lib.ne.us
 cc.nh.us
@@ -12577,10 +12575,12 @@ cafjs.com
 // Submitted by Joel Aquilina <publicsuffixlist@canva.com>
 canva-apps.cn
 my.canvasite.cn
+khsj.cn
 canva-apps.com
 canva-hosted-embed.com
 canvacode.com
 rice-labs.com
+canva.link
 canva.run
 my.canva.site
 
@@ -14061,6 +14061,10 @@ ltd.ng
 ngo.ng
 plc.ng
 
+// Hostinger : https://hostinger.com
+// Submitted by Valentinas Cirba <domains@hostinger.com>
+hstgr.cloud
+
 // HostyHosting : https://hostyhosting.com
 hostyhosting.io
 
@@ -15048,6 +15052,7 @@ opensocial.site
 // OpenAI : https://openai.com
 // Submitted by Thomas Shadwell <security@openai.com>
 *.oaiusercontent.com
+chatgpt.site
 
 // OpenCraft GmbH : http://opencraft.com/
 // Submitted by Sven Marnach <sven@opencraft.com>
@@ -16005,6 +16010,11 @@ reservd.testing.thingdust.io
 // Submitted by Christian Franke <it@ticket.io>
 tickets.io
 
+// Tigris Data, Inc. : https://www.tigrisdata.com
+// Submitted by Bo Cao <security@tigrisdata.com>
+t3.storage.dev
+t3.storageapi.dev
+
 // Tlon.io : https://tlon.io
 // Submitted by Mark Staarink <mark@tlon.io>
 arvo.network
@@ -16197,11 +16207,10 @@ webflowtest.io
 *.webhare.dev
 
 // WebHotelier Technologies Ltd : https://www.webhotelier.net/
-// Submitted by Apostolos Tsakpinis <apostolos.tsakpinis@gmail.com>
-bookonline.app
+// Submitted by Apostolos Tsakpinis <cto@webhotelier.net>
 hotelwithflight.com
-reserve-online.com
 reserve-online.net
+book.online
 
 // WebPros International, LLC : https://webpros.com/
 // Submitted by Nicolas Rochelemagne <public.suffix@webpros.com>

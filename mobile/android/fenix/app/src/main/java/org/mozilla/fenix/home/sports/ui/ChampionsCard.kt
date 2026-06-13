@@ -46,10 +46,10 @@ import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.text.font.FontWeight.Companion.W700
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import mozilla.components.compose.base.PagerIndicator
 import mozilla.components.compose.base.button.IconButton
 import mozilla.components.compose.base.theme.AcornCorners
 import org.mozilla.fenix.R
-import org.mozilla.fenix.compose.PagerIndicator
 import org.mozilla.fenix.home.sports.FollowedTeamOutcome
 import org.mozilla.fenix.home.sports.Match
 import org.mozilla.fenix.home.sports.TournamentRound
@@ -64,6 +64,7 @@ import org.mozilla.fenix.home.sports.MatchCard as MatchCardState
  * @param state The [MatchCardState] to display in this card.
  * @param onMatchClicked Used to handle match click actions.
  * @param onGetCustomWallpaper Invoked when the user clicks on the "Get custom wallpaper" menu item.
+ * @param onShare Invoked when the user clicks on the "Share" menu item.
  * @param onRemove Invoked when the user dismisses the sports widget.
  * @param modifier [Modifier] to be applied to the card.
  * @param pageNumber 1-based page position when this card is rendered inside a pager; used by the
@@ -75,6 +76,7 @@ fun ChampionsCard(
     state: MatchCardState,
     onMatchClicked: (String?, String?, String?) -> Unit,
     onGetCustomWallpaper: () -> Unit,
+    onShare: () -> Unit,
     onRemove: () -> Unit,
     modifier: Modifier = Modifier,
     pageNumber: Int? = null,
@@ -136,6 +138,7 @@ fun ChampionsCard(
                     flagContentDescription = flagContentDescription,
                     onMatchClicked = onMatchClicked,
                     onGetCustomWallpaper = onGetCustomWallpaper,
+                    onShare = onShare,
                     onRemove = onRemove,
                     modifier = Modifier
                         .align(Alignment.TopCenter)
@@ -153,6 +156,7 @@ private fun ChampionBody(
     flagContentDescription: String,
     onMatchClicked: (String?, String?, String?) -> Unit,
     onGetCustomWallpaper: () -> Unit,
+    onShare: () -> Unit,
     onRemove: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -196,6 +200,7 @@ private fun ChampionBody(
 
         ChampionOverflowMenu(
             onGetCustomWallpaper = onGetCustomWallpaper,
+            onShare = onShare,
             onRemove = onRemove,
             modifier = Modifier
                 .align(Alignment.TopEnd)
@@ -262,6 +267,7 @@ private fun ChampionDetails(
 @Composable
 private fun ChampionOverflowMenu(
     onGetCustomWallpaper: () -> Unit,
+    onShare: () -> Unit,
     onRemove: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -283,6 +289,7 @@ private fun ChampionOverflowMenu(
             onDismissRequest = { showMenu = false },
             onChangeTeam = null,
             onGetCustomWallpaper = onGetCustomWallpaper,
+            onShare = onShare,
             onRemove = onRemove,
         )
     }
@@ -332,6 +339,7 @@ private fun ChampionsCardPreview() {
                     ),
                     onMatchClicked = { _, _, _ -> },
                     onGetCustomWallpaper = {},
+                    onShare = {},
                     onRemove = {},
                 )
 
@@ -346,6 +354,7 @@ private fun ChampionsCardPreview() {
                     ),
                     onMatchClicked = { _, _, _ -> },
                     onGetCustomWallpaper = {},
+                    onShare = {},
                     onRemove = {},
                 )
             }

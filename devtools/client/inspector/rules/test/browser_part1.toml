@@ -111,6 +111,8 @@ skip-if = [
 
 ["browser_rules_class_panel_toggle.js"]
 
+["browser_rules_color-preview.js"]
+
 ["browser_rules_colorUnit.js"]
 
 ["browser_rules_color_scheme_simulation.js"]
@@ -342,6 +344,9 @@ skip-if = [
 ["browser_rules_variables-in-pseudo-element_02.js"]
 
 ["browser_rules_variables-jump-to-definition.js"]
+skip-if = [
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 2034604
+]
 
 ["browser_rules_variables_01.js"]
 

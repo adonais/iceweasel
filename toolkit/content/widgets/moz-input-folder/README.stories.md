@@ -23,7 +23,7 @@
 
 ## Code
 
-The source for `moz-input-folder` can be found under [toolkit/content/widgets/moz-input-folder/](https://searchfox.org/mozilla-central/source/toolkit/content/widgets/moz-input-folder)
+The source for `moz-input-folder` can be found under [toolkit/content/widgets/moz-input-folder/](https://searchfox.org/firefox-main/source/toolkit/content/widgets/moz-input-folder)
 
 ## How to use `moz-input-folder`
 

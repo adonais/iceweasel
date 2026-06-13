@@ -23,9 +23,10 @@ use crate::values::generics::position::{GenericAnchorFunction, GenericInset, Tre
 use crate::values::generics::position::{IsTreeScoped, Position as GenericPosition};
 use crate::values::specified;
 use crate::values::specified::align::AlignFlags;
+use crate::values::specified::percentage::NoCalcPercentage;
 use crate::values::specified::{AllowQuirks, Integer, LengthPercentage, NonNegativeNumber};
 use crate::values::{AtomIdent, DashedIdent};
-use crate::{Atom, Zero};
+use crate::Atom;
 use cssparser::{match_ignore_ascii_case, Parser};
 use num_traits::FromPrimitive;
 use selectors::parser::SelectorParseErrorKind;
@@ -288,9 +289,11 @@ impl<S> GenericPositionComponent for PositionComponent<S> {
     fn is_center(&self) -> bool {
         match *self {
             PositionComponent::Center => true,
-            PositionComponent::Length(LengthPercentage::Percentage(ref per)) => per.0 == 0.5,
+            PositionComponent::Length(LengthPercentage::Percentage(ref per)) => per.get() == 0.5,
             // 50% from any side is still the center.
-            PositionComponent::Side(_, Some(LengthPercentage::Percentage(ref per))) => per.0 == 0.5,
+            PositionComponent::Side(_, Some(LengthPercentage::Percentage(ref per))) => {
+                per.get() == 0.5
+            },
             _ => false,
         }
     }
@@ -299,7 +302,7 @@ impl<S> GenericPositionComponent for PositionComponent<S> {
 impl<S> PositionComponent<S> {
     /// `0%`
     pub fn zero() -> Self {
-        PositionComponent::Length(LengthPercentage::Percentage(Percentage::zero()))
+        PositionComponent::Length(LengthPercentage::Percentage(NoCalcPercentage::zero()))
     }
 
     /// Returns the count of this component.
@@ -535,7 +538,6 @@ pub enum PositionAnchorKeyword {
     Ident(DashedIdent),
 }
 
-
 impl IsTreeScoped for PositionAnchorKeyword {
     fn is_tree_scoped(&self) -> bool {
         match *self {
@@ -741,13 +743,20 @@ pub enum PositionTryFallbacksItem {
 #[repr(C)]
 #[typed(todo_derive_fields)]
 /// https://drafts.csswg.org/css-anchor-position-1/#position-try-fallbacks
-pub struct PositionTryFallbacks(
+pub struct PositionTryFallbacksList(
     #[css(iterable, if_empty = "none")]
     #[ignore_malloc_size_of = "Arc"]
     pub crate::ArcSlice<PositionTryFallbacksItem>,
 );
 
-impl PositionTryFallbacks {
+
+impl IsTreeScoped for PositionTryFallbacksList {
+    fn is_tree_scoped(&self) -> bool {
+        !self.is_none()
+    }
+}
+
+impl PositionTryFallbacksList {
     #[inline]
     /// Return the `none` value.
     pub fn none() -> Self {
@@ -760,7 +769,7 @@ impl PositionTryFallbacks {
     }
 }
 
-impl Parse for PositionTryFallbacks {
+impl Parse for PositionTryFallbacksList {
     fn parse<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
@@ -776,6 +785,16 @@ impl Parse for PositionTryFallbacks {
             items.push(PositionTryFallbacksItem::parse(context, input)?);
         }
         Ok(Self(ArcSlice::from_iter(items.drain(..))))
+    }
+}
+
+/// https://drafts.csswg.org/css-anchor-position-1/#position-try-fallbacks
+pub type PositionTryFallbacks = TreeScoped<PositionTryFallbacksList>;
+
+impl PositionTryFallbacks {
+    /// Returns the default value, `none`.
+    pub fn none() -> Self {
+        Self::with_default_level(PositionTryFallbacksList::none())
     }
 }
 

@@ -47,7 +47,8 @@ NS_IMPL_CI_INTERFACE_GETTER0(DefaultURI)
 NS_IMPL_ADDREF(DefaultURI)
 NS_IMPL_RELEASE(DefaultURI)
 NS_INTERFACE_TABLE_HEAD(DefaultURI)
-  NS_INTERFACE_TABLE(DefaultURI, nsIURI, nsISerializable)
+  NS_INTERFACE_TABLE(DefaultURI, nsIURI, nsISerializable, nsIIPCSerializableURI,
+                     nsIURIWithSizeOf)
   NS_INTERFACE_TABLE_TO_MAP_SEGUE
   NS_IMPL_QUERY_CLASSINFO(DefaultURI)
   if (aIID.Equals(kDefaultURICID)) {

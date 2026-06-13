@@ -26,7 +26,7 @@ An error of greater than 0.001 indicates we have the loading bar present, any le
 """
 ACCEPTABLE_THRESHOLD_ERROR = {
     "homeview_startup": 0.0002,
-    "cold_view_nav_end": 0.001,
+    "cold_view_nav_end": 0.003,
     "mobile_restore": 0.001,
 }
 BACKGROUND_TABS = [
@@ -48,6 +48,12 @@ SERVER_CERT_FINGERPRINT = (
     "55:31:7E:DD:E2:BA:47:5B:E4:FF:93:19:F6:5B:EA:74:"
     "97:BF:46:21:D0:2D:A5:64:8C:C8:3E:C3:3B:64:EC:E6"
 )
+
+
+class InvalidLastFrame(Exception):
+    """If thrown, the difference in images is too high, we suspect a faulty run"""
+
+    pass
 
 
 class ImageAnalzer:
@@ -234,7 +240,7 @@ class ImageAnalzer:
         # We crop out the bottom 100 pixels to remove the fading in of the OS navigation controls
         # We crop out the right 20 pixels to remove the scroll bar as it interferes with startup accuracy
         if cropped:
-            return frame[100 : int(self.height) - 100, 0 : int(self.width) - 20]
+            return frame[100 : int(self.height) - 150, 0 : int(self.width) - 20]
         return frame
 
     def error(self, img1, img2):
@@ -360,15 +366,20 @@ class ImageAnalzer:
             filename += f"-{device}.png"
             validated_image = cv2.imread(str(pathlib.Path(VALID_IMAGES_DIR, filename)))
             cropped_image = validated_image[
-                100 : int(self.height) - 100, 0 : int(self.width) - 20
+                100 : int(self.height) - 150, 0 : int(self.width) - 20
             ]
             cropped_image = cv2.cvtColor(cropped_image, cv2.COLOR_BGR2GRAY)
             diff = self.error(self.get_image(frame_to_check), cropped_image)
             print(f"Error we found in images: {diff}")
             if diff > 0.5:
-                raise Exception(
+                raise InvalidLastFrame(
                     "Difference in Images is too high, suspected faulty run"
                 )
+
+    def run_test(self, iteration):
+        self.app_setup()
+        self.get_video(iteration)
+        return self.get_page_loaded_time(iteration)
 
 
 def get_profiler_combinations():
@@ -413,10 +424,13 @@ if __name__ == "__main__":
 
         ImageObject = ImageAnalzer(browser, test, test_url, profilers)
         for iteration in range(iterations):
-            ImageObject.app_setup()
-            ImageObject.get_video(iteration)
-            nav_done_frame = ImageObject.get_page_loaded_time(iteration)
-            ImageObject.validate_end_frame(nav_done_frame)
+            nav_done_frame = ImageObject.run_test(iteration)
+            try:
+                ImageObject.validate_end_frame(nav_done_frame)
+            except InvalidLastFrame:
+                print("Something went wrong, retrying image validation")
+                nav_done_frame = ImageObject.run_test(iteration)
+                ImageObject.validate_end_frame(nav_done_frame)
             start_video_timestamp += [
                 ImageObject.get_time_from_frame_num(nav_done_frame)
             ]

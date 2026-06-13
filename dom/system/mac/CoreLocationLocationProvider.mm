@@ -92,12 +92,6 @@ static void LogLocationPermissionState() {
 
   LogLocationPermissionState();
 
-  if ([aError code] == kCLErrorLocationUnknown) {
-    // The system will keep trying to get location.  See
-    // https://developer.apple.com/documentation/corelocation/cllocationmanagerdelegate/locationmanager(_:didfailwitherror:)?language=objc#Discussion
-    return;
-  }
-
   NSString* message = [@"Failed to acquire position: "
       stringByAppendingString:[aError localizedDescription]];
 
@@ -109,10 +103,20 @@ static void LogLocationPermissionState() {
   errorCodeStr.AppendInt(static_cast<int32_t>([aError code]));
   glean::geolocation::macos_error_code.Get(errorCodeStr).Add();
 
-  // The CL provider does not fallback to GeoIP, so use
-  // NetworkGeolocationProvider for this. The concept here is: on error, hand
-  // off geolocation to MLS, which will then report back a location or error.
-  mProvider->CreateMLSFallbackProvider();
+  if ([aError code] == kCLErrorLocationUnknown) {
+    // LocationUnknown is returned in situations where MacOS can't get location
+    // for some reason.  It means that MacOS will try again later, but, in
+    // practice, we see this error when wifi-scanning isn't available (maybe
+    // there is no wifi device).  We temporarily switch to
+    // NetworkGeolocationProvider, which will then report back a location or
+    // error.
+    mProvider->CreateMLSFallbackProvider();
+  }
+
+  // We leave the CoreLocation provider running.  If it receives a location
+  // result later, say, because a wifi device was added or the user enables
+  // MacOS location permissions, then the CoreLocation results will resume
+  // and the fallback provider, if running, will be stopped.
 }
 
 - (void)locationManager:(CLLocationManager*)aManager

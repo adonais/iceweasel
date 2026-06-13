@@ -50,8 +50,9 @@ class ContentMediaAgent : public IMediaInfoUpdater {
   // IMediaInfoUpdater Methods
   void NotifyMediaPlaybackChanged(uint64_t aBrowsingContextId,
                                   MediaPlaybackState aState) override;
-  void NotifyMediaAudibleChanged(uint64_t aBrowsingContextId,
-                                 MediaAudibleState aState) override;
+  void NotifyMediaAudibleChanged(
+      uint64_t aBrowsingContextId, MediaAudibleState aState,
+      ControlType aType = ControlType::eControllable) override;
   void SetIsInPictureInPictureMode(uint64_t aBrowsingContextId,
                                    bool aIsInPictureInPictureMode) override;
   void SetDeclaredPlaybackState(uint64_t aBrowsingContextId,
@@ -73,9 +74,15 @@ class ContentMediaAgent : public IMediaInfoUpdater {
                                   const Maybe<PositionState>& aState) override;
 
   // Use these methods to register/unregister `ContentMediaControlKeyReceiver`
-  // in order to listen to media control key events.
-  virtual void AddReceiver(ContentMediaControlKeyReceiver* aReceiver) = 0;
-  virtual void RemoveReceiver(ContentMediaControlKeyReceiver* aReceiver) = 0;
+  // in order to listen to media control key events. The aType parameter
+  // indicates whether the receiver participates in the full media-control
+  // lifecycle (eControllable, the default) or only accepts volume/mute keys
+  // (eUncontrollable).
+  virtual void AddReceiver(ContentMediaControlKeyReceiver* aReceiver,
+                           ControlType aType = ControlType::eControllable) = 0;
+  virtual void RemoveReceiver(
+      ContentMediaControlKeyReceiver* aReceiver,
+      ControlType aType = ControlType::eControllable) = 0;
 };
 
 /**
@@ -91,8 +98,10 @@ class ContentMediaController final : public ContentMediaAgent,
 
   explicit ContentMediaController(uint64_t aId);
   // ContentMediaAgent methods
-  void AddReceiver(ContentMediaControlKeyReceiver* aListener) override;
-  void RemoveReceiver(ContentMediaControlKeyReceiver* aListener) override;
+  void AddReceiver(ContentMediaControlKeyReceiver* aListener,
+                   ControlType aType = ControlType::eControllable) override;
+  void RemoveReceiver(ContentMediaControlKeyReceiver* aListener,
+                      ControlType aType = ControlType::eControllable) override;
 
   // ContentMediaControlKeyReceiver method
   void HandleMediaKey(MediaControlKey aKey,
@@ -106,7 +115,8 @@ class ContentMediaController final : public ContentMediaAgent,
 
   void PauseOrStopMedia();
 
-  nsTArray<RefPtr<ContentMediaControlKeyReceiver>> mReceivers;
+  nsTArray<RefPtr<ContentMediaControlKeyReceiver>> mControllableReceivers;
+  nsTArray<RefPtr<ContentMediaControlKeyReceiver>> mUncontrollableReceivers;
 };
 
 }  // namespace mozilla::dom

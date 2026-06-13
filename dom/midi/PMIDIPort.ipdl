@@ -18,9 +18,7 @@ parent:
   async Clear();
 child:
   async Receive(MIDIMessage[] msg);
-  // Actually takes a MIDIDeviceConnectionState and MIDIPortConnectionState
-  // respectively.
-  async UpdateStatus(uint32_t deviceState, uint32_t connectionState);
+  async UpdateStatus(MIDIPortDeviceState deviceState, MIDIPortConnectionState connectionState);
 };
 
 }

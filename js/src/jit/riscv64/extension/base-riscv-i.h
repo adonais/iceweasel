@@ -132,11 +132,7 @@ class AssemblerRISCVI : public AssemblerRiscvBase {
   }
 
   static inline Instr SetLoadOffset(int32_t offset, Instr instr) {
-#if JS_CODEGEN_RISCV64
     MOZ_ASSERT(IsLd(instr));
-#elif JS_CODEGEN_RISCV32
-    MOZ_ASSERT(IsLw(instr));
-#endif
     MOZ_ASSERT(is_int12(offset));
     instr &= ~kImm12Mask;
     int32_t imm12 = offset << kImm12Shift;
@@ -246,7 +242,6 @@ class AssemblerRISCVI : public AssemblerRiscvBase {
   void sltz(Register rd, Register rs) { slt(rd, rs, zero_reg); }
   void sgtz(Register rd, Register rs) { slt(rd, zero_reg, rs); }
 
-#if JS_CODEGEN_RISCV64
   void lwu(Register rd, Register rs1, int16_t imm12);
   void ld(Register rd, Register rs1, int16_t imm12);
   void sd(Register source, Register base, int16_t imm12);
@@ -264,7 +259,6 @@ class AssemblerRISCVI : public AssemblerRiscvBase {
 
   static bool IsAddiw(Instr instr);
   static bool IsLd(Instr instr);
-#endif
 };
 
 }  // namespace jit

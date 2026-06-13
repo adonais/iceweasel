@@ -35,28 +35,26 @@ void Pose::SetFloat32Array(JSContext* aJSContext, nsWrapperCache* creator,
                            JS::MutableHandle<JSObject*> aRetVal,
                            JS::Heap<JSObject*>& aObj, float* aVal,
                            uint32_t aValLength, ErrorResult& aRv) {
-  if (!aVal) {
-    aRetVal.set(nullptr);
-    return;
-  }
-
-  if (!aObj) {
+  if (!aVal || aValLength == 0) {
+    // Array can be erased by passing a nullptr or a zero length as the source.
+    aObj = nullptr;
+  } else if (!aObj || JS_GetTypedArrayLength(aObj) != aValLength) {
+    // If the array doesn't exist or is the wrong length, create a new one and
+    // copy the source into it.
     aObj =
         Float32Array::Create(aJSContext, creator, Span(aVal, aValLength), aRv);
-    if (aRv.Failed()) {
-      return;
-    }
   } else {
+    // Array exists and is the correct length. Just copy source into it.
     JS::AutoCheckCannotGC nogc;
     bool isShared = false;
-    JS::Rooted<JSObject*> obj(aJSContext, aObj.get());
-    float* data = JS_GetFloat32ArrayData(obj, &isShared, nogc);
-    if (data) {
-      memcpy(data, aVal, aValLength * sizeof(float));
-    }
+    float* data = JS_GetFloat32ArrayData(aObj, &isShared, nogc);
+    MOZ_ASSERT(data);
+    memcpy(data, aVal, aValLength * sizeof(float));
   }
 
-  aRetVal.set(aObj);
+  if (!aRv.Failed()) {
+    aRetVal.set(aObj);
+  }
 }
 
 }  // namespace mozilla::dom

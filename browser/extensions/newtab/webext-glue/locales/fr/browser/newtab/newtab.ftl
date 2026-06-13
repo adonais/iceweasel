@@ -8,9 +8,13 @@
 newtab-page-title = Nouvel onglet
 newtab-settings-button =
     .title = Personnaliser la page Nouvel onglet
+#  (developer note): @nova-cleanup(remove-string): Remove newtab-customize-panel-icon-button once Nova lands, will be using newtab-customize-panel-label instead
 newtab-customize-panel-icon-button =
     .title = Personnaliser cette page
+#  (developer note): @nova-cleanup(remove-string): Remove newtab-customize-panel-icon-button-label once Nova lands, will be using newtab-customize-panel-label instead
 newtab-customize-panel-icon-button-label = Personnaliser
+newtab-customize-panel-label =
+    .label = Personnaliser
 newtab-personalize-settings-icon-label =
     .title = Personnaliser la page Nouvel onglet
     .aria-label = Paramètres
@@ -359,6 +363,10 @@ newtab-custom-widget-lists-toggle =
     .label = Listes
 newtab-custom-widget-timer-toggle =
     .label = Minuteur
+newtab-custom-widget-sports-toggle =
+    .label = Coupe du monde
+newtab-custom-widget-clock-toggle =
+    .label = Horloge
 newtab-custom-widget-section-title = Widgets
 newtab-custom-widget-section-toggle =
     .label = Widgets
@@ -497,6 +505,9 @@ newtab-weather-menu-change-location = Changer de lieu
 newtab-weather-change-location-search-input-placeholder =
     .placeholder = Rechercher un lieu
     .aria-label = Rechercher un lieu
+# "Current" refers to the user's physical/geographic location detected via geolocation.
+newtab-weather-change-location-search-use-current =
+    .label = Utiliser l’emplacement actuel
 newtab-weather-menu-weather-display = Affichage météo
 newtab-weather-todays-forecast = Prévisions du jour
 newtab-weather-see-full-forecast = Voir les prévisions complètes
@@ -585,8 +596,16 @@ newtab-topic-selection-button-pick-interests = Choisir vos centres d’intérêt
 ## e.g. Following the travel section of stories.
 
 newtab-section-follow-button = Suivre
+# Variables:
+#   $topic (string) - Topic that the user can follow
+newtab-section-follow-button-label =
+    .aria-label = Suivre { $topic }
 newtab-section-following-button = Suivi
 newtab-section-unfollow-button = Ne plus suivre
+# Variables:
+#   $topic (string) - Topic that the user is following and can unfollow
+newtab-section-unfollow-button-label =
+    .aria-label = Suivi : ne plus suivre { $topic }
 # A modal may appear next to the Follow button, directing users to try out the feature
 newtab-section-follow-highlight-title = Personnalisez votre fil
 newtab-section-follow-highlight-subtitle = Suivez vos centres d’intérêt pour découvrir davantage de contenus qui vous plaisent.
@@ -598,6 +617,22 @@ newtab-section-follow-highlight-subtitle = Suivez vos centres d’intérêt pour
 newtab-section-block-button = Bloquer
 newtab-section-blocked-button = Bloqué
 newtab-section-unblock-button = Débloquer
+# Variables:
+#   $topic (string) - Name of topic that user is following
+newtab-section-follow-topic =
+    .aria-label = Suivre { $topic }
+# Variables:
+#   $topic (string) - Name of topic that user is unfollowing
+newtab-section-unfollow-topic =
+    .aria-label = Ne plus suivre { $topic }
+# Variables:
+#   $topic (string) - Name of topic that user is blocking
+newtab-section-block-topic =
+    .aria-label = Bloquer { $topic }
+# Variables:
+#   $topic (string) - Name of topic that user is unblocking
+newtab-section-unblock-topic =
+    .aria-label = Débloquer { $topic }
 
 ## Confirmation modal for blocking a section
 
@@ -628,6 +663,12 @@ newtab-custom-wallpaper-cta = Essayer
 newtab-new-user-custom-wallpaper-title = Choisissez un fond d’écran pour personnaliser { -brand-product-name }
 newtab-new-user-custom-wallpaper-subtitle = Personnalisez chaque nouvel onglet pour qu’il vous ressemble en choisissant vos propres fonds d’écran et couleurs.
 newtab-new-user-custom-wallpaper-cta = Essayer
+
+## Strings for Nova wallpaper feature highlight
+
+newtab-wallpaper-feature-highlight-title = De nouveaux fonds d’écran viennent d’arriver
+newtab-wallpaper-feature-highlight-subtitle = Sélectionnez votre préféré et donnez à chaque nouvel onglet une touche personnelle.
+newtab-wallpaper-feature-highlight-cta = Choisir un fond d’écran
 
 ## Strings for download mobile highlight
 
@@ -697,12 +738,20 @@ newtab-widget-lists-label-beta =
 # Variables:
 #   $number (number) - Amount of list items marked complete
 newtab-widget-lists-completed-list = Achevées ({ $number })
+newtab-widget-lists-celebration-headline = Bien joué
+newtab-widget-lists-celebration-subhead = Aucune tâche restante
 newtab-widget-task-list-menu-copy = Copier
 newtab-widget-lists-menu-edit = Modifier le nom de la liste
+newtab-widget-lists-menu-edit2 =
+    .aria-label = Modifier le nom de la liste
 newtab-widget-lists-menu-create = Créer une nouvelle liste
 newtab-widget-lists-menu-delete = Supprimer cette liste
 newtab-widget-lists-menu-copy = Copier la liste dans le presse-papiers
 newtab-widget-lists-menu-learn-more = En savoir plus
+newtab-widget-lists-button-add-item = Ajouter un élément
+newtab-widget-lists-input-add-an-item2 =
+    .placeholder = Ajouter un élément
+    .aria-label = Ajouter un élément
 newtab-widget-lists-input-add-an-item =
     .placeholder = Ajouter un élément
 newtab-widget-lists-input-error = Veuillez saisir du texte pour ajouter un élément.
@@ -711,12 +760,25 @@ newtab-widget-lists-input-menu-move-up = Déplacer vers le haut
 newtab-widget-lists-input-menu-move-down = Déplacer vers le bas
 newtab-widget-lists-input-menu-delete = Supprimer
 newtab-widget-lists-input-menu-edit = Modifier
+newtab-widget-lists-input-menu-edit2 =
+    .aria-label = Modifier l’élément
 # the + symbol emphasises the functionality of adding a new list
 newtab-widget-lists-dropdown-create =
     .label = + Créer une nouvelle liste
 newtab-widget-lists-name-label-default =
     .label = Liste de tâches
+newtab-widget-lists-name-label-checklist =
+    .label = Liste de tâches
 newtab-widget-lists-name-placeholder-default =
+    .placeholder = Liste de tâches
+newtab-widget-lists-name-placeholder-checklist2 =
+    .placeholder = Liste de tâches
+    .aria-label = Modifier le nom de la liste
+# The placeholder value of the name field for a newly created list
+newtab-widget-lists-name-placeholder-new2 =
+    .placeholder = Nouvelle liste
+    .aria-label = Modifier le nom de la liste
+newtab-widget-lists-name-placeholder-checklist =
     .placeholder = Liste de tâches
 # The placeholder value of the name field for a newly created list
 newtab-widget-lists-name-placeholder-new =
@@ -724,6 +786,15 @@ newtab-widget-lists-name-placeholder-new =
 newtab-widget-section-title = Widgets
 newtab-widget-menu-hide = Masquer le widget
 newtab-widget-menu-change-size = Modifier la taille
+# Parent label for a submenu in the widget menu that reorders the widget
+# among its siblings. "Left" and "Right" appear as items inside this submenu.
+newtab-widget-menu-move = Déplacer
+# Submenu item under "Move"; moves the widget one position to the left.
+# RTL locales should translate this as "Right".
+newtab-widget-menu-move-left = À gauche
+# Submenu item under "Move"; moves the widget one position to the right.
+# RTL locales should translate this as "Left".
+newtab-widget-menu-move-right = À droite
 newtab-widget-size-small = Petite
 newtab-widget-size-medium = Moyenne
 newtab-widget-size-large = Grande
@@ -737,10 +808,19 @@ newtab-widget-section-maximize =
 newtab-widget-section-minimize =
     .title = Réduire les widgets
     .aria-label = Réduire tous les widgets au format compact
+newtab-widget-section-menu-button =
+    .title = Menu Widgets
+    .aria-label = Ouvrir le menu des widgets
+newtab-widget-add-widgets-button =
+    .aria-label = Ajouter le widget
+    .title = Ajouter le widget
+newtab-widget-section-menu-manage = Gérer les widgets
+newtab-widget-section-menu-hide-all = Masquer les widgets
+newtab-widget-section-menu-learn-more = En savoir plus
 newtab-widget-section-feedback = Donnez-nous votre avis
+newtab-widget-lists-name-default = Liste de tâches
 
-## Strings for timer productivity widget
-## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown
+## Strings introduced by the Nova redesign of the Timer widget
 
 newtab-widget-timer-notification-title = Minuteur
 newtab-widget-timer-notification-focus = La période de concentration est terminée. Bien joué. Besoin de faire une pause ?
@@ -781,6 +861,123 @@ newtab-promo-card-dismiss-button =
     .title = Ignorer
     .aria-label = Ignorer
 
+## Strings introduced by the Nova redesign of the Timer widget
+
+# Variables:
+#   $minutes (number) - The currently selected timer duration in minutes
+newtab-widget-timer-start-aria =
+    .aria-label =
+        { $minutes ->
+            [one] Démarrer le chronomètre de { $minutes } minute
+           *[other] Démarrer le chronomètre de { $minutes } minutes
+        }
+newtab-widget-timer-pause-aria =
+    .aria-label = Mettre en pause le minuteur
+# Variables:
+#   $minutes (number) - The currently selected timer duration in minutes
+newtab-widget-timer-spinbutton-name =
+    .aria-label =
+        { $minutes ->
+            [one] { $minutes } minute
+           *[other] { $minutes } minutes
+        }
+newtab-widget-timer-decrease-min =
+    .title = Diminuer d’une minute
+newtab-widget-timer-increase-min =
+    .title = Augmenter d’une minute
+newtab-widget-timer-mode-group =
+    .aria-label = Mode minuteur
+# Small label shown beneath the live time while the focus timer is running or paused.
+newtab-widget-timer-running-focus = Concentration
+# Small label shown beneath the live time while the break timer is running or paused.
+newtab-widget-timer-running-break = Pause
+# Context-menu item to hide the Timer widget. Replaces the shared "Hide widget"
+# copy with a widget-specific string per the Nova design.
+newtab-widget-timer-menu-hide = Masquer le minuteur
+# Heading shown inside the Timer widget after a focus session ends.
+newtab-widget-timer-celebration-heading-focus = Bien joué
+# Heading shown inside the Timer widget after a break session ends.
+newtab-widget-timer-celebration-heading-break = Votre pause est terminée
+# Message shown inside the Timer widget after a focus session ends.
+newtab-widget-timer-celebration-message-focus = Besoin de faire une pause ?
+# Message shown inside the Timer widget after a break session ends.
+newtab-widget-timer-celebration-message-break = Prêt·e à vous concentrer ?
+
+## Sports widget
+
+newtab-sports-widget-menu-follow-teams = Suivre des équipes
+newtab-sports-widget-menu-view-schedule = Voir le calendrier
+newtab-sports-widget-menu-view-upcoming = Voir les matchs à venir
+newtab-sports-widget-menu-view-results = Voir les résultats
+# Milestone dates (e.g. group stage, semifinals, etc.). Refers to calendar dates.
+newtab-sports-widget-menu-key-dates = Dates clés
+newtab-sports-widget-menu-learn-more = En savoir plus
+# “Keep tabs on” is an informal expression meaning to stay updated on, stay informed on, or regularly follow something (in this case, World Cup matches and updates).
+newtab-sports-widget-keep-tabs = Gardez un œil sur la Coupe du monde
+newtab-sports-widget-get-updates = Recevez les dernières infos en direct sur les matchs et bien plus encore.
+newtab-sports-widget-view-schedule =
+    .label = Voir le calendrier
+newtab-sports-widget-follow-teams =
+    .label = Suivre des équipes
+newtab-sports-widget-view-matches =
+    .label = Voir les matchs
+# Variables:
+#   $number (number) - Maximum number of teams a user can choose to follow in the team selection state
+newtab-sports-widget-follow-teams-title =
+    { $number ->
+        [one] Suivez jusqu’à { $number } équipe
+       *[other] Suivez jusqu’à { $number } équipes
+    }
+newtab-sports-widget-choose-wallpaper =
+    .label = Choisir un fond d’écran
+newtab-sports-widget-skip = Ignorer
+newtab-sports-widget-search-country =
+    .placeholder = Rechercher un pays
+    .aria-label = Rechercher un pays
+newtab-sports-widget-cancel = Annuler
+newtab-sports-widget-back-button =
+    .aria-label = Retour
+newtab-sports-widget-done-button =
+    .label = Terminé
+newtab-sports-widget-group-stage = Phase de groupes
+newtab-sports-widget-round-32 = 16es de finale
+newtab-sports-widget-round-16 = 8es de finale
+newtab-sports-widget-quarter-finals = Quarts de finale
+# The "LIVE" string is meant to be uppercase in English, but other languages and locales may vary in how they handle this.
+newtab-sports-widget-live = EN DIRECT
+newtab-custom-widget-live-refresh =
+    .title = Actualiser les scores
+    .aria-label = Actualiser les scores
+# Milestone dates (e.g. group stage, semifinals, etc.). Refers to calendar dates.
+newtab-sports-widget-key-dates = Dates clés
+newtab-sports-widget-upcoming = À venir
+# Used for a match currently ongoing
+newtab-sports-widget-now = Maintenant
+newtab-sports-widget-results = Résultats
+newtab-sports-widget-semi-finals = Demi-finale
+newtab-sports-widget-bronze-finals = Petite finale
+# Final is the final match for 1st place.
+newtab-sports-widget-final = Finale
+# Variables:
+#   $start (Date) - Start date of a tournament stage
+#   $end (Date) - End date of a tournament stage
+newtab-sports-widget-key-date-range = { DATETIME($start, month: "short", day: "numeric") } – { DATETIME($end, month: "short", day: "numeric") }
+# Variables:
+#   $date (Date) - Date of a single tournament event
+newtab-sports-widget-key-date = { DATETIME($date, month: "short", day: "numeric") }
+newtab-sports-widget-delayed = Retardé
+newtab-sports-widget-postponed = Reporté
+newtab-sports-widget-suspended = Suspendu
+newtab-sports-widget-cancelled = Annulé
+newtab-sports-widget-information = Informations à propos du match
+newtab-sports-widget-no-live-data = Les informations des matchs en direct ne sont pas actualisées pour le moment
+newtab-sports-widget-view-results-link = Voir les résultats
+newtab-sports-widget-third-place = Troisième place
+# Runner-up is the team in 2nd place.
+newtab-sports-widget-runner-up = Finaliste
+newtab-sports-widget-champions = Champions
+newtab-sports-widget-world-cup-champions = Champions du monde 2026
+
 ## Strings for activation window message variants. In certain experiment configurations,
 ## the strings from these variants may be displayed in a message below the search input
 ## for the first 48 hours of a new profile's lifetime. Some messages include buttons with
@@ -802,3 +999,59 @@ newtab-activation-window-message-customization-focus-primary-button =
 # the existing widgetry that appears on it.
 newtab-activation-window-message-values-focus-header = Cet espace suit vos règles
 newtab-activation-window-message-values-focus-message = { -brand-product-name } vous permet de naviguer comme bon vous semble, de commencer votre journée en ligne de façon plus personnelle. Personnalisez { -brand-product-name }.
+
+## Strings for the Clock widget
+
+# Context menu item: toggle the clock card off.
+newtab-clock-widget-menu-hide = Masquer l’horloge
+newtab-clock-widget-menu-learn-more = En savoir plus
+newtab-clock-widget-menu-edit = Modifier les horloges
+newtab-clock-widget-menu-switch-to-12h = Passer au format 12 heures
+newtab-clock-widget-menu-switch-to-24h = Passer au format 24 heures
+newtab-clock-widget-label-your-clocks = Vos horloges
+newtab-clock-widget-search-location-input =
+    .label = Emplacement
+    .placeholder = Rechercher une ville
+    .aria-label = Rechercher une ville
+# "Nickname (optional)" refers to a custom, user-defined label for a saved location
+# (e.g., "Home", "Office", or "School") to make it easier to recognize.
+# Not to be translated as a legal name, username, or alias used for identity verification.
+newtab-clock-widget-input-nickname =
+    .label = Nom personnalisé (facultatif)
+    .placeholder = Ajouter un nom personnalisé
+    .aria-label = Nom personnalisé (facultatif)
+# "Add new clock" is an icon-only button in the widget toolbar — the
+# attributes are consumed as tooltip/screen-reader label only. The button
+# never renders visible text.
+newtab-clock-widget-button-add =
+    .title = Ajouter une horloge
+    .aria-label = Ajouter une horloge
+newtab-clock-widget-button-add-clock = Ajouter
+newtab-clock-widget-button-cancel = Annuler
+newtab-clock-widget-button-back =
+    .title = Retour
+    .aria-label = Retour
+newtab-clock-widget-button-edit-clock =
+    .title = Modifier l’horloge
+    .aria-label = Modifier l’horloge
+newtab-clock-widget-button-save = Enregistrer
+newtab-clock-widget-button-remove-clock =
+    .title = Supprimer l’horloge
+    .aria-label = Supprimer l’horloge
+newtab-clock-widget-add-clock-form =
+    .aria-label = Ajouter une horloge
+newtab-clock-widget-edit-clock-form =
+    .aria-label = Modifier l’horloge
+# "Search results" is the accessible label for the listbox dropdown that appears
+# below the location search field, listing matching cities as the user types.
+# It means "results of the search", not "search within the results".
+newtab-clock-widget-search-results =
+    .aria-label = Résultats de la recherche
+# "Open menu for clock" is an icon-only button in the widget toolbar — the
+# attributes are consumed as tooltip/screen-reader label only. The button
+# never renders visible text.
+newtab-clock-widget-menu-button =
+    .title = Ouvrir le menu de l’horloge
+    .aria-label = Ouvrir le menu de l’horloge
+# $nickname (String) - The user-defined nickname for a saved clock location (e.g., "Home", "Office").
+newtab-clock-widget-label-nickname-with-value = Nom personnalisé : { $nickname }

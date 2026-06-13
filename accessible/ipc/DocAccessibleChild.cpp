@@ -44,7 +44,7 @@ void DocAccessibleChild::FlattenTree(LocalAccessible* aRoot,
 
 /* static */
 AccessibleData DocAccessibleChild::SerializeAcc(LocalAccessible* aAcc) {
-  uint32_t genericTypes = aAcc->mGenericTypes;
+  AccGenericType genericTypes = aAcc->GenericTypes();
   if (aAcc->ARIAHasNumericValue()) {
     // XXX: We need to do this because this requires a state check.
     genericTypes |= eNumericValue;
@@ -63,11 +63,9 @@ AccessibleData DocAccessibleChild::SerializeAcc(LocalAccessible* aAcc) {
   }
 
   return AccessibleData(aAcc->ID(), aAcc->NativeRole(),
-                        aAcc->LocalParent()->ID(),
-                        static_cast<int32_t>(aAcc->IndexInParent()),
-                        static_cast<AccType>(aAcc->mType),
-                        static_cast<AccGenericType>(genericTypes),
-                        aAcc->mRoleMapEntryIndex, fields);
+                        aAcc->LocalParent()->ID(), aAcc->IndexInParent(),
+                        aAcc->mType, genericTypes, aAcc->mRoleMapEntryIndex,
+                        fields);
 }
 
 void DocAccessibleChild::InsertIntoIpcTree(LocalAccessible* aChild,

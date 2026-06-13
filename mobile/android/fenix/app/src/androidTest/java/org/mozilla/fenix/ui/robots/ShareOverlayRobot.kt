@@ -37,7 +37,6 @@ import org.mozilla.fenix.helpers.MatcherHelper.itemWithText
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTime
 import org.mozilla.fenix.helpers.TestHelper.mDevice
 import org.mozilla.fenix.helpers.TestHelper.packageName
-import org.mozilla.fenix.helpers.TestHelper.waitForAppWindowToBeUpdated
 import org.mozilla.fenix.helpers.ext.waitNotNull
 
 class ShareOverlayRobot {
@@ -79,6 +78,32 @@ class ShareOverlayRobot {
                 "$packageName:id/accountHeaderText",
                 getStringResource(R.string.share_device_subheader),
             ),
+            // Recently used header
+            itemWithResIdContainingText(
+                "$packageName:id/recent_apps_link_header",
+                getStringResource(R.string.share_link_recent_apps_subheader),
+            ),
+            // All actions header
+            itemWithResIdContainingText(
+                "$packageName:id/apps_link_header",
+                getStringResource(R.string.share_link_all_apps_subheader),
+            ),
+            // Save as PDF button
+            itemContainingText(getStringResource(R.string.share_save_to_pdf)),
+        )
+    }
+
+    // This function verifies the share layout in Landscape mode when a single tab is shared - no tab info shown
+    // Send to device section is not shown in landscape mode
+
+    fun verifyShareTabLayoutInLandscapeMode() {
+        assertUIObjectExists(
+            // Share layout
+            itemWithResId("$packageName:id/sharingLayout"),
+            // Recently used section
+            itemWithResId("$packageName:id/recentAppsContainer"),
+            // All actions sections
+            itemWithResId("$packageName:id/appsList"),
             // Recently used header
             itemWithResIdContainingText(
                 "$packageName:id/recent_apps_link_header",
@@ -173,13 +198,30 @@ class ShareOverlayRobot {
         Log.i(TAG, "verifyShareLinkIntent: Verified that the share intent for link: $url was launched")
     }
 
+    /**
+     * Click the share target for [appName] and wait for the share sheet to dismiss.
+     * Callers must follow up with [assertNativeAppOpens] to verify the target app
+     * foregrounded -- this helper intentionally does not verify the launch itself.
+     */
     fun clickSharingApp(appName: String, appPackageName: String) {
-            val sharingApp = itemContainingText(appName)
-            if (isPackageInstalled(appPackageName)) {
-                assertUIObjectExists(sharingApp)
+        val sharingApp = itemContainingText(appName)
+        if (isPackageInstalled(appPackageName)) {
+            assertUIObjectExists(sharingApp)
+            for (i in 1..RETRY_COUNT) {
+                Log.i(TAG, "clickSharingApp: Started try #$i")
+                if (!sharingApp.exists()) {
+                    // Share sheet is gone: a prior click was consumed. Stop clicking,
+                    // and let callers verify the target app via assertNativeAppOpens.
+                    Log.i(TAG, "clickSharingApp: Share sheet dismissed, stopping click retry")
+                    break
+                }
                 Log.i(TAG, "clickSharingApp: Trying to click sharing app: $appName and wait for a new window")
                 sharingApp.clickAndWaitForNewWindow()
                 Log.i(TAG, "clickSharingApp: Clicked sharing app: $appName and waited for a new window")
+            }
+            if (sharingApp.exists()) {
+                Log.i(TAG, "clickSharingApp: Retries exhausted; share sheet still visible")
+            }
         }
     }
 

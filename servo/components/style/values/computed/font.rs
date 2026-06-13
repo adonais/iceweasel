@@ -19,7 +19,7 @@ use crate::values::resolved::{Context as ResolvedContext, ToResolvedValue};
 use crate::values::specified::font::{
     self as specified, KeywordInfo, MAX_FONT_WEIGHT, MIN_FONT_WEIGHT,
 };
-use crate::values::specified::length::{FontBaseSize, LineHeightBase, NoCalcLength};
+use crate::values::specified::length::{FontBaseSize, LineHeightBase};
 use crate::values::CSSInteger;
 use crate::Atom;
 use cssparser::{match_ignore_ascii_case, serialize_identifier, CssStringWriter, Parser};
@@ -868,7 +868,7 @@ impl ToComputedValue for specified::FontSizeAdjust {
             }};
         }
 
-        match *self {
+        match self {
             Self::None => FontSizeAdjust::None,
             Self::ExHeight(val) => {
                 resolve!(
@@ -1062,15 +1062,8 @@ impl ToComputedValue for specified::MozScriptMinSize {
         // we use the parent size
         let base_size = FontBaseSize::InheritedStyle;
         let line_height_base = LineHeightBase::InheritedStyle;
-        match self.0 {
-            NoCalcLength::FontRelative(value) => {
-                value.to_computed_value(cx, base_size, line_height_base)
-            },
-            NoCalcLength::ServoCharacterWidth(value) => {
-                value.to_computed_value(base_size.resolve(cx).computed_size())
-            },
-            ref l => l.to_computed_value(cx),
-        }
+        self.0
+            .to_computed_value_with_base_size(cx, base_size, line_height_base)
     }
 
     fn from_computed_value(other: &MozScriptMinSize) -> Self {
@@ -1089,7 +1082,7 @@ impl ToComputedValue for specified::MathDepth {
         use crate::properties::longhands::math_style::SpecifiedValue as MathStyleValue;
         use std::{cmp, i8};
 
-        let int = match *self {
+        let int = match self {
             specified::MathDepth::AutoAdd => {
                 let parent = cx.builder.get_parent_font().clone_math_depth() as i32;
                 let style = cx.builder.get_parent_font().clone_math_style();

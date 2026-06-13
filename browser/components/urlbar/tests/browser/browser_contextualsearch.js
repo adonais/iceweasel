@@ -272,10 +272,15 @@ add_task(async function test_selectContextualSearchResult_already_installed() {
     expectedUrl,
     "Selecting the contextual search result opens the search URL"
   );
-  await UrlbarTestUtils.exitSearchMode(window, {
-    clickClose: true,
-    waitForSearch: false,
-  });
+  Assert.ok(
+    !gURLBar.view.isOpen,
+    "Urlbar view should be closed after navigation"
+  );
+  Assert.equal(
+    gURLBar.searchMode,
+    null,
+    "Search mode should be cleared after navigation"
+  );
 });
 
 add_task(async function test_tab_to_search_engine() {
@@ -405,6 +410,7 @@ add_task(async function keep_search_query_searchbar() {
   });
 
   let gCUITestUtils = new CustomizableUITestUtils(window);
+  registerCleanupFunction(() => gCUITestUtils.removeSearchBar());
   let searchbar = await gCUITestUtils.addSearchBar();
 
   // Visit page where de-engine will be suggested.

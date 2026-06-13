@@ -135,7 +135,7 @@ void EncoderTemplate<EncoderType>::Configure(const ConfigType& aConfig,
 
   // Audio encoders are all software, no need to do anything.
   if constexpr (std::is_same_v<ConfigType, VideoEncoderConfig>) {
-    ApplyResistFingerprintingIfNeeded(config, GetOwnerGlobal());
+    ApplyResistFingerprintingIfNeeded(config, GetRelevantGlobal());
   }
 
   mState = CodecState::Configured;

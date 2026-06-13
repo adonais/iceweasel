@@ -398,13 +398,14 @@ nsresult NotificationParent::Show(Maybe<IPCImage>&& aIcon) {
     }
   }
 
-  nsTArray<RefPtr<nsIAlertAction>> actions;
-  MOZ_ASSERT(options.actions().Length() <= kMaxActions);
-  for (const auto& action : options.actions()) {
-    actions.AppendElement(new AlertAction(action.name(), action.title()));
+  if (StaticPrefs::dom_webnotifications_actions_enabled()) {
+    nsTArray<RefPtr<nsIAlertAction>> actions;
+    MOZ_ASSERT(options.actions().Length() <= kMaxActions);
+    for (const auto& action : options.actions()) {
+      actions.AppendElement(new AlertAction(action.name(), action.title()));
+    }
+    alert->SetActions(actions);
   }
-
-  alert->SetActions(actions);
 
   MOZ_TRY(alert->GetId(mId));
 

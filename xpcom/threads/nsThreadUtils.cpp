@@ -26,6 +26,13 @@
 #  include <windows.h>
 #elif defined(XP_MACOSX)
 #  include <sys/resource.h>
+#elif defined(XP_LINUX) && !defined(ANDROID)
+#  include <sys/syscall.h>
+// <linux/ioprio.h> has no glibc wrapper and is absent from some sysroots, so
+// define the constants directly from the stable kernel ABI.
+#  define IOPRIO_WHO_THREAD 1
+#  define IOPRIO_CLASS_BE 2
+#  define IOPRIO_PRIO_VALUE(class, data) (((class) << 13) | (data))
 #endif
 
 #if defined(ANDROID)
@@ -516,6 +523,14 @@ nsAutoLowPriorityIO::nsAutoLowPriorityIO() {
   lowIOPrioritySet =
       oldPriority != -1 &&
       setiopolicy_np(IOPOL_TYPE_DISK, IOPOL_SCOPE_THREAD, IOPOL_THROTTLE) != -1;
+#elif defined(XP_LINUX) && !defined(ANDROID)
+  // IOPRIO_CLASS_BE with priority 7 is the lowest best-effort I/O class,
+  // matching the throttled (not starved) semantics of macOS and Windows.
+  oldPriority =
+      static_cast<int>(syscall(__NR_ioprio_get, IOPRIO_WHO_THREAD, 0));
+  lowIOPrioritySet =
+      oldPriority >= 0 && syscall(__NR_ioprio_set, IOPRIO_WHO_THREAD, 0,
+                                  IOPRIO_PRIO_VALUE(IOPRIO_CLASS_BE, 7)) == 0;
 #else
   lowIOPrioritySet = false;
 #endif
@@ -530,6 +545,10 @@ nsAutoLowPriorityIO::~nsAutoLowPriorityIO() {
 #elif defined(XP_MACOSX)
   if (MOZ_LIKELY(lowIOPrioritySet)) {
     setiopolicy_np(IOPOL_TYPE_DISK, IOPOL_SCOPE_THREAD, oldPriority);
+  }
+#elif defined(XP_LINUX) && !defined(ANDROID)
+  if (MOZ_LIKELY(lowIOPrioritySet)) {
+    syscall(__NR_ioprio_set, IOPRIO_WHO_THREAD, 0, oldPriority);
   }
 #endif
 }

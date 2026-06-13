@@ -332,7 +332,6 @@ newtab-widget-lists-label-beta =
 newtab-widget-lists-menu-learn-more = ఇంకా తెలుసుకోండి
 newtab-widget-lists-input-menu-delete = తొలగించు
 
-## Strings for timer productivity widget
-## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown
+## Strings introduced by the Nova redesign of the Timer widget
 
 newtab-widget-timer-menu-learn-more = ఇంకా తెలుసుకోండి

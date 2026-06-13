@@ -31,6 +31,11 @@ class ContentParent;
  */
 class ProcessPriorityManager final {
  public:
+  ProcessPriorityManager() = delete;
+  ProcessPriorityManager(const ProcessPriorityManager&) = delete;
+  const ProcessPriorityManager& operator=(const ProcessPriorityManager&) =
+      delete;
+
   /**
    * Initialize the ProcessPriorityManager machinery, causing the
    * ProcessPriorityManager to actively manage the priorities of all
@@ -77,13 +82,6 @@ class ProcessPriorityManager final {
                                      bool aPriority);
   static void BrowserPriorityChanged(dom::BrowserParent* aBrowserParent,
                                      bool aPriority);
-
- private:
-  ProcessPriorityManager();
-  ProcessPriorityManager(const ProcessPriorityManager&) = delete;
-
-  const ProcessPriorityManager& operator=(const ProcessPriorityManager&) =
-      delete;
 };
 
 }  // namespace mozilla

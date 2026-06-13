@@ -13,12 +13,11 @@ const MockFilePicker = SpecialPowers.MockFilePicker;
 const { promise: filePickerPromise, resolve: resolveFilePicker } =
   Promise.withResolvers();
 add_setup(async function () {
-  MockFilePicker.init(window.browsingContext);
+  MockFilePicker.init();
   MockFilePicker.showCallback = function (fp) {
     resolveFilePicker(fp.defaultString);
     return MockFilePicker.returnCancel;
   };
-
   registerCleanupFunction(function () {
     MockFilePicker.cleanup();
   });

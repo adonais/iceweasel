@@ -19,6 +19,7 @@
 
 #include "mozilla/CheckedInt.h"
 #include "mozilla/EnumeratedArray.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/Span.h"
 
 #include <stdint.h>
@@ -744,6 +745,15 @@ struct TrapData {
   // a signature mismatch may leave us with only one frame. This frame is
   // validly constructed, but has no debug frame yet.
   bool failedUnwindSignatureMismatch;
+
+  struct FaultInfo {
+    uint32_t memoryIndex;
+    uint64_t byteOffset;
+  };
+
+  // For Trap::OutOfBounds triggered by a memory fault, the memory index and
+  // byte offset of the faulting address within the memory's mapped region.
+  mozilla::Maybe<FaultInfo> faultInfo;
 };
 
 // The (,Callable,Func)Offsets classes are used to record the offsets of

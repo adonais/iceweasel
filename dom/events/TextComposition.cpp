@@ -671,7 +671,7 @@ void TextComposition::MaybeNotifyIMEOfCompositionEventHandled(
 void TextComposition::DispatchCompositionEventRunnable(
     EventMessage aEventMessage, const nsAString& aData,
     bool aIsSynthesizingCommit) {
-  nsContentUtils::AddScriptRunner(new CompositionEventDispatcher(
+  nsContentUtils::AddScriptRunner(MakeAndAddRef<CompositionEventDispatcher>(
       this, mNode, aEventMessage, aData, aIsSynthesizingCommit));
 }
 

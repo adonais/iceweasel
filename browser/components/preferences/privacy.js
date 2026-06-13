@@ -9,20 +9,25 @@
 /* import-globals-from extensionControlled.js */
 /* import-globals-from preferences.js */
 
+// import the new Permissions & Data settings pane code.
+const { PRIVACY_SEGMENTATION_PREF } = ChromeUtils.importESModule(
+  "chrome://browser/content/preferences/config/permissions-data.mjs",
+  { global: "current" }
+);
+const { PasswordSettingHelpers } = ChromeUtils.importESModule(
+  "chrome://browser/content/preferences/config/passwords-autofill.mjs",
+  { global: "current" }
+);
 const { PrivacySettingHelpers } = ChromeUtils.importESModule(
   "chrome://browser/content/preferences/config/privacy.mjs",
   { global: "current" }
 );
-
-const PREF_UPLOAD_ENABLED = "datareporting.healthreport.uploadEnabled";
 
 const TRACKING_PROTECTION_KEY = "websites.trackingProtectionMode";
 const TRACKING_PROTECTION_PREFS = [
   "privacy.trackingprotection.enabled",
   "privacy.trackingprotection.pbmode.enabled",
 ];
-const PRIVACY_SEGMENTATION_PREF =
-  "browser.privacySegmentation.preferences.show";
 const CONTENT_BLOCKING_PREFS = [
   "privacy.trackingprotection.enabled",
   "privacy.trackingprotection.pbmode.enabled",
@@ -37,11 +42,6 @@ const CONTENT_BLOCKING_PREFS = [
   "privacy.trackingprotection.allow_list.baseline.enabled",
   "privacy.trackingprotection.allow_list.convenience.enabled",
 ];
-
-const PREF_OPT_OUT_STUDIES_ENABLED = "app.shield.optoutstudies.enabled";
-const PREF_NORMANDY_ENABLED = "app.normandy.enabled";
-
-const PREF_ADDON_RECOMMENDATIONS_ENABLED = "browser.discovery.enabled";
 
 const PREF_PASSWORD_GENERATION_AVAILABLE = "signon.generation.available";
 const { BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN } = Ci.nsICookieService;
@@ -627,6 +627,7 @@ var gPrivacyPane = {
     initSettingGroup("history2");
     initSettingGroup("permissions");
     initSettingGroup("dataCollection");
+    initSettingGroup("privacyPanel");
     initSettingGroup("dnsOverHttps");
     initSettingGroup("dnsOverHttpsAdvanced");
     initSettingGroup("etpStatus");
@@ -732,8 +733,6 @@ var gPrivacyPane = {
 
     setSyncFromPrefListener("savePasswords", () => this.readSavePasswords());
 
-    this.initSiteDataControls();
-
     this.initPrivacySegmentation();
 
     let signonBundle = document.getElementById("signonBundle");
@@ -771,10 +770,6 @@ var gPrivacyPane = {
 
     // Notify observers that the UI is now ready
     Services.obs.notifyObservers(window, "privacy-pane-loaded");
-  },
-
-  initSiteDataControls() {
-    SiteDataManager.updateSites();
   },
 
   // CONTENT BLOCKING
@@ -1685,7 +1680,7 @@ var gPrivacyPane = {
    * where passwords are never saved.
    */
   showPasswordExceptions() {
-    PrivacySettingHelpers.showPasswordExceptions();
+    PasswordSettingHelpers.showPasswordExceptions();
   },
 
   /**
@@ -1695,7 +1690,7 @@ var gPrivacyPane = {
    * the UI for it can't be controlled by the normal preference bindings.
    */
   _initMasterPasswordUI() {
-    PrivacySettingHelpers._initMasterPasswordUI();
+    PasswordSettingHelpers._initMasterPasswordUI();
   },
 
   /**
@@ -1708,19 +1703,19 @@ var gPrivacyPane = {
     let button = document.getElementById("changeMasterPassword");
     button.disabled = !checkbox.checked;
     if (!checkbox.checked) {
-      await PrivacySettingHelpers._removeMasterPassword();
+      await PasswordSettingHelpers._removeMasterPassword();
     } else {
-      await PrivacySettingHelpers.changeMasterPassword();
+      await PasswordSettingHelpers.changeMasterPassword();
     }
     this._initMasterPasswordUI();
   },
 
   async _removeMasterPassword() {
-    await PrivacySettingHelpers._removeMasterPassword();
+    await PasswordSettingHelpers._removeMasterPassword();
   },
 
   async changeMasterPassword() {
-    await PrivacySettingHelpers.changeMasterPassword();
+    await PasswordSettingHelpers.changeMasterPassword();
   },
 
   /**
@@ -1782,7 +1777,8 @@ var gPrivacyPane = {
       "about-logins-os-auth-dialog-caption"
     );
     let win =
-      osReauthCheckbox.ownerGlobal.docShell.chromeEventHandler.ownerGlobal;
+      osReauthCheckbox.documentGlobal.docShell.chromeEventHandler
+        .documentGlobal;
 
     // Calling OSKeyStore.ensureLoggedIn() instead of LoginHelper.verifyOSAuth()
     // since we want to authenticate user each time this setting is changed.
@@ -1836,7 +1832,7 @@ var gPrivacyPane = {
    * information.
    */
   showPasswords() {
-    PrivacySettingHelpers.showPasswords();
+    PasswordSettingHelpers.showPasswords();
   },
 
   /**

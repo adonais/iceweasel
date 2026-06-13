@@ -2,16 +2,9 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-:host {
-  --page-nav-margin-block-start: var(--dimension-64);
-  --page-nav-margin-inline-start: var(--dimension-40);
-  --page-nav-gap: var(--space-large);
-  --page-nav-button-gap: var(--space-xsmall);
-  --page-nav-border-color: var(--border-color-transparent);
-  --page-nav-focus-outline-inset: var(--focus-outline-inset);
-  --page-nav-heading-logo-size: calc(var(--icon-size) + var(--space-small));
-  --page-nav-hr-color: var(--border-color);
+@import url("chrome://global/content/elements/moz-page-nav.tokens.css");
 
+:host {
   margin-inline-start: var(--page-nav-margin-inline-start);
   position: sticky;
   top: 0;
@@ -101,7 +94,7 @@ hr {
   margin: 0;
   height: 1px;
   border: 0;
-  background-color: var(--page-nav-hr-color);
+  background-color: var(--page-nav-hr-background-color);
   flex-shrink: 0;
 
   @media (max-width: 52rem) {

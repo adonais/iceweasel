@@ -116,12 +116,13 @@ describe("aichat container tab behavior", () => {
           aiWindow.shadowRoot?.querySelector("#aichat-browser");
         return !!chatBrowser?.browsingContext;
       }, "Nested aichat-browser should exist");
+
       return aiWindow.shadowRoot.querySelector("#aichat-browser")
         .browsingContext;
     });
 
     if (innerBC.currentURI.spec !== "about:aichatcontent") {
-      await BrowserTestUtils.browserLoaded(innerBC, {
+      await BrowserTestUtils.browserLoaded(innerBC.embedderElement, {
         wantLoad: "about:aichatcontent",
       });
     }

@@ -1,5 +1,4 @@
 import com.android.build.api.variant.FilterConfiguration
-import com.google.android.gms.oss.licenses.plugin.DependencyTask
 
 import java.time.format.DateTimeFormatter
 
@@ -33,7 +32,9 @@ apply plugin: 'androidx.navigation.safeargs.kotlin'
 apply plugin: 'kotlinx-serialization'
 apply plugin: 'com.google.devtools.ksp'
 
-if (gradle.mozconfig.substs.MOZILLA_OFFICIAL) {
+// The OSS-licenses plugin is only needed for shipping builds, so skip it during
+// `mach lint` (which always passes `-Pandroid-lint`) to avoid unnecessary overhead.
+if (gradle.mozconfig.substs.MOZILLA_OFFICIAL && !project.hasProperty('android-lint')) {
     apply plugin: 'com.google.android.gms.oss-licenses-plugin'
 }
 
@@ -547,7 +548,6 @@ dependencies {
     implementation project(':components:browser-domains')
     implementation project(':components:browser-icons')
     implementation project(':components:browser-menu')
-    implementation project(':components:browser-menu2')
     implementation project(':components:browser-session-storage')
     implementation project(':components:browser-state')
     implementation project(':components:browser-storage-sync')
@@ -565,7 +565,9 @@ dependencies {
     implementation project(':components:feature-downloads')
     implementation project(':components:feature-findinpage')
     implementation project(':components:feature-fxsuggest')
+    implementation project(':components:feature-importer')
     implementation project(':components:feature-intent')
+    implementation project(':components:feature-ipprotection')
     implementation project(':components:feature-logins')
     implementation project(':components:feature-media')
     implementation project(':components:feature-privatemode')
@@ -615,6 +617,8 @@ dependencies {
     implementation project(':components:ui-colors')
     implementation project(':components:ui-tabcounter')
     implementation project(':components:ui-widgets')
+    implementation project(':components:lib-bookmarks-file')
+    implementation project(':components:lib-bookmark-parser-jsoup')
     implementation project(':components:lib-crash')
     implementation project(':components:lib-crash-sentry')
     implementation project(':components:lib-dataprotect')
@@ -632,7 +636,6 @@ dependencies {
     implementation libs.accompanist.drawablepainter
     implementation libs.adjust
     implementation libs.androidx.activity
-    implementation libs.androidx.activity.ktx
     implementation libs.androidx.annotation
     implementation libs.androidx.appcompat
     implementation libs.androidx.biometric
@@ -670,7 +673,7 @@ dependencies {
     implementation libs.androidx.navigation3.runtime
     implementation libs.androidx.navigation3.ui
     implementation libs.androidx.paging
-    implementation libs.androidx.preferences
+    implementation libs.androidx.preference
     implementation libs.androidx.profileinstaller
     implementation libs.androidx.recyclerview
     implementation libs.androidx.swiperefreshlayout
@@ -740,6 +743,7 @@ dependencies {
     androidTestImplementation libs.androidx.test.runner
     androidTestImplementation libs.androidx.test.uiautomator
     androidTestImplementation libs.androidx.work.testing
+    androidTestImplementation libs.kotlin.test
     androidTestImplementation libs.leakcanary.instrumentation
     androidTestImplementation libs.mockk.android
     androidTestImplementation libs.mockwebserver
@@ -859,15 +863,6 @@ def getSupportedLocales() {
     foundLocales.append("}")
     def foundLocalesString = foundLocales.toString().replaceAll(',}', '}')
     return foundLocalesString
-}
-
-// Fix for Gradle 9 strictness: Ensure CleanUp runs before DependencyTask
-tasks.withType(DependencyTask).configureEach { task ->
-    // The OSS plugin creates a "LicensesCleanUp" task for every "DependencyTask"
-    // e.g., nightlyOssDependencyTask -> nightlyOssLicensesCleanUp
-    def cleanUpTaskName = task.name.replace("DependencyTask", "LicensesCleanUp")
-    // make the dependency task depend on its cleanup task.
-    task.dependsOn(tasks.named(cleanUpTaskName))
 }
 
 mozilla {

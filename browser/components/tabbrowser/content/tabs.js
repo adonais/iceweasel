@@ -136,16 +136,6 @@
 
       this.allTabs[0].label = this.emptyTabTitle;
 
-      // Hide the secondary text for locales where it is unsupported due to size constraints.
-      const language = Services.locale.appLocaleAsBCP47;
-      const unsupportedLocales = Services.prefs.getCharPref(
-        "browser.tabs.secondaryTextUnsupportedLocales"
-      );
-      this.toggleAttribute(
-        "secondarytext-unsupported",
-        unsupportedLocales.split(",").includes(language.split("-")[0])
-      );
-
       this.newTabButton.setAttribute(
         "aria-label",
         DynamicShortcutTooltip.getText("tabs-newtab-button")

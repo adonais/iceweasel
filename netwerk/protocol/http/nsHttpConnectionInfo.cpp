@@ -103,6 +103,7 @@ void nsHttpConnectionInfo::Init(const nsACString& host, int32_t port,
   mIPv4Disabled = false;
   mIPv6Disabled = false;
   mHasIPHintAddress = false;
+  mIsWildCard = host.Equals("*"_ns);
 
   mUsingHttpsProxy = (proxyInfo && proxyInfo->IsHTTPS());
   mUsingHttpProxy = mUsingHttpsProxy || (proxyInfo && proxyInfo->IsHTTP());

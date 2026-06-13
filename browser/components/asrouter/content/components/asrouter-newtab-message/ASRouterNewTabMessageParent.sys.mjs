@@ -12,8 +12,16 @@ ChromeUtils.defineESModuleGetters(lazy, {
 
 export class ASRouterNewTabMessageParent extends JSWindowActorParent {
   receiveMessage(message) {
+    /**
+     * @backward-compat {version 151}
+     *
+     * remoteType only became available on WindowGlobalParent starting in 151,
+     * so fallback to this.manager.domProcess.remoteType until 151 hits release.
+     */
     if (
-      this.manager.remoteType !== lazy.E10SUtils.PRIVILEGEDABOUT_REMOTE_TYPE
+      this.manager.remoteType !== lazy.E10SUtils.PRIVILEGEDABOUT_REMOTE_TYPE &&
+      this.manager.domProcess.remoteType !==
+        lazy.E10SUtils.PRIVILEGEDABOUT_REMOTE_TYPE
     ) {
       return null;
     }

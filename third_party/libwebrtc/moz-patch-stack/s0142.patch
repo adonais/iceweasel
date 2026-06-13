@@ -1,55 +1,544 @@
-From: Michael Froman <mfroman@mozilla.com>
-Date: Mon, 6 Apr 2026 21:43:00 +0000
-Subject: Bug 2027499 - adhere to spec on number of CSRCs in rtp packets. r=bwc
+From: Michael Froman <mjfroman@mac.com>
+Date: Mon, 27 Apr 2026 14:02:26 -0500
+Subject: Bug 2033420 - Cherry-pick upstream libwebrtc commit 273009d2fa r=mjf
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
 
-Differential Revision: https://phabricator.services.mozilla.com/D291629
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/ccdaaef4f2b19d4a849d5a6f1e4aedba392c0f91
+Upstream commit: https://webrtc.googlesource.com/src/+/273009d2fa8fe3027d4c9a31e8944e2e1e3e8d4e
+       Move EncodedFrame's receive time to Timestamp
+
+       Bug: webrtc:42223979
+       Change-Id: I58db2fbd8ce42bbbb3725b37047f91f4a113b81d
+       Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/465242
+       Commit-Queue: Andreas Pehrson <apehrson@mozilla.com>
+       Reviewed-by: Danil Chapovalov <danilchap@webrtc.org>
+       Reviewed-by: Erik Språng <sprang@webrtc.org>
+       Cr-Commit-Position: refs/heads/main@{#47526}
+
+Differential Revision: https://phabricator.services.mozilla.com/D295934
 ---
- modules/rtp_rtcp/source/rtp_packet.cc | 9 ++++++++-
- modules/rtp_rtcp/source/rtp_packet.h  | 6 ++++++
- 2 files changed, 14 insertions(+), 1 deletion(-)
+ api/video/BUILD.gn                            |  1 +
+ api/video/encoded_frame.cc                    |  6 -----
+ api/video/encoded_frame.h                     | 22 ++++++++++++++-----
+ api/video/rtp_video_frame_assembler.cc        |  7 ++++--
+ modules/rtp_rtcp/source/frame_object.cc       | 15 ++++++++-----
+ modules/rtp_rtcp/source/frame_object.h        |  9 ++++----
+ ...eam_receiver_frame_transformer_delegate.cc |  2 +-
+ ...ver_frame_transformer_delegate_unittest.cc | 11 +++++-----
+ .../rtp_frame_reference_finder_unittest.cc    |  4 ++--
+ .../rtp_vp8_ref_finder_unittest.cc            |  4 ++--
+ .../rtp_vp9_ref_finder_unittest.cc            |  4 ++--
+ .../video_coding/video_receiver2_unittest.cc  |  7 ++++--
+ test/fake_encoded_frame.cc                    |  7 +++---
+ test/fake_encoded_frame.h                     |  6 ++---
+ test/fuzzers/frame_buffer_fuzzer.cc           |  4 +++-
+ .../rtp_frame_reference_finder_fuzzer.cc      |  4 ++--
+ video/buffered_frame_decryptor_unittest.cc    |  4 ++--
+ video/rtp_video_stream_receiver2.cc           | 12 +++++-----
+ video/video_receive_stream2_unittest.cc       | 12 +++++-----
+ ...video_stream_buffer_controller_unittest.cc |  7 +++---
+ 20 files changed, 84 insertions(+), 64 deletions(-)
 
-diff --git a/modules/rtp_rtcp/source/rtp_packet.cc b/modules/rtp_rtcp/source/rtp_packet.cc
-index adbf16854e..294d703af5 100644
---- a/modules/rtp_rtcp/source/rtp_packet.cc
-+++ b/modules/rtp_rtcp/source/rtp_packet.cc
-@@ -230,14 +230,21 @@ void RtpPacket::SetCsrcs(std::span<const uint32_t> csrcs) {
-   RTC_DCHECK_EQ(padding_size_, 0);
-   RTC_DCHECK_LE(csrcs.size(), 0x0fu);
-   RTC_DCHECK_LE(kFixedHeaderSize + 4 * csrcs.size(), capacity());
+diff --git a/api/video/BUILD.gn b/api/video/BUILD.gn
+index a9d312fa13..c561ebb9ff 100644
+--- a/api/video/BUILD.gn
++++ b/api/video/BUILD.gn
+@@ -205,6 +205,7 @@ rtc_library("rtp_video_frame_assembler") {
+     ":video_rtp_headers",
+     "..:rtp_packet_info",
+     "..:scoped_refptr",
++    "../../api/units:timestamp",
+     "../../modules/rtp_rtcp",
+     "../../modules/rtp_rtcp:rtp_rtcp_format",
+     "../../modules/rtp_rtcp:rtp_video_header",
+diff --git a/api/video/encoded_frame.cc b/api/video/encoded_frame.cc
+index 7ceffb6f80..01838b7ff7 100644
+--- a/api/video/encoded_frame.cc
++++ b/api/video/encoded_frame.cc
+@@ -23,12 +23,6 @@
+ 
+ namespace webrtc {
+ 
+-std::optional<Timestamp> EncodedFrame::ReceivedTimestamp() const {
+-  return ReceivedTime() >= 0
+-             ? std::make_optional(Timestamp::Millis(ReceivedTime()))
+-             : std::nullopt;
+-}
+-
+ std::optional<Timestamp> EncodedFrame::RenderTimestamp() const {
+   return RenderTimeMs() >= 0
+              ? std::make_optional(Timestamp::Millis(RenderTimeMs()))
+diff --git a/api/video/encoded_frame.h b/api/video/encoded_frame.h
+index 97c9d89a14..c51a7c7f74 100644
+--- a/api/video/encoded_frame.h
++++ b/api/video/encoded_frame.h
+@@ -35,12 +35,22 @@ class EncodedFrame : public EncodedImage {
+   EncodedFrame(const EncodedFrame&) = default;
+   virtual ~EncodedFrame() {}
+ 
+-  // When this frame was received.
+-  // TODO(bugs.webrtc.org/13756): Use Timestamp instead of int.
+-  virtual int64_t ReceivedTime() const { return -1; }
+-  // Returns a Timestamp from `ReceivedTime`, or nullopt if there is no receive
+-  // time.
+-  std::optional<Timestamp> ReceivedTimestamp() const;
++  // Note that subclasses must override either ReceivedTime or ReceivedTimestamp
++  // to avoid infinite recursion.
 +
-+  if (csrcs.size() > kMaxCsrcs) {
-+    RTC_LOG(LS_WARNING) << "Truncating CSRC list to spec length " << kMaxCsrcs
-+                        << " from " << csrcs.size();
-+    csrcs = csrcs.first(kMaxCsrcs);
++  // When this frame was received in milliseconds.
++  virtual int64_t ReceivedTime() const {
++    const std::optional<Timestamp> t = ReceivedTimestamp();
++    return t.has_value() ? t->ms() : -1;
 +  }
-+
-   payload_offset_ = kFixedHeaderSize + 4 * csrcs.size();
-+  buffer_.SetSize(payload_offset_);
-   WriteAt(0, (data()[0] & 0xF0) | dchecked_cast<uint8_t>(csrcs.size()));
-   size_t offset = kFixedHeaderSize;
-   for (uint32_t csrc : csrcs) {
-     ByteWriter<uint32_t>::WriteBigEndian(WriteAt(offset), csrc);
-     offset += 4;
++  // When this frame was received, or nullopt if there is no receive timestamp.
++  virtual std::optional<Timestamp> ReceivedTimestamp() const {
++    const int64_t received_time_ms = ReceivedTime();
++    if (received_time_ms == -1) {
++      return std::nullopt;
++    }
++    return Timestamp::Millis(received_time_ms);
++  }
+ 
+   // When this frame should be rendered.
+   // TODO(bugs.webrtc.org/13756): Use Timestamp instead of int.
+diff --git a/api/video/rtp_video_frame_assembler.cc b/api/video/rtp_video_frame_assembler.cc
+index 821e529268..8c0316232b 100644
+--- a/api/video/rtp_video_frame_assembler.cc
++++ b/api/video/rtp_video_frame_assembler.cc
+@@ -21,6 +21,7 @@
+ #include "api/rtp_packet_infos.h"
+ #include "api/scoped_refptr.h"
+ #include "api/transport/rtp/dependency_descriptor.h"
++#include "api/units/timestamp.h"
+ #include "api/video/encoded_image.h"
+ #include "api/video/video_frame_type.h"
+ #include "api/video/video_timing.h"
+@@ -179,14 +180,16 @@ RtpVideoFrameAssembler::Impl::AssembleFrames(
+         continue;
+       }
+ 
++      // TODO: bugs.webrtc.org/42222730 - Propagate actual first/last packet
++      // received time from RtpPacketReceived::arrival_time.
+       const video_coding::PacketBuffer::Packet& last_packet = *packet;
+       result.push_back(std::make_unique<RtpFrameObject>(
+           first_packet->seq_num(),                              //
+           last_packet.seq_num(),                                //
+           last_packet.marker_bit,                               //
+           /*times_nacked=*/0,                                   //
+-          /*first_packet_received_time=*/0,                     //
+-          /*last_packet_received_time=*/0,                      //
++          /*first_packet_received_time=*/Timestamp::Zero(),     //
++          /*last_packet_received_time=*/Timestamp::Zero(),      //
+           first_packet->timestamp,                              //
+           /*ntp_time_ms=*/0,                                    //
+           /*timing=*/VideoSendTiming(),                         //
+diff --git a/modules/rtp_rtcp/source/frame_object.cc b/modules/rtp_rtcp/source/frame_object.cc
+index 9f6442eefb..4a8695504c 100644
+--- a/modules/rtp_rtcp/source/frame_object.cc
++++ b/modules/rtp_rtcp/source/frame_object.cc
+@@ -16,6 +16,7 @@
+ 
+ #include "api/rtp_packet_infos.h"
+ #include "api/scoped_refptr.h"
++#include "api/units/timestamp.h"
+ #include "api/video/color_space.h"
+ #include "api/video/corruption_detection/frame_instrumentation_data.h"
+ #include "api/video/encoded_image.h"
+@@ -33,8 +34,8 @@ RtpFrameObject::RtpFrameObject(
+     uint16_t last_seq_num,
+     bool markerBit,
+     int times_nacked,
+-    int64_t first_packet_received_time,
+-    int64_t last_packet_received_time,
++    std::optional<Timestamp> first_packet_received_time,
++    std::optional<Timestamp> last_packet_received_time,
+     uint32_t rtp_timestamp,
+     int64_t ntp_time_ms,
+     const VideoSendTiming& timing,
+@@ -98,8 +99,12 @@ RtpFrameObject::RtpFrameObject(
+     timing_.network2_timestamp_ms =
+         ntp_time_ms_ + timing.network2_timestamp_delta_ms;
    }
--  buffer_.SetSize(payload_offset_);
+-  timing_.receive_start_ms = first_packet_received_time;
+-  timing_.receive_finish_ms = last_packet_received_time;
++  timing_.receive_start_ms = first_packet_received_time.has_value()
++                                 ? first_packet_received_time->ms()
++                                 : -1;
++  timing_.receive_finish_ms = last_packet_received_time.has_value()
++                                  ? last_packet_received_time->ms()
++                                  : -1;
+   timing_.flags = timing.flags;
+   is_last_spatial_layer = markerBit;
+ }
+@@ -126,7 +131,7 @@ VideoCodecType RtpFrameObject::codec_type() const {
+   return codec_type_;
  }
  
- std::span<uint8_t> RtpPacket::AllocateRawExtension(int id, size_t length) {
-diff --git a/modules/rtp_rtcp/source/rtp_packet.h b/modules/rtp_rtcp/source/rtp_packet.h
-index 1a9f91799b..78cccb347d 100644
---- a/modules/rtp_rtcp/source/rtp_packet.h
-+++ b/modules/rtp_rtcp/source/rtp_packet.h
-@@ -30,6 +30,12 @@ class RtpPacket {
-   using ExtensionType = RTPExtensionType;
-   using ExtensionManager = RtpHeaderExtensionMap;
+-int64_t RtpFrameObject::ReceivedTime() const {
++std::optional<Timestamp> RtpFrameObject::ReceivedTimestamp() const {
+   return last_packet_received_time_;
+ }
  
-+  // Maximum number of CSRCs in an RTP packet as specified in section
-+  // "5.1 RTP Fixed Header Fields" of RFC 3550.
-+  // Note: This is a different limit than the one that applies to RTCP packets
-+  // (which is specified in section 6.1).
-+  static constexpr size_t kMaxCsrcs = 15;
-+
-   // `extensions` required for SetExtension/ReserveExtension functions during
-   // packet creating and used if available in Parse function.
-   // Adding and getting extensions will fail until `extensions` is
+diff --git a/modules/rtp_rtcp/source/frame_object.h b/modules/rtp_rtcp/source/frame_object.h
+index a0261eea16..7941d5eb90 100644
+--- a/modules/rtp_rtcp/source/frame_object.h
++++ b/modules/rtp_rtcp/source/frame_object.h
+@@ -17,6 +17,7 @@
+ 
+ #include "api/rtp_packet_infos.h"
+ #include "api/scoped_refptr.h"
++#include "api/units/timestamp.h"
+ #include "api/video/color_space.h"
+ #include "api/video/corruption_detection/frame_instrumentation_data.h"
+ #include "api/video/encoded_frame.h"
+@@ -38,8 +39,8 @@ class RtpFrameObject : public EncodedFrame {
+       uint16_t last_seq_num,
+       bool markerBit,
+       int times_nacked,
+-      int64_t first_packet_received_time,
+-      int64_t last_packet_received_time,
++      std::optional<Timestamp> first_packet_received_time,
++      std::optional<Timestamp> last_packet_received_time,
+       uint32_t rtp_timestamp,
+       int64_t ntp_time_ms,
+       const VideoSendTiming& timing,
+@@ -59,7 +60,7 @@ class RtpFrameObject : public EncodedFrame {
+   int times_nacked() const;
+   VideoFrameType frame_type() const;
+   VideoCodecType codec_type() const;
+-  int64_t ReceivedTime() const override;
++  std::optional<Timestamp> ReceivedTimestamp() const override;
+   int64_t RenderTime() const override;
+   bool delayed_by_retransmission() const override;
+   const RTPVideoHeader& GetRtpVideoHeader() const;
+@@ -81,7 +82,7 @@ class RtpFrameObject : public EncodedFrame {
+   VideoCodecType codec_type_;
+   uint16_t first_seq_num_;
+   uint16_t last_seq_num_;
+-  int64_t last_packet_received_time_;
++  std::optional<Timestamp> last_packet_received_time_;
+   std::vector<uint32_t> csrcs_;
+ 
+   // Equal to times nacked of the packet with the highet times nacked
+diff --git a/modules/rtp_rtcp/source/rtp_video_stream_receiver_frame_transformer_delegate.cc b/modules/rtp_rtcp/source/rtp_video_stream_receiver_frame_transformer_delegate.cc
+index 6a119c01c9..fb11c73c29 100644
+--- a/modules/rtp_rtcp/source/rtp_video_stream_receiver_frame_transformer_delegate.cc
++++ b/modules/rtp_rtcp/source/rtp_video_stream_receiver_frame_transformer_delegate.cc
+@@ -233,7 +233,7 @@ void RtpVideoStreamReceiverFrameTransformerDelegate::ManageFrame(
+     RTPVideoHeader video_header = RTPVideoHeader::FromMetadata(metadata);
+     VideoSendTiming timing;
+     std::span<const uint8_t> data = transformed_frame->GetData();
+-    int64_t receive_time = clock_->CurrentTime().ms();
++    Timestamp receive_time = clock_->CurrentTime();
+     receiver_->ManageFrame(std::make_unique<RtpFrameObject>(
+         /*first_seq_num=*/metadata.GetFrameId().value_or(0),
+         /*last_seq_num=*/metadata.GetFrameId().value_or(0),
+diff --git a/modules/rtp_rtcp/source/rtp_video_stream_receiver_frame_transformer_delegate_unittest.cc b/modules/rtp_rtcp/source/rtp_video_stream_receiver_frame_transformer_delegate_unittest.cc
+index 989beddcba..367ac4ec30 100644
+--- a/modules/rtp_rtcp/source/rtp_video_stream_receiver_frame_transformer_delegate_unittest.cc
++++ b/modules/rtp_rtcp/source/rtp_video_stream_receiver_frame_transformer_delegate_unittest.cc
+@@ -63,10 +63,11 @@ std::unique_ptr<RtpFrameObject> CreateRtpFrameObject(
+                             /*receive_time=*/Timestamp::Seconds(123456));
+   return std::make_unique<RtpFrameObject>(
+       kFirstSeqNum, kLastSeqNum, /*markerBit=*/true,
+-      /*times_nacked=*/3, /*first_packet_received_time=*/4,
+-      /*last_packet_received_time=*/5, /*rtp_timestamp=*/6, /*ntp_time_ms=*/7,
+-      VideoSendTiming(), /*payload_type=*/8, video_header.codec,
+-      kVideoRotation_0, VideoContentType::UNSPECIFIED, video_header,
++      /*times_nacked=*/3, /*first_packet_received_time=*/Timestamp::Millis(4),
++      /*last_packet_received_time=*/Timestamp::Millis(5), /*rtp_timestamp=*/6,
++      /*ntp_time_ms=*/7, VideoSendTiming(), /*payload_type=*/8,
++      video_header.codec, kVideoRotation_0, VideoContentType::UNSPECIFIED,
++      video_header,
+       /*color_space=*/std::nullopt, /*frame_instrumentation_data=*/std::nullopt,
+       RtpPacketInfos({packet_info}), EncodedImageBuffer::Create(0));
+ }
+@@ -353,7 +354,7 @@ TEST(RtpVideoStreamReceiverFrameTransformerDelegateTest,
+   EXPECT_CALL(receiver, ManageFrame)
+       .WillOnce([&](std::unique_ptr<RtpFrameObject> frame) {
+         EXPECT_EQ(frame->codec_type(), metadata.GetCodec());
+-        EXPECT_EQ(frame->ReceivedTime(), 12345);
++        EXPECT_EQ(frame->ReceivedTimestamp(), Timestamp::Micros(12345000));
+       });
+   callback->OnTransformedFrame(std::move(mock_sender_frame));
+   ThreadManager::ProcessAllMessageQueuesForTesting();
+diff --git a/modules/video_coding/rtp_frame_reference_finder_unittest.cc b/modules/video_coding/rtp_frame_reference_finder_unittest.cc
+index 56c0cf31b4..30786990ae 100644
+--- a/modules/video_coding/rtp_frame_reference_finder_unittest.cc
++++ b/modules/video_coding/rtp_frame_reference_finder_unittest.cc
+@@ -51,8 +51,8 @@ std::unique_ptr<RtpFrameObject> CreateFrame(
+       seq_num_end,
+       /*markerBit=*/true,
+       /*times_nacked=*/0,
+-      /*first_packet_received_time=*/0,
+-      /*last_packet_received_time=*/0,
++      /*first_packet_received_time=*/std::nullopt,
++      /*last_packet_received_time=*/std::nullopt,
+       /*rtp_timestamp=*/0,
+       /*ntp_time_ms=*/0,
+       VideoSendTiming(),
+diff --git a/modules/video_coding/rtp_vp8_ref_finder_unittest.cc b/modules/video_coding/rtp_vp8_ref_finder_unittest.cc
+index b52d1fb811..0fa010f0c5 100644
+--- a/modules/video_coding/rtp_vp8_ref_finder_unittest.cc
++++ b/modules/video_coding/rtp_vp8_ref_finder_unittest.cc
+@@ -96,8 +96,8 @@ class Frame {
+         /*seq_num_end=*/0,
+         /*markerBit=*/true,
+         /*times_nacked=*/0,
+-        /*first_packet_received_time=*/0,
+-        /*last_packet_received_time=*/0,
++        /*first_packet_received_time=*/std::nullopt,
++        /*last_packet_received_time=*/std::nullopt,
+         /*rtp_timestamp=*/0,
+         /*ntp_time_ms=*/0,
+         VideoSendTiming(),
+diff --git a/modules/video_coding/rtp_vp9_ref_finder_unittest.cc b/modules/video_coding/rtp_vp9_ref_finder_unittest.cc
+index 08633251a9..7ca4e035a4 100644
+--- a/modules/video_coding/rtp_vp9_ref_finder_unittest.cc
++++ b/modules/video_coding/rtp_vp9_ref_finder_unittest.cc
+@@ -137,8 +137,8 @@ class Frame {
+         seq_num_end,
+         /*markerBit=*/true,
+         /*times_nacked=*/0,
+-        /*first_packet_received_time=*/0,
+-        /*last_packet_received_time=*/0,
++        /*first_packet_received_time=*/std::nullopt,
++        /*last_packet_received_time=*/std::nullopt,
+         /*rtp_timestamp=*/0,
+         /*ntp_time_ms=*/0,
+         VideoSendTiming(),
+diff --git a/modules/video_coding/video_receiver2_unittest.cc b/modules/video_coding/video_receiver2_unittest.cc
+index d665692487..59e7a3cd1f 100644
+--- a/modules/video_coding/video_receiver2_unittest.cc
++++ b/modules/video_coding/video_receiver2_unittest.cc
+@@ -12,6 +12,7 @@
+ 
+ #include <cstdint>
+ #include <memory>
++#include <optional>
+ #include <utility>
+ 
+ #include "api/field_trials.h"
+@@ -59,12 +60,14 @@ class TestEncodedFrame : public EncodedFrame {
+     received_time_ = received_time;
+   }
+ 
+-  int64_t ReceivedTime() const override { return received_time_.ms(); }
++  std::optional<Timestamp> ReceivedTimestamp() const override {
++    return received_time_;
++  }
+ 
+   int64_t RenderTime() const override { return _renderTimeMs; }
+ 
+  private:
+-  Timestamp received_time_ = Timestamp::Millis(0);
++  std::optional<Timestamp> received_time_;
+ };
+ 
+ class VideoReceiver2Test : public ::testing::Test {
+diff --git a/test/fake_encoded_frame.cc b/test/fake_encoded_frame.cc
+index f15c4028ca..c7f614e849 100644
+--- a/test/fake_encoded_frame.cc
++++ b/test/fake_encoded_frame.cc
+@@ -13,6 +13,7 @@
+ #include <cstddef>
+ #include <cstdint>
+ #include <memory>
++#include <optional>
+ #include <vector>
+ 
+ #include "api/rtp_packet_infos.h"
+@@ -27,7 +28,7 @@
+ namespace webrtc {
+ namespace test {
+ 
+-int64_t FakeEncodedFrame::ReceivedTime() const {
++std::optional<Timestamp> FakeEncodedFrame::ReceivedTimestamp() const {
+   return received_time_;
+ }
+ 
+@@ -35,7 +36,7 @@ int64_t FakeEncodedFrame::RenderTime() const {
+   return _renderTimeMs;
+ }
+ 
+-void FakeEncodedFrame::SetReceivedTime(int64_t received_time) {
++void FakeEncodedFrame::SetReceivedTime(Timestamp received_time) {
+   received_time_ = received_time;
+ }
+ 
+@@ -107,7 +108,7 @@ std::unique_ptr<FakeEncodedFrame> FakeFrameBuilder::Build() {
+   if (spatial_layer_)
+     frame->SetSpatialIndex(spatial_layer_);
+   if (received_time_)
+-    frame->SetReceivedTime(received_time_->ms());
++    frame->SetReceivedTime(*received_time_);
+   if (payload_type_)
+     frame->SetPayloadType(*payload_type_);
+   if (ntp_time_)
+diff --git a/test/fake_encoded_frame.h b/test/fake_encoded_frame.h
+index 484bd3168b..a95044b211 100644
+--- a/test/fake_encoded_frame.h
++++ b/test/fake_encoded_frame.h
+@@ -30,15 +30,15 @@ namespace test {
+ class FakeEncodedFrame : public EncodedFrame {
+  public:
+   // Always 10ms delay and on time.
+-  int64_t ReceivedTime() const override;
++  std::optional<Timestamp> ReceivedTimestamp() const override;
+   int64_t RenderTime() const override;
+ 
+   // Setters for protected variables.
+-  void SetReceivedTime(int64_t received_time);
++  void SetReceivedTime(Timestamp received_time);
+   void SetPayloadType(int payload_type);
+ 
+  private:
+-  int64_t received_time_;
++  Timestamp received_time_ = Timestamp::Zero();
+ };
+ 
+ MATCHER_P(WithId, id, "") {
+diff --git a/test/fuzzers/frame_buffer_fuzzer.cc b/test/fuzzers/frame_buffer_fuzzer.cc
+index f2164c1616..aa26d946b5 100644
+--- a/test/fuzzers/frame_buffer_fuzzer.cc
++++ b/test/fuzzers/frame_buffer_fuzzer.cc
+@@ -23,7 +23,9 @@ namespace webrtc {
+ namespace {
+ class FuzzyFrameObject : public EncodedFrame {
+  public:
+-  int64_t ReceivedTime() const override { return 0; }
++  std::optional<Timestamp> ReceivedTimestamp() const override {
++    return Timestamp::Zero();
++  }
+   int64_t RenderTime() const override { return 0; }
+ };
+ 
+diff --git a/test/fuzzers/rtp_frame_reference_finder_fuzzer.cc b/test/fuzzers/rtp_frame_reference_finder_fuzzer.cc
+index bbfc288121..71e0ced189 100644
+--- a/test/fuzzers/rtp_frame_reference_finder_fuzzer.cc
++++ b/test/fuzzers/rtp_frame_reference_finder_fuzzer.cc
+@@ -142,8 +142,8 @@ void FuzzOneInput(FuzzDataHelper fuzz_data) {
+         last_seq_num,
+         marker_bit,
+         /*times_nacked=*/0,
+-        /*first_packet_received_time=*/0,
+-        /*last_packet_received_time=*/0,
++        /*first_packet_received_time=*/std::nullopt,
++        /*last_packet_received_time=*/std::nullopt,
+         /*rtp_timestamp=*/0,
+         /*ntp_time_ms=*/0,
+         VideoSendTiming(),
+diff --git a/video/buffered_frame_decryptor_unittest.cc b/video/buffered_frame_decryptor_unittest.cc
+index bbe975ff34..e666fa6851 100644
+--- a/video/buffered_frame_decryptor_unittest.cc
++++ b/video/buffered_frame_decryptor_unittest.cc
+@@ -77,8 +77,8 @@ class BufferedFrameDecryptorTest : public ::testing::Test,
+         seq_num_,
+         /*markerBit=*/true,
+         /*times_nacked=*/0,
+-        /*first_packet_received_time=*/0,
+-        /*last_packet_received_time=*/0,
++        /*first_packet_received_time=*/std::nullopt,
++        /*last_packet_received_time=*/std::nullopt,
+         /*rtp_timestamp=*/0,
+         /*ntp_time_ms=*/0,
+         VideoSendTiming(),
+diff --git a/video/rtp_video_stream_receiver2.cc b/video/rtp_video_stream_receiver2.cc
+index 69d22d5c64..9bbff9a156 100644
+--- a/video/rtp_video_stream_receiver2.cc
++++ b/video/rtp_video_stream_receiver2.cc
+@@ -837,8 +837,8 @@ void RtpVideoStreamReceiver2::OnInsertedPacket(
+   RTC_DCHECK_RUN_ON(&worker_task_checker_);
+   video_coding::PacketBuffer::Packet* first_packet = nullptr;
+   int max_nack_count;
+-  int64_t min_recv_time;
+-  int64_t max_recv_time;
++  Timestamp min_recv_time = Timestamp::PlusInfinity();
++  Timestamp max_recv_time = Timestamp::MinusInfinity();
+   std::optional<int64_t> absolute_capture_time_ms;
+   std::vector<std::span<const uint8_t>> payloads;
+   RtpPacketInfos::vector_type packet_infos;
+@@ -868,8 +868,8 @@ void RtpVideoStreamReceiver2::OnInsertedPacket(
+       packet_infos.clear();
+       first_packet = packet.get();
+       max_nack_count = packet->times_nacked;
+-      min_recv_time = packet_info.receive_time().ms();
+-      max_recv_time = packet_info.receive_time().ms();
++      min_recv_time = packet_info.receive_time();
++      max_recv_time = packet_info.receive_time();
+       if (env_.field_trials().IsEnabled("WebRTC-UseAbsCapTimeForG2gMetric") &&
+           packet_info.absolute_capture_time().has_value() &&
+           packet_info.local_capture_clock_offset().has_value()) {
+@@ -881,8 +881,8 @@ void RtpVideoStreamReceiver2::OnInsertedPacket(
+       }
+     } else {
+       max_nack_count = std::max(max_nack_count, packet->times_nacked);
+-      min_recv_time = std::min(min_recv_time, packet_info.receive_time().ms());
+-      max_recv_time = std::max(max_recv_time, packet_info.receive_time().ms());
++      min_recv_time = std::min(min_recv_time, packet_info.receive_time());
++      max_recv_time = std::max(max_recv_time, packet_info.receive_time());
+     }
+     payloads.emplace_back(packet->video_payload);
+     packet_infos.push_back(packet_info);
+diff --git a/video/video_receive_stream2_unittest.cc b/video/video_receive_stream2_unittest.cc
+index a499b0e881..6b8a25af1b 100644
+--- a/video/video_receive_stream2_unittest.cc
++++ b/video/video_receive_stream2_unittest.cc
+@@ -911,23 +911,23 @@ TEST_P(VideoReceiveStream2Test, FramesScheduledInOrder) {
+       .Times(1);
+ 
+   // `key_frame` arrives at the start time...
+-  key_frame->SetReceivedTime(env_.clock().CurrentTime().ms());
++  key_frame->SetReceivedTime(env_.clock().CurrentTime());
+   video_receive_stream_->OnCompleteFrame(std::move(key_frame));
+   // ...and it is decoded and rendered right away.
+   EXPECT_THAT(fake_renderer_.WaitForFrame(TimeDelta::Zero()), RenderedFrame());
+ 
+   // `delta_frame2` arrives on time, which is two inter-frame durations later...
+   time_controller_.AdvanceTime(2 * k30FpsDelay);
+-  int64_t delta_frame2_received_time_ms = env_.clock().CurrentTime().ms();
+-  delta_frame2->SetReceivedTime(delta_frame2_received_time_ms);
++  Timestamp delta_frame2_received_time = env_.clock().CurrentTime();
++  delta_frame2->SetReceivedTime(delta_frame2_received_time);
+   video_receive_stream_->OnCompleteFrame(std::move(delta_frame2));
+   // ...but it doesn't render, since it is not yet decodable.
+   EXPECT_THAT(fake_renderer_.WaitForFrame(TimeDelta::Zero()),
+               DidNotReceiveFrame());
+ 
+   // `delta_frame1` arrives back-to-back with `delta_frame2`...
+-  delta_frame1->SetReceivedTime(env_.clock().CurrentTime().ms());
+-  EXPECT_EQ(delta_frame1->ReceivedTime(), delta_frame2_received_time_ms);
++  delta_frame1->SetReceivedTime(env_.clock().CurrentTime());
++  EXPECT_EQ(delta_frame1->ReceivedTimestamp(), delta_frame2_received_time);
+   video_receive_stream_->OnCompleteFrame(std::move(delta_frame1));
+   // ...so it is decoded and rendered right away (since it is late).
+   EXPECT_THAT(fake_renderer_.WaitForFrame(TimeDelta::Zero()), RenderedFrame());
+@@ -963,7 +963,7 @@ TEST_P(VideoReceiveStream2Test, WaitsforAllSpatialLayers) {
+ 
+   // No decodes should be called until `sl2` is received.
+   EXPECT_CALL(mock_decoder_, Decode(_, _)).Times(0);
+-  sl0->SetReceivedTime(env_.clock().CurrentTime().ms());
++  sl0->SetReceivedTime(env_.clock().CurrentTime());
+   video_receive_stream_->OnCompleteFrame(std::move(sl0));
+   EXPECT_THAT(fake_renderer_.WaitForFrame(TimeDelta::Zero()),
+               DidNotReceiveFrame());
+diff --git a/video/video_stream_buffer_controller_unittest.cc b/video/video_stream_buffer_controller_unittest.cc
+index 26aacb7c7d..79bcbb54b2 100644
+--- a/video/video_stream_buffer_controller_unittest.cc
++++ b/video/video_stream_buffer_controller_unittest.cc
+@@ -74,11 +74,10 @@ auto Frame(testing::Matcher<EncodedFrame> m) {
+ std::unique_ptr<test::FakeEncodedFrame> WithReceiveTimeFromRtpTimestamp(
+     std::unique_ptr<test::FakeEncodedFrame> frame) {
+   if (frame->RtpTimestamp() == 0) {
+-    frame->SetReceivedTime(kClockStart.ms());
++    frame->SetReceivedTime(kClockStart);
+   } else {
+-    frame->SetReceivedTime(
+-        TimeDelta::Seconds(frame->RtpTimestamp() / 90000.0).ms() +
+-        kClockStart.ms());
++    frame->SetReceivedTime(kClockStart +
++                           TimeDelta::Seconds(frame->RtpTimestamp() / 90000.0));
+   }
+   return frame;
+ }

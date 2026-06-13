@@ -33,7 +33,7 @@
         "selected": {
           "value": {
             "light": "{color.white.@base}",
-            "dark": "{color.neutral.90}",
+            "dark": "{color.gray.55}",
             "forcedColors": "SelectedItemText"
           }
         }

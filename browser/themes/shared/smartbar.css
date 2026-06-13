@@ -15,26 +15,55 @@
   --smartbar-box-shadow: var(--smartwindow-shadow, var(--box-shadow-level-2));
   --smartbar-glow-color: color-mix(in srgb, var(--color-violet-40) 30%, transparent);
   --smartbar-max-height: 50vh;
+  --smartbar-max-visible-rows: 7;
   --smartbar-max-width: calc(var(--size-item-xlarge) * 12);
   --smartbar-outline: var(--focus-outline-width) solid var(--smartbar-outline-color);
   --smartbar-outline-color: light-dark(var(--color-violet-30), var(--color-violet-50));
   --smartbar-cta-icon-fill: var(--icon-color);
+  --smartbar-scroll-mask-height: calc(var(--urlbarView-row-min-height) * 1.5);
   --text-color-deemphasized: light-dark(color-mix(in srgb, var(--color-gray-100) 69%, transparent), color-mix(in srgb, var(--color-gray-05) 69%, transparent));
 }
 
 .smartbar {
   --urlbarView-favicon-margin-start: 0;
   --urlbarView-favicon-margin-end: var(--space-small);
-  --urlbarview-background-color-hover: light-dark(var(--color-violet-0), var(--button-background-color-hover));
-  --urlbarview-background-color-selected: light-dark(var(--color-violet-10), var(--button-background-color-active));
-  /* This aligns with the hover color assignment. This will likely be refactored once Nova lands */
-  --urlbarview-text-color-selected: var(--toolbar-field-focus-color);
-  --urlbarView-item-inline-padding: var(--space-small);
-  --urlbarView-item-block-padding: var(--space-small);
+  --urlbarView-row-padding-inline: var(--space-small);
+  --urlbarView-row-padding-block: var(--space-small);
   --urlbarView-labeled-row-margin-top: 0;
+
   --urlbarView-small-font-size: var(--font-size-small);
-  --urlbarView-secondary-text-color: light-dark(color-mix(in srgb, var(--color-gray-100) 69%, transparent), var(--color-violet-desaturated-20));
-  --link-color: light-dark(var(--color-violet-70), var(--color-violet-30));
+
+  @media not (forced-colors) {
+    --urlbarview-background-color-hover: light-dark(var(--color-violet-0), var(--button-background-color-hover));
+    --urlbarview-background-color-selected: light-dark(var(--color-violet-10), var(--button-background-color-active));
+    --urlbarview-text-color-selected: var(--toolbar-field-focus-color);
+    --urlbarView-secondary-text-color: light-dark(color-mix(in srgb, var(--color-gray-100) 69%, transparent), var(--color-violet-desaturated-20));
+    --link-color: light-dark(var(--color-violet-70), var(--color-violet-30));
+
+    &:is(:hover, :focus-within, [focused], [open]) > .urlbar-background {
+      outline: none;
+      background-color: var(--smartbar-background-color);
+      transition: background-color 0.2s ease-out;
+    }
+
+    &[open] > .urlbar-background {
+      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+      box-shadow: var(--smartbar-box-shadow);
+    }
+
+    /* Show outline on keyboard focus */
+    &:focus-within:not([usertyping]):not([suppress-focus-border]) > .urlbar-background {
+      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+      outline: var(--smartbar-outline);
+      outline-offset: var(--focus-outline-offset);
+    }
+
+    /* HOVER and FOCUSED states: Show gradient glow */
+    &:is(:hover, :focus-within) > .urlbar-background::before {
+      opacity: var(--opacity-deemphasized);
+      transition: opacity 0.2s ease-in;
+    }
+  }
 
   display: flex;
   flex-direction: column;
@@ -61,80 +90,140 @@
     overflow-y: auto;
     margin-inline: 0;
     width: 100%;
+    /*
+     * Limit to `--smartbar-max-visible-rows` non-rich results. Fewer results
+     * are visible if rich results are present.
+     */
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    max-height: calc(
+      (var(--urlbarView-row-inner-min-height) + var(--urlbarView-row-padding-block) * 2 + var(--urlbarView-row-gutter) * 2) * var(--smartbar-max-visible-rows) +
+        var(--space-medium) * 2 - var(--urlbarView-row-gutter) * 2
+    );
+    /*
+     * Scroll fade using an animated mask:
+     * --smartbar-view-scroll-progress is set by JS as a fallback when
+     * `animation-timeline: scroll()` is not supported.
+     */
+    --smartbar-view-scroll-progress: 0;
+    --smartbar-view-fade-threshold: 0.1;
+    --smartbar-view-scroll-at-top-ratio: clamp(0, var(--smartbar-view-scroll-progress) / var(--smartbar-view-fade-threshold), 1);
+    --smartbar-view-scroll-at-bottom-ratio: clamp(
+      0,
+      (var(--smartbar-view-scroll-progress) - (1 - var(--smartbar-view-fade-threshold))) / var(--smartbar-view-fade-threshold),
+      1
+    );
+
+    @media not (prefers-contrast) {
+      mask-image: linear-gradient(
+        to bottom,
+        transparent,
+        black var(--smartbar-scroll-mask-height),
+        black calc(100% - var(--smartbar-scroll-mask-height)),
+        transparent
+      );
+      mask-position: 0 calc((var(--smartbar-view-scroll-at-top-ratio) - 1) * var(--smartbar-scroll-mask-height));
+      mask-repeat: no-repeat;
+      mask-size: 100%
+        calc(100% + (1 - var(--smartbar-view-scroll-at-top-ratio) + var(--smartbar-view-scroll-at-bottom-ratio)) * var(--smartbar-scroll-mask-height));
+
+      &:not([has-overflow]) {
+        mask-image: none;
+      }
+    }
   }
 
   .urlbarView-row[label] {
     --urlbarView-labeled-row-margin-top: calc(var(--urlbarView-labeled-row-label-top) + 3.25em);
   }
-}
 
-/* Background: border, glow */
-.smartbar > .urlbar-background {
-  background: color-mix(in srgb, var(--smartbar-background-color) 60%, transparent);
-  border-radius: var(--border-radius-large);
-  border: var(--smartbar-border-style-gradient) transparent;
-  outline: none;
-  transition: background-color 0.2s ease-in;
-
-  /* TODO Upgrade to use background-clip instead of mask when bug 1880365 is fixed */
-  /* Gradient border via mask to keep fill semi-transparent */
-  &::after {
-    content: "";
-    position: absolute;
+  .urlbarView-row:not([type="tip"], [type="dynamic"]) {
     /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-    inset: calc(-1 * var(--border-width));
-    border-radius: inherit;
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-    background: var(--smartbar-border-color-gradient);
-    mask:
-      linear-gradient(#fff 0 0) content-box,
-      linear-gradient(#fff 0 0);
-    mask-composite: exclude;
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-    padding: var(--border-width);
-    pointer-events: none;
+    min-height: var(--urlbarView-row-min-height);
   }
 
-  /* Pseudo-element for glow effect on hover/focus */
-  &::before {
-    border-radius: inherit;
-    content: "";
-    inset: 0;
-    position: absolute;
-    filter: blur(30px);
-    background-color: var(--smartbar-glow-color);
-    opacity: 0;
-    transition: opacity 0.2s ease-out;
-    z-index: -1;
+  .urlbarView-row-inner {
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    min-height: var(--urlbarView-row-inner-min-height);
+  }
+}
 
-    @media (prefers-color-scheme: dark) {
-      background-image: var(--smartbar-border-color-gradient-dark);
+@media not (prefers-contrast) {
+  @supports (animation-timeline: scroll()) {
+    .smartbar > .urlbarView {
+      animation: smartbar-view-scroll-mask-fade linear both;
+      animation-timeline: scroll(self);
+    }
+
+    @keyframes smartbar-view-scroll-mask-fade {
+      /* Scrolled to top: Top fade hidden, bottom fade visible. */
+      0% {
+        mask-position: 0 calc(-1 * var(--smartbar-scroll-mask-height));
+        mask-size: 100% calc(100% + var(--smartbar-scroll-mask-height));
+      }
+      /* Scrolling: Top and bottom fades visible. */
+      10%,
+      90% {
+        mask-position: 0 0;
+        mask-size: 100% 100%;
+      }
+      /* Scrolled to bottom: Top fade visible, bottom fade hidden. */
+      100% {
+        mask-position: 0 0;
+        mask-size: 100% calc(100% + var(--smartbar-scroll-mask-height));
+      }
     }
   }
 }
 
-.smartbar:is(:hover, :focus-within, [focused], [open]) > .urlbar-background {
-  outline: none;
-  background-color: var(--smartbar-background-color);
-  transition: background-color 0.2s ease-out;
-}
+/* Background: border, glow */
+.smartbar > .urlbar-background {
+  border-radius: var(--border-radius-large);
 
-.smartbar[open] > .urlbar-background {
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-  box-shadow: var(--smartbar-box-shadow);
-}
+  @media not (forced-colors) {
+    background: color-mix(in srgb, var(--smartbar-background-color) 60%, transparent);
+    border: var(--smartbar-border-style-gradient) transparent;
+    outline: none;
+    transition: background-color 0.2s ease-in;
+    /* TODO Upgrade to use background-clip instead of mask when bug 1880365 is fixed */
+    /* Gradient border via mask to keep fill semi-transparent */
+    &::after {
+      content: "";
+      position: absolute;
+      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+      inset: calc(-1 * var(--border-width));
+      border-radius: inherit;
+      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+      background: var(--smartbar-border-color-gradient);
+      mask:
+        linear-gradient(#fff 0 0) content-box,
+        linear-gradient(#fff 0 0);
+      mask-composite: exclude;
+      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+      padding: var(--border-width);
+      pointer-events: none;
+    }
 
-/* Show outline on keyboard focus */
-.smartbar:focus-within:not([usertyping]):not([suppress-focus-border]) > .urlbar-background {
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-  outline: var(--smartbar-outline);
-  outline-offset: var(--focus-outline-offset);
-}
+    /* Pseudo-element for glow effect on hover/focus */
+    &::before {
+      border-radius: inherit;
+      content: "";
+      inset: 0;
+      position: absolute;
+      filter: blur(30px);
+      background-color: var(--smartbar-glow-color);
+      opacity: 0;
+      transition: opacity 0.2s ease-out;
+      z-index: -1;
 
-/* HOVER and FOCUSED states: Show gradient glow */
-.smartbar:is(:hover, :focus-within) > .urlbar-background::before {
-  opacity: 0.7;
-  transition: opacity 0.2s ease-in;
+      @media (prefers-color-scheme: dark) {
+        background-image: var(--smartbar-border-color-gradient-dark);
+      }
+    }
+  }
+
+  @media (forced-colors) {
+    border: var(--border-width) solid var(--button-border-color);
+  }
 }
 
 /* Input container */
@@ -181,11 +270,6 @@
   display: none;
 }
 
-/* Favicon icon fill */
-.smartbar .urlbarView-favicon {
-  fill: var(--icon-color);
-}
-
 /* Results */
 .smartbar .urlbarView-results {
   padding-block: var(--space-medium);
@@ -194,7 +278,7 @@
 
 /* Button container */
 .smartbar-button-container {
-  padding: 0 var(--space-large) var(--space-medium);
+  padding: var(--space-xsmall) var(--space-large) var(--space-medium);
   position: relative;
   display: flex;
 }
@@ -206,4 +290,29 @@
 /* Context chips */
 .smartbar-context-chips-header {
   position: relative;
+}
+
+/* stylelint-disable-next-line media-query-no-invalid */
+@media -moz-pref("browser.nova.enabled") {
+  .smartbar {
+    @media not (forced-colors) {
+      --urlbarview-background-color-hover: light-dark(
+        color-mix(in srgb, var(--color-violet-desaturated-40) 25%, transparent),
+        color-mix(in srgb, var(--color-violet-30) 20%, transparent)
+      );
+      --urlbarview-background-color-selected: light-dark(
+        color-mix(in srgb, var(--color-violet-desaturated-40) 38%, transparent),
+        color-mix(in srgb, var(--color-violet-30) 40%, transparent)
+      );
+      --link-color: var(--color-accent-primary);
+    }
+  }
+
+  .urlbarView-row {
+    cursor: pointer;
+
+    &:before {
+      cursor: none;
+    }
+  }
 }

@@ -11,7 +11,7 @@ add_task(async function testButtons() {
   await setHttpsFirstPref("off");
 
   // Open the privacy-pane in about:preferences
-  await openPreferencesViaOpenPreferencesAPI("panePrivacy", {
+  await openPreferencesViaOpenPreferencesAPI(CONNECTION_SECURITY_PREF_PANE, {
     leaveOpen: true,
   });
 
@@ -115,7 +115,7 @@ add_task(async function checkDialogFunctionality() {
   await setHttpsOnlyPref("everywhere");
 
   // Open the privacy-pane in about:preferences
-  await openPreferencesViaOpenPreferencesAPI("panePrivacy", {
+  await openPreferencesViaOpenPreferencesAPI(CONNECTION_SECURITY_PREF_PANE, {
     leaveOpen: true,
   });
   const preferencesDoc = gBrowser.contentDocument;

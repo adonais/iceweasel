@@ -44,20 +44,29 @@ class JS_PUBLIC_API JobQueue {
    * dom/script/ScriptSettings.h for details.
    *
    * If the embedding has the host defined data, this method should return the
-   * host defined data via the `data` out parameter and return `true`.
-   * The object in the `data` out parameter can belong to any compartment.
-   * If the embedding doesn't need the host defined data, this method should
-   * set the `data` out parameter to `nullptr` and return `true`.
-   * If any error happens while generating the host defined data, this method
-   * should set a pending exception to `cx` and return `false`.
+   * host defined data via the `incumbentGlobal` and
+   * `optionalHostDefinedData` out parameter and return `true`. If the
+   * embedding doesn't need the host defined data, this method should set the
+   * `incumbentGlobal` and `optionalHostDefinedData` out parameters to
+   * `nullptr` and return `true`. If any error happens while generating the host
+   * defined data, this method should set a pending exception to `cx` and return
+   * `false`.
+   *
+   * Currently optionalHostDefinedData is only processed if there is an
+   * associated incumbent global, and an assertion will fire if there's
+   * a optionalHostDefinedData without an incumbent global, in debug builds.
+   *
+   * incumbentGlobal and optionalHostDefinedData should be same compartment
+   * as cx, and will be wrapped as necessary by the JS engine.
    */
-  virtual bool getHostDefinedData(JSContext* cx,
-                                  JS::MutableHandle<JSObject*> data) const = 0;
+  virtual bool getHostDefinedData(
+      JSContext* cx, JS::MutableHandle<JSObject*> incumbentGlobal,
+      JS::MutableHandle<JSObject*> optionalHostDefinedData) const = 0;
 
   /**
    * If the embedding has a host-defined global, return it. This is used when
-   * we are able to optimize out the host defined data, as the embedding may
-   * still require this when running jobs.
+   * we are able to optimize out the optional host defined data, as the
+   * embedding may still require this when running jobs.
    *
    * In Gecko, this is used for dealing with the incumbent global.
    */

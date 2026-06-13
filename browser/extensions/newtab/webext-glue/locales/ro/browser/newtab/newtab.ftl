@@ -8,9 +8,13 @@
 newtab-page-title = Filă nouă
 newtab-settings-button =
     .title = Personalizează pagina pentru filă nouă
+#  (developer note): @nova-cleanup(remove-string): Remove newtab-customize-panel-icon-button once Nova lands, will be using newtab-customize-panel-label instead
 newtab-customize-panel-icon-button =
     .title = Personalizează această pagină
+#  (developer note): @nova-cleanup(remove-string): Remove newtab-customize-panel-icon-button-label once Nova lands, will be using newtab-customize-panel-label instead
 newtab-customize-panel-icon-button-label = Personalizează
+newtab-customize-panel-label =
+    .label = Personalizează
 newtab-personalize-settings-icon-label =
     .title = Personalizează pagina de filă nouă
     .aria-label = Setări
@@ -144,6 +148,9 @@ newtab-menu-report = Raportează
 # Context menu option to personalize New Tab recommended stories by blocking a section of stories,
 # e.g. "Sports". "Block" is a verb here.
 newtab-menu-section-block = Blochează
+# "Follow", "unfollow", and "following" are social media terms that refer to subscribing to or unsubscribing from a section of stories.
+# e.g. Following the travel section of stories.
+newtab-menu-section-unfollow-topic = Nu mai urmări
 # "Follow", "unfollow", and "following" are social media terms that refer to subscribing to or unsubscribing from a section of stories.
 # e.g. Following the travel section of stories.
 newtab-menu-section-unfollow = Anulează urmărirea subiectului
@@ -358,6 +365,8 @@ newtab-custom-widget-lists-toggle =
     .label = Liste
 newtab-custom-widget-timer-toggle =
     .label = Cronometru
+newtab-custom-widget-sports-toggle =
+    .label = Cupa Mondială
 newtab-custom-widget-section-title = Widgeturi
 newtab-custom-widget-section-toggle =
     .label = Widgeturi
@@ -377,6 +386,7 @@ newtab-wallpaper-title = Imagini de fundal
 newtab-wallpaper-reset = Resetează la valorile implicite
 #  (developer note): @nova-cleanup(remove-string): Remove old "Upload an image" string once Nova lands. The new "Add an image"  string will take over
 newtab-wallpaper-upload-image = Încarcă o imagine
+newtab-wallpaper-add-an-image = Adaugă o imagine
 newtab-wallpaper-custom-color = Alege o culoare
 newtab-wallpaper-toggle-title =
     .label = Imagini de fundal
@@ -404,6 +414,7 @@ newtab-wallpaper-light-fox-anniversary = O vulpe într-un câmp ierbos cu un pei
 
 #  (developer note): @nova-cleanup(remove-string): Remove old "Solid colors" string once Nova lands. The simplified "Colors" string will take over
 newtab-wallpaper-category-title-colors = Culori uni
+newtab-wallpaper-colors = Culori
 newtab-wallpaper-blue = Albastru
 newtab-wallpaper-light-blue = Albastru deschis
 newtab-wallpaper-light-purple = Violet deschis
@@ -494,6 +505,9 @@ newtab-weather-menu-change-location = Schimbă locația
 newtab-weather-change-location-search-input-placeholder =
     .placeholder = Caută locație
     .aria-label = Caută locație
+# "Current" refers to the user's physical/geographic location detected via geolocation.
+newtab-weather-change-location-search-use-current =
+    .label = Folosește locația curentă
 newtab-weather-menu-weather-display = Afișaj meteo
 newtab-weather-todays-forecast = Prognoza de astăzi
 newtab-weather-see-full-forecast = Vezi prognoza completă
@@ -519,6 +533,10 @@ newtab-weather-opt-in-not-now =
     .label = Nu acum
 newtab-weather-opt-in-yes =
     .label = Da
+newtab-weather-opt-in-headline = Obține prognoza meteo locală
+newtab-weather-opt-in-use-location =
+    .label = Folosește locația
+newtab-weather-opt-in-choose-location = Alege locația
 # We'll be showing static (fake) weather data if the user has not opted in to using their location
 newtab-weather-static-city = New York City
 # "Highest" here refers to the highest temperature of the day
@@ -578,8 +596,16 @@ newtab-topic-selection-button-pick-interests = Alege-ți interesele
 ## e.g. Following the travel section of stories.
 
 newtab-section-follow-button = Urmărește
+# Variables:
+#   $topic (string) - Topic that the user can follow
+newtab-section-follow-button-label =
+    .aria-label = Urmărește { $topic }
 newtab-section-following-button = Urmăresc
 newtab-section-unfollow-button = Nu mai urmări
+# Variables:
+#   $topic (string) - Topic that the user is following and can unfollow
+newtab-section-unfollow-button-label =
+    .aria-label = Urmărești: Anulează urmărirea { $topic }
 # A modal may appear next to the Follow button, directing users to try out the feature
 newtab-section-follow-highlight-title = Ajustează-ți feedul
 newtab-section-follow-highlight-subtitle = Urmărește ce te interesează ca să vezi mai multe din ceea ce îți place.
@@ -591,6 +617,22 @@ newtab-section-follow-highlight-subtitle = Urmărește ce te interesează ca să
 newtab-section-block-button = Blochează
 newtab-section-blocked-button = Blocat
 newtab-section-unblock-button = Deblochează
+# Variables:
+#   $topic (string) - Name of topic that user is following
+newtab-section-follow-topic =
+    .aria-label = Urmărește { $topic }
+# Variables:
+#   $topic (string) - Name of topic that user is unfollowing
+newtab-section-unfollow-topic =
+    .aria-label = Anulează urmărirea { $topic }
+# Variables:
+#   $topic (string) - Name of topic that user is blocking
+newtab-section-block-topic =
+    .aria-label = Blochează { $topic }
+# Variables:
+#   $topic (string) - Name of topic that user is unblocking
+newtab-section-unblock-topic =
+    .aria-label = Deblochează { $topic }
 
 ## Confirmation modal for blocking a section
 
@@ -600,6 +642,7 @@ newtab-section-confirm-block-topic-p2 = Subiectele blocate nu vor mai apărea î
 # Variables:
 #   $topic (string) - Name of topic that user is blocking
 newtab-section-block-topic-button = Blochează { $topic }
+newtab-section-block-cancel-button = Anulează
 
 ## Strings for custom wallpaper highlight
 
@@ -620,6 +663,12 @@ newtab-custom-wallpaper-cta = Încearcă-l
 newtab-new-user-custom-wallpaper-title = Alege o imagine de fundal ca să personalizezi { -brand-product-name }
 newtab-new-user-custom-wallpaper-subtitle = Fă să simți fiecare filă nouă ca a ta, cu imagini de fundal și culori personalizate.
 newtab-new-user-custom-wallpaper-cta = Încearcă acum
+
+## Strings for Nova wallpaper feature highlight
+
+newtab-wallpaper-feature-highlight-title = Tocmai au apărut noi imagini de fundal
+newtab-wallpaper-feature-highlight-subtitle = Alege-ți preferatele și personalizează fiecare filă nouă.
+newtab-wallpaper-feature-highlight-cta = Alege o imagine de fundal
 
 ## Strings for download mobile highlight
 
@@ -663,6 +712,18 @@ newtab-toast-thanks-for-reporting =
     .message = Îți mulțumim pentru sesizare.
 newtab-toast-widgets-hidden =
     .message = Selectează pictograma cu creion ca să adaugi widgeturi în orice moment.
+# Variables:
+#   $topic (string) - Topic that the user has followed
+newtab-section-toast-follow =
+    .message = Acum urmărești { $topic }.
+# Variables:
+#   $topic (string) - Topic that the user has unfollowed
+newtab-section-toast-unfollow =
+    .message = Nu mai urmărești { $topic }.
+# Variables:
+#   $topic (string) - Topic that the user has blocked
+newtab-section-toast-block =
+    .message = Nu vei mai vedea articole despre { $topic }.
 
 ## Strings for task / to-do list productivity widget
 
@@ -677,12 +738,20 @@ newtab-widget-lists-label-beta =
 # Variables:
 #   $number (number) - Amount of list items marked complete
 newtab-widget-lists-completed-list = Finalizat ({ $number })
+newtab-widget-lists-celebration-headline = Bună treabă
+newtab-widget-lists-celebration-subhead = Toate finalizate
 newtab-widget-task-list-menu-copy = Copiază
 newtab-widget-lists-menu-edit = Editează denumirea listei
+newtab-widget-lists-menu-edit2 =
+    .aria-label = Editează denumirea listei
 newtab-widget-lists-menu-create = Creează o listă nouă
 newtab-widget-lists-menu-delete = Șterge lista
 newtab-widget-lists-menu-copy = Copiază lista în clipboard
 newtab-widget-lists-menu-learn-more = Află mai multe
+newtab-widget-lists-button-add-item = Adaugă un element
+newtab-widget-lists-input-add-an-item2 =
+    .placeholder = Adaugă un element
+    .aria-label = Adaugă un element
 newtab-widget-lists-input-add-an-item =
     .placeholder = Adaugă un element
 newtab-widget-lists-input-error = Te rugăm să incluzi text ca să adaugi un element.
@@ -691,18 +760,35 @@ newtab-widget-lists-input-menu-move-up = Mută în sus
 newtab-widget-lists-input-menu-move-down = Mută în jos
 newtab-widget-lists-input-menu-delete = Șterge
 newtab-widget-lists-input-menu-edit = Editează
+newtab-widget-lists-input-menu-edit2 =
+    .aria-label = Editează elementul
 # the + symbol emphasises the functionality of adding a new list
 newtab-widget-lists-dropdown-create =
     .label = + Creează o listă nouă
 newtab-widget-lists-name-label-default =
     .label = Listă de sarcini
+newtab-widget-lists-name-label-checklist =
+    .label = Listă de verificare
 newtab-widget-lists-name-placeholder-default =
     .placeholder = Listă de sarcini
+newtab-widget-lists-name-placeholder-checklist2 =
+    .placeholder = Listă de verificare
+    .aria-label = Editează denumirea listei
+# The placeholder value of the name field for a newly created list
+newtab-widget-lists-name-placeholder-new2 =
+    .placeholder = Listă nouă
+    .aria-label = Editează denumirea listei
+newtab-widget-lists-name-placeholder-checklist =
+    .placeholder = Listă de verificare
 # The placeholder value of the name field for a newly created list
 newtab-widget-lists-name-placeholder-new =
     .placeholder = Listă nouă
 newtab-widget-section-title = Widgeturi
 newtab-widget-menu-hide = Ascunde widgetul
+newtab-widget-menu-change-size = Modifică mărimea
+newtab-widget-size-small = Mic
+newtab-widget-size-medium = Mediu
+newtab-widget-size-large = Mare
 # Tooltip for hide all widgets button
 newtab-widget-section-hide-all-button =
     .title = Ascunde widgeturile
@@ -713,10 +799,16 @@ newtab-widget-section-maximize =
 newtab-widget-section-minimize =
     .title = Minimizează widgeturile
     .aria-label = Minimizează toate widgeturile la mărimea compactă
+newtab-widget-section-menu-button =
+    .title = Meniu de widgeturi
+    .aria-label = Deschide meniul de widgeturi
+newtab-widget-section-menu-manage = Gestionează widgeturile
+newtab-widget-section-menu-hide-all = Ascunde widgeturile
+newtab-widget-section-menu-learn-more = Află mai multe
 newtab-widget-section-feedback = Spune-ne ce părere ai
+newtab-widget-lists-name-default = Listă de verificare
 
-## Strings for timer productivity widget
-## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown
+## Strings introduced by the Nova redesign of the Timer widget
 
 newtab-widget-timer-notification-title = Cronometru
 newtab-widget-timer-notification-focus = Timpul de concentrare a expirat. Ai lucrat bine. Ai nevoie de o pauză?
@@ -756,6 +848,91 @@ newtab-promo-card-cta = Află mai multe
 newtab-promo-card-dismiss-button =
     .title = Respinge
     .aria-label = Respinge
+
+## Strings introduced by the Nova redesign of the Timer widget
+
+# Variables:
+#   $minutes (number) - The currently selected timer duration in minutes
+newtab-widget-timer-start-aria =
+    .aria-label =
+        { $minutes ->
+            [one] Pornește cronometrul de { $minutes } minut
+            [few] Pornește cronometrul de { $minutes } minute
+           *[other] Pornește cronometrul de { $minutes } de minute
+        }
+newtab-widget-timer-pause-aria =
+    .aria-label = Pune cronometrul în pauză
+# Variables:
+#   $minutes (number) - The currently selected timer duration in minutes
+newtab-widget-timer-spinbutton-name =
+    .aria-label =
+        { $minutes ->
+            [one] { $minutes } minut
+            [few] { $minutes } minute
+           *[other] { $minutes } de minute
+        }
+newtab-widget-timer-decrease-min =
+    .title = Redu cu 1 minut
+newtab-widget-timer-increase-min =
+    .title = Mărește cu 1 minut
+newtab-widget-timer-mode-group =
+    .aria-label = Mod cronometru
+# Small label shown beneath the live time while the focus timer is running or paused.
+newtab-widget-timer-running-focus = Focus
+# Small label shown beneath the live time while the break timer is running or paused.
+newtab-widget-timer-running-break = Pauză
+# Context-menu item to hide the Timer widget. Replaces the shared "Hide widget"
+# copy with a widget-specific string per the Nova design.
+newtab-widget-timer-menu-hide = Ascunde cronometrul
+# Heading shown inside the Timer widget after a focus session ends.
+newtab-widget-timer-celebration-heading-focus = Bună treabă
+# Heading shown inside the Timer widget after a break session ends.
+newtab-widget-timer-celebration-heading-break = Pauza s-a terminat
+# Message shown inside the Timer widget after a focus session ends.
+newtab-widget-timer-celebration-message-focus = Ai nevoie de o pauză?
+# Message shown inside the Timer widget after a break session ends.
+newtab-widget-timer-celebration-message-break = Ești gata să te concentrezi?
+
+## Sports widget
+
+newtab-sports-widget-menu-follow-teams = Urmărește echipe
+newtab-sports-widget-menu-view-upcoming = Vezi evenimente viitoare
+newtab-sports-widget-menu-view-results = Vezi rezultate
+newtab-sports-widget-menu-learn-more = Află mai multe
+newtab-sports-widget-get-updates = Obține actualizări în timp real ale meciurilor și multe altele.
+newtab-sports-widget-view-schedule =
+    .label = Vezi programul
+newtab-sports-widget-follow-teams =
+    .label = Urmărește echipe
+newtab-sports-widget-choose-wallpaper =
+    .label = Alege o imagine de fundal
+newtab-sports-widget-skip = Omite
+newtab-sports-widget-done-button =
+    .label = Terminat
+newtab-sports-widget-group-stage = Faza grupelor
+# The "LIVE" string is meant to be uppercase in English, but other languages and locales may vary in how they handle this.
+newtab-sports-widget-live = LIVE
+newtab-custom-widget-live-refresh =
+    .title = Împrospătează scorurile
+    .aria-label = Împrospătează scorurile
+newtab-sports-widget-upcoming = Evenimente viitoare
+newtab-sports-widget-results = Rezultate
+newtab-sports-widget-semi-finals = Semifinale
+newtab-sports-widget-bronze-finals = Finala de bronz
+# Final is the final match for 1st place.
+newtab-sports-widget-final = Finală
+newtab-sports-widget-delayed = Întârziat
+newtab-sports-widget-postponed = Amânat
+newtab-sports-widget-suspended = Suspendat
+newtab-sports-widget-cancelled = Anulat
+newtab-sports-widget-information = Informații despre meci
+newtab-sports-widget-no-live-data = Datele în timp real despre meciuri nu se actualizează momentan
+newtab-sports-widget-view-results-link = Vezi rezultate
+newtab-sports-widget-third-place = Locul trei
+# Runner-up is the team in 2nd place.
+newtab-sports-widget-runner-up = Locul 2
+newtab-sports-widget-champions = Campionii
+newtab-sports-widget-world-cup-champions = Campionii Cupei Mondiale din 2026
 
 ## Strings for activation window message variants. In certain experiment configurations,
 ## the strings from these variants may be displayed in a message below the search input

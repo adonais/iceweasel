@@ -44,7 +44,7 @@ add_task(async function test_search_after_result_nav() {
   info("Press on the engine button to search for the suggestion");
   let popupHidden = UrlbarTestUtils.searchModeSwitcherPopupClosed(window);
   let browserLoaded = BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
-  popup.querySelector(`panel-item[data-engine-id=engine]`).button.click();
+  popup.querySelector(`panel-item[data-engine-id=engine]`).click();
   EventUtils.synthesizeKey("KEY_Enter");
   await Promise.all([popupHidden, browserLoaded]);
 
@@ -81,7 +81,7 @@ add_task(async function test_local_searchmode_after_result_nav() {
 
   info("Press on the bookmarks button to enter local search mode");
   let popupHidden = UrlbarTestUtils.searchModeSwitcherPopupClosed(window);
-  popup.querySelector(".search-button-bookmarks").button.click();
+  popup.querySelector(".search-button-bookmarks").click();
   await popupHidden;
 
   await UrlbarTestUtils.assertSearchMode(window, {
@@ -106,7 +106,7 @@ add_task(async function test_engine_searchmode_without_usertyped() {
   let popup = await UrlbarTestUtils.openSearchModeSwitcher(window);
   let popupHidden = UrlbarTestUtils.searchModeSwitcherPopupClosed(window);
   info("Press on the engine button to enter search mode");
-  popup.querySelector(`panel-item[data-engine-id=engine]`).button.click();
+  popup.querySelector(`panel-item[data-engine-id=engine]`).click();
   await popupHidden;
 
   await UrlbarTestUtils.assertSearchMode(window, {
@@ -132,7 +132,7 @@ add_task(async function test_local_searchmode_without_usertyped() {
   let popup = await UrlbarTestUtils.openSearchModeSwitcher(window);
   info("Press on the bookmarks button to enter local search mode");
   let popupHidden = UrlbarTestUtils.searchModeSwitcherPopupClosed(window);
-  popup.querySelector(".search-button-bookmarks").button.click();
+  popup.querySelector(".search-button-bookmarks").click();
   await popupHidden;
 
   await UrlbarTestUtils.assertSearchMode(window, {
@@ -163,15 +163,18 @@ add_task(async function test_closeButtonFocus() {
     uriString: "about:blank",
   });
 
-  let popup = await UrlbarTestUtils.openSearchModeSwitcher(window);
-  let popupHidden = UrlbarTestUtils.searchModeSwitcherPopupClosed(window);
-  info("Press on the engine button to enter search mode");
-  popup.querySelector(`panel-item[data-engine-id=engine]`).button.click();
-  await popupHidden;
+  await UrlbarTestUtils.activateSearchModeSwitcherItem(
+    window,
+    "panel-item[data-engine-id=engine]"
+  );
 
   Assert.equal(document.activeElement, gURLBar.inputField, "Input is focused");
 
+  // We intentionally turn off this a11y check, because the following click is
+  // purposefully targeting a non-interactive element.
+  AccessibilityUtils.setEnv({ mustHaveAccessibleRule: false });
   EventUtils.synthesizeMouseAtCenter(gBrowser.selectedBrowser, {});
+  AccessibilityUtils.resetEnv();
   Assert.equal(
     document.activeElement,
     gBrowser.selectedBrowser,

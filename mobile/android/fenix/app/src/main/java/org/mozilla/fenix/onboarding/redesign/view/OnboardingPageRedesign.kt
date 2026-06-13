@@ -94,7 +94,11 @@ private fun CardView(
                 ),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Spacer(Modifier.weight(TITLE_TOP_SPACER_WEIGHT)).takeIf { !isSmallDevice }
+                if (pageState.isSmallDevice) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                } else {
+                    Spacer(modifier = Modifier.weight(TITLE_TOP_SPACER_WEIGHT))
+                }
 
                 Content(pageState, isSmallDevice)
 

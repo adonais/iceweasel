@@ -4,6 +4,7 @@
 
 #include "mozilla/dom/WebIdentityChild.h"
 
+#include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/WebIdentityHandler.h"
 #include "mozilla/dom/WindowContext.h"
 #include "nsGlobalWindowOuter.h"
@@ -28,8 +29,8 @@ mozilla::ipc::IPCResult WebIdentityChild::RecvOpenContinuationWindow(
   MOZ_ASSERT(window);
   MOZ_ASSERT(window->GetWindowContext());
 
-  // Open a popup on via the window opening this to the provided URL, resolving
-  // with the new BC ID if we can get one. Otherwise resolve with the error
+  // Open a popup via the window opening this to the provided URL, resolving
+  // with the new browsing context if we can get one.
   nsGlobalWindowOuter* outer = nsGlobalWindowOuter::GetOuterWindowWithId(
       window->GetWindowContext()->OuterWindowId());
   RefPtr<BrowsingContext> newBC;
@@ -40,7 +41,7 @@ mozilla::ipc::IPCResult WebIdentityChild::RecvOpenContinuationWindow(
   } else if (!newBC) {
     aResolver(NS_ERROR_UNEXPECTED);
   } else {
-    aResolver(newBC->Id());
+    aResolver(MaybeDiscardedBrowsingContext(newBC));
   }
   return IPC_OK();
 }

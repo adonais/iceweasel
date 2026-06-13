@@ -109,7 +109,7 @@ New ICU versions are announced on the `icu-announce <https://lists.sourceforge.n
    $ # Ensure certain Python modules in the tree are accessible when updating.
    $ export PYTHONPATH="$topsrcdir/python/mozbuild/"
    $ #               <URL to ICU Git>                       <release tag name>
-   $ ./update-icu.sh https://github.com/unicode-org/icu.git release-67-1
+   $ ./update-icu.sh https://github.com/unicode-org/icu.git release-78.3
 
 .. [#icu-git-argument]
    The ICU Git URL argument lets you update from a local ICU clone. This can speed up work when you’re updating to a new ICU release and need to adjust or add new local patches.
@@ -122,7 +122,7 @@ But usually you’ll want to update to the latest commit from the corresponding 
    $ # Ensure certain Python modules in the tree are accessible when updating.
    $ export PYTHONPATH="$topsrcdir/python/mozbuild/"
    $ #               <URL to ICU Git>                       <maintenance name>
-   $ ./update-icu.sh https://github.com/unicode-org/icu.git maint/maint-67
+   $ ./update-icu.sh https://github.com/unicode-org/icu.git maint/maint-78
 
 Updating ICU will also update the language tag registry (which records language tag semantics needed to correctly implement ``Intl`` functionality). Therefore it’s likely necessary to update SpiderMonkey’s language tag handling after running this [#update-icu-warning-langtags]_. See below where the ``langtags`` mode of ``make_intl_data.py`` is discussed.
 
@@ -137,7 +137,35 @@ Updating ICU will also update the language tag registry (which records language 
 
 Often a local patch won’t apply, or new patches must be applied to successfully build. In this case you’ll have to manually edit ``update-icu.sh`` to abort after only *some* patches have been applied, make whatever changes are necessary by hand, generate a new/updated patch file by hand, then carefully reattempt updating. (The people who have updated ICU in the past, usually jwalden and anba, follow this awkward process and don’t have good ideas on how to improve it.)
 
-Any time ICU is updated, you’ll need to fully rebuild whichever of SpiderMonkey or Gecko you’re building. For SpiderMonkey, delete your object directory and reconfigure from scratch. For Gecko, change the message in the top-level `CLOBBER <https://searchfox.org/mozilla-central/source/CLOBBER>`__ file.
+Any time ICU is updated, you’ll need to fully rebuild whichever of SpiderMonkey or Gecko you’re building. For SpiderMonkey, delete your object directory and reconfigure from scratch. For Gecko, change the message in the top-level :searchfox:`CLOBBER` file.
+
+
+Patching locale data
+~~~~~~~~~~~~~~~~~~~~
+
+Occasionally a locale data change in an upstream ICU or CLDR release breaks web compatibility. In that case, it may be necessary to patch a file under ``intl/icu/source/data/`` and rebuild the ICU data file to fix the problem without waiting for an upstream fix.
+
+The steps are:
+
+1. Edit the relevant locale file under ``intl/icu/source/data/`` (e.g. ``intl/icu/source/data/locales/en.txt``).
+
+2. Rebuild the ICU data file by running ``icu_sources_data.py``:
+
+   .. code:: bash
+
+      $ cd "$topsrcdir/intl"
+      $ export PYTHONPATH="$topsrcdir/python/mozbuild/"
+      $ python3 icu_sources_data.py "$topsrcdir"
+
+   This reconfigures and rebuilds a standalone copy of ICU and copies the resulting ``icudtNNl.dat`` file to ``config/external/icu/data/``.
+
+3. Rebuild Firefox and run the relevant tests to confirm the fix works.
+
+4. Create a patch file capturing the locale data change, and save it to ``intl/icu-patches/``.
+
+5. Add the new patch file name to the patch loop in ``intl/update-icu.sh``, so it will be re-applied automatically on future ICU updates.
+
+For a recent example, see https://bugzilla.mozilla.org/show_bug.cgi?id=2010411.
 
 Updating tzdata
 ~~~~~~~~~~~~~~~

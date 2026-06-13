@@ -1,0 +1,34 @@
+{
+  "background": {
+    "color": {
+      "@base": {
+        "value": "{background.color.box.@base}"
+      }
+    }
+  },
+  "border": {
+    "color": {
+      "value": {
+        "light": "{color.gray.10}",
+        "dark": "{color.gray.60}",
+        "forcedColors": "{border.color.@base}"
+      }
+    },
+    "radius": {
+      "value": "16px"
+    }
+  },
+  "padding": {
+    "@base": {
+      "value": "{panel.padding.block}"
+    },
+    "block": {
+      "value": "8px"
+    }
+  },
+  "text": {
+    "color": {
+      "value": "{text.color.@base}"
+    }
+  }
+}

@@ -57,6 +57,7 @@
 #include "mozilla/ProfilerMarkers.h"
 #include "mozilla/RangeUtils.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/ReflowInput.h"
 #include "mozilla/RestyleManager.h"
 #include "mozilla/SMILAnimationController.h"
 #include "mozilla/SVGFragmentIdentifier.h"
@@ -96,6 +97,7 @@
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "mozilla/dom/ContentChild.h"
+#include "mozilla/dom/ContentList.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/DOMIntersectionObserver.h"
 #include "mozilla/dom/Document.h"
@@ -146,7 +148,6 @@
 #include "nsCaret.h"
 #include "nsClassHashtable.h"
 #include "nsContainerFrame.h"
-#include "nsContentList.h"
 #include "nsDOMNavigationTiming.h"
 #include "nsDisplayList.h"
 #include "nsDocShell.h"  // for reflow observation
@@ -829,16 +830,16 @@ void PresShell::Init(nsPresContext* aPresContext) {
       AccessibleCaretEnabled(mDocument->GetDocShell());
   if (accessibleCaretEnabled) {
     // Need to happen before nsFrameSelection has been set up.
-    mAccessibleCaretEventHub = new AccessibleCaretEventHub(this);
+    mAccessibleCaretEventHub = MakeRefPtr<AccessibleCaretEventHub>(this);
     mAccessibleCaretEventHub->Init();
   }
 
-  mSelection = new nsFrameSelection(this, accessibleCaretEnabled);
+  mSelection = MakeRefPtr<nsFrameSelection>(this, accessibleCaretEnabled);
 
   // Important: this has to happen after the selection has been set up
 #ifdef SHOW_CARET
   // make the caret
-  mCaret = new nsCaret();
+  mCaret = MakeRefPtr<nsCaret>();
   mCaret->Init(this);
   mOriginalCaret = mCaret;
 
@@ -909,7 +910,7 @@ void PresShell::Init(nsPresContext* aPresContext) {
   mTouchManager.Init(this, mDocument);
 
   if (mPresContext->IsRootContentDocumentCrossProcess()) {
-    mZoomConstraintsClient = new ZoomConstraintsClient();
+    mZoomConstraintsClient = MakeRefPtr<ZoomConstraintsClient>();
     mZoomConstraintsClient->Init(this, mDocument);
 
     // We call this to create mMobileViewportManager, if it is needed.
@@ -1403,6 +1404,11 @@ bool PresShell::FixUpFocus() {
   nsCOMPtr<nsPIDOMWindowOuter> window = mDocument->GetWindow();
   if (NS_WARN_IF(!window)) {
     return false;
+  }
+  if (auto* element = fm->GetFocusedElement()) {
+    // Set focus navigation starting point, so that focus navigation still
+    // starts from this element.
+    element->OwnerDoc()->SetFocusNavigationStartingPoint(element);
   }
   fm->ClearFocus(window);
   return true;
@@ -2211,8 +2217,13 @@ void PresShell::NotifyDestroyingFrame(nsIFrame* aFrame) {
   }
 }
 
-already_AddRefed<nsCaret> PresShell::GetCaret() const {
+already_AddRefed<nsCaret> PresShell::GetActiveCaret() const {
   RefPtr<nsCaret> caret = mCaret;
+  return caret.forget();
+}
+
+already_AddRefed<nsCaret> PresShell::GetOriginalCaret() const {
+  RefPtr<nsCaret> caret = mOriginalCaret;
   return caret.forget();
 }
 
@@ -2222,7 +2233,7 @@ PresShell::GetAccessibleCaretEventHub() const {
   return eventHub.forget();
 }
 
-void PresShell::SetCaret(nsCaret* aNewCaret) {
+void PresShell::SetActiveCaret(nsCaret* aNewCaret) {
   if (mCaret == aNewCaret) {
     return;
   }
@@ -2235,7 +2246,7 @@ void PresShell::SetCaret(nsCaret* aNewCaret) {
   }
 }
 
-void PresShell::RestoreCaret() { SetCaret(mOriginalCaret); }
+void PresShell::RestoreOriginalCaret() { SetActiveCaret(mOriginalCaret); }
 
 NS_IMETHODIMP PresShell::SetCaretEnabled(bool aInEnable) {
   bool oldEnabled = mCaretEnabled;
@@ -2243,9 +2254,9 @@ NS_IMETHODIMP PresShell::SetCaretEnabled(bool aInEnable) {
   mCaretEnabled = aInEnable;
 
   if (mCaretEnabled != oldEnabled) {
-    MOZ_ASSERT(mCaret);
-    if (mCaret) {
-      mCaret->SetVisible(mCaretEnabled);
+    MOZ_ASSERT(mOriginalCaret);
+    if (mOriginalCaret) {
+      mOriginalCaret->SetVisible(mCaretEnabled);
     }
   }
 
@@ -2253,8 +2264,8 @@ NS_IMETHODIMP PresShell::SetCaretEnabled(bool aInEnable) {
 }
 
 NS_IMETHODIMP PresShell::SetCaretReadOnly(bool aReadOnly) {
-  if (mCaret) {
-    mCaret->SetCaretReadOnly(aReadOnly);
+  if (mOriginalCaret) {
+    mOriginalCaret->SetCaretReadOnly(aReadOnly);
   }
   return NS_OK;
 }
@@ -2266,16 +2277,16 @@ NS_IMETHODIMP PresShell::GetCaretEnabled(bool* aOutEnabled) {
 }
 
 NS_IMETHODIMP PresShell::SetCaretVisibilityDuringSelection(bool aVisibility) {
-  if (mCaret) {
-    mCaret->SetVisibilityDuringSelection(aVisibility);
+  if (mOriginalCaret) {
+    mOriginalCaret->SetVisibilityDuringSelection(aVisibility);
   }
   return NS_OK;
 }
 
 NS_IMETHODIMP PresShell::GetCaretVisible(bool* aOutIsVisible) {
   *aOutIsVisible = false;
-  if (mCaret) {
-    *aOutIsVisible = mCaret->IsVisible();
+  if (mOriginalCaret) {
+    *aOutIsVisible = mOriginalCaret->IsVisible();
   }
   return NS_OK;
 }
@@ -2336,6 +2347,12 @@ NS_IMETHODIMP
 PresShell::IntraLineMove(bool aForward, bool aExtend) {
   RefPtr<nsFrameSelection> frameSelection = mSelection;
   return frameSelection->IntraLineMove(aForward, aExtend);
+}
+
+NS_IMETHODIMP
+PresShell::ParagraphMove(bool aForward, bool aExtend) {
+  RefPtr<nsFrameSelection> frameSelection = mSelection;
+  return frameSelection->ParagraphMove(aForward, aExtend);
 }
 
 NS_IMETHODIMP
@@ -3151,7 +3168,8 @@ nsresult PresShell::GoToAnchor(const nsAString& aAnchorName,
       // since the text fragment is stored as a `eTargetText` selection.
       //
       // 3.4. Scroll target into view, with behavior set to "auto", block set to
-      //      "start", and inline set to "nearest".
+      //      "auto", and inline set to "auto".
+      // https://github.com/w3c/csswg-drafts/issues/9576
       // FIXME(emilio): Not all callers pass ScrollSmoothAuto (but we use auto
       // smooth scroll for `top` regardless below, so maybe they should!).
       ScrollingInteractionContext scrollToAnchorContext(true);
@@ -3165,9 +3183,8 @@ nsresult PresShell::GoToAnchor(const nsAString& aAnchorName,
             SelectionScrollMode::SyncFlush));
       } else {
         MOZ_TRY(ScrollContentIntoView(
-            target,
-            AxisScrollParams(WhereToScroll::Start, WhenToScroll::Always),
-            AxisScrollParams(),
+            target, AxisScrollParams(WhereToScroll::Auto, WhenToScroll::Always),
+            AxisScrollParams(WhereToScroll::Auto),
             ScrollFlags::AnchorScrollFlags | aAdditionalScrollFlags));
       }
       if (ScrollContainerFrame* rootScroll = GetRootScrollContainerFrame()) {
@@ -3296,9 +3313,8 @@ nsresult PresShell::ScrollToAnchor() {
       return NS_OK;
     }
     return ScrollContentIntoView(
-        lastAnchor,
-        AxisScrollParams(WhereToScroll::Start, WhenToScroll::Always),
-        AxisScrollParams(), ScrollFlags::AnchorScrollFlags);
+        lastAnchor, AxisScrollParams(WhereToScroll::Auto, WhenToScroll::Always),
+        AxisScrollParams(WhereToScroll::Auto), ScrollFlags::AnchorScrollFlags);
   }
 
   return ScrollSelectionIntoView(
@@ -3432,10 +3448,16 @@ static nscoord ComputeWhereToScroll(WhereToScroll aWhereToScroll,
 static WhereToScroll GetApplicableWhereToScroll(
     const ScrollContainerFrame* aScrollContainerFrame,
     const nsIFrame* aScrollableFrame, const nsIFrame* aTarget,
-    ScrollDirection aScrollDirection, WhereToScroll aOriginal) {
+    ScrollDirection aScrollDirection, WhereToScroll aOriginal,
+    WhereToScroll aAutoDefault) {
   MOZ_ASSERT(do_QueryFrame(aScrollContainerFrame) == aScrollableFrame);
-  if (aTarget == aScrollableFrame) {
+
+  if (!aOriginal.mIsAuto) {
     return aOriginal;
+  }
+
+  if (aTarget == aScrollableFrame) {
+    return aAutoDefault;
   }
 
   StyleScrollSnapAlignKeyword align =
@@ -3445,7 +3467,7 @@ static WhereToScroll GetApplicableWhereToScroll(
 
   switch (align) {
     case StyleScrollSnapAlignKeyword::None:
-      return aOriginal;
+      return aAutoDefault;
     case StyleScrollSnapAlignKeyword::Start:
       return WhereToScroll::Start;
     case StyleScrollSnapAlignKeyword::Center:
@@ -3453,7 +3475,7 @@ static WhereToScroll GetApplicableWhereToScroll(
     case StyleScrollSnapAlignKeyword::End:
       return WhereToScroll::End;
   }
-  return aOriginal;
+  return aAutoDefault;
 }
 
 static ScrollMode GetScrollModeForScrollIntoView(
@@ -3504,7 +3526,8 @@ static Maybe<nsPoint> ScrollToShowRect(
     const nsIFrame* aScrollableFrame, const nsIFrame* aTarget,
     const nsRect& aRect, const Sides aScrollPaddingSkipSides,
     const nsMargin& aMargin, AxisScrollParams aVertical,
-    AxisScrollParams aHorizontal, ScrollFlags aScrollFlags) {
+    AxisScrollParams aHorizontal, ScrollFlags aScrollFlags,
+    WhereToScroll aVerticalAutoDefault, WhereToScroll aHorizontalAutoDefault) {
   nsPoint scrollPt = aScrollContainerFrame->GetVisualViewportOffset();
   const nsPoint originalScrollPt = scrollPt;
   const nsRect visibleRect(scrollPt,
@@ -3540,10 +3563,10 @@ static Maybe<nsPoint> ScrollToShowRect(
     if (ComputeNeedToScroll(aVertical.mWhenToScroll, lineSize.height, aRect.y,
                             aRect.YMost(), visibleRect.y + padding.top,
                             visibleRect.YMost() - padding.bottom)) {
-      // If the scroll-snap-align on the frame is valid, we need to respect it.
       WhereToScroll whereToScroll = GetApplicableWhereToScroll(
           aScrollContainerFrame, aScrollableFrame, aTarget,
-          ScrollDirection::eVertical, aVertical.mWhereToScroll);
+          ScrollDirection::eVertical, aVertical.mWhereToScroll,
+          aVerticalAutoDefault);
 
       const auto result = ComputeWhereToScrollAndRange(
           whereToScroll, scrollPt.y, rectToScrollIntoView.y,
@@ -3560,10 +3583,10 @@ static Maybe<nsPoint> ScrollToShowRect(
     if (ComputeNeedToScroll(aHorizontal.mWhenToScroll, lineSize.width, aRect.x,
                             aRect.XMost(), visibleRect.x + padding.left,
                             visibleRect.XMost() - padding.right)) {
-      // If the scroll-snap-align on the frame is valid, we need to respect it.
       WhereToScroll whereToScroll = GetApplicableWhereToScroll(
           aScrollContainerFrame, aScrollableFrame, aTarget,
-          ScrollDirection::eHorizontal, aHorizontal.mWhereToScroll);
+          ScrollDirection::eHorizontal, aHorizontal.mWhereToScroll,
+          aHorizontalAutoDefault);
 
       const auto result = ComputeWhereToScrollAndRange(
           whereToScroll, scrollPt.x, rectToScrollIntoView.x,
@@ -3796,27 +3819,30 @@ void PresShell::ScrollFrameIntoVisualViewport(
     // or the visual viewport. Likewise, if the right bottom position of the
     // fixed element is (110vw, 110vh), it's also outside of the scrollable
     // range.
-    const nsRect clampedPositionFixedRect =
-        aPositionFixedRect.MoveInsideAndClamp(layoutViewport);
-    // If the position:fixed element is already inside the visual viewport, we
-    // don't need to scroll visually.
-    if (clampedPositionFixedRect.y >= 0 &&
-        clampedPositionFixedRect.YMost() <= visualViewportSize.height &&
-        clampedPositionFixedRect.x >= 0 &&
-        clampedPositionFixedRect.XMost() <= visualViewportSize.width) {
+    // If the position:fixed element is totally outside of the layout viewport,
+    // it will never be in the viewport.
+    if (!NeedToVisuallyScroll(layoutViewportSize, aPositionFixedRect)) {
       return;
     }
 
-    // If the position:fixed element is totally outside of the the layout
-    // viewport, it will never be in the viewport.
-    if (!NeedToVisuallyScroll(layoutViewportSize, aPositionFixedRect)) {
+    // If the position:fixed element is already in the visual viewport, no
+    // visual scroll is needed. Convert to layout coordinates first since the
+    // visual viewport may have been panned from the origin.
+    nsRect clampedPositionFixedRect =
+        aPositionFixedRect.MoveInsideAndClamp(layoutViewport);
+    nsPoint layoutOffset = rootScrollContainer->GetScrollPosition();
+    clampedPositionFixedRect.MoveBy(layoutOffset);
+    const nsRect visualViewport(GetVisualViewportOffset(), visualViewportSize);
+    // Use Contains(point) twice rather than Contains(rect) because the latter
+    // returns true for empty rects regardless of position.
+    if (visualViewport.Contains(clampedPositionFixedRect.TopLeft()) &&
+        visualViewport.Contains(clampedPositionFixedRect.BottomRight())) {
       return;
     }
     // Offset the position:fixed element position by the layout scroll
     // position because the position:fixed origin (0, 0) is the layout scroll
     // position. Otherwise if we've already scrolled, this scrollIntoView
     // operation will jump back to near (0, 0) position.
-    nsPoint layoutOffset = rootScrollContainer->GetScrollPosition();
     const auto scrollRange = rootScrollContainer->GetVisualScrollRange();
 
     const nsRect visibleRect(layoutOffset, visualViewportSize);
@@ -3854,6 +3880,14 @@ bool PresShell::ScrollFrameIntoView(
   // to physical axes/directions here.
   // XXX Maybe we should convert more of the following code to logical axes,
   // if it's convenient for more callers to work that way?
+
+  // The default of WhereToScroll for physical vertical/horizontal axes:
+  // block-start (top) and inline-nearest respectively, matching the spec for
+  // horizontal writing modes. These are overridden below when AxesAreLogical is
+  // set.
+  WhereToScroll verticalAutoDefault = WhereToScroll::Start;
+  WhereToScroll horizontalAutoDefault = WhereToScroll::Nearest;
+
   if (aScrollFlags & ScrollFlags::AxesAreLogical) {
     // The aVertical parameter actually refers to the element's block axis,
     // and aHorizontal to its inline axis. Potentially reverse/swap them,
@@ -3875,6 +3909,13 @@ bool PresShell::ScrollFrameIntoView(
     }
     if (wm.IsVertical()) {
       std::swap(aVertical, aHorizontal);
+
+      // After the swap, physical vertical = inline and physical horizontal =
+      // block for vertical writing modes. Compute auto defaults accordingly.
+      verticalAutoDefault = WhereToScroll::Nearest;
+      horizontalAutoDefault = wm.IsVerticalRL()
+                                  ? WhereToScroll{WhereToScroll::End}
+                                  : WhereToScroll{WhereToScroll::Start};
     }
     // Remove the AxesAreLogical flag, to make it clear that methods we call
     // always get physical axes from here on.
@@ -3989,7 +4030,8 @@ bool PresShell::ScrollFrameIntoView(
         AutoWeakFrame wf(container);
         Maybe<nsPoint> destination = ScrollToShowRect(
             sf, container, target, targetRect, skipPaddingSides, scrollMargin,
-            aVertical, aHorizontal, aScrollFlags);
+            aVertical, aHorizontal, aScrollFlags, verticalAutoDefault,
+            horizontalAutoDefault);
         if (!wf.IsAlive()) {
           return didScroll;
         }
@@ -4146,7 +4188,7 @@ void PresShell::ScheduleBeforeFirstPaint() {
             ("PresShell::ScheduleBeforeFirstPaint this=%p", this));
 
     nsContentUtils::AddScriptRunner(
-        new nsBeforeFirstPaintDispatcher(mDocument));
+        MakeAndAddRef<nsBeforeFirstPaintDispatcher>(mDocument));
   }
 }
 
@@ -7407,7 +7449,7 @@ nsresult PresShell::EnsurePrecedingPointerRawUpdate(
           !TouchManager::ShouldConvertTouchToPointer(touch, &touchRawUpdate)) {
         continue;
       }
-      RefPtr<Touch> newTouch = new Touch(*touch);
+      auto newTouch = MakeRefPtr<Touch>(*touch);
       newTouch->mMessage = eTouchRawUpdate;
       newTouch->mCoalescedWidgetEvents = nullptr;
       touchRawUpdate.mTouches.AppendElement(std::move(newTouch));
@@ -9368,6 +9410,27 @@ void PresShell::EventHandler::FinalizeHandlingEvent(
   }
 }
 
+void PresShell::MaybeExitKeyboardLockedFullscreen(
+    WidgetKeyboardEvent* aKeyboardEvent, Document* aFullscreenRoot) {
+  // No recorded keydown?
+  if (mFirstUnmatchedEscapeKeyDownForFullscreen.IsNull()) {
+    return;
+  }
+  const bool escapeKeyDeltaLargeEnough =
+      (aKeyboardEvent->mTimeStamp -
+       mFirstUnmatchedEscapeKeyDownForFullscreen) >=
+      TimeDuration::FromMilliseconds(
+          StaticPrefs::dom_fullscreen_keyboard_lock_long_press_interval());
+
+  if (escapeKeyDeltaLargeEnough) {
+    Document::AsyncExitFullscreen(aFullscreenRoot);
+    if (XRE_IsParentProcess() && (PointerLockManager::GetLockedRemoteTarget() ||
+                                  PointerLockManager::IsLocked())) {
+      PointerLockManager::Unlock("EscapeKey");
+    }
+  }
+}
+
 void PresShell::EventHandler::MaybeHandleKeyboardEventBeforeDispatch(
     WidgetKeyboardEvent* aKeyboardEvent) {
   MOZ_ASSERT(aKeyboardEvent);
@@ -9406,33 +9469,19 @@ void PresShell::EventHandler::MaybeHandleKeyboardEventBeforeDispatch(
         }
 
         MOZ_ASSERT(aKeyboardEvent->mIsRepeat);
-        if (mPresShell->mFirstUnmatchedEscapeKeyDownForFullscreen) {
-          if (mPresShell->ShouldShowFullscreenKeyboardLockWarning(
-                  *aKeyboardEvent)) {
-            nsContentUtils::DispatchEventOnlyToChrome(
-                root, root, u"MozDOMFullscreen:WarnAboutKeyboardLock"_ns,
-                CanBubble::eYes, Cancelable::eNo, /* DefaultAction */ nullptr);
-          }
-
-          const bool escapeHasBeenHeldLongEnough =
-              (aKeyboardEvent->mTimeStamp -
-               mPresShell->mFirstUnmatchedEscapeKeyDownForFullscreen) >=
-              TimeDuration::FromMilliseconds(
-                  StaticPrefs::
-                      dom_fullscreen_keyboard_lock_long_press_interval());
-          if (escapeHasBeenHeldLongEnough) {
-            mPresShell->mFirstUnmatchedEscapeKeyDownForFullscreen = TimeStamp();
-            MOZ_LOG_FMT(gLog, LogLevel::Debug,
-                        "Exiting fullscreen from Escape key long-press");
-            Document::AsyncExitFullscreen(root);
-
-            if (XRE_IsParentProcess() &&
-                (PointerLockManager::GetLockedRemoteTarget() ||
-                 PointerLockManager::IsLocked())) {
-              PointerLockManager::Unlock("EscapeKey");
-            }
-          }
+        if (mPresShell->ShouldShowFullscreenKeyboardLockWarning(
+                *aKeyboardEvent)) {
+          nsContentUtils::DispatchEventOnlyToChrome(
+              root, root, u"MozDOMFullscreen:WarnAboutKeyboardLock"_ns,
+              CanBubble::eYes, Cancelable::eNo, /* DefaultAction */ nullptr);
         }
+
+        mPresShell->MaybeExitKeyboardLockedFullscreen(aKeyboardEvent, root);
+      } else if (aKeyboardEvent->mMessage == eKeyUp) {
+        // When keyboard key repeat is disabled by the OS, no repeat keydown
+        // events are generated while holding Escape. Check on keyup whether the
+        // key was held long enough to exit fullscreen.
+        mPresShell->MaybeExitKeyboardLockedFullscreen(aKeyboardEvent, root);
       }
 
       // If fullscreen keyboard-lock is enabled, return here, as we don't allow
@@ -9954,7 +10003,7 @@ bool PresShell::EventHandler::PrepareToUseCaretPosition(
   nsresult rv;
 
   // check caret visibility
-  RefPtr<nsCaret> caret = mPresShell->GetCaret();
+  RefPtr<nsCaret> caret = mPresShell->GetActiveCaret();
   NS_ENSURE_TRUE(caret, false);
 
   bool caretVisible = caret->IsVisible();
@@ -11870,8 +11919,9 @@ void PresShell::MaybeRecreateMobileViewportManager(bool aAfterInitialization) {
     // have one.
     MOZ_ASSERT(!mMobileViewportManager);
 
-    mMVMContext = new GeckoMVMContext(mDocument, this);
-    mMobileViewportManager = new MobileViewportManager(mMVMContext, *mvmType);
+    mMVMContext = MakeRefPtr<GeckoMVMContext>(mDocument, this);
+    mMobileViewportManager =
+        MakeRefPtr<MobileViewportManager>(mMVMContext, *mvmType);
     if (MOZ_UNLIKELY(
             MOZ_LOG_TEST(MobileViewportManager::gLog, LogLevel::Debug))) {
       nsIURI* uri = mDocument->GetDocumentURI();
@@ -12115,6 +12165,16 @@ void PresShell::SetNeedsWindowPropertiesSync() {
   }
   mNeedsWindowPropertiesSync = true;
   SchedulePaint();
+}
+
+nsSize PresShell::GetVisualViewportSize() const {
+  NS_ASSERTION(mVisualViewportSizeSet,
+               "asking for visual viewport size when its not set?");
+  DynamicToolbarState state = GetDynamicToolbarState();
+  return (state == DynamicToolbarState::InTransition ||
+          state == DynamicToolbarState::Collapsed)
+             ? GetVisualViewportSizeUpdatedByDynamicToolbar()
+             : mVisualViewportSize;
 }
 
 bool PresShell::SetVisualViewportOffset(const nsPoint& aScrollOffset,

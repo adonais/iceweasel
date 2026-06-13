@@ -10,7 +10,7 @@
 namespace mozilla {
 namespace dom {
 
-NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(IdentityProvider, mOwner)
+NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(IdentityProvider, mGlobal)
 
 IdentityProvider::~IdentityProvider() = default;
 
@@ -19,8 +19,9 @@ JSObject* IdentityProvider::WrapObject(JSContext* aCx,
   return IdentityProvider_Binding::Wrap(aCx, this, aGivenProto);
 }
 
-IdentityProvider::IdentityProvider(nsIGlobalObject* aGlobal) : mOwner(aGlobal) {
-  MOZ_ASSERT(mOwner);
+IdentityProvider::IdentityProvider(nsIGlobalObject* aGlobal)
+    : mGlobal(aGlobal) {
+  MOZ_ASSERT(mGlobal);
 }
 
 // static

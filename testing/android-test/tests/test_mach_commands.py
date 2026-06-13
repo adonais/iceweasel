@@ -23,6 +23,8 @@ from mach_commands import (
     flavor_for_test,
     project_for_ac,
     project_for_test,
+    source_dir_for_test,
+    submodule_for_test,
 )
 
 
@@ -71,6 +73,13 @@ class TestAndroidMachCommands(unittest.TestCase):
             "android",
             "org.mozilla.fenix.components.MenuItemTest",
         ),
+        (
+            "mobile/android/fenix/app/longfox/src/test/kotlin/org/mozilla/fenix/longfox/GameStateTest.kt",
+            "fenix",
+            None,
+            "unit",
+            "org.mozilla.fenix.longfox.GameStateTest",
+        ),
     ]
 
     def cleanup_gradle_args(self, args):
@@ -81,14 +90,16 @@ class TestAndroidMachCommands(unittest.TestCase):
 
     def test_classname_for_test(self):
         """Test extraction of class name from test path."""
-        TEST_PATH_PREFIX = "src/test/java"
-        ANDROIDTEST_PATH_PREFIX = "src/androidTest/java"
         for test_path, _, _, _, expected in self.TEST_CASES:
             with self.subTest(test_path=test_path):
                 if flavor_for_test(test_path) == "unit":
-                    result = classname_for_test(test_path, TEST_PATH_PREFIX)
+                    result = classname_for_test(
+                        test_path, source_dir_for_test(test_path)
+                    )
                 else:
-                    result = classname_for_test(test_path, ANDROIDTEST_PATH_PREFIX)
+                    result = classname_for_test(
+                        test_path, source_dir_for_test(test_path, "androidTest")
+                    )
                 self.assertEqual(result, expected)
 
     def test_project_for_test(self):
@@ -137,7 +148,7 @@ class TestAndroidMachCommands(unittest.TestCase):
             [
                 "-p",
                 os.path.join("mobile", "android", "focus-android", "app"),
-                "testFocusDebugUnitTest",
+                ":app:testFocusDebugUnitTest",
                 "--tests",
                 "org.mozilla.focus.components.EngineProviderTest",
             ],
@@ -193,7 +204,7 @@ class TestAndroidMachCommands(unittest.TestCase):
             [
                 "-p",
                 os.path.join("mobile", "android", "fenix", "app"),
-                "connectedDebugAndroidTest",
+                ":app:connectedDebugAndroidTest",
                 "-Pandroid.testInstrumentationRunnerArguments.class=org.mozilla.fenix.components.MenuItemTest",
             ],
         )
@@ -253,6 +264,62 @@ class TestAndroidMachCommands(unittest.TestCase):
             ],
         )
 
+    def test_submodule_for_test(self):
+        """Test detection of nested sub-modules."""
+        SUBDIR = os.path.join("mobile", "android", "fenix", "app")
+        self.assertIsNone(
+            submodule_for_test(
+                "mobile/android/fenix/app/src/test/java/org/mozilla/fenix/home/HomeFragmentTest.kt",
+                SUBDIR,
+            )
+        )
+        self.assertEqual(
+            submodule_for_test(
+                "mobile/android/fenix/app/longfox/src/test/kotlin/org/mozilla/fenix/longfox/GameStateTest.kt",
+                SUBDIR,
+            ),
+            "longfox",
+        )
+
+    def test_run_android_test_longfox(self):
+        """Test that run_android_test handles longfox submodule tests."""
+        from mach_commands import run_android_test
+
+        command_context = mock.MagicMock()
+        mock_dispatch = command_context._mach_context.commands.dispatch = (
+            mock.MagicMock(return_value=0)
+        )
+
+        test_objects = [
+            {
+                "name": "mobile/android/fenix/app/src/test/java/org/mozilla/fenix/home/HomeFragmentTest.kt",
+            },
+            {
+                "name": "mobile/android/fenix/app/longfox/src/test/kotlin/org/mozilla/fenix/longfox/GameStateTest.kt",
+            },
+        ]
+
+        run_android_test(
+            command_context,
+            subproject="fenix",
+            test_objects=test_objects,
+        )
+
+        gradle_args = mock_dispatch.call_args[1]["args"]
+        self.assertEqual(
+            self.cleanup_gradle_args(gradle_args),
+            [
+                "-p",
+                os.path.join("mobile", "android", "fenix", "app"),
+                ":app:testDebugUnitTest",
+                "--tests",
+                "org.mozilla.fenix.home.HomeFragmentTest",
+                ":app:longfox:testDebugUnitTest",
+                "--tests",
+                "org.mozilla.fenix.longfox.GameStateTest",
+            ],
+        )
+
     def test_run_android_test_with_multi_component(self):
         """Test that multiple android-component tests resolve the their component projects"""
         from mach_commands import run_android_test
@@ -289,11 +356,11 @@ class TestAndroidMachCommands(unittest.TestCase):
                 "-p",
                 os.path.join("mobile", "android", "android-components"),
                 ":components:concept-engine:testDebugUnitTest",
-                ":components:browser-engine-gecko:testDebugUnitTest",
                 "--tests",
                 "mozilla.components.concept.engine.EngineTest",
                 "--tests",
                 "mozilla.components.concept.engine.EngineViewTest",
+                ":components:browser-engine-gecko:testDebugUnitTest",
                 "--tests",
                 "mozilla.components.browser.engine.gecko.GeckoEngineTest",
                 ":components:browser-engine-gecko:connectedDebugAndroidTest",

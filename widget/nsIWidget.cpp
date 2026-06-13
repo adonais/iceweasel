@@ -1650,16 +1650,17 @@ WindowRenderer* nsIWidget::GetWindowRenderer() {
   return mWindowRenderer;
 }
 
-WindowRenderer* nsIWidget::CreateFallbackRenderer() {
+already_AddRefed<WindowRenderer> nsIWidget::CreateFallbackRenderer() {
   // We don't provide a reference to ourself because we want to stay with the
   // fallback renderer regardless of changes in compositing.
-  return new DefaultFallbackRenderer();
+  return MakeAndAddRef<DefaultFallbackRenderer>();
 }
 
-WindowRenderer* nsIWidget::CreateBackgroundedFallbackRenderer() {
+already_AddRefed<WindowRenderer>
+nsIWidget::CreateBackgroundedFallbackRenderer() {
   // Provide a reference back to ourself so that when the GPU process and
   // hardware compositing is once again available, we can return to it.
-  return new BackgroundedFallbackRenderer(this);
+  return MakeAndAddRef<BackgroundedFallbackRenderer>(this);
 }
 
 CompositorBridgeChild* nsIWidget::GetRemoteRenderer() {
@@ -1882,12 +1883,12 @@ void nsIWidget::SetSizeConstraints(const SizeConstraints& aConstraints) {
   // the new constraints don't affect the current size, because Resize
   // implementation on some platforms may touch other geometry even if
   // the size don't need to change.
-  LayoutDeviceIntSize curSize = GetBounds().Size();
-  LayoutDeviceIntSize clampedSize =
+  DesktopIntSize curSize =
+      DesktopIntSize::Round(GetBounds().Size() / GetDesktopToDeviceScale());
+  DesktopIntSize clampedSize =
       Max(aConstraints.mMinSize, Min(aConstraints.mMaxSize, curSize));
   if (clampedSize != curSize) {
-    DesktopSize desktopSize = clampedSize / GetDesktopToDeviceScale();
-    Resize(desktopSize, true);
+    Resize(DesktopSize(clampedSize), true);
   }
 }
 

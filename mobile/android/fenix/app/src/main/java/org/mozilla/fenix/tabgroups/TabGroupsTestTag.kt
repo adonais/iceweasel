@@ -11,4 +11,8 @@ internal object TabGroupsTestTag {
     // Delete Tab Groups Confirmation Dialog
     const val DELETE_DIALOG_CONFIRM_BUTTON = "$TAB_GROUPS.DeleteDialog.ConfirmButton"
     const val DELETE_DIALOG_CANCEL_BUTTON = "$TAB_GROUPS.DeleteDialog.CancelButton"
+
+    // Close Last Tab and Delete Tab Group Confirmation Dialog
+    const val CLOSE_LAST_TAB_AND_DELETE_DIALOG_CONFIRM_BUTTON = "$TAB_GROUPS.CloseAndDeleteDialog.ConfirmButton"
+    const val CLOSE_LAST_TAB_AND_DELETE_DIALOG_CANCEL_BUTTON = "$TAB_GROUPS.CloseAndDeleteDialog.CancelButton"
 }

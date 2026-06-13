@@ -995,8 +995,10 @@ class SelectableProfileServiceClass extends EventEmitter {
       window.document.documentElement
     );
 
-    let themeFgColor = computedStyles.getPropertyValue("--toolbar-color");
-    let themeBgColor = computedStyles.getPropertyValue("--toolbar-bgcolor");
+    let themeFgColor = computedStyles.getPropertyValue("--toolbar-text-color");
+    let themeBgColor = computedStyles.getPropertyValue(
+      "--toolbar-background-color"
+    );
 
     let bg = window.InspectorUtils.colorToRGBA(themeBgColor);
     let themeBg = `rgba(${bg.r}, ${bg.g}, ${bg.b}, ${bg.a})`;
@@ -1390,8 +1392,13 @@ class SelectableProfileServiceClass extends EventEmitter {
    * Create the prefs.js file and write all shared prefs to the file.
    *
    * @param {nsIFile} profileDir The root dir of the newly created profile
+   * @param {string} source The entry point that is creating the profile
    */
-  async createProfileInitialFiles(profileDir) {
+  async createProfileInitialFiles(profileDir, source) {
+    if (!source) {
+      console.error("No source passed for new profile");
+    }
+
     let timesJsonFilePath = await IOUtils.createUniqueFile(
       profileDir.path,
       "times.json",
@@ -1401,6 +1408,7 @@ class SelectableProfileServiceClass extends EventEmitter {
     await IOUtils.writeJSON(timesJsonFilePath, {
       created: Date.now(),
       firstUse: null,
+      source: source ?? "unknown",
     });
 
     let prefsJsFilePath = await IOUtils.createUniqueFile(
@@ -1478,10 +1486,11 @@ class SelectableProfileServiceClass extends EventEmitter {
    * If path is not included, new profile directories will be created.
    *
    * @param {nsIFile} existingProfilePath Optional. The path of an existing profile.
+   * @param {string} source The entry point that is creating the profile
    *
    * @returns {SelectableProfile} The newly created profile object.
    */
-  async #createProfile(existingProfilePath) {
+  async #createProfile(existingProfilePath, source) {
     let nextProfileNumber = Math.max(
       0,
       ...(await this.getAllProfiles()).map(p => p.id)
@@ -1509,7 +1518,7 @@ class SelectableProfileServiceClass extends EventEmitter {
     let path =
       existingProfilePath || (await this.createProfileDirs(profileData.name));
     if (!existingProfilePath) {
-      await this.createProfileInitialFiles(path);
+      await this.createProfileInitialFiles(path, source);
     }
     profileData.path = this.getRelativeProfilePath(path);
 
@@ -1536,7 +1545,7 @@ class SelectableProfileServiceClass extends EventEmitter {
     // add the current toolkit profile to the datastore.
     if (!this.#currentProfile) {
       let path = this.groupToolkitProfile.rootDir;
-      this.#currentProfile = await this.#createProfile(path);
+      this.#currentProfile = await this.#createProfile(path, null);
 
       // And also set the profile selector window to show at startup (bug 1933911).
       await this.setShowProfileSelectorWindow(true);
@@ -1638,7 +1647,7 @@ class SelectableProfileServiceClass extends EventEmitter {
     let profiles = await this.getAllProfiles();
 
     if (profiles.length <= 1) {
-      await this.createNewProfile();
+      await this.createNewProfile(true, null, "replace-last");
       await this.setShowProfileSelectorWindow(false);
 
       profiles = await this.getAllProfiles();
@@ -1756,13 +1765,18 @@ class SelectableProfileServiceClass extends EventEmitter {
    * the newly created profile.
    * @param {nsIFile} [existingProfilePath=null] Optional path to use for the
    * profile instead of creating new directories in the default location.
+   * @param {string} source The entry point that is creating the profile
    *
    * @returns {SelectableProfile} The profile just created.
    */
-  async createNewProfile(launchProfile = true, existingProfilePath = null) {
+  async createNewProfile(
+    launchProfile = true,
+    existingProfilePath = null,
+    source
+  ) {
     await this.maybeSetupDataStore();
 
-    let profile = await this.#createProfile(existingProfilePath);
+    let profile = await this.#createProfile(existingProfilePath, source);
     if (launchProfile) {
       this.launchInstance(profile, ["about:newprofile"]);
     }

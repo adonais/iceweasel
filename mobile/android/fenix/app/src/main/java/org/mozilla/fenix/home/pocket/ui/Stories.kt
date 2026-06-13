@@ -54,6 +54,7 @@ import org.mozilla.fenix.home.fake.FakeHomepagePreview
 import org.mozilla.fenix.home.pocket.PocketRecommendedStoriesCategory
 import org.mozilla.fenix.home.ui.HomepageTestTag.HOMEPAGE_SPONSORED_STORY
 import org.mozilla.fenix.home.ui.HomepageTestTag.HOMEPAGE_STORY
+import org.mozilla.fenix.home.ui.HomepageTestTag.POCKET_STORIES
 import org.mozilla.fenix.theme.FirefoxTheme
 import kotlin.math.roundToInt
 
@@ -180,7 +181,7 @@ fun Stories(
             .padding(start = contentPadding, end = contentPadding)
             .semantics {
                 testTagsAsResourceId = true
-                testTag = "pocket.stories"
+                testTag = POCKET_STORIES
             },
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {

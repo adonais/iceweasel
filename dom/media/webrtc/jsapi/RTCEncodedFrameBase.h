@@ -46,6 +46,12 @@ class RTCEncodedFrameBase : public nsISupports, public nsWrapperCache {
                                RTCEncodedFrameState& aState,
                                RTCRtpScriptTransformer* aOwner);
 
+  // forbid copy/move to protect mState
+  RTCEncodedFrameBase(const RTCEncodedFrameBase&) = delete;
+  RTCEncodedFrameBase& operator=(const RTCEncodedFrameBase&) = delete;
+  RTCEncodedFrameBase(RTCEncodedFrameBase&&) = delete;
+  RTCEncodedFrameBase& operator=(RTCEncodedFrameBase&&) = delete;
+
   // nsISupports
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(RTCEncodedFrameBase)
@@ -72,12 +78,6 @@ class RTCEncodedFrameBase : public nsISupports, public nsWrapperCache {
  protected:
   virtual ~RTCEncodedFrameBase();
   void DetachData();
-
-  // forbid copy/move to protect mState
-  RTCEncodedFrameBase(const RTCEncodedFrameBase&) = delete;
-  RTCEncodedFrameBase& operator=(const RTCEncodedFrameBase&) = delete;
-  RTCEncodedFrameBase(RTCEncodedFrameBase&&) = delete;
-  RTCEncodedFrameBase& operator=(RTCEncodedFrameBase&&) = delete;
 
   RefPtr<nsIGlobalObject> mGlobal;
   RefPtr<RTCRtpScriptTransformer> mOwner;

@@ -138,8 +138,19 @@ void NativeLayerRootWayland::Init() {
     SetDRMFormat(format);
   }
 
-  // Unmap all layers if nsWindow is unmapped
   WaylandSurfaceLock lock(mRootSurface);
+
+  // Repaint layers if we're mapped
+  mRootSurface->SetMapCallbackLocked(
+      lock,
+      [this, self = RefPtr{this}](WaylandSurfaceLock& aProofOfLock) -> void {
+        if (mMissingRootCommit) {
+          LOG("NativeLayerRootWayland map callback - missing root commit");
+          CommitToScreenLocked(aProofOfLock);
+        }
+      });
+
+  // Unmap all layers if nsWindow is unmapped
   mRootSurface->SetUnmapCallbackLocked(
       lock, [this, self = RefPtr{this}]() -> void {
         LOG("NativeLayerRootWayland Unmap callback");
@@ -162,13 +173,29 @@ void NativeLayerRootWayland::Init() {
 
   // Propagate frame callback state (enabled/disabled) to all layers
   // to save resources.
-  mRootSurface->SetFrameCallbackStateHandlerLocked(
+  mRootSurface->SetVSyncCallbackStateHandlerLocked(
       lock, [this, self = RefPtr{this}](bool aState) -> void {
-        LOGVERBOSE("FrameCallbackStateHandler()");
+        LOGVERBOSE("VSyncCallbackStateHandler()");
+        // It's run on locked surface
         mRootSurface->AssertCurrentThreadOwnsMutex();
         for (RefPtr<NativeLayerWayland>& layer : mSublayers) {
           layer->SetFrameCallbackState(aState);
         }
+      });
+
+  // Run emulated VSync if there isn't any mapped/painted layer
+  mRootSurface->SetVSyncEmulateCheckLocked(
+      lock, [this, self = RefPtr{this}]() -> bool {
+        // It's run on locked surface
+        mRootSurface->AssertCurrentThreadOwnsMutex();
+        bool isVisible = false;
+        for (RefPtr<NativeLayerWayland>& layer : mSublayers) {
+          if ((isVisible = layer->IsVisible())) {
+            break;
+          }
+        }
+        LOGVERBOSE("Emulate VSync [%d]", !isVisible);
+        return !isVisible;
       });
 
   // Get the best DMABuf format for root wl_surface. We use the same
@@ -220,6 +247,7 @@ void NativeLayerRootWayland::Shutdown() {
     if (mRootSurface->IsMapped()) {
       mRootSurface->RemoveAttachedBufferLocked(lock);
     }
+    mRootSurface->ClearMapCallbackLocked(lock);
     mRootSurface->ClearUnmapCallbackLocked(lock);
     mRootSurface->ClearGdkCommitCallbackLocked(lock);
     mRootSurface->DisableDMABufFormatsLocked(lock);
@@ -401,7 +429,7 @@ void NativeLayerRootWayland::SetLayers(
     for (const RefPtr<NativeLayerWayland>& layer : newLayers) {
       if (layer->IsNew()) {
         LOG("  Map new child layer [%p]", layer.get());
-        if (!layer->Map(&lock)) {
+        if (!layer->Map(lock)) {
           continue;
         }
         if (layer->IsOpaque() && WaylandSurface::IsOpaqueRegionEnabled()) {
@@ -513,16 +541,6 @@ void NativeLayerRootWayland::LogStatsLocked(
 bool NativeLayerRootWayland::CommitToScreen() {
   WaylandSurfaceLock lock(mRootSurface);
 
-  mFrameInProcess = false;
-
-  if (!mRootSurface->IsMapped()) {
-    // TODO: Register frame callback to paint again? Are we hidden?
-    LOG("NativeLayerRootWayland::CommitToScreen() root surface is not mapped");
-    return false;
-  }
-
-  LOG("NativeLayerRootWayland::CommitToScreen()");
-
   // Attach empty tmp buffer to root layer (nsWindow).
   // We need to have any content to attach child layers to it.
   if (!mRootSurface->HasBufferAttached()) {
@@ -530,10 +548,24 @@ bool NativeLayerRootWayland::CommitToScreen() {
     mRootSurface->ClearOpaqueRegionLocked(lock);
   }
 
+  if (!mRootSurface->IsMapped()) {
+    LOG("NativeLayerRootWayland::CommitToScreen() root surface is not mapped");
+    mMissingRootCommit = true;
+    return false;
+  }
+
+  return CommitToScreenLocked(lock);
+}
+
+bool NativeLayerRootWayland::CommitToScreenLocked(WaylandSurfaceLock& aLock) {
+  mFrameInProcess = false;
+
+  LOG("NativeLayerRootWayland::CommitToScreen()");
+
   // Try to map all missing surfaces
   for (RefPtr<NativeLayerWayland>& layer : mSublayers) {
     if (!layer->IsMapped()) {
-      if (!layer->Map(&lock)) {
+      if (!layer->Map(aLock)) {
         LOGVERBOSE(
             "NativeLayerRootWayland::CommitToScreen() failed to map layer [%p]",
             layer.get());
@@ -547,7 +579,7 @@ bool NativeLayerRootWayland::CommitToScreen() {
   }
 
   if (mRootMutatedStackingOrder) {
-    RequestUpdateOnMainThreadLocked(lock);
+    RequestUpdateOnMainThreadLocked(aLock);
   }
 
   const double scale = mRootSurface->GetScale();
@@ -583,26 +615,30 @@ bool NativeLayerRootWayland::CommitToScreen() {
 
   LOGVERBOSE("NativeLayerRootWayland::CommitToScreen(): %s root commit",
              mRootAllLayersRendered ? "enabled" : "disabled");
-  mRootSurface->SetCommitStateLocked(lock, mRootAllLayersRendered);
+  mRootSurface->SetCommitStateLocked(aLock, mRootAllLayersRendered);
 
 #ifdef MOZ_LOGGING
-  LogStatsLocked(lock);
+  LogStatsLocked(aLock);
 #endif
 
   // Commit all layers changes now so we can unmap removed layers without
   // flickering.
-  lock.Commit();
+  aLock.Commit();
 
   if (mRootAllLayersRendered && !mRemovedSublayers.IsEmpty()) {
-    ClearLayersLocked(lock);
+    ClearLayersLocked(aLock);
   }
 
+  mMissingRootCommit = false;
   return true;
 }
 
-// Ready-to-paint signal from root or child surfaces. Route it to
+// Ready-to-paint signal (VSync) from child surfaces. Route it to
 // root WaylandSurface (owned by nsWindow) where it's used to fire VSync.
-void NativeLayerRootWayland::FrameCallbackHandler(uint32_t aTime) {
+void NativeLayerRootWayland::VSyncCallbackHandler(uint32_t aTime,
+                                                  bool aEmulated) {
+  MOZ_DIAGNOSTIC_ASSERT(!aEmulated,
+                        "VSyncCallbackHandler() is supposed to be HW only");
   {
     // Child layer wl_subsurface already requested next frame callback
     // and we need to commit to root surface too as we're in
@@ -612,15 +648,18 @@ void NativeLayerRootWayland::FrameCallbackHandler(uint32_t aTime) {
 
   if (aTime <= mLastFrameCallbackTime) {
     LOGVERBOSE(
-        "NativeLayerRootWayland::FrameCallbackHandler() ignoring redundant "
+        "NativeLayerRootWayland::VSyncCallbackHandler() ignoring redundant "
         "callback %d",
         aTime);
     return;
   }
   mLastFrameCallbackTime = aTime;
 
-  LOGVERBOSE("NativeLayerRootWayland::FrameCallbackHandler() time %d", aTime);
-  mRootSurface->FrameCallbackHandler(nullptr, aTime,
+  LOGVERBOSE(
+      "NativeLayerRootWayland::VSyncCallbackHandler() time %d emulated [%d]",
+      aTime, aEmulated);
+  mRootSurface->VSyncCallbackHandler(nullptr, aTime,
+                                     /* aEmulated */ aEmulated,
                                      /* aRoutedFromChildSurface */ true);
 }
 
@@ -684,6 +723,10 @@ NativeLayerWayland::~NativeLayerWayland() {
 }
 
 bool NativeLayerWayland::IsMapped() { return mSurface->IsMapped(); }
+
+bool NativeLayerWayland::IsVisible() {
+  return mSurface->IsMapped() && mSurface->HasBufferAttached();
+}
 
 void NativeLayerWayland::SetSurfaceIsFlipped(bool aIsFlipped) {
   WaylandSurfaceLock lock(mSurface);
@@ -923,7 +966,7 @@ void NativeLayerWayland::RenderLayer(double aScale) {
   LOG("NativeLayerWayland::RenderLayer(): rendered [%d]", mState.mIsRendered);
 }
 
-bool NativeLayerWayland::Map(WaylandSurfaceLock* aParentWaylandSurfaceLock) {
+bool NativeLayerWayland::Map(WaylandSurfaceLock& aParentWaylandSurfaceLock) {
   WaylandSurfaceLock surfaceLock(mSurface);
 
   if (mNeedsMainThreadUpdate == MainThreadUpdate::Unmap) {
@@ -936,7 +979,7 @@ bool NativeLayerWayland::Map(WaylandSurfaceLock* aParentWaylandSurfaceLock) {
   MOZ_DIAGNOSTIC_ASSERT(!mSurface->IsMapped());
   MOZ_DIAGNOSTIC_ASSERT(mNeedsMainThreadUpdate != MainThreadUpdate::Map);
 
-  if (!mSurface->MapLocked(surfaceLock, aParentWaylandSurfaceLock,
+  if (!mSurface->MapLocked(surfaceLock, &aParentWaylandSurfaceLock,
                            DesktopIntPoint())) {
     gfxCriticalError() << "NativeLayerWayland::Map() failed!";
     return false;
@@ -950,14 +993,16 @@ bool NativeLayerWayland::Map(WaylandSurfaceLock* aParentWaylandSurfaceLock) {
   //
   // aTime param is used to identify duplicate events.
   //
-  mSurface->SetFrameCallbackLocked(
+  mSurface->SetVSyncCallbackHandlerLocked(
       surfaceLock,
-      [this, self = RefPtr{this}](wl_callback* aCallback,
-                                  uint32_t aTime) -> void {
-        LOGVERBOSE("NativeLayerWayland::FrameCallbackHandler() time %d", aTime);
-        mRootLayer->FrameCallbackHandler(aTime);
-      },
-      /* aEmulateFrameCallback */ true);
+      [this, self = RefPtr{this}](wl_callback* aCallback, uint32_t aTime,
+                                  bool aEmulated) -> void {
+        LOGVERBOSE(
+            "NativeLayerWayland::VSyncCallbackHandler() time %d emulated %d",
+            aTime, aEmulated);
+        MOZ_DIAGNOSTIC_ASSERT(!aEmulated);
+        mRootLayer->VSyncCallbackHandler(aTime, aEmulated);
+      });
 
   if (mIsHDR) {
     gfx::YUVColorSpace yuvColorSpace = gfx::YUVColorSpace::BT709;
@@ -995,7 +1040,7 @@ bool NativeLayerWayland::Map(WaylandSurfaceLock* aParentWaylandSurfaceLock) {
 void NativeLayerWayland::SetFrameCallbackState(bool aState) {
   LOGVERBOSE("NativeLayerWayland::SetFrameCallbackState() %d", aState);
   WaylandSurfaceLock lock(mSurface);
-  mSurface->SetFrameCallbackStateLocked(lock, aState);
+  mSurface->SetVSyncCallbackStateLocked(lock, aState);
 }
 
 void NativeLayerWayland::MainThreadMap() {
@@ -1026,7 +1071,7 @@ void NativeLayerWayland::Unmap() {
   mSurface->UnmapLocked(surfaceLock);
   // Clear reference to this added at NativeLayerWayland::Map() by
   // callback handler.
-  mSurface->ClearFrameCallbackHandlerLocked(surfaceLock);
+  mSurface->ClearVSyncCallbackHandlerLocked(surfaceLock);
   mState.mMutatedStackingOrder = true;
   mState.mMutatedVisibility = true;
   mState.mIsRendered = false;

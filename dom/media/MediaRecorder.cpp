@@ -605,7 +605,7 @@ static nsTArray<nsCString> GetMIMELabelStrings(const ParsedMIMEType& aType) {
   if (aType.mCodecs.IsEmpty()) {
     nsCString label = baseLabel;
     label.AppendLiteral("_unspecified");
-    labels.AppendElement(label);
+    labels.AppendElement(std::move(label));
     return labels;
   }
   for (const auto& codec : aType.mCodecs) {
@@ -621,7 +621,7 @@ static nsTArray<nsCString> GetMIMELabelStrings(const ParsedMIMEType& aType) {
         ("GetMIMELabelStrings: type: %s, container: %s, codec: %s => label: %s",
          ToString(aType.mMediaType).c_str(), ToString(aType.mContainer).c_str(),
          ToString(codec).c_str(), label.get()));
-    labels.AppendElement(label);
+    labels.AppendElement(std::move(label));
   }
   return labels;
 }
@@ -1938,12 +1938,12 @@ bool MediaRecorder::IsTypeSupported(const nsAString& aMIMEType) {
 nsresult MediaRecorder::CreateAndDispatchBlobEvent(BlobImpl* aBlobImpl) {
   MOZ_ASSERT(NS_IsMainThread(), "Not running on main thread");
 
-  if (!GetOwnerGlobal()) {
+  if (!GetRelevantGlobal()) {
     // This MediaRecorder has been disconnected in the meantime.
     return NS_ERROR_FAILURE;
   }
 
-  RefPtr<Blob> blob = Blob::Create(GetOwnerGlobal(), aBlobImpl);
+  RefPtr<Blob> blob = Blob::Create(GetRelevantGlobal(), aBlobImpl);
   if (NS_WARN_IF(!blob)) {
     return NS_ERROR_FAILURE;
   }

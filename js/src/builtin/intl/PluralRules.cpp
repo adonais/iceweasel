@@ -8,6 +8,7 @@
 
 #include "mozilla/Assertions.h"
 #include "mozilla/intl/PluralRules.h"
+#include "mozilla/UsingEnum.h"
 
 #include "builtin/Array.h"
 #include "builtin/intl/CommonFunctions.h"
@@ -15,7 +16,6 @@
 #include "builtin/intl/LocaleNegotiation.h"
 #include "builtin/intl/NumberFormatOptions.h"
 #include "builtin/intl/ParameterNegotiation.h"
-#include "builtin/intl/UsingEnum.h"
 #include "gc/GCContext.h"
 #include "js/PropertySpec.h"
 #include "vm/GlobalObject.h"
@@ -30,16 +30,7 @@ using namespace js;
 using namespace js::intl;
 
 const JSClassOps PluralRulesObject::classOps_ = {
-    nullptr,                      // addProperty
-    nullptr,                      // delProperty
-    nullptr,                      // enumerate
-    nullptr,                      // newEnumerate
-    nullptr,                      // resolve
-    nullptr,                      // mayResolve
-    PluralRulesObject::finalize,  // finalize
-    nullptr,                      // call
-    nullptr,                      // construct
-    nullptr,                      // trace
+    .finalize = PluralRulesObject::finalize,
 };
 
 const JSClass PluralRulesObject::class_ = {
@@ -115,11 +106,7 @@ void js::intl::PluralRulesObject::setOptions(
 
 static constexpr std::string_view PluralRulesTypeToString(
     PluralRulesOptions::Type type) {
-#ifndef USING_ENUM
-  using enum PluralRulesOptions::Type;
-#else
-  USING_ENUM(PluralRulesOptions::Type, Cardinal, Ordinal);
-#endif
+  MOZ_USING_ENUM(PluralRulesOptions::Type, Cardinal, Ordinal);
   switch (type) {
     case Cardinal:
       return "cardinal";
@@ -131,12 +118,8 @@ static constexpr std::string_view PluralRulesTypeToString(
 
 static constexpr std::string_view PluralRulesNotationToString(
     PluralRulesOptions::Notation notation) {
-#ifndef USING_ENUM
-  using enum PluralRulesOptions::Notation;
-#else
-  USING_ENUM(PluralRulesOptions::Notation, Standard, Scientific, Engineering,
-             Compact);
-#endif
+  MOZ_USING_ENUM(PluralRulesOptions::Notation, Standard, Scientific,
+                 Engineering, Compact);
   switch (notation) {
     case Standard:
       return "standard";
@@ -152,11 +135,7 @@ static constexpr std::string_view PluralRulesNotationToString(
 
 static constexpr std::string_view PluralRulesCompactDisplayToString(
     PluralRulesOptions::CompactDisplay compactDisplay) {
-#ifndef USING_ENUM
-  using enum PluralRulesOptions::CompactDisplay;
-#else
-  USING_ENUM(PluralRulesOptions::CompactDisplay, Short, Long);
-#endif
+  MOZ_USING_ENUM(PluralRulesOptions::CompactDisplay, Short, Long);
   switch (compactDisplay) {
     case Short:
       return "short";
@@ -340,12 +319,8 @@ static bool ResolveLocale(JSContext* cx,
 
 static JSString* KeywordToString(mozilla::intl::PluralRules::Keyword keyword,
                                  JSContext* cx) {
-#ifndef USING_ENUM
-  using enum mozilla::intl::PluralRules::Keyword;
-#else
-  USING_ENUM(mozilla::intl::PluralRules::Keyword, Zero, One, Two, Few, Many,
-             Other);
-#endif
+  MOZ_USING_ENUM(mozilla::intl::PluralRules::Keyword, Zero, One, Two, Few, Many,
+                 Other);
   switch (keyword) {
     case Zero:
       return cx->names().zero;

@@ -183,7 +183,7 @@ bool NullPrincipal::MayLoadInternal(nsIURI* aURI) {
   // Also allow the load if we are the principal of the URI being checked.
   nsCOMPtr<nsIPrincipal> blobPrincipal;
   if (dom::BlobURLProtocolHandler::GetBlobURLPrincipal(
-          aURI, getter_AddRefs(blobPrincipal))) {
+          aURI, OriginAttributesRef(), getter_AddRefs(blobPrincipal))) {
     MOZ_ASSERT(blobPrincipal);
     return SubsumesInternal(blobPrincipal,
                             BasePrincipal::ConsiderDocumentDomain);

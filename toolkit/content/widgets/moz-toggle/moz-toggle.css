@@ -129,8 +129,6 @@
   }
 }
 
-@media not (forced-colors) {
-  :host(:state(disabled)) .toggle-button {
-    opacity: 0.4;
-  }
+:host(:state(disabled)) .toggle-button {
+  opacity: var(--button-opacity-disabled);
 }

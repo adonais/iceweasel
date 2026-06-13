@@ -54,10 +54,7 @@ function updateTabContextMenu(tab = gBrowser.selectedTab) {
 
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.urlbar.trustPanel.featureGate", false],
-      ["test.wait300msAfterTabSwitch", true],
-    ],
+    set: [["test.wait300msAfterTabSwitch", true]],
   });
 
   await promiseSyncReady();
@@ -275,13 +272,13 @@ add_task(async function test_tab_contextmenu_unconfigured() {
   updateTabContextMenu(testTab);
   is(
     document.getElementById("context_sendTabToDevice").hidden,
-    true,
-    "Send tab to device is hidden"
+    false,
+    "Send tab to device should not be hidden"
   );
   is(
     document.getElementById("context_sendTabToDeviceSeparator").hidden,
-    true,
-    "Send tab to device separator is hidden"
+    false,
+    "Send tab to device separator should not be hidden"
   );
   is(
     document.getElementById("context_sendTabToDevice").disabled,
@@ -370,13 +367,13 @@ add_task(async function test_tab_contextmenu_sync_not_ready_other_state() {
   updateTabContextMenu(testTab);
   is(
     document.getElementById("context_sendTabToDevice").hidden,
-    true,
-    "Send tab to device is hidden"
+    false,
+    "Send tab to device should not be hidden"
   );
   is(
     document.getElementById("context_sendTabToDeviceSeparator").hidden,
-    true,
-    "Send tab to device separator is hidden"
+    false,
+    "Send tab to device separator should not be hidden"
   );
   is(
     document.getElementById("context_sendTabToDevice").disabled,

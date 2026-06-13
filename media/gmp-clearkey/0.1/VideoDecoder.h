@@ -20,9 +20,7 @@
 // This include is required in order for content_decryption_module to work
 // on Unix systems.
 
-#include <atomic>
 #include <queue>
-#include <thread>
 
 #include "content_decryption_module.h"
 #include "WMFH264Decoder.h"

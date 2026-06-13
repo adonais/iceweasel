@@ -20,11 +20,11 @@ origin:
 
   # Human-readable identifier for this version/release
   # Generally "version NNN", "tag SSS", "bookmark SSS"
-  release: d69235dd804b24c04ed05639cffcc912cd6cfd75 (2026-03-17T22:00:03.000+01:00).
+  release: f995e1fbf9379027367a93aafd2b5711ba76f81e (2026-04-27T21:09:28.000+02:00).
 
   # Revision to pull in
   # Must be a long or short commit SHA (long preferred)
-  revision: d69235dd804b24c04ed05639cffcc912cd6cfd75
+  revision: f995e1fbf9379027367a93aafd2b5711ba76f81e
 
   # The package's license, where possible using the mnemonic from
   # https://spdx.org/licenses/
@@ -46,9 +46,6 @@ vendoring:
   url: https://code.videolan.org/videolan/dav1d
   source-hosting: gitlab
   vendor-directory: third_party/dav1d
-
-  patches:
-    - init-cdf-error-handling.patch
 
   exclude:
     - "build/.git*"

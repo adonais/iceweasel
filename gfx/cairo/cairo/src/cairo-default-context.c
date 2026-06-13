@@ -1,3 +1,4 @@
+/* -*- Mode: c; c-basic-offset: 4; indent-tabs-mode: t; tab-width: 8; -*- */
 /* cairo - a vector graphics library with display and print output
  *
  * Copyright © 2002 University of Southern California
@@ -1507,7 +1508,7 @@ _cairo_default_context_create (void *target)
 
     cr = _freed_pool_get (&context_pool);
     if (unlikely (cr == NULL)) {
-	cr = _cairo_malloc (sizeof (cairo_default_context_t));
+	cr = _cairo_calloc (sizeof (cairo_default_context_t));
 	if (unlikely (cr == NULL))
 	    return _cairo_create_in_error (_cairo_error (CAIRO_STATUS_NO_MEMORY));
     }

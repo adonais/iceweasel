@@ -33,14 +33,6 @@ async def is_scrollbar_visible(client):
 @pytest.mark.skip_platforms("android")
 @pytest.mark.need_visible_scrollbars
 @pytest.mark.asyncio
-@pytest.mark.with_interventions
-async def test_enabled(client):
-    assert not await is_scrollbar_visible(client)
-
-
-@pytest.mark.skip_platforms("android")
-@pytest.mark.need_visible_scrollbars
-@pytest.mark.asyncio
 @pytest.mark.without_interventions
-async def test_disabled(client):
-    assert await is_scrollbar_visible(client)
+async def test_regression(client):
+    assert not await is_scrollbar_visible(client)

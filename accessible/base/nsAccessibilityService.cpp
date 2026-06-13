@@ -258,13 +258,13 @@ bool nsAccessibilityService::ShouldCreateImgAccessible(
   }
 
   // If the element is not an img, not an embedded image via embed or object,
-  // and not a pseudo-element with CSS content alt text, then we should not
-  // create an accessible.
+  // and not a pseudo-element with non-empty CSS content alt text, then we
+  // should not create an accessible.
   if (!aElement->IsHTMLElement(nsGkAtoms::img) &&
       ((!aElement->IsHTMLElement(nsGkAtoms::embed) &&
         !aElement->IsHTMLElement(nsGkAtoms::object)) ||
        frame->AccessibleType() != AccType::eImageType) &&
-      !CssAltContent(aElement)) {
+      CssAltContent(aElement).IsEmpty()) {
     return false;
   }
 
@@ -315,7 +315,11 @@ static RefPtr<LocalAccessible> MaybeCreateSVGAccessible(
     // Shape elements: rect, circle, ellipse, line, path, polygon, and polyline.
     // 'use' and 'text' graphic elements require special support.
     if (MustSVGElementBeAccessible(aContent, aDocument)) {
-      return new EnumRoleAccessible<roles::GRAPHIC>(aContent, aDocument);
+      // Any accessible that could have TextLeafAccessible children must be a
+      // HyperTextAccessible to satisfy the invariant in
+      // GetTextAttributesLocalAcc.
+      return new EnumRoleHyperTextAccessible<roles::GRAPHIC>(aContent,
+                                                             aDocument);
     }
   } else if (aContent->IsSVGElement(nsGkAtoms::text)) {
     return new HyperTextAccessible(aContent->AsElement(), aDocument);
@@ -652,7 +656,7 @@ void nsAccessibilityService::NotifyOfResolutionChange(
   DocAccessible* document = aPresShell->GetDocAccessible();
   if (document && document->IPCDoc()) {
     AutoTArray<mozilla::a11y::CacheData, 1> data;
-    RefPtr<AccAttributes> fields = new AccAttributes();
+    auto fields = MakeRefPtr<AccAttributes>();
     fields->SetAttribute(CacheKey::Resolution, aResolution);
     data.AppendElement(mozilla::a11y::CacheData(0, fields));
     document->IPCDoc()->SendCache(CacheUpdateType::Update, data);
@@ -664,7 +668,7 @@ void nsAccessibilityService::NotifyOfDevPixelRatioChange(
   DocAccessible* document = aPresShell->GetDocAccessible();
   if (document && document->IPCDoc()) {
     AutoTArray<mozilla::a11y::CacheData, 1> data;
-    RefPtr<AccAttributes> fields = new AccAttributes();
+    auto fields = MakeRefPtr<AccAttributes>();
     fields->SetAttribute(CacheKey::AppUnitsPerDevPixel, aAppUnitsPerDevPixel);
     data.AppendElement(mozilla::a11y::CacheData(0, fields));
     document->IPCDoc()->SendCache(CacheUpdateType::Update, data);
@@ -802,8 +806,8 @@ void nsAccessibilityService::NotifyOfTabPanelVisibilityChange(
   }
 
   if (LocalAccessible* acc = document->GetAccessible(aPanel)) {
-    RefPtr<AccEvent> event =
-        new AccStateChangeEvent(acc, states::OFFSCREEN, aNowVisible);
+    auto event =
+        MakeRefPtr<AccStateChangeEvent>(acc, states::OFFSCREEN, aNowVisible);
     document->FireDelayedEvent(event);
   }
 }
@@ -1042,7 +1046,7 @@ void nsAccessibilityService::GetStringStates(uint32_t aState,
 
 already_AddRefed<DOMStringList> nsAccessibilityService::GetStringStates(
     uint64_t aStates) const {
-  RefPtr<DOMStringList> stringStates = new DOMStringList();
+  auto stringStates = MakeRefPtr<DOMStringList>();
 
   if (aStates & states::UNAVAILABLE) {
     stringStates->Add(u"unavailable"_ns);
@@ -1411,7 +1415,12 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
 
       return nullptr;
     }
-
+    if (cssAlt && cssAlt.IsEmpty()) {
+      if (aIsSubtreeHidden) {
+        *aIsSubtreeHidden = true;
+      }
+      return nullptr;
+    }
     newAcc = CreateAccessibleByFrameType(frame, content, aContext);
     MOZ_ASSERT(newAcc, "Accessible not created for text node!");
     document->BindToDocument(newAcc, nullptr);
@@ -1578,13 +1587,14 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
       if (aIsSubtreeHidden) {
         *aIsSubtreeHidden = true;
       }
-    } else if (auto cssAlt = CssAltContent(content)) {
-      // This is a pseudo-element without children that has CSS alt text. This
-      // only happens when there is alt text with an empty content string; e.g.
-      // content: "" / "alt"
-      // In this case, we need to expose the alt text on the pseudo-element
-      // itself, since we don't have a child to use. We create a
-      // TextLeafAccessible with the pseudo-element as the backing DOM node.
+    } else if (auto cssAlt = CssAltContent(content);
+               cssAlt && !cssAlt.IsEmpty()) {
+      // This is a pseudo-element without children that has CSS alt text which
+      // isn't empty. This only happens when there is alt text with an empty
+      // content string; e.g. content: "" / "alt" In this case, we need to
+      // expose the alt text on the pseudo-element itself, since we don't have a
+      // child to use. We create a TextLeafAccessible with the pseudo-element as
+      // the backing DOM node.
       newAcc = new TextLeafAccessible(content, document);
       nsAutoString text;
       cssAlt.AppendToString(text);
@@ -1604,15 +1614,10 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
     // accessibility property. If it's interesting we need it in the
     // accessibility hierarchy so that events or other accessibles can point to
     // it, or so that it can hold a state, etc.
-    if (content->IsHTMLElement() || content->IsMathMLElement() ||
-        content->IsSVGElement(nsGkAtoms::foreignObject)) {
-      // Interesting container which may have selectable text and/or embedded
-      // objects.
-      newAcc = new HyperTextAccessible(content, document);
-    } else {  // XUL, other SVG, etc.
-      // Interesting generic non-HTML container
-      newAcc = new AccessibleWrap(content, document);
-    }
+    // Interesting container which may have selectable text and/or embedded
+    // objects. Must be a HyperTextAccessible because children might include
+    // TextLeafAccessibles.
+    newAcc = new HyperTextAccessible(content, document);
   } else if (!newAcc && MustBeGenericAccessible(content, document)) {
     newAcc = new EnumRoleHyperTextAccessible<roles::TEXT_CONTAINER>(content,
                                                                     document);

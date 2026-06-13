@@ -33,10 +33,10 @@ object SettingsSavedPasswordsSelectors {
     )
 
     val EMPTY_SAVED_PASSWORDS_LIST_ADD_PASSWORD_BUTTON = Selector(
-        strategy = SelectorStrategy.ESPRESSO_BY_TEXT,
+        strategy = SelectorStrategy.COMPOSE_BY_TEXT,
         value = "Add password",
-        description = "Save Passwords Toggle",
-        groups = listOf("emptySavedPasswordsList"),
+        description = "Add password button",
+        groups = listOf("requiredForPage", "emptySavedPasswordsList"),
     )
 
     val all = listOf(

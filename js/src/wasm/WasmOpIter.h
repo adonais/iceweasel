@@ -438,7 +438,7 @@ class MOZ_STACK_CLASS OpIter : private Policy {
   ControlStack controlStack_;
   UnsetLocalsState unsetLocals_;
   FeatureUsage featureUsage_;
-  uint32_t lastBranchHintIndex_;
+  uint32_t lastBranchHintIndex_ = 0;
   BranchHintVector* branchHintVector_;
 
 #ifdef DEBUG
@@ -4730,11 +4730,6 @@ inline bool OpIter<Policy>::readCallBuiltinModuleFunc(
   }
 
   *builtinModuleFunc = &BuiltinModuleFuncs::getFromId(BuiltinModuleFuncId(id));
-
-  if ((*builtinModuleFunc)->usesMemory() && codeMeta_.numMemories() == 0) {
-    return fail("can't touch memory without memory");
-  }
-
   const FuncType& funcType = *(*builtinModuleFunc)->funcType();
   if (!popCallArgs(funcType.args(), params)) {
     return false;

@@ -37,7 +37,6 @@ import mozilla.components.support.test.whenever
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertThrows
@@ -49,6 +48,7 @@ import org.mockito.ArgumentMatchers.anyString
 import org.mockito.Mockito.never
 import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
+import kotlin.test.assertNotNull
 
 const val DAY_IN_MS = 24 * 60 * 60 * 1000L
 
@@ -731,9 +731,9 @@ class TabsUseCasesTest {
 
         val partition = store.state.tabGroupsPartition()
         assertNotNull(partition)
-        assertEquals(TabPartitionKeys.TAB_GROUPS, partition?.id)
-        assertEquals(1, partition?.tabGroups?.size)
-        assertEquals(group, partition?.getGroupById("group1"))
+        assertEquals(TabPartitionKeys.TAB_GROUPS, partition.id)
+        assertEquals(1, partition.tabGroups.size)
+        assertEquals(group, partition.getGroupById("group1"))
     }
 
     @Test
@@ -785,7 +785,7 @@ class TabsUseCasesTest {
         tabsUseCases.addTabsInGroup(group = "group1", tabId = tab1.id)
         var group = store.state.tabGroupsPartition()?.getGroupById("group1")
         assertNotNull(group)
-        assertEquals(setOf(tab1.id), group?.tabIds)
+        assertEquals(setOf(tab1.id), group.tabIds)
 
         tabsUseCases.addTabsInGroup(group = "group1", tabIds = setOf(tab2.id))
         group = store.state.tabGroupsPartition()?.getGroupById("group1")

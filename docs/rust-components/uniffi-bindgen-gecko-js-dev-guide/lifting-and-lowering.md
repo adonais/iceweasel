@@ -33,7 +33,7 @@ Examples:
   * The generated JavaScript serializes the data into an [ArrayBuffer](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer)
   * The C++ copies that data into a `RustBuffer`
 
-Note: in [UniFFI.webIDL](https://searchfox.org/mozilla-central/source/dom/chrome-webidl/UniFFI.webidl), functions input the `UniFFIScaffoldingValue` type which is the union of all types in the JavaScript lowered type column.
+Note: in [UniFFI.webIDL](https://searchfox.org/firefox-main/source/dom/chrome-webidl/UniFFI.webidl), functions input the `UniFFIScaffoldingValue` type which is the union of all types in the JavaScript lowered type column.
 
 ## RustBuffers and ArrayBuffers
 

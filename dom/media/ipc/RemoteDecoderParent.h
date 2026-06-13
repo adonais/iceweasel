@@ -4,6 +4,8 @@
 #ifndef include_dom_media_ipc_RemoteDecoderParent_h
 #define include_dom_media_ipc_RemoteDecoderParent_h
 
+#include "mozilla/Maybe.h"
+#include "mozilla/MozPromise.h"
 #include "mozilla/PRemoteDecoderParent.h"
 #include "mozilla/ShmemRecycleAllocator.h"
 
@@ -48,6 +50,12 @@ class RemoteDecoderParent : public ShmemRecycleAllocator<RemoteDecoderParent>,
 
   bool OnManagerThread();
 
+  // Rejects any in-flight IPC resolvers with NS_ERROR_DOM_MEDIA_CANCELED and
+  // disconnects the matching MozPromiseRequestHolders so that their ThenValues
+  // cannot trip AssertIsDead if the underlying decoder's promise chain is torn
+  // down before the callback fires. Must be called on the manager thread.
+  void AbortPendingRequests();
+
   virtual MediaResult ProcessDecodedData(MediaDataDecoder::DecodedData&& aData,
                                          DecodedOutputIPDL& aDecodedData) = 0;
 
@@ -63,10 +71,21 @@ class RemoteDecoderParent : public ShmemRecycleAllocator<RemoteDecoderParent>,
 
   bool mShutdown = false;
 
+  // Pending IPC resolvers and matching request holders for the in-flight
+  // decoder promise. Accessed only on the manager thread.
+  Maybe<InitResolver> mPendingInitResolver;
+  Maybe<DecodeResolver> mPendingDecodeResolver;
+  Maybe<FlushResolver> mPendingFlushResolver;
+  Maybe<DrainResolver> mPendingDrainResolver;
+
+  MozPromiseRequestHolder<MediaDataDecoder::InitPromise> mInitRequest;
+  MozPromiseRequestHolder<MediaDataDecoder::DecodePromise> mDecodeRequest;
+  MozPromiseRequestHolder<MediaDataDecoder::FlushPromise> mFlushRequest;
+  MozPromiseRequestHolder<MediaDataDecoder::DecodePromise> mDrainRequest;
+
  private:
   void DecodeNextSample(const RefPtr<ArrayOfRemoteMediaRawData>& aData,
-                        size_t aIndex, MediaDataDecoder::DecodedData&& aOutput,
-                        DecodeResolver&& aResolver);
+                        size_t aIndex, MediaDataDecoder::DecodedData&& aOutput);
   RefPtr<RemoteDecoderParent> mIPDLSelfRef;
   const RefPtr<nsISerialEventTarget> mManagerThread;
 };

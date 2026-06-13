@@ -7,7 +7,6 @@
  * the doorhager UI for formautofill related features.
  */
 
-import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 import { FormAutofill } from "resource://autofill/FormAutofill.sys.mjs";
 import { FormAutofillUtils } from "resource://gre/modules/shared/FormAutofillUtils.sys.mjs";
 
@@ -90,7 +89,7 @@ export class AutofillDoorhanger {
   }
 
   get chromeWin() {
-    return this.browser.ownerGlobal;
+    return this.browser.documentGlobal;
   }
 
   /*
@@ -165,12 +164,12 @@ export class AutofillDoorhanger {
     );
 
     if (evt == "open-pref") {
-      this.browser.ownerGlobal.openPreferences(this.preferenceURL);
+      this.browser.documentGlobal.openPreferences(this.preferenceURL);
     } else if (evt == "learn-more") {
       const url =
         Services.urlFormatter.formatURLPref("app.support.baseURL") +
         this.learnMoreURL;
-      this.browser.ownerGlobal.openWebLinkIn(url, "tab", {
+      this.browser.documentGlobal.openWebLinkIn(url, "tab", {
         relatedToCurrent: true,
       });
     }
@@ -344,7 +343,7 @@ export class AutofillDoorhanger {
 
     let secondaryActions = [];
     for (const params of secondaryActionParams) {
-      const callback = () => {
+      const secondaryCallback = () => {
         AutofillTelemetry.recordDoorhangerClicked(
           this.constructor.telemetryType,
           params.callbackState,
@@ -357,7 +356,7 @@ export class AutofillDoorhanger {
 
       secondaryActions.push({
         ...getLabelAndAccessKey(params),
-        callback,
+        callback: secondaryCallback,
       });
     }
 
@@ -952,21 +951,31 @@ export class CreditCardSaveDoorhanger extends AutofillDoorhanger {
           descriptionIcon.includes("icon-credit"))
       ) {
         icon.setAttribute("src", descriptionIcon);
+        icon.className = "cc-icon";
       }
       descriptionWrapper.appendChild(icon);
     }
 
     const description = this.doc.createXULElement("description");
-    description.textContent =
-      `${lazy.CreditCard.getMaskedNumber(number)}` + (name ? `, ${name}` : ``);
+    description.className = "payments-doorhanger-description";
+    const lineOne = this.doc.createElement("div");
+    lineOne.className = "line-one";
+    const lineTwo = this.doc.createElement("div");
+    lineTwo.className = "line-two";
 
+    lineOne.textContent = lazy.CreditCard.getMaskedNumber(number);
+    lineTwo.textContent = name || "";
+
+    description.appendChild(lineOne);
+    description.appendChild(lineTwo);
+    description.appendChild(this.createPrivacyPanelLink());
     descriptionWrapper.appendChild(description);
     docFragment.appendChild(descriptionWrapper);
 
     this.content.appendChild(docFragment);
   }
 
-  appendPrivacyPanelLink() {
+  createPrivacyPanelLink() {
     const privacyLinkElement = this.doc.createXULElement("label", {
       is: "text-link",
     });
@@ -977,12 +986,9 @@ export class CreditCardSaveDoorhanger extends AutofillDoorhanger {
         "about:preferences#privacy-payment-methods-autofill"
     );
 
-    const linkId = `autofill-options-link${
-      AppConstants.platform == "macosx" ? "-osx" : ""
-    }`;
-    this.doc.l10n.setAttributes(privacyLinkElement, linkId);
+    this.doc.l10n.setAttributes(privacyLinkElement, "autofill-options-link");
 
-    this.content.appendChild(privacyLinkElement);
+    return privacyLinkElement;
   }
 
   // TODO: Currently, the header and description are unused. Align
@@ -1004,8 +1010,6 @@ export class CreditCardSaveDoorhanger extends AutofillDoorhanger {
     this.content.replaceChildren();
 
     this.appendDescription();
-
-    this.appendPrivacyPanelLink();
   }
 
   onEventCallback(state) {
@@ -1232,7 +1236,6 @@ CONTENT = {
     },
     options: {
       persistWhileVisible: true,
-      popupIconURL: "chrome://formautofill/content/icon-credit-card.svg",
       hideClose: true,
 
       checkbox: {
@@ -1287,7 +1290,6 @@ CONTENT = {
     },
     options: {
       persistWhileVisible: true,
-      popupIconURL: "chrome://formautofill/content/icon-credit-card.svg",
       hideClose: true,
     },
   },
@@ -1312,7 +1314,7 @@ export let FormAutofillPrompter = {
       } credit card doorhanger`
     );
 
-    const { ownerGlobal: win } = browser;
+    const { documentGlobal: win } = browser;
     win.MozXULElement.insertFTLIfNeeded(
       "toolkit/formautofill/formAutofill.ftl"
     );
@@ -1372,7 +1374,7 @@ export let FormAutofillPrompter = {
       `Show the ${showUpdateDoorhanger ? "update" : "save"} address doorhanger`
     );
 
-    const { ownerGlobal: win } = browser;
+    const { documentGlobal: win } = browser;
     win.MozXULElement.insertFTLIfNeeded(
       "toolkit/formautofill/formAutofill.ftl"
     );

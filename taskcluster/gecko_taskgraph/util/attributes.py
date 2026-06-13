@@ -102,7 +102,6 @@ _COPYABLE_ATTRIBUTES = (
     "mar-channel-id",
     "maven_packages",
     "nightly",
-    "required_signoffs",
     "shippable",
     "shipping_phase",
     "shipping_product",

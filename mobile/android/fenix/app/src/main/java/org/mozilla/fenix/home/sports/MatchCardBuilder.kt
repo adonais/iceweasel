@@ -98,11 +98,17 @@ object MatchCardBuilder {
         )
     }
 
+    // One card per (day, round): grouping by day alone would merge same-day matches from
+    // different rounds — e.g. the last group-stage games and the first Round of 32 fixtures
+    // both falling on the final group-stage day — into a single card labelled with whichever
+    // stage came first, surfacing knockout fixtures under a group-stage heading (and showing
+    // group names for knockout teams). Splitting by stage gives each round its own card.
     private fun buildNoTeamPerDayCards(sortedMatches: List<SportsMatch>): List<MatchCard> =
         sortedMatches
-            .groupBy { it.date.toLocalDate() }
-            .toSortedMap()
-            .map { (_, dayMatches) -> buildDayCard(dayMatches, dayMatches.first().stage) }
+            .groupBy { it.date.toLocalDate() to it.stage }
+            .entries
+            .sortedWith(compareBy({ it.key.first }, { it.key.second.ordinal }))
+            .map { (key, dayMatches) -> buildDayCard(dayMatches, key.second) }
 
     // Featured (enlarged) match in `matches`, everything else as compact rows in
     // `relatedMatches`. Featured priority: live > next upcoming > most recent past — same

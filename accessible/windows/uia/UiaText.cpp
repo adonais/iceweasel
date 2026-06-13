@@ -99,7 +99,7 @@ UiaText::RangeFromChild(__RPC__in_opt IRawElementProviderSimple* aChildElement,
     return E_INVALIDARG;
   }
   TextLeafRange range = TextLeafRange::FromAccessible(child);
-  RefPtr uiaRange = new UiaTextRange(range);
+  auto uiaRange = MakeRefPtr<UiaTextRange>(range);
   uiaRange.forget(aRetVal);
   return S_OK;
 }
@@ -129,7 +129,7 @@ UiaText::RangeFromPoint(struct UiaPoint aPoint,
   TextLeafPoint closestPoint =
       leafRange.TextLeafPointAtScreenPoint(aPoint.x, aPoint.y);
   TextLeafRange range{closestPoint, closestPoint};
-  RefPtr uiaRange = new UiaTextRange(range);
+  auto uiaRange = MakeRefPtr<UiaTextRange>(range);
   uiaRange.forget(aRetVal);
   return S_OK;
 }
@@ -148,7 +148,7 @@ UiaText::get_DocumentRange(__RPC__deref_out_opt ITextRangeProvider** aRetVal) {
   // pattern was queried. See:
   // https://learn.microsoft.com/en-us/windows/win32/winauto/uiauto-textpattern-and-embedded-objects-overview#webpage-and-text-input-controls-in-edge
   TextLeafRange range = TextLeafRange::FromAccessible(acc);
-  RefPtr uiaRange = new UiaTextRange(range);
+  auto uiaRange = MakeRefPtr<UiaTextRange>(range);
   uiaRange.forget(aRetVal);
   return S_OK;
 }
@@ -206,7 +206,7 @@ UiaText::GetCaretRange(__RPC__out BOOL* aIsActive,
   }
   *aIsActive = !!(acc->State() & states::FOCUSED);
   TextLeafRange range{caret, caret};
-  RefPtr uiaRange = new UiaTextRange(range);
+  auto uiaRange = MakeRefPtr<UiaTextRange>(range);
   uiaRange.forget(aRetVal);
   return S_OK;
 }

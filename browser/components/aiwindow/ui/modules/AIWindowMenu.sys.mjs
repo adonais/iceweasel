@@ -121,7 +121,7 @@ export class AIWindowMenu {
       where = "tab";
     }
 
-    const win = event.target.ownerGlobal;
+    const win = event.target.documentGlobal;
     const mostRecentPage = conversation.getMostRecentPageVisited();
     const url = mostRecentPage?.href ?? win.BROWSER_NEW_TAB_URL;
 
@@ -130,7 +130,7 @@ export class AIWindowMenu {
         if (url === win.BROWSER_NEW_TAB_URL) {
           AIWindowUI.openInFullWindow(targetBrowser, conversation);
         } else {
-          AIWindowUI.openSidebar(targetBrowser.ownerGlobal, conversation);
+          AIWindowUI.openSidebar(targetBrowser.documentGlobal, conversation);
         }
       },
     });

@@ -1,3 +1,4 @@
+/* -*- Mode: c; tab-width: 8; c-basic-offset: 4; indent-tabs-mode: t; -*- */
 /* cairo - a vector graphics library with display and print output
  *
  * Copyright © 2011 Intel Corporation
@@ -167,7 +168,7 @@ cairo_pattern_create_raster_source (void *user_data,
     if (! CAIRO_CONTENT_VALID (content))
 	return _cairo_pattern_create_in_error (CAIRO_STATUS_INVALID_CONTENT);
 
-    pattern = calloc (1, sizeof (*pattern));
+    pattern = _cairo_calloc (sizeof (*pattern));
     if (unlikely (pattern == NULL))
 	return _cairo_pattern_create_in_error (CAIRO_STATUS_NO_MEMORY);
 

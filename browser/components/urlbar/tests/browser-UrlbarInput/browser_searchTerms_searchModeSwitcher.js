@@ -50,13 +50,11 @@ add_task(async function visibility_of_elements() {
 add_task(async function select_default_engine_and_search() {
   let { tab } = await searchWithTab(SEARCH_STRING);
 
-  let popup = UrlbarTestUtils.searchModeSwitcherPopup(window);
-  await UrlbarTestUtils.openSearchModeSwitcher(window);
-
   info("Press on the Example menu button and enter Search Mode.");
-  let popupHidden = UrlbarTestUtils.searchModeSwitcherPopupClosed(window);
-  popup.querySelector("panel-item[data-engine-name=Example]").button.click();
-  await popupHidden;
+  await UrlbarTestUtils.activateSearchModeSwitcherItem(
+    window,
+    "panel-item[data-engine-name=Example]"
+  );
 
   info("Search with the default engine.");
   let [url] = UrlbarUtils.getSearchQueryUrl(
@@ -79,10 +77,6 @@ add_task(async function select_default_engine_and_search() {
 add_task(async function select_non_default_engine_and_search() {
   let { tab } = await searchWithTab(SEARCH_STRING);
 
-  let popup = UrlbarTestUtils.searchModeSwitcherPopup(window);
-  await UrlbarTestUtils.openSearchModeSwitcher(window);
-
-  info("Press on the non default menu button and perform search.");
   let [url] = UrlbarUtils.getSearchQueryUrl(nonDefaultEngine, SEARCH_STRING);
   let browserLoadedPromise = BrowserTestUtils.browserLoaded(
     tab.linkedBrowser,
@@ -90,12 +84,13 @@ add_task(async function select_non_default_engine_and_search() {
     url,
     true
   );
-  let popupHidden = UrlbarTestUtils.searchModeSwitcherPopupClosed(window);
-  popup
-    .querySelector("panel-item[data-engine-name=MochiSearch]")
-    .button.click();
+
+  info("Press on the non default menu button and perform search.");
+  await UrlbarTestUtils.activateSearchModeSwitcherItem(
+    window,
+    "panel-item[data-engine-name=MochiSearch]"
+  );
   EventUtils.synthesizeKey("KEY_Enter");
-  await popupHidden;
   await browserLoadedPromise;
 
   assertSearchStringIsInUrlbar(SEARCH_STRING);

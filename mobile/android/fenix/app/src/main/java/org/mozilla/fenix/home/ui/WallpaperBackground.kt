@@ -25,11 +25,13 @@ import org.mozilla.fenix.wallpapers.Wallpaper
  *
  * @param wallpaper The [Wallpaper] to render.
  * @param loadBitmap Suspend function to load the wallpaper bitmap from disk.
+ * @param onLoadFailed Called when [loadBitmap] returns null for a non-local wallpaper.
  */
 @Composable
 fun WallpaperBackground(
     wallpaper: Wallpaper,
     loadBitmap: suspend (Wallpaper, Int) -> Bitmap?,
+    onLoadFailed: () -> Unit = {},
 ) {
     val orientation = LocalConfiguration.current.orientation
     var bitmap by remember { mutableStateOf<Bitmap?>(null) }
@@ -38,7 +40,9 @@ fun WallpaperBackground(
         bitmap = if (Wallpaper.isLocalWallpaper(wallpaper.name)) {
             null
         } else {
-            loadBitmap(wallpaper, orientation)
+            loadBitmap(wallpaper, orientation).also { result ->
+                if (result == null) onLoadFailed()
+            }
         }
     }
 

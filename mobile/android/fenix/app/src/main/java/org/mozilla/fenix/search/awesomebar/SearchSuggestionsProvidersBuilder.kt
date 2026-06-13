@@ -6,6 +6,7 @@ package org.mozilla.fenix.search.awesomebar
 
 import android.net.Uri
 import androidx.annotation.VisibleForTesting
+import kotlinx.coroutines.CoroutineScope
 import mozilla.components.browser.state.search.SearchEngine
 import mozilla.components.browser.state.state.searchEngines
 import mozilla.components.concept.awesomebar.AwesomeBar
@@ -25,9 +26,7 @@ import mozilla.components.feature.awesomebar.provider.SportsOnlineSuggestionProv
 import mozilla.components.feature.awesomebar.provider.StocksOnlineSuggestionProvider
 import mozilla.components.feature.awesomebar.provider.TrendingSearchProvider
 import mozilla.components.feature.fxsuggest.FxSuggestSuggestionProvider
-import mozilla.components.feature.fxsuggest.datasource.MockedFlightsSuggestionDataSource
-import mozilla.components.feature.fxsuggest.datasource.MockedSportsSuggestionDataSource
-import mozilla.components.feature.fxsuggest.datasource.MockedStocksSuggestionDataSource
+import mozilla.components.feature.fxsuggest.datasource.CombinedOnlineSuggestionDataSource
 import mozilla.components.feature.search.SearchUseCases
 import mozilla.components.feature.session.SessionUseCases.LoadUrlUseCase
 import mozilla.components.feature.syncedtabs.DeviceIndicators
@@ -50,6 +49,7 @@ import org.mozilla.fenix.search.SearchEngineSource
 @Suppress("LongParameterList")
 class SearchSuggestionsProvidersBuilder(
     private val components: Components,
+    private val scope: CoroutineScope,
     private val browsingModeManager: BrowsingModeManager,
     private val includeSelectedTab: Boolean,
     private val loadUrlUseCase: LoadUrlUseCase,
@@ -67,6 +67,7 @@ class SearchSuggestionsProvidersBuilder(
     val defaultSearchActionProvider: SearchActionProvider
     var searchEngineSuggestionProvider: SearchEngineSuggestionProvider?
     val searchSuggestionProviderMap: MutableMap<SearchEngine, List<AwesomeBar.SuggestionProvider>>
+    val combinedOnlineDataSource: CombinedOnlineSuggestionDataSource = CombinedOnlineSuggestionDataSource(scope = scope)
 
     init {
         engineForSpeculativeConnects = when (browsingModeManager.mode) {
@@ -260,7 +261,7 @@ class SearchSuggestionsProvidersBuilder(
             providersToAdd.add(
                 StocksOnlineSuggestionProvider(
                     searchUseCase = searchUseCase,
-                    dataSource = MockedStocksSuggestionDataSource(),
+                    dataSource = combinedOnlineDataSource,
                     suggestionsHeader = suggestionsStringsProvider.firefoxSuggestOnlineHeader,
                 ),
             )
@@ -269,8 +270,9 @@ class SearchSuggestionsProvidersBuilder(
         if (state.showSportsSuggestions) {
             providersToAdd.add(
                 SportsOnlineSuggestionProvider(
+                    icons = components.core.icons,
                     searchUseCase = searchUseCase,
-                    dataSource = MockedSportsSuggestionDataSource(),
+                    dataSource = combinedOnlineDataSource,
                     suggestionsHeader = suggestionsStringsProvider.firefoxSuggestOnlineHeader,
                 ),
             )
@@ -280,7 +282,7 @@ class SearchSuggestionsProvidersBuilder(
             providersToAdd.add(
                 FlightsOnlineSuggestionProvider(
                     loadUrlUseCase = loadUrlUseCase,
-                    dataSource = MockedFlightsSuggestionDataSource(),
+                    dataSource = combinedOnlineDataSource,
                     suggestionsHeader = suggestionsStringsProvider.firefoxSuggestOnlineHeader,
                 ),
             )

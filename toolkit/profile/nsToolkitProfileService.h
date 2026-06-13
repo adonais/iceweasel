@@ -7,6 +7,7 @@
 
 #include "mozilla/Components.h"
 #include "mozilla/LinkedList.h"
+#include "nsIObserver.h"
 #include "nsIToolkitProfileService.h"
 #include "nsIToolkitProfile.h"
 #include "nsIFactory.h"
@@ -81,10 +82,12 @@ class nsToolkitProfileLock final : public nsIProfileLock {
   nsProfileLock mLock;
 };
 
-class nsToolkitProfileService final : public nsIToolkitProfileService {
+class nsToolkitProfileService final : public nsIToolkitProfileService,
+                                      public nsIObserver {
  public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSITOOLKITPROFILESERVICE
+  NS_DECL_NSIOBSERVER
 
   nsresult SelectStartupProfile(int* aArgc, char* aArgv[], bool aIsResetting,
                                 nsIFile** aRootDir, nsIFile** aLocalDir,
@@ -109,7 +112,7 @@ class nsToolkitProfileService final : public nsIToolkitProfileService {
 
   nsresult Init();
 
-  nsresult CreateTimesInternal(nsIFile* profileDir);
+  nsresult CreateTimesInternal(nsIFile* profileDir, const nsACString& aSource);
   void GetProfileByDir(nsIFile* aRootDir, nsIFile* aLocalDir,
                        nsToolkitProfile** aResult);
   already_AddRefed<nsToolkitProfile> GetProfileByStoreID(
@@ -122,11 +125,13 @@ class nsToolkitProfileService final : public nsIToolkitProfileService {
                                             bool* aResult);
   bool IsSnapEnvironment();
   bool UseLegacyProfiles();
-  nsresult CreateDefaultProfile(nsToolkitProfile** aResult);
+  nsresult CreateDefaultProfile(const nsACString& aSource,
+                                nsToolkitProfile** aResult);
   nsresult CreateUniqueProfile(nsIFile* aRootDir, const nsACString& aNamePrefix,
+                               const nsACString& aSource,
                                nsToolkitProfile** aResult);
   nsresult CreateProfile(nsIFile* aRootDir, const nsACString& aName,
-                         nsToolkitProfile** aResult);
+                         const nsACString& aSource, nsToolkitProfile** aResult);
   already_AddRefed<nsToolkitProfile> GetProfileByName(const nsACString& aName);
   void SetNormalDefault(nsToolkitProfile* aProfile);
   already_AddRefed<nsToolkitProfile> GetDefaultProfile();
@@ -191,6 +196,7 @@ class nsToolkitProfileService final : public nsIToolkitProfileService {
   bool mProfileDBExists;
   int64_t mProfileDBFileSize;
   PRTime mProfileDBModifiedTime;
+  nsCString mIniStatus;
 
   // A background task queue for the async flushing operations.
   nsCOMPtr<nsISerialEventTarget> mAsyncQueue;

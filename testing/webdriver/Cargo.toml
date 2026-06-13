@@ -32,7 +32,7 @@ serde = "1.0"
 serde_json = "1.0"
 serde_derive = "1.0"
 time = "0.3"
-tokio = { version = "1.0", features = ["rt", "net"], optional = true}
+tokio = { version = "1.0", features = ["macros", "net", "rt", "signal", "sync"], optional = true}
 tokio-stream = { version = "0.1", features = ["net"], optional = true}
 url = "2.4"
 thiserror = "1"

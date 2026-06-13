@@ -57,14 +57,14 @@ sidebar-search-results-header =
 
 ## Labels for sidebar customize panel
 
-sidebar-customize-extensions-header = Sidebar extensions
-sidebar-customize-firefox-tools-header =
-  .label = { -brand-product-name } tools
+sidebar-customize-extensions-header2 = Extensions
+sidebar-customize-firefox-tools-header2 =
+  .label = Tools
 sidebar-customize-firefox-settings = Manage { -brand-short-name } settings
 sidebar-vertical-tabs =
   .label = Vertical tabs
-sidebar-settings =
-  .label = Sidebar settings
+sidebar-settings2 =
+  .label = Settings
 sidebar-hide-tabs-and-sidebar =
   .label = Hide tabs and sidebar
 sidebar-show-on-the-right =
@@ -75,7 +75,7 @@ sidebar-show-on-the-left =
 # hovers over it.
 expand-sidebar-on-hover =
   .label = Expand sidebar on hover
-sidebar-manage-extensions = Manage Extensions
+sidebar-manage-extensions2 = Manage all extensions
 
 ## Labels for sidebar context menu items
 

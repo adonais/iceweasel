@@ -16,7 +16,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Surface
@@ -44,6 +43,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import mozilla.components.compose.base.button.IconButton
 import mozilla.components.compose.base.menu.DropdownMenu
 import mozilla.components.compose.base.menu.MenuItem
 import mozilla.components.compose.base.text.Text
@@ -81,6 +81,7 @@ private val TabIndicatorRoundedCornerDp = 100.dp
  * @param shouldShowTabAutoCloseBanner Whether the tab auto-close banner should be displayed.
  * @param shouldShowLockPbmBanner Whether the lock private browsing mode banner should be displayed.
  * @param shouldShowAddToTabGroupButton Whether the add to tab group button should be displayed.
+ * @param hasTabDataLoaded Whether the tab data has loaded.
  * @param onTabPageIndicatorClicked Invoked when the user clicks on a tab page indicator.
  * @param onSaveToCollectionClick Invoked when the user clicks the "Save to Collection" button in multi-select mode.
  * @param onShareSelectedTabsClick Invoked when the user clicks the "Share" button in multi-select mode.
@@ -110,6 +111,7 @@ fun TabsTrayBanner(
     shouldShowTabAutoCloseBanner: Boolean,
     shouldShowLockPbmBanner: Boolean,
     shouldShowAddToTabGroupButton: Boolean,
+    hasTabDataLoaded: Boolean,
     onTabPageIndicatorClicked: (Page) -> Unit,
     onSaveToCollectionClick: () -> Unit,
     onShareSelectedTabsClick: () -> Unit,
@@ -170,6 +172,7 @@ fun TabsTrayBanner(
                 tabGroupCount = tabGroupCount,
                 syncedTabCount = syncedTabCount,
                 onTabPageIndicatorClicked = onTabPageIndicatorClicked,
+                hasTabDataLoaded = hasTabDataLoaded,
             )
         }
 
@@ -225,6 +228,7 @@ fun TabsTrayBanner(
  * @param shouldShowTabGroupsPage Whether to show the tab groups page.
  * @param tabGroupCount The amount of tab groups.
  * @param syncedTabCount The amount of synced tabs.
+ * @param hasTabDataLoaded Whether the tab data has loaded.
  * @param onTabPageIndicatorClicked Invoked when the user clicks on a tab page button. Passes along the
  * [Page] that was clicked.
  */
@@ -237,6 +241,7 @@ private fun TabPageBanner(
     shouldShowTabGroupsPage: Boolean,
     tabGroupCount: Int,
     syncedTabCount: Int,
+    hasTabDataLoaded: Boolean,
     onTabPageIndicatorClicked: (Page) -> Unit,
 ) {
     val inactiveColor = MaterialTheme.colorScheme.onSurfaceVariant
@@ -276,6 +281,7 @@ private fun TabPageBanner(
                 tabGroupCount = tabGroupCount,
                 syncedTabCount = syncedTabCount,
                 inactiveColor = inactiveColor,
+                hasTabDataLoaded = hasTabDataLoaded,
                 onTabPageIndicatorClicked = onTabPageIndicatorClicked,
             )
         }
@@ -292,6 +298,7 @@ private fun TabPageBannerTabs(
     tabGroupCount: Int,
     syncedTabCount: Int,
     inactiveColor: Color,
+    hasTabDataLoaded: Boolean,
     onTabPageIndicatorClicked: (Page) -> Unit,
 ) {
     val privateTabDescription = stringResource(
@@ -329,7 +336,10 @@ private fun TabPageBannerTabs(
         inactiveColor = inactiveColor,
         onClick = { onTabPageIndicatorClicked(Page.NormalTabs) },
     ) {
-        TabCounter(tabCount = normalTabCount)
+        TabCounter(
+            tabCount = normalTabCount,
+            showTabCount = hasTabDataLoaded,
+        )
     }
 
     if (shouldShowTabGroupsPage) {
@@ -439,40 +449,46 @@ private fun MultiSelectBanner(
             )
         },
         navigationIcon = {
-            IconButton(onClick = onExitSelectModeClick) {
+            IconButton(
+                onClick = onExitSelectModeClick,
+                contentDescription = stringResource(id = R.string.tab_tray_close_multiselect_content_description),
+            ) {
                 Icon(
                     painter = painterResource(id = iconsR.drawable.mozac_ic_back_24),
-                    contentDescription = stringResource(id = R.string.tab_tray_close_multiselect_content_description),
+                    contentDescription = null,
                 )
             }
         },
         actions = {
             IconButton(
                 onClick = onBookmarkSelectedTabsClick,
+                contentDescription = stringResource(
+                    id = R.string.tab_manager_multiselect_menu_item_bookmark_content_description,
+                ),
                 enabled = buttonsEnabled,
             ) {
                 Icon(
                     painter = painterResource(id = iconsR.drawable.mozac_ic_bookmark_24),
-                    contentDescription = stringResource(
-                        id = R.string.tab_manager_multiselect_menu_item_bookmark_content_description,
-                    ),
+                    contentDescription = null,
                 )
             }
 
             IconButton(
                 onClick = onCloseSelectedTabsClick,
+                contentDescription = stringResource(
+                    id = R.string.tab_manager_multiselect_menu_item_close_content_description,
+                ),
                 enabled = buttonsEnabled,
             ) {
                 Icon(
                     painter = painterResource(id = iconsR.drawable.mozac_ic_delete_24),
-                    contentDescription = stringResource(
-                        id = R.string.tab_manager_multiselect_menu_item_close_content_description,
-                    ),
+                    contentDescription = null,
                 )
             }
 
             IconButton(
                 onClick = { showMenu = true },
+                contentDescription = stringResource(id = R.string.tab_tray_multiselect_menu_content_description),
                 modifier = Modifier.testTag(TabsTrayTestTag.THREE_DOT_BUTTON),
                 enabled = buttonsEnabled,
             ) {
@@ -484,7 +500,7 @@ private fun MultiSelectBanner(
 
                 Icon(
                     painter = painterResource(iconsR.drawable.mozac_ic_ellipsis_vertical_24),
-                    contentDescription = stringResource(id = R.string.tab_tray_multiselect_menu_content_description),
+                    contentDescription = null,
                 )
             }
         },
@@ -612,6 +628,7 @@ private fun TabsTrayBannerPreviewRoot(
                 syncedTabCount = 0,
                 selectionMode = state.mode,
                 isInDebugMode = false,
+                hasTabDataLoaded = true,
                 shouldShowTabAutoCloseBanner = shouldShowTabAutoCloseBanner,
                 shouldShowLockPbmBanner = shouldShowLockPbmBanner,
                 shouldShowAddToTabGroupButton = shouldShowAddToTabGroupButton,

@@ -12,15 +12,9 @@ use crate::values::{CSSFloat, CustomIdent};
 use crate::{One, Zero};
 use cssparser::Parser;
 use std::fmt::{self, Write};
-use std::{cmp, usize};
+use std::usize;
+use style_traits::values::specified::AllowedNumericType;
 use style_traits::{CssWriter, ParseError, StyleParseErrorKind, ToCss};
-
-/// These are the limits that we choose to clamp grid line numbers to.
-/// http://drafts.csswg.org/css-grid/#overlarge-grids
-/// line_num is clamped to this range at parse time.
-pub const MIN_GRID_LINE: i32 = -10000;
-/// See above.
-pub const MAX_GRID_LINE: i32 = 10000;
 
 /// A `<grid-line>` type.
 ///
@@ -45,12 +39,6 @@ pub struct GenericGridLine<Integer> {
     /// <https://drafts.csswg.org/css-grid/#grid-placement-slot>
     pub ident: CustomIdent,
     /// Denotes the nth grid line from grid item's placement.
-    ///
-    /// This is clamped by MIN_GRID_LINE and MAX_GRID_LINE.
-    ///
-    /// NOTE(emilio): If we ever allow animating these we need to either do
-    /// something more complicated for the clamping, or do this clamping at
-    /// used-value time.
     pub line_num: Integer,
     /// Flag to check whether it's a `span` keyword.
     pub is_span: bool,
@@ -149,10 +137,13 @@ impl Parse for GridLine<specified::Integer> {
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
-        let mut grid_line = Self::auto();
         if input.try_parse(|i| i.expect_ident_matching("auto")).is_ok() {
-            return Ok(grid_line);
+            return Ok(Self::auto());
         }
+
+        let mut is_span = false;
+        let mut line_num: Option<specified::Integer> = None;
+        let mut ident: Option<CustomIdent> = None;
 
         // <custom-ident> | [ <integer> && <custom-ident>? ] | [ span && [ <integer> || <custom-ident> ] ]
         // This <grid-line> horror is simply,
@@ -164,54 +155,57 @@ impl Parse for GridLine<specified::Integer> {
             // Maximum possible entities for <grid-line>
             let location = input.current_source_location();
             if input.try_parse(|i| i.expect_ident_matching("span")).is_ok() {
-                if grid_line.is_span {
+                if is_span {
                     return Err(location.new_custom_error(StyleParseErrorKind::UnspecifiedError));
                 }
 
-                if !grid_line.line_num.is_zero() || grid_line.ident.0 != atom!("") {
+                if line_num.is_some() || ident.is_some() {
                     val_before_span = true;
                 }
 
-                grid_line.is_span = true;
+                is_span = true;
             } else if let Ok(i) = input.try_parse(|i| specified::Integer::parse(context, i)) {
-                // FIXME(emilio): Probably shouldn't reject if it's calc()...
-                let value = i.value();
-                if value == 0 || val_before_span || !grid_line.line_num.is_zero() {
+                if val_before_span || line_num.is_some() {
                     return Err(location.new_custom_error(StyleParseErrorKind::UnspecifiedError));
                 }
 
-                grid_line.line_num = specified::Integer::new(cmp::max(
-                    MIN_GRID_LINE,
-                    cmp::min(value, MAX_GRID_LINE),
-                ));
+                if matches!(i.get(), Some(0)) {
+                    return Err(location.new_custom_error(StyleParseErrorKind::UnspecifiedError));
+                }
+
+                line_num = Some(i);
             } else if let Ok(name) = input.try_parse(|i| CustomIdent::parse(i, &["auto"])) {
-                if val_before_span || grid_line.ident.0 != atom!("") {
+                if val_before_span || ident.is_some() {
                     return Err(location.new_custom_error(StyleParseErrorKind::UnspecifiedError));
                 }
                 // NOTE(emilio): `span` is consumed above, so we only need to
                 // reject `auto`.
-                grid_line.ident = name;
+                ident = Some(name);
             } else {
                 break;
             }
         }
 
-        if grid_line.is_auto() {
+        if line_num.is_none() && ident.is_none() {
             return Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError));
         }
 
-        if grid_line.is_span {
-            if !grid_line.line_num.is_zero() {
-                if grid_line.line_num.value() <= 0 {
-                    // disallow negative integers for grid spans
-                    return Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError));
-                }
-            } else if grid_line.ident.0 == atom!("") {
-                // integer could be omitted
+        let mut grid_line = Self::auto();
+        grid_line.is_span = is_span;
+        if let Some(mut line_num) = line_num {
+            if is_span
+                && line_num
+                    .ensure_clamping_mode(AllowedNumericType::AtLeastOne)
+                    .is_err()
+            {
+                // Disallow negative integers for grid spans.
                 return Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError));
             }
+            grid_line.line_num = line_num;
         }
-
+        if let Some(ident) = ident {
+            grid_line.ident = ident;
+        }
         Ok(grid_line)
     }
 }
@@ -465,10 +459,7 @@ impl Parse for RepeatCount<specified::Integer> {
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
-        if let Ok(mut i) = input.try_parse(|i| specified::Integer::parse_positive(context, i)) {
-            if i.value() > MAX_GRID_LINE {
-                i = specified::Integer::new(MAX_GRID_LINE);
-            }
+        if let Ok(i) = input.try_parse(|i| specified::Integer::parse_positive(context, i)) {
             return Ok(RepeatCount::Number(i));
         }
         try_match_ident_ignore_ascii_case! { input,

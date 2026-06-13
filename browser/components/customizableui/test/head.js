@@ -215,7 +215,7 @@ function getAreaWidgetIds(areaId) {
 function simulateItemDrag(aToDrag, aTarget, aEvent = {}, aOffset = 2) {
   let ev = aEvent;
   if (ev == "end" || ev == "start") {
-    let win = aTarget.ownerGlobal;
+    let win = aTarget.documentGlobal;
     const dwu = win.windowUtils;
     let bounds = dwu.getBoundsWithoutFlushing(aTarget);
     if (ev == "end") {
@@ -233,12 +233,12 @@ function simulateItemDrag(aToDrag, aTarget, aEvent = {}, aOffset = 2) {
     aTarget,
     null,
     null,
-    aToDrag.ownerGlobal,
-    aTarget.ownerGlobal,
+    aToDrag.documentGlobal,
+    aTarget.documentGlobal,
     ev
   );
   // Ensure dnd suppression is cleared.
-  synthesizeMouseAtCenter(aTarget, { type: "mouseup" }, aTarget.ownerGlobal);
+  synthesizeMouseAtCenter(aTarget, { type: "mouseup" }, aTarget.documentGlobal);
 }
 
 function endCustomizing(aWindow = window) {
@@ -369,7 +369,7 @@ function isOverflowOpen() {
 
 function subviewShown(aSubview) {
   return new Promise((resolve, reject) => {
-    let win = aSubview.ownerGlobal;
+    let win = aSubview.documentGlobal;
     let timeoutId = win.setTimeout(() => {
       reject("Subview (" + aSubview.id + ") did not show within 20 seconds.");
     }, 20000);
@@ -384,7 +384,7 @@ function subviewShown(aSubview) {
 
 function subviewHidden(aSubview) {
   return new Promise((resolve, reject) => {
-    let win = aSubview.ownerGlobal;
+    let win = aSubview.documentGlobal;
     let timeoutId = win.setTimeout(() => {
       reject("Subview (" + aSubview.id + ") did not hide within 20 seconds.");
     }, 20000);
@@ -566,6 +566,7 @@ function ensureToolbarOverflow(aWindow, shouldCleanup = true) {
     0
   );
   CustomizableUI.addWidgetToArea("panic-button", CustomizableUI.AREA_NAVBAR, 0);
+  CustomizableUI.addWidgetToArea("print-button", CustomizableUI.AREA_NAVBAR, 0);
 
   if (shouldCleanup) {
     registerCleanupFunction(() => {
@@ -586,4 +587,5 @@ function unensureToolbarOverflow(aWindow, originalWindowWidth) {
   CustomizableUI.removeWidgetFromArea("history-panelmenu");
   CustomizableUI.removeWidgetFromArea("email-link-button");
   CustomizableUI.removeWidgetFromArea("panic-button");
+  CustomizableUI.removeWidgetFromArea("print-button");
 }

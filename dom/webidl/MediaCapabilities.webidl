@@ -42,11 +42,12 @@ dictionary KeySystemTrackConfiguration {
 enum MediaDecodingType {
   "file",
   "media-source",
+  "webrtc",
 };
 
 enum MediaEncodingType {
   "record",
-  "transmission"
+  "webrtc",
 };
 
 dictionary VideoConfiguration {

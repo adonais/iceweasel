@@ -1,3 +1,4 @@
+/* -*- Mode: c; c-basic-offset: 4; indent-tabs-mode: t; tab-width: 8; -*- */
 /* cairo - a vector graphics library with display and print output
  *
  * Copyright © 2005 Red Hat, Inc
@@ -41,6 +42,10 @@
 #include "cairo-ft.h"
 
 #if CAIRO_HAS_FT_FONT
+
+#ifdef FT_COLOR_H
+#include FT_COLOR_H
+#endif
 
 CAIRO_BEGIN_DECLS
 

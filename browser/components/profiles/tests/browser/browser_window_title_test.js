@@ -46,7 +46,11 @@ add_task(async function test_windowTitle() {
   );
 
   dbUpdate = waitForDbUpdatePropagation();
-  let newProfile = await SelectableProfileService.createNewProfile(false);
+  let newProfile = await SelectableProfileService.createNewProfile(
+    false,
+    null,
+    "tests"
+  );
   await dbUpdate;
 
   Assert.ok(

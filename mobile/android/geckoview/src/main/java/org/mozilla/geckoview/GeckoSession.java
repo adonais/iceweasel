@@ -1995,7 +1995,7 @@ public class GeckoSession {
   public @interface LoadFlags {}
 
   // These flags follow similarly named ones in Gecko's nsIWebNavigation.idl
-  // https://searchfox.org/mozilla-central/source/docshell/base/nsIWebNavigation.idl
+  // https://searchfox.org/firefox-main/source/docshell/base/nsIWebNavigation.idl
   //
   // We do not use the same values directly in order to insulate ourselves from
   // changes in Gecko. Instead, the flags are converted in GeckoViewNavigation.sys.mjs.
@@ -3593,8 +3593,9 @@ public class GeckoSession {
       // When the delegate is changed or cleared, make sure onHideAction is called
       // one last time to hide any existing selection action UI. Gecko doesn't keep
       // track of the old delegate, so we can't rely on Gecko to do that for us.
-      getSelectionActionDelegate()
-          .onHideAction(this, GeckoSession.SelectionActionDelegate.HIDE_REASON_NO_SELECTION);
+      final SelectionActionDelegate oldDelegate = getSelectionActionDelegate();
+      oldDelegate.onHideAction(this, GeckoSession.SelectionActionDelegate.HIDE_REASON_NO_SELECTION);
+      oldDelegate.onDismissClipboardPermissionRequest(this);
     }
     mSelectionActionDelegate.setDelegate(delegate, this);
   }
@@ -4822,10 +4823,10 @@ public class GeckoSession {
      *     document.getFailedCertSecurityInfo(), returns FailedCertSecurityInfo -
      *     document.getNetErrorInfo(), returns NetErrorInfo document.reloadWithHttpsOnlyException()
      * @see <a
-     *     href="https://searchfox.org/mozilla-central/source/dom/webidl/FailedCertSecurityInfo.webidl">FailedCertSecurityInfo
+     *     href="https://searchfox.org/firefox-main/source/dom/webidl/FailedCertSecurityInfo.webidl">FailedCertSecurityInfo
      *     IDL</a>
      * @see <a
-     *     href="https://searchfox.org/mozilla-central/source/dom/webidl/NetErrorInfo.webidl">NetErrorInfo
+     *     href="https://searchfox.org/firefox-main/source/dom/webidl/NetErrorInfo.webidl">NetErrorInfo
      *     IDL</a>
      */
     @UiThread
@@ -5078,6 +5079,52 @@ public class GeckoSession {
        * Confirms the prompt.
        *
        * @param allowOrDeny whether the browser should allow resubmitting data.
+       * @return A {@link PromptResponse} which can be used to complete the {@link GeckoResult}
+       *     associated with this prompt.
+       */
+      @UiThread
+      public @NonNull PromptResponse confirm(final @Nullable AllowOrDeny allowOrDeny) {
+        ensureResult().putBoolean("allow", allowOrDeny != AllowOrDeny.DENY);
+        return super.confirm();
+      }
+    }
+
+    /** WebAuthnRelatedOriginPrompt is shown to confirm a WebAuthn related origin request. */
+    class WebAuthnRelatedOriginPrompt extends BasePrompt {
+      /** The origin of the site making the request. */
+      public final @Nullable String origin;
+
+      /** The relying party ID for the passkey. */
+      public final @Nullable String rpId;
+
+      /** Whether this is a create (true) or use (false) request. */
+      public final boolean isCreate;
+
+      /**
+       * A constructor for WebAuthnRelatedOriginPrompt.
+       *
+       * @param id The identification for this prompt.
+       * @param origin The origin of the site making the request.
+       * @param rpId The relying party ID for the passkey.
+       * @param isCreate Whether this is a create (true) or use (false) request.
+       * @param observer A callback to notify when the prompt has been completed.
+       */
+      protected WebAuthnRelatedOriginPrompt(
+          @NonNull final String id,
+          @Nullable final String origin,
+          @Nullable final String rpId,
+          final boolean isCreate,
+          @NonNull final Observer observer) {
+        super(id, null, observer);
+        this.origin = origin;
+        this.rpId = rpId;
+        this.isCreate = isCreate;
+      }
+
+      /**
+       * Confirms the prompt.
+       *
+       * @param allowOrDeny whether the user confirmed or denied the request.
        * @return A {@link PromptResponse} which can be used to complete the {@link GeckoResult}
        *     associated with this prompt.
        */
@@ -6497,6 +6544,20 @@ public class GeckoSession {
     default @Nullable GeckoResult<PromptResponse> onFolderUploadPrompt(
         @NonNull final GeckoSession session, @NonNull final FolderUploadPrompt prompt) {
       return null;
+    }
+
+    /**
+     * Display a WebAuthn related origin confirmation prompt.
+     *
+     * @param session GeckoSession that triggered the prompt.
+     * @param prompt The {@link WebAuthnRelatedOriginPrompt} that describes the prompt.
+     * @return A {@link GeckoResult} resolving to a {@link PromptResponse} with allow=true if the
+     *     user confirmed, or allow=false if the user denied.
+     */
+    @UiThread
+    default @Nullable GeckoResult<PromptResponse> onWebAuthnRelatedOriginPrompt(
+        @NonNull final GeckoSession session, @NonNull final WebAuthnRelatedOriginPrompt prompt) {
+      return GeckoResult.fromValue(prompt.confirm(AllowOrDeny.DENY));
     }
 
     /**

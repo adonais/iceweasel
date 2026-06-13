@@ -29,6 +29,13 @@ void SVGStringList::GetValue(nsAString& aValue) const {
 nsresult SVGStringList::SetValue(const nsAString& aValue) {
   SVGStringList temp;
 
+  if (aValue.IsEmpty()) {
+    if (!temp.AppendItem(u""_ns)) {
+      return NS_ERROR_OUT_OF_MEMORY;
+    }
+    return CopyFrom(temp);
+  }
+
   if (mIsCommaSeparated) {
     nsCharSeparatedTokenizerTemplate<nsContentUtils::IsHTMLWhitespace>
         tokenizer(aValue, ',');
@@ -39,7 +46,9 @@ nsresult SVGStringList::SetValue(const nsAString& aValue) {
       }
     }
     if (tokenizer.separatorAfterCurrentToken()) {
-      return NS_ERROR_DOM_SYNTAX_ERR;  // trailing comma
+      if (!temp.AppendItem(u""_ns)) {
+        return NS_ERROR_OUT_OF_MEMORY;
+      }
     }
   } else {
     nsWhitespaceTokenizerTemplate<nsContentUtils::IsHTMLWhitespace> tokenizer(

@@ -21,6 +21,9 @@ class Accessible;
  */
 class xpcAccessibleSelectable : public nsIAccessibleSelectable {
  public:
+  xpcAccessibleSelectable(const xpcAccessibleSelectable&) = delete;
+  xpcAccessibleSelectable& operator=(const xpcAccessibleSelectable&) = delete;
+
   // nsIAccessibleSelectable
   NS_IMETHOD GetSelectedItems(nsIArray** aSelectedItems) final;
   NS_IMETHOD GetSelectedItemCount(uint32_t* aSelectedItemCount) final;
@@ -32,13 +35,10 @@ class xpcAccessibleSelectable : public nsIAccessibleSelectable {
   NS_IMETHOD UnselectAll() final;
 
  protected:
-  xpcAccessibleSelectable() {}
-  virtual ~xpcAccessibleSelectable() {}
+  xpcAccessibleSelectable() = default;
+  virtual ~xpcAccessibleSelectable() = default;
 
  private:
-  xpcAccessibleSelectable(const xpcAccessibleSelectable&) = delete;
-  xpcAccessibleSelectable& operator=(const xpcAccessibleSelectable&) = delete;
-
   Accessible* Intl();
 };
 

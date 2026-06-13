@@ -28,7 +28,7 @@ class Permissions final : public GlobalTeardownObserver, public nsWrapperCache {
 
   explicit Permissions(nsIGlobalObject* aGlobal);
 
-  nsIGlobalObject* GetParentObject() const { return GetOwnerGlobal(); }
+  nsIGlobalObject* GetParentObject() const { return GetRelevantGlobal(); }
 
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;

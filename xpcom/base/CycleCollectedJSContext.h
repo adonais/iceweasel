@@ -5,8 +5,6 @@
 #ifndef mozilla_CycleCollectedJSContext_h
 #define mozilla_CycleCollectedJSContext_h
 
-#include <deque>
-
 #include "js/TracingAPI.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/LinkedList.h"
@@ -135,12 +133,14 @@ class MOZ_STACK_CLASS MayConsumeMicroTask {
   }
 
   bool MaybeGetHostDefinedDataFromJSMicroTask(
-      JS::MutableHandle<JSObject*> out) const {
+      JS::MutableHandle<JSObject*> aIncumbentGlobal,
+      JS::MutableHandle<JSObject*> aOptionalHostDefinedData) const {
     JS::JSMicroTask* task = JS::ToUnwrappedJSMicroTask(mMicroTask);
     if (!task) {
       return false;
     }
-    return JS::MaybeGetHostDefinedDataFromJSMicroTask(task, out);
+    return JS::MaybeGetHostDefinedDataFromJSMicroTask(task, aIncumbentGlobal,
+                                                      aOptionalHostDefinedData);
   }
 
   bool MaybeGetAllocationSiteFromJSMicroTask(
@@ -150,14 +150,6 @@ class MOZ_STACK_CLASS MayConsumeMicroTask {
       return false;
     }
     return JS::MaybeGetAllocationSiteFromJSMicroTask(task, out);
-  }
-
-  JSObject* MaybeGetHostDefinedGlobalFromJSMicroTask() const {
-    JS::JSMicroTask* task = JS::ToUnwrappedJSMicroTask(mMicroTask);
-    if (!task) {
-      return nullptr;
-    }
-    return JS::MaybeGetHostDefinedGlobalFromJSMicroTask(task);
   }
 
   void trace(JSTracer* aTrc) {
@@ -315,11 +307,11 @@ class FinalizationRegistryCleanup {
   explicit FinalizationRegistryCleanup(CycleCollectedJSContext* aContext);
   void Init();
   void Destroy();
-  void QueueCallback(JSFunction* aDoCleanup, JSObject* aHostDefinedData);
+  void QueueCallback(JSFunction* aDoCleanup, JSObject* aIncumbentGlobal);
   MOZ_CAN_RUN_SCRIPT void DoCleanup();
 
  private:
-  static void QueueCallback(JSFunction* aDoCleanup, JSObject* aHostDefinedData,
+  static void QueueCallback(JSFunction* aDoCleanup, JSObject* aIncumbentGlobal,
                             void* aData);
 
   class CleanupRunnable;
@@ -533,8 +525,9 @@ class CycleCollectedJSContext : dom::PerThreadAtomCache, public JS::JobQueue {
   // Others protect the debuggee microtask queue from the debugger's
   // interruptions; see the comments on JS::AutoDebuggerJobQueueInterruption for
   // details.
-  bool getHostDefinedData(JSContext* cx,
-                          JS::MutableHandle<JSObject*> aData) const override;
+  bool getHostDefinedData(
+      JSContext* aCx, JS::MutableHandle<JSObject*> aIncumbentGlobal,
+      JS::MutableHandle<JSObject*> aOptionalHostDefinedData) const override;
 
   // Fills in the JS Object used to represent the current incumbent global.
   // Used when running MicroTasks which don't have host-defined data as

@@ -90,6 +90,7 @@
   <script type="module" src="chrome://browser/content/backup/backup-settings.mjs"></script>
   <script type="module" src="chrome://browser/content/preferences/widgets/dialog-button.mjs"></script>
   <script type="module" src="chrome://browser/content/preferences/widgets/placeholder-message.mjs"></script>
+  <script type="module" src="chrome://browser/content/preferences/widgets/browser-language-restart-message.mjs"></script>
   <script type="module" src="chrome://browser/content/preferences/widgets/nav-notice.mjs"></script>
   <script type="module" src="chrome://browser/content/preferences/widgets/setting-pane.mjs"></script>
   <script type="module" src="chrome://browser/content/preferences/widgets/setting-group.mjs"></script>
@@ -98,6 +99,8 @@
   <script type="module" src="chrome://global/content/elements/moz-input-color.mjs"></script>
   <script type="module" src="chrome://browser/content/preferences/widgets/sync-device-name.mjs"></script>
   <script type="module" src="chrome://browser/content/preferences/widgets/sync-engines-list.mjs"></script>
+  <script type="module" src="chrome://browser/content/preferences/widgets/update-information.mjs"></script>
+  <script type="module" src="chrome://browser/content/preferences/widgets/update-state.mjs"></script>
   <script type="module" src="chrome://browser/content/ipprotection/bandwidth-usage.mjs"></script>
 </head>
 
@@ -113,34 +116,11 @@
   <hbox flex="1">
 
     <html:moz-page-nav id="categories" data-l10n-id="category-nav-heading" allownoselection="true">
-      <html:nav-notice
-        id="policies-container"
-        slot="subheading"
-        hidden="true"
-        href="about:policies"
-        iconsrc="chrome://global/skin/icons/info.svg"
-        data-l10n-id="managed-notice-nav"
-      />
-
       <html:moz-page-nav-button id="category-general"
+        hidden="true"
         view="paneGeneral"
         iconsrc="chrome://browser/skin/preferences/category-general.svg"
         data-l10n-id="pane-general-title">
-      </html:moz-page-nav-button>
-      <html:moz-page-nav-button id="category-home"
-        view="paneHome"
-        iconsrc="chrome://browser/skin/home.svg"
-        data-l10n-id="pane-home-title">
-      </html:moz-page-nav-button>
-      <html:moz-page-nav-button id="category-search"
-        view="paneSearch"
-        iconsrc="chrome://browser/skin/preferences/category-search.svg"
-        data-l10n-id="pane-search-title">
-      </html:moz-page-nav-button>
-      <html:moz-page-nav-button id="category-privacy"
-        view="panePrivacy"
-        iconsrc="chrome://browser/skin/preferences/category-privacy-security.svg"
-        data-l10n-id="pane-privacy-title2">
       </html:moz-page-nav-button>
       <html:moz-page-nav-button id="category-sync"
         hidden="true"
@@ -148,22 +128,73 @@
         iconsrc="chrome://browser/skin/preferences/category-sync.svg"
         data-l10n-id="pane-sync-title3">
       </html:moz-page-nav-button>
+      <html:moz-page-nav-button id="category-home"
+        view="paneHome"
+        iconsrc="chrome://browser/skin/home.svg"
+        data-l10n-id="pane-home-startup-title2">
+      </html:moz-page-nav-button>
+      <html:moz-page-nav-button id="category-search"
+        view="paneSearch"
+        iconsrc="chrome://browser/skin/preferences/category-search.svg"
+        data-l10n-id="pane-search-title2">
+      </html:moz-page-nav-button>
+      <html:moz-page-nav-button id="category-privacy"
+        view="panePrivacy"
+        iconsrc="chrome://browser/skin/preferences/category-privacy-security.svg"
+        data-l10n-id="pane-privacy-title3">
+      </html:moz-page-nav-button>
+      <html:moz-page-nav-button id="category-passwords-autofill"
+        view="panePasswordsAutofill"
+        iconsrc="chrome://browser/skin/login.svg"
+        data-l10n-id="pane-passwords-autofill-title2">
+      </html:moz-page-nav-button>
+      <html:moz-page-nav-button id="category-appearance"
+        view="paneAppearance"
+        iconsrc="chrome://global/skin/icons/eye.svg"
+        data-l10n-id="pane-appearance-title">
+      </html:moz-page-nav-button>
+      <html:moz-page-nav-button id="category-downloads"
+        view="paneDownloads"
+        iconsrc="chrome://browser/skin/downloads/downloads.svg"
+        data-l10n-id="pane-downloads-title2">
+      </html:moz-page-nav-button>
+      <html:moz-page-nav-button id="category-tabs-browsing"
+        view="paneTabsBrowsing"
+        iconsrc="chrome://global/skin/icons/cursor-arrow.svg"
+        data-l10n-id="pane-tabs-browsing-title2">
+      </html:moz-page-nav-button>
+      <html:hr class="nav-separator" id="nav-separator" role="presentation" />
+      <html:moz-page-nav-button id="category-accessibility"
+        view="paneAccessibility"
+        iconsrc="chrome://browser/skin/preferences/category-accessibility.svg"
+        data-l10n-id="pane-accessibility-title">
+      </html:moz-page-nav-button>
+      <html:moz-page-nav-button id="category-languages"
+        view="paneLanguages"
+        iconsrc="chrome://browser/skin/translations.svg"
+        data-l10n-id="pane-languages-title2">
+      </html:moz-page-nav-button>
       <html:moz-page-nav-button id="category-ai-features"
         view="paneAi"
         iconsrc="chrome://global/skin/icons/highlights.svg"
-        data-l10n-id="pane-ai-controls-title">
+        data-l10n-id="pane-ai-controls-title2">
+      </html:moz-page-nav-button>
+      <html:moz-page-nav-button id="category-permissions-data"
+        view="panePermissionsData"
+        iconsrc="chrome://browser/skin/permissions.svg"
+        data-l10n-id="pane-permissions-data-title2">
       </html:moz-page-nav-button>
       <html:moz-page-nav-button id="category-experimental"
         hidden="true"
         view="paneExperimental"
-        iconsrc="chrome://global/skin/icons/experiments.svg"
-        data-l10n-id="settings-pane-labs-title">
+        iconsrc="chrome://browser/skin/labs-16.svg"
+        data-l10n-id="settings-pane-labs-title2">
       </html:moz-page-nav-button>
       <html:moz-page-nav-button id="category-more-from-mozilla"
         hidden="true"
         view="paneMoreFromMozilla"
-        iconsrc="chrome://browser/skin/preferences/mozilla-logo.svg"
-        data-l10n-id="more-from-moz-title">
+        iconsrc="chrome://browser/skin/preferences/mozilla-16.svg"
+        data-l10n-id="more-from-moz-title2">
       </html:moz-page-nav-button>
       <html:moz-page-nav-button id="category-iceweasel"
         view="paneIceweasel"
@@ -182,7 +213,7 @@
       <html:moz-page-nav-button id="addonsButton"
         slot="secondary-nav"
         iconsrc="chrome://mozapps/skin/extensions/extension.svg"
-        data-l10n-id="addons-button-label"
+        data-l10n-id="addons-button-label2"
         href="about:addons"
       >
       </html:moz-page-nav-button>
@@ -190,7 +221,7 @@
         slot="secondary-nav"
         support-page="preferences"
         iconsrc="chrome://global/skin/icons/help.svg"
-        data-l10n-id="help-button-label">
+        data-l10n-id="help-button-label2">
       </html:moz-page-nav-button>
     </html:moz-page-nav>
 
@@ -205,7 +236,7 @@
             id="policies-container-content"
             hidden="true"
             href="about:policies"
-            iconsrc="chrome://global/skin/icons/info.svg"
+            iconsrc="chrome://global/skin/icons/organizational-unit.svg"
             data-l10n-id="managed-notice-nav"
           />
           <html:moz-input-search
@@ -222,9 +253,8 @@
 #include privacy.inc.xhtml
 #include containers.inc.xhtml
 #include sync.inc.xhtml
-#include experimental.inc.xhtml
-#include iceweasel.inc.xhtml
 #include moreFromMozilla.inc.xhtml
+#include iceweasel.inc.xhtml
         </vbox>
       </vbox>
     </vbox>

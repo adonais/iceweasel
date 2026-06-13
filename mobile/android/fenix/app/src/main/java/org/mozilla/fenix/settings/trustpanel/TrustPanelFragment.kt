@@ -9,6 +9,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import androidx.activity.compose.BackHandler
@@ -28,12 +29,12 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.fragment.compose.content
+import androidx.lifecycle.coroutineScope
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import com.google.android.material.bottomsheet.BottomSheetBehavior
@@ -46,7 +47,10 @@ import kotlinx.coroutines.withContext
 import mozilla.components.browser.state.selector.findTabOrCustomTab
 import mozilla.components.browser.state.state.SessionState
 import mozilla.components.browser.state.store.BrowserStore
+import mozilla.components.feature.ipprotection.store.IPProtectionAction
 import mozilla.components.lib.state.ext.consumeFlow
+import mozilla.components.lib.state.helpers.StoreProvider.Companion.fragmentStore
+import mozilla.components.support.base.feature.ViewBoundFeatureWrapper
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.ktx.android.view.setNavigationBarColorCompat
 import mozilla.components.support.ktx.kotlinx.coroutines.flow.ifAnyChanged
@@ -55,12 +59,15 @@ import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.browsingmode.BrowsingModeManager
 import org.mozilla.fenix.components.components
+import org.mozilla.fenix.components.menu.IPProtectionMenuBinding
 import org.mozilla.fenix.components.menu.compose.MenuDialogBottomSheet
+import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.settings.PhoneFeature
 import org.mozilla.fenix.settings.trustpanel.middleware.TrustPanelMiddleware
 import org.mozilla.fenix.settings.trustpanel.middleware.TrustPanelNavigationMiddleware
 import org.mozilla.fenix.settings.trustpanel.middleware.TrustPanelTelemetryMiddleware
 import org.mozilla.fenix.settings.trustpanel.store.TrustPanelAction
+import org.mozilla.fenix.settings.trustpanel.store.TrustPanelState
 import org.mozilla.fenix.settings.trustpanel.store.TrustPanelStore
 import org.mozilla.fenix.settings.trustpanel.store.WebsiteInfoState
 import org.mozilla.fenix.settings.trustpanel.store.WebsitePermission
@@ -87,13 +94,60 @@ import com.google.android.material.R as materialR
 class TrustPanelFragment : BottomSheetDialogFragment() {
 
     private val args by navArgs<TrustPanelFragmentArgs>()
-
+    private val ipProtectionMenuBinding = ViewBoundFeatureWrapper<IPProtectionMenuBinding>()
     private lateinit var permissionsCallback: ((Map<String, Boolean>) -> Unit)
     private val requestPermissionsLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions(),
     ) { isGranted: Map<String, Boolean> -> permissionsCallback.invoke(isGranted) }
 
     private lateinit var browsingModeManager: BrowsingModeManager
+
+    private val store by fragmentStore(TrustPanelState()) {
+        val lifecycleScope = viewLifecycleOwner.lifecycle.coroutineScope
+        TrustPanelStore(
+            isTrackingProtectionEnabled = args.isTrackingProtectionEnabled,
+            websiteInfoState = WebsiteInfoState(
+                isSecured = args.isSecured,
+                websiteUrl = args.url,
+                websiteTitle = args.title,
+                certificate = args.certificate,
+            ),
+            sessionState = requireComponents.core.store.state.findTabOrCustomTab(args.sessionId),
+            settings = requireComponents.settings,
+            sitePermissions = args.sitePermissions,
+            permissionHighlights = args.permissionHighlights,
+            isPermissionBlockedByAndroid = { phoneFeature ->
+                !phoneFeature.isAndroidPermissionGranted(requireContext())
+            },
+            middleware = listOf(
+                TrustPanelMiddleware(
+                    engine = requireComponents.core.engine,
+                    publicSuffixList = requireComponents.publicSuffixList,
+                    sessionUseCases = requireComponents.useCases.sessionUseCases,
+                    trackingProtectionUseCases = requireComponents.useCases.trackingProtectionUseCases,
+                    settings = requireComponents.settings,
+                    permissionStorage = requireComponents.core.permissionStorage,
+                    requestPermissionsLauncher = requestPermissionsLauncher,
+                    onDismiss = {
+                        withContext(Dispatchers.Main) {
+                            this@TrustPanelFragment.dismiss()
+                        }
+                    },
+                    scope = lifecycleScope,
+                ),
+                TrustPanelNavigationMiddleware(
+                    navController = findNavController(),
+                    privacySecurityPrefKey = requireContext().getString(
+                        R.string.pref_key_privacy_security_category,
+                    ),
+                    appStore = requireComponents.appStore,
+                    tabsUseCases = requireComponents.useCases.tabsUseCases,
+                    scope = lifecycleScope,
+                ),
+                TrustPanelTelemetryMiddleware(),
+            ),
+        )
+    }
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog =
         (super.onCreateDialog(savedInstanceState) as BottomSheetDialog).apply {
@@ -126,53 +180,6 @@ class TrustPanelFragment : BottomSheetDialogFragment() {
             val components = components
             val trackingProtectionUseCases = components.useCases.trackingProtectionUseCases
             val settings = components.settings
-
-            val coroutineScope = rememberCoroutineScope()
-            val store = remember {
-                TrustPanelStore(
-                    isTrackingProtectionEnabled = args.isTrackingProtectionEnabled,
-                    websiteInfoState = WebsiteInfoState(
-                        isSecured = args.isSecured,
-                        websiteUrl = args.url,
-                        websiteTitle = args.title,
-                        certificate = args.certificate,
-                    ),
-                    sessionState = components.core.store.state.findTabOrCustomTab(args.sessionId),
-                    settings = settings,
-                    sitePermissions = args.sitePermissions,
-                    permissionHighlights = args.permissionHighlights,
-                    isPermissionBlockedByAndroid = { phoneFeature ->
-                        !phoneFeature.isAndroidPermissionGranted(requireContext())
-                    },
-                    middleware = listOf(
-                        TrustPanelMiddleware(
-                            engine = components.core.engine,
-                            publicSuffixList = components.publicSuffixList,
-                            sessionUseCases = components.useCases.sessionUseCases,
-                            trackingProtectionUseCases = trackingProtectionUseCases,
-                            settings = settings,
-                            permissionStorage = components.core.permissionStorage,
-                            requestPermissionsLauncher = requestPermissionsLauncher,
-                            onDismiss = {
-                                withContext(Dispatchers.Main) {
-                                    this@TrustPanelFragment.dismiss()
-                                }
-                            },
-                            scope = coroutineScope,
-                        ),
-                        TrustPanelNavigationMiddleware(
-                            navController = findNavController(),
-                            privacySecurityPrefKey = requireContext().getString(
-                                R.string.pref_key_privacy_security_category,
-                            ),
-                            appStore = components.appStore,
-                            tabsUseCases = components.useCases.tabsUseCases,
-                            scope = coroutineScope,
-                        ),
-                        TrustPanelTelemetryMiddleware(),
-                    ),
-                )
-            }
 
             MenuDialogBottomSheet(
                 modifier = Modifier
@@ -312,7 +319,7 @@ class TrustPanelFragment : BottomSheetDialogFragment() {
                                     store.dispatch(TrustPanelAction.Navigate.QWAC)
                                 },
                                 onIPProtectionToggle = {
-                                    // will be implemented in https://bugzilla.mozilla.org/show_bug.cgi?id=2030143
+                                    requireComponents.ipProtection.store.dispatch(IPProtectionAction.Toggle)
                                 },
                                 onIPProtectionNavigate = {
                                     store.dispatch(TrustPanelAction.Navigate.IPProtectionSettings)
@@ -361,6 +368,20 @@ class TrustPanelFragment : BottomSheetDialogFragment() {
                 }
             }
         }
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        ipProtectionMenuBinding.set(
+            feature = IPProtectionMenuBinding(
+                ipProtectionStore = requireComponents.ipProtection.store,
+                onIPProtectionStatusUpdate = {
+                    store.dispatch(TrustPanelAction.UpdateIPProtectionMenuState(it))
+                },
+            ),
+            owner = this@TrustPanelFragment,
+            view = view,
+        )
     }
 
     @Composable

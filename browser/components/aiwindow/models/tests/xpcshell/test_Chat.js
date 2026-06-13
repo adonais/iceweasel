@@ -488,35 +488,6 @@ add_task(
   }
 );
 
-add_task(async function test_Chat_modelId_reads_from_pref() {
-  const defaultModelId = "";
-  const customModelId = "custom-model-id";
-
-  Services.prefs.clearUserPref(PREF_MODEL);
-
-  Assert.equal(
-    Chat.modelId,
-    defaultModelId,
-    "Should be '' when pref is not set"
-  );
-
-  Services.prefs.setStringPref(PREF_MODEL, customModelId);
-
-  Assert.equal(
-    Chat.modelId,
-    customModelId,
-    "Should read modelId from pref after it is set"
-  );
-
-  Services.prefs.clearUserPref(PREF_MODEL);
-
-  Assert.equal(
-    Chat.modelId,
-    defaultModelId,
-    "Should revert to default modelId after pref is cleared"
-  );
-});
-
 add_task(
   async function test_Chat_fetchWithHistory_get_page_content_sets_flags_and_only_works_once() {
     const sb = sinon.createSandbox();
@@ -750,7 +721,7 @@ add_task(
       sb.stub(openAIEngine, "getFxAccountToken").resolves("mock_token");
 
       const mockBrowser = {
-        ownerGlobal: {
+        documentGlobal: {
           closed: false,
           gBrowser: {
             getTabForBrowser: () => ({ selected: true }),

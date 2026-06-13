@@ -67,7 +67,7 @@ int32_t HTMLTableCellElement::CellIndex() const {
     return -1;
   }
 
-  nsIHTMLCollection* cells = row->Cells();
+  HTMLCollection* cells = row->Cells();
   if (!cells) {
     return -1;
   }

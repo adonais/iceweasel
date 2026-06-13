@@ -226,6 +226,9 @@ class RegExpObject : public NativeObject {
   void dumpOwnStringContent(js::GenericPrinter& out) const;
 #endif
 
+  /* Call setShared in preference to setPrivate. */
+  void setPrivate(void* priv) = delete;
+
  private:
   /*
    * Precondition: the syntax for |source| has already been validated.
@@ -233,9 +236,6 @@ class RegExpObject : public NativeObject {
    */
   static RegExpShared* createShared(JSContext* cx,
                                     Handle<RegExpObject*> regexp);
-
-  /* Call setShared in preference to setPrivate. */
-  void setPrivate(void* priv) = delete;
 };
 
 /*

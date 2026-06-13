@@ -497,7 +497,7 @@ export class CreditCardResult extends ProfileAutoCompleteResult {
           : (ccType ?? ""); // Unknown card type
         const ariaLabel = [
           ccTypeName,
-          primary.toString().replaceAll("*", ""),
+          primary.toString().replaceAll("•", ""),
           secondary,
         ]
           .filter(chunk => !!chunk) // Exclude empty chunks.

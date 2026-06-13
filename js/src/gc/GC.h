@@ -107,14 +107,13 @@ void FinishGC(JSContext* cx, JS::GCReason = JS::GCReason::FINISH_GC);
 class MOZ_RAII AutoHeapSession {
  public:
   ~AutoHeapSession();
+  AutoHeapSession(const AutoHeapSession&) = delete;
+  void operator=(const AutoHeapSession&) = delete;
 
  protected:
   AutoHeapSession(GCRuntime* gc, JS::HeapState state);
 
  private:
-  AutoHeapSession(const AutoHeapSession&) = delete;
-  void operator=(const AutoHeapSession&) = delete;
-
   GCRuntime* gc;
   JS::HeapState prevState;
   mozilla::Maybe<AutoGeckoProfilerEntry> profilingStackFrame;

@@ -1020,7 +1020,7 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
    * True when processing real-time audio/video.  False when processing
    * non-realtime audio.
    */
-  bool mRealtime;
+  bool mRealtime = false;
   /**
    * True when a change has happened which requires us to recompute the track
    * blocking order.

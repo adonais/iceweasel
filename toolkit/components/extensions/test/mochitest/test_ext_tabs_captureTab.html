@@ -278,10 +278,11 @@ add_task(async function testOOPiframeScale() {
   });
 });
 
-add_task(async function testCaptureTabPermissions() {
+async function do_test_without_all_urls_permission(manifest) {
   let extension = ExtensionTestUtils.loadExtension({
     manifest: {
       permissions: ["tabs"],
+      ...manifest,
     },
 
     background() {
@@ -290,33 +291,76 @@ add_task(async function testCaptureTabPermissions() {
         browser.tabs.captureTab,
         'Extension without "<all_urls>" permission should not have access to captureTab'
       );
-      browser.test.notifyPass("captureTabPermissions");
-    },
-  });
-
-  await extension.startup();
-  await extension.awaitFinish("captureTabPermissions");
-  await extension.unload();
-});
-
-add_task(async function testCaptureVisibleTabPermissions() {
-  let extension = ExtensionTestUtils.loadExtension({
-    manifest: {
-      permissions: ["tabs"],
-    },
-
-    background() {
       browser.test.assertEq(
         undefined,
         browser.tabs.captureVisibleTab,
         'Extension without "<all_urls>" permission should not have access to captureVisibleTab'
       );
-      browser.test.notifyPass("captureVisibleTabPermissions");
+      browser.test.notifyPass("withoutPermissions");
     },
   });
 
   await extension.startup();
-  await extension.awaitFinish("captureVisibleTabPermissions");
+  await extension.awaitFinish("withoutPermissions");
+  await extension.unload();
+}
+
+add_task(async function test_without_all_urls_permission_mv2() {
+  await do_test_without_all_urls_permission({
+    manifest_version: 2,
+  });
+});
+
+add_task(async function test_without_all_urls_permission_mv3() {
+  await do_test_without_all_urls_permission({
+    manifest_version: 3,
+  });
+});
+
+add_task(async function test_without_all_urls_permission_mv3_not_granted() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["extensions.originControls.grantByDefault", false]],
+  });
+  await do_test_without_all_urls_permission({
+    manifest_version: 3,
+    host_permissions: ["<all_urls>"],
+  });
+  await SpecialPowers.popPrefEnv();
+});
+
+// <all_urls> is internally treated as a host permission and an API permission;
+// this test verifies that the permission is available when granted at install
+// time in MV3 (other tests in this file already verifies MV2 behavior).
+// Regression test for https://bugzilla.mozilla.org/show_bug.cgi?id=2014047
+add_task(async function test_with_all_urls_permission_mv3() {
+  let extension = ExtensionTestUtils.loadExtension({
+    manifest: {
+      manifest_version: 3,
+      host_permissions: ["<all_urls>"],
+      permissions: ["tabs"],
+    },
+
+    async background() {
+      // captureTab and captureVisibleTab default to the current window's tab
+      // when tabId / windowId are not explicitly specified, which is expected
+      // to be this test's tab.
+      let dataUrl = await browser.tabs.captureVisibleTab();
+      browser.test.assertTrue(
+        dataUrl.startsWith("data:"),
+        "Got data:-URL from tabs.captureVisibleTab"
+      );
+
+      dataUrl = await browser.tabs.captureTab();
+      browser.test.assertTrue(
+        dataUrl.startsWith("data:"),
+        "Got data:-URL from tabs.captureTab"
+      );
+      browser.test.notifyPass("withPermissions");
+    },
+  });
+
+  await extension.startup();
+  await extension.awaitFinish("withPermissions");
   await extension.unload();
 });
 

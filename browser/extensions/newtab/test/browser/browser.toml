@@ -29,7 +29,7 @@ skip-if = [
   "os == 'win' && os_version == '11.26200' && verify-standalone",
 ]
 
-["browser_WallpaperThemeWorker.js"]
+["browser_WallpaperThemeUtils.js"]
 
 ["browser_activation_window.js"]
 

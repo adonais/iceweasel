@@ -15,7 +15,6 @@ import io.mockk.mockk
 import io.mockk.spyk
 import io.mockk.verify
 import mozilla.components.support.test.robolectric.testContext
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Rule
@@ -36,6 +35,7 @@ import org.mozilla.fenix.helpers.FenixGleanTestRule
 import org.mozilla.fenix.tabstray.redux.state.Page
 import org.mozilla.fenix.tabstray.ui.AccessPoint
 import org.robolectric.ParameterizedRobolectricTestRunner
+import kotlin.test.assertNotNull
 import org.mozilla.fenix.components.toolbar.gestures.ToolbarVerticalGesturesHandlerTest.ToolbarVerticalGesturesHandlerTestScenario as Scenario
 import org.mozilla.fenix.components.toolbar.gestures.ToolbarVerticalGesturesHandlerTest.ToolbarVerticalGesturesHandlerTestSwipe as Swipe
 

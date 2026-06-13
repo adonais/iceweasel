@@ -11,6 +11,7 @@
 #include "gmp-video-frame-encoded.h"
 #include "ipc/EnumSerializer.h"
 #include "ipc/IPCMessageUtilsSpecializations.h"
+#include "mozilla/Attributes.h"
 
 namespace IPC {
 
@@ -51,8 +52,8 @@ struct ParamTraits<GMPVideoCodecMode>
 
 template <>
 struct ParamTraits<GMPLogLevel>
-    : public ContiguousEnumSerializerInclusive<GMPLogLevel, kGMPLogDefault,
-                                               kGMPLogInvalid> {};
+    : public ContiguousEnumSerializer<GMPLogLevel, kGMPLogDefault,
+                                      kGMPLogInvalid> {};
 
 template <>
 struct ParamTraits<GMPLevel>
@@ -70,7 +71,7 @@ struct ParamTraits<GMPRateControlMode>
           GMPRateControlMode, kGMPRateControlUnknown, kGMPRateControlOff> {};
 
 template <>
-struct ParamTraits<GMPSliceMode>
+struct MOZ_ENUM_SERIALIZER_ALLOW_SENTINEL_UPPER_BOUND ParamTraits<GMPSliceMode>
     : public ContiguousEnumSerializerInclusive<GMPSliceMode, kGMPSliceUnknown,
                                                kGMPSliceSizeLimited> {};
 
@@ -90,6 +91,57 @@ struct ParamTraits<cdm::HdcpVersion>
     : public ContiguousEnumSerializerInclusive<
           cdm::HdcpVersion, cdm::HdcpVersion::kHdcpVersionNone,
           cdm::HdcpVersion::kHdcpVersion2_3> {};
+
+template <>
+struct ParamTraits<cdm::SessionType>
+    : public ContiguousEnumSerializerInclusive<
+          cdm::SessionType, cdm::SessionType::kTemporary,
+          cdm::SessionType::kPersistentLicense> {};
+
+template <>
+struct ParamTraits<cdm::InitDataType>
+    : public ContiguousEnumSerializerInclusive<cdm::InitDataType,
+                                               cdm::InitDataType::kCenc,
+                                               cdm::InitDataType::kWebM> {};
+
+template <>
+struct ParamTraits<cdm::VideoCodec>
+    : public ContiguousEnumSerializerInclusive<
+          cdm::VideoCodec, cdm::VideoCodec::kUnknownVideoCodec,
+          cdm::VideoCodec::kCodecAv1> {};
+
+template <>
+struct ParamTraits<cdm::VideoCodecProfile>
+    : public ContiguousEnumSerializerInclusive<
+          cdm::VideoCodecProfile,
+          cdm::VideoCodecProfile::kUnknownVideoCodecProfile,
+          cdm::VideoCodecProfile::kAv1ProfilePro> {};
+
+struct CDMVideoFormatValidator {
+  using IntegralType = std::underlying_type_t<cdm::VideoFormat>;
+
+  static bool IsLegalValue(const IntegralType e) {
+    switch (static_cast<cdm::VideoFormat>(e)) {
+      case cdm::VideoFormat::kUnknownVideoFormat:
+      case cdm::VideoFormat::kYv12:
+      case cdm::VideoFormat::kI420:
+      case cdm::VideoFormat::kYUV420P9:
+      case cdm::VideoFormat::kYUV420P10:
+      case cdm::VideoFormat::kYUV422P9:
+      case cdm::VideoFormat::kYUV422P10:
+      case cdm::VideoFormat::kYUV444P9:
+      case cdm::VideoFormat::kYUV444P10:
+      case cdm::VideoFormat::kYUV420P12:
+      case cdm::VideoFormat::kYUV422P12:
+      case cdm::VideoFormat::kYUV444P12:
+        return true;
+    }
+    return false;
+  }
+};
+template <>
+struct ParamTraits<cdm::VideoFormat>
+    : public EnumSerializer<cdm::VideoFormat, CDMVideoFormatValidator> {};
 
 using CDMStatusEnumValidator =
     ContiguousEnumValidatorInclusive<cdm::Status, cdm::Status::kSuccess,

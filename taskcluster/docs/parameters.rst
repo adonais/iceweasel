@@ -236,12 +236,6 @@ Release Promotion
 ``release_product``
    The product that is being released.
 
-``required_signoffs``
-   A list of signoffs that are required for this release promotion flavor. If specified, and if the corresponding `signoff_urls` url isn't specified, tasks that require these signoffs will not be scheduled.
-
-``signoff_urls``
-   A dictionary of signoff keys to url values. These are the urls marking the corresponding ``required_signoffs`` as signed off.
-
 ``partial_versions``
    A list of previous versions that partial updates should be generated for, in the form of X.YbuildN, eg: ["138.0.1build1", "137.0build2"].
 

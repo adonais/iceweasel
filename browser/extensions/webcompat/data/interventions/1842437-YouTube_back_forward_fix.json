@@ -14,7 +14,7 @@
     {
       "platforms": ["all"],
       "content_scripts": {
-        "js": ["bug1842437-www.youtube.com-performance-now-precision.js"]
+        "js": ["increase_performance_now_precision.js"]
       }
     }
   ]

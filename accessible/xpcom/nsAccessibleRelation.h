@@ -24,15 +24,15 @@ class nsAccessibleRelation final : public nsIAccessibleRelation {
  public:
   nsAccessibleRelation(uint32_t aType, Relation* aRel);
 
+  nsAccessibleRelation() = delete;
+  nsAccessibleRelation(const nsAccessibleRelation&) = delete;
+  nsAccessibleRelation& operator=(const nsAccessibleRelation&) = delete;
+
   NS_DECL_ISUPPORTS
   NS_DECL_NSIACCESSIBLERELATION
 
  private:
-  nsAccessibleRelation();
   ~nsAccessibleRelation();
-
-  nsAccessibleRelation(const nsAccessibleRelation&);
-  nsAccessibleRelation& operator=(const nsAccessibleRelation&);
 
   uint32_t mType;
   nsCOMPtr<nsIMutableArray> mTargets;

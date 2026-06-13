@@ -72,7 +72,7 @@ class TextureForwarder : public LayersIPCChannel {
    * Create a TextureChild/Parent pair as as well as the TextureHost on the
    * parent side.
    */
-  virtual PTextureChild* CreateTexture(
+  virtual already_AddRefed<PTextureChild> CreateTexture(
       const SurfaceDescriptor& aSharedData, ReadLockDescriptor&& aReadLock,
       LayersBackend aLayersBackend, TextureFlags aFlags,
       const dom::ContentParentId& aContentId, uint64_t aSerial,

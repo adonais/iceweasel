@@ -9,6 +9,7 @@
 
 #include "nsSplittableFrame.h"
 
+#include "mozilla/ReflowInput.h"
 #include "nsContainerFrame.h"
 #include "nsFieldSetFrame.h"
 #include "nsIFrameInlines.h"

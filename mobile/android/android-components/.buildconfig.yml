@@ -25,6 +25,7 @@ projects:
     - components:concept-engine
     - components:concept-fetch
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:lib-publicsuffixlist
     - components:lib-state
     - components:service-nimbus
@@ -46,6 +47,7 @@ projects:
     - components:concept-engine
     - components:concept-fetch
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:lib-publicsuffixlist
     - components:support-base
     - components:support-ktx
@@ -79,6 +81,7 @@ projects:
     - components:concept-engine
     - components:concept-fetch
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:lib-fetch-httpurlconnection
     - components:lib-fetch-okhttp
     - components:lib-publicsuffixlist
@@ -104,6 +107,7 @@ projects:
     - components:concept-fetch
     - components:concept-menu
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:lib-publicsuffixlist
     - components:lib-state
     - components:support-base
@@ -148,6 +152,7 @@ projects:
     - components:concept-fetch
     - components:concept-menu
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:concept-tabstray
     - components:concept-toolbar
     - components:feature-session
@@ -182,6 +187,7 @@ projects:
     - components:concept-engine
     - components:concept-fetch
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:lib-publicsuffixlist
     - components:lib-state
     - components:support-base
@@ -199,6 +205,7 @@ projects:
     - components:concept-base
     - components:concept-fetch
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:concept-sync
     - components:concept-toolbar
     - components:lib-publicsuffixlist
@@ -220,6 +227,7 @@ projects:
     - components:concept-engine
     - components:concept-fetch
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:concept-tabstray
     - components:lib-publicsuffixlist
     - components:lib-state
@@ -243,6 +251,7 @@ projects:
     - components:concept-engine
     - components:concept-fetch
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:lib-publicsuffixlist
     - components:lib-state
     - components:support-base
@@ -268,6 +277,7 @@ projects:
     - components:concept-fetch
     - components:concept-menu
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:concept-toolbar
     - components:lib-publicsuffixlist
     - components:lib-state
@@ -294,6 +304,7 @@ projects:
     - components:concept-engine
     - components:concept-fetch
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:lib-publicsuffixlist
     - components:lib-state
     - components:support-base
@@ -335,6 +346,7 @@ projects:
     - components:concept-fetch
     - components:concept-menu
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:concept-toolbar
     - components:feature-session
     - components:lib-publicsuffixlist
@@ -378,6 +390,7 @@ projects:
     - components:concept-engine
     - components:concept-fetch
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:lib-publicsuffixlist
     - components:lib-state
     - components:support-base
@@ -406,6 +419,7 @@ projects:
     - components:concept-fetch
     - components:concept-menu
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:concept-tabstray
     - components:concept-toolbar
     - components:feature-session
@@ -454,6 +468,20 @@ projects:
     - components:support-base
     - components:support-test
     - components:tooling-lint
+  components:concept-bookmarks-file:
+    description: An abstract definition of a component for importing bookmarks from
+      a file.
+    path: components/concept/bookmarks-file
+    publish: true
+    upstream_dependencies:
+    - components:tooling-lint
+  components:concept-bookmarks-parser:
+    description: An abstract definition of a bookmark-file-parser component.
+    path: components/concept/bookmarks-parser
+    publish: true
+    upstream_dependencies:
+    - components:concept-storage-bookmarks
+    - components:tooling-lint
   components:concept-engine:
     description: An abstract layer hiding the actual browser engine implementation.
     path: components/concept/engine
@@ -463,6 +491,7 @@ projects:
     - components:concept-base
     - components:concept-fetch
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:lib-publicsuffixlist
     - components:support-base
     - components:support-ktx
@@ -521,6 +550,7 @@ projects:
     upstream_dependencies:
     - components:concept-base
     - components:concept-fetch
+    - components:concept-storage-bookmarks
     - components:lib-publicsuffixlist
     - components:support-base
     - components:support-ktx
@@ -553,6 +583,7 @@ projects:
     - components:concept-engine
     - components:concept-fetch
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:lib-publicsuffixlist
     - components:support-base
     - components:support-ktx
@@ -593,6 +624,7 @@ projects:
     - components:concept-fetch
     - components:concept-menu
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:concept-sync
     - components:concept-tabstray
     - components:concept-toolbar
@@ -627,6 +659,7 @@ projects:
     - components:concept-fetch
     - components:concept-push
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:concept-sync
     - components:feature-push
     - components:lib-dataprotect
@@ -654,6 +687,7 @@ projects:
     - components:concept-fetch
     - components:concept-menu
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:concept-toolbar
     - components:lib-publicsuffixlist
     - components:lib-state
@@ -681,6 +715,7 @@ projects:
     - components:concept-engine
     - components:concept-fetch
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:concept-toolbar
     - components:feature-session
     - components:lib-publicsuffixlist
@@ -704,6 +739,7 @@ projects:
     - components:concept-engine
     - components:concept-fetch
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:concept-toolbar
     - components:lib-publicsuffixlist
     - components:service-digitalassetlinks
@@ -737,6 +773,7 @@ projects:
     - components:concept-fetch
     - components:concept-menu
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:concept-sync
     - components:concept-tabstray
     - components:concept-toolbar
@@ -776,6 +813,7 @@ projects:
     - components:concept-engine
     - components:concept-fetch
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:lib-publicsuffixlist
     - components:lib-state
     - components:support-android-test
@@ -807,6 +845,7 @@ projects:
     - components:concept-fetch
     - components:concept-menu
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:concept-tabstray
     - components:concept-toolbar
     - components:feature-app-links
@@ -853,6 +892,7 @@ projects:
     - components:concept-fetch
     - components:concept-menu
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:concept-tabstray
     - components:concept-toolbar
     - components:feature-intent
@@ -892,6 +932,7 @@ projects:
     - components:concept-engine
     - components:concept-fetch
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:concept-toolbar
     - components:lib-publicsuffixlist
     - components:lib-state
@@ -927,6 +968,7 @@ projects:
     - components:concept-engine
     - components:concept-fetch
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:lib-publicsuffixlist
     - components:lib-state
     - components:support-base
@@ -947,6 +989,7 @@ projects:
     - components:concept-engine
     - components:concept-fetch
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:concept-toolbar
     - components:feature-session
     - components:lib-publicsuffixlist
@@ -961,6 +1004,20 @@ projects:
     - components:support-utils
     - components:tooling-lint
     - components:ui-icons
+  components:feature-importer:
+    description: A feature that handles importing bookmarks and passwords.
+    path: components/feature/importer
+    publish: true
+    upstream_dependencies:
+    - components:concept-base
+    - components:concept-bookmarks-file
+    - components:concept-fetch
+    - components:lib-publicsuffixlist
+    - components:lib-state
+    - components:support-base
+    - components:support-ktx
+    - components:support-utils
+    - components:tooling-lint
   components:feature-intent:
     description: Combining various feature components for intent processing.
     path: components/feature/intent
@@ -982,6 +1039,7 @@ projects:
     - components:concept-fetch
     - components:concept-menu
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:concept-tabstray
     - components:concept-toolbar
     - components:feature-search
@@ -1027,6 +1085,7 @@ projects:
     - components:concept-fetch
     - components:concept-menu
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:concept-sync
     - components:concept-tabstray
     - components:concept-toolbar
@@ -1068,6 +1127,7 @@ projects:
     - components:concept-fetch
     - components:concept-menu
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:concept-tabstray
     - components:concept-toolbar
     - components:feature-prompts
@@ -1099,6 +1159,7 @@ projects:
     - components:concept-engine
     - components:concept-fetch
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:lib-publicsuffixlist
     - components:lib-state
     - components:support-base
@@ -1120,6 +1181,7 @@ projects:
     - components:concept-engine
     - components:concept-fetch
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:lib-publicsuffixlist
     - components:lib-state
     - components:support-base
@@ -1151,6 +1213,7 @@ projects:
     - components:concept-fetch
     - components:concept-menu
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:concept-tabstray
     - components:concept-toolbar
     - components:feature-session
@@ -1177,17 +1240,20 @@ projects:
     upstream_dependencies:
     - components:browser-errorpages
     - components:browser-state
+    - components:compose-base
     - components:concept-awesomebar
     - components:concept-base
     - components:concept-engine
     - components:concept-fetch
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:lib-publicsuffixlist
     - components:lib-state
     - components:support-base
     - components:support-ktx
     - components:support-utils
     - components:tooling-lint
+    - components:ui-colors
     - components:ui-icons
   components:feature-push:
     description: Feature that implements push notifications with a supported push
@@ -1222,6 +1288,7 @@ projects:
     - components:concept-fetch
     - components:concept-menu
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:concept-tabstray
     - components:concept-toolbar
     - components:feature-customtabs
@@ -1277,6 +1344,7 @@ projects:
     - components:concept-fetch
     - components:concept-menu
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:lib-publicsuffixlist
     - components:lib-state
     - components:support-base
@@ -1301,6 +1369,7 @@ projects:
     - components:concept-engine
     - components:concept-fetch
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:concept-toolbar
     - components:feature-session
     - components:lib-publicsuffixlist
@@ -1346,6 +1415,7 @@ projects:
     - components:concept-fetch
     - components:concept-menu
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:concept-tabstray
     - components:concept-toolbar
     - components:feature-session
@@ -1391,6 +1461,7 @@ projects:
     - components:concept-fetch
     - components:concept-menu
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:concept-tabstray
     - components:concept-toolbar
     - components:feature-session
@@ -1423,6 +1494,7 @@ projects:
     - components:concept-engine
     - components:concept-fetch
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:concept-toolbar
     - components:lib-publicsuffixlist
     - components:lib-state
@@ -1469,6 +1541,7 @@ projects:
     - components:concept-fetch
     - components:concept-menu
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:concept-tabstray
     - components:concept-toolbar
     - components:feature-session
@@ -1501,6 +1574,7 @@ projects:
     - components:concept-fetch
     - components:concept-llm
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:lib-publicsuffixlist
     - components:lib-state
     - components:support-base
@@ -1525,6 +1599,7 @@ projects:
     - components:concept-engine
     - components:concept-fetch
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:concept-sync
     - components:concept-toolbar
     - components:feature-session
@@ -1562,6 +1637,7 @@ projects:
     - components:concept-fetch
     - components:concept-menu
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:concept-tabstray
     - components:concept-toolbar
     - components:feature-session
@@ -1603,6 +1679,7 @@ projects:
     - components:concept-fetch
     - components:concept-menu
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:concept-tabstray
     - components:concept-toolbar
     - components:feature-session
@@ -1634,6 +1711,7 @@ projects:
     - components:concept-engine
     - components:concept-fetch
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:concept-toolbar
     - components:feature-session
     - components:lib-publicsuffixlist
@@ -1654,6 +1732,7 @@ projects:
     - components:concept-base
     - components:concept-fetch
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:concept-sync
     - components:concept-toolbar
     - components:lib-publicsuffixlist
@@ -1674,6 +1753,7 @@ projects:
     - components:concept-engine
     - components:concept-fetch
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:lib-publicsuffixlist
     - components:support-base
     - components:support-ktx
@@ -1694,6 +1774,7 @@ projects:
     - components:concept-engine
     - components:concept-fetch
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:lib-publicsuffixlist
     - components:lib-state
     - components:support-base
@@ -1716,6 +1797,7 @@ projects:
     - components:concept-engine
     - components:concept-fetch
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:lib-publicsuffixlist
     - components:lib-state
     - components:support-base
@@ -1746,6 +1828,7 @@ projects:
     - components:concept-fetch
     - components:concept-menu
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:concept-tabstray
     - components:concept-toolbar
     - components:feature-intent
@@ -1794,6 +1877,7 @@ projects:
     - components:concept-engine
     - components:concept-fetch
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:lib-publicsuffixlist
     - components:support-base
     - components:support-ktx
@@ -1811,6 +1895,24 @@ projects:
     - components:support-base
     - components:support-test
     - components:tooling-lint
+  components:lib-bookmark-parser-jsoup:
+    description: A jsoup-based implementation of concept-bookmarks-parser
+    path: components/lib/bookmark-parser-jsoup
+    publish: true
+    upstream_dependencies:
+    - components:concept-bookmarks-parser
+    - components:concept-storage-bookmarks
+    - components:tooling-lint
+  components:lib-bookmarks-file:
+    description: A concrete implementation of concept-bookmarks-file-importer that
+      parses Netscape HTML bookmark files.
+    path: components/lib/bookmarks-file
+    publish: true
+    upstream_dependencies:
+    - components:concept-bookmarks-file
+    - components:concept-bookmarks-parser
+    - components:concept-storage-bookmarks
+    - components:tooling-lint
   components:lib-crash:
     description: A generic crash reporter library that can report crashes to multiple
       services.
@@ -1825,6 +1927,7 @@ projects:
     - components:concept-engine
     - components:concept-fetch
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:lib-publicsuffixlist
     - components:lib-state
     - components:service-nimbus
@@ -1921,6 +2024,7 @@ projects:
     - components:concept-integrity
     - components:concept-llm
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:lib-publicsuffixlist
     - components:support-base
     - components:support-ktx
@@ -2017,6 +2121,7 @@ projects:
     - components:concept-fetch
     - components:concept-menu
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:concept-sync
     - components:concept-tabstray
     - components:concept-toolbar
@@ -2098,6 +2203,7 @@ projects:
     - components:concept-fetch
     - components:concept-menu
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:concept-sync
     - components:concept-tabstray
     - components:concept-toolbar
@@ -2162,6 +2268,7 @@ projects:
     - components:concept-base
     - components:concept-fetch
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:concept-sync
     - components:feature-qr
     - components:lib-dataprotect
@@ -2184,6 +2291,7 @@ projects:
     - components:concept-base
     - components:concept-fetch
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:concept-sync
     - components:lib-dataprotect
     - components:lib-fetch-httpurlconnection
@@ -2211,6 +2319,7 @@ projects:
     - components:concept-engine
     - components:concept-fetch
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:lib-fetch-httpurlconnection
     - components:lib-publicsuffixlist
     - components:lib-state
@@ -2240,6 +2349,7 @@ projects:
     - components:concept-base
     - components:concept-fetch
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:concept-sync
     - components:concept-toolbar
     - components:lib-dataprotect
@@ -2262,6 +2372,7 @@ projects:
     - components:concept-base
     - components:concept-fetch
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:concept-sync
     - components:lib-dataprotect
     - components:lib-fetch-httpurlconnection
@@ -2295,6 +2406,7 @@ projects:
     - components:concept-fetch
     - components:concept-menu
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:concept-toolbar
     - components:feature-session
     - components:feature-toolbar
@@ -2330,6 +2442,7 @@ projects:
     - components:concept-base
     - components:concept-fetch
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:concept-sync
     - components:lib-dataprotect
     - components:lib-publicsuffixlist
@@ -2349,6 +2462,7 @@ projects:
     - components:concept-base
     - components:concept-fetch
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:concept-sync
     - components:lib-dataprotect
     - components:lib-publicsuffixlist
@@ -2400,6 +2514,7 @@ projects:
     - components:concept-base
     - components:concept-fetch
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:concept-sync
     - components:concept-toolbar
     - components:feature-top-sites
@@ -2436,6 +2551,7 @@ projects:
     - components:concept-engine
     - components:concept-fetch
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:lib-publicsuffixlist
     - components:lib-state
     - components:support-base
@@ -2468,6 +2584,7 @@ projects:
     - components:concept-base
     - components:concept-fetch
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:concept-sync
     - components:lib-dataprotect
     - components:lib-publicsuffixlist
@@ -2484,6 +2601,7 @@ projects:
     - components:concept-base
     - components:concept-fetch
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:concept-sync
     - components:lib-dataprotect
     - components:lib-publicsuffixlist
@@ -2539,6 +2657,7 @@ projects:
     - components:concept-engine
     - components:concept-fetch
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:lib-publicsuffixlist
     - components:support-android-test
     - components:support-base
@@ -2557,6 +2676,7 @@ projects:
     - components:concept-engine
     - components:concept-fetch
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:concept-toolbar
     - components:lib-publicsuffixlist
     - components:support-base
@@ -2579,6 +2699,7 @@ projects:
     - components:concept-engine
     - components:concept-fetch
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:lib-publicsuffixlist
     - components:lib-state
     - components:support-base
@@ -2631,6 +2752,7 @@ projects:
     - components:concept-engine
     - components:concept-fetch
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:lib-publicsuffixlist
     - components:support-base
     - components:support-ktx
@@ -2674,6 +2796,7 @@ projects:
     - components:concept-engine
     - components:concept-fetch
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:lib-publicsuffixlist
     - components:lib-state
     - components:support-base
@@ -2772,6 +2895,7 @@ projects:
     - components:concept-engine
     - components:concept-fetch
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:concept-toolbar
     - components:lib-publicsuffixlist
     - components:support-base

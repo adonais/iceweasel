@@ -59,6 +59,8 @@ class nsCategoryCache final {
     }
   }
 
+  nsCategoryCache(const nsCategoryCache<T>&) = delete;
+
   void GetEntries(nsCOMArray<T>& aResult) {
     MOZ_ASSERT(NS_IsMainThread());
     LazyInit();
@@ -108,9 +110,6 @@ class nsCategoryCache final {
   }
 
  private:
-  // Not to be implemented
-  nsCategoryCache(const nsCategoryCache<T>&);
-
   nsCString mCategoryName;
   RefPtr<nsCategoryObserver> mObserver;
   nsCOMArray<T> mCachedEntries;

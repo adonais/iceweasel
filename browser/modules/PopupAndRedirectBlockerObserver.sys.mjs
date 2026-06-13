@@ -40,7 +40,7 @@ export var PopupAndRedirectBlockerObserver = {
    * @param {*} aEvent
    */
   onDOMUpdateBlockedPopupsAndRedirect(aEvent) {
-    const window = aEvent.originalTarget.ownerGlobal;
+    const window = aEvent.originalTarget.documentGlobal;
     const { gBrowser, gPermissionPanel } = window;
     if (aEvent.originalTarget != gBrowser.selectedBrowser) {
       return;
@@ -149,7 +149,7 @@ export var PopupAndRedirectBlockerObserver = {
    * @param {*} aEvent
    */
   async onPopupShowing(aEvent) {
-    const window = aEvent.originalTarget.ownerGlobal;
+    const window = aEvent.originalTarget.documentGlobal;
     const { gBrowser, document } = window;
 
     // We get `uriHost` from the principal whenever possible and fall
@@ -283,7 +283,7 @@ export var PopupAndRedirectBlockerObserver = {
    * @param {*} aEvent
    */
   onPopupHiding(aEvent) {
-    const window = aEvent.originalTarget.ownerGlobal;
+    const window = aEvent.originalTarget.documentGlobal;
     const { document } = window;
 
     // Remove the blocked redirect, if any.
@@ -365,7 +365,7 @@ export var PopupAndRedirectBlockerObserver = {
   },
 
   async toggleAllowPopupsForSite(aEvent) {
-    const window = aEvent.originalTarget.ownerGlobal;
+    const window = aEvent.originalTarget.documentGlobal;
     const { gBrowser } = window;
 
     // The toggle should only be visible (and therefore clickable) if
@@ -385,14 +385,14 @@ export var PopupAndRedirectBlockerObserver = {
   },
 
   editPopupSettings(aEvent) {
-    const window = aEvent.originalTarget.ownerGlobal;
+    const window = aEvent.originalTarget.documentGlobal;
     const { openPreferences } = window;
 
     openPreferences("privacy-permissions-block-popups");
   },
 
   dontShowMessage(aEvent) {
-    const window = aEvent.originalTarget.ownerGlobal;
+    const window = aEvent.originalTarget.documentGlobal;
     const { gBrowser } = window;
 
     Services.prefs.setBoolPref("privacy.popups.showBrowserMessage", false);

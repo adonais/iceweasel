@@ -150,11 +150,7 @@ var BrowserCommands = {
         if (isInitialPage(homePage)) {
           gBrowser.selectedBrowser.initialPageLoadedFromUserAction = homePage;
         }
-        loadOneOrMoreURIs(
-          homePage,
-          Services.scriptSecurityManager.getSystemPrincipal(),
-          null
-        );
+        loadOneOrMoreURIs(homePage);
         if (isBlankPageURL(homePage)) {
           gURLBar.select();
         } else {
@@ -268,6 +264,38 @@ var BrowserCommands = {
   },
 
   openFileWindow() {
+    // The file picker is presented as a sheet attached to its parent
+    // browsingContext's window. When this command is dispatched from a
+    // non-browser chrome window (the macOS hidden menubar window when
+    // all browsers are closed, or auxiliary windows like Library /
+    // About when one of them holds the keyboard focus), we must
+    // redirect the call to a real browser window — otherwise the
+    // sheet either attaches off-screen (hidden window) or to the
+    // wrong window (Library/About). Mirrors openLocation()'s pattern.
+    if (window.location.href != AppConstants.BROWSER_CHROME_URL) {
+      let targetWin = URILoadingHelper.getTargetWindow(window);
+      if (targetWin) {
+        targetWin.focus();
+        targetWin.BrowserCommands.openFileWindow();
+        return;
+      }
+      let newWin = window.openDialog(
+        AppConstants.BROWSER_CHROME_URL,
+        "_blank",
+        "chrome,all,dialog=no",
+        "about:blank"
+      );
+      newWin.addEventListener(
+        "load",
+        () => {
+          newWin.focus();
+          newWin.BrowserCommands.openFileWindow();
+        },
+        { once: true }
+      );
+      return;
+    }
+
     // Get filepicker component.
     try {
       const nsIFilePicker = Ci.nsIFilePicker;
@@ -355,7 +383,7 @@ var BrowserCommands = {
     // Switch to and focus the opener
     const openerBC = gBrowser.selectedBrowser.browsingContext.opener;
     const openerBrowser = openerBC.embedderElement;
-    const openerWindow = openerBrowser.ownerGlobal;
+    const openerWindow = openerBrowser.documentGlobal;
     const openerTab = openerWindow.gBrowser.getTabForBrowser(openerBrowser);
     openerWindow.gBrowser.selectedTab = openerTab;
     openerWindow.focus();

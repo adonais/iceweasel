@@ -11,7 +11,7 @@
       "platforms": ["all"],
       "content_scripts": {
         "all_frames": true,
-        "js": ["bug2011862-copilot.zenwork.com-fix-chatbot.js"]
+        "js": ["define_MozAppearance.js"]
       }
     }
   ]

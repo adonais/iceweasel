@@ -430,6 +430,8 @@ skip-if = [
 
 ["test_cannot_undo_after_reinitializing_editor.html"]
 
+["test_caret_focused_element_becomes_editable.html"]
+
 ["test_caret_move_in_vertical_content.html"]
 
 ["test_cmd_absPos.html"]

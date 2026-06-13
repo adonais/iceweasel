@@ -34,7 +34,6 @@ class SandboxBrokerClient final : private SandboxBrokerCommon {
   int Chmod(const char* aPath, int aMode);
   int Link(const char* aPath, const char* aPath2);
   int Mkdir(const char* aPath, int aMode);
-  int Symlink(const char* aOldPath, const char* aNewPath);
   int Rename(const char* aOldPath, const char* aNewPath);
   int Unlink(const char* aPath);
   int Rmdir(const char* aPath);

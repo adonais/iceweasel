@@ -71,7 +71,6 @@ sealed class AppAction : Action {
         val topSites: List<TopSite>,
         val mode: BrowsingMode,
         val collections: List<TabCollection>,
-        val showCollectionPlaceholder: Boolean,
         val recentTabs: List<RecentTab>,
         val bookmarks: List<Bookmark>,
         val recentHistory: List<RecentlyVisitedItem>,
@@ -119,8 +118,6 @@ sealed class AppAction : Action {
      * Removes a set of items, previously marked for removal, to be displayed again in the UI.
      */
     data class UndoPendingDeletionSet(val historyItems: Set<PendingDeletionHistory>) : AppAction()
-
-    data object RemoveCollectionsPlaceholder : AppAction()
 
     /**
      * Action dispatched when the user has authenticated with their account.
@@ -387,6 +384,9 @@ sealed class AppAction : Action {
     sealed class LensAction : AppAction() {
         /** The user has requested a Lens image search. */
         data object LensRequested : LensAction()
+
+        /** The user has requested a Lens image search for an already-known image URL. */
+        data class LensRequestedWithImageUrl(val imageUrl: String) : LensAction()
 
         /** The Lens request has been consumed and the image chooser launched. */
         data object LensRequestConsumed : LensAction()

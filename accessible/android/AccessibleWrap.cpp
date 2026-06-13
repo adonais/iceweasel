@@ -33,7 +33,7 @@
 
 // icu TRUE conflicting with java::sdk::Boolean::TRUE()
 // https://searchfox.org/mozilla-central/rev/ce02064d8afc8673cef83c92896ee873bd35e7ae/intl/icu/source/common/unicode/umachine.h#265
-// https://searchfox.org/mozilla-central/source/__GENERATED__/widget/android/bindings/JavaBuiltins.h#78
+// https://searchfox.org/firefox-main/source/__GENERATED__/widget/android/bindings/JavaBuiltins.h#78
 #ifdef TRUE
 #  undef TRUE
 #endif
@@ -440,7 +440,7 @@ bool AccessibleWrap::HandleLiveRegionEvent(AccEvent* aEvent) {
     return false;
   }
 
-  RefPtr<AccAttributes> attributes = new AccAttributes();
+  auto attributes = MakeRefPtr<AccAttributes>();
   nsAccUtils::SetLiveContainerAttributes(attributes, this);
   nsString live;
   if (!attributes->GetAttribute(nsGkAtoms::containerLive, live)) {

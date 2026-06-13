@@ -1,7 +1,4 @@
 [DEFAULT]
-skip-if = [
-  "debug && standalone", # Bug 2028423
-]
 support-files = [
   "dummy_page.html",
   "head.js",
@@ -10,6 +7,7 @@ support-files = [
 prefs = [
   "browser.bookmarks.testing.skipDefaultBookmarksImport=true",
   "browser.urlbar.trending.featureGate=false",
+  "layout.css.attr.enabled=true",
   "screenshots.browser.component.enabled=true",
   "sidebar.revamp=false",
 ]
@@ -111,12 +109,6 @@ skip-if = [
 ["browser_content_opener.js"]
 
 ["browser_contextualsearch.js"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # Bug 1932516
-  "os == 'mac' && os_version == '10.15' && arch == 'x86_64'", # Bug 1932516
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && opt", # Bug 1932516
-  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && opt", # Bug 1932516
-]
 
 
 ["browser_contextualsearch_install.js"]
@@ -316,6 +308,8 @@ support-files = [
 
 ["browser_raceWithTabs.js"]
 
+["browser_readOnly.js"]
+
 ["browser_recentsearches.js"]
 
 ["browser_redirect_error.js"]
@@ -370,10 +364,6 @@ support-files = ["dummy_page.html"]
 
 ["browser_searchSingleWordNotification.js"]
 https_first_disabled = true
-skip-if = [
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && opt", # Bug 1929645
-  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && opt", # Bug 1929645
-]
 
 ["browser_searchSuggestions.js"]
 support-files = [
@@ -491,6 +481,8 @@ support-files = ["moz.png"]
 
 ["browser_tabToSearch.js"]
 
+["browser_testUrlbarIcons.js"]
+
 ["browser_text_dont_shift_on_mousedown.js"]
 
 ["browser_textruns.js"]
@@ -506,6 +498,10 @@ https_first_disabled = true
 ["browser_top_sites_switchtab.js"]
 
 ["browser_trust_panel.js"]
+https_first_disabled = true
+support-files = ["!/browser/base/content/test/protectionsUI/trackingPage.html"]
+
+["browser_trust_panel_icon.js"]
 https_first_disabled = true
 support-files = ["!/browser/base/content/test/protectionsUI/trackingPage.html"]
 
@@ -531,6 +527,8 @@ https_first_disabled = true
 https_first_disabled = true
 support-files = ["redirect_to.sjs"]
 
+["browser_urlbar_contextmenu.js"]
+
 ["browser_urlbar_modifiedClick.js"]
 
 ["browser_urlbar_selection.js"]
@@ -540,72 +538,10 @@ skip-if = [
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # bug 1570474
 ]
 
-["browser_urlbar_telemetry.js"]
-tags = "search-telemetry"
-support-files = [
-  "urlbarTelemetrySearchSuggestions.sjs",
-  "urlbarTelemetrySearchSuggestions.xml",
-]
-
-["browser_urlbar_telemetry_autofill.js"]
-tags = "search-telemetry"
-
-["browser_urlbar_telemetry_extension.js"]
-tags = "search-telemetry"
-
-["browser_urlbar_telemetry_handoff.js"]
-tags = "search-telemetry"
-
-["browser_urlbar_telemetry_heuristic.js"]
-tags = "search-telemetry"
-
-["browser_urlbar_telemetry_persisted.js"]
-tags = "search-telemetry"
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt && a11y_checks && swgl", # Bug 1934362
-]
-
-["browser_urlbar_telemetry_places.js"]
-https_first_disabled = true
-tags = "search-telemetry"
-
-["browser_urlbar_telemetry_remotetab.js"]
-tags = "search-telemetry"
-
-["browser_urlbar_telemetry_searchmode.js"]
-tags = "search-telemetry"
-support-files = [
-  "urlbarTelemetrySearchSuggestions.sjs",
-  "urlbarTelemetrySearchSuggestions.xml",
-]
-
-["browser_urlbar_telemetry_tabtosearch.js"]
-tags = "search-telemetry"
-
-["browser_urlbar_telemetry_zeroPrefix.js"]
-tags = "search-telemetry"
-
 ["browser_userTypedValue.js"]
 support-files = ["file_userTypedValue.html"]
 
 ["browser_valueOnTabSwitch.js"]
-
-["browser_view_emptyResultSet.js"]
-
-["browser_view_removedSelectedElement.js"]
-
-["browser_view_resultDisplay.js"]
-
-["browser_view_resultTypes_display.js"]
-support-files = [
-  "print_postdata.sjs",
-  "searchSuggestionEngine.xml",
-  "searchSuggestionEngine.sjs",
-]
-
-["browser_view_reusable.js"]
-
-["browser_view_selectionByMouse.js"]
 
 ["browser_waitForLoadStartOrTimeout.js"]
 https_first_disabled = true

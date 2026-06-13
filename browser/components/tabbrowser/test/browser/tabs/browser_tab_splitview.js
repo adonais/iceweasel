@@ -265,6 +265,116 @@ add_task(async function test_split_view_panels() {
   BrowserTestUtils.removeTab(tab2);
 });
 
+/**
+ * Verify that switching to a non-split-view tab preserves the split-view panel
+ * attributes needed to avoid browser content reflow when switching back.
+ *
+ * Specifically:
+ * - split-view-panel class and column attribute are kept on the panels so they
+ *   re-enter the flex layout at the correct width on reactivation.
+ * - The splitview attribute stays on tabpanels so CSS rules scoped to it remain
+ *   stable and do not affect the non-split-view tab's content area.
+ * - The splitter is hidden but stays in position.
+ * - After full dissolution, all attributes are properly cleaned up.
+ */
+add_task(async function test_suspend_preserves_split_view_attributes() {
+  const tab1 = await addTabAndLoadBrowser();
+  const tab2 = await addTabAndLoadBrowser();
+  const originalTab = gBrowser.selectedTab;
+  await BrowserTestUtils.switchTab(gBrowser, tab1);
+
+  const splitView = gBrowser.addTabSplitView([tab1, tab2]);
+  const tabpanels = document.getElementById("tabbrowser-tabpanels");
+  for (const tab of splitView.tabs) {
+    await checkSplitViewPanelVisible(tab, true);
+  }
+
+  const panel1 = document.getElementById(tab1.linkedPanel);
+  const panel2 = document.getElementById(tab2.linkedPanel);
+  const splitter = tabpanels.splitViewSplitter;
+
+  info("Switch to a non-split-view tab.");
+  await BrowserTestUtils.switchTab(gBrowser, originalTab);
+  for (const tab of splitView.tabs) {
+    await checkSplitViewPanelVisible(tab, false);
+  }
+
+  Assert.ok(
+    panel1.classList.contains("split-view-panel"),
+    "panel1 retains split-view-panel class while a non-split-view tab is selected"
+  );
+  Assert.ok(
+    panel2.classList.contains("split-view-panel"),
+    "panel2 retains split-view-panel class while a non-split-view tab is selected"
+  );
+  Assert.ok(
+    panel1.hasAttribute("column"),
+    "panel1 retains column attribute while a non-split-view tab is selected"
+  );
+  Assert.ok(
+    panel2.hasAttribute("column"),
+    "panel2 retains column attribute while a non-split-view tab is selected"
+  );
+  Assert.ok(
+    tabpanels.hasAttribute("splitview"),
+    "tabpanels retains splitview attribute while a non-split-view tab is selected"
+  );
+  Assert.ok(
+    splitter.hidden,
+    "Splitter is hidden when a non-split-view tab is selected"
+  );
+
+  info("Switch back to a split-view tab.");
+  await BrowserTestUtils.switchTab(gBrowser, tab1);
+  for (const tab of splitView.tabs) {
+    await checkSplitViewPanelVisible(tab, true);
+  }
+
+  Assert.ok(
+    panel1.classList.contains("split-view-panel-active"),
+    "panel1 has split-view-panel-active after switching back to the split-view tab"
+  );
+  Assert.ok(
+    panel2.classList.contains("split-view-panel-active"),
+    "panel2 has split-view-panel-active after switching back to the split-view tab"
+  );
+  Assert.ok(
+    !splitter.hidden,
+    "Splitter is visible after switching back to the split-view tab"
+  );
+
+  info("Dissolve split view and verify full attribute cleanup.");
+  splitView.unsplitTabs();
+  await BrowserTestUtils.waitForMutationCondition(
+    tabpanels,
+    { attributes: true },
+    () => !tabpanels.hasAttribute("splitview")
+  );
+  Assert.ok(
+    !tabpanels.hasAttribute("splitview"),
+    "tabpanels splitview attribute is removed after split view dissolution"
+  );
+  Assert.ok(
+    !panel1.classList.contains("split-view-panel"),
+    "split-view-panel class is removed from panel1 after dissolution"
+  );
+  Assert.ok(
+    !panel2.classList.contains("split-view-panel"),
+    "split-view-panel class is removed from panel2 after dissolution"
+  );
+  Assert.ok(
+    !panel1.hasAttribute("column"),
+    "column attribute is removed from panel1 after dissolution"
+  );
+  Assert.ok(
+    !panel2.hasAttribute("column"),
+    "column attribute is removed from panel2 after dissolution"
+  );
+
+  BrowserTestUtils.removeTab(tab1);
+  BrowserTestUtils.removeTab(tab2);
+});
+
 add_task(async function test_splitview_replaceTab_activates_panels() {
   const tab1 = await addTabAndLoadBrowser();
   const tab2 = await addTabAndLoadBrowser();
@@ -282,6 +392,7 @@ add_task(async function test_splitview_replaceTab_activates_panels() {
   await checkSplitViewPanelVisible(tab3, true);
 
   splitView.close();
+  BrowserTestUtils.removeTab(tab1);
 });
 
 add_task(async function test_split_view_preserves_multiple_pairings() {

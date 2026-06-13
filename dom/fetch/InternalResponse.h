@@ -163,8 +163,6 @@ class InternalResponse final : public AtomicSafeRefCounted<InternalResponse> {
     return Headers();
   }
 
-  void SnapshotUnfilteredHeaders();
-
   void GetUnfilteredBody(nsIInputStream** aStream,
                          int64_t* aBodySize = nullptr) {
     if (mWrappedResponse) {
@@ -191,15 +189,13 @@ class InternalResponse final : public AtomicSafeRefCounted<InternalResponse> {
     GetUnfilteredBody(aStream, aBodySize);
   }
 
-  void SetBodyBlobURISpec(nsACString& aBlobURISpec) {
-    mBodyBlobURISpec = aBlobURISpec;
-  }
+  void SetBodyBlobImpl(BlobImpl* aBlobImpl) { mBodyBlobImpl = aBlobImpl; }
 
-  const nsACString& BodyBlobURISpec() const {
+  BlobImpl* BodyBlobImpl() const {
     if (mWrappedResponse) {
-      return mWrappedResponse->BodyBlobURISpec();
+      return mWrappedResponse->BodyBlobImpl();
     }
-    return mBodyBlobURISpec;
+    return mBodyBlobImpl;
   }
 
   void SetBodyLocalPath(nsAString& aLocalPath) { mBodyLocalPath = aLocalPath; }
@@ -349,10 +345,10 @@ class InternalResponse final : public AtomicSafeRefCounted<InternalResponse> {
 
   ~InternalResponse();
 
- private:
   explicit InternalResponse(const InternalResponse& aOther) = delete;
   InternalResponse& operator=(const InternalResponse&) = delete;
 
+ private:
   // Returns an instance of InternalResponse which is a copy of this
   // InternalResponse, except headers, body and wrapped response (if any) which
   // are left uninitialized. Used for cloning and filtering.
@@ -370,7 +366,7 @@ class InternalResponse final : public AtomicSafeRefCounted<InternalResponse> {
   const nsCString mStatusText;
   RefPtr<InternalHeaders> mHeaders;
   nsCOMPtr<nsIInputStream> mBody;
-  nsCString mBodyBlobURISpec;
+  RefPtr<BlobImpl> mBodyBlobImpl;
   nsString mBodyLocalPath;
   int64_t mBodySize;
   // It's used to passed to the CacheResponse to generate padding size. Once, we

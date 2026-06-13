@@ -57,8 +57,9 @@
 #include "mozilla/ComputedStyle.h"
 #include "mozilla/EnumSet.h"
 #include "mozilla/EventForwards.h"
+#include "mozilla/LayoutStructs.h"
 #include "mozilla/Maybe.h"
-#include "mozilla/ReflowInput.h"
+#include "mozilla/ReflowOutput.h"
 #include "mozilla/RelativeTo.h"
 #include "mozilla/Result.h"
 #include "mozilla/SmallPointerArray.h"
@@ -147,6 +148,7 @@ class nsDisplayList;
 class nsDisplayListBuilder;
 class nsDisplayListSet;
 class PresShell;
+struct ReflowInput;
 class ScrollContainerFrame;
 class ServoRestyleState;
 class WidgetGUIEvent;
@@ -695,6 +697,7 @@ class nsIFrame : public nsQueryFrame {
   using AlignmentContext = mozilla::AlignmentContext;
   using BaselineSharingGroup = mozilla::BaselineSharingGroup;
   using BaselineExportContext = mozilla::BaselineExportContext;
+  using BreakType = mozilla::BreakType;
   template <typename T>
   using Maybe = mozilla::Maybe<T>;
   template <typename T, typename E>
@@ -758,7 +761,6 @@ class nsIFrame : public nsQueryFrame {
         mFrameIsModified(false),
         mHasModifiedDescendants(false),
         mHasOverrideDirtyRegion(false),
-        mMayHaveWillChangeBudget(false),
 #ifdef DEBUG
         mWasVisitedByAutoFrameConstructionPageName(false),
 #endif
@@ -1483,19 +1485,19 @@ class nsIFrame : public nsQueryFrame {
   // Note: this method only checks 'break-before' property on *this* frame, and
   // it doesn't handle forced break value propagation from its first child.
   // Callers should handle the propagation in reflow.
-  bool ShouldBreakBefore(const ReflowInput::BreakType aBreakType) const;
+  bool ShouldBreakBefore(const BreakType aBreakType) const;
 
   // Return True if this frame has a forced break value after it.
   //
   // Note: this method only checks 'break-after' property on *this* frame, and
   // it doesn't handle forced break value propagation from its last child.
   // Callers should handle the propagation in reflow.
-  bool ShouldBreakAfter(const ReflowInput::BreakType aBreakType) const;
+  bool ShouldBreakAfter(const BreakType aBreakType) const;
 
  private:
   bool ShouldBreakBetween(const nsStyleDisplay* aDisplay,
                           const mozilla::StyleBreakBetween aBreakBetween,
-                          const ReflowInput::BreakType aBreakType) const;
+                          const BreakType aBreakType) const;
 
   mozilla::LogicalSize SizeReducedBy(mozilla::WritingMode aWritingMode,
                                      mozilla::LogicalMargin aMargin) const {
@@ -2663,6 +2665,8 @@ class nsIFrame : public nsQueryFrame {
    * Exceptions: TableColGroupFrame children.
    */
   void MarkSubtreeDirty();
+
+  void MarkPrincipalChildrenDirty();
 
   /**
    * Get the min-content intrinsic inline size of the frame.  This must be
@@ -4495,6 +4499,29 @@ class nsIFrame : public nsQueryFrame {
   }
 
   /**
+   * Set the releasable property with a given value if it doesn't already exist;
+   * otherwise, return the existing value.
+   *
+   * Note: As the name suggests, this will behave properly only for properties
+   * declared with NS_DECLARE_FRAME_PROPERTY_RELEASABLE!
+   */
+  template <typename T, typename... Params>
+  T* GetOrCreateReleasableProperty(FrameProperties::Descriptor<T> aProperty,
+                                   Params&&... aParams) {
+    bool found;
+    using DataType = std::remove_pointer_t<FrameProperties::PropertyType<T>>;
+    DataType* prop = GetProperty(aProperty, &found);
+    if (found) {
+      MOZ_ASSERT(prop, "this property should only store non-null values");
+      return prop;
+    }
+    prop = new DataType{aParams...};
+    NS_ADDREF(prop);
+    AddProperty(aProperty, prop);
+    return prop;
+  }
+
+  /**
    * Set the deletable property with a given value if it doesn't already exist;
    * otherwise, allocate a copy of the passed-in value and insert that as a new
    * value. Returns the pointer to the property, guaranteed non-null, value that
@@ -4514,6 +4541,21 @@ class nsIFrame : public nsQueryFrame {
       AddProperty(aProperty, storedValue);
     } else {
       *storedValue = DataType{aParams...};
+    }
+    return storedValue;
+  }
+
+  // As above, but creates a default-constructed T if it doesn't exist, and
+  // doesn't override the existing property if it does.
+  template <typename T>
+  FrameProperties::PropertyType<T> GetOrCreateDeletableProperty(
+      FrameProperties::Descriptor<T> aProperty) {
+    bool found;
+    using DataType = std::remove_pointer_t<FrameProperties::PropertyType<T>>;
+    DataType* storedValue = GetProperty(aProperty, &found);
+    if (!found) {
+      storedValue = new DataType{};
+      AddProperty(aProperty, storedValue);
     }
     return storedValue;
   }
@@ -5123,11 +5165,6 @@ class nsIFrame : public nsQueryFrame {
     mHasOverrideDirtyRegion = aHasDirtyRegion;
   }
 
-  bool MayHaveWillChangeBudget() const { return mMayHaveWillChangeBudget; }
-  void SetMayHaveWillChangeBudget(const bool aHasBudget) {
-    mMayHaveWillChangeBudget = aHasBudget;
-  }
-
   bool HasBSizeChange() const { return mHasBSizeChange; }
   void SetHasBSizeChange(const bool aHasBSizeChange) {
     mHasBSizeChange = aHasBSizeChange;
@@ -5349,12 +5386,6 @@ class nsIFrame : public nsQueryFrame {
    */
   bool mHasOverrideDirtyRegion : 1;
 
-  /**
-   * True if frame has will-change, and currently has display
-   * items consuming some of the will-change budget.
-   */
-  bool mMayHaveWillChangeBudget : 1;
-
 #ifdef DEBUG
  public:
   /**
@@ -5499,7 +5530,7 @@ class nsIFrame : public nsQueryFrame {
     // on the current line.
     nsAutoString mContext;
 
-    PeekWordState() {}
+    PeekWordState() = default;
     void SetSawBeforeType() { mSawBeforeType = true; }
     void SetSawInlineCharacter() { mSawInlineCharacter = true; }
     void Update(bool aAfterPunctuation, bool aAfterWhitespace,
@@ -5767,13 +5798,13 @@ class MOZ_NONHEAP_CLASS AutoWeakFrame {
 
   ~AutoWeakFrame();
 
- private:
   // Not available for the heap!
   void* operator new(size_t) = delete;
   void* operator new[](size_t) = delete;
   void operator delete(void*) = delete;
   void operator delete[](void*) = delete;
 
+ private:
   void Init(nsIFrame* aFrame);
 
   AutoWeakFrame* mPrev;

@@ -168,7 +168,7 @@ class InterceptedHttpChannel final
     // The final status of the interception.
     Status mStatus;
 
-    bool mIsNonSubresourceRequest;
+    bool mIsNonSubresourceRequest = false;
     // The keys used for telemetries.
     nsCString mKey;
     nsCString mSubresourceKey;

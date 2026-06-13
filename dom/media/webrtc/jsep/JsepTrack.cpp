@@ -412,14 +412,14 @@ void JsepTrack::AddToMsection(const std::vector<std::string>& aRids,
       SdpRidAttributeList::Rid ridAttr;
       ridAttr.id = rid;
       ridAttr.direction = direction;
-      ridAttrs->mRids.push_back(ridAttr);
+      ridAttrs->mRids.push_back(std::move(ridAttr));
 
       SdpSimulcastAttribute::Version version;
       version.choices.push_back(SdpSimulcastAttribute::Encoding(rid, false));
       if (direction == sdp::kSend) {
-        simulcast->sendVersions.push_back(version);
+        simulcast->sendVersions.push_back(std::move(version));
       } else {
-        simulcast->recvVersions.push_back(version);
+        simulcast->recvVersions.push_back(std::move(version));
       }
     }
 

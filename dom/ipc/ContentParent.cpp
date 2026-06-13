@@ -251,6 +251,7 @@
 #include "nsStyleSheetService.h"
 #include "nsThread.h"
 #include "nsThreadUtils.h"
+#include "nsURLHelper.h"
 #include "nsWidgetsCID.h"
 #include "nsWindowWatcher.h"
 #include "prenv.h"
@@ -419,7 +420,7 @@ extern mozilla::LazyLogModule sPDMLog;
 
 namespace mozilla {
 namespace CubebUtils {
-extern FileDescriptor CreateAudioIPCConnection();
+extern FileDescriptor CreateAudioIPCConnection(uint32_t aRemotePid);
 }
 
 namespace dom {
@@ -664,7 +665,7 @@ void ContentParent::StartUp() {
   nsDebugImpl::SetMultiprocessMode("Parent");
 
   // Note: This reporter measures all ContentParents.
-  RegisterStrongMemoryReporter(new ContentParentsMemoryReporter());
+  RegisterStrongMemoryReporter(MakeAndAddRef<ContentParentsMemoryReporter>());
 
   BackgroundChild::Startup();
   ClientManager::Startup();
@@ -1293,51 +1294,85 @@ IPCResult ContentParent::RecvAttributionConversion(
   return IPC_OK();
 }
 
+static mozilla::glean::security::FissionPrincipalsExtra
+GetAndLogPrincipalValidationFailure(nsIPrincipal* aPrincipal,
+                                    const char* aMethod) {
+  mozilla::glean::security::FissionPrincipalsExtra extra = {};
+  extra.value = Some(aMethod);
+
+  if (!aPrincipal) {
+    extra.principaltype = Some("NullPtr"_ns);
+  } else if (aPrincipal->IsSystemPrincipal()) {
+    extra.principaltype = Some("SystemPrincipal"_ns);
+  } else if (aPrincipal->GetIsExpandedPrincipal()) {
+    extra.principaltype = Some("ExpandedPrincipal"_ns);
+  } else if (aPrincipal->GetIsContentPrincipal()) {
+    extra.principaltype = Some("ContentPrincipal"_ns);
+
+    // NOTE: Pull the scheme from the origin, rather than from our URI.
+    // This can be relevant in cases where the URI is unwrapped to determine the
+    // origin (e.g. view-source).
+    nsAutoCString scheme;
+    nsAutoCString origin;
+    MOZ_ALWAYS_SUCCEEDS(aPrincipal->GetOriginNoSuffix(origin));
+    MOZ_ALWAYS_SUCCEEDS(net_ExtractURLScheme(origin, scheme));
+    extra.scheme = Some(scheme);
+  } else {
+    extra.principaltype = Some("Unknown"_ns);
+  }
+
+  // NOTE: This log can contain PII (the full origin) as it's local-only.
+  if (MOZ_LOG_TEST(ContentParent::GetLog(), LogLevel::Error)) {
+    nsAutoCString origin;
+    if (aPrincipal) {
+      MOZ_ALWAYS_SUCCEEDS(aPrincipal->GetOrigin(origin));
+    }
+    MOZ_LOG(ContentParent::GetLog(), LogLevel::Error,
+            ("  Receiving unexpected Principal (%s) within %s", origin.get(),
+             aMethod));
+  }
+
+  return extra;
+}
+
 /*static*/
 void ContentParent::LogAndAssertFailedPrincipalValidationInfo(
     nsIPrincipal* aPrincipal, const char* aMethod) {
-  // Send Telemetry
-  nsAutoCString principalScheme, principalType, spec;
-  mozilla::glean::security::FissionPrincipalsExtra extra = {};
-
-  if (!aPrincipal) {
-    principalType.AssignLiteral("NullPtr");
-  } else if (aPrincipal->IsSystemPrincipal()) {
-    principalType.AssignLiteral("SystemPrincipal");
-  } else if (aPrincipal->GetIsExpandedPrincipal()) {
-    principalType.AssignLiteral("ExpandedPrincipal");
-  } else if (aPrincipal->GetIsContentPrincipal()) {
-    principalType.AssignLiteral("ContentPrincipal");
-    aPrincipal->GetSpec(spec);
-    aPrincipal->GetScheme(principalScheme);
-
-    extra.scheme = Some(principalScheme);
-  } else {
-    principalType.AssignLiteral("Unknown");
-  }
-  extra.principaltype = Some(principalType);
-  extra.value = Some(aMethod);
-
+  auto gleanExtra = GetAndLogPrincipalValidationFailure(aPrincipal, aMethod);
   // Do not send telemetry when chrome-debugging is enabled
   bool isChromeDebuggingEnabled =
       Preferences::GetBool("devtools.chrome.enabled", false);
   if (!isChromeDebuggingEnabled) {
-    glean::security::fission_principals.Record(mozilla::Some(extra));
+    glean::security::fission_principals.Record(mozilla::Some(gleanExtra));
   }
-
-  // And log it
-  MOZ_LOG(
-      ContentParent::GetLog(), LogLevel::Error,
-      ("  Receiving unexpected Principal (%s) within %s",
-       aPrincipal && aPrincipal->GetIsContentPrincipal() ? spec.get()
-                                                         : principalType.get(),
-       aMethod));
 
 #ifdef DEBUG
   // Not only log but also ensure we do not receive an unexpected
   // principal when running in debug mode.
   MOZ_ASSERT(false, "Receiving unexpected Principal");
 #endif
+}
+
+/*static*/
+mozilla::ipc::IPCResult ContentParent::PrincipalValidationIpcFail(
+    nsIPrincipal* aPrincipal, mozilla::ipc::IProtocol* aActor,
+    const char* aMethod) {
+  // Always get the telemetry extra, as we'll use it for building the crash
+  // report as well.
+  auto gleanExtra = GetAndLogPrincipalValidationFailure(aPrincipal, aMethod);
+
+  // Do not send telemetry when chrome-debugging is enabled
+  bool isChromeDebuggingEnabled =
+      Preferences::GetBool("devtools.chrome.enabled", false);
+  if (!isChromeDebuggingEnabled) {
+    glean::security::fission_principals.Record(mozilla::Some(gleanExtra));
+  }
+
+  return IPC_FAIL_UNSAFE_PRINTF(
+      aActor, "Invalid principal (%s%s%s) in %s%s",
+      gleanExtra.principaltype->get(), gleanExtra.scheme ? " " : "",
+      gleanExtra.scheme ? gleanExtra.scheme->get() : "", aMethod,
+      isChromeDebuggingEnabled ? " (chrome debug on)" : "");
 }
 
 bool ContentParent::ValidatePrincipal(
@@ -2333,8 +2368,7 @@ static void CacheSandboxParams(std::vector<std::string>& aCachedParams) {
   // "true" or out-of-process WebGL is not enabled, allow window server
   // access in the sandbox policy.
   if (!Preferences::GetBool(
-          "security.sandbox.content.mac.disconnect-windowserver") ||
-      !Preferences::GetBool("webgl.out-of-process")) {
+          "security.sandbox.content.mac.disconnect-windowserver")) {
     info.hasWindowServer = true;
   }
 
@@ -2701,6 +2735,15 @@ ContentParent::~ContentParent() {
   }
 }
 
+static nsIDNSService::ResolverMode TrrModeFromPref() {
+  auto mode =
+      static_cast<nsIDNSService::ResolverMode>(StaticPrefs::network_trr_mode());
+  if (mode > nsIDNSService::MODE_TRROFF) {
+    mode = nsIDNSService::MODE_TRROFF;
+  }
+  return mode;
+}
+
 bool ContentParent::InitInternal(ProcessPriority aInitialPriority) {
   // We can't access the locale service after shutdown has started. Since we
   // can't init the process without it, and since we're going to be canceling
@@ -2885,8 +2928,7 @@ bool ContentParent::InitInternal(ProcessPriority aInitialPriority) {
   nsIDNSService::ResolverMode mode;
   dns->GetCurrentTrrMode(&mode);
   xpcomInit.trrMode() = mode;
-  xpcomInit.trrModeFromPref() =
-      static_cast<nsIDNSService::ResolverMode>(StaticPrefs::network_trr_mode());
+  xpcomInit.trrModeFromPref() = TrrModeFromPref();
 
   (void)SendSetXPCOMProcessAttributes(
       xpcomInit, initialData, lnf, fontList, std::move(sharedUASheetHandle),
@@ -2959,7 +3001,7 @@ bool ContentParent::InitInternal(ProcessPriority aInitialPriority) {
   Endpoint<PImageBridgeChild> imageBridge;
   Endpoint<PVRManagerChild> vrBridge;
   Endpoint<PRemoteMediaManagerChild> videoManager;
-  AutoTArray<uint32_t, 3> namespaces;
+  AutoTArray<uint32_t, 4> namespaces;
 
   if (NS_SUCCEEDED(gpuReadyRv) &&
       gpm->CreateContentBridges(OtherEndpointProcInfo(), &compositor,
@@ -3081,17 +3123,11 @@ bool ContentParent::InitInternal(ProcessPriority aInitialPriority) {
         return true;
       }
 
-      IPCBlob ipcBlob;
-      nsresult rv = IPCBlobUtils::Serialize(aBlobImpl, ipcBlob);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return false;
-      }
+      registrations.AppendElement(
+          BlobURLRegistrationData(nsCString(aURI), WrapNotNull(aPrincipal),
+                                  nsCString(aPartitionKey), aRevoked));
 
-      registrations.AppendElement(BlobURLRegistrationData(
-          nsCString(aURI), ipcBlob, WrapNotNull(aPrincipal),
-          nsCString(aPartitionKey), aRevoked));
-
-      rv = TransmitPermissionsForPrincipal(aPrincipal);
+      nsresult rv = TransmitPermissionsForPrincipal(aPrincipal);
       (void)NS_WARN_IF(NS_FAILED(rv));
       return true;
     });
@@ -3151,7 +3187,7 @@ void ContentParent::OnCompositorUnexpectedShutdown() {
   Endpoint<PImageBridgeChild> imageBridge;
   Endpoint<PVRManagerChild> vrBridge;
   Endpoint<PRemoteMediaManagerChild> videoManager;
-  AutoTArray<uint32_t, 3> namespaces;
+  AutoTArray<uint32_t, 4> namespaces;
 
   if (!gpm->CreateContentBridges(OtherEndpointProcInfo(), &compositor,
                                  &imageBridge, &vrBridge, &videoManager,
@@ -3205,8 +3241,8 @@ mozilla::ipc::IPCResult ContentParent::RecvSetClipboard(
                          {ValidatePrincipalOptions::AllowNullPtr,
                           ValidatePrincipalOptions::AllowExpanded,
                           ValidatePrincipalOptions::AllowSystem})) {
-    LogAndAssertFailedPrincipalValidationInfo(aTransferable.dataPrincipal(),
-                                              __func__);
+    return PrincipalValidationIpcFail(aTransferable.dataPrincipal(), this,
+                                      __func__);
   }
 
   nsresult rv;
@@ -3404,7 +3440,7 @@ mozilla::ipc::IPCResult ContentParent::RecvGetClipboardDataSnapshot(
   if (!ValidatePrincipal(aRequestingPrincipal,
                          {ValidatePrincipalOptions::AllowSystem,
                           ValidatePrincipalOptions::AllowExpanded})) {
-    LogAndAssertFailedPrincipalValidationInfo(aRequestingPrincipal, __func__);
+    return PrincipalValidationIpcFail(aRequestingPrincipal, this, __func__);
   }
 
   // If the requesting context has been discarded, cancel the paste.
@@ -3982,13 +4018,7 @@ ContentParent::Observe(nsISupports* aSubject, const char* aTopic,
     nsCOMPtr<nsIDNSService> dns = do_GetService(NS_DNSSERVICE_CONTRACTID);
     nsIDNSService::ResolverMode mode;
     dns->GetCurrentTrrMode(&mode);
-    nsIDNSService::ResolverMode modeFromPref =
-        static_cast<nsIDNSService::ResolverMode>(
-            StaticPrefs::network_trr_mode());
-    if (modeFromPref > nsIDNSService::MODE_TRROFF) {
-      modeFromPref = nsIDNSService::MODE_TRROFF;
-    }
-    (void)SendSetTRRMode(mode, modeFromPref);
+    (void)SendSetTRRMode(mode, TrrModeFromPref());
   }
 
   return NS_OK;
@@ -4121,6 +4151,10 @@ mozilla::ipc::IPCResult ContentParent::RecvCloneDocumentTreeInto(
     return IPC_FAIL(this, "Illegal subframe clone");
   }
 
+  if (aPrintData.remotePrintJob()) {
+    return IPC_FAIL(this, "Shouldn't pass print jobs around this IPC call");
+  }
+
   ContentParent* cp = source->GetContentParent();
   if (NS_WARN_IF(!cp)) {
     return IPC_OK();
@@ -4184,13 +4218,16 @@ mozilla::ipc::IPCResult ContentParent::RecvConstructPopupBrowser(
   if (!browsingContext || browsingContext->IsDiscarded()) {
     return IPC_FAIL(this, "Null or discarded initial BrowsingContext");
   }
+  if (!browsingContext->Group()->IsKnownForChildID(OtherChildID())) {
+    return IPC_FAIL(this, "Unknown BrowsingContextGroup for this process");
+  }
   if (!aInitialWindowInit.principal()) {
     return IPC_FAIL(this, "Cannot create without valid initial principal");
   }
 
   if (!ValidatePrincipal(aInitialWindowInit.principal())) {
-    LogAndAssertFailedPrincipalValidationInfo(aInitialWindowInit.principal(),
-                                              __func__);
+    return PrincipalValidationIpcFail(aInitialWindowInit.principal(), this,
+                                      __func__);
   }
 
   if (browsingContext->GetBrowserParent()) {
@@ -5096,7 +5133,7 @@ mozilla::ipc::IPCResult ContentParent::RecvRequestAnonymousTemporaryFile(
 
 mozilla::ipc::IPCResult ContentParent::RecvCreateAudioIPCConnection(
     CreateAudioIPCConnectionResolver&& aResolver) {
-  FileDescriptor fd = CubebUtils::CreateAudioIPCConnection();
+  FileDescriptor fd = CubebUtils::CreateAudioIPCConnection(OtherPid());
   FileDescOrError result;
   if (fd.IsValid()) {
     result = fd;
@@ -5466,7 +5503,7 @@ mozilla::ipc::IPCResult ContentParent::RecvCreateWindow(
   }
 
   if (!ValidatePrincipal(aTriggeringPrincipal)) {
-    LogAndAssertFailedPrincipalValidationInfo(aTriggeringPrincipal, __func__);
+    return PrincipalValidationIpcFail(aTriggeringPrincipal, this, __func__);
   }
 
   nsresult rv = NS_OK;
@@ -5646,14 +5683,16 @@ mozilla::ipc::IPCResult ContentParent::RecvCreateWindowInDifferentProcess(
 }
 
 mozilla::ipc::IPCResult ContentParent::RecvShutdownProfile(
-    const nsACString& aProfile) {
-  profiler_received_exit_profile(aProfile);
+    mozilla::ProfileAndAdditionalInformation&&
+        aProfileAndAdditionalInformation) {
+  profiler_received_exit_profile(std::move(aProfileAndAdditionalInformation));
   return IPC_OK();
 }
 
 mozilla::ipc::IPCResult ContentParent::RecvShutdownPerfStats(
     const nsACString& aPerfStats) {
-  PerfStats::StorePerfStats(this, aPerfStats);
+  PerfStats::StorePerfStats(
+      this, std::string(aPerfStats.Data(), aPerfStats.Length()));
   return IPC_OK();
 }
 
@@ -5790,14 +5829,7 @@ void ContentParent::BroadcastBlobURLRegistration(const nsACString& aURI,
         break;
       }
 
-      IPCBlob ipcBlob;
-      rv = IPCBlobUtils::Serialize(aBlobImpl, ipcBlob);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        break;
-      }
-
-      (void)cp->SendBlobURLRegistration(uri, ipcBlob, aPrincipal,
-                                        aPartitionKey);
+      (void)cp->SendBlobURLRegistration(uri, aPrincipal, aPartitionKey);
     }
   }
 }
@@ -5849,15 +5881,15 @@ mozilla::ipc::IPCResult ContentParent::RecvStoreAndBroadcastBlobURLRegistration(
   }
 
   if (!ValidatePrincipal(aPrincipal, {ValidatePrincipalOptions::AllowSystem})) {
-    LogAndAssertFailedPrincipalValidationInfo(aPrincipal, __func__);
+    return PrincipalValidationIpcFail(aPrincipal, this, __func__);
   }
   RefPtr<BlobImpl> blobImpl = IPCBlobUtils::Deserialize(aBlob);
   if (NS_WARN_IF(!blobImpl)) {
     return IPC_FAIL(this, "Blob deserialization failed.");
   }
 
-  BlobURLProtocolHandler::AddDataEntry(aURI, aPrincipal, aPartitionKey,
-                                       blobImpl, Some(ChildID()));
+  BlobURLProtocolHandler::AddDataEntryParent(aURI, aPrincipal, aPartitionKey,
+                                             blobImpl, ChildID());
   BroadcastBlobURLRegistration(aURI, blobImpl, aPrincipal, aPartitionKey, this);
 
   return IPC_OK();
@@ -5871,7 +5903,7 @@ ContentParent::RecvUnstoreAndBroadcastBlobURLUnregistration(
   for (const BroadcastBlobURLUnregistrationRequest& request : aRequests) {
     if (!ValidatePrincipal(request.principal(),
                            {ValidatePrincipalOptions::AllowSystem})) {
-      LogAndAssertFailedPrincipalValidationInfo(request.principal(), __func__);
+      return PrincipalValidationIpcFail(request.principal(), this, __func__);
     }
 
     uris.AppendElement(request.url());
@@ -6113,17 +6145,11 @@ void ContentParent::TransmitBlobURLsForPrincipal(nsIPrincipal* aPrincipal) {
             return true;
           }
 
-          IPCBlob ipcBlob;
-          nsresult rv = IPCBlobUtils::Serialize(aBlobImpl, ipcBlob);
-          if (NS_WARN_IF(NS_FAILED(rv))) {
-            return false;
-          }
+          registrations.AppendElement(
+              BlobURLRegistrationData(nsCString(aURI), WrapNotNull(aPrincipal),
+                                      nsCString(aPartitionKey), aRevoked));
 
-          registrations.AppendElement(BlobURLRegistrationData(
-              nsCString(aURI), ipcBlob, WrapNotNull(aPrincipal),
-              nsCString(aPartitionKey), aRevoked));
-
-          rv = TransmitPermissionsForPrincipal(aBlobPrincipal);
+          nsresult rv = TransmitPermissionsForPrincipal(aBlobPrincipal);
           (void)NS_WARN_IF(NS_FAILED(rv));
           return true;
         });
@@ -6134,11 +6160,12 @@ void ContentParent::TransmitBlobURLsForPrincipal(nsIPrincipal* aPrincipal) {
   }
 }
 
-void ContentParent::TransmitBlobDataIfBlobURL(nsIURI* aURI) {
+void ContentParent::TransmitBlobDataIfBlobURL(nsIURI* aURI,
+                                              const OriginAttributes& aAttrs) {
   MOZ_ASSERT(aURI);
 
   nsCOMPtr<nsIPrincipal> principal;
-  if (BlobURLProtocolHandler::GetBlobURLPrincipal(aURI,
+  if (BlobURLProtocolHandler::GetBlobURLPrincipal(aURI, aAttrs,
                                                   getter_AddRefs(principal))) {
     TransmitBlobURLsForPrincipal(principal);
   }
@@ -6381,7 +6408,7 @@ mozilla::ipc::IPCResult ContentParent::RecvPURLClassifierConstructor(
     return IPC_OK();
   }
   if (!ValidatePrincipal(aPrincipal)) {
-    LogAndAssertFailedPrincipalValidationInfo(aPrincipal, __func__);
+    return PrincipalValidationIpcFail(aPrincipal, this, __func__);
   }
   return actor->StartClassify(principal, aSuccess);
 }
@@ -6558,7 +6585,7 @@ ContentParent::RecvAutomaticStorageAccessPermissionCanBeGranted(
   }
 
   if (!ValidatePrincipal(aPrincipal)) {
-    LogAndAssertFailedPrincipalValidationInfo(aPrincipal, __func__);
+    return PrincipalValidationIpcFail(aPrincipal, this, __func__);
   }
   aResolver(Document::AutomaticStorageAccessPermissionCanBeGranted(aPrincipal));
   return IPC_OK();
@@ -6569,7 +6596,7 @@ ContentParent::RecvStorageAccessPermissionGrantedForOrigin(
     uint64_t aTopLevelWindowId,
     const MaybeDiscarded<BrowsingContext>& aParentContext,
     nsIPrincipal* aTrackingPrincipal, const nsACString& aTrackingOrigin,
-    const int& aAllowMode,
+    const StorageAccessPromptChoices& aAllowMode,
     const Maybe<ContentBlockingNotifier::StorageAccessPermissionGrantedReason>&
         aReason,
     const bool& aFrameOnly,
@@ -6626,8 +6653,7 @@ mozilla::ipc::IPCResult ContentParent::RecvCompleteAllowAccessFor(
                      ResolveOrRejectValue&& aValue) {
                Maybe<StorageAccessPromptChoices> choice;
                if (aValue.IsResolve()) {
-                 choice.emplace(static_cast<StorageAccessPromptChoices>(
-                     aValue.ResolveValue()));
+                 choice.emplace(aValue.ResolveValue());
                }
                aResolver(choice);
              });
@@ -6641,7 +6667,7 @@ mozilla::ipc::IPCResult ContentParent::RecvStoreUserInteractionAsPermission(
   }
 
   if (!ValidatePrincipal(aPrincipal)) {
-    LogAndAssertFailedPrincipalValidationInfo(aPrincipal, __func__);
+    return PrincipalValidationIpcFail(aPrincipal, this, __func__);
   }
   ContentBlockingUserInteraction::Observe(aPrincipal);
   return IPC_OK();
@@ -6688,13 +6714,14 @@ mozilla::ipc::IPCResult ContentParent::RecvNotifyMediaPlaybackChanged(
 }
 
 mozilla::ipc::IPCResult ContentParent::RecvNotifyMediaAudibleChanged(
-    const MaybeDiscarded<BrowsingContext>& aContext, MediaAudibleState aState) {
+    const MaybeDiscarded<BrowsingContext>& aContext, MediaAudibleState aState,
+    ControlType aType) {
   if (aContext.IsNullOrDiscarded()) {
     return IPC_OK();
   }
   if (RefPtr<IMediaInfoUpdater> updater =
           aContext.get_canonical()->GetMediaController()) {
-    updater->NotifyMediaAudibleChanged(aContext.ContextId(), aState);
+    updater->NotifyMediaAudibleChanged(aContext.ContextId(), aState, aType);
   }
   return IPC_OK();
 }

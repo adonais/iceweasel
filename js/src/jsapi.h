@@ -912,14 +912,14 @@ class MOZ_RAII JS_PUBLIC_API AutoFilename {
   js::ScriptSource* ss_;
   mozilla::Variant<const char*, UniqueChars> filename_;
 
-  AutoFilename(const AutoFilename&) = delete;
-  AutoFilename& operator=(const AutoFilename&) = delete;
-
  public:
   AutoFilename()
       : ss_(nullptr), filename_(mozilla::AsVariant<const char*>(nullptr)) {}
 
   ~AutoFilename() { reset(); }
+
+  AutoFilename(const AutoFilename&) = delete;
+  AutoFilename& operator=(const AutoFilename&) = delete;
 
   void reset();
 

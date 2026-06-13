@@ -266,7 +266,10 @@ html|select:disabled,
 html|input[type="color"]:disabled,
 xul|button[disabled],
 xul|menulist[disabled] {
-  opacity: 0.4;
+  background-color: var(--button-background-color-disabled);
+  border-color: var(--button-border-color-disabled);
+  color: var(--button-text-color-disabled);
+  opacity: var(--button-opacity-disabled);
 }
 
 html|button[autofocus],
@@ -276,6 +279,15 @@ button.primary {
   background-color: var(--button-background-color-primary);
   color: var(--button-text-color-primary);
   border-color: var(--button-border-color-primary);
+}
+
+html|button[autofocus]:disabled,
+html|button[type="submit"]:disabled,
+xul|button[default]:disabled,
+button.primary:disabled {
+  background-color: var(--button-background-color-primary-disabled);
+  border-color: var(--button-border-color-primary-disabled);
+  color: var(--button-text-color-primary-disabled);
 }
 
 html|button[autofocus]:enabled:hover,
@@ -361,10 +373,10 @@ xul|menulist > xul|menupopup {
   border: none;
   background-color: transparent;
 
+  --panel-background-color: var(--background-color-box);
   --panel-border-color: var(--border-color);
   --panel-border-radius: 2px;
-  --panel-background: var(--background-color-box);
-  --panel-color: var(--text-color);
+  --panel-text-color: var(--text-color);
   --panel-padding: 0;
 }
 
@@ -439,6 +451,7 @@ html|textarea:user-invalid {
 
 html|input:where([type="email"], [type="tel"], [type="text"], [type="password"], [type="url"], [type="number"]):disabled,
 html|textarea:disabled {
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens -- to be addressed in Bug 2033872 */
   opacity: 0.4;
 }
 
@@ -533,7 +546,7 @@ xul|label[disabled] {
 xul|checkbox[disabled] > .checkbox-label-box,
 xul|radio[disabled] > .radio-label-box,
 xul|label[disabled] {
-  opacity: 0.5;
+  color: var(--text-color-disabled);
 }
 
 /* Category List */

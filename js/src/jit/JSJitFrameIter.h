@@ -652,6 +652,9 @@ class InlineFrameIterator {
   InlineFrameIterator(JSContext* cx, const JSJitFrameIter* iter);
   InlineFrameIterator(JSContext* cx, const InlineFrameIterator* iter);
 
+  InlineFrameIterator() = delete;
+  InlineFrameIterator(const InlineFrameIterator& iter) = delete;
+
   bool more() const { return frame_ && framesRead_ < frameCount_; }
 
   // Due to optimizations, we are not always capable of reading the callee of
@@ -835,10 +838,6 @@ class InlineFrameIterator {
     MOZ_ASSERT(frameCount_ != UINT32_MAX);
     return frameCount_;
   }
-
- private:
-  InlineFrameIterator() = delete;
-  InlineFrameIterator(const InlineFrameIterator& iter) = delete;
 };
 
 }  // namespace jit

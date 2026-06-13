@@ -637,6 +637,19 @@ class AsyncPanZoomController {
 
   bool FuzzyGreater(ParentLayerCoord aCoord1, ParentLayerCoord aCoord2) const;
 
+  /**
+   * This deleted function is used for:
+   * 1. avoiding accidental implicit value type conversions of input delta
+   *    values when callers intend to call the above function;
+   * 2. decoupling the manual relationship between the delta value type and the
+   *    above function. If by any chance the defined delta value type in
+   *    ScrollWheelInput has changed, this will automatically result in build
+   *    time failure, so we can learn of it the first time and accordingly
+   *    redefine those parameters' value types in the above function.
+   */
+  template <typename T>
+  ParentLayerPoint GetScrollWheelDelta(ScrollWheelInput&, T, T, T, T) = delete;
+
  private:
   // Get whether the horizontal content of the honoured target of auto-dir
   // scrolling starts from right to left. If you don't know of auto-dir
@@ -730,19 +743,6 @@ class AsyncPanZoomController {
                                        double aDeltaX, double aDeltaY,
                                        double aMultiplierX,
                                        double aMultiplierY) const;
-
-  /**
-   * This deleted function is used for:
-   * 1. avoiding accidental implicit value type conversions of input delta
-   *    values when callers intend to call the above function;
-   * 2. decoupling the manual relationship between the delta value type and the
-   *    above function. If by any chance the defined delta value type in
-   *    ScrollWheelInput has changed, this will automatically result in build
-   *    time failure, so we can learn of it the first time and accordingly
-   *    redefine those parameters' value types in the above function.
-   */
-  template <typename T>
-  ParentLayerPoint GetScrollWheelDelta(ScrollWheelInput&, T, T, T, T) = delete;
 
   /**
    * Helper methods for handling keyboard events.
@@ -1999,20 +1999,18 @@ class AsyncPanZoomController {
   // If moving |aStartPosition| by |aDelta| should trigger scroll snapping,
   // adjust |aDelta| to reflect the snapping (that is, make it a delta that will
   // take us to the desired snap point). The delta is interpreted as being
-  // relative to |aStartPosition|, and if a target snap point is found,
-  // |aStartPosition| is also updated, to the value of the snap point.
-  // |aUnit| affects the snapping behaviour (see ScrollSnapUtils::
-  // GetSnapPointForDestination).
+  // relative to |aStartPosition|. |aUnit| affects the snapping behaviour
+  // (see ScrollSnapUtils:: GetSnapPointForDestination).
   // Returns true iff. a target snap point was found.
   Maybe<CSSSnapDestination> MaybeAdjustDeltaForScrollSnapping(
       ScrollUnit aUnit, ScrollSnapFlags aSnapFlags, ParentLayerPoint& aDelta,
-      CSSPoint& aStartPosition);
+      const CSSPoint& aStartPosition);
 
   // A wrapper function of MaybeAdjustDeltaForScrollSnapping for
   // ScrollWheelInput.
   Maybe<CSSSnapDestination> MaybeAdjustDeltaForScrollSnappingOnWheelInput(
       const ScrollWheelInput& aEvent, ParentLayerPoint& aDelta,
-      CSSPoint& aStartPosition);
+      const CSSPoint& aStartPosition);
 
   Maybe<CSSSnapDestination> MaybeAdjustDestinationForScrollSnapping(
       const KeyboardInput& aEvent, CSSPoint& aDestination,

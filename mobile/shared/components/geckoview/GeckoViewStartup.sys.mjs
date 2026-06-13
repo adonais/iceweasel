@@ -132,6 +132,15 @@ export class GeckoViewStartup {
           ],
         });
 
+        GeckoViewUtils.addLazyGetter(this, "GeckoViewTrackingDB", {
+          module: "resource://gre/modules/GeckoViewTrackingDB.sys.mjs",
+          ged: [
+            "GeckoView:TrackingDB:GetEventsByDateRange",
+            "GeckoView:TrackingDB:SumAllEvents",
+            "GeckoView:TrackingDB:GetEarliestRecordedDate",
+          ],
+        });
+
         GeckoViewUtils.addLazyGetter(this, "GeckoViewPushController", {
           module: "resource://gre/modules/GeckoViewPushController.sys.mjs",
           ged: ["GeckoView:PushEvent", "GeckoView:PushSubscriptionChanged"],
@@ -192,6 +201,19 @@ export class GeckoViewStartup {
               "devtools-installed-addon",
               "testing-installed-addon",
               "testing-uninstalled-addon",
+            ],
+          });
+
+          GeckoViewUtils.addLazyGetter(this, "GeckoViewIPProtection", {
+            module: "resource://gre/modules/GeckoViewIPProtection.sys.mjs",
+            ged: [
+              "GeckoView:IPProtection:Init",
+              "GeckoView:IPProtection:Uninit",
+              "GeckoView:IPProtection:IPProtectionService:GetState",
+              "GeckoView:IPProtection:IPPProxyManager:GetState",
+              "GeckoView:IPProtection:Activate",
+              "GeckoView:IPProtection:Deactivate",
+              "GeckoView:IPProtection:Enroll",
             ],
           });
 
@@ -278,6 +300,14 @@ export class GeckoViewStartup {
             handler: _ => this.GeckoViewRemoteDebugger,
           }
         );
+
+        // Initialize the cookie service early so the DB is loaded by
+        // the time we make the first HTTP request. Skip in xpcshell tests,
+        // which expect to control when (and against which DB file) the
+        // cookie service first opens the database.
+        if (!Services.env.exists("XPCSHELL_TEST_PROFILE_DIR")) {
+          Services.cookies;
+        }
 
         GeckoViewUtils.addLazyGetter(this, "DownloadTracker", {
           module: "resource://gre/modules/GeckoViewWebExtension.sys.mjs",

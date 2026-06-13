@@ -18,15 +18,11 @@
 
 #include <algorithm>
 #include <bit>
-#include <cctype>
 #include <optional>
 #include <ostream>
 
-#ifdef JS_JITSPEW
-#  include <queue>
-#endif
-
 #include "irregexp/RegExpTypes.h"
+#include "irregexp/util/BitFieldShim.h"
 #include "irregexp/util/BitVectorShim.h"
 #include "irregexp/util/FlagsShim.h"
 #include "irregexp/util/VectorShim.h"
@@ -75,6 +71,7 @@ class Handle;
 #define V8_FALLTHROUGH [[fallthrough]]
 #define V8_NODISCARD [[nodiscard]]
 #define V8_NOEXCEPT noexcept
+#define V8_LIFETIME_BOUND /* unsupported */
 
 #define V8_LIKELY(x) MOZ_LIKELY(x)
 #define V8_UNLIKELY(x) MOZ_UNLIKELY(x)
@@ -413,6 +410,30 @@ constexpr uint32_t CountPopulation(uint32_t value) {
 }
 
 }  // namespace bits
+
+namespace internal {
+
+template <typename T>
+class CheckedNumeric : public mozilla::CheckedInt<T> {
+ public:
+  template <typename U>
+  MOZ_IMPLICIT constexpr CheckedNumeric(U val) : mozilla::CheckedInt<T>(val) {}
+
+  // AssignIfValid(Dst) - Assigns the underlying value if it is currently valid
+  // and is within the range supported by the destination type. Returns true if
+  // successful and false otherwise.
+  template <typename Dst>
+  bool AssignIfValid(Dst* result) const {
+    if (MOZ_LIKELY(this->isValid() && std::in_range<Dst>(this->value()))) {
+      *result = this->value();
+      return true;
+    }
+    return false;
+  }
+};
+
+}  // namespace internal
+
 }  // namespace base
 
 namespace unibrow {
@@ -802,7 +823,7 @@ class HeapObject : public Object {
 template <typename T>
 class Tagged {
  public:
-  Tagged() {}
+  Tagged() = default;
   MOZ_IMPLICIT Tagged(const T& value) : value_(value) {}
   MOZ_IMPLICIT Tagged(T&& value) : value_(std::move(value)) {}
 
@@ -1151,7 +1172,7 @@ using DisallowGarbageCollection = JS::AutoAssertNoGC;
 
 class AllowGarbageCollection {
  public:
-  AllowGarbageCollection() {}
+  AllowGarbageCollection() = default;
 };
 
 // Origin:

@@ -334,10 +334,14 @@ void RTCRtpTransceiver::InitVideo(const TrackingId& aRecvTrackingId) {
       std::max(0, Preferences::GetInt(
                       "media.peerconnection.video.min_bitrate_estimate", 0) *
                       1000);
-  options.mSpatialLayers = std::max(
-      1, Preferences::GetInt("media.peerconnection.video.svc.spatial", 0));
-  options.mTemporalLayers = std::max(
-      1, Preferences::GetInt("media.peerconnection.video.svc.temporal", 0));
+  options.mSpatialLayers = std::clamp(
+      Preferences::GetInt("media.peerconnection.video.svc.spatial", 0), 1,
+      static_cast<int>(webrtc::kMaxSpatialLayers));
+  // kMaxTemporalStreams is the array bound used throughout the encoder bitrate
+  // adjuster for per-temporal-layer tracking.
+  options.mTemporalLayers = std::clamp(
+      Preferences::GetInt("media.peerconnection.video.svc.temporal", 0), 1,
+      static_cast<int>(webrtc::kMaxTemporalStreams));
   options.mDenoising =
       Preferences::GetBool("media.peerconnection.video.denoising", false);
   options.mLockScaling =
@@ -705,6 +709,7 @@ static void JsepCodecDescToAudioCodecConfig(
   (*aConfig)->mMinFrameSizeMs = aCodec.mMinFrameSizeMs;
   (*aConfig)->mMaxFrameSizeMs = aCodec.mMaxFrameSizeMs;
   (*aConfig)->mCbrEnabled = aCodec.mCbrEnabled;
+  (*aConfig)->mTransportCCFbSet = aCodec.RtcpFbTransportCCIsSet();
 }
 
 // TODO: This and the next function probably should move to JsepTransceiver

@@ -11,6 +11,10 @@ requesttimeoutfactor = 2
 
 ["test_ExtensionTaskScheduler.js"]
 
+["test_GuardSets.js"]
+
+["test_GuardSets_propagation.js"]
+
 ["test_QuarantinedDomains.js"]
 
 ["test_change_backgroundServiceWorker_enabled_pref_false.js"]
@@ -462,6 +466,8 @@ skip-if = [
   "os == 'android'",
 ]
 
+["test_ext_management_setEnabled.js"]
+
 ["test_ext_management_uninstall_self.js"]
 
 ["test_ext_messaging_startup.js"]
@@ -870,6 +876,12 @@ skip-if = [
 ["test_ext_webRequest_suspend.js"]
 
 ["test_ext_webRequest_type_json.js"]
+
+["test_ext_webRequest_type_text.js"]
+prefs = ["javascript.options.experimental.import_text=true"]
+skip-if = [
+  "!nightly_build",
+]
 
 ["test_ext_webRequest_userContextId.js"]
 

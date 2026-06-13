@@ -19,6 +19,7 @@ if not CONFIG["MOZ_SYSTEM_NSS"]:
     GeckoSimplePrograms(
         [
             "FaultyServer",
+            "ZeroRttAcceptServer",
         ],
         linkage=None,
     )

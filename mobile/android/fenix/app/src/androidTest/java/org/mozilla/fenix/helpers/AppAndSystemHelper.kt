@@ -60,6 +60,7 @@ import org.mozilla.fenix.helpers.MatcherHelper.itemWithResId
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithResIdContainingText
 import org.mozilla.fenix.helpers.NetworkConnectionStatusHelper.checkActiveNetworkState
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTime
+import org.mozilla.fenix.helpers.TestAssetHelper.waitingTimeLong
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTimeShort
 import org.mozilla.fenix.helpers.TestHelper.appContext
 import org.mozilla.fenix.helpers.TestHelper.mDevice
@@ -530,9 +531,10 @@ object AppAndSystemHelper {
     }
 
     fun clickSystemHomeScreenShortcutAddButton() {
-        when (Build.VERSION.SDK_INT) {
-            in Build.VERSION_CODES.O..Build.VERSION_CODES.R -> clickAddAutomaticallyButton()
-            in Build.VERSION_CODES.S..Build.VERSION_CODES.UPSIDE_DOWN_CAKE -> clickAddToHomeScreenButton()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            clickAddToHomeScreenButton()
+        } else {
+            clickAddAutomaticallyButton()
         }
     }
 
@@ -553,12 +555,16 @@ object AppAndSystemHelper {
     }
 
     fun clickAddToHomeScreenButton() {
-        Log.i(TAG, "clickAddToHomeScreenButton: Waiting for $waitingTime ms for the \"Add to home screen\" system dialog button to exist")
-        itemContainingText("Add to home screen").waitForExists(waitingTime)
-        Log.i(TAG, "clickAddToHomeScreenButton: Waited for $waitingTime ms for the \"Add to home screen\" system dialog button to exist")
+        Log.i(TAG, "clickAddToHomeScreenButton: Waiting for $waitingTimeLong ms for the \"Add to home screen\" system dialog button to appear")
+        val button = mDevice.wait(
+            Until.findObject(By.textContains("Add to home screen")),
+            waitingTimeLong,
+        ) ?: throw AssertionError(
+            "clickAddToHomeScreenButton: \"Add to home screen\" system dialog button did not appear after $waitingTimeLong ms",
+        )
         Log.i(TAG, "clickAddToHomeScreenButton: Trying to click the \"Add to home screen\" system dialog button and wait for $waitingTimeShort ms for a new window")
-        itemContainingText("Add to home screen").clickAndWaitForNewWindow(waitingTimeShort)
-        Log.i(TAG, "clickAddToHomeScreenButton: Clicked the \"Add to home screen\" system dialog button and wait for $waitingTimeShort ms for a new window")
+        button.clickAndWait(Until.newWindow(), waitingTimeShort)
+        Log.i(TAG, "clickAddToHomeScreenButton: Clicked the \"Add to home screen\" system dialog button")
     }
 
     fun isTestLab(): Boolean {
@@ -734,7 +740,7 @@ object AppAndSystemHelper {
      * Wrapper to launch the app using the launcher intent.
      */
     fun runWithLauncherIntent(
-        activityTestRule: AndroidComposeTestRule<HomeActivityIntentTestRule, HomeActivity>,
+        activityTestRule: HomeActivityIntentTestRule,
         testBlock: () -> Unit,
     ) {
         val launcherIntent = Intent(Intent.ACTION_MAIN).apply {
@@ -742,7 +748,7 @@ object AppAndSystemHelper {
         }
 
         Log.i(TAG, "runWithLauncherIntent: Trying to launch the activity from an intent: $launcherIntent.")
-        activityTestRule.activityRule.withIntent(launcherIntent).launchActivity(launcherIntent)
+        activityTestRule.withIntent(launcherIntent).launchActivity(launcherIntent)
         Log.i(TAG, "runWithLauncherIntent: Launched the activity from an intent: $launcherIntent.")
         try {
             Log.i(TAG, "runWithLauncherIntent: Trying run the test block.")

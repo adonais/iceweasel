@@ -46,6 +46,11 @@ class nsUDPSocket final : public nsASocketHandler, public nsIUDPSocket {
  private:
   virtual ~nsUDPSocket();
 
+  already_AddRefed<nsIUDPSocketListener> GetListener() {
+    MutexAutoLock lock(mLock);
+    return do_AddRef(mListener.get());
+  }
+
   void OnMsgClose();
   void OnMsgAttach();
 
@@ -64,13 +69,13 @@ class nsUDPSocket final : public nsASocketHandler, public nsIUDPSocket {
 
   // lock protects access to mListener;
   // so mListener is not cleared while being used/locked.
-  Mutex mLock MOZ_UNANNOTATED{"nsUDPSocket.mLock"};
+  Mutex mLock{"nsUDPSocket.mLock"};
   PRFileDesc* mFD{nullptr};
   NetAddr mAddr;
   OriginAttributes mOriginAttributes;
-  nsCOMPtr<nsIUDPSocketListener> mListener;
+  nsCOMPtr<nsIUDPSocketListener> mListener MOZ_GUARDED_BY(mLock);
   nsCOMPtr<nsIUDPSocketSyncListener> mSyncListener;
-  nsCOMPtr<nsIEventTarget> mListenerTarget;
+  nsCOMPtr<nsIEventTarget> mListenerTarget MOZ_GUARDED_BY(mLock);
   Atomic<bool, ReleaseAcquire> mAttached{false};
   RefPtr<nsSocketTransportService> mSts;
 

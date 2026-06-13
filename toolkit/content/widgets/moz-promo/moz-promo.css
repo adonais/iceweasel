@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 @import url("chrome://global/skin/design-system/text-and-typography.css");
+@import url("chrome://global/content/elements/moz-promo.tokens.css");
 
 /*
  Bug 1972702: Remove the following TODOs
@@ -14,28 +15,18 @@
 */
 
 :host {
-  --promo-message-text-color: var(--text-color);
-  --promo-heading-text-color: var(--promo-message-text-color);
-  --promo-background-color: color-mix(in lch, currentColor 8%, transparent);
-  --promo-border: var(--promo-border-width) solid var(--promo-border-color);
-  --promo-border-color: color-mix(in lch, currentColor 8%, transparent);
-  --promo-border-width: var(--border-width);
-  --promo-border-radius: var(--border-radius-medium);
-  --promo-image-dimension: var(--size-image-xlarge);
-  --promo-image-dimension-large: calc(2 * var(--size-image-xlarge));
-  --promo-padding: var(--space-medium);
-
-  @media (prefers-contrast) {
-    --promo-background-color: var(--background-color-canvas);
-    --promo-message-text-color: var(--text-color);
-    --promo-border-color: var(--border-color);
-  }
-
   display: flex;
   flex-direction: column;
 }
 
 /* MozPromo layout */
+
+:host([type="vibrant"]) {
+  --promo-message-text-color: var(--promo-message-text-color-vibrant);
+  --promo-heading-text-color: var(--promo-heading-text-color-vibrant);
+  --promo-background-color: var(--promo-background-color-vibrant);
+  --promo-border-color: var(--promo-border-color-vibrant);
+}
 
 .container {
   background-color: var(--promo-background-color);
@@ -54,11 +45,11 @@
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: var(--space-xsmall);
+  gap: var(--space-small);
 }
 
 .image-container {
-  width: var(--promo-image-dimension);
+  width: var(--promo-image-size);
   flex-shrink: 0;
   align-self: stretch;
   overflow: hidden;
@@ -69,13 +60,6 @@
     width: 100%;
     height: auto;
   }
-}
-
-:host([type="vibrant"]) {
-  --promo-message-text-color: light-dark(var(--color-violet-80), var(--color-violet-0));
-  --promo-heading-text-color: var(--promo-message-text-color);
-  --promo-background-color: light-dark(var(--color-violet-0), var(--color-violet-90));
-  --promo-border-color: var(--color-violet-30);
 }
 
 :host([imagedisplay="cover"]) {
@@ -124,12 +108,12 @@
 :host([imagealignment="center"][imagedisplay="cover"]) {
   .image-container {
     width: 100%;
-    height: var(--promo-image-dimension);
+    height: var(--promo-image-size);
   }
 }
 
 :host([imagewidth="large"]) {
-  --promo-image-dimension: var(--promo-image-dimension-large);
+  --promo-image-size: var(--promo-image-size-large);
 }
 
 /* MozPromo heading style */

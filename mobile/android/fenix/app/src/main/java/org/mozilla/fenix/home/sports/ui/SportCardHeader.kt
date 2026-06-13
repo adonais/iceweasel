@@ -126,7 +126,7 @@ internal fun SportCardHeader(
                 modifier = Modifier.size(24.dp),
             ) {
                 Icon(
-                    painter = painterResource(iconsR.drawable.mozac_ic_refresh_24),
+                    painter = painterResource(iconsR.drawable.mozac_ic_arrow_clockwise_24),
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurface,
                 )

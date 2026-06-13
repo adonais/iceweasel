@@ -104,6 +104,7 @@ import org.mozilla.geckoview.GeckoSession;
 import org.mozilla.geckoview.GeckoSessionSettings;
 import org.mozilla.geckoview.GeckoView;
 import org.mozilla.geckoview.HandlerThread;
+import org.mozilla.geckoview.IPProtectionController;
 import org.mozilla.geckoview.Image;
 import org.mozilla.geckoview.MediaSession;
 import org.mozilla.geckoview.OrientationController;
@@ -717,9 +718,16 @@ package org.mozilla.geckoview {
     method @NonNull public ContentBlocking.Settings.Builder queryParameterStrippingPrivateBrowsingEnabled(boolean);
     method @NonNull public ContentBlocking.Settings.Builder queryParameterStrippingStripList(@NonNull String...);
     method @NonNull public ContentBlocking.Settings.Builder safeBrowsing(int);
+    method @NonNull public ContentBlocking.Settings.Builder safeBrowsingGlobalCacheEnabled(boolean);
     method @NonNull public ContentBlocking.Settings.Builder safeBrowsingMalwareTable(@NonNull String[]);
     method @NonNull public ContentBlocking.Settings.Builder safeBrowsingPhishingTable(@NonNull String[]);
     method @NonNull public ContentBlocking.Settings.Builder safeBrowsingProviders(@NonNull ContentBlocking.SafeBrowsingProvider...);
+    method @NonNull public ContentBlocking.Settings.Builder safeBrowsingRealTimeEnabled(boolean);
+    method @NonNull public ContentBlocking.Settings.Builder safeBrowsingRealTimeSimulationCacheTTLSec(int);
+    method @NonNull public ContentBlocking.Settings.Builder safeBrowsingRealTimeSimulationEnabled(boolean);
+    method @NonNull public ContentBlocking.Settings.Builder safeBrowsingRealTimeSimulationHitProbability(int);
+    method @NonNull public ContentBlocking.Settings.Builder safeBrowsingRealTimeSimulationNegativeCacheEnabled(boolean);
+    method @NonNull public ContentBlocking.Settings.Builder safeBrowsingRealTimeSimulationNegativeCacheTTLSec(int);
     method @NonNull public ContentBlocking.Settings.Builder strictSocialTrackingProtection(boolean);
     method @NonNull protected ContentBlocking.Settings newSettings(@Nullable ContentBlocking.Settings);
   }
@@ -727,6 +735,9 @@ package org.mozilla.geckoview {
   @AnyThread public class ContentBlockingController {
     ctor public ContentBlockingController();
     method @NonNull @UiThread public GeckoResult<List<ContentBlockingController.LogEntry>> getLog(@NonNull GeckoSession);
+    method @HandlerThread @NonNull public GeckoResult<Long> getTrackingDbEarliestRecordedDate();
+    method @HandlerThread @NonNull public GeckoResult<List<ContentBlockingController.TrackingDbEvent>> getTrackingDbEventsByDateRange(long, long);
+    method @HandlerThread @NonNull public GeckoResult<Integer> sumAllTrackingDbEvents();
   }
 
   public static class ContentBlockingController.Event {
@@ -774,6 +785,21 @@ package org.mozilla.geckoview {
   }
 
   @Retention(value=RetentionPolicy.SOURCE) public static interface ContentBlockingController.LogEntry.BlockingData.LogEvent {
+  }
+
+  @AnyThread public static class ContentBlockingController.TrackingDbEvent {
+    ctor protected TrackingDbEvent();
+    field public static final int BOUNCETRACKERS_ID = 7;
+    field public static final int CRYPTOMINERS_ID = 3;
+    field public static final int FINGERPRINTERS_ID = 4;
+    field public static final int OTHER_COOKIES_BLOCKED_ID = 0;
+    field public static final int SOCIAL_ID = 5;
+    field public static final int SUSPICIOUS_FINGERPRINTERS_ID = 6;
+    field public static final int TRACKERS_ID = 1;
+    field public static final int TRACKING_COOKIES_ID = 2;
+    field public final int count;
+    field @Nullable public final String date;
+    field public final int type;
   }
 
   @FunctionalInterface public class CrashHandler implements Thread.UncaughtExceptionHandler {
@@ -1001,6 +1027,7 @@ package org.mozilla.geckoview {
     method @Nullable @UiThread public CrashPullController.Delegate getCrashPullDelegate();
     method @NonNull @UiThread public static synchronized GeckoRuntime getDefault(@NonNull Context);
     method @Nullable @UiThread public GeckoRuntime.Delegate getDelegate();
+    method @NonNull @UiThread public IPProtectionController getIPProtectionController();
     method @NonNull @UiThread public OrientationController getOrientationController();
     method @AnyThread @Nullable public GeckoPreferenceController.Observer.Delegate getPreferencesObserverDelegate();
     method @Nullable @UiThread public GeckoRuntime.ServiceWorkerDelegate getServiceWorkerDelegate();
@@ -1705,6 +1732,7 @@ package org.mozilla.geckoview {
     method @Nullable @UiThread default public GeckoResult<GeckoSession.PromptDelegate.PromptResponse> onSharePrompt(@NonNull GeckoSession, @NonNull GeckoSession.PromptDelegate.SharePrompt);
     method @Nullable @UiThread default public GeckoResult<GeckoSession.PromptDelegate.PromptResponse> onShowPrivacyPolicyIdentityCredential(@NonNull GeckoSession, @NonNull GeckoSession.PromptDelegate.IdentityCredential.PrivacyPolicyPrompt);
     method @Nullable @UiThread default public GeckoResult<GeckoSession.PromptDelegate.PromptResponse> onTextPrompt(@NonNull GeckoSession, @NonNull GeckoSession.PromptDelegate.TextPrompt);
+    method @Nullable @UiThread default public GeckoResult<GeckoSession.PromptDelegate.PromptResponse> onWebAuthnRelatedOriginPrompt(@NonNull GeckoSession, @NonNull GeckoSession.PromptDelegate.WebAuthnRelatedOriginPrompt);
   }
 
   public static class GeckoSession.PromptDelegate.AlertPrompt extends GeckoSession.PromptDelegate.BasePrompt {
@@ -1999,6 +2027,14 @@ package org.mozilla.geckoview {
     field @Nullable public final String message;
   }
 
+  public static class GeckoSession.PromptDelegate.WebAuthnRelatedOriginPrompt extends GeckoSession.PromptDelegate.BasePrompt {
+    ctor protected WebAuthnRelatedOriginPrompt(@NonNull String, @Nullable String, @Nullable String, boolean, @NonNull GeckoSession.PromptDelegate.BasePrompt.Observer);
+    method @NonNull @UiThread public GeckoSession.PromptDelegate.PromptResponse confirm(@Nullable AllowOrDeny);
+    field public final boolean isCreate;
+    field @Nullable public final String origin;
+    field @Nullable public final String rpId;
+  }
+
   @Retention(value=RetentionPolicy.SOURCE) public static interface GeckoSession.RestartReason {
   }
 
@@ -2243,6 +2279,81 @@ package org.mozilla.geckoview {
   }
 
   @Documented @Retention(value=RetentionPolicy.CLASS) @Target(value={ElementType.METHOD, ElementType.CONSTRUCTOR, ElementType.TYPE, ElementType.PARAMETER}) public interface HandlerThread {
+  }
+
+  public class IPProtectionController {
+    method @HandlerThread @NonNull public GeckoResult<Void> activate();
+    method @HandlerThread @NonNull public GeckoResult<Void> deactivate();
+    method @HandlerThread @NonNull public GeckoResult<IPProtectionController.EnrollResult> enroll();
+    method @Nullable @UiThread public IPProtectionController.AuthProvider getAuthProvider();
+    method @Nullable @UiThread public IPProtectionController.Delegate getDelegate();
+    method @HandlerThread @NonNull public GeckoResult<IPProtectionController.ProxyState> getProxyState();
+    method @HandlerThread @NonNull public GeckoResult<Integer> getServiceState();
+    method @HandlerThread @NonNull public GeckoResult<Void> init();
+    method @NonNull @UiThread public GeckoResult<Void> notifySignInStateChanged(boolean);
+    method @UiThread public void setAuthProvider(@Nullable IPProtectionController.AuthProvider);
+    method @UiThread public void setDelegate(@Nullable IPProtectionController.Delegate);
+    method @HandlerThread @NonNull public GeckoResult<Void> uninit();
+    field public static final int SERVICE_STATE_OPTED_OUT = 3;
+    field public static final int SERVICE_STATE_READY = 4;
+    field public static final int SERVICE_STATE_UNAUTHENTICATED = 2;
+    field public static final int SERVICE_STATE_UNAVAILABLE = 1;
+    field public static final int SERVICE_STATE_UNINITIALIZED = 0;
+  }
+
+  public static interface IPProtectionController.AuthProvider {
+    method @NonNull @UiThread default public GeckoResult<String> getToken();
+  }
+
+  public static interface IPProtectionController.Delegate {
+    method @UiThread default public void onProxyStateChanged(@NonNull IPProtectionController.ProxyState);
+    method @UiThread default public void onServiceStateChanged(int);
+    method @UiThread default public void onUsageChanged(@NonNull IPProtectionController.UsageInfo);
+  }
+
+  public static class IPProtectionController.EnrollResult {
+    ctor protected EnrollResult();
+    field @Nullable public final String error;
+    field public final boolean isEnrolledAndEntitled;
+  }
+
+  public static class IPProtectionController.IPProxyException extends RuntimeException {
+    method @AnyThread @NonNull public static IPProtectionController.IPProxyException fromErrorString(@Nullable String);
+    field public static final int ERROR_ACTIVATION_CANCELED = -6;
+    field public static final int ERROR_NETWORK = -2;
+    field public static final int ERROR_PASS_UNAVAILABLE = -4;
+    field public static final int ERROR_SERVER_NOT_FOUND = -5;
+    field public static final int ERROR_TIMEOUT = -3;
+    field public static final int ERROR_UNKNOWN = -1;
+    field public final int code;
+  }
+
+  @Retention(value=RetentionPolicy.SOURCE) public static interface IPProtectionController.IPProxyException.Code {
+  }
+
+  public static class IPProtectionController.ProxyState {
+    ctor protected ProxyState();
+    field public static final int ACTIVATING = 2;
+    field public static final int ACTIVE = 3;
+    field public static final int ERROR = 4;
+    field public static final int NOT_READY = 0;
+    field public static final int PAUSED = 5;
+    field public static final int READY = 1;
+    field @Nullable public final String errorType;
+    field public final int state;
+  }
+
+  @Retention(value=RetentionPolicy.SOURCE) public static interface IPProtectionController.ProxyState.Code {
+  }
+
+  @Retention(value=RetentionPolicy.SOURCE) public static interface IPProtectionController.ServiceState {
+  }
+
+  public static class IPProtectionController.UsageInfo {
+    ctor protected UsageInfo();
+    field public final long max;
+    field public final long remaining;
+    field @Nullable public final String resetTime;
   }
 
   @AnyThread public class Image {
@@ -3065,6 +3176,7 @@ package org.mozilla.geckoview {
     field public static final String INSTALLATION_METHOD_FROM_FILE = "install-from-file";
     field public static final String INSTALLATION_METHOD_MANAGER = "manager";
     field public static final String INSTALLATION_METHOD_ONBOARDING = "onboarding";
+    field public static final String INSTALLATION_METHOD_RTAMO = "rtamo";
   }
 
   public static interface WebExtensionController.AddonManagerDelegate {

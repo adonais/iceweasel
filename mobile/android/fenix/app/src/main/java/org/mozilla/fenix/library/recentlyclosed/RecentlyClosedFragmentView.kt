@@ -4,6 +4,7 @@
 
 package org.mozilla.fenix.library.recentlyclosed
 
+import android.content.res.ColorStateList
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.appcompat.content.res.AppCompatResources
@@ -11,10 +12,12 @@ import androidx.core.view.isVisible
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.SimpleItemAnimator
 import mozilla.components.browser.state.state.recover.TabState
+import mozilla.components.support.ktx.android.content.getColorFromAttr
 import org.mozilla.fenix.R
 import org.mozilla.fenix.databinding.ComponentRecentlyClosedBinding
 import org.mozilla.fenix.library.LibraryPageView
 import org.mozilla.fenix.selection.SelectionInteractor
+import com.google.android.material.R as materialR
 import mozilla.components.ui.icons.R as iconsR
 
 interface RecentlyClosedInteractor : SelectionInteractor<TabState> {
@@ -65,6 +68,9 @@ class RecentlyClosedFragmentView(
                     containerView.context,
                     iconsR.drawable.mozac_ic_history_24,
                 ),
+            )
+            iconView.imageTintList = ColorStateList.valueOf(
+                context.getColorFromAttr(materialR.attr.colorOnSurface),
             )
             setOnClickListener {
                 interactor.onNavigateToHistory()

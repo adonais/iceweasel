@@ -415,18 +415,6 @@ void JitRuntime::TraceAtomZoneRoots(JSTracer* trc) {
 }
 
 /* static */
-bool JitRuntime::MarkJitcodeGlobalTableIteratively(GCMarker* marker) {
-  if (marker->runtime()->hasJitRuntime() &&
-      marker->runtime()->jitRuntime()->hasJitcodeGlobalTable()) {
-    return marker->runtime()
-        ->jitRuntime()
-        ->getJitcodeGlobalTable()
-        ->markIteratively(marker);
-  }
-  return false;
-}
-
-/* static */
 void JitRuntime::TraceWeakJitcodeGlobalTable(JSRuntime* rt, JSTracer* trc) {
   if (rt->hasJitRuntime() && rt->jitRuntime()->hasJitcodeGlobalTable()) {
     rt->jitRuntime()->getJitcodeGlobalTable()->traceWeak(rt, trc);
@@ -626,12 +614,15 @@ void JitCode::traceChildren(JSTracer* trc) {
 }
 
 void JitCode::finalize(JS::GCContext* gcx) {
-  // If this jitcode had a bytecode map, it must have already been removed.
+  // If this jitcode had a bytecode map, either the entry has been removed
+  // from the table, or it has been detached (jitcode_ set to null) because
+  // the profiler buffer still references it.
 #ifdef DEBUG
   JSRuntime* rt = gcx->runtime();
   if (hasBytecodeMap_) {
     MOZ_ASSERT(rt->jitRuntime()->hasJitcodeGlobalTable());
-    MOZ_ASSERT(!rt->jitRuntime()->getJitcodeGlobalTable()->lookup(raw()));
+    auto* entry = rt->jitRuntime()->getJitcodeGlobalTable()->lookup(raw());
+    MOZ_ASSERT(!entry || !entry->hasJitcode());
   }
 #endif
 
@@ -2180,7 +2171,7 @@ static MethodStatus BaselineCanEnterAtBranch(JSContext* cx, HandleScript script,
     }
 
     JitSpew(JitSpew_IonScripts, "Forcing OSR Mismatch Compilation");
-    Invalidate(cx, script);
+    Invalidate(cx, script, /* resetUses = */ false);
   }
 
   // Attempt compilation.

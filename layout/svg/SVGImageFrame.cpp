@@ -848,7 +848,13 @@ SVGBBox SVGImageFrame::GetBBoxContribution(const Matrix& aToBBoxUserspace,
 
   auto* element = static_cast<SVGImageElement*>(GetContent());
 
-  return element->GeometryBounds(aToBBoxUserspace);
+  Rect rect = element->GeometryBounds(aToBBoxUserspace);
+
+  if (aFlags.contains(SVGBBoxFlag::DisregardCSSZoom)) {
+    rect.Scale(1 / Style()->EffectiveZoom().ToFloat());
+  }
+
+  return rect;
 }
 
 //----------------------------------------------------------------------

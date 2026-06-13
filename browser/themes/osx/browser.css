@@ -15,7 +15,7 @@
         --urlbar-box-background-color: #fafafa;
       }
       @media (prefers-color-scheme: dark) {
-        --tab-selected-bgcolor: color-mix(in srgb, -moz-dialog 75%, white);
+        --tab-background-color-selected: color-mix(in srgb, -moz-dialog 75%, white);
       }
     }
   }
@@ -112,7 +112,7 @@
 
 #editBMPanel_folderTree > treechildren::-moz-tree-row(blur, selected),
 #editBMPanel_tagsSelector:not(:focus) > richlistitem[selected] {
-  background-color: var(--panel-dimmed);
+  background-color: var(--panel-background-color-dimmed);
 }
 
 #editBMPanel_folderTree > treechildren::-moz-tree-twisty(blur, selected),

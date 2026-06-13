@@ -19,7 +19,6 @@ import mozilla.components.tooling.fetch.tests.FetchTestCases
 import okhttp3.Headers.Companion.toHeaders
 import okio.ByteString.Companion.encodeUtf8
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -35,6 +34,7 @@ import org.mozilla.geckoview.WebResponse
 import java.io.IOException
 import java.nio.charset.Charset
 import java.util.concurrent.TimeoutException
+import kotlin.test.assertIs
 
 /**
  * We can't run standard JVM unit tests for GWE. Therefore, we provide both
@@ -67,7 +67,7 @@ class GeckoViewFetchUnitTestCases : FetchTestCases() {
 
     @Test
     fun clientInstance() {
-        assertTrue(createNewClient() is GeckoViewFetchClient)
+        assertIs<GeckoViewFetchClient>(createNewClient())
     }
 
     @Test

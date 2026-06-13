@@ -338,11 +338,9 @@ function add_tests() {
 }
 
 function check_ocsp_stapling_telemetry() {
-  let histogram = Services.telemetry
-    .getHistogramById("SSL_OCSP_STAPLING")
-    .snapshot();
+  let histogram = Glean.ssl.ocspStapling.testGetValue();
   equal(
-    histogram.values[0],
+    histogram.values[0] || 0,
     0,
     "Should have 0 connections for unused histogram bucket 0"
   );
@@ -371,6 +369,9 @@ function check_ocsp_stapling_telemetry() {
 
 function run_test() {
   do_get_profile();
+  Services.fog.initializeFOG();
+  Services.fog.testResetFOG();
+
   Services.prefs.setIntPref("security.OCSP.enabled", 1);
   // This test may sometimes fail on android due to an OCSP request timing out.
   // That aspect of OCSP requests is not what we're testing here, so we can just

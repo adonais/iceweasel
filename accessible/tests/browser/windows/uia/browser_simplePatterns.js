@@ -28,6 +28,9 @@ addAccessibleTask(
 <p id="p">p</p>
 <input id="checkbox" type="checkbox">
 <input id="radio" type="radio">
+<div role="listbox">
+  <div id="option" role="option" onclick=";">option</div>
+</div>
   `,
   async function testInvoke() {
     await definePyVar("doc", `getDocUia()`);
@@ -43,6 +46,8 @@ addAccessibleTask(
     ok(true, "button got focus");
     await waitForUiaEvent();
     ok(true, "button got Invoked event");
+
+    await testPatternSupported("option", "Invoke");
 
     await testPatternAbsent("p", "Invoke");
     // Check boxes expose the Toggle pattern, so they should not expose the

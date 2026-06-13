@@ -1,3 +1,4 @@
+/* -*- Mode: c; c-basic-offset: 4; indent-tabs-mode: t; tab-width: 8; -*- */
 /* cairo - a vector graphics library with display and print output
  *
  * Copyright © 2002 University of Southern California
@@ -1772,7 +1773,7 @@ found:
 	;
     }
 
-    surface = _cairo_malloc (sizeof (cairo_xlib_surface_t));
+    surface = _cairo_calloc (sizeof (cairo_xlib_surface_t));
     if (unlikely (surface == NULL))
 	return _cairo_surface_create_in_error (_cairo_error (CAIRO_STATUS_NO_MEMORY));
 

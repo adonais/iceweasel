@@ -73,24 +73,31 @@ export class PageExtractorChild extends JSWindowActorChild {
   }
 
   /**
-   * This function resolves once the page is ready after a requestIdleCallback.
+   * Resolves after DOMContentLoaded, an idle callback, and a double
+   * requestAnimationFrame so layout and paint are committed before
+   * extraction reads page geometry.
    *
    * @returns {Promise<void>}
    */
   async waitForPageReady() {
-    return new Promise(resolve => {
-      const waitForIdle = () => {
-        this.document.ownerGlobal.requestIdleCallback(() => resolve(), {
-          timeout: MAX_REQUEST_IDLE_CALLBACK_DELAY_MS,
-        });
-      };
+    const doc = this.document;
+    const win = doc.documentGlobal;
 
-      if (this.document.readyState == "loading") {
-        this.document.addEventListener("DOMContentLoaded", waitForIdle);
-      } else {
-        lazy.console.log("The page is already interactive");
-        waitForIdle();
-      }
+    if (doc.readyState == "loading") {
+      await new Promise(resolve => {
+        doc.addEventListener("DOMContentLoaded", resolve, { once: true });
+      });
+    } else {
+      lazy.console.log("The page is already interactive");
+    }
+
+    await new Promise(resolve => {
+      win.requestIdleCallback(resolve, {
+        timeout: MAX_REQUEST_IDLE_CALLBACK_DELAY_MS,
+      });
+    });
+    await new Promise(resolve => {
+      win.requestAnimationFrame(() => win.requestAnimationFrame(resolve));
     });
   }
 

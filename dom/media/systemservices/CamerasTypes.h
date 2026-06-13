@@ -8,6 +8,10 @@
 #include "PerformanceRecorder.h"
 #include "ipc/EnumSerializer.h"
 
+namespace webrtc {
+enum class VideoType;
+}  // namespace webrtc
+
 namespace mozilla::camera {
 
 enum CaptureEngine : int {
@@ -38,6 +42,10 @@ enum class CamerasAccessStatus {
 TrackingId::Source CaptureEngineToTrackingSourceStr(
     const CaptureEngine& aEngine);
 
+struct WebrtcVideoTypeValidator {
+  using IntegralType = std::underlying_type_t<webrtc::VideoType>;
+  static bool IsLegalValue(const IntegralType aValue);
+};
 }  // namespace mozilla::camera
 
 namespace IPC {
@@ -54,6 +62,11 @@ struct ParamTraits<mozilla::camera::CamerasAccessStatus>
           mozilla::camera::CamerasAccessStatus,
           mozilla::camera::CamerasAccessStatus::Granted,
           mozilla::camera::CamerasAccessStatus::Error> {};
+
+template <>
+struct ParamTraits<webrtc::VideoType>
+    : EnumSerializer<webrtc::VideoType,
+                     mozilla::camera::WebrtcVideoTypeValidator> {};
 }  // namespace IPC
 
 #endif  // mozilla_CamerasTypes_h

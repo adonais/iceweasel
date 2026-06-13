@@ -382,7 +382,7 @@ const DownloadsIndicatorView = {
       return;
     }
 
-    if (anchor.ownerGlobal.matchMedia("(prefers-reduced-motion)").matches) {
+    if (anchor.documentGlobal.matchMedia("(prefers-reduced-motion)").matches) {
       // User has prefers-reduced-motion enabled, so we shouldn't show the animation.
       return;
     }

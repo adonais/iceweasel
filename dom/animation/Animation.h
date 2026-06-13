@@ -74,7 +74,7 @@ class Animation : public DOMEventTargetHelper,
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(Animation, DOMEventTargetHelper)
 
-  nsIGlobalObject* GetParentObject() const { return GetOwnerGlobal(); }
+  nsIGlobalObject* GetParentObject() const { return GetRelevantGlobal(); }
 
   /**
    * Utility function to get the target (pseudo-)element associated with an
@@ -110,20 +110,21 @@ class Animation : public DOMEventTargetHelper,
   virtual void SetEffect(AnimationEffect* aEffect);
   void SetEffectNoUpdate(AnimationEffect* aEffect);
 
-  // FIXME: Bug 1676794. This is a tentative solution before we implement
-  // ScrollTimeline interface. If the timeline is scroll/view timeline, we
-  // return null. Once we implement ScrollTimeline interface, we can drop this.
-  already_AddRefed<AnimationTimeline> GetTimelineFromJS() const {
-    return mTimeline && mTimeline->IsScrollTimeline() ? nullptr
-                                                      : do_AddRef(mTimeline);
-  }
-  void SetTimelineFromJS(AnimationTimeline* aTimeline) {
-    SetTimeline(aTimeline);
+  void SetTimeline(AnimationTimeline* aTimeline) {
+    // Can't refer to timeline by name from JS side.
+    const auto prevTimelineName = GetTimelineName();
+    SetTimeline(aTimeline, nullptr);
+    if (prevTimelineName) {
+      RemovedNamedTimelineReferenceFromJS(prevTimelineName);
+    }
   }
 
+  void RemovedNamedTimelineReferenceFromJS(const nsAtom* aName);
+
   AnimationTimeline* GetTimeline() const { return mTimeline; }
-  void SetTimeline(AnimationTimeline* aTimeline);
-  void SetTimelineNoUpdate(AnimationTimeline* aTimeline);
+  void SetTimeline(AnimationTimeline* aTimeline, const nsAtom* aTimelineName);
+  void SetTimelineNoUpdate(AnimationTimeline* aTimeline,
+                           const nsAtom* aTimelineName);
 
   const AnimationRange& GetTimelineRange() const { return mTimelineRange; }
   void SetTimelineRange(AnimationRange&& aRange);
@@ -433,6 +434,7 @@ class Animation : public DOMEventTargetHelper,
   }
 
   void UpdateNormalizedTimingForTimelineDataChange();
+  void MaybeUpdateKeyframeComputedOffsets();
 
   void SetHiddenByContentVisibility(bool hidden);
   bool IsHiddenByContentVisibility() const {
@@ -445,6 +447,8 @@ class Animation : public DOMEventTargetHelper,
   void PostUpdate();
 
   void AutoAlignStartTime();
+
+  const nsAtom* GetTimelineName() const { return mTimelineName; }
 
  protected:
   void SilentlySetCurrentTime(const TimeDuration& aNewCurrentTime);
@@ -626,6 +630,11 @@ class Animation : public DOMEventTargetHelper,
   // calculated until post layout since the start time is to align with the
   // start or end of the animation range.
   bool mAutoAlignStartTime = false;
+
+  // The name of the timeline this animation is referring to, if one exists.
+  // Note that animations can have a null timeline but have this set, if it
+  // refers to a timeline that does not exist by name.
+  RefPtr<const nsAtom> mTimelineName;
 };
 
 }  // namespace dom

@@ -14,7 +14,6 @@ import mozilla.components.feature.privatemode.notification.AbstractPrivateNotifi
 import mozilla.components.feature.tabs.TabsUseCases
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
@@ -26,6 +25,7 @@ import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.android.controller.ServiceController
+import kotlin.test.assertNotNull
 
 @RunWith(RobolectricTestRunner::class)
 class PrivateNotificationServiceTest {

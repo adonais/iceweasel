@@ -90,17 +90,9 @@ class CompositorBridgeChild final : public PCompositorBridgeChild,
   mozilla::ipc::IPCResult RecvNotifyJankedAnimations(
       const LayersId& aLayersId, nsTArray<uint64_t>&& aJankedAnimations);
 
-  PTextureChild* AllocPTextureChild(
-      const SurfaceDescriptor& aSharedData, ReadLockDescriptor& aReadLock,
-      const LayersBackend& aLayersBackend, const TextureFlags& aFlags,
-      const uint64_t& aSerial,
-      const wr::MaybeExternalImageId& aExternalImageId);
-
-  bool DeallocPTextureChild(PTextureChild* actor);
-
   mozilla::ipc::IPCResult RecvParentAsyncMessages(
       nsTArray<AsyncParentMessageData>&& aMessages);
-  PTextureChild* CreateTexture(
+  already_AddRefed<PTextureChild> CreateTexture(
       const SurfaceDescriptor& aSharedData, ReadLockDescriptor&& aReadLock,
       LayersBackend aLayersBackend, TextureFlags aFlags,
       const dom::ContentParentId& aContentId, uint64_t aSerial,
@@ -178,16 +170,9 @@ class CompositorBridgeChild final : public PCompositorBridgeChild,
   bool AllocShmem(size_t aSize, mozilla::ipc::Shmem* aShmem) override;
   bool DeallocShmem(mozilla::ipc::Shmem& aShmem) override;
 
-  PAPZCTreeManagerChild* AllocPAPZCTreeManagerChild(const LayersId& aLayersId);
-  bool DeallocPAPZCTreeManagerChild(PAPZCTreeManagerChild* aActor);
-
-  PAPZChild* AllocPAPZChild(const LayersId& aLayersId);
-  bool DeallocPAPZChild(PAPZChild* aActor);
-
-  PWebRenderBridgeChild* AllocPWebRenderBridgeChild(
-      const wr::PipelineId& aPipelineId, const LayoutDeviceIntSize&,
-      const WindowKind&);
-  bool DeallocPWebRenderBridgeChild(PWebRenderBridgeChild* aActor);
+  already_AddRefed<PAPZCTreeManagerChild> AllocPAPZCTreeManagerChild(
+      const LayersId& aLayersId);
+  already_AddRefed<PAPZChild> AllocPAPZChild(const LayersId& aLayersId);
 
   wr::MaybeExternalImageId GetNextExternalImageId() override;
 

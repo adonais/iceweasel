@@ -1,7 +1,7 @@
 const { history } = PlacesUtils;
 
 add_task(async function test_addVisitCheckFields() {
-  let uri = NetUtil.newURI("http://test4.com/");
+  let uri = Services.io.newURI("http://test4.com/");
   await PlacesTestUtils.addVisits([
     { uri },
     { uri, referrer: uri },

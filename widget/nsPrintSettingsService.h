@@ -21,6 +21,10 @@ class nsPrintSettingsService : public nsIPrintSettingsService {
 
   nsPrintSettingsService() = default;
 
+  // Copying is not supported.
+  nsPrintSettingsService(const nsPrintSettingsService& x) = delete;
+  nsPrintSettingsService& operator=(const nsPrintSettingsService& x) = delete;
+
   /**
    * method Init
    *  Initializes member variables. Every consumer that does manual
@@ -30,10 +34,6 @@ class nsPrintSettingsService : public nsIPrintSettingsService {
   virtual nsresult Init();
 
  private:
-  // Copying is not supported.
-  nsPrintSettingsService(const nsPrintSettingsService& x) = delete;
-  nsPrintSettingsService& operator=(const nsPrintSettingsService& x) = delete;
-
  protected:
   virtual ~nsPrintSettingsService() = default;
 

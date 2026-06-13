@@ -6,12 +6,13 @@
       "matches": ["*://*.doctolib.de/*"]
     }
   },
+  "css": {
+    "hide_browser_notice": ".MuiDrawer-root:has(#app_description) { display: none !important; }"
+  },
   "interventions": [
     {
       "platforms": ["android"],
-      "content_scripts": {
-        "css": ["1998361_doctolib.de-hide-app-recommendation.css"]
-      },
+      "css": ["hide_browser_notice"],
       "ua_string": ["Chrome", "add_Firefox_as_Gecko"]
     }
   ]

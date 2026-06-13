@@ -515,7 +515,7 @@ OSPreferences::GetDateTimePattern(int32_t aDateFormatStyle,
 
   nsCString pattern;
   if (mPatternCache.Get(key, &pattern)) {
-    aRetVal = pattern;
+    aRetVal = std::move(pattern);
     return NS_OK;
   }
 
@@ -536,7 +536,7 @@ OSPreferences::GetDateTimePattern(int32_t aDateFormatStyle,
   }
   mPatternCache.InsertOrUpdate(key, pattern);
 
-  aRetVal = pattern;
+  aRetVal = std::move(pattern);
   return NS_OK;
 }
 

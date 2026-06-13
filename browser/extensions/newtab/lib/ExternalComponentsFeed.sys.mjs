@@ -27,6 +27,28 @@ ChromeUtils.defineLazyGetter(lazy, "logConsole", function () {
 
 const TRAIN_HOPPING_COMPONENT_CONFIGURATIONS = [
   {
+    type: "ASROUTER_MULTISTAGE_MESSAGE",
+    mountStrategy: "react-bundle",
+    bundleURL:
+      "chrome://newtab/content/data/content/external-components/asrouter-newtab-multistage/asrouter-newtab-multistage.bundle.js",
+    stylesURLs: [
+      "chrome://global/skin/in-content/common.css",
+      "chrome://newtab/content/data/content/external-components/asrouter-newtab-multistage/asrouter-newtab-multistage.css",
+    ],
+    mountFunction: "mountMultistageMessage",
+    l10nURLs: [
+      "browser/newtab/onboarding.ftl",
+      "browser/featureCallout.ftl",
+      "browser/backupSettings.ftl",
+    ],
+    moduleURLs: [
+      // While it's more than likely that moz-button is already available on newtab,
+      // better safe than sorry.
+      "chrome://global/content/elements/moz-button.mjs",
+      "chrome://browser/content/backup/turn-on-scheduled-backups.mjs",
+    ],
+  },
+  {
     type: "ASROUTER_NEWTAB_MESSAGE",
     l10nURLs: [],
     componentURL:

@@ -774,7 +774,11 @@ class WebConsoleUI extends EventEmitter {
   }
 
   getJsTermTooltipAnchor() {
-    return this.outputNode.querySelector(".CodeMirror-cursor");
+    return this.outputNode.querySelector(
+      Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)
+        ? ".cm-cursor"
+        : ".CodeMirror-cursor"
+    );
   }
 
   attachRef(id, node) {

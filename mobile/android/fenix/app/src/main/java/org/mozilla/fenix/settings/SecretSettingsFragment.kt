@@ -157,41 +157,6 @@ class SecretSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFra
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
-        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_toolbar_customization).apply {
-            isChecked = context.settings().shouldShowToolbarCustomization
-            val newOption = context.settings().toolbarRedesignEnabled
-            isEnabled = newOption
-            summary = when (newOption) {
-                true -> null
-                false -> getString(R.string.preferences_debug_settings_toolbar_customization_summary)
-            }
-            onPreferenceChangeListener = SharedPreferenceUpdater()
-        }
-
-        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_toolbar_redesign).apply {
-            isChecked = context.settings().toolbarRedesignEnabled
-            onPreferenceChangeListener = Preference.OnPreferenceChangeListener { _, newValue ->
-                (newValue as? Boolean)?.let { newOption ->
-                    context.settings().toolbarRedesignEnabled = newOption
-                    if (!newOption) {
-                        context.settings().shouldUseExpandedToolbar = false
-                    }
-                    requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_toolbar_customization).apply {
-                        isEnabled = newOption
-                        summary = when (newOption) {
-                            true -> null
-                            false -> getString(R.string.preferences_debug_settings_toolbar_customization_summary)
-                        }
-                        if (!newOption && isChecked) {
-                            isChecked = false
-                            context.settings().shouldShowToolbarCustomization = false
-                        }
-                    }
-                }
-                true
-            }
-        }
-
         requirePreference<Preference>(R.string.pref_key_search_optimization).apply {
             isVisible = Config.channel.isNightlyOrDebug
         }
@@ -222,17 +187,6 @@ class SecretSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFra
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
-        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_compose_wallpaper).apply {
-            isChecked = context.settings().shouldUseComposeWallpaper
-            onPreferenceChangeListener = SharedPreferenceUpdater()
-        }
-
-        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_homepage_searchbar).apply {
-            isVisible = true
-            isChecked = context.settings().enableHomepageSearchBar
-            onPreferenceChangeListener = SharedPreferenceUpdater()
-        }
-
         requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_homepage_as_new_tab).apply {
             isVisible = Config.channel.isNightlyOrDebug
             isChecked = context.settings().enableHomepageAsNewTab
@@ -241,6 +195,11 @@ class SecretSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFra
 
         requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_firefox_labs).apply {
             isChecked = context.settings().enableFirefoxLabs
+            onPreferenceChangeListener = SharedPreferenceUpdater()
+        }
+
+        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_top_sites_pager).apply {
+            isChecked = context.settings().topSitesPager
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
@@ -261,12 +220,6 @@ class SecretSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFra
 
         requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_mozilla_ads_client).apply {
             isChecked = context.settings().enableMozillaAdsClient
-            onPreferenceChangeListener = SharedPreferenceUpdater()
-        }
-
-        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_privacy_report).apply {
-            isVisible = Config.channel.isNightlyOrDebug
-            isChecked = context.settings().showPrivacyReportSectionToggle
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
@@ -415,6 +368,12 @@ class SecretSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFra
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
+        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_import_passwords).apply {
+            isVisible = Config.channel.isDebug
+            isChecked = context.settings().importPasswordsFeatureFlagEnabled
+            onPreferenceChangeListener = SharedPreferenceUpdater()
+        }
+
         requirePreference<SwitchPreferenceCompat>(R.string.pref_key_persistent_debug_menu).apply {
             isVisible = true
             isChecked = context.settings().isDebugMenuPersistentlyRevealed
@@ -468,12 +427,6 @@ class SecretSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFra
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
-        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_tab_search).apply {
-            isVisible = true
-            isChecked = context.settings().tabSearchEnabled
-            onPreferenceChangeListener = SharedPreferenceUpdater()
-        }
-
         requirePreference<SwitchPreferenceCompat>(R.string.pref_key_tab_groups).apply {
             isVisible = Config.channel.isNightlyOrDebug
             isChecked = context.settings().tabGroupsEnabled
@@ -481,7 +434,7 @@ class SecretSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFra
         }
 
         requirePreference<SwitchPreferenceCompat>(R.string.pref_key_tab_groups_drag_and_drop).apply {
-            isVisible = Config.channel.isDebug
+            isVisible = Config.channel.isNightlyOrDebug
             isChecked = context.settings().tabGroupsDragAndDropEnabled
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
@@ -514,9 +467,9 @@ class SecretSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFra
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
-        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_tracking_protection_database_status).apply {
+        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_tracking_protection_dashboard_status).apply {
             isVisible = Config.channel.isDebug
-            isChecked = context.settings().shouldUseTrackingProtectionDatabase
+            isChecked = context.settings().shouldShowTrackingProtectionDashboard
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
     }
@@ -548,9 +501,11 @@ class SecretSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFra
             resources.getString(R.string.pref_key_remote_settings_server) -> {
                 SecretSettingsFragmentDirections.actionSecretSettingsFragmentToRemoteSettingsServerFragment()
             }
+
             resources.getString(R.string.pref_key_search_optimization) -> {
                 SecretSettingsFragmentDirections.actionSecretSettingsFragmentToSearchOptimizationFragment()
             }
+
             else -> return super.onPreferenceTreeClick(preference)
         }
         navigateFromSecretSettings(directions)

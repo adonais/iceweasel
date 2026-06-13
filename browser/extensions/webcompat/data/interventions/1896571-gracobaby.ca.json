@@ -6,15 +6,16 @@
       "matches": ["*://www.gracobaby.ca/*"]
     }
   },
+  "css": {
+    "unlock-scrolling": "@media (max-width: 767.98px) { html { overflow: auto; } }"
+  },
   "interventions": [
     {
       "platforms": ["all"],
       "pref_check": {
         "layout.css.webkit-fill-available.enabled": false
       },
-      "content_scripts": {
-        "css": ["bug1896571-gracobaby.ca-unlock-scrolling.css"]
-      }
+      "css": ["unlock-scrolling"]
     }
   ]
 }

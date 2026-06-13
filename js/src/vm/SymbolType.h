@@ -29,6 +29,9 @@ class Symbol
   friend class js::gc::CellAllocator;
 
  public:
+  Symbol(const Symbol&) = delete;
+  void operator=(const Symbol&) = delete;
+
   // User description of symbol, stored in the cell header.
   JSAtom* description() const { return headerPtr(); }
 
@@ -41,9 +44,6 @@ class Symbol
 
   Symbol(SymbolCode code, js::HashNumber hash, Handle<JSAtom*> desc)
       : CellWithTenuredGCPointer(desc), code_(code), hash_(hash) {}
-
-  Symbol(const Symbol&) = delete;
-  void operator=(const Symbol&) = delete;
 
   static Symbol* newInternal(JSContext* cx, SymbolCode code,
                              js::HashNumber hash, Handle<JSAtom*> description);

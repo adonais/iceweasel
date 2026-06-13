@@ -51,7 +51,7 @@ class BaseInBrowserHost {
     this.hostTab = hostTab;
     this.type = type;
 
-    this._gBrowser = this.hostTab.ownerGlobal.gBrowser;
+    this._gBrowser = this.hostTab.documentGlobal.gBrowser;
     this._browserContainer = this._gBrowser.getBrowserContainer(
       this.hostTab.linkedBrowser
     );
@@ -138,7 +138,7 @@ class BottomHost extends BaseInBrowserHost {
    * Create a box at the bottom of the host tab.
    */
   async create() {
-    await gDevToolsBrowser.loadBrowserStyleSheet(this.hostTab.ownerGlobal);
+    await gDevToolsBrowser.loadBrowserStyleSheet(this.hostTab.documentGlobal);
 
     const { ownerDocument } = this.hostTab;
     this.#splitter = ownerDocument.createXULElement("splitter");
@@ -204,7 +204,7 @@ class SidebarHost extends BaseInBrowserHost {
    * Create a box in the sidebar of the host tab.
    */
   async create() {
-    await gDevToolsBrowser.loadBrowserStyleSheet(this.hostTab.ownerGlobal);
+    await gDevToolsBrowser.loadBrowserStyleSheet(this.hostTab.documentGlobal);
 
     this.#browserPanel = this._gBrowser.getPanel(this.hostTab.linkedBrowser);
     const { ownerDocument } = this.hostTab;
@@ -221,7 +221,7 @@ class SidebarHost extends BaseInBrowserHost {
       ) + "px";
 
     // We should consider the direction when changing the dock position.
-    const topWindow = this.hostTab.ownerGlobal;
+    const topWindow = this.hostTab.documentGlobal;
     const topDoc = topWindow.document.documentElement;
     const isLTR = topWindow.getComputedStyle(topDoc).direction === "ltr";
 
@@ -313,7 +313,7 @@ class WindowHost extends EventEmitter {
       // set the private flag on the DevTools host window. Otherwise switching
       // hosts between docked and window modes can fail due to incompatible
       // docshell origin attributes. See 1581093.
-      const owner = this.hostTab?.ownerGlobal;
+      const owner = this.hostTab?.documentGlobal;
       if (owner && lazy.PrivateBrowsingUtils.isWindowPrivate(owner)) {
         flags += ",private";
       }
@@ -322,7 +322,7 @@ class WindowHost extends EventEmitter {
       // flag. Otherwise switching to window host from a non-fission window in
       // a fission Firefox (!) will attempt to swapFrameLoaders between fission
       // and non-fission frames. See Bug 1650963.
-      if (this.hostTab && !this.hostTab.ownerGlobal.gFissionBrowser) {
+      if (this.hostTab && !this.hostTab.documentGlobal.gFissionBrowser) {
         flags += ",non-fission";
       }
 
@@ -474,7 +474,7 @@ class PageHost {
   raise() {
     // See @constructor, for the page host, the frame is also the browser
     // element.
-    focusTab(this.frame.ownerGlobal.gBrowser.getTabForBrowser(this.frame));
+    focusTab(this.frame.documentGlobal.gBrowser.getTabForBrowser(this.frame));
   }
 
   // Do nothing.
@@ -490,7 +490,7 @@ class PageHost {
  *  Switch to the given tab in a browser and focus the browser window
  */
 function focusTab(tab) {
-  const browserWindow = tab.ownerGlobal;
+  const browserWindow = tab.documentGlobal;
   browserWindow.focus();
   browserWindow.gBrowser.selectedTab = tab;
 }

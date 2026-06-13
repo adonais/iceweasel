@@ -9,7 +9,6 @@ function checkForPrompt(prefVal) {
       set: [
         ["privacy.history.custom", true],
         ["browser.privatebrowsing.autostart", !prefVal],
-        ["browser.settings-redesign.enabled", true],
       ],
     });
 
@@ -48,7 +47,7 @@ function checkForPrompt(prefVal) {
     await EventUtils.synthesizeMouseAtCenter(
       checkbox,
       {},
-      checkbox.ownerGlobal
+      checkbox.documentGlobal
     );
 
     // Now the prompt should have shown.

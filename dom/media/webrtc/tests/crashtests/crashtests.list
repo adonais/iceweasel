@@ -6,7 +6,7 @@ load 1789908.html
 load 1799168.html
 load 1816708.html
 load 1821477.html
-skip-if(cocoaWidget&&/^15\.30$/.test(os_version)) load 1903905.html
+load 1903905.html
 load 1975995.html
 pref(media.navigator.streams.fake,false) pref(media.getusermedia.camera.fake.force,true) load 1986442.html
 pref(media.navigator.streams.fake,true) pref(media.getusermedia.camera.fake.force,false) load 1986452.html

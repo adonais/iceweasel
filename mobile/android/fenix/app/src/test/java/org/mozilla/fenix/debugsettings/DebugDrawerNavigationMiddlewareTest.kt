@@ -115,6 +115,16 @@ class DebugDrawerNavigationMiddlewareTest {
         }
 
     @Test
+    fun `WHEN the tab process tools screen is the next destination THEN the tab process tools screen is navigated to`() =
+        runTest(testDispatcher) {
+            store.dispatch(DebugDrawerAction.NavigateTo.TabProcessTools)
+
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            verify { navController.navigate(DebugDrawerRoute.TabProcessTools.route) }
+        }
+
+    @Test
     fun `WHEN the back button is pressed THEN the drawer should go back one screen`() =
         runTest(testDispatcher) {
             store.dispatch(DebugDrawerAction.OnBackPressed)

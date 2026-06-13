@@ -19,7 +19,7 @@ namespace mozilla::net {
 
 #if defined(HAVE_RES_NINIT)
 MOZ_THREAD_LOCAL(struct __res_state*) sThreadRes;
-mozilla::StaticMutex sMutex MOZ_UNANNOTATED;
+mozilla::StaticMutex sMutex MOZ_ANNOTATED;
 #endif
 
 #define LOG(msg, ...) \

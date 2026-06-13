@@ -39,15 +39,17 @@ class ConnectionAttempt : public nsSupportsWeakReference {
                              bool speculative, bool urgentStart);
 
   virtual nsresult Init(ConnectionEntry* ent) = 0;
-  // Cancel this connection attempt and release resources. When
-  // aReenqueueTransaction is true, any claimed transaction that has not yet
-  // been dispatched onto a connection is put back into the pending queue
-  // instead of being closed (used during H2/H3 coalescing).
-  virtual void Abandon(bool aReenqueueTransaction = false) = 0;
+  // Cancel this connection attempt and release resources.
+  virtual void Abandon() = 0;
   virtual double Duration(TimeStamp epoch) = 0;
   bool AcceptsTransaction(nsHttpTransaction* trans) const;
   virtual bool Claim(nsHttpTransaction* newTransaction = nullptr) = 0;
-  void Unclaim();
+  // HE attempts are 1:1 owned by their creator transaction, and re-flipping
+  // mFreeToUse to true on an HE that already has a real mTransaction lets
+  // a *different* transaction Claim it without `Claim()` actually rebinding
+  // the ownership — the new claimer ends up "remembered" by an HE that
+  // doesn't dispatch it. (See HappyEyeballsConnectionAttempt::Unclaim.)
+  virtual void Unclaim();
   virtual void OnTimeout() = 0;
   virtual void PrintDiagnostics(nsCString& log) = 0;
   virtual DnsAndConnectSocket* ToDnsAndConnectSocket() { return nullptr; }

@@ -61,6 +61,7 @@ import mozilla.components.feature.prompts.dialog.ConfirmDialogFragment
 import mozilla.components.feature.prompts.dialog.MultiButtonDialogFragment
 import mozilla.components.feature.prompts.dialog.PromptDialogFragment
 import mozilla.components.feature.prompts.dialog.SaveLoginDialogFragment
+import mozilla.components.feature.prompts.dialog.WebAuthnRelatedOriginDialogFragment
 import mozilla.components.feature.prompts.emailmask.EmailMaskDelegate
 import mozilla.components.feature.prompts.facts.CreditCardAutofillDialogFacts
 import mozilla.components.feature.prompts.file.FilePicker.Companion.FILE_PICKER_ACTIVITY_REQUEST_CODE
@@ -81,7 +82,6 @@ import mozilla.components.support.test.robolectric.testContext
 import mozilla.components.support.test.whenever
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -96,6 +96,8 @@ import org.robolectric.Robolectric
 import java.lang.ref.WeakReference
 import java.security.InvalidParameterException
 import java.util.Date
+import kotlin.test.assertIs
+import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class PromptFeatureTest {
@@ -2948,8 +2950,8 @@ class PromptFeatureTest {
         )
 
         // Only interested in the icon, but it doesn't hurt to be sure we show a properly configured dialog.
-        assertTrue(feature.activePrompt!!.get() is SaveLoginDialogFragment)
-        val dialogFragment = feature.activePrompt!!.get() as SaveLoginDialogFragment
+        val dialogFragment = feature.activePrompt!!.get()
+        assertIs<SaveLoginDialogFragment>(dialogFragment)
         assertEquals(loginUsername, dialogFragment.username)
         assertEquals(loginPassword, dialogFragment.password)
         assertEquals(websiteIcon, dialogFragment.icon)
@@ -3040,7 +3042,7 @@ class PromptFeatureTest {
 
         val prompt = feature.activePrompt?.get()
         assertNotNull(prompt)
-        assertFalse(prompt!!.shouldDismissOnLoad)
+        assertFalse(prompt.shouldDismissOnLoad)
     }
 
     @Test
@@ -3266,9 +3268,8 @@ class PromptFeatureTest {
             session = session,
         )
 
-        assertTrue(feature.activePrompt!!.get() is CreditCardSaveDialogFragment)
-
-        val dialogFragment = feature.activePrompt!!.get() as CreditCardSaveDialogFragment
+        val dialogFragment = feature.activePrompt!!.get()
+        assertIs<CreditCardSaveDialogFragment>(dialogFragment)
 
         assertEquals(sessionId, dialogFragment.sessionId)
         assertEquals(creditCardEntry, dialogFragment.creditCard)
@@ -3597,6 +3598,126 @@ class PromptFeatureTest {
             testContext.getString(R.string.mozac_feature_prompt_folder_upload_confirm_negative_button_text),
             dialog.negativeButtonText,
         )
+    }
+
+    @Test
+    fun `A WebAuthnRelatedOriginPrompt for create will be shown as a WebAuthnRelatedOriginDialogFragment`() = runTest(testDispatcher) {
+        val feature = PromptFeature(
+            activity = Robolectric.buildActivity(Activity::class.java).setup().get(),
+            store = store,
+            fragmentManager = fragmentManager,
+            tabsUseCases = mock(),
+            fileUploadsDirCleaner = mock(),
+            isEmailMaskFeatureEnabled = { false },
+            isSuggestEmailMaskEnabled = { false },
+            onNeedToRequestPermissions = { },
+        )
+        val promptRequest = PromptRequest.WebAuthnRelatedOriginPrompt(
+            origin = "example.com",
+            rpId = "rp.example.com",
+            isCreate = true,
+            onConfirm = { },
+            onDismiss = { },
+        )
+
+        feature.handleDialogsRequest(promptRequest, mock())
+
+        val dialog = feature.activePrompt!!.get() as WebAuthnRelatedOriginDialogFragment
+        assertEquals(
+            testContext.getString(R.string.webauthn_related_origin_create_message, "example.com", "rp.example.com"),
+            dialog.message,
+        )
+    }
+
+    @Test
+    fun `A WebAuthnRelatedOriginPrompt for use will be shown as a WebAuthnRelatedOriginDialogFragment`() = runTest(testDispatcher) {
+        val feature = PromptFeature(
+            activity = Robolectric.buildActivity(Activity::class.java).setup().get(),
+            store = store,
+            fragmentManager = fragmentManager,
+            tabsUseCases = mock(),
+            fileUploadsDirCleaner = mock(),
+            isEmailMaskFeatureEnabled = { false },
+            isSuggestEmailMaskEnabled = { false },
+            onNeedToRequestPermissions = { },
+        )
+        val promptRequest = PromptRequest.WebAuthnRelatedOriginPrompt(
+            origin = "example.com",
+            rpId = "rp.example.com",
+            isCreate = false,
+            onConfirm = { },
+            onDismiss = { },
+        )
+
+        feature.handleDialogsRequest(promptRequest, mock())
+
+        val dialog = feature.activePrompt!!.get() as WebAuthnRelatedOriginDialogFragment
+        assertEquals(
+            testContext.getString(R.string.webauthn_related_origin_use_message, "example.com", "rp.example.com"),
+            dialog.message,
+        )
+    }
+
+    @Test
+    fun `Calling onConfirm on a WebAuthnRelatedOriginPrompt request will consume promptRequest`() = runTest(testDispatcher) {
+        val feature = PromptFeature(
+            activity = mock(),
+            store = store,
+            fragmentManager = fragmentManager,
+            tabsUseCases = mock(),
+            fileUploadsDirCleaner = mock(),
+            isEmailMaskFeatureEnabled = { false },
+            isSuggestEmailMaskEnabled = { false },
+            onNeedToRequestPermissions = { },
+        )
+        var onConfirmWasCalled = false
+        val promptRequest = PromptRequest.WebAuthnRelatedOriginPrompt(
+            origin = "example.com",
+            rpId = "rp.example.com",
+            isCreate = true,
+            onConfirm = { onConfirmWasCalled = true },
+            onDismiss = { },
+        )
+
+        feature.start()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        store.dispatch(ContentAction.UpdatePromptRequestAction(tabId, promptRequest))
+
+        feature.onConfirm(tabId, promptRequest.uid, false)
+        assertTrue(tab()!!.content.promptRequests.isEmpty())
+        assertTrue(onConfirmWasCalled)
+    }
+
+    @Test
+    fun `Calling onCancel on a WebAuthnRelatedOriginPrompt request will consume promptRequest`() = runTest(testDispatcher) {
+        val feature = PromptFeature(
+            activity = mock(),
+            store = store,
+            fragmentManager = fragmentManager,
+            tabsUseCases = mock(),
+            fileUploadsDirCleaner = mock(),
+            isEmailMaskFeatureEnabled = { false },
+            isSuggestEmailMaskEnabled = { false },
+            onNeedToRequestPermissions = { },
+        )
+        var onDismissWasCalled = false
+        val promptRequest = PromptRequest.WebAuthnRelatedOriginPrompt(
+            origin = "example.com",
+            rpId = "rp.example.com",
+            isCreate = true,
+            onConfirm = { },
+            onDismiss = { onDismissWasCalled = true },
+        )
+
+        feature.start()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        store.dispatch(ContentAction.UpdatePromptRequestAction(tabId, promptRequest))
+
+        feature.onCancel(tabId, promptRequest.uid)
+        assertTrue(tab()!!.content.promptRequests.isEmpty())
+        assertTrue(onDismissWasCalled)
     }
 
     @Test

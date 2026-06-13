@@ -178,9 +178,7 @@ for a description of this object.
 ~~~~~~~~~~~~~~~~~~~~
 
 If you are creating the provider in the internal address bar implementation in
-mozilla-central, then add styling to `dynamic-results.css`_.
-
-.. _dynamic-results.css: https://searchfox.org/mozilla-central/source/browser/themes/shared/urlbar/dynamic-results.css
+mozilla-central, then add styling to :searchfox:`dynamic-results.css <browser/themes/shared/urlbar/dynamic-results.css>`.
 
 The rest of this section will discuss the CSS rules you need to use to style
 your results.
@@ -630,7 +628,5 @@ Appendix A: Examples
 This section lists some example and real-world consumers of dynamic result
 types.
 
-`Tab-to-Search Provider`__
+:searchfox:`Tab-to-Search Provider <browser/components/urlbar/UrlbarProviderTabToSearch.sys.mjs>`
   This is a built-in provider in mozilla-central that uses dynamic result types.
-
-__ https://searchfox.org/mozilla-central/source/browser/components/urlbar/UrlbarProviderTabToSearch.sys.mjs

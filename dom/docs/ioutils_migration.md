@@ -17,7 +17,7 @@ I/O tasks via a collection of static methods inspired from `OS.File`.
 It is implemented in C++, and exposed to JavaScript via WebIDL bindings.
 
 The most up-to-date API can always be found in
-[IOUtils.webidl](https://searchfox.org/mozilla-central/source/dom/chrome-webidl/IOUtils.webidl).
+[IOUtils.webidl](https://searchfox.org/firefox-main/source/dom/chrome-webidl/IOUtils.webidl).
 
 ## Differences from `OS.File`
 

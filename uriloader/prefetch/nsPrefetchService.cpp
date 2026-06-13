@@ -204,16 +204,15 @@ nsPrefetchNode::OnStartRequest(nsIRequest* aRequest) {
     return NS_BINDING_ABORTED;
   }
 
-  //
-  // no need to prefetch a document that must be requested fresh each
-  // and every time.
-  //
   uint32_t expTime;
   if (NS_SUCCEEDED(cacheInfoChannel->GetCacheTokenExpirationTime(&expTime))) {
-    if (mozilla::net::NowInSeconds() >= expTime) {
-      LOG(
-          ("document cannot be reused from cache; "
-           "canceling prefetch\n"));
+    // expTime == 0 means the response has a MustValidate directive (no-cache,
+    // no-store, Expires in past). These cannot be reused from cache so we
+    // cancel to avoid wasting bandwidth. Responses with no explicit cache
+    // headers get expTime = now (non-zero) and are handled by ForceValidFor
+    // in nsHttpChannel (bug 1527334).
+    if (expTime == 0) {
+      LOG(("document cannot be reused from cache; canceling prefetch\n"));
       return NS_BINDING_ABORTED;
     }
   }

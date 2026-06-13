@@ -192,8 +192,8 @@ StorageAccessAPIHelper::AllowAccessForHelper(
         ("Disabled by network.cookie.cookieBehavior pref (%d), bailing out "
          "early",
          *aBehavior));
-    return StorageAccessPermissionGrantPromise::CreateAndResolve(true,
-                                                                 __func__);
+    return StorageAccessPermissionGrantPromise::CreateAndResolve(
+        eAllowAutoGrant, __func__);
   }
 
   MOZ_ASSERT(
@@ -203,8 +203,8 @@ StorageAccessAPIHelper::AllowAccessForHelper(
 
   // No need to continue when we are already in the allow list.
   if (parentWindowContext->GetIsOnContentBlockingAllowList()) {
-    return StorageAccessPermissionGrantPromise::CreateAndResolve(true,
-                                                                 __func__);
+    return StorageAccessPermissionGrantPromise::CreateAndResolve(
+        eAllowAutoGrant, __func__);
   }
 
   // Make sure storage access isn't disabled
@@ -522,10 +522,10 @@ StorageAccessAPIHelper::CompleteAllowAccessForOnParentProcess(
   }
 
   RefPtr<dom::BrowsingContext> parentBC = aParentContext;
-  auto storePermission =
-      [parentBC, aTopLevelWindowId, trackingOrigin, trackingPrincipal,
-       aCookieBehavior,
-       aReason](int aAllowMode) -> RefPtr<StorageAccessPermissionGrantPromise> {
+  auto storePermission = [parentBC, aTopLevelWindowId, trackingOrigin,
+                          trackingPrincipal, aCookieBehavior,
+                          aReason](StorageAccessPromptChoices aAllowMode)
+      -> RefPtr<StorageAccessPermissionGrantPromise> {
     if (parentBC->IsDiscarded()) {
       return StorageAccessPermissionGrantPromise::CreateAndReject(false,
                                                                   __func__);
@@ -618,7 +618,7 @@ StorageAccessAPIHelper::CompleteAllowAccessForOnParentProcess(
                                                                       __func__);
         });
   }
-  return storePermission(false);
+  return storePermission(eAllow);
 }
 
 // A helper class to handle the callback of the URL classifier feature check.
@@ -631,7 +631,8 @@ class CheckTrackerCallback final : public nsIUrlClassifierFeatureCallback {
                          aResults) override {
     // If the result shows no tracker, we can resolve the promise.
     if (aResults.IsEmpty()) {
-      mPromiseHolder.ResolveIfExists(true, __func__);
+      mPromiseHolder.ResolveIfExists(StorageAccessAPIHelper::eAllowAutoGrant,
+                                     __func__);
       return NS_OK;
     }
 
@@ -749,10 +750,10 @@ StorageAccessAPIHelper::CompleteAllowAccessForOnChildProcess(
   }
 
   RefPtr<dom::BrowsingContext> parentBC = aParentContext;
-  auto storePermission =
-      [parentBC, aTopLevelWindowId, trackingOrigin, trackingPrincipal,
-       aCookieBehavior,
-       aReason](int aAllowMode) -> RefPtr<StorageAccessPermissionGrantPromise> {
+  auto storePermission = [parentBC, aTopLevelWindowId, trackingOrigin,
+                          trackingPrincipal, aCookieBehavior,
+                          aReason](StorageAccessPromptChoices aAllowMode)
+      -> RefPtr<StorageAccessPermissionGrantPromise> {
     if (parentBC->IsDiscarded()) {
       return StorageAccessPermissionGrantPromise::CreateAndReject(false,
                                                                   __func__);
@@ -796,29 +797,27 @@ StorageAccessAPIHelper::CompleteAllowAccessForOnChildProcess(
         ->SendStorageAccessPermissionGrantedForOrigin(
             aTopLevelWindowId, parentBC, trackingPrincipal, trackingOrigin,
             aAllowMode, reportReason, frameOnly)
-        ->Then(
-            GetCurrentSerialEventTarget(), __func__,
-            [aReason, trackingPrincipal,
-             innerWindowId](const ContentChild::
-                                StorageAccessPermissionGrantedForOriginPromise::
-                                    ResolveOrRejectValue& aValue) {
-              if (aValue.IsResolve()) {
-                if (aValue.ResolveValue() &&
-                    (aReason == ContentBlockingNotifier::eStorageAccessAPI)) {
-                  ContentBlockingUserInteraction::Observe(trackingPrincipal);
-                  RefPtr<dom::WindowContext> windowContext =
-                      dom::WindowContext::GetById(innerWindowId);
-                  if (windowContext) {
-                    (void)BounceTrackingProtection::RecordUserActivation(
-                        windowContext);
-                  }
-                }
-                return StorageAccessPermissionGrantPromise::CreateAndResolve(
-                    aValue.ResolveValue(), __func__);
-              }
-              return StorageAccessPermissionGrantPromise::CreateAndReject(
-                  false, __func__);
-            });
+        ->Then(GetCurrentSerialEventTarget(), __func__,
+               [aReason, trackingPrincipal, innerWindowId](
+                   const ContentChild::
+                       StorageAccessPermissionGrantedForOriginPromise::
+                           ResolveOrRejectValue& aValue) {
+                 if (aValue.IsResolve() && aValue.ResolveValue()) {
+                   if (aReason == ContentBlockingNotifier::eStorageAccessAPI) {
+                     ContentBlockingUserInteraction::Observe(trackingPrincipal);
+                     RefPtr<dom::WindowContext> windowContext =
+                         dom::WindowContext::GetById(innerWindowId);
+                     if (windowContext) {
+                       (void)BounceTrackingProtection::RecordUserActivation(
+                           windowContext);
+                     }
+                   }
+                   return StorageAccessPermissionGrantPromise::CreateAndResolve(
+                       eAllow, __func__);
+                 }
+                 return StorageAccessPermissionGrantPromise::CreateAndReject(
+                     false, __func__);
+               });
   };
 
   if (aPerformFinalChecks) {
@@ -834,7 +833,7 @@ StorageAccessAPIHelper::CompleteAllowAccessForOnChildProcess(
                                                                       __func__);
         });
   }
-  return storePermission(false);
+  return storePermission(eAllow);
 }
 
 /* static */ void StorageAccessAPIHelper::OnAllowAccessFor(
@@ -939,8 +938,8 @@ StorageAccessAPIHelper::CompleteAllowAccessForOnChildProcess(
 RefPtr<mozilla::StorageAccessAPIHelper::ParentAccessGrantPromise>
 StorageAccessAPIHelper::SaveAccessForOriginOnParentProcess(
     uint64_t aTopLevelWindowId, BrowsingContext* aParentContext,
-    nsIPrincipal* aTrackingPrincipal, int aAllowMode, bool aFrameOnly,
-    uint64_t aExpirationTime) {
+    nsIPrincipal* aTrackingPrincipal, StorageAccessPromptChoices aAllowMode,
+    bool aFrameOnly, uint64_t aExpirationTime) {
   MOZ_ASSERT(aTopLevelWindowId != 0);
   MOZ_ASSERT(aTrackingPrincipal);
 
@@ -982,7 +981,8 @@ StorageAccessAPIHelper::SaveAccessForOriginOnParentProcess(
 RefPtr<mozilla::StorageAccessAPIHelper::ParentAccessGrantPromise>
 StorageAccessAPIHelper::SaveAccessForOriginOnParentProcess(
     nsIPrincipal* aParentPrincipal, nsIPrincipal* aTrackingPrincipal,
-    int aAllowMode, bool aFrameOnly, uint64_t aExpirationTime) {
+    StorageAccessPromptChoices aAllowMode, bool aFrameOnly,
+    uint64_t aExpirationTime) {
   MOZ_ASSERT(XRE_IsParentProcess());
   MOZ_ASSERT(aAllowMode == eAllow || aAllowMode == eAllowAutoGrant);
 

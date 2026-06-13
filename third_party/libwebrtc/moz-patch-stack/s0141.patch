@@ -1,23 +1,814 @@
-From: Michael Froman <mfroman@mozilla.com>
-Date: Mon, 6 Apr 2026 18:41:00 -0500
-Subject: Bug 2029247 - (fix-4520c7897c) fix new usage of GetRealTimeClock in
- bitrate_adjuster.h
+From: Jan Grulich <jgrulich@redhat.com>
+Date: Mon, 27 Apr 2026 06:15:00 +0000
+Subject: Bug 2029785 - WebRTC backport: Fix use-after-free in ScreenCast and
+ Camera portal D-Bus callbacks r=pehrsons
 
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/a88b1959591bc4ddbf6deb88ff76dcc24fd8ae5d
+GDBus async callbacks fire on the GLib main thread with a raw pointer
+to the portal object. When the portal is destroyed on another thread,
+the callback accesses freed memory.
+
+Introduce PortalGuard, a ref-counted mutex-protected wrapper that
+outlives the portal. Callbacks lock the guard and check the portal
+pointer before use. Stop() locks the same mutex to null the pointer,
+blocking until any in-flight callback finishes. Utility functions
+now take scoped_refptr<PortalGuard> and manage refs internally.
+
+This is a simple backport of an WebRTC upstream change.
+
+Upstream commit: 9dde36ebf937da0ab92837932b253cc3d42c8dc2
+
+Differential Revision: https://phabricator.services.mozilla.com/D296096
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/f935320e250b94abf511fb867b55feb6564d61e5
 ---
- common_video/include/bitrate_adjuster.h | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ .../linux/wayland/base_capturer_pipewire.cc   |  4 +
+ .../screen_capture_portal_interface.cc        |  7 +-
+ .../wayland/screen_capture_portal_interface.h |  5 +-
+ .../linux/wayland/screencast_portal.cc        | 95 +++++++++++++------
+ .../linux/wayland/screencast_portal.h         |  6 +-
+ modules/portal/BUILD.gn                       |  4 +
+ modules/portal/portal_guard.h                 | 90 ++++++++++++++++++
+ modules/portal/xdg_desktop_portal_utils.cc    | 25 ++---
+ modules/portal/xdg_desktop_portal_utils.h     | 17 +++-
+ modules/video_capture/linux/camera_portal.cc  | 56 +++++++----
+ 10 files changed, 239 insertions(+), 70 deletions(-)
+ create mode 100644 modules/portal/portal_guard.h
 
-diff --git a/common_video/include/bitrate_adjuster.h b/common_video/include/bitrate_adjuster.h
-index 6cd92b7deb..d414fb7e25 100644
---- a/common_video/include/bitrate_adjuster.h
-+++ b/common_video/include/bitrate_adjuster.h
-@@ -40,7 +40,7 @@ class RTC_EXPORT BitrateAdjuster {
-   ABSL_DEPRECATE_AND_INLINE()
-   BitrateAdjuster(float min_adjusted_bitrate_pct,
-                   float max_adjusted_bitrate_pct)
--      : BitrateAdjuster(Clock::GetRealTimeClock(),
-+      : BitrateAdjuster(Clock::GetRealTimeClockRaw(),
-                         min_adjusted_bitrate_pct,
-                         max_adjusted_bitrate_pct) {}
-   virtual ~BitrateAdjuster() = default;
+diff --git a/modules/desktop_capture/linux/wayland/base_capturer_pipewire.cc b/modules/desktop_capture/linux/wayland/base_capturer_pipewire.cc
+index 6cb394f943..45537dce07 100644
+--- a/modules/desktop_capture/linux/wayland/base_capturer_pipewire.cc
++++ b/modules/desktop_capture/linux/wayland/base_capturer_pipewire.cc
+@@ -75,6 +75,10 @@ BaseCapturerPipeWire::BaseCapturerPipeWire(
+ }
+ 
+ BaseCapturerPipeWire::~BaseCapturerPipeWire() {
++  // Destroy the portal first. Its destructor may block until in-flight
++  // GDBus callbacks finish, and those callbacks access other members
++  // (options_, callback_) through the notifier_ pointer.
++  portal_.reset();
+   options_.screencast_stream()->StopScreenCastStream();
+ }
+ 
+diff --git a/modules/desktop_capture/linux/wayland/screen_capture_portal_interface.cc b/modules/desktop_capture/linux/wayland/screen_capture_portal_interface.cc
+index 3ea47e4d3f..3a71218164 100644
+--- a/modules/desktop_capture/linux/wayland/screen_capture_portal_interface.cc
++++ b/modules/desktop_capture/linux/wayland/screen_capture_portal_interface.cc
+@@ -15,6 +15,7 @@
+ #include <cstdint>
+ #include <string>
+ 
++#include "modules/portal/portal_guard.h"
+ #include "modules/portal/portal_request_response.h"
+ #include "modules/portal/scoped_glib.h"
+ #include "modules/portal/xdg_desktop_portal_utils.h"
+@@ -73,7 +74,8 @@ void ScreenCapturePortalInterface::RegisterSessionClosedSignalHandler(
+     GVariant* parameters,
+     GDBusConnection* connection,
+     std::string& session_handle,
+-    guint& session_closed_signal_id) {
++    guint& session_closed_signal_id,
++    scoped_refptr<PortalGuard> guard) {
+   uint32_t portal_response = 2;
+   Scoped<GVariant> response_data;
+   g_variant_get(parameters, /*format_string=*/"(u@a{sv})", &portal_response,
+@@ -101,7 +103,8 @@ void ScreenCapturePortalInterface::RegisterSessionClosedSignalHandler(
+   session_closed_signal_id = g_dbus_connection_signal_subscribe(
+       connection, kDesktopBusName, kSessionInterfaceName, /*member=*/"Closed",
+       session_handle.c_str(), /*arg0=*/nullptr, G_DBUS_SIGNAL_FLAGS_NONE,
+-      session_close_signal_handler, this, /*user_data_free_func=*/nullptr);
++      session_close_signal_handler, guard->AddRefAndGet(),
++      portal_guard_release);
+ }
+ 
+ void ScreenCapturePortalInterface::OnStartRequestResult(GDBusProxy* proxy,
+diff --git a/modules/desktop_capture/linux/wayland/screen_capture_portal_interface.h b/modules/desktop_capture/linux/wayland/screen_capture_portal_interface.h
+index 06401f0de2..487a1e63e9 100644
+--- a/modules/desktop_capture/linux/wayland/screen_capture_portal_interface.h
++++ b/modules/desktop_capture/linux/wayland/screen_capture_portal_interface.h
+@@ -16,6 +16,8 @@
+ 
+ #include <string>
+ 
++#include "api/scoped_refptr.h"
++#include "modules/portal/portal_guard.h"
+ #include "modules/portal/portal_request_response.h"
+ #include "modules/portal/xdg_session_details.h"
+ #include "rtc_base/system/rtc_export.h"
+@@ -65,7 +67,8 @@ class RTC_EXPORT ScreenCapturePortalInterface {
+       GVariant* parameters,
+       GDBusConnection* connection,
+       std::string& session_handle,
+-      guint& session_closed_signal_id);
++      guint& session_closed_signal_id,
++      scoped_refptr<PortalGuard> guard);
+   // Handles the result of session start request.
+   void OnStartRequestResult(GDBusProxy* proxy, GAsyncResult* result);
+ };
+diff --git a/modules/desktop_capture/linux/wayland/screencast_portal.cc b/modules/desktop_capture/linux/wayland/screencast_portal.cc
+index affab4dc1f..e399d38b83 100644
+--- a/modules/desktop_capture/linux/wayland/screencast_portal.cc
++++ b/modules/desktop_capture/linux/wayland/screencast_portal.cc
+@@ -21,6 +21,7 @@
+ 
+ #include "modules/desktop_capture/desktop_capture_types.h"
+ #include "modules/portal/pipewire_utils.h"
++#include "modules/portal/portal_guard.h"
+ #include "modules/portal/portal_request_response.h"
+ #include "modules/portal/scoped_glib.h"
+ #include "modules/portal/xdg_desktop_portal_utils.h"
+@@ -63,7 +64,6 @@ ScreenCastPortal::ScreenCastPortal(CaptureType type,
+                        notifier,
+                        OnProxyRequested,
+                        OnSourcesRequestResponseSignal,
+-                       this,
+                        prefer_cursor_embedded) {}
+ 
+ ScreenCastPortal::ScreenCastPortal(
+@@ -71,7 +71,6 @@ ScreenCastPortal::ScreenCastPortal(
+     PortalNotifier* notifier,
+     ProxyRequestResponseHandler proxy_request_response_handler,
+     SourcesRequestResponseSignalHandler sources_request_response_signal_handler,
+-    gpointer user_data,
+     bool prefer_cursor_embedded)
+     : notifier_(notifier),
+       capture_source_type_(ToCaptureSourceType(type)),
+@@ -79,14 +78,26 @@ ScreenCastPortal::ScreenCastPortal(
+                                           : CursorMode::kMetadata),
+       proxy_request_response_handler_(proxy_request_response_handler),
+       sources_request_response_signal_handler_(
+-          sources_request_response_signal_handler),
+-      user_data_(user_data) {}
++          sources_request_response_signal_handler) {}
+ 
+ ScreenCastPortal::~ScreenCastPortal() {
+   Stop();
+ }
+ 
+ void ScreenCastPortal::Stop() {
++  // Cancel first so that any callback entering g_dbus_proxy_call_finish()
++  // after this point gets G_IO_ERROR_CANCELLED via GTask's check_cancellable.
++  if (cancellable_)
++    g_cancellable_cancel(cancellable_);
++
++  // Lock the guard to wait for any in-flight callback on the GLib main
++  // thread that already passed the _finish() check and is currently using
++  // the portal. Once we acquire the lock, that callback has finished.
++  if (guard_) {
++    MutexLock lock(&guard_->mutex);
++    guard_->portal = nullptr;
++  }
++
+   UnsubscribeSignalHandlers();
+   TearDownSession(std::move(session_handle_), proxy_, cancellable_,
+                   connection_);
+@@ -135,8 +146,12 @@ void ScreenCastPortal::SetSessionDetails(
+ 
+ void ScreenCastPortal::Start() {
+   cancellable_ = g_cancellable_new();
++
++  guard_ = scoped_refptr<PortalGuard>(new PortalGuard());
++  guard_->portal = this;
++
+   RequestSessionProxy(kScreenCastInterfaceName, proxy_request_response_handler_,
+-                      cancellable_, this);
++                      cancellable_, guard_);
+ }
+ 
+ xdg_portal::SessionDetails ScreenCastPortal::GetSessionDetails() {
+@@ -145,8 +160,8 @@ xdg_portal::SessionDetails ScreenCastPortal::GetSessionDetails() {
+ 
+ void ScreenCastPortal::OnPortalDone(RequestResponse result) {
+   notifier_->OnScreenCastRequestResult(result, pw_stream_node_id_, pw_fd_);
+-  if (result != RequestResponse::kSuccess) {
+-    Stop();
++  if (result != RequestResponse::kSuccess && cancellable_) {
++    g_cancellable_cancel(cancellable_);
+   }
+ }
+ 
+@@ -154,7 +169,9 @@ void ScreenCastPortal::OnPortalDone(RequestResponse result) {
+ void ScreenCastPortal::OnProxyRequested(GObject* gobject,
+                                         GAsyncResult* result,
+                                         gpointer user_data) {
+-  static_cast<ScreenCastPortal*>(user_data)->RequestSessionUsingProxy(result);
++  ScopedPortalLock lock(user_data);
++  if (auto* that = static_cast<ScreenCastPortal*>(lock.portal()))
++    that->RequestSessionUsingProxy(result);
+ }
+ 
+ void ScreenCastPortal::RequestSession(GDBusProxy* proxy) {
+@@ -162,15 +179,16 @@ void ScreenCastPortal::RequestSession(GDBusProxy* proxy) {
+   connection_ = g_dbus_proxy_get_connection(proxy_);
+   SetupSessionRequestHandlers(
+       "webrtc", OnSessionRequested, OnSessionRequestResponseSignal, connection_,
+-      proxy_, cancellable_, portal_handle_, session_request_signal_id_, this);
++      proxy_, cancellable_, portal_handle_, session_request_signal_id_, guard_);
+ }
+ 
+ // static
+ void ScreenCastPortal::OnSessionRequested(GDBusProxy* proxy,
+                                           GAsyncResult* result,
+                                           gpointer user_data) {
+-  static_cast<ScreenCastPortal*>(user_data)->OnSessionRequestResult(proxy,
+-                                                                    result);
++  ScopedPortalLock lock(user_data);
++  if (auto* that = static_cast<ScreenCastPortal*>(lock.portal()))
++    that->OnSessionRequestResult(proxy, result);
+ }
+ 
+ // static
+@@ -182,11 +200,14 @@ void ScreenCastPortal::OnSessionRequestResponseSignal(
+     const char* signal_name,
+     GVariant* parameters,
+     gpointer user_data) {
+-  ScreenCastPortal* that = static_cast<ScreenCastPortal*>(user_data);
+-  RTC_DCHECK(that);
++  ScopedPortalSignalLock lock(user_data);
++  auto* that = static_cast<ScreenCastPortal*>(lock.portal());
++  if (!that)
++    return;
++
+   that->RegisterSessionClosedSignalHandler(
+       OnSessionClosedSignal, parameters, that->connection_,
+-      that->session_handle_, that->session_closed_signal_id_);
++      that->session_handle_, that->session_closed_signal_id_, that->guard_);
+ 
+   // Do not continue if we don't get session_handle back. The call above will
+   // already notify the capturer there is a failure, but we would still continue
+@@ -204,8 +225,10 @@ void ScreenCastPortal::OnSessionClosedSignal(GDBusConnection* connection,
+                                              const char* signal_name,
+                                              GVariant* parameters,
+                                              gpointer user_data) {
+-  ScreenCastPortal* that = static_cast<ScreenCastPortal*>(user_data);
+-  RTC_DCHECK(that);
++  ScopedPortalSignalLock lock(user_data);
++  auto* that = static_cast<ScreenCastPortal*>(lock.portal());
++  if (!that)
++    return;
+ 
+   RTC_LOG(LS_INFO) << "Received closed signal from session.";
+ 
+@@ -266,23 +289,26 @@ void ScreenCastPortal::SourcesRequest() {
+ 
+   sources_handle_ = PrepareSignalHandle(variant_string.get(), connection_);
+   sources_request_signal_id_ = SetupRequestResponseSignal(
+-      sources_handle_.c_str(), sources_request_response_signal_handler_,
+-      user_data_, connection_);
++      sources_handle_.c_str(), sources_request_response_signal_handler_, guard_,
++      connection_);
+ 
+   RTC_LOG(LS_INFO) << "Requesting sources from the screen cast session.";
+   g_dbus_proxy_call(
+       proxy_, "SelectSources",
+       g_variant_new("(oa{sv})", session_handle_.c_str(), &builder),
+       G_DBUS_CALL_FLAGS_NONE, /*timeout=*/-1, cancellable_,
+-      reinterpret_cast<GAsyncReadyCallback>(OnSourcesRequested), this);
++      reinterpret_cast<GAsyncReadyCallback>(OnSourcesRequested),
++      guard_->AddRefAndGet());
+ }
+ 
+ // static
+ void ScreenCastPortal::OnSourcesRequested(GDBusProxy* proxy,
+                                           GAsyncResult* result,
+                                           gpointer user_data) {
+-  ScreenCastPortal* that = static_cast<ScreenCastPortal*>(user_data);
+-  RTC_DCHECK(that);
++  ScopedPortalLock lock(user_data);
++  auto* that = static_cast<ScreenCastPortal*>(lock.portal());
++  if (!that)
++    return;
+ 
+   Scoped<GError> error;
+   Scoped<GVariant> variant(
+@@ -319,8 +345,10 @@ void ScreenCastPortal::OnSourcesRequestResponseSignal(
+     const char* signal_name,
+     GVariant* parameters,
+     gpointer user_data) {
+-  ScreenCastPortal* that = static_cast<ScreenCastPortal*>(user_data);
+-  RTC_DCHECK(that);
++  ScopedPortalSignalLock lock(user_data);
++  auto* that = static_cast<ScreenCastPortal*>(lock.portal());
++  if (!that)
++    return;
+ 
+   RTC_LOG(LS_INFO) << "Received sources signal from session.";
+ 
+@@ -339,15 +367,16 @@ void ScreenCastPortal::OnSourcesRequestResponseSignal(
+ void ScreenCastPortal::StartRequest() {
+   StartSessionRequest("webrtc", session_handle_, OnStartRequestResponseSignal,
+                       OnStartRequested, proxy_, connection_, cancellable_,
+-                      start_request_signal_id_, start_handle_, this);
++                      start_request_signal_id_, start_handle_, guard_);
+ }
+ 
+ // static
+ void ScreenCastPortal::OnStartRequested(GDBusProxy* proxy,
+                                         GAsyncResult* result,
+                                         gpointer user_data) {
+-  static_cast<ScreenCastPortal*>(user_data)->OnStartRequestResult(proxy,
+-                                                                  result);
++  ScopedPortalLock lock(user_data);
++  if (auto* that = static_cast<ScreenCastPortal*>(lock.portal()))
++    that->OnStartRequestResult(proxy, result);
+ }
+ 
+ // static
+@@ -358,8 +387,10 @@ void ScreenCastPortal::OnStartRequestResponseSignal(GDBusConnection* connection,
+                                                     const char* signal_name,
+                                                     GVariant* parameters,
+                                                     gpointer user_data) {
+-  ScreenCastPortal* that = static_cast<ScreenCastPortal*>(user_data);
+-  RTC_DCHECK(that);
++  ScopedPortalSignalLock lock(user_data);
++  auto* that = static_cast<ScreenCastPortal*>(lock.portal());
++  if (!that)
++    return;
+ 
+   RTC_LOG(LS_INFO) << "Start signal received.";
+   uint32_t portal_response;
+@@ -435,15 +466,17 @@ void ScreenCastPortal::OpenPipeWireRemote() {
+       g_variant_new("(oa{sv})", session_handle_.c_str(), &builder),
+       G_DBUS_CALL_FLAGS_NONE, /*timeout=*/-1, /*fd_list=*/nullptr, cancellable_,
+       reinterpret_cast<GAsyncReadyCallback>(OnOpenPipeWireRemoteRequested),
+-      this);
++      guard_->AddRefAndGet());
+ }
+ 
+ // static
+ void ScreenCastPortal::OnOpenPipeWireRemoteRequested(GDBusProxy* proxy,
+                                                      GAsyncResult* result,
+                                                      gpointer user_data) {
+-  ScreenCastPortal* that = static_cast<ScreenCastPortal*>(user_data);
+-  RTC_DCHECK(that);
++  ScopedPortalLock lock(user_data);
++  auto* that = static_cast<ScreenCastPortal*>(lock.portal());
++  if (!that)
++    return;
+ 
+   Scoped<GError> error;
+   Scoped<GUnixFDList> outlist;
+diff --git a/modules/desktop_capture/linux/wayland/screencast_portal.h b/modules/desktop_capture/linux/wayland/screencast_portal.h
+index d0777567e0..27b01a42f6 100644
+--- a/modules/desktop_capture/linux/wayland/screencast_portal.h
++++ b/modules/desktop_capture/linux/wayland/screencast_portal.h
+@@ -18,9 +18,11 @@
+ #include <cstdint>
+ #include <string>
+ 
++#include "api/scoped_refptr.h"
+ #include "modules/desktop_capture/desktop_capture_types.h"
+ #include "modules/desktop_capture/linux/wayland/screen_capture_portal_interface.h"
+ #include "modules/portal/pipewire_utils.h"
++#include "modules/portal/portal_guard.h"
+ #include "modules/portal/portal_request_response.h"
+ #include "modules/portal/xdg_session_details.h"
+ #include "rtc_base/system/rtc_export.h"
+@@ -91,7 +93,6 @@ class RTC_EXPORT ScreenCastPortal
+                    ProxyRequestResponseHandler proxy_request_response_handler,
+                    SourcesRequestResponseSignalHandler
+                        sources_request_response_signal_handler,
+-                   gpointer user_data,
+                    // TODO(chromium:1291247): Remove the default option once
+                    // downstream has been adjusted.
+                    bool prefer_cursor_embedded = false);
+@@ -156,7 +157,6 @@ class RTC_EXPORT ScreenCastPortal
+ 
+   ProxyRequestResponseHandler proxy_request_response_handler_;
+   SourcesRequestResponseSignalHandler sources_request_response_signal_handler_;
+-  gpointer user_data_;
+ 
+   GDBusConnection* connection_ = nullptr;
+   GDBusProxy* proxy_ = nullptr;
+@@ -170,6 +170,8 @@ class RTC_EXPORT ScreenCastPortal
+   guint start_request_signal_id_ = 0;
+   guint session_closed_signal_id_ = 0;
+ 
++  scoped_refptr<PortalGuard> guard_;
++
+   void UnsubscribeSignalHandlers();
+   static void OnProxyRequested(GObject* object,
+                                GAsyncResult* result,
+diff --git a/modules/portal/BUILD.gn b/modules/portal/BUILD.gn
+index 70b4739ad0..7f91839dfd 100644
+--- a/modules/portal/BUILD.gn
++++ b/modules/portal/BUILD.gn
+@@ -101,6 +101,7 @@ if (!build_with_mozilla) {
+     sources = [
+       "pipewire_utils.cc",
+       "pipewire_utils.h",
++      "portal_guard.h",
+       "portal_request_response.h",
+       "scoped_glib.cc",
+       "scoped_glib.h",
+@@ -116,10 +117,13 @@ if (!build_with_mozilla) {
+     ]
+ 
+     deps = [
++      "../../api:refcountedbase",
++      "../../api:scoped_refptr",
+       "../../rtc_base:checks",
+       "../../rtc_base:logging",
+       "../../rtc_base:sanitizer",
+       "../../rtc_base:stringutils",
++      "../../rtc_base/synchronization:mutex",
+       "../../rtc_base/system:rtc_export",
+       "//third_party/abseil-cpp/absl/strings",
+     ]
+diff --git a/modules/portal/portal_guard.h b/modules/portal/portal_guard.h
+new file mode 100644
+index 0000000000..6c4d2b7630
+--- /dev/null
++++ b/modules/portal/portal_guard.h
+@@ -0,0 +1,90 @@
++/*
++ *  Copyright 2026 The WebRTC project authors. All Rights Reserved.
++ *
++ *  Use of this source code is governed by a BSD-style license
++ *  that can be found in the LICENSE file in the root of the source
++ *  tree. An additional intellectual property rights grant can be found
++ *  in the file PATENTS.  All contributing project authors may
++ *  be found in the AUTHORS file in the root of the source tree.
++ */
++
++#ifndef MODULES_PORTAL_PORTAL_GUARD_H_
++#define MODULES_PORTAL_PORTAL_GUARD_H_
++
++#include <glib.h>
++
++#include "api/ref_counted_base.h"
++#include "rtc_base/synchronization/mutex.h"
++
++namespace webrtc {
++
++// Ref-counted guard for safe cross-thread portal access from GDBus callbacks.
++// Callbacks lock the mutex and check the portal pointer before use.
++// Stop() nulls the pointer under the same mutex, waiting for any in-flight
++// callback to finish.
++struct PortalGuard : public RefCountedNonVirtual<PortalGuard> {
++  Mutex mutex;
++  gpointer portal = nullptr;
++
++  gpointer AddRefAndGet() {
++    AddRef();
++    return this;
++  }
++};
++
++inline void portal_guard_release(gpointer data) {
++  static_cast<PortalGuard*>(data)->Release();
++}
++
++// RAII lock for PortalGuard. Use ScopedPortalLock for async callbacks
++// (releases the callback's ref) or ScopedPortalSignalLock for signal
++// callbacks (ref is owned by the subscription).
++enum class RefOwnership {
++  kOwnedByCallback,      // Async: callback owns the ref, release on unlock.
++  kOwnedBySubscription,  // Signal: subscription owns the ref via
++                         // GDestroyNotify.
++};
++
++class ScopedPortalLockBase {
++ public:
++  ScopedPortalLockBase(const ScopedPortalLockBase&) = delete;
++  ScopedPortalLockBase& operator=(const ScopedPortalLockBase&) = delete;
++
++  gpointer portal() const { return guard_->portal; }
++
++ protected:
++  ScopedPortalLockBase(gpointer user_data, RefOwnership ownership)
++      : guard_(static_cast<PortalGuard*>(user_data)), ownership_(ownership) {
++    guard_->mutex.Lock();
++  }
++  ~ScopedPortalLockBase() {
++    guard_->mutex.Unlock();
++    if (ownership_ == RefOwnership::kOwnedByCallback)
++      guard_->Release();
++  }
++
++ private:
++  PortalGuard* guard_;
++  RefOwnership ownership_;
++};
++
++// For async callbacks. Releases the ref on destruction because async
++// callbacks fire exactly once and own their ref.
++class ScopedPortalLock : public ScopedPortalLockBase {
++ public:
++  explicit ScopedPortalLock(gpointer user_data)
++      : ScopedPortalLockBase(user_data, RefOwnership::kOwnedByCallback) {}
++};
++
++// For signal callbacks. Does not release the ref because the signal
++// subscription owns it. The ref is released by portal_guard_release
++// (GDestroyNotify) when the subscription is removed.
++class ScopedPortalSignalLock : public ScopedPortalLockBase {
++ public:
++  explicit ScopedPortalSignalLock(gpointer user_data)
++      : ScopedPortalLockBase(user_data, RefOwnership::kOwnedBySubscription) {}
++};
++
++}  // namespace webrtc
++
++#endif  // MODULES_PORTAL_PORTAL_GUARD_H_
+diff --git a/modules/portal/xdg_desktop_portal_utils.cc b/modules/portal/xdg_desktop_portal_utils.cc
+index ad4c6614d6..723978cfa6 100644
+--- a/modules/portal/xdg_desktop_portal_utils.cc
++++ b/modules/portal/xdg_desktop_portal_utils.cc
+@@ -15,6 +15,8 @@
+ 
+ #include "absl/strings/str_replace.h"
+ #include "absl/strings/string_view.h"
++#include "api/scoped_refptr.h"
++#include "modules/portal/portal_guard.h"
+ #include "modules/portal/portal_request_response.h"
+ #include "modules/portal/scoped_glib.h"
+ #include "rtc_base/logging.h"
+@@ -73,24 +75,25 @@ std::string PrepareSignalHandle(absl::string_view token,
+ 
+ uint32_t SetupRequestResponseSignal(absl::string_view object_path,
+                                     const GDBusSignalCallback callback,
+-                                    gpointer user_data,
++                                    scoped_refptr<PortalGuard> guard,
+                                     GDBusConnection* connection) {
+   return g_dbus_connection_signal_subscribe(
+       connection, kDesktopBusName, kRequestInterfaceName, "Response",
+       std::string(object_path).c_str(), /*arg0=*/nullptr,
+-      G_DBUS_SIGNAL_FLAGS_NO_MATCH_RULE, callback, user_data,
+-      /*user_data_free_func=*/nullptr);
++      G_DBUS_SIGNAL_FLAGS_NO_MATCH_RULE, callback, guard->AddRefAndGet(),
++      portal_guard_release);
+ }
+ 
+ void RequestSessionProxy(absl::string_view interface_name,
+                          const ProxyRequestCallback proxy_request_callback,
+                          GCancellable* cancellable,
+-                         gpointer user_data) {
++                         scoped_refptr<PortalGuard> guard) {
+   g_dbus_proxy_new_for_bus(
+       G_BUS_TYPE_SESSION, G_DBUS_PROXY_FLAGS_NONE, /*info=*/nullptr,
+       kDesktopBusName, kDesktopObjectPath, std::string(interface_name).c_str(),
+       cancellable,
+-      reinterpret_cast<GAsyncReadyCallback>(proxy_request_callback), user_data);
++      reinterpret_cast<GAsyncReadyCallback>(proxy_request_callback),
++      guard->AddRefAndGet());
+ }
+ 
+ void SetupSessionRequestHandlers(
+@@ -102,7 +105,7 @@ void SetupSessionRequestHandlers(
+     GCancellable* cancellable,
+     std::string& portal_handle,
+     guint& session_request_signal_id,
+-    gpointer user_data) {
++    scoped_refptr<PortalGuard> guard) {
+   GVariantBuilder builder;
+   Scoped<char> variant_string;
+ 
+@@ -121,7 +124,7 @@ void SetupSessionRequestHandlers(
+ 
+   portal_handle = PrepareSignalHandle(variant_string.get(), connection);
+   session_request_signal_id = SetupRequestResponseSignal(
+-      portal_handle.c_str(), request_response_signale_handler, user_data,
++      portal_handle.c_str(), request_response_signale_handler, guard,
+       connection);
+ 
+   RTC_LOG(LS_INFO) << "Desktop session requested.";
+@@ -129,7 +132,7 @@ void SetupSessionRequestHandlers(
+       proxy, "CreateSession", g_variant_new("(a{sv})", &builder),
+       G_DBUS_CALL_FLAGS_NONE, /*timeout=*/-1, cancellable,
+       reinterpret_cast<GAsyncReadyCallback>(session_request_callback),
+-      user_data);
++      guard->AddRefAndGet());
+ }
+ 
+ void StartSessionRequest(
+@@ -142,7 +145,7 @@ void StartSessionRequest(
+     GCancellable* cancellable,
+     guint& start_request_signal_id,
+     std::string& start_handle,
+-    gpointer user_data) {
++    scoped_refptr<PortalGuard> guard) {
+   GVariantBuilder builder;
+   Scoped<char> variant_string;
+ 
+@@ -155,7 +158,7 @@ void StartSessionRequest(
+ 
+   start_handle = PrepareSignalHandle(variant_string.get(), connection);
+   start_request_signal_id = SetupRequestResponseSignal(
+-      start_handle.c_str(), signal_handler, user_data, connection);
++      start_handle.c_str(), signal_handler, guard, connection);
+ 
+   // "Identifier for the application window", this is Wayland, so not "x11:...".
+   const char parent_window[] = "";
+@@ -167,7 +170,7 @@ void StartSessionRequest(
+                     parent_window, &builder),
+       G_DBUS_CALL_FLAGS_NONE, /*timeout=*/-1, cancellable,
+       reinterpret_cast<GAsyncReadyCallback>(session_started_handler),
+-      user_data);
++      guard->AddRefAndGet());
+ }
+ 
+ void TearDownSession(absl::string_view session_handle,
+diff --git a/modules/portal/xdg_desktop_portal_utils.h b/modules/portal/xdg_desktop_portal_utils.h
+index feb7da3da4..ab9ddb3ca1 100644
+--- a/modules/portal/xdg_desktop_portal_utils.h
++++ b/modules/portal/xdg_desktop_portal_utils.h
+@@ -17,6 +17,8 @@
+ #include <string>
+ 
+ #include "absl/strings/string_view.h"
++#include "api/scoped_refptr.h"
++#include "modules/portal/portal_guard.h"
+ #include "modules/portal/portal_request_response.h"
+ #include "rtc_base/system/rtc_export.h"
+ 
+@@ -61,19 +63,22 @@ RTC_EXPORT std::string PrepareSignalHandle(absl::string_view token,
+                                            GDBusConnection* connection);
+ 
+ // Sets up the callback to execute when a response signal is received for the
+-// given object.
++// given object. Adds a ref to the guard for the signal subscription.
+ RTC_EXPORT uint32_t
+ SetupRequestResponseSignal(absl::string_view object_path,
+                            const GDBusSignalCallback callback,
+-                           gpointer user_data,
++                           scoped_refptr<PortalGuard> guard,
+                            GDBusConnection* connection);
+ 
++// Requests a D-Bus proxy. Adds a ref to the guard for the async callback.
+ RTC_EXPORT void RequestSessionProxy(
+     absl::string_view interface_name,
+     const ProxyRequestCallback proxy_request_callback,
+     GCancellable* cancellable,
+-    gpointer user_data);
++    scoped_refptr<PortalGuard> guard);
+ 
++// Sets up signal subscription and async call for session creation.
++// Adds refs to the guard for both.
+ RTC_EXPORT void SetupSessionRequestHandlers(
+     absl::string_view portal_prefix,
+     const SessionRequestCallback session_request_callback,
+@@ -83,8 +88,10 @@ RTC_EXPORT void SetupSessionRequestHandlers(
+     GCancellable* cancellable,
+     std::string& portal_handle,
+     guint& session_request_signal_id,
+-    gpointer user_data);
++    scoped_refptr<PortalGuard> guard);
+ 
++// Starts a portal session. Adds refs to the guard for both signal
++// subscription and async call.
+ RTC_EXPORT void StartSessionRequest(
+     absl::string_view prefix,
+     absl::string_view session_handle,
+@@ -95,7 +102,7 @@ RTC_EXPORT void StartSessionRequest(
+     GCancellable* cancellable,
+     guint& start_request_signal_id,
+     std::string& start_handle,
+-    gpointer user_data);
++    scoped_refptr<PortalGuard> guard);
+ 
+ // Tears down the portal session and cleans up related objects.
+ RTC_EXPORT void TearDownSession(absl::string_view session_handle,
+diff --git a/modules/video_capture/linux/camera_portal.cc b/modules/video_capture/linux/camera_portal.cc
+index b6c703f38c..5a9c88b6a9 100644
+--- a/modules/video_capture/linux/camera_portal.cc
++++ b/modules/video_capture/linux/camera_portal.cc
+@@ -16,11 +16,12 @@
+ #include <memory>
+ #include <string>
+ 
++#include "api/scoped_refptr.h"
+ #include "modules/portal/pipewire_utils.h"
++#include "modules/portal/portal_guard.h"
+ #include "modules/portal/portal_request_response.h"
+ #include "modules/portal/scoped_glib.h"
+ #include "modules/portal/xdg_desktop_portal_utils.h"
+-#include "rtc_base/checks.h"
+ #include "rtc_base/logging.h"
+ #include "rtc_base/synchronization/mutex.h"
+ #include "rtc_base/thread_annotations.h"
+@@ -71,6 +72,7 @@ class CameraPortalPrivate {
+   GDBusProxy* proxy_ = nullptr;
+   GCancellable* cancellable_ = nullptr;
+   guint access_request_signal_id_ = 0;
++  scoped_refptr<PortalGuard> guard_;
+ };
+ 
+ CameraPortalPrivate::CameraPortalPrivate(CameraPortal::PortalNotifier* notifier)
+@@ -82,13 +84,20 @@ CameraPortalPrivate::~CameraPortalPrivate() {
+     notifier_ = nullptr;
+   }
+ 
++  if (cancellable_)
++    g_cancellable_cancel(cancellable_);
++
++  if (guard_) {
++    MutexLock lock(&guard_->mutex);
++    guard_->portal = nullptr;
++  }
++
+   if (access_request_signal_id_) {
+     g_dbus_connection_signal_unsubscribe(connection_,
+                                          access_request_signal_id_);
+     access_request_signal_id_ = 0;
+   }
+   if (cancellable_) {
+-    g_cancellable_cancel(cancellable_);
+     g_object_unref(cancellable_);
+     cancellable_ = nullptr;
+   }
+@@ -101,20 +110,24 @@ CameraPortalPrivate::~CameraPortalPrivate() {
+ 
+ void CameraPortalPrivate::Start() {
+   cancellable_ = g_cancellable_new();
+-  Scoped<GError> error;
++  guard_ = scoped_refptr<PortalGuard>(new PortalGuard());
++  guard_->portal = this;
+   RequestSessionProxy(kCameraInterfaceName, OnProxyRequested, cancellable_,
+-                      this);
++                      guard_);
+ }
+ 
+ // static
+ void CameraPortalPrivate::OnProxyRequested(GObject* gobject,
+                                            GAsyncResult* result,
+                                            gpointer user_data) {
+-  CameraPortalPrivate* that = static_cast<CameraPortalPrivate*>(user_data);
++  ScopedPortalLock lock(user_data);
++  auto* that = static_cast<CameraPortalPrivate*>(lock.portal());
++  if (!that)
++    return;
++
+   Scoped<GError> error;
+   GDBusProxy* proxy = g_dbus_proxy_new_finish(result, error.receive());
+   if (!proxy) {
+-    // Ignore the error caused by user cancelling the request via `cancellable_`
+     if (g_error_matches(error.get(), G_IO_ERROR, G_IO_ERROR_CANCELLED))
+       return;
+     RTC_LOG(LS_ERROR) << "Failed to get a proxy for the portal: "
+@@ -144,21 +157,23 @@ void CameraPortalPrivate::ProxyRequested(GDBusProxy* proxy) {
+   access_handle =
+       xdg_portal::PrepareSignalHandle(variant_string.get(), connection_);
+   access_request_signal_id_ = xdg_portal::SetupRequestResponseSignal(
+-      access_handle.c_str(), OnResponseSignalEmitted, this, connection_);
++      access_handle.c_str(), OnResponseSignalEmitted, guard_, connection_);
+ 
+   RTC_LOG(LS_VERBOSE) << "Requesting camera access from the portal.";
+   g_dbus_proxy_call(proxy_, "AccessCamera", g_variant_new("(a{sv})", &builder),
+                     G_DBUS_CALL_FLAGS_NONE, /*timeout_msec=*/-1, cancellable_,
+                     reinterpret_cast<GAsyncReadyCallback>(OnAccessResponse),
+-                    this);
++                    guard_->AddRefAndGet());
+ }
+ 
+ // static
+ void CameraPortalPrivate::OnAccessResponse(GDBusProxy* proxy,
+                                            GAsyncResult* result,
+                                            gpointer user_data) {
+-  CameraPortalPrivate* that = static_cast<CameraPortalPrivate*>(user_data);
+-  RTC_DCHECK(that);
++  ScopedPortalLock lock(user_data);
++  auto* that = static_cast<CameraPortalPrivate*>(lock.portal());
++  if (!that)
++    return;
+ 
+   Scoped<GError> error;
+   Scoped<GVariant> variant(
+@@ -184,8 +199,10 @@ void CameraPortalPrivate::OnResponseSignalEmitted(GDBusConnection* connection,
+                                                   const char* signal_name,
+                                                   GVariant* parameters,
+                                                   gpointer user_data) {
+-  CameraPortalPrivate* that = static_cast<CameraPortalPrivate*>(user_data);
+-  RTC_DCHECK(that);
++  ScopedPortalSignalLock lock(user_data);
++  auto* that = static_cast<CameraPortalPrivate*>(lock.portal());
++  if (!that)
++    return;
+ 
+   uint32_t portal_response;
+   g_variant_get(parameters, "(u@a{sv})", &portal_response, nullptr);
+@@ -200,17 +217,20 @@ void CameraPortalPrivate::OnResponseSignalEmitted(GDBusConnection* connection,
+   GVariantBuilder builder;
+   g_variant_builder_init(&builder, G_VARIANT_TYPE_VARDICT);
+ 
+-  g_dbus_proxy_call(
+-      that->proxy_, "OpenPipeWireRemote", g_variant_new("(a{sv})", &builder),
+-      G_DBUS_CALL_FLAGS_NONE, /*timeout_msec=*/-1, that->cancellable_,
+-      reinterpret_cast<GAsyncReadyCallback>(OnOpenResponse), that);
++  g_dbus_proxy_call(that->proxy_, "OpenPipeWireRemote",
++                    g_variant_new("(a{sv})", &builder), G_DBUS_CALL_FLAGS_NONE,
++                    /*timeout_msec=*/-1, that->cancellable_,
++                    reinterpret_cast<GAsyncReadyCallback>(OnOpenResponse),
++                    that->guard_->AddRefAndGet());
+ }
+ 
+ void CameraPortalPrivate::OnOpenResponse(GDBusProxy* proxy,
+                                          GAsyncResult* result,
+                                          gpointer user_data) {
+-  CameraPortalPrivate* that = static_cast<CameraPortalPrivate*>(user_data);
+-  RTC_DCHECK(that);
++  ScopedPortalLock lock(user_data);
++  auto* that = static_cast<CameraPortalPrivate*>(lock.portal());
++  if (!that)
++    return;
+ 
+   Scoped<GError> error;
+   Scoped<GUnixFDList> outlist;

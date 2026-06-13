@@ -1229,6 +1229,7 @@ static celt_glog dynalloc_analysis(const celt_glog *bandLogE, const celt_glog *b
             follower[i] = follower[i] +  GCONST(1.f/64.f)*analysis->leak_boost[i];
       }
 #endif
+      if (effectiveBytes>320) follower[0] += MIN32(GCONST(1.5f), GCONST(1e-3f)*(effectiveBytes-320));
       for (i=start;i<end;i++)
       {
          int width;
@@ -2554,7 +2555,6 @@ int celt_encode_with_ec(CELTEncoder * OPUS_RESTRICT st, const opus_res * pcm, in
          }
          scale = PSHR32(toneishness,14);
          scale = Q15ONE - MULT16_16_Q15(scale, scale);
-         qext_bytes += MULT16_32_Q15(scale, (nbCompressedBytes-(target/(8<<BITRES))) - qext_bytes);
          qext_bytes = IMAX(nbCompressedBytes-1275, IMAX(21, qext_bytes));
       }
       padding_len_bytes = (qext_bytes+253)/254;

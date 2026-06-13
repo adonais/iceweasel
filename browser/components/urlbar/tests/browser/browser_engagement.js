@@ -35,6 +35,7 @@ add_task(async function engagement() {
         searchSource: "urlbar",
         windowMode: "classic",
         isSessionOngoing: false,
+        pickedActionKey: null,
       },
     });
   });
@@ -76,6 +77,7 @@ add_task(async function privateWindow_engagement() {
       searchSource: "urlbar",
       windowMode: "private",
       isSessionOngoing: false,
+      pickedActionKey: null,
     },
   });
   await BrowserTestUtils.closeWindow(win);

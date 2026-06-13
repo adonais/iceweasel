@@ -367,10 +367,6 @@ size_t ArrayType::sizeOfExcludingThis(MallocSizeOf mallocSizeOf) const {
 }
 
 #ifdef ENABLE_WASM_JSPI
-ContType::ContType(const TypeDef* funcTypeDef) : funcTypeDef_(funcTypeDef) {
-  MOZ_ASSERT(funcTypeDef->isFuncType());
-}
-
 const FuncType& ContType::funcType() const { return funcTypeDef_->funcType(); }
 
 size_t ContType::sizeOfExcludingThis(MallocSizeOf mallocSizeOf) const {

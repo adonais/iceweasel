@@ -46,7 +46,7 @@ class StatementParams final : public nsISupports, public nsWrapperCache {
   nsPIDOMWindowInner* GetParentObject() const { return mWindow; }
 
  private:
-  ~StatementParams() {}
+  ~StatementParams() = default;
 
   nsCOMPtr<nsPIDOMWindowInner> mWindow;
   Statement* mStatement;

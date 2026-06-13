@@ -6,6 +6,7 @@
 #define DOM_FS_PARENT_FILESYSTEMACCESSHANDLE_H_
 
 #include "FileSystemStreamCallbacks.h"
+#include "mozilla/Atomics.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/NotNull.h"
 #include "mozilla/RefPtr.h"
@@ -93,7 +94,7 @@ class FileSystemAccessHandle : public FileSystemStreamCallbacks {
   const NotNull<RefPtr<TaskQueue>> mIOTaskQueue;
   FileSystemAccessHandleParent* mActor;
   FileSystemAccessHandleControlParent* mControlActor;
-  nsAutoRefCnt mRegCount;
+  Atomic<uint32_t, ReleaseAcquire> mRegCount;
   bool mLocked;
   bool mRegistered;
   bool mClosed;

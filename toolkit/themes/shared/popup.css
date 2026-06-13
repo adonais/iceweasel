@@ -7,8 +7,8 @@
 /* ::::: menupopup ::::: */
 
 :is(menupopup, panel):where(:not([type="arrow"])) {
-  --panel-background: Menu;
-  --panel-color: MenuText;
+  --panel-background-color: Menu;
+  --panel-text-color: MenuText;
   --panel-padding: var(--panel-padding-block) 0;
   /* This should match GetMenuCornerRadius() on macOS, or be overridden below */
   --panel-border-radius: 6px;
@@ -22,13 +22,13 @@
     /* On some linux WMs we need to draw square and opaque menus because alpha
      * is not available */
     @media not (-moz-gtk-csd-transparency-available) {
-      --panel-shadow-margin: 0px !important;
+      --panel-box-shadow-margin: 0px !important;
       --panel-border-radius: 0px !important;
     }
   }
 
   @media (-moz-platform: macos) {
-    --panel-background: none;
+    --panel-background-color: none;
     --panel-border-color: transparent;
 
     @media (-moz-mac-tahoe-theme) {
@@ -43,11 +43,11 @@
    * overridden). */
   color-scheme: light dark;
   min-width: 1px;
-  -moz-window-input-region-margin: var(--panel-shadow-margin);
-  margin: calc(-1 * var(--panel-shadow-margin));
+  -moz-window-input-region-margin: var(--panel-box-shadow-margin);
+  margin: calc(-1 * var(--panel-box-shadow-margin));
 
   /* Panel design token theming */
-  --background-color-canvas: var(--panel-background);
+  --background-color-canvas: var(--panel-background-color);
 
   @media (-moz-platform: linux) and (not (-moz-gtk-csd-transparency-available)) {
     /* On some linux WMs we need to draw square and opaque menus because alpha
@@ -57,13 +57,13 @@
 
   @media (-moz-platform: macos) {
     /* -moz-window-shadow does the trick on macOS */
-    --panel-shadow: none;
-    --panel-shadow-margin: 0px;
+    --panel-box-shadow: none;
+    --panel-box-shadow-margin: 0px;
     appearance: auto;
     -moz-default-appearance: menupopup;
     /* We set the default background here, rather than on ::part(content),
      * because otherwise it'd interfere with the native look. Non-native-looking
-     * popups should get their background via --panel-background */
+     * popups should get their background via --panel-background-color */
     background-color: Menu;
   }
 
@@ -71,23 +71,17 @@
     display: flex;
     box-sizing: border-box;
 
-    /* This should pass stylelint once panel design tokens are added in bug 2017979 */
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     padding: var(--panel-padding);
-    color: var(--panel-color);
-    background: var(--panel-background);
+    color: var(--panel-text-color);
+    background: var(--panel-background-color);
     /* The values chosen for the border radius should match OS values, not necessarily
      * design system values. */
     /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     border-radius: var(--panel-border-radius);
     border: 1px solid var(--panel-border-color);
-    /* This should pass stylelint once panel design tokens are added in bug 2017979 */
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     width: var(--panel-width);
-    /* This should pass stylelint once panel design tokens are added in bug 2017979 */
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-    box-shadow: var(--panel-shadow);
-    margin: var(--panel-shadow-margin);
+    box-shadow: var(--panel-box-shadow);
+    margin: var(--panel-box-shadow-margin);
 
     min-width: 0;
     min-height: 0;
@@ -96,9 +90,9 @@
      * causing overflow, see bug 1846050 */
     /* Our stylelint rules don't account for the round() function, see bug 2018789 */
     /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-    max-height: round(up, 100% - 2 * var(--panel-shadow-margin), 1px);
+    max-height: round(up, 100% - 2 * var(--panel-box-shadow-margin), 1px);
     /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-    max-width: round(up, 100% - 2 * var(--panel-shadow-margin), 1px);
+    max-width: round(up, 100% - 2 * var(--panel-box-shadow-margin), 1px);
 
     overflow: clip; /* Don't let panel content overflow the border */
   }

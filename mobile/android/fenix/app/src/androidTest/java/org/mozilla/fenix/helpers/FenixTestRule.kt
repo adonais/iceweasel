@@ -25,7 +25,7 @@ import org.junit.runners.model.Statement
  * val fenixTestRule = FenixTestRule()
  * ```
  */
-class FenixTestRule : TestRule {
+class FenixTestRule(private val grantNotifications: Boolean = true) : TestRule {
 
     val testSetupRule = TestSetupRule()
     val mockWebServerRule = MockWebServerRule()
@@ -33,18 +33,17 @@ class FenixTestRule : TestRule {
     val mockWebServer: MockWebServer get() = mockWebServerRule.server
     val browserStore: BrowserStore get() = testSetupRule.browserStore
 
-    override fun apply(base: Statement, description: Description): Statement =
-        RuleChain
-            .outerRule(
-                if (Build.VERSION.SDK_INT >= 33) {
-                    GrantPermissionRule.grant(
-                        Manifest.permission.POST_NOTIFICATIONS,
-                    )
-                } else {
-                    GrantPermissionRule.grant()
-                },
-            )
+    override fun apply(base: Statement, description: Description): Statement {
+        val permissionRule = if (grantNotifications && Build.VERSION.SDK_INT >= 33) {
+            GrantPermissionRule.grant(Manifest.permission.POST_NOTIFICATIONS)
+        } else {
+            GrantPermissionRule.grant()
+        }
+
+        return RuleChain
+            .outerRule(permissionRule)
             .around(testSetupRule)
             .around(mockWebServerRule)
             .apply(base, description)
+    }
 }

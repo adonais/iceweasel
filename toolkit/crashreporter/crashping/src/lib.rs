@@ -104,7 +104,8 @@ impl InitGlean {
         // No need to check `cfg!(test)`, since we don't set an uploader in unit tests (and if we
         // did, it would be test-specific).
         let is_test = std::env::var_os("XPCSHELL_TEST_PROFILE_DIR").is_some()
-            || std::env::var_os("MOZ_AUTOMATION").is_some();
+            || std::env::var_os("MOZ_AUTOMATION").is_some()
+            || std::env::var_os("MOZ_DISABLE_NONLOCAL_CONNECTIONS") == Some("1".into());
         if self.clear_uploader_for_tests && is_test {
             self.configuration.uploader = None;
             self.configuration.server_endpoint = None;

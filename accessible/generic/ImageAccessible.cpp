@@ -238,7 +238,7 @@ void ImageAccessible::Notify(imgIRequest* aRequest, int32_t aType,
   if ((status ^ mImageRequestStatus) & imgIRequest::STATUS_SIZE_AVAILABLE) {
     nsIFrame* frame = GetFrame();
     if (frame && !frame->HasAnyStateBits(IMAGE_SIZECONSTRAINED)) {
-      RefPtr<AccEvent> event = new AccStateChangeEvent(
+      auto event = MakeRefPtr<AccStateChangeEvent>(
           this, states::INVISIBLE,
           !(status & imgIRequest::STATUS_SIZE_AVAILABLE));
       mDoc->FireDelayedEvent(event);
@@ -246,7 +246,7 @@ void ImageAccessible::Notify(imgIRequest* aRequest, int32_t aType,
   }
 
   if ((status ^ mImageRequestStatus) & imgIRequest::STATUS_IS_ANIMATED) {
-    RefPtr<AccEvent> event = new AccStateChangeEvent(
+    auto event = MakeRefPtr<AccStateChangeEvent>(
         this, states::ANIMATED, (status & imgIRequest::STATUS_IS_ANIMATED));
     mDoc->FireDelayedEvent(event);
   }

@@ -716,12 +716,6 @@ Tester.prototype = {
   },
 
   async ensureVsyncDisabled() {
-    // The WebExtension process keeps vsync enabled forever in headless mode.
-    // See bug 1782541.
-    if (Services.env.get("MOZ_HEADLESS")) {
-      return;
-    }
-
     try {
       await this.TestUtils.waitForCondition(
         () => !ChromeUtils.vsyncEnabled(),
@@ -1323,14 +1317,6 @@ Tester.prototype = {
         );
 
         barrier.wait().then(() => {
-          // Simulate memory pressure so that we're forced to free more resources
-          // and thus get rid of more false leaks like already terminated workers.
-          Services.obs.notifyObservers(
-            null,
-            "memory-pressure",
-            "heap-minimize"
-          );
-
           Services.ppmm.broadcastAsyncMessage("browser-test:collect-request");
 
           this._shutdownCleanup(() => {
@@ -1525,6 +1511,7 @@ Tester.prototype = {
             ? {
                 name: err.message,
                 stack: err.stack,
+                time: err.time,
                 allowFailure: currentTest.allowFailure,
               }
             : {
@@ -1777,10 +1764,13 @@ function isErrorOrException(err) {
  *     false    false    todoCount    TEST-KNOWN-FAIL         FAIL     FAIL
  *     false    true     todoCount    TEST-KNOWN-FAIL         FAIL     FAIL
  */
-function testResult({ name, pass, todo, ex, stack, allowFailure }) {
+function testResult({ name, pass, todo, ex, stack, allowFailure, time }) {
   this.info = false;
   this.name = name;
   this.msg = "";
+  if (time) {
+    this.time = time;
+  }
 
   if (allowFailure && !pass) {
     this.allowedFailure = true;

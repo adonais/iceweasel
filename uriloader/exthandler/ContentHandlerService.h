@@ -44,7 +44,7 @@ class RemoteHandlerApp : public nsIHandlerApp {
   explicit RemoteHandlerApp(HandlerApp aAppChild) : mAppChild(aAppChild) {}
 
  private:
-  virtual ~RemoteHandlerApp() {}
+  virtual ~RemoteHandlerApp() = default;
   HandlerApp mAppChild;
 };
 

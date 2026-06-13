@@ -11,7 +11,7 @@
       "platforms": ["all"],
       "skip_if": ["InstallTrigger_undefined"],
       "content_scripts": {
-        "js": ["bug1859617-installtrigger-removal-shim.js"]
+        "js": ["undefine_InstallTrigger.js"]
       }
     }
   ]

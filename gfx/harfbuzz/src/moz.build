@@ -44,17 +44,10 @@ UNIFIED_SOURCES += [
     'hb-blob.cc',
     'hb-buffer.cc',
     'hb-common.cc',
-    'hb-coretext-font.cc',
-    'hb-coretext-shape.cc',
-    'hb-coretext.cc',
-    'hb-directwrite-font.cc',
-    'hb-directwrite-shape.cc',
     'hb-draw.cc',
     'hb-face-builder.cc',
     'hb-face.cc',
     'hb-font.cc',
-    'hb-harfrust.cc',
-    'hb-kbts.cc',
     'hb-map.cc',
     'hb-number.cc',
     'hb-ot-cff1-table.cc',
@@ -85,24 +78,6 @@ UNIFIED_SOURCES += [
     'hb-ot-tag.cc',
     'hb-ot-var.cc',
     'hb-outline.cc',
-    'hb-paint-bounded.cc',
-    'hb-paint-extents.cc',
-    'hb-paint.cc',
-    'hb-raster-draw.cc',
-    'hb-raster-image.cc',
-    'hb-raster-paint.cc',
-    'hb-raster-svg-base.cc',
-    'hb-raster-svg-bbox.cc',
-    'hb-raster-svg-clip.cc',
-    'hb-raster-svg-color.cc',
-    'hb-raster-svg-defs-scan.cc',
-    'hb-raster-svg-defs.cc',
-    'hb-raster-svg-fill.cc',
-    'hb-raster-svg-gradient.cc',
-    'hb-raster-svg-parse.cc',
-    'hb-raster-svg-render.cc',
-    'hb-raster-svg-use.cc',
-    'hb-raster.cc',
     'hb-set.cc',
     'hb-shape-plan.cc',
     'hb-shape.cc',
@@ -127,12 +102,6 @@ UNIFIED_SOURCES += [
     'hb-subset-table-var.cc',
     'hb-subset.cc',
     'hb-unicode.cc',
-    'hb-vector-svg-draw.cc',
-    'hb-vector-svg-paint.cc',
-    'hb-vector-svg-path.cc',
-    'hb-vector-svg-subset.cc',
-    'hb-vector-svg-utils.cc',
-    'hb-vector.cc',
     'hb-zlib.cc',
 ]
 
@@ -156,6 +125,7 @@ DEFINES['HAVE_OT'] = 1
 DEFINES['HAVE_ROUND'] = 1
 DEFINES['HB_NO_BUFFER_VERIFY'] = True
 DEFINES['HB_NO_FALLBACK_SHAPE'] = True
+DEFINES['HB_NO_PAINT'] = True
 DEFINES['HB_NO_UCD'] = True
 DEFINES['HB_NO_UNICODE_FUNCS'] = True
 DEFINES['HB_NO_VAR_COMPOSITES'] = True

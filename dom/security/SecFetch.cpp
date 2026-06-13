@@ -34,6 +34,9 @@ nsCString MapInternalContentPolicyTypeToDest(nsContentPolicyType aType) {
     case nsIContentPolicy::TYPE_JSON:
     case nsIContentPolicy::TYPE_INTERNAL_JSON_PRELOAD:
       return "json"_ns;
+    case nsIContentPolicy::TYPE_TEXT:
+    case nsIContentPolicy::TYPE_INTERNAL_TEXT_PRELOAD:
+      return "text"_ns;
     case nsIContentPolicy::TYPE_INTERNAL_WORKER:
     case nsIContentPolicy::TYPE_INTERNAL_WORKER_STATIC_MODULE:
       return "worker"_ns;
@@ -117,7 +120,6 @@ nsCString MapInternalContentPolicyTypeToDest(nsContentPolicyType aType) {
       return "webtransport"_ns;
     case nsIContentPolicy::TYPE_INTERNAL_EXTERNAL_RESOURCE:
       return "image"_ns;
-    case nsIContentPolicy::TYPE_END:
     case nsIContentPolicy::TYPE_INVALID:
       break;
       // Do not add default: so that compilers can catch the missing case.

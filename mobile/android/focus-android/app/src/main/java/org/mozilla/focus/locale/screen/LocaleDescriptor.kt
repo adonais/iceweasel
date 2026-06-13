@@ -10,6 +10,9 @@ import org.mozilla.focus.locale.Locales
 import java.text.Collator
 import java.util.Locale
 
+/**
+ * Represents a locale and its native name.
+ */
 class LocaleDescriptor(private val localeTag: String) : Comparable<LocaleDescriptor> {
 
     private val languageCodeAndNameMap: HashMap<String, String> = HashMap()
@@ -100,10 +103,16 @@ class LocaleDescriptor(private val localeTag: String) : Comparable<LocaleDescrip
         return Locales.parseLocaleCode(localeTag)
     }
 
+    /**
+     * Returns the locale tag (e.g. "en-US").
+     */
     fun getTag(): String {
         return localeTag
     }
 
+    /**
+     * Returns the native name of the locale (e.g. "Deutsch" for "de").
+     */
     fun getNativeName(): String? {
         return nativeName
     }

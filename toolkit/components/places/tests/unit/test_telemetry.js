@@ -118,7 +118,7 @@ add_task(async function test_execute() {
 
   for (let i = 0; i < 3; i++) {
     await PlacesTestUtils.addVisits({
-      uri: NetUtil.newURI("http://" + i + ".moz.org/"),
+      uri: Services.io.newURI("http://" + i + ".moz.org/"),
       visitDate: newTimeInMicroseconds(),
     });
   }

@@ -11,6 +11,29 @@ LOG = RaptorLogger(component="raptor-speedometer3-support")
 
 
 class Speedometer3Support(BasePythonSupport):
+    def setup_test(self, test, args):
+        super().setup_test(test, args)
+
+        if args.simpleperf:
+            # Each test suite runs in its own browser cycle.
+            # There's 20 test suites, so 20 cycles are needed.
+            speedometer3_test_count = 20
+
+            # Each test suite is run speedometer3_iteration_count times
+            # in 1 browser cycle.
+            speedometer3_iteration_count = 50
+
+            test["simpleperf"] = True
+            test["test_script"] = "speedometer3_simpleperf.js"
+            test["browser_cycles"] = speedometer3_test_count
+            test["browsertime_args"] = (
+                f"{test.get('browsertime_args', '')} --browsertime.iteration_count={speedometer3_iteration_count}".strip()
+            )
+
+            # For correctness (should not affect functionality), set
+            # test["apps"] to apps that work with Simpleperf profiling.
+            test["apps"] = "fenix, geckoview"
+
     def handle_result(self, bt_result, raw_result, **kwargs):
         """Parse a result for the required results.
 
@@ -50,10 +73,17 @@ class Speedometer3Support(BasePythonSupport):
             lower_is_better = False
             unit = "score"
 
+        alert_severity = "subcritical"
+        if measurement_name == "score" and self.platform == "Windows":
+            alert_severity = "critical"
+
         subtest = {
             "unit": unit,
             "alertThreshold": float(test.get("alert_threshold", 2.0)),
+            "alertSeverity": alert_severity,
             "lowerIsBetter": lower_is_better,
+            "minBackWindow": 24,
+            "maxBackWindow": 48,
             "name": measurement_name,
             "replicates": replicates,
             "shouldAlert": True,
@@ -74,12 +104,18 @@ class Speedometer3Support(BasePythonSupport):
         See base_python_support.py for what's expected from this method.
         """
         suite["type"] = "benchmark"
+        suite["minBackWindow"] = 24
+        suite["maxBackWindow"] = 48
         if suite["subtests"] == {}:
             suite["subtests"] = []
         for measurement_name, replicates in test["measurements"].items():
             if not replicates:
                 continue
             if self.is_additional_metric(measurement_name):
+                continue
+            # Only report suite-level totals (e.g. "Perf-Dashboard/total"),
+            # not per-task breakdowns (e.g. "Perf-Dashboard/Render/Async").
+            if measurement_name.count("/") > 1:
                 continue
             suite["subtests"].append(
                 self._build_subtest(measurement_name, replicates, test)
@@ -97,6 +133,9 @@ class Speedometer3Support(BasePythonSupport):
                 break
         suite["value"] = score
         suite["replicates"] = replicates
+        suite["alertSeverity"] = "subcritical"
+        if self.platform == "Windows":
+            suite["alertSeverity"] = "critical"
 
     def modify_command(self, cmd, test):
         """Modify the browsertime command for speedometer 3.

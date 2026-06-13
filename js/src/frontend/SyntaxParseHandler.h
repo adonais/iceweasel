@@ -443,6 +443,12 @@ class SyntaxParseHandler {
     return NodeUnparenthesizedUnary;
   }
   UnaryNodeResult newOptionalChain(uint32_t begin, Node value) {
+    // Propagate private member access so we can check for it when deleting
+    // unary expressions
+    if (value == NodeOptionalPrivateMemberAccess ||
+        value == NodePrivateMemberAccess) {
+      return NodeOptionalPrivateMemberAccess;
+    }
     return NodeGeneric;
   }
 
@@ -816,7 +822,8 @@ class SyntaxParseHandler {
 
   bool isPrivateName(Node node) { return node == NodePrivateName; }
   bool isPrivateMemberAccess(Node node) {
-    return node == NodePrivateMemberAccess;
+    return node == NodePrivateMemberAccess ||
+           node == NodeOptionalPrivateMemberAccess;
   }
 
   TaggedParserAtomIndex maybeDottedProperty(Node node) {

@@ -7,8 +7,6 @@
 #ifndef nsStyleConsts_h_
 #define nsStyleConsts_h_
 
-#include <inttypes.h>
-
 #include "X11UndefineNone.h"
 #include "gfxFontConstants.h"
 #include "mozilla/ServoStyleConsts.h"

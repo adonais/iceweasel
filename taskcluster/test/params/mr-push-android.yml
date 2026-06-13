@@ -2156,8 +2156,6 @@ release_partners: null
 release_product: firefox-android
 release_type: release
 repository_type: hg
-required_signoffs: []
-signoff_urls: {}
 target_tasks_method: push_android
 tasks_for: hg-push
 test_manifest_loader: default

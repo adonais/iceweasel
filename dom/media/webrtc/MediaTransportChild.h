@@ -23,18 +23,18 @@ class MediaTransportChild : public dom::PMediaTransportChild {
   mozilla::ipc::IPCResult RecvOnCandidateError(
       IceCandidateErrorInfo&& errorInfo);
   mozilla::ipc::IPCResult RecvOnAlpnNegotiated(const string& alpn);
-  mozilla::ipc::IPCResult RecvOnGatheringStateChange(const string& transportId,
-                                                     const int& state);
-  mozilla::ipc::IPCResult RecvOnConnectionStateChange(const string& transportId,
-                                                      const int& state);
+  mozilla::ipc::IPCResult RecvOnGatheringStateChange(
+      const string& transportId, const RTCIceGathererState& state);
+  mozilla::ipc::IPCResult RecvOnConnectionStateChange(
+      const string& transportId, const RTCIceTransportState& state);
   mozilla::ipc::IPCResult RecvOnPacketReceived(string&& transportId,
                                                MediaPacket&& packet);
   mozilla::ipc::IPCResult RecvOnEncryptedSending(const string& transportId,
                                                  MediaPacket&& packet);
   mozilla::ipc::IPCResult RecvOnStateChange(const string& transportId,
-                                            const int& state);
-  mozilla::ipc::IPCResult RecvOnRtcpStateChange(const string& transportId,
-                                                const int& state);
+                                            const TransportLayerState& state);
+  mozilla::ipc::IPCResult RecvOnRtcpStateChange(
+      const string& transportId, const TransportLayerState& state);
 
  private:
   virtual ~MediaTransportChild();

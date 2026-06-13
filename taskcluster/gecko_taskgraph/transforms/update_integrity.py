@@ -182,9 +182,6 @@ def add_additional_fetches_and_command(config, jobs):
         cert_overrides = job.pop("cert-overrides")
         if cert_overrides:
             cmd.extend([
-                # script that does certificate replacements in the updater
-                "--cert-replace-script",
-                "tools/update-verify/release/replace-updater-certs.py",
                 # directory containing mar certificates
                 # note we use versions from tools/update-verify, not the ones
                 # in toolkit/mozapps/update/updater, which are not precisely

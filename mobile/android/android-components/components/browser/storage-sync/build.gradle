@@ -42,6 +42,7 @@ dependencies {
     testImplementation libs.androidx.test.junit
     testImplementation libs.androidx.work.testing
     testImplementation libs.kotlin.reflect
+    testImplementation libs.kotlin.test
     testImplementation libs.kotlinx.coroutines.test
     testImplementation libs.mozilla.glean.forUnitTests
     testImplementation libs.robolectric

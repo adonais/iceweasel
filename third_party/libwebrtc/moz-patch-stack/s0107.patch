@@ -10,7 +10,7 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/b6dd815fc9d2df718
  1 file changed, 11 deletions(-)
 
 diff --git a/media/BUILD.gn b/media/BUILD.gn
-index c864693158..4a4eb9de0c 100644
+index 7cddb06ba4..3728ef79cf 100644
 --- a/media/BUILD.gn
 +++ b/media/BUILD.gn
 @@ -54,11 +54,6 @@ rtc_library("rtc_media_base") {
@@ -25,7 +25,7 @@ index c864693158..4a4eb9de0c 100644
    deps = [
      ":adapted_video_track_source",
      ":codec",
-@@ -138,12 +133,6 @@ rtc_library("adapted_video_track_source") {
+@@ -137,12 +132,6 @@ rtc_library("adapted_video_track_source") {
      "base/adapted_video_track_source.cc",
      "base/adapted_video_track_source.h",
    ]

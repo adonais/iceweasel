@@ -411,7 +411,7 @@ async function testInteractionFeature(interaction, win) {
 async function clickHandoff(browser) {
   let sandbox = sinon.createSandbox();
   let spy = sandbox.spy(
-    browser.ownerGlobal.gURLBar.inputField,
+    browser.documentGlobal.gURLBar.inputField,
     "addEventListener"
   );
   info("Click on search-handoff-button in newtab page");
@@ -480,6 +480,10 @@ async function openAboutNewTab(win = window) {
     "Waiting for background about:newtab to open."
   );
   let tab = win.gBrowser.tabs[win.gBrowser.tabs.length - 1];
-  await BrowserTestUtils.browserLoaded(tab.linkedBrowser);
+  // about:newtab may be preloaded, in which case the load event already fired
+  // before this listener is set up. Skip browserLoaded in that case.
+  if (tab.linkedBrowser.currentURI?.spec != "about:newtab") {
+    await BrowserTestUtils.browserLoaded(tab.linkedBrowser);
+  }
   return tab;
 }

@@ -190,7 +190,7 @@ bool ParsingResultComparer::CompareMediaSections(
 
 bool ParsingResultComparer::CompareAttrLists(
     const SdpAttributeList& rustAttrlist, const SdpAttributeList& sipccAttrlist,
-    int level, const SdpComparisonResult expect) const {
+    const int level, const SdpComparisonResult expect) const {
   bool result = true;
 
   for (size_t i = AttributeType::kFirstAttribute;
@@ -263,7 +263,7 @@ std::vector<std::string> SplitLines(const std::string& sdp) {
 }
 
 std::string ParsingResultComparer::GetAttributeLines(
-    const std::string& attrType, int level) const {
+    const std::string& attrType, const int level) const {
   std::vector<std::string> lines = SplitLines(mOriginalSdp);
   std::string attrToFind = attrType + ":";
   std::string attrLines;

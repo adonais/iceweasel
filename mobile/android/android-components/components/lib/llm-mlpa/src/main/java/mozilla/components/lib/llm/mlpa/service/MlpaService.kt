@@ -26,12 +26,12 @@ private val BUDGET_EXCEEDED = ErrorCode(1007)
 private val RATE_LIMITED = ErrorCode(1008)
 private val UPSTREAM_ERROR = ErrorCode(1009)
 private val SERVER_ERROR = ErrorCode(1010)
-private val NETWORK_ERROR = ErrorCode(1011)
+private val CHAT_NETWORK_ERROR = ErrorCode(1011)
 private val RESPONSE_PARSE_ERROR = ErrorCode(1012)
 private val RATE_LIMIT_RESPONSE_PARSE_ERROR = ErrorCode(1013)
 private val UPSTREAM_RESPONSE_PARSE_ERROR = ErrorCode(1014)
-private val STREAM_CONTENT_PARSE_ERROR = ErrorCode(1015)
-private val STREAM_EVENT_PARSE_ERROR = ErrorCode(1016)
+private val VERIFICATION_RESPONSE_PARSE_ERROR = ErrorCode(1017)
+private val VERIFICATION_NETWORK_ERROR = ErrorCode(1018)
 
 /**
  * Thrown when the Integrity client experiences a failure, propagating its error message.
@@ -88,7 +88,8 @@ sealed class ChatServiceError(message: String, errorCode: ErrorCode) : Llm.Excep
      *
      * @param cause The underlying network exception.
      */
-    class NetworkError(cause: Exception) : ChatServiceError("Network error: ${cause.message}", NETWORK_ERROR)
+    class ChatNetworkError(cause: Exception) :
+        ChatServiceError("Chat network error: ${cause.message}", CHAT_NETWORK_ERROR)
 
     /**
      * The server response could not be parsed.
@@ -115,20 +116,20 @@ sealed class ChatServiceError(message: String, errorCode: ErrorCode) : Llm.Excep
         ChatServiceError("Upstream response parse error: ${cause.message}", UPSTREAM_RESPONSE_PARSE_ERROR)
 
     /**
-     * A streamed response could not be parsed.
+     * An error occurred while serializing the verification request.
      *
      * @param cause The underlying serialization exception.
      */
-    class StreamEventParseError(cause: Exception) :
-        ChatServiceError("Stream event parse error: ${cause.message}", STREAM_CONTENT_PARSE_ERROR)
+    class VerificationResponseParseError(cause: Exception) :
+        ChatServiceError("Could not decode request: ${cause.message}", VERIFICATION_RESPONSE_PARSE_ERROR)
 
     /**
-     * A streamed response event included an error message.
+     * A network error occurred while communicating with the authentication service.
      *
-     * @param cause The underlying serialization exception.
+     * @param cause The underlying network exception.
      */
-    class StreamError(cause: Exception) :
-        ChatServiceError("Stream event error: ${cause.message}", STREAM_EVENT_PARSE_ERROR)
+    class VerificationNetworkError(cause: Exception) :
+        ChatServiceError("Auth network error: ${cause.message}", VERIFICATION_NETWORK_ERROR)
 }
 
 /**

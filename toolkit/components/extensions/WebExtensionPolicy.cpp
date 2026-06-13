@@ -170,6 +170,23 @@ WebAccessibleResource::WebAccessibleResource(
   }
 }
 
+bool WebAccessibleResource::IsHostMatch(const URLInfo& aURI) {
+  if (!mMatches) {
+    return false;
+  }
+  return mMatches->Matches(aURI) ||
+         // If aURI is not matching schemes of <all_urls>, permit access anyway
+         // if the match pattern includes <all_urls> or *://*/*. This allows
+         // requests from sandboxed documents (moz-nullprincipal) to pass.
+         //
+         // Note: this check means that file:-documents can create a sandboxed
+         // iframe to get access to a resource that is restricted to *://*/*,
+         // despite "*://*/*" supposed to only match http(s). This is acceptable
+         // because a file can already easily bypass the check by embedding a
+         // web page to fetch the resource.
+         (!MatchPattern::MatchesAllURLs(aURI) && mMatches->MatchesAllWebUrls());
+}
+
 bool WebAccessibleResource::IsExtensionMatch(const URLInfo& aURI) {
   if (!mExtensionIDs) {
     return false;
@@ -286,6 +303,9 @@ bool WebExtensionPolicyCore::CanAccessURI(const URLInfo& aURI, bool aExplicit,
   if (!aAllowFilePermission && aURI.Scheme() == nsGkAtoms::file) {
     return false;
   }
+  if (CheckGuarded(aURI).isSome()) {
+    return false;
+  }
 
   AutoReadLock lock(mLock);
   return mHostPermissions && mHostPermissions->Matches(aURI, aExplicit);
@@ -301,6 +321,17 @@ bool WebExtensionPolicyCore::QuarantinedFromURI(const URLInfo& aURI) const {
 
 bool WebExtensionPolicyCore::PrivateBrowsingAllowed() const {
   return HasPermission(nsGkAtoms::privateBrowsingAllowedPermission);
+}
+
+Maybe<dom::ExtensionGuardSource> WebExtensionPolicyCore::CheckGuarded(
+    const URLInfo& aURI) const {
+  AutoReadLock lock(mLock);
+  for (const auto& guard : mGuardSets) {
+    if (guard->Denies(aURI)) {
+      return Some(guard->Source());
+    }
+  }
+  return Nothing();
 }
 
 /*****************************************************************************
@@ -513,6 +544,25 @@ void WebExtensionPolicy::SetAllowedOrigins(MatchPatternSet& aAllowedOrigins) {
   mCore->mHostPermissions = aAllowedOrigins.Core();
 }
 
+void WebExtensionPolicy::GetGuardSets(
+    nsTArray<RefPtr<ExtensionGuardSet>>& aResult) const {
+  aResult.Assign(mGuardSets);
+}
+
+void WebExtensionPolicy::SetGuardSets(
+    const nsTArray<OwningNonNull<ExtensionGuardSet>>& aLists) {
+  nsTArray<RefPtr<ExtensionGuardSetCore>> cores(aLists.Length());
+  mGuardSets.ClearAndRetainStorage();
+  mGuardSets.SetCapacity(aLists.Length());
+  for (const auto& guard : aLists) {
+    cores.AppendElement(guard->Core());
+    mGuardSets.AppendElement(&*guard);
+  }
+  AutoWriteLock lock(mCore->mLock);
+  mCore->mGuardSets = std::move(cores);
+  WebExtensionPolicy_Binding::ClearCachedGuardSetsValue(this);
+}
+
 void WebExtensionPolicy::InjectContentScripts(ErrorResult& aRv) {
   EPS().InjectContentScripts(this, aRv);
 }
@@ -663,6 +713,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(WebExtensionPolicy)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mBrowsingContextGroup)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mLocalizeCallback)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mHostPermissions)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mGuardSets)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mContentScripts)
   NS_IMPL_CYCLE_COLLECTION_UNLINK_PRESERVED_WRAPPER
   AssertIsOnMainThread();
@@ -673,6 +724,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(WebExtensionPolicy)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mBrowsingContextGroup)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mLocalizeCallback)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mHostPermissions)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mGuardSets)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mContentScripts)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 

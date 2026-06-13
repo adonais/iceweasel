@@ -5,8 +5,20 @@
 
 #include "RemoteCDMParent.h"
 #include "RemoteMediaManagerParent.h"
+#include "mozilla/EnumeratedRange.h"
 
 namespace mozilla {
+
+namespace {
+template <typename T>
+void RejectResolver(Maybe<T>& aResolver, const char* aWhere) {
+  if (aResolver) {
+    auto resolver = std::move(*aResolver);
+    aResolver.reset();
+    resolver(MediaResult(NS_ERROR_DOM_MEDIA_CANCELED, aWhere));
+  }
+}
+}  // namespace
 
 RemoteDecoderParent::RemoteDecoderParent(
     RemoteMediaManagerParent* aParent,
@@ -48,97 +60,112 @@ mozilla::ipc::IPCResult RemoteDecoderParent::RecvInit(
     return IPC_OK();
   }
 
+  MOZ_DIAGNOSTIC_ASSERT(!mPendingInitResolver,
+                        "overlapping Init in RemoteDecoderParent");
+  mPendingInitResolver.emplace(std::move(aResolver));
   RefPtr<RemoteDecoderParent> self = this;
-  mDecoder->Init()->Then(
-      mManagerThread, __func__,
-      [self, resolver = std::move(aResolver)](
-          MediaDataDecoder::InitPromise::ResolveOrRejectValue&& aValue) {
-        if (!self->CanSend()) {
-          // The promise to the child would have already been rejected.
-          return;
-        }
-        if (aValue.IsReject()) {
-          resolver(aValue.RejectValue());
-          return;
-        }
-        auto track = aValue.ResolveValue();
-        MOZ_ASSERT(track == TrackInfo::kAudioTrack ||
-                   track == TrackInfo::kVideoTrack);
-        if (self->mDecoder) {
-          nsCString hardwareReason;
-          bool hardwareAccelerated =
-              self->mDecoder->IsHardwareAccelerated(hardwareReason);
-          nsTArray<DecodePropertyIPDL> properties;
-          for (size_t i = 0; i < MediaDataDecoder::sPropertyNameCount; i++) {
-            MediaDataDecoder::PropertyName name =
-                static_cast<MediaDataDecoder::PropertyName>(i);
-            if (auto v = self->mDecoder->GetDecodeProperty(name)) {
-              properties.AppendElement(
-                  DecodePropertyIPDL(name, std::move(v.ref())));
+  mInitRequest.DisconnectIfExists();
+  mDecoder->Init()
+      ->Then(
+          mManagerThread, __func__,
+          [self](MediaDataDecoder::InitPromise::ResolveOrRejectValue&& aValue) {
+            self->mInitRequest.Complete();
+            if (!self->CanSend() || !self->mPendingInitResolver) {
+              return;
             }
-          }
-          resolver(InitCompletionIPDL{
-              track, self->mDecoder->GetDescriptionName(),
-              self->mDecoder->GetProcessName(), self->mDecoder->GetCodecName(),
-              hardwareAccelerated, hardwareReason,
-              self->mDecoder->NeedsConversion(),
-              self->mDecoder->ShouldDecoderAlwaysBeRecycled(), properties});
-        }
-      });
+            auto resolver = std::move(*self->mPendingInitResolver);
+            self->mPendingInitResolver.reset();
+            if (aValue.IsReject()) {
+              resolver(aValue.RejectValue());
+              return;
+            }
+            auto track = aValue.ResolveValue();
+            MOZ_ASSERT(track == TrackInfo::kAudioTrack ||
+                       track == TrackInfo::kVideoTrack);
+            if (self->mDecoder) {
+              nsCString hardwareReason;
+              bool hardwareAccelerated =
+                  self->mDecoder->IsHardwareAccelerated(hardwareReason);
+              nsTArray<DecodePropertyIPDL> properties;
+              for (auto name : MakeInclusiveEnumeratedRange(
+                       MediaDataDecoder::sHighestPropertyName)) {
+                if (auto v = self->mDecoder->GetDecodeProperty(name)) {
+                  properties.AppendElement(
+                      DecodePropertyIPDL(name, std::move(v.ref())));
+                }
+              }
+              resolver(InitCompletionIPDL{
+                  track, self->mDecoder->GetDescriptionName(),
+                  self->mDecoder->GetProcessName(),
+                  self->mDecoder->GetCodecName(), hardwareAccelerated,
+                  hardwareReason, self->mDecoder->NeedsConversion(),
+                  self->mDecoder->ShouldDecoderAlwaysBeRecycled(), properties});
+            }
+          })
+      ->Track(mInitRequest);
   return IPC_OK();
 }
 
 void RemoteDecoderParent::DecodeNextSample(
     const RefPtr<ArrayOfRemoteMediaRawData>& aData, size_t aIndex,
-    MediaDataDecoder::DecodedData&& aOutput, DecodeResolver&& aResolver) {
+    MediaDataDecoder::DecodedData&& aOutput) {
   MOZ_ASSERT(OnManagerThread());
 
-  if (!CanSend()) {
-    // Avoid unnecessarily creating shmem objects later.
+  if (!CanSend() || !mPendingDecodeResolver) {
     return;
   }
 
   if (!mDecoder) {
-    // We got shutdown or the child got destroyed.
-    aResolver(MediaResult(NS_ERROR_ABORT, __func__));
+    auto resolver = std::move(*mPendingDecodeResolver);
+    mPendingDecodeResolver.reset();
+    resolver(MediaResult(NS_ERROR_ABORT, __func__));
     return;
   }
 
   if (aData->Count() == aIndex) {
+    auto resolver = std::move(*mPendingDecodeResolver);
+    mPendingDecodeResolver.reset();
     DecodedOutputIPDL result;
     MediaResult rv = ProcessDecodedData(std::move(aOutput), result);
     if (NS_FAILED(rv)) {
-      aResolver(std::move(rv));  // Out of Memory.
+      resolver(std::move(rv));  // Out of Memory.
     } else {
-      aResolver(std::move(result));
+      resolver(std::move(result));
     }
     return;
   }
 
   RefPtr<MediaRawData> rawData = aData->ElementAt(aIndex);
   if (!rawData) {
-    // OOM
-    aResolver(MediaResult(NS_ERROR_OUT_OF_MEMORY, __func__));
+    auto resolver = std::move(*mPendingDecodeResolver);
+    mPendingDecodeResolver.reset();
+    resolver(MediaResult(NS_ERROR_OUT_OF_MEMORY, __func__));
     return;
   }
 
-  mDecoder->Decode(rawData)->Then(
-      mManagerThread, __func__,
-      [self = RefPtr{this}, this, aData, aIndex, output = std::move(aOutput),
-       resolver = std::move(aResolver)](
-          MediaDataDecoder::DecodePromise::ResolveOrRejectValue&&
-              aValue) mutable {
-        if (aValue.IsReject()) {
-          resolver(aValue.RejectValue());
-          return;
-        }
+  mDecodeRequest.DisconnectIfExists();
+  mDecoder->Decode(rawData)
+      ->Then(mManagerThread, __func__,
+             [self = RefPtr{this}, this, aData, aIndex,
+              output = std::move(aOutput)](
+                 MediaDataDecoder::DecodePromise::ResolveOrRejectValue&&
+                     aValue) mutable {
+               mDecodeRequest.Complete();
+               if (aValue.IsReject()) {
+                 if (mPendingDecodeResolver) {
+                   auto resolver = std::move(*mPendingDecodeResolver);
+                   mPendingDecodeResolver.reset();
+                   resolver(aValue.RejectValue());
+                 }
+                 return;
+               }
 
-        output.AppendElements(std::move(aValue.ResolveValue()));
+               output.AppendElements(std::move(aValue.ResolveValue()));
 
-        // Call again in case we have more data to decode.
-        DecodeNextSample(aData, aIndex + 1, std::move(output),
-                         std::move(resolver));
-      });
+               // Call again in case we have more data to decode.
+               DecodeNextSample(aData, aIndex + 1, std::move(output));
+             })
+      ->Track(mDecodeRequest);
 }
 
 mozilla::ipc::IPCResult RemoteDecoderParent::RecvDecode(
@@ -148,8 +175,11 @@ mozilla::ipc::IPCResult RemoteDecoderParent::RecvDecode(
   // used by the child. We can mark all previously sent ShmemBuffer as
   // available again.
   ReleaseAllBuffers();
+  MOZ_DIAGNOSTIC_ASSERT(!mPendingDecodeResolver,
+                        "overlapping Decode in RemoteDecoderParent");
+  mPendingDecodeResolver.emplace(std::move(aResolver));
   MediaDataDecoder::DecodedData output;
-  DecodeNextSample(aData, 0, std::move(output), std::move(aResolver));
+  DecodeNextSample(aData, 0, std::move(output));
 
   return IPC_OK();
 }
@@ -162,18 +192,30 @@ mozilla::ipc::IPCResult RemoteDecoderParent::RecvFlush(
     return IPC_OK();
   }
 
+  MOZ_DIAGNOSTIC_ASSERT(!mPendingFlushResolver,
+                        "overlapping Flush in RemoteDecoderParent");
+  mPendingFlushResolver.emplace(std::move(aResolver));
   RefPtr<RemoteDecoderParent> self = this;
-  mDecoder->Flush()->Then(
-      mManagerThread, __func__,
-      [self, resolver = std::move(aResolver)](
-          MediaDataDecoder::FlushPromise::ResolveOrRejectValue&& aValue) {
-        self->ReleaseAllBuffers();
-        if (aValue.IsReject()) {
-          resolver(aValue.RejectValue());
-        } else {
-          resolver(MediaResult(NS_OK));
-        }
-      });
+  mFlushRequest.DisconnectIfExists();
+  mDecoder->Flush()
+      ->Then(
+          mManagerThread, __func__,
+          [self](
+              MediaDataDecoder::FlushPromise::ResolveOrRejectValue&& aValue) {
+            self->mFlushRequest.Complete();
+            if (!self->mPendingFlushResolver) {
+              return;
+            }
+            auto resolver = std::move(*self->mPendingFlushResolver);
+            self->mPendingFlushResolver.reset();
+            self->ReleaseAllBuffers();
+            if (aValue.IsReject()) {
+              resolver(aValue.RejectValue());
+            } else {
+              resolver(MediaResult(NS_OK));
+            }
+          })
+      ->Track(mFlushRequest);
 
   return IPC_OK();
 }
@@ -186,35 +228,48 @@ mozilla::ipc::IPCResult RemoteDecoderParent::RecvDrain(
     return IPC_OK();
   }
 
+  MOZ_DIAGNOSTIC_ASSERT(!mPendingDrainResolver,
+                        "overlapping Drain in RemoteDecoderParent");
+  mPendingDrainResolver.emplace(std::move(aResolver));
   RefPtr<RemoteDecoderParent> self = this;
-  mDecoder->Drain()->Then(
-      mManagerThread, __func__,
-      [self, this, resolver = std::move(aResolver)](
-          MediaDataDecoder::DecodePromise::ResolveOrRejectValue&& aValue) {
-        ReleaseAllBuffers();
-        if (!self->CanSend()) {
-          // Avoid unnecessarily creating shmem objects later.
-          return;
-        }
-        if (aValue.IsReject()) {
-          resolver(aValue.RejectValue());
-          return;
-        }
-        DecodedOutputIPDL output;
-        MediaResult rv =
-            ProcessDecodedData(std::move(aValue.ResolveValue()), output);
-        if (NS_FAILED(rv)) {
-          resolver(rv);
-        } else {
-          resolver(std::move(output));
-        }
-      });
+  mDrainRequest.DisconnectIfExists();
+  mDecoder->Drain()
+      ->Then(
+          mManagerThread, __func__,
+          [self, this](
+              MediaDataDecoder::DecodePromise::ResolveOrRejectValue&& aValue) {
+            mDrainRequest.Complete();
+            if (!mPendingDrainResolver) {
+              return;
+            }
+            auto resolver = std::move(*mPendingDrainResolver);
+            mPendingDrainResolver.reset();
+            ReleaseAllBuffers();
+            if (!self->CanSend()) {
+              resolver(MediaResult(NS_ERROR_DOM_MEDIA_CANCELED, __func__));
+              return;
+            }
+            if (aValue.IsReject()) {
+              resolver(aValue.RejectValue());
+              return;
+            }
+            DecodedOutputIPDL output;
+            MediaResult rv =
+                ProcessDecodedData(std::move(aValue.ResolveValue()), output);
+            if (NS_FAILED(rv)) {
+              resolver(rv);
+            } else {
+              resolver(std::move(output));
+            }
+          })
+      ->Track(mDrainRequest);
   return IPC_OK();
 }
 
 mozilla::ipc::IPCResult RemoteDecoderParent::RecvShutdown(
     ShutdownResolver&& aResolver) {
   MOZ_ASSERT(OnManagerThread());
+  AbortPendingRequests();
   if (mDecoder) {
     RefPtr<RemoteDecoderParent> self = this;
     mDecoder->Shutdown()->Then(
@@ -225,6 +280,8 @@ mozilla::ipc::IPCResult RemoteDecoderParent::RecvShutdown(
           self->ReleaseAllBuffers();
           resolver(true);
         });
+  } else {
+    aResolver(true);
   }
   mDecoder = nullptr;
   mShutdown = true;
@@ -242,11 +299,24 @@ mozilla::ipc::IPCResult RemoteDecoderParent::RecvSetSeekThreshold(
 
 void RemoteDecoderParent::ActorDestroy(ActorDestroyReason aWhy) {
   MOZ_ASSERT(OnManagerThread());
+  AbortPendingRequests();
   if (mDecoder) {
     mDecoder->Shutdown();
     mDecoder = nullptr;
   }
   CleanupShmemRecycleAllocator();
+}
+
+void RemoteDecoderParent::AbortPendingRequests() {
+  MOZ_ASSERT(OnManagerThread());
+  RejectResolver(mPendingInitResolver, __func__);
+  RejectResolver(mPendingDecodeResolver, __func__);
+  RejectResolver(mPendingFlushResolver, __func__);
+  RejectResolver(mPendingDrainResolver, __func__);
+  mInitRequest.DisconnectIfExists();
+  mDecodeRequest.DisconnectIfExists();
+  mFlushRequest.DisconnectIfExists();
+  mDrainRequest.DisconnectIfExists();
 }
 
 bool RemoteDecoderParent::OnManagerThread() {

@@ -17,14 +17,13 @@ import mozilla.components.concept.storage.BookmarksStorage
 import mozilla.components.concept.storage.HistoryStorage
 import mozilla.components.concept.storage.VisitInfo
 import mozilla.components.concept.storage.VisitType
-import mozilla.components.support.test.capture
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.mozilla.fenix.home.bookmarks.Bookmark
 import java.util.concurrent.TimeUnit
+import kotlin.test.assertNotNull
 
 class BookmarksUseCaseTest {
 

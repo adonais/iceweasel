@@ -6,12 +6,13 @@
       "matches": ["*://kaigetsu.staysee.jp/*"]
     }
   },
+  "css": {
+    "hide_browser_notice": ".loginFooter__desc__browser { display: none !important; }"
+  },
   "interventions": [
     {
       "platforms": ["all"],
-      "content_scripts": {
-        "css": ["bug1902415-kaigetsu.staysee.jp-hide-unsupported.css"]
-      }
+      "css": ["hide_browser_notice"]
     }
   ]
 }

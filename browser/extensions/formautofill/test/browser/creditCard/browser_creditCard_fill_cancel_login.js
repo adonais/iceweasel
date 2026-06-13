@@ -20,7 +20,6 @@ add_task(async function test_fill_creditCard_but_cancel_login() {
 
   await Services.fog.testFlushAllChildren();
   Services.fog.testResetFOG();
-  Services.telemetry.clearEvents();
 
   await setStorage(TEST_CREDIT_CARD_2);
 

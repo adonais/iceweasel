@@ -1109,17 +1109,6 @@ interface nsIDOMWindowUtils : nsISupports {
                                [optional] in unsigned long aAdditionalFlags);
 
   /**
-   * If sendQueryContentEvent()'s aAdditionalFlags argument is
-   * QUERY_CONTENT_FLAG_USE_XP_LINE_BREAK, plain text generated from content
-   * is created with "\n".
-   * Otherwise, platform dependent.  E.g., on Windows, "\r\n" is used.
-   * aOffset and aLength are offset and length in/of the plain text content.
-   * This flag also affects the result values such as offset, length and string.
-   */
-  const unsigned long QUERY_CONTENT_FLAG_USE_NATIVE_LINE_BREAK = 0x0000;
-  const unsigned long QUERY_CONTENT_FLAG_USE_XP_LINE_BREAK     = 0x0001;
-
-  /**
    * sendQueryContentEvent()'s aAdditionalFlags may have one of following
    * flags when aType is QUERY_SELECTED_TEXT.  If one of them is set,
    * the result is the first range of the selection type.  See also
@@ -1139,8 +1128,6 @@ interface nsIDOMWindowUtils : nsISupports {
   /**
    * One of sendQueryContentEvent()'s aAdditionalFlags.  If this is specified,
    * aOffset is relative to start of selection or composition.
-   * Note that this is supported only when QUERY_CONTENT_FLAG_USE_XP_LINE_BREAK
-   * is not specified for now.
    */
   const unsigned long QUERY_CONTENT_FLAG_OFFSET_RELATIVE_TO_INSERTION_POINT =
                                                                          0x0400;

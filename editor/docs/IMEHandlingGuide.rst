@@ -82,30 +82,39 @@ selections from ``mozilla::TextRangeType`` which are sent by
 ``mozilla::WidgetCompositionEvent`` as ``mozilla::TextRangeArray``. The
 following table explains the mapping between them.
 
-.. table:: Selection types of each clause of composition string or caret
+.. list-table:: Selection types of each clause of composition string or caret
+   :header-rows: 1
+   :widths: auto
 
-   +------------------------------------------------------------+---------------------------------------+-------------------------+-------------------------+
-   |                                                            |`nsISelectionController`_              |`mozilla::SelectionType`_|`mozilla::TextRangeType`_|
-   +============================================================+=======================================+=========================+=========================+
-   |Caret                                                       |``SELECTION_NORMAL``                   |``eNormal``              |``eCaret``               |
-   +------------------------------------------------------------+---------------------------------------+-------------------------+-------------------------+
-   |Raw text typed by the user                                  |``SELECTION_IME_RAW_INPUT``            |``eIMERawClause``        |``eRawClause``           |
-   +------------------------------------------------------------+---------------------------------------+-------------------------+-------------------------+
-   |Selected clause of raw text typed by the user               |``SELECTION_IME_SELECTEDRAWTEXT``      |``eIMESelectedRawClause``|``eSelectedRawClause``   |
-   +------------------------------------------------------------+---------------------------------------+-------------------------+-------------------------+
-   |Converted clause by IME                                     |``SELECTION_IME_CONVERTEDTEXT``        |``eIMEConvertedClause``  |``eConvertedClause``     |
-   +------------------------------------------------------------+---------------------------------------+-------------------------+-------------------------+
-   |Selected clause by the user or IME and also converted by IME|``SELECTION_IME_SELECTEDCONVERTEDTEXT``|``eIMESelectedClause``   |``eSelectedClause``      |
-   +------------------------------------------------------------+---------------------------------------+-------------------------+-------------------------+
+   * -
+     - :searchfox:`nsISelectionController <dom/base/nsISelectionController.idl>`
+     - :searchfox:`mozilla::SelectionType <dom/base/nsISelectionController.idl>`
+     - :searchfox:`mozilla::TextRangeType <widget/TextRange.h>`
+   * - Caret
+     - ``SELECTION_NORMAL``
+     - ``eNormal``
+     - ``eCaret``
+   * - Raw text typed by the user
+     - ``SELECTION_IME_RAW_INPUT``
+     - ``eIMERawClause``
+     - ``eRawClause``
+   * - Selected clause of raw text typed by the user
+     - ``SELECTION_IME_SELECTEDRAWTEXT``
+     - ``eIMESelectedRawClause``
+     - ``eSelectedRawClause``
+   * - Converted clause by IME
+     - ``SELECTION_IME_CONVERTEDTEXT``
+     - ``eIMEConvertedClause``
+     - ``eConvertedClause``
+   * - Selected clause by the user or IME and also converted by IME
+     - ``SELECTION_IME_SELECTEDCONVERTEDTEXT``
+     - ``eIMESelectedClause``
+     - ``eSelectedClause``
 
 Note that typically, "Selected clause of raw text typed by the user" isn't used
 because when composition string is already separated to multiple clauses, that
 means that the composition string has already been converted by IME at least
 once.
-
-.. _nsISelectionController: https://searchfox.org/mozilla-central/source/dom/base/nsISelectionController.idl
-.. _mozilla::SelectionType: https://searchfox.org/mozilla-central/source/dom/base/nsISelectionController.idl
-.. _mozilla::TextRangeType: https://searchfox.org/mozilla-central/source/widget/TextRange.h
 
 Modules handling IME composition
 ================================
@@ -277,12 +286,12 @@ composition to IME is perefored synchronously. See
 editor/libeditor
 ----------------
 
-`mozilla::EditorEventListener <https://searchfox.org/mozilla-central/source/editor/libeditor/EditorEventListener.cpp>`__
+:searchfox:`mozilla::EditorEventListener <editor/libeditor/EditorEventListener.cpp>`
 listens for trusted DOM ``compositionstart``, ``text`` and ``compositionend``
 events and notifies
-`mozilla::EditorBase <https://searchfox.org/mozilla-central/source/editor/libeditor/EditorBase.cpp>`__
+:searchfox:`mozilla::EditorBase <editor/libeditor/EditorBase.cpp>`
 and
-`mozilla::TextEditor <https://searchfox.org/mozilla-central/source/editor/libeditor/TextEditor.cpp>`__
+:searchfox:`mozilla::TextEditor <editor/libeditor/TextEditor.cpp>`
 of the events.
 
 When ``EditorBase`` receives an ``eCompositionStart``
@@ -291,7 +300,7 @@ instance and stores it.
 
 When ``TextEditor`` receives an ``eCompositionChange`` (DOM ``"text"``) event,
 it creates or modifies a text node which includes the composition string and
-`mozilla::CompositionTransaction <https://searchfox.org/mozilla-central/source/editor/libeditor/CompositionTransaction.cpp>`__
+:searchfox:`mozilla::CompositionTransaction <editor/libeditor/CompositionTransaction.cpp>`
 (it was called ``IMETextTxn``) sets IME selections for representing the clauses
 of the composition string.
 
@@ -413,7 +422,7 @@ mozilla::ContentCacheInChild
 ----------------------------
 
 This exists only in remote processes. This is created as a member of
-`PuppetWidget <https://searchfox.org/mozilla-central/source/widget/PuppetWidget.cpp>`__.
+:searchfox:`PuppetWidget <widget/PuppetWidget.cpp>`.
 When ``PuppetWidget`` receives notifications to IME from ``IMEContentObserver``
 in the remote process, it makes this class modify its cached content. Then,
 this class do that with ``WidgetQueryContentEvents``. Finally, ``PuppetWidget``
@@ -488,7 +497,7 @@ Style of each clause
 --------------------
 
 The style of each IME selection is managed by
-`LookAndFeel <https://searchfox.org/mozilla-central/source/widget/LookAndFeel.h>`__
+:searchfox:`LookAndFeel <widget/LookAndFeel.h>`
 class per platform. Therefore, it can be overridden by prefs.
 
 Background color, foreground color (text color) and underline color can be
@@ -510,7 +519,7 @@ specified with following prefs. The values must be string of "#rrggbb" format.
 Underline style can be specified with the following prefs. The values are
 integer,  0: none, 1: dotted, 2: dashed, 3: solid, 4: double, 5: wavy (The
 values same as ``mozilla::StyleTextDecorationStyle`` defined in
-`nsStyleConsts.h <https://searchfox.org/mozilla-central/source/layout/style/nsStyleConsts.h>`__).
+:searchfox:`nsStyleConsts.h <layout/style/nsStyleConsts.h>`).
 
 * ``ui.IMERawInputUnderlineStyle``
 * ``ui.IMESelectedRawTextUnderlineStyle``
@@ -524,7 +533,7 @@ normal width, 200 means double width.
 On some platforms, IME may support its own style for each clause. Currently,
 this feature is supported in TSF mode of Windows and on Linux. The style
 information is stored in ``TextRangeStyle`` which is defined in
-`TextRange.h <https://searchfox.org/mozilla-central/source/widget/TextRange.h>`__.
+:searchfox:`TextRange.h <widget/TextRange.h>`.
 It's a member of ``TextRange``. ``TextRange`` is stored in ``mRanges`` of
 ``WidgetCompositionEvent`` only when its message is ``eCompositionChange``.
 
@@ -707,7 +716,7 @@ focused editor, this is sent to widget. But this is sent only when result of
 ``nsIWidget::GetIMEUpdatePreference()`` includes
 ``NOTIFY_MOUSE_BUTTON_EVENT_ON_CHAR``. This is sent with various information.
 See ``IMENotification::mMouseButtonEventData`` in
-`IMEData.h <https://searchfox.org/mozilla-central/source/widget/IMEData.h>`__
+:searchfox:`IMEData.h <widget/IMEData.h>`
 for the detail.
 
 If native IME supports mouse button event handling, ``widget`` should notify
@@ -842,7 +851,7 @@ of the new focused node (calls ``IMEStateManager::OnChangeFocus()``).
 returns the result.
 
 Next, ``IMEStateManager`` initializes ``InputContext`` (defined in
-`IMEData.h <https://searchfox.org/mozilla-central/source/widget/IMEData.h>`__)
+:searchfox:`IMEData.h <widget/IMEData.h>`)
 with the desired IME state and node information. Then, it calls
 ``nsIWidget::SetInputContext()`` with the ``InputContext``.
 
@@ -917,26 +926,26 @@ How does Gecko disable IME in IMM mode on Windows
 
 Every window on Windows is associated an ``IMContext``. When Gecko disables
 IME,
-`mozilla::widget::IMEHandler <https://searchfox.org/mozilla-central/source/widget/windows/WinIMEHandler.cpp>`__::SetInputContext()
+:searchfox:`mozilla::widget::IMEHandler <widget/windows/WinIMEHandler.cpp>`::SetInputContext()
 disassociates the context from the window.
 
 How does Gecko disable IME in TSF mode on Windows
 """""""""""""""""""""""""""""""""""""""""""""""""
 
-`mozilla::widget::TSFTextStore <https://searchfox.org/mozilla-central/source/widget/windows/TSFTextStore.cpp>`__
+:searchfox:`mozilla::widget::TSFTextStore <widget/windows/TSFTextStore.cpp>`
 sets focus to a dummy context which disables the keyboard.
 
 How does Gecko disable IME on Mac
 """""""""""""""""""""""""""""""""
 
-`mozilla::widget::TextInputHandler <https://searchfox.org/mozilla-central/source/widget/cocoa/TextInputHandler.mm>`__::HandleKeyDownEvent()
+:searchfox:`mozilla::widget::TextInputHandler <widget/cocoa/TextInputHandler.mm>`::HandleKeyDownEvent()
 doesn't call focused view's interpretKeyEvents. This prevents native key events
 to be passed to IME.
 
 How does Gecko disable IME on GTK
 """""""""""""""""""""""""""""""""
 
-`mozilla::widget::IMContextWrapper <https://searchfox.org/mozilla-central/source/widget/gtk/IMContextWrapper.cpp>`__
+:searchfox:`mozilla::widget::IMContextWrapper <widget/gtk/IMContextWrapper.cpp>`
 sets focus to a dummy context which doesn't have IME composition.
 
 How does Gecko disable IME on Android
@@ -982,17 +991,16 @@ Following classes handles IME on each platform:
 Windows
 -------
 
-`mozilla::widget::IMEHandler`__
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+:searchfox:`mozilla::widget::IMEHandler <widget/windows/WinIMEHandler.cpp>`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 This class manages input method context of each window and makes ``IMMHandler``
 or ``TSFTextStore`` work with active IME and focused editor. This class has
 only static members, i.e., never created its instance.
 
-__ https://searchfox.org/mozilla-central/source/widget/windows/WinIMEHandler.cpp
 
-`mozilla::widget::IMMHandler`__
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+:searchfox:`mozilla::widget::IMMHandler <widget/windows/IMMHandler.cpp>`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 This class is used when TSF mode is disabled by pref (``"intl.tsf.enabled"``
 since 108, formerly named ``"intl.tsf.enable"``) or active IME is for IMM
@@ -1004,10 +1012,9 @@ Typically, a process creates windows with default IM context. Therefore, this
 design is enough (ideally, an instance should be created per IM context,
 though). The singleton instance is created when it becomes necessary.
 
-__ https://searchfox.org/mozilla-central/source/widget/windows/IMMHandler.cpp
 
-`mozilla::widget::TSFTextStore`__
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+:searchfox:`mozilla::widget::TSFTextStore <widget/windows/TSFTextStore.cpp>`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 This class handles IME events in TSF mode and when TIP (IME implemented with
 TSF) is active. This instances are created when an editable element gets focus
@@ -1062,30 +1069,29 @@ position's character rect (for a popup to indicate current input mode or next
 word suggestion list) or first character rect of the target clause of current
 composition (for a candidate list window of conversion).
 
-__ https://searchfox.org/mozilla-central/source/widget/windows/TSFTextStore.cpp
 
 Mac
 ---
 
 Both IME and key events are handled in
-`TextInputHandler.mm <https://searchfox.org/mozilla-central/source/widget/cocoa/TextInputHandler.mm>`__.
+:searchfox:`TextInputHandler.mm <widget/cocoa/TextInputHandler.mm>`.
 
 ``mozilla::widget::TextInputHandlerBase`` is the most base class.
 ``mozilla::widget::IMEInputHandler`` inherits ``TextInputHandlerBase`` and
 handles IME related events. ``mozilla::widget::TextInputHandler`` inherits
 ``TextInputHandlerBase`` and implements ``NSTextInput`` protocol of Cocoa. Its
 instance is created per
-`nsChildView <https://searchfox.org/mozilla-central/source/widget/cocoa/nsChildView.mm>`__
+:searchfox:`nsChildView <widget/cocoa/nsChildView.mm>`
 instance.
 
 GTK
 ---
 
-`mozilla::widget::IMContextWrapper <https://searchfox.org/mozilla-central/source/widget/gtk/IMContextWrapper.cpp>`__
+:searchfox:`mozilla::widget::IMContextWrapper <widget/gtk/IMContextWrapper.cpp>`
 handles IME. The instance is created per top level window.
 
 Android
 -------
 
-`org.mozilla.geckoview.GeckoEditable <https://searchfox.org/mozilla-central/source/mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoEditable.java>`__ handles native IME events and `mozilla::widget::GeckoEditableSupport <https://searchfox.org/mozilla-central/source/widget/android/GeckoEditableSupport.cpp>`__
+:searchfox:`org.mozilla.geckoview.GeckoEditable <mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoEditable.java>` handles native IME events and :searchfox:`mozilla::widget::GeckoEditableSupport <widget/android/GeckoEditableSupport.cpp>`
 dispatches ``Widget*Event``.

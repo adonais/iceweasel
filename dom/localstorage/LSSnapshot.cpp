@@ -298,7 +298,7 @@ nsresult LSSnapshot::GetItem(const nsAString& aKey, nsAString& aResult) {
     return rv;
   }
 
-  aResult = result;
+  aResult = std::move(result);
   return NS_OK;
 }
 
@@ -423,7 +423,7 @@ nsresult LSSnapshot::SetItem(const nsAString& aKey, const nsAString& aValue,
   }
 
   aNotifyInfo.changed() = changed;
-  aNotifyInfo.oldValue() = oldValue;
+  aNotifyInfo.oldValue() = std::move(oldValue);
 
   return NS_OK;
 }
@@ -495,7 +495,7 @@ nsresult LSSnapshot::RemoveItem(const nsAString& aKey,
   }
 
   aNotifyInfo.changed() = changed;
-  aNotifyInfo.oldValue() = oldValue;
+  aNotifyInfo.oldValue() = std::move(oldValue);
 
   return NS_OK;
 }
@@ -805,7 +805,7 @@ nsresult LSSnapshot::GetItemInternal(const nsAString& aKey,
       MOZ_CRASH("Bad state!");
   }
 
-  aResult = result;
+  aResult = std::move(result);
   return NS_OK;
 }
 
@@ -903,7 +903,7 @@ nsresult LSSnapshot::EnsureAllKeys() {
   for (auto iter = newValues.Iter(); !iter.Done(); iter.Next()) {
     nsString value;
     if (mValues.Get(iter.Key(), &value)) {
-      iter.Data() = value;
+      iter.Data() = std::move(value);
     }
   }
 

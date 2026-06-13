@@ -63,12 +63,13 @@ class nsJSURI final : public mozilla::net::nsSimpleURI {
 
   nsIURI* GetBaseURI() const { return mBaseURI; }
 
+  NS_INLINE_DECL_STATIC_IID(NS_JSURI_CID)
   NS_DECL_ISUPPORTS_INHERITED
 
   // nsIURI overrides
   virtual already_AddRefed<mozilla::net::nsSimpleURI> StartClone() override;
   NS_IMETHOD Mutate(nsIURIMutator** _retval) override;
-  NS_IMETHOD_(void) Serialize(mozilla::ipc::URIParams& aParams) override;
+  virtual void Serialize(mozilla::ipc::URIParams& aParams) override;
 
   // nsISerializable overrides
   NS_IMETHOD Read(nsIObjectInputStream* aStream) override;

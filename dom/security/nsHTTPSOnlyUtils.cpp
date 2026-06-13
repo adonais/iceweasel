@@ -808,7 +808,9 @@ bool nsHTTPSOnlyUtils::HttpsUpgradeUnrelatedErrorCode(nsresult aError) {
          NS_ERROR_UNKNOWN_HOST == aError || NS_ERROR_PHISHING_URI == aError ||
          NS_ERROR_MALWARE_URI == aError || NS_ERROR_UNWANTED_URI == aError ||
          NS_ERROR_HARMFUL_URI == aError || NS_ERROR_CONTENT_CRASHED == aError ||
-         NS_ERROR_FRAME_CRASHED == aError;
+         NS_ERROR_FRAME_CRASHED == aError ||
+         NS_ERROR_NET_EMPTY_RESPONSE == aError ||
+         NS_ERROR_NET_ERROR_RESPONSE == aError;
 }
 
 /* ------ Logging ------ */
@@ -1150,8 +1152,16 @@ TestHTTPAnswerRunnable::Run() {
         new nsDNSPrefetch(mURI, originAttributes, origChannel->GetTRRMode());
     nsCOMPtr<nsIHttpChannelInternal> internalChannel =
         do_QueryInterface(origChannel);
+    // If the channel will be proxied and the proxy is responsible for DNS
+    // resolution, skip the HTTPS RR lookup to avoid leaking the host name
+    nsIHttpChannelInternal::ProxyDNSStrategy dnsStrategy =
+        nsIHttpChannelInternal::PROXY_DNS_STRATEGY_ORIGIN;
+    if (internalChannel) {
+      (void)internalChannel->GetProxyDNSStrategy(&dnsStrategy);
+    }
     uint32_t caps;
-    if (NS_SUCCEEDED(internalChannel->GetCaps(&caps))) {
+    if (dnsStrategy != nsIHttpChannelInternal::PROXY_DNS_STRATEGY_PROXY &&
+        internalChannel && NS_SUCCEEDED(internalChannel->GetCaps(&caps))) {
       (void)resolver->FetchHTTPSSVC(
           caps & NS_HTTP_REFRESH_DNS, false,
           [self = RefPtr{this}](nsIDNSHTTPSSVCRecord* aRecord) {

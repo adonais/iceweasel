@@ -25,6 +25,12 @@ class TokenizerBase {
 
   static TChar const sWhitespaces[];
 
+  TokenizerBase() = delete;
+  TokenizerBase(const TokenizerBase&) = delete;
+  TokenizerBase(TokenizerBase&&) = delete;
+  TokenizerBase(const TokenizerBase&&) = delete;
+  TokenizerBase& operator=(const TokenizerBase&) = delete;
+
   /**
    * The analyzer works with elements in the input cut to a sequence of token
    * where each token has an elementary type
@@ -200,13 +206,6 @@ class TokenizerBase {
   // This is the list of tokens user has registered with AddCustomToken()
   nsTArray<UniquePtr<Token>> mCustomTokens;
   uint32_t mNextCustomTokenID;
-
- private:
-  TokenizerBase() = delete;
-  TokenizerBase(const TokenizerBase&) = delete;
-  TokenizerBase(TokenizerBase&&) = delete;
-  TokenizerBase(const TokenizerBase&&) = delete;
-  TokenizerBase& operator=(const TokenizerBase&) = delete;
 };
 
 /**
@@ -558,6 +557,12 @@ class TTokenizer : public TokenizerBase<TChar> {
                                typename base::TAString& aResult,
                                ClaimInclusion aInclude = EXCLUDE_LAST);
 
+  TTokenizer() = delete;
+  TTokenizer(const TTokenizer&) = delete;
+  TTokenizer(TTokenizer&&) = delete;
+  TTokenizer(const TTokenizer&&) = delete;
+  TTokenizer& operator=(const TTokenizer&) = delete;
+
  protected:
   // All these point to the original buffer passed to the TTokenizer's
   // constructor
@@ -565,13 +570,6 @@ class TTokenizer : public TokenizerBase<TChar> {
       mRecord;  // Position where the recorded sub-string for Claim() is
   typename base::TAString::const_char_iterator
       mRollback;  // Position of the previous token start
-
- private:
-  TTokenizer() = delete;
-  TTokenizer(const TTokenizer&) = delete;
-  TTokenizer(TTokenizer&&) = delete;
-  TTokenizer(const TTokenizer&&) = delete;
-  TTokenizer& operator=(const TTokenizer&) = delete;
 };
 
 typedef TTokenizer<char> Tokenizer;

@@ -1307,6 +1307,35 @@ class BookmarksReducerTest {
         assertEquals(currentFolder.guid, result.bookmarksSelectFolderState?.outerSelectionGuid)
     }
 
+    @Test
+    fun `WHEN RootOverflowMenuClicked THEN rootMenuShown is true`() {
+        val state = BookmarksState.default
+        assertFalse(state.rootMenuShown)
+        val result = bookmarksReducer(state, RootOverflowMenuClicked)
+        assertTrue(result.rootMenuShown)
+    }
+
+    @Test
+    fun `WHEN RootOverflowMenuDismissed THEN rootMenuShown is false`() {
+        val state = BookmarksState.default.copy(rootMenuShown = true)
+        val result = bookmarksReducer(state, RootOverflowMenuDismissed)
+        assertFalse(result.rootMenuShown)
+    }
+
+    @Test
+    fun `WHEN ImportFileClicked from button THEN rootMenuShown is false and launchFilePicker is true`() {
+        val state = BookmarksState.default.copy(rootMenuShown = true)
+        val result = bookmarksReducer(state, ImportAction.ImportFileClicked.FromButton)
+        assertFalse(result.rootMenuShown)
+    }
+
+    @Test
+    fun `WHEN ImportFileClicked from menu THEN rootMenuShown is false and launchFilePicker is true`() {
+        val state = BookmarksState.default.copy(rootMenuShown = true)
+        val result = bookmarksReducer(state, ImportAction.ImportFileClicked.FromMenu)
+        assertFalse(result.rootMenuShown)
+    }
+
     private fun generateBookmark(
         num: Int = 0,
         url: String = "url",

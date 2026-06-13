@@ -22,12 +22,19 @@ interface SVGTextPathElement : SVGTextContentElement {
   const unsigned short TEXTPATH_SPACINGTYPE_AUTO = 1;
   const unsigned short TEXTPATH_SPACINGTYPE_EXACT = 2;
 
+  // textPath Side Types
+  const unsigned short TEXTPATH_SIDETYPE_UNKNOWN = 0;
+  const unsigned short TEXTPATH_SIDETYPE_LEFT = 1;
+  const unsigned short TEXTPATH_SIDETYPE_RIGHT = 2;
+
   [Constant]
   readonly attribute SVGAnimatedLength startOffset;
   [Constant]
   readonly attribute SVGAnimatedEnumeration method;
   [Constant]
   readonly attribute SVGAnimatedEnumeration spacing;
+  [Constant]
+  readonly attribute SVGAnimatedEnumeration side;
 };
 
 SVGTextPathElement includes SVGURIReference;

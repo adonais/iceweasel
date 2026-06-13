@@ -115,7 +115,7 @@ add_task(
             "browsingContext should be a tab browser, not the sidebar browser"
           );
           Assert.ok(
-            ctxBrowser.ownerGlobal.gBrowser.getTabForBrowser(ctxBrowser),
+            ctxBrowser.documentGlobal.gBrowser.getTabForBrowser(ctxBrowser),
             "browsingContext embedderElement should belong to a tab"
           );
           BrowserTestUtils.startLoadingURIString(

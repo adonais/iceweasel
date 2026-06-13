@@ -39,6 +39,7 @@ class nsWindowRoot final : public nsPIWindowRoot {
   // nsPIWindowRoot
 
   nsPIDOMWindowOuter* GetWindow() override;
+  nsGlobalWindowInner* GetInnerWindow();
 
   nsresult GetControllers(bool aForVisibleWindow,
                           nsIControllers** aResult) override;
@@ -56,8 +57,7 @@ class nsWindowRoot final : public nsPIWindowRoot {
     mParent = aTarget;
   }
   mozilla::dom::EventTarget* GetParentTarget() override { return mParent; }
-  nsPIDOMWindowOuter* GetOwnerGlobalForBindingsInternal() override;
-  nsIGlobalObject* GetOwnerGlobal() const override;
+  nsIGlobalObject* GetRelevantGlobal() const override;
 
   nsIGlobalObject* GetParentObject();
 

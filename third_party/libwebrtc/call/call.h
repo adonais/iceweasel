@@ -24,6 +24,7 @@
 #include "api/scoped_refptr.h"
 #include "api/task_queue/task_queue_base.h"
 #include "api/transport/bitrate_settings.h"
+#include "api/video/video_stream_encoder_settings.h"
 #include "call/audio_receive_stream.h"
 #include "call/audio_send_stream.h"
 #include "call/call_basic_stats.h"
@@ -68,11 +69,14 @@ class Call {
 
   virtual VideoSendStream* CreateVideoSendStream(
       VideoSendStream::Config config,
-      VideoEncoderConfig encoder_config) = 0;
+      VideoEncoderConfig encoder_config,
+      EncoderSwitchRequestCallback encoder_switch_request_callback =
+          nullptr) = 0;
   virtual VideoSendStream* CreateVideoSendStream(
       VideoSendStream::Config config,
       VideoEncoderConfig encoder_config,
-      std::unique_ptr<FecController> fec_controller);
+      EncoderSwitchRequestCallback encoder_switch_request_callback,
+      std::unique_ptr<FecController> fec_controller) = 0;
   virtual void DestroyVideoSendStream(VideoSendStream* send_stream) = 0;
 
   virtual VideoReceiveStreamInterface* CreateVideoReceiveStream(

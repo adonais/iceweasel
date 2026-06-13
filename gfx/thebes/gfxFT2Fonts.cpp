@@ -19,7 +19,6 @@
 #include "gfxFT2Utils.h"
 #include "gfxFT2FontList.h"
 #include "gfxTextRun.h"
-#include <locale.h>
 #include "nsTArray.h"
 #include "nsCRT.h"
 #include "nsXULAppAPI.h"
@@ -38,17 +37,15 @@ using namespace mozilla::gfx;
  * gfxFT2Font
  */
 
-bool gfxFT2Font::ShapeText(DrawTarget* aDrawTarget, const char16_t* aText,
-                           uint32_t aOffset, uint32_t aLength, Script aScript,
-                           nsAtom* aLanguage, bool aVertical,
-                           RoundingFlags aRounding,
+bool gfxFT2Font::ShapeText(const char16_t* aText, uint32_t aOffset,
+                           uint32_t aLength, Script aScript, nsAtom* aLanguage,
+                           bool aVertical, RoundingFlags aRounding,
                            gfxShapedText* aShapedText) {
-  if (!gfxFont::ShapeText(aDrawTarget, aText, aOffset, aLength, aScript,
-                          aLanguage, aVertical, aRounding, aShapedText)) {
+  if (!gfxFont::ShapeText(aText, aOffset, aLength, aScript, aLanguage,
+                          aVertical, aRounding, aShapedText)) {
     // harfbuzz must have failed(?!), just render raw glyphs
     AddRange(aText, aOffset, aLength, aShapedText);
-    PostShapingFixup(aDrawTarget, aText, aOffset, aLength, aVertical,
-                     aShapedText);
+    PostShapingFixup(aText, aOffset, aLength, aVertical, aShapedText);
   }
 
   return true;

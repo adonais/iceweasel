@@ -82,6 +82,8 @@ support-files = [
   "import_attributes_css.mjs",
   "import_attributes_data.css",
   "import_attributes_data.json",
+  "import_attributes_data.txt",
+  "import_attributes_text.mjs",
   "import_attributes_worker.js",
 ]
 
@@ -231,6 +233,9 @@ skip-if = [
 ["test_getObjectPrincipal.js"]
 
 ["test_import_attributes.js"]
+prefs = [
+  "javascript.options.experimental.import_text=true",
+]
 
 ["test_import_attributes_worker.js"]
 skip-if = [
@@ -335,6 +340,8 @@ head = "head_ongc.js"
 ["test_rtcIdentityProvider.js"]
 
 ["test_sandbox_DOMException.js"]
+
+["test_sandbox_SharedArrayBuffer.js"]
 
 ["test_sandbox_atob.js"]
 

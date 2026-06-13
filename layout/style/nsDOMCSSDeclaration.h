@@ -27,7 +27,7 @@ enum class AttrModType : uint8_t;  // Defined in nsIMutationObserver.h
 namespace mozilla {
 struct CSSPropertyId;
 enum class StyleCssRuleType : uint8_t;
-class DeclarationBlock;
+struct StyleLockedDeclarationBlock;
 struct DeclarationBlockMutationClosure;
 namespace css {
 class Loader;
@@ -52,6 +52,9 @@ struct MutationClosureData {
 
 class nsDOMCSSDeclaration : public nsICSSDeclaration {
  public:
+  using Block = mozilla::StyleLockedDeclarationBlock;
+  static already_AddRefed<Block> EnsureBlockMutable(Block*);
+
   // Only implement QueryInterface; subclasses have the responsibility
   // of implementing AddRef/Release.
   NS_IMETHOD QueryInterface(REFNSIID aIID, void** aInstancePtr) override;
@@ -145,12 +148,11 @@ class nsDOMCSSDeclaration : public nsICSSDeclaration {
 
   // If aOperation is Modify, aCreated must be non-null and the call may set it
   // to point to the newly created object.
-  virtual mozilla::DeclarationBlock* GetOrCreateCSSDeclaration(
-      Operation aOperation, mozilla::DeclarationBlock** aCreated) = 0;
+  virtual Block* GetOrCreateCSSDeclaration(Operation aOperation,
+                                           Block** aCreated) = 0;
 
   virtual nsresult SetCSSDeclaration(
-      mozilla::DeclarationBlock* aDecl,
-      mozilla::MutationClosureData* aClosureData) = 0;
+      Block* aDecl, mozilla::MutationClosureData* aClosureData) = 0;
   // Document that we must call BeginUpdate/EndUpdate on around the
   // calls to SetCSSDeclaration and the style rule mutation that leads
   // to it.

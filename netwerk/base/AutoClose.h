@@ -50,8 +50,8 @@ class AutoClose {
   void operator=(const AutoClose<T>&) = delete;
   AutoClose(const AutoClose<T>&) = delete;
 
-  nsCOMPtr<T> mPtr;
-  Mutex mMutex MOZ_UNANNOTATED;
+  nsCOMPtr<T> mPtr MOZ_GUARDED_BY(mMutex);
+  Mutex mMutex;
 };
 
 }  // namespace net

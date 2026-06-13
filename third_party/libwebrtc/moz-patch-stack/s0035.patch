@@ -20,7 +20,7 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/d0b311007c033e838
  11 files changed, 58 insertions(+), 11 deletions(-)
 
 diff --git a/audio/audio_receive_stream.cc b/audio/audio_receive_stream.cc
-index 4f31b489ea..cdc021bd1a 100644
+index 4f052c6a21..5f1f9601b7 100644
 --- a/audio/audio_receive_stream.cc
 +++ b/audio/audio_receive_stream.cc
 @@ -60,6 +60,8 @@ std::string AudioReceiveStreamInterface::Config::Rtp::ToString() const {
@@ -43,7 +43,7 @@ index 4f31b489ea..cdc021bd1a 100644
  }  // namespace
  
 diff --git a/audio/channel_receive.cc b/audio/channel_receive.cc
-index 2eb4a6202a..f3bb76fc61 100644
+index dfd4cd4091..01f537fb2c 100644
 --- a/audio/channel_receive.cc
 +++ b/audio/channel_receive.cc
 @@ -129,7 +129,8 @@ class ChannelReceive : public ChannelReceiveInterface,

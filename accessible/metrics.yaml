@@ -142,7 +142,7 @@ a11y:
   consumers:
     type: custom_distribution
     description: |
-      A list of known accessibility clients that inject into Firefox process space (see https://searchfox.org/mozilla-central/source/accessible/windows/msaa/Compatibility.h).
+      A list of known accessibility clients that inject into Firefox process space (see https://searchfox.org/firefox-main/source/accessible/windows/msaa/Compatibility.h).
       This metric was generated to correspond to the Legacy Telemetry enumerated histogram A11Y_CONSUMERS.
     range_min: 0
     range_max: 11

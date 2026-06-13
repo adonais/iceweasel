@@ -73,13 +73,13 @@ export class DOMFullscreenParent extends JSWindowActorParent {
         this.waitingForChildEnterFullscreen = false;
         // We were destroyed while waiting for our DOMFullscreenChild to exit
         // or enter fullscreen, run cleanup steps anyway.
-        this._cleanupFullscreenStateAndResumeChromeUI(browser.ownerGlobal);
+        this._cleanupFullscreenStateAndResumeChromeUI(browser.documentGlobal);
       }
 
       if (this != this.requestOrigin) {
         // The current fullscreen requester should handle the fullsceen event
         // if any.
-        this.removeListeners(browser.ownerGlobal);
+        this.removeListeners(browser.documentGlobal);
       }
       return;
     }
@@ -128,7 +128,7 @@ export class DOMFullscreenParent extends JSWindowActorParent {
       return;
     }
 
-    let window = browser.ownerGlobal;
+    let window = browser.documentGlobal;
     switch (aMessage.name) {
       case "DOMFullscreen:Request": {
         const keyboardLockEnabled = Services.prefs.getBoolPref(
@@ -215,7 +215,7 @@ export class DOMFullscreenParent extends JSWindowActorParent {
   }
 
   handleEvent(aEvent) {
-    let window = aEvent.currentTarget.ownerGlobal;
+    let window = aEvent.currentTarget;
     // We can not get the corresponding browsing context from actor if the actor
     // has already destroyed, so use event target to get browsing context
     // instead.
@@ -236,10 +236,10 @@ export class DOMFullscreenParent extends JSWindowActorParent {
         // request was initiated from an in-process browser, we need
         // to get its corresponding browser here.
         let browser;
-        if (aEvent.target.ownerGlobal == window) {
+        if (aEvent.target.documentGlobal == window) {
           browser = aEvent.target;
         } else {
-          browser = aEvent.target.ownerGlobal.docShell.chromeEventHandler;
+          browser = aEvent.target.documentGlobal.docShell.chromeEventHandler;
         }
 
         // Addon installation should be cancelled when entering fullscreen for security and usability reasons.
@@ -256,7 +256,7 @@ export class DOMFullscreenParent extends JSWindowActorParent {
         if (!this.hasBeenDestroyed() && this.requestOrigin) {
           window.PointerlockFsWarning.showFullScreen(
             this.requestOrigin.browsingContext,
-            browser.ownerGlobal.document.fullscreenKeyboardLock == "browser"
+            browser.documentGlobal.document.fullscreenKeyboardLock == "browser"
           );
         }
         break;

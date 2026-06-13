@@ -136,7 +136,7 @@ already_AddRefed<Promise> Permissions::Query(JSContext* aCx,
   // Step 1.1: If the current settings object's associated Document is not fully
   // active, return a promise rejected with an "InvalidStateError" DOMException.
 
-  nsCOMPtr<nsIGlobalObject> global = GetOwnerGlobal();
+  nsCOMPtr<nsIGlobalObject> global = GetRelevantGlobal();
   if (NS_WARN_IF(!global)) {
     aRv.ThrowInvalidStateError("The context is not fully active.");
     return nullptr;

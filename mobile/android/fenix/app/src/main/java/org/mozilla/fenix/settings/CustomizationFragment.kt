@@ -140,26 +140,20 @@ class CustomizationFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFrag
         )
         val settings = requireContext().settings()
         val isExpandedToolbarEnabled = settings.shouldUseExpandedToolbar && isTallWindow() && !isWideWindow()
-        val shouldShowShortcutCategory = settings.shouldShowToolbarCustomization &&
-                settings.shouldUseComposableToolbar &&
-                settings.toolbarRedesignEnabled
         val isAnyShortcutSelectedForSimpleToolbar = settings.toolbarSimpleShortcutKey != ShortcutType.NONE.value
 
-        category.isVisible = shouldShowShortcutCategory
-        if (shouldShowShortcutCategory) {
-            val shortcutPreference = if (isExpandedToolbarEnabled) {
-                buildExpandedToolbarCustomButtonSetting()
-            } else if (isAnyShortcutSelectedForSimpleToolbar) {
-                buildSimpleToolbarWithCustomButtonSelectedSetting()
-            } else {
-                buildSimpleToolbarWithNoCustomButtonSelectedSetting()
-            }
-            category.apply {
-                removeAll()
-                addPreference(shortcutPreference)
-                val shortcutOptions = shortcutPreference.getShortcutOptions()
-                shortcutOptions.forEach(::addPreference)
-            }
+        val shortcutPreference = if (isExpandedToolbarEnabled) {
+            buildExpandedToolbarCustomButtonSetting()
+        } else if (isAnyShortcutSelectedForSimpleToolbar) {
+            buildSimpleToolbarWithCustomButtonSelectedSetting()
+        } else {
+            buildSimpleToolbarWithNoCustomButtonSelectedSetting()
+        }
+        category.apply {
+            removeAll()
+            addPreference(shortcutPreference)
+            val shortcutOptions = shortcutPreference.getShortcutOptions()
+            shortcutOptions.forEach(::addPreference)
         }
     }
 
@@ -294,10 +288,8 @@ class CustomizationFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFrag
     }
 
     private fun setupToolbarLayout() {
-        val settings = requireContext().settings()
         (requirePreference(R.string.pref_key_customization_category_toolbar_layout) as PreferenceCategory).apply {
-            isVisible = settings.shouldUseComposableToolbar &&
-                    settings.toolbarRedesignEnabled && isTallWindow() && !isWideWindow()
+            isVisible = isTallWindow() && !isWideWindow()
         }
 
         val layoutToggle = requirePreference<ToggleRadioButtonPreference>(R.string.pref_key_toolbar_expanded)

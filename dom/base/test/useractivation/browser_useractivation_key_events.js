@@ -71,6 +71,7 @@ add_task(async function TestNonPrintableKey() {
     ["KEY_Control", false],
     ["KEY_Shift", false],
     ["KEY_Escape", false],
+    ["KEY_F5", false],
     // Treat as user input
     ["KEY_Tab", true],
     ["KEY_Enter", true],
@@ -98,6 +99,8 @@ add_task(async function TestModifier() {
     ["v", { accelKey: true }, true],
     ["x", { altKey: true }, true],
     ["x", { accelKey: true }, true],
+    // Bug 2001938: ctrl+f5 is allowed because web apps use it.
+    ["KEY_F5", { accelKey: true }, true],
   ];
 
   for (let [key, event, expectedResult] of tests) {

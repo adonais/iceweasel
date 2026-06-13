@@ -12,6 +12,7 @@
 #include "mozilla/MouseEvents.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/PresShell.h"
+#include "mozilla/ReflowInput.h"
 #include "mozilla/StaticPrefs_browser.h"
 #include "mozilla/StaticPrefs_ui.h"
 #include "mozilla/TextEvents.h"
@@ -618,7 +619,7 @@ uint32_t nsListControlFrame::GetNumberOfOptions() {
 
 void nsListControlFrame::DoneAddingChildren() { ResetList(true); }
 
-void nsListControlFrame::AddOption(int32_t aIndex) {
+void nsListControlFrame::OptionsAdded() {
   // Make sure we scroll to the selected option as needed
   mNeedToReset = true;
 
@@ -713,8 +714,7 @@ bool nsListControlFrame::UpdateSelection() {
   return true;
 }
 
-void nsListControlFrame::OnSetSelectedIndex(int32_t aOldIndex,
-                                            int32_t aNewIndex) {
+void nsListControlFrame::OnSetSelectedIndex(int32_t aNewIndex) {
 #ifdef ACCESSIBILITY
   nsCOMPtr<nsIContent> prevOption = GetCurrentOption();
 #endif
@@ -724,12 +724,11 @@ void nsListControlFrame::OnSetSelectedIndex(int32_t aOldIndex,
   if (!weakFrame.IsAlive()) {
     return;
   }
-  mStartSelectionIndex = aNewIndex;
-  mEndSelectionIndex = aNewIndex;
+  mStartSelectionIndex = mEndSelectionIndex = aNewIndex;
   InvalidateFocus();
 
 #ifdef ACCESSIBILITY
-  if (aOldIndex != aNewIndex) {
+  if (prevOption != GetCurrentOption()) {
     FireMenuItemActiveEvent(prevOption);
   }
 #endif
@@ -765,7 +764,7 @@ bool nsListControlFrame::ReflowFinished() {
     // scrolling to the selected element, when the ResetList was probably only
     // caused by content loading normally.
     const bool scroll = !DidHistoryRestore() || mPostChildrenLoadedReset;
-    nsContentUtils::AddScriptRunner(new AsyncReset(this, scroll));
+    nsContentUtils::AddScriptRunner(MakeAndAddRef<AsyncReset>(this, scroll));
   }
   mReflowWasInterrupted = false;
   return ScrollContainerFrame::ReflowFinished();

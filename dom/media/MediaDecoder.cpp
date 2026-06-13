@@ -358,16 +358,22 @@ void MediaDecoder::OnPlaybackEvent(const MediaPlaybackEvent& aEvent) {
     case MediaPlaybackEvent::VideoOnlySeekCompleted:
       GetOwner()->QueueEvent(u"mozvideoonlyseekcompleted"_ns);
       break;
-    case MediaPlaybackEvent::PlaybackRateFallback:
-      nsContentUtils::ReportToConsoleNonLocalized(
-          u"Failed to initialize the audio time stretcher. Audio will play at "
-          u"normal speed."_ns,
-          nsIScriptError::warningFlag, "Media"_ns, GetOwner()->GetDocument());
+#ifdef MOZ_WMF_CDM
+    case MediaPlaybackEvent::FrameServerMode:
+      mIsFrameServerMode = true;
+      UpdateReadyState();
       break;
+#endif
     default:
       break;
   }
 }
+
+#ifdef MOZ_WMF_CDM
+bool MediaDecoder::IsUsingWMFClearKey() const {
+  return mIsFrameServerMode && StaticPrefs::media_eme_wmf_clearkey_enabled();
+}
+#endif
 
 bool MediaDecoder::IsVideoDecodingSuspended() const {
   return mIsVideoDecodingSuspended;

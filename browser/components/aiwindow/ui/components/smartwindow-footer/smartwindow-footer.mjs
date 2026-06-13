@@ -29,7 +29,6 @@ export class SmartwindowFooter extends MozLitElement {
       />
       <div class="footer-container">
         <moz-button
-          size="small"
           type="ghost"
           data-l10n-id="smartwindow-footer-history"
           data-l10n-attrs="tooltiptext,aria-label"
@@ -40,7 +39,6 @@ export class SmartwindowFooter extends MozLitElement {
           }}
         ></moz-button>
         <moz-button
-          size="small"
           type="ghost"
           data-l10n-id="smartwindow-footer-chats"
           data-l10n-attrs="tooltiptext,aria-label"

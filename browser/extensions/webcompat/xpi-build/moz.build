@@ -18,16 +18,13 @@ FINAL_TARGET_FILES += [
     "../manifest.json",
 ]
 
-GeneratedFile(
-    "run.js",
-    script="../codegen.py",
-    entry_point="generate_run_js",
-    inputs=[
-        "../run.js",
-        "../data/interventions",
-    ],
-)
+include("../preprocessed_intervention_files.mozbuild")
+
+GenerateWebCompatAddonFiles(preprocessed_intervention_files, "../")
+
 FINAL_TARGET_FILES += ["!run.js"]
+for file in preprocessed_intervention_files:
+    FINAL_TARGET_FILES.injections.generated += ["!injections/generated/%s" % file]
 
 FINAL_TARGET_FILES["about-compat"] += [
     "../about-compat/**",

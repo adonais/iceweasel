@@ -114,9 +114,9 @@ class nsComputedDOMStyle final : public nsDOMCSSDeclaration,
   // nsDOMCSSDeclaration abstract methods which should never be called
   // on a nsComputedDOMStyle object, but must be defined to avoid
   // compile errors.
-  mozilla::DeclarationBlock* GetOrCreateCSSDeclaration(
-      Operation aOperation, mozilla::DeclarationBlock** aCreated) final;
-  virtual nsresult SetCSSDeclaration(mozilla::DeclarationBlock*,
+  Block* GetOrCreateCSSDeclaration(Operation aOperation,
+                                   Block** aCreated) final;
+  virtual nsresult SetCSSDeclaration(Block*,
                                      mozilla::MutationClosureData*) override;
   virtual mozilla::dom::Document* DocToUpdate() final;
 

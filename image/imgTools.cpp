@@ -89,7 +89,7 @@ class ImageDecoderListener final : public nsIStreamListener,
                                    &unused);
       }
 
-      RefPtr<ProgressTracker> tracker = new ProgressTracker();
+      auto tracker = MakeRefPtr<ProgressTracker>();
       if (mObserver) {
         tracker->AddObserver(this);
       }
@@ -366,8 +366,7 @@ imgTools::DecodeImageFromChannelAsync(nsIURI* aURI, nsIChannel* aChannel,
   NS_ENSURE_ARG_POINTER(aChannel);
   NS_ENSURE_ARG_POINTER(aCallback);
 
-  RefPtr<ImageDecoderListener> listener =
-      new ImageDecoderListener(aURI, aCallback, aObserver);
+  auto listener = MakeRefPtr<ImageDecoderListener>(aURI, aCallback, aObserver);
 
   return aChannel->AsyncOpen(listener);
 }
@@ -410,8 +409,8 @@ imgTools::DecodeImageAsync(nsIInputStream* aInStr, const nsACString& aMimeType,
     return NS_ERROR_FAILURE;
   }
 
-  RefPtr<ImageDecoderHelper> helper = new ImageDecoderHelper(
-      image.forget(), stream.forget(), target, aCallback, aEventTarget);
+  auto helper = MakeRefPtr<ImageDecoderHelper>(image.forget(), stream.forget(),
+                                               target, aCallback, aEventTarget);
   rv = target->Dispatch(helper.forget(), NS_DISPATCH_NORMAL);
   NS_ENSURE_SUCCESS(rv, rv);
 

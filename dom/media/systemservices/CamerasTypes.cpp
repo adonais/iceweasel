@@ -4,6 +4,14 @@
 
 #include "CamerasTypes.h"
 
+#ifdef MOZ_WEBRTC
+#  include "common_video/libyuv/include/webrtc_libyuv.h"
+#else
+namespace webrtc {
+enum class VideoType {};
+}
+#endif
+
 namespace mozilla::camera {
 
 TrackingId::Source CaptureEngineToTrackingSourceStr(
@@ -20,5 +28,16 @@ TrackingId::Source CaptureEngineToTrackingSourceStr(
     default:
       return TrackingId::Source::Unimplemented;
   }
+}
+
+/* static */
+bool WebrtcVideoTypeValidator::IsLegalValue(const int aValue) {
+#ifdef MOZ_WEBRTC
+  return IPC::ContiguousEnumValidatorInclusive<
+      webrtc::VideoType, webrtc::VideoType::kUnknown,
+      webrtc::VideoType::kNV12>::IsLegalValue(aValue);
+#else
+  return false;
+#endif
 }
 }  // namespace mozilla::camera

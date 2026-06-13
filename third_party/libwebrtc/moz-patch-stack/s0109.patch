@@ -1,23 +1,23 @@
 From: Michael Froman <mfroman@mozilla.com>
-Date: Wed, 5 Feb 2025 18:03:00 +0000
-Subject: Bug 1942171 - add builtin_audio_processing_builder to the libwebrtc
- build. r=pehrsons,webrtc-reviewers
+Date: Fri, 7 Mar 2025 17:43:00 -0600
+Subject: Bug 1952339 - (fix-68e7b00928) add default param to emplace() to fix
+ compile issue
 
-Differential Revision: https://phabricator.services.mozilla.com/D234594
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/27c29807e6f46562d2b6bae4b7b06a5966290afe
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/26c916591791b13a3d8888066c22c5ba49c86c47
 ---
- BUILD.gn | 1 +
- 1 file changed, 1 insertion(+)
+ call/rtp_config.cc | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/BUILD.gn b/BUILD.gn
-index 9cf4fd325e..faa64b8469 100644
---- a/BUILD.gn
-+++ b/BUILD.gn
-@@ -590,6 +590,7 @@ if (!build_with_chromium) {
- 
-     if (build_with_mozilla) {
-       deps += [
-+        "api/audio:builtin_audio_processing_builder",
-         "api/environment:environment_factory",
-         "api/video:video_frame",
-         "api/video:video_rtp_headers",
+diff --git a/call/rtp_config.cc b/call/rtp_config.cc
+index f48ae30462..4f81e2a705 100644
+--- a/call/rtp_config.cc
++++ b/call/rtp_config.cc
+@@ -257,7 +257,7 @@ RtpStreamConfig RtpConfig::GetStreamConfig(size_t index) const {
+   stream_config.raw_payload = raw_payload;
+   if (!rtx.ssrcs.empty()) {
+     RTC_DCHECK_EQ(ssrcs.size(), rtx.ssrcs.size());
+-    auto& stream_config_rtx = stream_config.rtx.emplace();
++    auto& stream_config_rtx = stream_config.rtx.emplace(RtpStreamConfig::Rtx());
+     stream_config_rtx.ssrc = rtx.ssrcs[index];
+     stream_config_rtx.payload_type = rtx.payload_type;
+   }

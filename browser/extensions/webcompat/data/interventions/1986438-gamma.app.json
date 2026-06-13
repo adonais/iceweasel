@@ -9,10 +9,12 @@
   "interventions": [
     {
       "platforms": ["desktop"],
-      "content_scripts": {
-        "isolated": true,
-        "js": ["1986438-gamma.app-hide-unsupported.js"]
-      }
+      "hide_messages": [
+        {
+          "container": ".chakra-alert",
+          "message": "Chrome"
+        }
+      ]
     }
   ]
 }

@@ -51,6 +51,8 @@ tags = "remote-settings"
 
 ["test_SmartShortcutsFeed.js"]
 
+["test_SportsFeed.js"]
+
 ["test_StartupCacheInit.js"]
 
 ["test_Store.js"]

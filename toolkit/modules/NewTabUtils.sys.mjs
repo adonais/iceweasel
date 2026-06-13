@@ -1090,6 +1090,7 @@ var ActivityStreamProvider = {
       links.forEach(link => {
         let searchProvider = getSearchProvider(NewTabUtils.shortURL(link));
         if (searchProvider) {
+          link.original_url = link.url;
           link.url = searchProvider.url;
         }
       });

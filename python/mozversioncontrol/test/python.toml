@@ -1,6 +1,8 @@
 [DEFAULT]
 subsuite = "mozversioncontrol"
 
+["test_notes.py"]
+
 ["test_branch.py"]
 
 ["test_commit.py"]

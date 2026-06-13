@@ -127,7 +127,7 @@ add_task(async function test_no_enterprise_management_fails() {
     browser.test.assertTrue(addon.enabled, "addon is enabled");
     await browser.test.assertRejects(
       browser.management.setEnabled(addon.id, false),
-      /setEnabled can only be used/,
+      "setEnabled can only be used for themes or by addons installed by enterprise policy",
       "setEnabled should fail"
     );
     addon = await browser.management.get(TEST_ADDON_ID);

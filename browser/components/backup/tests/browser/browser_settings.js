@@ -12,7 +12,7 @@ const BACKUP_ARCHIVE_ENABLED_PREF = "browser.backup.archive.enabled";
 const BACKUP_RESTORE_ENABLED_PREF = "browser.backup.restore.enabled";
 
 add_setup(async () => {
-  MockFilePicker.init(window.browsingContext);
+  MockFilePicker.init();
   registerCleanupFunction(() => {
     MockFilePicker.cleanup();
   });

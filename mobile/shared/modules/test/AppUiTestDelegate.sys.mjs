@@ -66,7 +66,7 @@ class Delegate {
   }
 
   async removeTab(tab) {
-    const window = tab.browser.ownerGlobal;
+    const window = tab.browser.documentGlobal;
     await lazy.GeckoViewTabBridge.closeTab({
       window,
       extensionId: TEST_SUPPORT_EXTENSION_ID,
@@ -94,7 +94,7 @@ class Delegate {
       triggeringPrincipal,
     });
 
-    const newWindow = browser.ownerGlobal;
+    const newWindow = browser.documentGlobal;
     lazy.mobileWindowTracker.setTabActive(newWindow, true);
 
     if (!waitForLoad) {

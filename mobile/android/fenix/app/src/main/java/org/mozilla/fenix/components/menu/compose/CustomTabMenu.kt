@@ -183,7 +183,7 @@ internal fun CustomTabMenu(
                     id = R.string.browser_menu_open_in_fenix,
                     stringResource(id = R.string.app_name),
                 ),
-                beforeIconPainter = painterResource(id = iconsR.drawable.mozac_ic_open_in),
+                beforeIconPainter = painterResource(id = iconsR.drawable.mozac_ic_external_link_24),
                 onClick = onOpenInFirefoxMenuClick,
                 state = if (isSandboxCustomTab) {
                     MenuItemState.DISABLED

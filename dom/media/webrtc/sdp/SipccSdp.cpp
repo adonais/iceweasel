@@ -39,26 +39,25 @@ uint32_t SipccSdp::GetBandwidth(const std::string& type) const {
   return found->second;
 }
 
-const SdpMediaSection& SipccSdp::GetMediaSection(size_t level) const {
+const SdpMediaSection& SipccSdp::GetMediaSection(const size_t level) const {
   if (level > mMediaSections.size()) {
     MOZ_CRASH();
   }
   return *mMediaSections[level];
 }
 
-SdpMediaSection& SipccSdp::GetMediaSection(size_t level) {
+SdpMediaSection& SipccSdp::GetMediaSection(const size_t level) {
   if (level > mMediaSections.size()) {
     MOZ_CRASH();
   }
   return *mMediaSections[level];
 }
 
-SdpMediaSection& SipccSdp::AddMediaSection(SdpMediaSection::MediaType mediaType,
-                                           SdpDirectionAttribute::Direction dir,
-                                           uint16_t port,
-                                           SdpMediaSection::Protocol protocol,
-                                           sdp::AddrType addrType,
-                                           const std::string& addr) {
+SdpMediaSection& SipccSdp::AddMediaSection(
+    const SdpMediaSection::MediaType mediaType,
+    const SdpDirectionAttribute::Direction dir, const uint16_t port,
+    const SdpMediaSection::Protocol protocol, const sdp::AddrType addrType,
+    const std::string& addr) {
   size_t level = mMediaSections.size();
   SipccSdpMediaSection* media =
       new SipccSdpMediaSection(level, &mAttributeList);
@@ -148,7 +147,7 @@ void SipccSdp::Serialize(std::ostream& os) const {
   }
 }
 
-bool SipccSdpBandwidths::Load(sdp_t* sdp, uint16_t level,
+bool SipccSdpBandwidths::Load(sdp_t* sdp, const uint16_t level,
                               InternalResults& results) {
   size_t count = sdp_get_num_bw_lines(sdp, level);
   for (size_t i = 1; i <= count; ++i) {

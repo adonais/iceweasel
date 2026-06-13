@@ -4,7 +4,15 @@
 "use strict";
 
 add_setup(async function () {
+  // The tests in this file seed autofill candidates with unvisited bookmarks,
+  // which only become candidates when adaptive autofill is off.
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.autoFill.adaptiveHistory.enabled", false]],
+  });
   await cleanUp();
+  registerCleanupFunction(async function () {
+    await SpecialPowers.popPrefEnv();
+  });
 });
 
 add_task(async function test_autoFill_clear_properly_on_accent_char() {

@@ -334,7 +334,11 @@ class RegExpZone {
 
   RegExpShared* maybeGet(JSAtom* source, JS::RegExpFlags flags) const {
     Set::Ptr p = set_.lookup(Key(source, flags));
-    return p ? *p : nullptr;
+    if (!p) {
+      return nullptr;
+    }
+
+    return *p;
   }
 
   RegExpShared* get(JSContext* cx, Handle<JSAtom*> source,

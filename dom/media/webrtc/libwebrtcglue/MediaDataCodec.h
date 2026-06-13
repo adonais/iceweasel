@@ -5,7 +5,10 @@
 #ifndef MEDIA_DATA_CODEC_H_
 #define MEDIA_DATA_CODEC_H_
 
-#include "MediaConduitInterface.h"
+#include "MediaCodecsSupport.h"
+#include "PerformanceRecorder.h"
+#include "api/video/video_codec_type.h"
+#include "api/video_codecs/sdp_video_format.h"
 
 namespace mozilla {
 
@@ -14,11 +17,23 @@ class WebrtcVideoEncoder;
 class MediaDataCodec {
  public:
   /**
+   * Return whether the codec given by aFormat is supported for encoding.
+   */
+  static media::EncodeSupportSet SupportsEncoderCodec(
+      const webrtc::SdpVideoFormat& aFormat);
+
+  /**
    * Create encoder object for codec format |aFormat|. Return |nullptr| when
    * failed.
    */
   static WebrtcVideoEncoder* CreateEncoder(
       const webrtc::SdpVideoFormat& aFormat);
+
+  /**
+   * Return whether the given codec is supported for decoding.
+   */
+  static media::DecodeSupportSet SupportsDecoderCodec(
+      webrtc::VideoCodecType aCodecType);
 
   /**
    * Create decoder object for codec type |aCodecType|. Return |nullptr| when

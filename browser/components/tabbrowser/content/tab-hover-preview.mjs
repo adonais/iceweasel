@@ -265,7 +265,7 @@ class HoverPanel {
   constructor(panelElement, panelSet) {
     this.panelElement = panelElement;
     this.panelSet = panelSet;
-    this.win = this.panelElement.ownerGlobal;
+    this.win = this.panelElement.documentGlobal;
   }
 
   get isActive() {
@@ -399,6 +399,10 @@ class TabPanel extends HoverPanel {
       this.panelElement.state == "open" ||
       this.panelElement.state == "showing"
     ) {
+      // Remove stale listener from previous activation to prevent
+      // duplicate popupshown events when moveToAnchor re-triggers
+      // the popup lifecycle during the "showing" state.
+      this.panelElement.removeEventListener("popupshowing", this);
       this.#updatePreview();
     } else {
       this.panelSet.panelOpener.execute(() => {

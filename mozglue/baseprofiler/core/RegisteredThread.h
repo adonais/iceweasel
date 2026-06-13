@@ -30,7 +30,7 @@ class RacyRegisteredThread final {
         mSleep(SleepState::Awake),
         mIsBeingProfiled(false) {}
 
-  ~RacyRegisteredThread() {}
+  ~RacyRegisteredThread() = default;
 
   void SetIsBeingProfiled(bool aIsBeingProfiled) {
     mIsBeingProfiled = aIsBeingProfiled;

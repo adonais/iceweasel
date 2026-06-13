@@ -1272,7 +1272,7 @@ int processConfigLine(char* configLine) {
         return 1;
       }
 
-      servers.push_back(server);
+      servers.push_back(std::move(server));
     }
 
     return 0;

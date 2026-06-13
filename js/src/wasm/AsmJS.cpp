@@ -788,7 +788,7 @@ class NumLit {
   };
 
  private:
-  Which which_;
+  Which which_ = OutOfRangeInt;
   JS::Value value_;
 
  public:
@@ -1106,8 +1106,8 @@ static const unsigned VALIDATION_LIFO_DEFAULT_CHUNK_SIZE = 4 * 1024;
 class MOZ_STACK_CLASS ModuleValidatorShared {
  public:
   struct Memory {
-    MemoryUsage usage;
-    uint64_t minLength;
+    MemoryUsage usage = MemoryUsage::Unshared;
+    uint64_t minLength = 0;
 
     uint64_t minPages() const {
       return DivideRoundingUp(minLength, StandardPageSizeBytes);

@@ -49,6 +49,18 @@ using namespace js::wasm;
 
 using mozilla::Atomic;
 
+ScriptedCaller ScriptedCaller::selfHosted(JSContext* cx) {
+  AutoEnterOOMUnsafeRegion oomUnsafe;
+  // The self_hosted_ atom is used by the saved stack code to distinguish self
+  // hosted frames from normal user frames.
+  UniqueChars selfHosted =
+      StringToNewUTF8CharsZ(cx, *cx->names().self_hosted_.get());
+  if (!selfHosted) {
+    oomUnsafe.crash("ScriptedCaller::selfHosted");
+  }
+  return ScriptedCaller(std::move(selfHosted), false, 0);
+}
+
 uint32_t wasm::ObservedCPUFeatures() {
   enum Arch : uint32_t {
     X86 = 0x1,
@@ -219,12 +231,26 @@ FeatureArgs FeatureArgs::build(JSContext* cx, const FeatureOptions& options) {
 
   features.simd = jit::JitSupportsWasmSimd();
   features.isBuiltinModule = options.isBuiltinModule;
-  features.builtinModules.jsString = options.jsStringBuiltins;
-  features.builtinModules.jsStringConstants = options.jsStringConstants;
-  features.builtinModules.jsStringConstantsNamespace =
-      options.jsStringConstantsNamespace;
-  features.builtinModules.intGemm =
-      MozIntGemmAvailable(cx) && options.mozIntGemm;
+  if (features.isBuiltinModule) {
+    // Builtin modules can use stack switching if it's available. JS-PI needs
+    // this.
+    features.stackSwitching = wasm::IonPlatformSupport();
+    // No builtin modules are available to use within a builtin module. We
+    // theoretically could allow a builtin module to import another builtin
+    // module, but we'd need to find a way to prevent cycles. For now just
+    // disable this.
+    MOZ_ASSERT(!options.jsStringBuiltins);
+    MOZ_ASSERT(!options.jsStringConstants);
+    MOZ_ASSERT(!options.mozIntGemm);
+  } else {
+    // Enable builtin modules that have been selected by the user.
+    features.builtinModules.jsString = options.jsStringBuiltins;
+    features.builtinModules.jsStringConstants = options.jsStringConstants;
+    features.builtinModules.jsStringConstantsNamespace =
+        options.jsStringConstantsNamespace;
+    features.builtinModules.intGemm =
+        MozIntGemmAvailable(cx) && options.mozIntGemm;
+  }
 
   return features;
 }
@@ -1039,7 +1065,7 @@ bool wasm::CompileCompleteTier2(const ShareableBytes* codeSection,
   const CodeMetadata& codeMeta = module.codeMeta();
   ModuleGenerator mg(codeMeta, compilerEnv, CompileState::EagerTier2, cancelled,
                      error, warnings);
-  if (!mg.initializeCompleteTier()) {
+  if (!mg.initializeCompleteTier(nullptr, &module.codeTailMeta())) {
     return false;
   }
 

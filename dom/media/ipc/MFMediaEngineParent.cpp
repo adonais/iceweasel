@@ -12,6 +12,7 @@
 #ifdef MOZ_WMF_CDM
 #  include "MFCDMParent.h"
 #  include "MFContentProtectionManager.h"
+#  include "mozilla/EMEUtils.h"
 #endif
 
 #include "MFMediaEngineExtension.h"
@@ -251,7 +252,7 @@ void MFMediaEngineParent::HandleMediaEngineEvent(
       break;
     }
     case MF_MEDIA_ENGINE_EVENT_FIRSTFRAMEREADY: {
-      if (mMediaEngine->HasVideo()) {
+      if (mMediaEngine->HasVideo() && !mIsFrameServerMode) {
         EnsureDcompSurfaceHandle();
       }
       [[fallthrough]];
@@ -279,6 +280,12 @@ void MFMediaEngineParent::HandleMediaEngineEvent(
       auto currentTimeInSeconds = mMediaEngine->GetCurrentTime();
       (void)SendUpdateCurrentTime(currentTimeInSeconds);
       UpdateStatisticsData();
+      if (mIsFrameServerMode && mMediaEngine->HasVideo()) {
+        LONGLONG pts = 0;
+        HRESULT hr = mMediaEngine->OnVideoStreamTick(&pts);
+        LOG("FrameServer pump: OnVideoStreamTick hr=%lx pts=%" PRId64, (long)hr,
+            (int64_t)pts);
+      }
       break;
     }
     default:
@@ -465,9 +472,6 @@ HRESULT MFMediaEngineParent::SetMediaInfo(const MediaInfoIPDL& aInfo,
   if (aInfo.videoInfo()) {
     ComPtr<IMFMediaEngineEx> mediaEngineEx;
     RETURN_IF_FAILED(mMediaEngine.As(&mediaEngineEx));
-    RETURN_IF_FAILED(mediaEngineEx->EnableWindowlessSwapchainMode(true));
-    LOG("Enabled dcomp swap chain mode");
-    ENGINE_MARKER("MFMediaEngineParent,EnabledSwapChain");
     if (isEncrypted) {
       // Microsoft recommends to disable low latency with DRM.
       RETURN_IF_FAILED(mediaEngineEx->SetRealTimeMode(false));
@@ -505,6 +509,39 @@ void MFMediaEngineParent::SetMediaSourceOnEngine() {
                       "Failed to set media source");
     DestroyEngineIfExists(Some(error));
   });
+
+  // Enable windowless swapchain mode before setting the source. For encrypted
+  // content, this must be called after SetContentProtectionManager (which
+  // resets the swapchain mode), and before SetSource.
+  if (mMediaSource->GetVideoStream()) {
+    if (mIsFrameServerMode) {
+      LOG("Frame server mode: skipping DComp");
+      ENGINE_MARKER("MFMediaEngineParent,FrameServerMode");
+      mMediaSource->GetVideoStream()->AsVideoStream()->SetFrameServerMode();
+      (void)SendNotifyFrameServerMode();
+    } else {
+      ComPtr<IMFMediaEngineEx> mediaEngineEx;
+      RETURN_VOID_IF_FAILED(mMediaEngine.As(&mediaEngineEx));
+      HRESULT swapChainHr = mediaEngineEx->EnableWindowlessSwapchainMode(true);
+      if (SUCCEEDED(swapChainHr)) {
+        mDCompModeEnabled = true;
+        LOG("Enabled dcomp swap chain mode");
+        ENGINE_MARKER("MFMediaEngineParent,EnabledSwapChain");
+      } else {
+        LOG("EnableWindowlessSwapchainMode failed: hr=%lx", (long)swapChainHr);
+        // This branch is reached in non-WMFClearKey playback (e.g. unencrypted
+        // or Widevine/PlayReady EME) when the underlying graphics driver does
+        // not support windowless swap chains (e.g. running in a remote desktop
+        // or software-rendering environment). mDCompModeEnabled stays false, so
+        // EnsureDcompSurfaceHandle() will early-return on FIRSTFRAMEREADY, and
+        // the engine falls back to its own internal rendering while still
+        // firing LOADEDDATA/ENDED/etc. normally. Do NOT enter frame-server mode
+        // here: that path is only for WMFClearKey, which is handled by the
+        // mIsFrameServerMode fast path above (set in RecvSetCDMProxyId before
+        // SetMediaSourceOnEngine runs).
+      }
+    }
+  }
 
   mMediaEngineExtension->SetMediaSource(mMediaSource.Get());
 
@@ -579,6 +616,10 @@ mozilla::ipc::IPCResult MFMediaEngineParent::RecvSetCDMProxyId(
   mProxyId = Some(aProxyId);
   MFCDMParent* cdmParent = MFCDMParent::GetCDMById(aProxyId);
   MOZ_DIAGNOSTIC_ASSERT(cdmParent);
+  if (IsWMFClearKeySystemAndSupported(cdmParent->GetKeySystem())) {
+    LOG("WMFClearKey CDM detected, enabling frame server mode");
+    mIsFrameServerMode = true;
+  }
   HRESULT rv =
       MakeAndInitialize<MFContentProtectionManager>(&mContentProtectionManager);
   CDM_SETUP_IPC_RETURN_IF_FAILED(rv,
@@ -738,6 +779,10 @@ void MFMediaEngineParent::EnsureDcompSurfaceHandle() {
   MOZ_ASSERT(mMediaEngine);
   MOZ_ASSERT(mMediaEngine->HasVideo());
 
+  if (!mDCompModeEnabled) {
+    LOG("Skip EnsureDcompSurfaceHandle: DComp mode not enabled");
+    return;
+  }
   ComPtr<IMFMediaEngineEx> mediaEngineEx;
   RETURN_VOID_IF_FAILED(mMediaEngine.As(&mediaEngineEx));
 

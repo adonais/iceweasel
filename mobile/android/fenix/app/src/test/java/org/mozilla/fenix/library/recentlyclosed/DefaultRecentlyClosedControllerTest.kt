@@ -6,7 +6,6 @@ package org.mozilla.fenix.library.recentlyclosed
 
 import androidx.navigation.NavController
 import androidx.navigation.NavOptions
-import io.mockk.coEvery
 import io.mockk.coJustRun
 import io.mockk.coVerify
 import io.mockk.every
@@ -26,7 +25,6 @@ import mozilla.components.feature.tabs.TabsUseCases
 import mozilla.components.support.test.middleware.CaptureActionsMiddleware
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Rule
@@ -37,10 +35,13 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppState
+import org.mozilla.fenix.components.share.ShareSource
+import org.mozilla.fenix.components.usecases.ShareUseCases
 import org.mozilla.fenix.ext.directionsEq
 import org.mozilla.fenix.ext.optionsEq
 import org.mozilla.fenix.helpers.FenixGleanTestRule
 import org.robolectric.RobolectricTestRunner
+import kotlin.test.assertNotNull
 
 @RunWith(RobolectricTestRunner::class)
 class DefaultRecentlyClosedControllerTest {
@@ -51,6 +52,7 @@ class DefaultRecentlyClosedControllerTest {
     private val browserStore: BrowserStore = BrowserStore(middleware = listOf(captureActionsMiddleware))
     private val recentlyClosedStore: RecentlyClosedFragmentStore = mockk(relaxed = true)
     private val tabsUseCases: TabsUseCases = mockk(relaxed = true)
+    private val shareUseCases: ShareUseCases = mockk(relaxed = true)
 
     @get:Rule
     val gleanTestRule = FenixGleanTestRule(testContext)
@@ -225,13 +227,15 @@ class DefaultRecentlyClosedControllerTest {
 
         createController().handleShare(tabs.toSet())
 
+        val items = listOf(
+            ShareData(url = tabs[0].url, title = tabs[0].title),
+            ShareData(url = tabs[1].url, title = tabs[1].title),
+        )
         verify {
-            val data = arrayOf(
-                ShareData(title = tabs[0].title, url = tabs[0].url),
-                ShareData(title = tabs[1].title, url = tabs[1].url),
-            )
-            navController.navigate(
-                directionsEq(RecentlyClosedFragmentDirections.actionGlobalShareFragment(data)),
+            shareUseCases.shareItems(
+                items = items,
+                source = ShareSource.RECENTLY_CLOSED,
+                navigateToShareFragment = any(),
             )
         }
         assertNotNull(RecentlyClosedTabs.menuShare.testGetValue())
@@ -337,6 +341,7 @@ class DefaultRecentlyClosedControllerTest {
             recentlyClosedStore = recentlyClosedStore,
             recentlyClosedTabsStorage = RecentlyClosedTabsStorage(testContext, mockk(), mockk()),
             tabsUseCases = tabsUseCases,
+            shareUseCases = shareUseCases,
             lifecycleScope = scope,
             openToBrowser = openToBrowser,
         )

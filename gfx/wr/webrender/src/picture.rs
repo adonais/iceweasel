@@ -110,8 +110,9 @@ use crate::internal_types::{FastHashMap, PlaneSplitter, Filter};
 use crate::internal_types::{PlaneSplitterIndex, PlaneSplitAnchor, TextureSource};
 use crate::frame_builder::{FrameBuildingContext, FrameBuildingState, PictureState, PictureContext};
 use plane_split::{Clipper, Polygon};
-use crate::prim_store::{PictureIndex, PrimitiveInstance, PrimitiveInstanceKind};
+use crate::prim_store::{PictureIndex, PrimitiveInstance, PrimitiveKind};
 use crate::prim_store::PrimitiveScratchBuffer;
+use crate::prim_store::storage;
 use crate::print_tree::PrintTreePrinter;
 use crate::render_backend::DataStores;
 use crate::render_task_graph::RenderTaskId;
@@ -242,7 +243,7 @@ impl PictureScratchBuffer {
 pub struct RasterConfig {
     /// How this picture should be composited into
     /// the parent surface.
-    // TODO(gw): We should remove this and just use what is in PicturePrimitive
+    // TODO(gw): We should remove this and just use what is in PictureInstance
     pub composite_mode: PictureCompositeMode,
     /// Index to the surface descriptor for this
     /// picture.
@@ -432,13 +433,13 @@ impl PrimitiveList {
         // Pictures are always put into a new cluster, to make it faster to
         // iterate all pictures in a given primitive list.
         match prim_instance.kind {
-            PrimitiveInstanceKind::Picture { pic_index, .. } => {
+            PrimitiveKind::Picture { pic_index, .. } => {
                 self.child_pictures.push(pic_index);
             }
-            PrimitiveInstanceKind::TextRun { .. } => {
+            PrimitiveKind::TextRun { .. } => {
                 self.needs_scissor_rect = true;
             }
-            PrimitiveInstanceKind::YuvImage { .. } => {
+            PrimitiveKind::YuvImage { .. } => {
                 // Any YUV image that requests a compositor surface is implicitly
                 // opaque. Though we might treat this prim as an underlay, which
                 // doesn't require an overlay surface, we add to the count anyway
@@ -449,7 +450,7 @@ impl PrimitiveList {
                     self.yuv_image_surface_count += 1;
                 }
             }
-            PrimitiveInstanceKind::Image { .. } => {
+            PrimitiveKind::Image { .. } => {
                 // For now, we assume that any image that wants a compositor surface
                 // is transparent, and uses the existing overlay compositor surface
                 // infrastructure. In future, we could detect opaque images, however
@@ -511,7 +512,7 @@ impl PrimitiveList {
 
 bitflags! {
     #[cfg_attr(feature = "capture", derive(Serialize))]
-    /// Flags describing properties for a given PicturePrimitive
+    /// Flags describing properties for a given PictureInstance
     #[derive(Debug, Copy, PartialEq, Eq, Clone, PartialOrd, Ord, Hash)]
     pub struct PictureFlags : u8 {
         /// This picture is a resolve target (doesn't actually render content itself,
@@ -525,15 +526,12 @@ bitflags! {
     }
 }
 
+/// Per-frame scratch data for a Picture primitive. Pushed in `take_context`
+/// and read by both prepare and batch through the `scratch_handle` carried
+/// on `PrimitiveKind::Picture`.
+#[derive(Debug)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
-pub struct PicturePrimitive {
-    /// List of primitives, and associated info for this picture.
-    pub prim_list: PrimitiveList,
-
-    /// If false and transform ends up showing the back of the picture,
-    /// it will be considered invisible.
-    pub is_backface_visible: bool,
-
+pub struct PictureScratch {
     /// All render tasks have 0-2 input tasks.
     pub primary_render_task_id: Option<RenderTaskId>,
     /// If a mix-blend-mode, contains the render task for
@@ -545,17 +543,36 @@ pub struct PicturePrimitive {
     /// This is also used by SVGFEBlend, SVGFEComposite and
     /// SVGFEDisplacementMap filters.
     pub secondary_render_task_id: Option<RenderTaskId>,
+    /// Optional cache handles for storing extra data in the
+    /// GPU cache, depending on the type of picture.
+    pub extra_gpu_data: SmallVec<[GpuBufferAddress; 1]>,
+}
+
+impl PictureScratch {
+    pub fn empty() -> Self {
+        PictureScratch {
+            primary_render_task_id: None,
+            secondary_render_task_id: None,
+            extra_gpu_data: SmallVec::new(),
+        }
+    }
+}
+
+#[cfg_attr(feature = "capture", derive(Serialize))]
+pub struct PictureInstance {
+    /// List of primitives, and associated info for this picture.
+    pub prim_list: PrimitiveList,
+
+    /// If false and transform ends up showing the back of the picture,
+    /// it will be considered invisible.
+    pub is_backface_visible: bool,
+
     /// How this picture should be composited.
     /// If None, don't composite - just draw directly on parent surface.
     pub composite_mode: Option<PictureCompositeMode>,
 
     pub raster_config: Option<RasterConfig>,
     pub context_3d: Picture3DContext<OrderedPictureChild>,
-
-    // Optional cache handles for storing extra data
-    // in the GPU cache, depending on the type of
-    // picture.
-    pub extra_gpu_data: SmallVec<[GpuBufferAddress; 1]>,
 
     /// The spatial node index of this picture when it is
     /// composited into the parent picture.
@@ -588,7 +605,7 @@ pub struct PicturePrimitive {
     pub snapshot: Option<SnapshotInfo>,
 }
 
-impl PicturePrimitive {
+impl PictureInstance {
     pub fn print<T: PrintTreePrinter>(
         &self,
         pictures: &[Self],
@@ -659,14 +676,11 @@ impl PicturePrimitive {
         flags: PictureFlags,
         snapshot: Option<SnapshotInfo>,
     ) -> Self {
-        PicturePrimitive {
+        PictureInstance {
             prim_list,
-            primary_render_task_id: None,
-            secondary_render_task_id: None,
             composite_mode,
             raster_config: None,
             context_3d,
-            extra_gpu_data: SmallVec::new(),
             is_backface_visible: prim_flags.contains(PrimitiveFlags::IS_BACKFACE_VISIBLE),
             spatial_node_index,
             prev_local_rect: LayoutRect::zero(),
@@ -688,10 +702,8 @@ impl PicturePrimitive {
         data_stores: &mut DataStores,
         scratch: &mut PrimitiveScratchBuffer,
         tile_caches: &mut FastHashMap<SliceId, Box<TileCacheInstance>>,
-    ) -> Option<(PictureContext, PictureState, PrimitiveList)> {
-        frame_state.visited_pictures[pic_index.0] = true;
-        self.primary_render_task_id = None;
-        self.secondary_render_task_id = None;
+    ) -> Option<(PictureContext, PictureState, PrimitiveList, storage::Index<PictureScratch>)> {
+        let mut picture_scratch = PictureScratch::empty();
 
         let dbg_flags = DebugFlags::PICTURE_CACHING_DBG | DebugFlags::PICTURE_BORDERS;
         if frame_context.debug_flags.intersects(dbg_flags) {
@@ -802,7 +814,7 @@ impl PicturePrimitive {
                 };
 
                 if let PictureCompositeMode::IntermediateSurface = raster_config.composite_mode {
-                    if !scratch.required_sub_graphs.contains(&pic_index) {
+                    if !scratch.frame.required_sub_graphs.contains(&pic_index) {
                         return None;
                     }
                 }
@@ -818,11 +830,11 @@ impl PicturePrimitive {
                     frame_context,
                     frame_state,
                     data_stores,
-                    &mut self.extra_gpu_data,
+                    &mut picture_scratch.extra_gpu_data,
                 );
 
-                self.primary_render_task_id = render_tasks[0];
-                self.secondary_render_task_id = render_tasks[1];
+                picture_scratch.primary_render_task_id = render_tasks[0];
+                picture_scratch.secondary_render_task_id = render_tasks[1];
 
                 let is_sub_graph = self.flags.contains(PictureFlags::IS_SUB_GRAPH);
 
@@ -873,7 +885,8 @@ impl PicturePrimitive {
 
         let prim_list = mem::replace(&mut self.prim_list, PrimitiveList::empty());
 
-        Some((context, state, prim_list))
+        let scratch_handle = scratch.frame.pictures.push(picture_scratch);
+        Some((context, state, prim_list, scratch_handle))
     }
 
     pub fn restore_context(
@@ -881,9 +894,9 @@ impl PicturePrimitive {
         pic_index: PictureIndex,
         prim_list: PrimitiveList,
         context: PictureContext,
-        prim_instances: &[PrimitiveInstance],
         frame_context: &FrameBuildingContext,
         frame_state: &mut FrameBuildingState,
+        scratch: &PrimitiveScratchBuffer,
     ) {
         // Pop any dirty regions this picture set
         for _ in 0 .. context.dirty_region_count {
@@ -898,28 +911,27 @@ impl PicturePrimitive {
             );
         }
 
-        if let Picture3DContext::In { root_data: Some(ref mut list), plane_splitter_index, .. } = self.context_3d {
+        if let Picture3DContext::In { root_data: Some(ref mut list), plane_splitter_index, ancestor_index, .. } = self.context_3d {
             let splitter = &mut frame_state.plane_splitters[plane_splitter_index.0];
 
             // Resolve split planes via BSP
-            PicturePrimitive::resolve_split_planes(
+            PictureInstance::resolve_split_planes(
                 splitter,
                 list,
                 &mut frame_state.frame_gpu_data.f32,
+                ancestor_index,
                 &frame_context.spatial_tree,
             );
 
             // Add the child prims to the relevant command buffers
             let mut cmd_buffer_targets = Vec::new();
             for child in list {
-                let child_prim_instance = &prim_instances[child.anchor.instance_index.0 as usize];
-
                 if frame_state.surface_builder.get_cmd_buffer_targets_for_prim(
-                    &child_prim_instance.vis,
+                    &scratch.frame.draws[child.anchor.instance_index.0 as usize],
                     &mut cmd_buffer_targets,
                 ) {
                     let prim_cmd = PrimitiveCommand::complex(
-                        child.anchor.instance_index,
+                        storage::Index::from_u32(child.anchor.instance_index.0),
                         child.gpu_address
                     );
 
@@ -942,20 +954,23 @@ impl PicturePrimitive {
         splitter: &mut PlaneSplitter,
         spatial_tree: &SpatialTree,
         prim_spatial_node_index: SpatialNodeIndex,
-        // TODO: this is called "visibility" while transitioning from world to raster
-        // space.
+        // Coordinate space of the 3D rendering context's containing block
+        // (`ancestor_index` from Picture3DContext::In). Polygons are projected
+        // into this pre-perspective space so the BSP works on real 3D planes
+        // rather than post-perspective ones.
+        ancestor_spatial_node_index: SpatialNodeIndex,
         visibility_spatial_node_index: SpatialNodeIndex,
         original_local_rect: LayoutRect,
         combined_local_clip_rect: &LayoutRect,
         dirty_rect: VisRect,
         plane_split_anchor: PlaneSplitAnchor,
     ) -> bool {
-        let transform = spatial_tree.get_relative_transform(
+        let prim_to_ancestor = spatial_tree.get_relative_transform(
             prim_spatial_node_index,
-            visibility_spatial_node_index
+            ancestor_spatial_node_index
         );
 
-        let matrix = transform.clone().into_transform().cast().to_untyped();
+        let ancestor_matrix = prim_to_ancestor.clone().into_transform().cast().to_untyped();
 
         // Apply the local clip rect here, before splitting. This is
         // because the local clip rect can't be applied in the vertex
@@ -969,9 +984,8 @@ impl PicturePrimitive {
             Some(rect) => rect.cast(),
             None => return false,
         };
-        let dirty_rect = dirty_rect.cast();
 
-        match transform {
+        match prim_to_ancestor {
             CoordinateSpaceMapping::Local => {
                 let polygon = Polygon::from_rect(
                     local_rect.to_rect() * Scale::new(1.0),
@@ -983,7 +997,7 @@ impl PicturePrimitive {
                 let inv_matrix = scale_offset.inverse().to_transform().cast();
                 let polygon = Polygon::from_transformed_rect_with_inverse(
                     local_rect.to_rect().to_untyped(),
-                    &matrix,
+                    &ancestor_matrix,
                     &inv_matrix,
                     plane_split_anchor,
                 ).unwrap();
@@ -991,18 +1005,43 @@ impl PicturePrimitive {
             }
             CoordinateSpaceMapping::ScaleOffset(_) |
             CoordinateSpaceMapping::Transform(_) => {
-                let mut clipper = Clipper::new();
-                let results = clipper.clip_transformed(
-                    Polygon::from_rect(
-                        local_rect.to_rect().to_untyped(),
-                        plane_split_anchor,
-                    ),
-                    &matrix,
-                    Some(dirty_rect.to_rect().to_untyped()),
+                // Project the visible region back into the 3D context's containing-block
+                // (ancestor) space.
+                // This may fail if the dirty rect doesn't have a valid pre-image (e.g. it
+                // sits behind the projection plane in ancestor space), in which case we
+                // fall back to no lateral bounds.
+                // TODO: Instead of trying to map the vis (world) space dirty rect into the
+                // right space here, we should be able to find the dirty rect in this space
+                // that was built during the dirty rect propagation at the beginning of the
+                // frame.
+                let map_ancestor_to_vis = SpaceMapper::<LayoutPixel, VisPixel>::new_with_target(
+                    visibility_spatial_node_index,
+                    ancestor_spatial_node_index,
+                    VisRect::max_rect(),
+                    spatial_tree,
                 );
-                if let Ok(results) = results {
-                    for poly in results {
-                        splitter.add(poly);
+                let ancestor_dirty_rect = map_ancestor_to_vis.unmap(&dirty_rect);
+
+                let ancestor_bounds = ancestor_dirty_rect.map(|r| r.cast().to_rect().to_untyped());
+
+                let mut clipper = Clipper::<PlaneSplitAnchor>::new();
+                let planes = match Clipper::<PlaneSplitAnchor>::frustum_planes(&ancestor_matrix, ancestor_bounds) {
+                    Ok(p) => p,
+                    Err(_) => return false,
+                };
+                for plane in planes {
+                    clipper.add(plane);
+                }
+
+                let polygon = Polygon::from_rect(
+                    local_rect.to_rect().to_untyped(),
+                    plane_split_anchor,
+                );
+                let clipped: Vec<_> = clipper.clip(polygon).to_vec();
+
+                for poly in clipped {
+                    if let Some(transformed) = poly.transform(&ancestor_matrix) {
+                        splitter.add(transformed);
                     }
                 }
             }
@@ -1015,6 +1054,7 @@ impl PicturePrimitive {
         splitter: &mut PlaneSplitter,
         ordered: &mut Vec<OrderedPictureChild>,
         gpu_buffer: &mut GpuBufferBuilderF,
+        ancestor_index: SpatialNodeIndex,
         spatial_tree: &SpatialTree,
     ) {
         ordered.clear();
@@ -1025,7 +1065,7 @@ impl PicturePrimitive {
         ordered.reserve(sorted.len());
         for poly in sorted {
             let transform = match spatial_tree
-                .get_world_transform(poly.anchor.spatial_node_index)
+                .get_relative_transform(poly.anchor.spatial_node_index, ancestor_index)
                 .inverse()
             {
                 Some(transform) => transform.into_transform(),
@@ -1360,6 +1400,7 @@ impl PicturePrimitive {
         &mut self,
         frame_state: &mut FrameBuildingState,
         data_stores: &mut DataStores,
+        scratch: &mut PictureScratch,
     ) {
         let raster_config = match self.raster_config {
             Some(ref mut raster_config) => raster_config,
@@ -1372,7 +1413,7 @@ impl PicturePrimitive {
             &frame_state.surfaces[raster_config.surface_index.0],
             &mut frame_state.frame_gpu_data,
             data_stores,
-            &mut self.extra_gpu_data
+            &mut scratch.extra_gpu_data,
         );
     }
 
@@ -2402,4 +2443,110 @@ fn test_drop_filter_dirty_region_outside_prim() {
         false,
     ).expect("No surface rect");
     assert_eq!(info.task_size, DeviceIntSize::new(432, 578));
+}
+
+#[test]
+fn test_drop_filter_partial_dirty_content_inflate() {
+    // Bug 1822189: When the parent's dirty region (clipping_rect here) overlaps
+    // the drop-shadow's image content but stops short of the picture's full
+    // unclipped extent, the source-texture allocation must include enough blur
+    // margin around the image content to keep the picture_task texture's edges
+    // in transparent space. Otherwise the content quad's blur margin samples
+    // UVs > 1 and the texture-edge image content bleeds into the visible
+    // result.
+
+    use api::Shadow;
+    use crate::spatial_tree::{SceneSpatialTree, SpatialTree};
+
+    let mut cst = SceneSpatialTree::new();
+    let root_reference_frame_index = cst.root_reference_frame_index();
+
+    let mut spatial_tree = SpatialTree::new();
+    spatial_tree.apply_updates(cst.end_frame_and_get_pending_updates());
+    spatial_tree.update_tree(&SceneProperties::new());
+
+    let map_local_to_picture = SpaceMapper::new_with_target(
+        root_reference_frame_index,
+        root_reference_frame_index,
+        PictureRect::max_rect(),
+        &spatial_tree,
+    );
+
+    // 500x500 image content, drop-shadow with non-zero offset.
+    let mut surfaces = vec![
+        SurfaceInfo {
+            unclipped_local_rect: PictureRect::max_rect(),
+            clipped_local_rect: PictureRect::max_rect(),
+            is_opaque: true,
+            // Parent's clipping_rect = dirty region that partially overlaps
+            // the image but stops short of the full picture extent. This is
+            // the scenario where the bug used to leave the texture's right
+            // and bottom edges on image content.
+            clipping_rect: PictureRect::new(
+                PicturePoint::new(0.0, 0.0),
+                PicturePoint::new(683.0, 341.0),
+            ),
+            map_local_to_picture: map_local_to_picture.clone(),
+            raster_spatial_node_index: root_reference_frame_index,
+            surface_spatial_node_index: root_reference_frame_index,
+            visibility_spatial_node_index: root_reference_frame_index,
+            device_pixel_scale: DevicePixelScale::new(1.0),
+            world_scale_factors: (1.0, 1.0),
+            local_scale: (1.0, 1.0),
+            allow_snapping: true,
+            force_scissor_rect: false,
+            culling_rect: VisRect::max_rect(),
+        },
+        SurfaceInfo {
+            unclipped_local_rect: PictureRect::new(
+                PicturePoint::new(0.0, 0.0),
+                PicturePoint::new(500.0, 500.0),
+            ),
+            clipped_local_rect: PictureRect::new(
+                PicturePoint::new(0.0, 0.0),
+                PicturePoint::new(500.0, 500.0),
+            ),
+            is_opaque: true,
+            clipping_rect: PictureRect::max_rect(),
+            map_local_to_picture,
+            raster_spatial_node_index: root_reference_frame_index,
+            surface_spatial_node_index: root_reference_frame_index,
+            visibility_spatial_node_index: root_reference_frame_index,
+            device_pixel_scale: DevicePixelScale::new(1.0),
+            world_scale_factors: (1.0, 1.0),
+            local_scale: (1.0, 1.0),
+            allow_snapping: true,
+            force_scissor_rect: false,
+            culling_rect: VisRect::max_rect(),
+        },
+    ];
+
+    let shadows = smallvec![
+        Shadow {
+            offset: LayoutVector2D::new(400.0, 100.0),
+            color: ColorF::BLACK,
+            blur_radius: 20.0,
+        },
+    ];
+
+    let composite_mode = PictureCompositeMode::Filter(Filter::DropShadows(shadows));
+
+    let info = get_surface_rects(
+        SurfaceIndex(1),
+        &composite_mode,
+        SurfaceIndex(0),
+        &mut surfaces,
+        &spatial_tree,
+        MAX_SURFACE_SIZE as f32,
+        false,
+    ).expect("No surface rect");
+
+    // With the fix, the image-content side of required_local_rect is inflated
+    // by blur (20 * BLUR_SAMPLE_SCALE = 60) so the texture extends to
+    // (-60, -60)..(560, 401) — placing the right and bottom edges in the
+    // transparent blur margin around the image rather than on image content.
+    // Width=620, height=461. Without the fix this would be (560, 401) i.e.
+    // 560x401 with the texture's right and bottom edges sitting on the
+    // 500x500 image content, producing the visible bleed.
+    assert_eq!(info.task_size, DeviceIntSize::new(620, 461));
 }

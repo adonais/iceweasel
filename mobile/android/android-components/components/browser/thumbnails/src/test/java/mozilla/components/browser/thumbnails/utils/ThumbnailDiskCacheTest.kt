@@ -13,7 +13,6 @@ import mozilla.components.support.test.any
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -21,6 +20,7 @@ import org.mockito.ArgumentMatchers
 import org.mockito.Mockito.`when`
 import java.io.IOException
 import java.io.OutputStream
+import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class ThumbnailDiskCacheTest {
@@ -46,7 +46,7 @@ class ThumbnailDiskCacheTest {
         cache.putThumbnailBitmap(testContext, ImageSaveRequest(request.id, request.isPrivate), bitmap)
 
         val data = cache.getThumbnailData(testContext, request)
-        assertNotNull(data!!)
+        assertNotNull(data)
         Assert.assertEquals("Hello World", String(data))
     }
 
@@ -58,7 +58,7 @@ class ThumbnailDiskCacheTest {
 
         cache.putThumbnailBitmap(testContext, ImageSaveRequest(request.id, request.isPrivate), bitmap)
         var data = cache.getThumbnailData(testContext, request)
-        assertNotNull(data!!)
+        assertNotNull(data)
 
         cache.removeThumbnailData(testContext, request.id)
         data = cache.getThumbnailData(testContext, request)
@@ -73,7 +73,7 @@ class ThumbnailDiskCacheTest {
 
         cache.putThumbnailBitmap(testContext, ImageSaveRequest(request.id, request.isPrivate), bitmap)
         var data = cache.getThumbnailData(testContext, request)
-        assertNotNull(data!!)
+        assertNotNull(data)
 
         cache.clear(testContext)
         data = cache.getThumbnailData(testContext, request)

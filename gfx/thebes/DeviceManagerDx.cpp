@@ -148,61 +148,71 @@ void DeviceManagerDx::ReleaseD3D11() {
 }
 
 nsTArray<DXGI_OUTPUT_DESC1> DeviceManagerDx::EnumerateOutputs() {
-  RefPtr<IDXGIAdapter> adapter = GetDXGIAdapter();
-
-  if (!adapter) {
-    NS_WARNING("Failed to acquire a DXGI adapter for enumerating outputs.");
-    return nsTArray<DXGI_OUTPUT_DESC1>();
+  MutexAutoLock lock(mDeviceLock);
+  nsTArray<DXGI_OUTPUT_DESC1> outputs;
+  if (!EnsureFactoryLocked()) {
+    return outputs;
   }
 
-  nsTArray<DXGI_OUTPUT_DESC1> outputs;
-  for (UINT i = 0;; ++i) {
-    RefPtr<IDXGIOutput> output = nullptr;
-    if (FAILED(adapter->EnumOutputs(i, getter_AddRefs(output)))) {
+  RefPtr<IDXGIAdapter1> adapter;
+  for (UINT adapterIndex = 0;; adapterIndex++) {
+    if (FAILED(
+            mFactory->EnumAdapters1(adapterIndex, getter_AddRefs(adapter)))) {
       break;
     }
 
-    RefPtr<IDXGIOutput6> output6 = nullptr;
-    if (FAILED(output->QueryInterface(__uuidof(IDXGIOutput6),
-                                      getter_AddRefs(output6)))) {
-      break;
+    for (UINT outputIndex = 0;; outputIndex++) {
+      RefPtr<IDXGIOutput> output;
+      if (FAILED(adapter->EnumOutputs(outputIndex, getter_AddRefs(output)))) {
+        break;
+      }
+      RefPtr<IDXGIOutput6> output6 = nullptr;
+      if (FAILED(output->QueryInterface(__uuidof(IDXGIOutput6),
+                                        getter_AddRefs(output6)))) {
+        break;
+      }
+      DXGI_OUTPUT_DESC1 desc;
+      if (FAILED(output6->GetDesc1(&desc))) {
+        break;
+      }
+      outputs.AppendElement(desc);
     }
-
-    DXGI_OUTPUT_DESC1 desc;
-    if (FAILED(output6->GetDesc1(&desc))) {
-      break;
-    }
-
-    outputs.AppendElement(desc);
   }
   return outputs;
 }
 
-bool DeviceManagerDx::GetOutputFromMonitor(HMONITOR monitor,
+bool DeviceManagerDx::GetOutputFromMonitor(HMONITOR aMonitor,
                                            RefPtr<IDXGIOutput>* aOutOutput) {
-  RefPtr<IDXGIAdapter> adapter = GetDXGIAdapter();
-
-  if (!adapter) {
-    NS_WARNING("Failed to acquire a DXGI adapter for GetOutputFromMonitor.");
+  MutexAutoLock lock(mDeviceLock);
+  if (!EnsureFactoryLocked()) {
     return false;
   }
 
-  for (UINT i = 0;; ++i) {
-    RefPtr<IDXGIOutput> output = nullptr;
-    if (FAILED(adapter->EnumOutputs(i, getter_AddRefs(output)))) {
+  RefPtr<IDXGIAdapter1> adapter;
+  for (UINT adapterIndex = 0;; adapterIndex++) {
+    if (FAILED(
+            mFactory->EnumAdapters1(adapterIndex, getter_AddRefs(adapter)))) {
       break;
     }
 
-    DXGI_OUTPUT_DESC desc;
-    if (FAILED(output->GetDesc(&desc))) {
-      continue;
-    }
+    for (UINT outputIndex = 0;; outputIndex++) {
+      RefPtr<IDXGIOutput> output;
+      if (FAILED(adapter->EnumOutputs(outputIndex, getter_AddRefs(output)))) {
+        break;
+      }
 
-    if (desc.Monitor == monitor) {
-      *aOutOutput = output;
-      return true;
+      DXGI_OUTPUT_DESC desc;
+      if (FAILED(output->GetDesc(&desc))) {
+        continue;
+      }
+
+      if (desc.Monitor == aMonitor) {
+        *aOutOutput = output;
+        return true;
+      }
     }
   }
+
   return false;
 }
 
@@ -718,24 +728,23 @@ void DeviceManagerDx::CreateContentDevicesLocked() {
   }
 }
 
-already_AddRefed<IDXGIAdapter1> DeviceManagerDx::GetDXGIAdapter() {
-  MutexAutoLock lock(mDeviceLock);
-  return do_AddRef(GetDXGIAdapterLocked());
-}
-
-IDXGIAdapter1* DeviceManagerDx::GetDXGIAdapterLocked() {
-  if (mAdapter && mFactory && mFactory->IsCurrent()) {
-    return mAdapter;
+bool DeviceManagerDx::EnsureFactoryLocked() {
+  if (mFactory && mFactory->IsCurrent()) {
+    return true;
   }
-  mAdapter = nullptr;
   mFactory = nullptr;
 
   nsModuleHandle dxgiModule(LoadLibrarySystem32(L"dxgi.dll"));
+  auto scopeExit = MakeScopeExit([&] {
+    // We leak this module everywhere, we might as well do so here as well.
+    dxgiModule.disown();
+  });
+
   decltype(CreateDXGIFactory1)* createDXGIFactory1 =
       (decltype(CreateDXGIFactory1)*)GetProcAddress(dxgiModule,
                                                     "CreateDXGIFactory1");
   if (!createDXGIFactory1) {
-    return nullptr;
+    return false;
   }
   static const auto fCreateDXGIFactory2 =
       (decltype(CreateDXGIFactory2)*)GetProcAddress(dxgiModule,
@@ -760,8 +769,28 @@ IDXGIAdapter1* DeviceManagerDx::GetDXGIAdapterLocked() {
     if (FAILED(hr) || !mFactory) {
       // This seems to happen with some people running the iZ3D driver.
       // They won't get acceleration.
-      return nullptr;
+      return false;
     }
+  }
+
+  MOZ_ASSERT(mFactory && mFactory->IsCurrent());
+  return true;
+}
+
+already_AddRefed<IDXGIAdapter1> DeviceManagerDx::GetDXGIAdapter() {
+  MutexAutoLock lock(mDeviceLock);
+  return do_AddRef(GetDXGIAdapterLocked());
+}
+
+IDXGIAdapter1* DeviceManagerDx::GetDXGIAdapterLocked() {
+  if (mAdapter && mFactory && mFactory->IsCurrent()) {
+    return mAdapter;
+  }
+
+  mAdapter = nullptr;
+  if (!EnsureFactoryLocked()) {
+    // No factory? Can't proceed.
+    return nullptr;
   }
 
   if (mDeviceStatus) {
@@ -792,8 +821,6 @@ IDXGIAdapter1* DeviceManagerDx::GetDXGIAdapterLocked() {
     mFactory->EnumAdapters1(0, getter_AddRefs(mAdapter));
   }
 
-  // We leak this module everywhere, we might as well do so here as well.
-  dxgiModule.disown();
   return mAdapter;
 }
 
@@ -1184,25 +1211,49 @@ static HRESULT SetDebugName(T* d3d11Object, const char* debugString) {
 
 RefPtr<ID3D11Device> DeviceManagerDx::CreateMediaEngineDevice() {
   MutexAutoLock lock(mDeviceLock);
-  if (!LoadD3D11()) {
-    return nullptr;
+  // LoadD3D11() asserts D3D11_COMPOSITING is enabled, which may not hold in
+  // the utility process (headless mode). Load the DLL directly if needed.
+  if (!sD3D11CreateDeviceFn) {
+    nsModuleHandle module(LoadLibrarySystem32(L"d3d11.dll"));
+    if (!module) {
+      return nullptr;
+    }
+    sD3D11CreateDeviceFn = (decltype(D3D11CreateDevice)*)GetProcAddress(
+        module, "D3D11CreateDevice");
+    if (!sD3D11CreateDeviceFn) {
+      return nullptr;
+    }
+    mD3D11Module.steal(module);
   }
 
   HRESULT hr;
   RefPtr<ID3D11Device> device;
-  UINT flags = D3D11_CREATE_DEVICE_BGRA_SUPPORT |
-               D3D11_CREATE_DEVICE_PREVENT_INTERNAL_THREADING_OPTIMIZATIONS;
-  RefPtr<IDXGIAdapter1> adapter = GetDXGIAdapterLocked();
-  if (!adapter) {
-    return nullptr;
+  UINT baseFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT |
+                   D3D11_CREATE_DEVICE_PREVENT_INTERNAL_THREADING_OPTIMIZATIONS;
+  UINT flags = D3D11_CREATE_DEVICE_VIDEO_SUPPORT | baseFlags;
+  // When hardware video decoding is unavailable, DXGI swap chains used by
+  // the MF Media Engine may fail. Fall back to WARP so the engine can
+  // create its swap chain with a software adapter.
+  bool useWarp = !gfxVars::CanUseHardwareVideoDecoding();
+  if (!useWarp) {
+    if (!CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, flags, hr, device) ||
+        FAILED(hr) || !device || !D3D11Checks::DoesDeviceWork()) {
+      useWarp = true;
+    }
   }
-  if (!CreateDevice(adapter, D3D_DRIVER_TYPE_UNKNOWN, flags, hr, device)) {
-    return nullptr;
+  if (useWarp) {
+    gfxWarning()
+        << "MFMediaEngine: hardware D3D11 device unavailable, using WARP";
+    device = nullptr;
+    // WARP does not support D3D11_CREATE_DEVICE_VIDEO_SUPPORT; use baseFlags
+    // only.
+    if (!CreateDevice(nullptr, D3D_DRIVER_TYPE_WARP, baseFlags, hr, device) ||
+        FAILED(hr) || !device) {
+      return nullptr;
+    }
   }
-  if (FAILED(hr) || !device || !D3D11Checks::DoesDeviceWork()) {
-    return nullptr;
-  }
-  (void)SetDebugName(device.get(), "MFMediaEngineDevice");
+  (void)SetDebugName(device.get(), useWarp ? "MFMediaEngineDevice(WARP)"
+                                           : "MFMediaEngineDevice");
 
   RefPtr<ID3D10Multithread> multi;
   device->QueryInterface(__uuidof(ID3D10Multithread), getter_AddRefs(multi));

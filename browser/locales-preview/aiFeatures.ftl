@@ -39,18 +39,18 @@ smart-window-model-section =
 smart-window-model-learn-link = Learn about models
 
 ## Variables:
-##   $modelName (String) - The name of the AI model
+##   $model (string) - The name of the AI model
 ##   $ownerName (String) - The name of owner of the AI model
 
 smart-window-model-fast =
     .label = Fast: Answers quickly
-    .description = Model { $modelName } by { $ownerName }
+    .description = Model { $model } by { $ownerName }
 smart-window-model-flexible =
     .label = Flexible: Solid fit for most needs
-    .description = Model { $modelName } by { $ownerName }
+    .description = Model { $model } by { $ownerName }
 smart-window-model-personal =
     .label = Personal: Most tailored answers
-    .description = Model { $modelName } by { $ownerName }
+    .description = Model { $model } by { $ownerName }
 smart-window-model-custom =
     .label = Custom: Use your own LLM
 smart-window-model-custom-name =
@@ -58,14 +58,15 @@ smart-window-model-custom-name =
     .placeholder = Example: glm4
 smart-window-model-custom-url =
     .label = Model endpoint
-    .placeholder = Example: http://localhost:11434/v1/chat/completions
+    .placeholder = Example: http://localhost:11434/v1
 smart-window-model-custom-token =
     .label = API key or auth token, if required
-smart-window-model-custom-help =
-    .message = Heads up! When you use a custom model, Smart Window may not work as expected.
+smart-window-model-custom-info =
+    .message = When you use a custom model, Smart Window may not work as expected.
 smart-window-model-custom-more-link = More about custom models
 smart-window-model-custom-save =
     .label = Save
+smart-window-model-custom-save-confirmation = Model details saved. Start a new chat to test.
 
 ai-window-memories-section =
     .label = Memories

@@ -5,6 +5,7 @@
 #include "SimpleXULLeafFrame.h"
 
 #include "mozilla/PresShell.h"
+#include "mozilla/ReflowInput.h"
 
 nsIFrame* NS_NewSimpleXULLeafFrame(mozilla::PresShell* aPresShell,
                                    mozilla::ComputedStyle* aStyle) {

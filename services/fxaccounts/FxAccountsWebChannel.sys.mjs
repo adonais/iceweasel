@@ -333,7 +333,11 @@ FxAccountsWebChannel.prototype = {
             await this._helpers.promptProfileSyncWarningIfNeeded(data);
           switch (result.action) {
             case "create-profile":
-              lazy.SelectableProfileService.createNewProfile();
+              lazy.SelectableProfileService.createNewProfile(
+                true,
+                null,
+                "sync-warning"
+              );
               response.data = { ok: false };
               break;
             case "switch-profile":
@@ -370,7 +374,7 @@ FxAccountsWebChannel.prototype = {
         break;
       case COMMAND_PAIR_PREFERENCES:
         if (lazy.pairingEnabled) {
-          let win = browser.ownerGlobal;
+          let win = browser.documentGlobal;
           this._channel.send(
             { command, messageId: message.messageId, data: { ok: true } },
             sendingContext
@@ -996,7 +1000,7 @@ FxAccountsWebChannelHelpers.prototype = {
    * @param {object} browser the browser in whose window we'll open Firefox View
    */
   openFirefoxView(browser) {
-    browser.ownerGlobal.FirefoxViewHandler.openTab("syncedtabs");
+    browser.documentGlobal.FirefoxViewHandler.openTab("syncedtabs");
   },
 
   /**

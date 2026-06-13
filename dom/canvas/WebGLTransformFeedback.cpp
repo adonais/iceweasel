@@ -29,6 +29,57 @@ WebGLTransformFeedback::~WebGLTransformFeedback() {
 
 ////////////////////////////////////////
 
+/// Do some validation when beginning/resuming the TF, and compute the
+/// vertex capacity.
+bool WebGLTransformFeedback::PrepareTransformFeedback() {
+  const auto& prog = mContext->mCurrentProgram;
+
+  if (!prog || !prog->IsLinked() ||
+      prog->LinkInfo()->componentsPerTFVert.empty()) {
+    mContext->ErrorInvalidOperation(
+        "Current program not valid for transform"
+        " feedback.");
+    return false;
+  }
+
+  const auto& linkInfo = prog->LinkInfo();
+  const auto& componentsPerTFVert = linkInfo->componentsPerTFVert;
+
+  mActive_VertCapacity = 0;
+
+  size_t minVertCapacity = SIZE_MAX;
+  for (size_t i = 0; i < componentsPerTFVert.size(); i++) {
+    const auto& indexedBinding = mIndexedBindings[i];
+    const auto& componentsPerVert = componentsPerTFVert[i];
+
+    const auto& buffer = indexedBinding.mBufferBinding;
+    if (!buffer) {
+      mContext->ErrorInvalidOperation(
+          "No buffer attached to required transform"
+          " feedback index %u.",
+          (uint32_t)i);
+      return false;
+    }
+
+    for (const auto iBound : IntegerRange(mIndexedBindings.size())) {
+      const auto& bound = mIndexedBindings[iBound].mBufferBinding.get();
+      if (iBound != i && buffer == bound) {
+        mContext->GenErrorIllegalUse(
+            LOCAL_GL_TRANSFORM_FEEDBACK_BUFFER, static_cast<uint32_t>(i),
+            LOCAL_GL_TRANSFORM_FEEDBACK_BUFFER, static_cast<uint32_t>(iBound));
+        return false;
+      }
+    }
+
+    const size_t vertCapacity = buffer->ByteLength() / 4 / componentsPerVert;
+    minVertCapacity = std::min(minVertCapacity, vertCapacity);
+  }
+
+  mActive_VertCapacity = minVertCapacity;
+
+  return true;
+}
+
 void WebGLTransformFeedback::BeginTransformFeedback(GLenum primMode) {
   if (mIsActive) return mContext->ErrorInvalidOperation("Already active.");
 
@@ -44,44 +95,8 @@ void WebGLTransformFeedback::BeginTransformFeedback(GLenum primMode) {
       return;
   }
 
-  const auto& prog = mContext->mCurrentProgram;
-  if (!prog || !prog->IsLinked() ||
-      prog->LinkInfo()->componentsPerTFVert.empty()) {
-    mContext->ErrorInvalidOperation(
-        "Current program not valid for transform"
-        " feedback.");
+  if (!PrepareTransformFeedback()) {
     return;
-  }
-
-  const auto& linkInfo = prog->LinkInfo();
-  const auto& componentsPerTFVert = linkInfo->componentsPerTFVert;
-
-  size_t minVertCapacity = SIZE_MAX;
-  for (size_t i = 0; i < componentsPerTFVert.size(); i++) {
-    const auto& indexedBinding = mIndexedBindings[i];
-    const auto& componentsPerVert = componentsPerTFVert[i];
-
-    const auto& buffer = indexedBinding.mBufferBinding;
-    if (!buffer) {
-      mContext->ErrorInvalidOperation(
-          "No buffer attached to required transform"
-          " feedback index %u.",
-          (uint32_t)i);
-      return;
-    }
-
-    for (const auto iBound : IntegerRange(mIndexedBindings.size())) {
-      const auto& bound = mIndexedBindings[iBound].mBufferBinding.get();
-      if (iBound != i && buffer == bound) {
-        mContext->GenErrorIllegalUse(
-            LOCAL_GL_TRANSFORM_FEEDBACK_BUFFER, static_cast<uint32_t>(i),
-            LOCAL_GL_TRANSFORM_FEEDBACK_BUFFER, static_cast<uint32_t>(iBound));
-        return;
-      }
-    }
-
-    const size_t vertCapacity = buffer->ByteLength() / 4 / componentsPerVert;
-    minVertCapacity = std::min(minVertCapacity, vertCapacity);
   }
 
   ////
@@ -94,10 +109,9 @@ void WebGLTransformFeedback::BeginTransformFeedback(GLenum primMode) {
   mIsActive = true;
   MOZ_ASSERT(!mIsPaused);
 
-  mActive_Program = prog;
+  mActive_Program = mContext->mCurrentProgram;
   mActive_PrimMode = primMode;
   mActive_VertPosition = 0;
-  mActive_VertCapacity = minVertCapacity;
 
   ////
 
@@ -155,6 +169,12 @@ void WebGLTransformFeedback::ResumeTransformFeedback() {
 
   if (mContext->mCurrentProgram != mActive_Program) {
     mContext->ErrorInvalidOperation("Active program differs from original.");
+    return;
+  }
+
+  // Re-run prepare in case some of the buffers have been modified
+  // while the TF was paused.
+  if (!PrepareTransformFeedback()) {
     return;
   }
 

@@ -475,8 +475,7 @@ const i32_rem_s = [
     divisor: 2,
     expected: `mov     w2, w0
                mov     w1, w2
-               tst     w1, w1
-               b.mi    #\\+0xc \\(addr 0x${HEX}+\\)
+               tbnz    w1, #31, #\\+0xc \\(addr 0x${HEX}+\\)
                and     w0, w1, #0x1
                b       #\\+0x10 \\(addr 0x${HEX}+\\)
                neg     w0, w1
@@ -487,8 +486,7 @@ const i32_rem_s = [
     divisor: 4,
     expected: `mov     w2, w0
                mov     w1, w2
-               tst     w1, w1
-               b.mi    #\\+0xc \\(addr 0x${HEX}+\\)
+               tbnz    w1, #31, #\\+0xc \\(addr 0x${HEX}+\\)
                and     w0, w1, #0x3
                b       #\\+0x10 \\(addr 0x${HEX}+\\)
                neg     w0, w1
@@ -499,8 +497,7 @@ const i32_rem_s = [
     divisor: 0x100,
     expected: `mov     w2, w0
                mov     w1, w2
-               tst     w1, w1
-               b.mi    #\\+0xc \\(addr 0x${HEX}+\\)
+               tbnz    w1, #31, #\\+0xc \\(addr 0x${HEX}+\\)
                and     w0, w1, #0xff
                b       #\\+0x10 \\(addr 0x${HEX}+\\)
                neg     w0, w1
@@ -511,8 +508,7 @@ const i32_rem_s = [
     divisor: 0x10000,
     expected: `mov     w2, w0
                mov     w1, w2
-               tst     w1, w1
-               b.mi    #\\+0xc \\(addr 0x${HEX}+\\)
+               tbnz    w1, #31, #\\+0xc \\(addr 0x${HEX}+\\)
                and     w0, w1, #0xffff
                b       #\\+0x10 \\(addr 0x${HEX}+\\)
                neg     w0, w1
@@ -523,8 +519,7 @@ const i32_rem_s = [
     divisor: 0x8000_0000,
     expected: `mov     w2, w0
                mov     w1, w2
-               tst     w1, w1
-               b.mi    #\\+0xc \\(addr 0x${HEX}+\\)
+               tbnz    w1, #31, #\\+0xc \\(addr 0x${HEX}+\\)
                and     w0, w1, #0x7fffffff
                b       #\\+0x10 \\(addr 0x${HEX}+\\)
                neg     w0, w1
@@ -628,8 +623,7 @@ const i64_rem_s = [
     divisor: 2,
     expected: `mov     x2, x0
                mov     x1, x2
-               tst     x1, x1
-               b.mi    #\\+0xc \\(addr 0x${HEX}+\\)
+               tbnz    x1, #63, #\\+0xc \\(addr 0x${HEX}+\\)
                and     x0, x1, #0x1
                b       #\\+0x10 \\(addr 0x${HEX}+\\)
                neg     x0, x1
@@ -640,8 +634,7 @@ const i64_rem_s = [
     divisor: 4,
     expected: `mov     x2, x0
                mov     x1, x2
-               tst     x1, x1
-               b.mi    #\\+0xc \\(addr 0x${HEX}+\\)
+               tbnz    x1, #63, #\\+0xc \\(addr 0x${HEX}+\\)
                and     x0, x1, #0x3
                b       #\\+0x10 \\(addr 0x${HEX}+\\)
                neg     x0, x1
@@ -652,8 +645,7 @@ const i64_rem_s = [
     divisor: 0x100,
     expected: `mov     x2, x0
                mov     x1, x2
-               tst     x1, x1
-               b.mi    #\\+0xc \\(addr 0x${HEX}+\\)
+               tbnz    x1, #63, #\\+0xc \\(addr 0x${HEX}+\\)
                and     x0, x1, #0xff
                b       #\\+0x10 \\(addr 0x${HEX}+\\)
                neg     x0, x1
@@ -664,8 +656,7 @@ const i64_rem_s = [
     divisor: 0x10000,
     expected: `mov     x2, x0
                mov     x1, x2
-               tst     x1, x1
-               b.mi    #\\+0xc \\(addr 0x${HEX}+\\)
+               tbnz    x1, #63, #\\+0xc \\(addr 0x${HEX}+\\)
                and     x0, x1, #0xffff
                b       #\\+0x10 \\(addr 0x${HEX}+\\)
                neg     x0, x1
@@ -676,8 +667,7 @@ const i64_rem_s = [
     divisor: 0x8000_0000,
     expected: `mov     x2, x0
                mov     x1, x2
-               tst     x1, x1
-               b.mi    #\\+0xc \\(addr 0x${HEX}+\\)
+               tbnz    x1, #63, #\\+0xc \\(addr 0x${HEX}+\\)
                and     x0, x1, #0x7fffffff
                b       #\\+0x10 \\(addr 0x${HEX}+\\)
                neg     x0, x1
@@ -688,8 +678,7 @@ const i64_rem_s = [
     divisor: 0x1_0000_0000,
     expected: `mov     x2, x0
                mov     x1, x2
-               tst     x1, x1
-               b.mi    #\\+0xc \\(addr 0x${HEX}+\\)
+               tbnz    x1, #63, #\\+0xc \\(addr 0x${HEX}+\\)
                mov     w0, w1
                b       #\\+0x10 \\(addr 0x${HEX}+\\)
                neg     x0, x1
@@ -700,8 +689,7 @@ const i64_rem_s = [
     divisor: 0x8000_0000_0000_0000n,
     expected: `mov     x2, x0
                mov     x1, x2
-               tst     x1, x1
-               b.mi    #\\+0xc \\(addr 0x${HEX}+\\)
+               tbnz    x1, #63, #\\+0xc \\(addr 0x${HEX}+\\)
                and     x0, x1, #0x7fffffffffffffff
                b       #\\+0x10 \\(addr 0x${HEX}+\\)
                neg     x0, x1

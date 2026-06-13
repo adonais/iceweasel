@@ -461,7 +461,7 @@ class TabNotesControllerClass {
     // clear the canonical URL/tab note state on the tab and wait for
     // `CanonicalURL:Identified` to tell us whether the new location has
     // a tab note.
-    const tab = aBrowser.ownerGlobal.gBrowser.getTabForBrowser(aBrowser);
+    const tab = aBrowser.documentGlobal.gBrowser.getTabForBrowser(aBrowser);
     this.#resetTab(tab);
     lazy.logConsole.debug("clear tab note due to location change", tab);
   }

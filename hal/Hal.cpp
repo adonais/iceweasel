@@ -207,7 +207,7 @@ class CachingObserversManager : public ObserversManager<InfoType> {
 
  private:
   InfoType mInfo;
-  bool mHasValidCache;
+  bool mHasValidCache = false;
 };
 
 class BatteryObserversManager final

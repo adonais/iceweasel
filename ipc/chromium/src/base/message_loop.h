@@ -5,7 +5,6 @@
 #ifndef BASE_MESSAGE_LOOP_H_
 #define BASE_MESSAGE_LOOP_H_
 
-#include <deque>
 #include <queue>
 #include <string>
 
@@ -82,7 +81,7 @@ class MessageLoop : public base::MessagePump::Delegate {
   //
   class DestructionObserver {
    public:
-    virtual ~DestructionObserver() {}
+    virtual ~DestructionObserver() = default;
     virtual void WillDestroyCurrentMessageLoop() = 0;
   };
 
@@ -303,11 +302,7 @@ class MessageLoop : public base::MessagePump::Delegate {
           nestable(aOther.nestable) {}
 
     // std::priority_queue<T>::top is dumb, so we have to have this.
-    PendingTask(const PendingTask& aOther)
-        : task(aOther.task),
-          delayed_run_time(aOther.delayed_run_time),
-          sequence_num(aOther.sequence_num),
-          nestable(aOther.nestable) {}
+    PendingTask(const PendingTask& aOther) = default;
     PendingTask& operator=(const PendingTask& aOther) {
       task = aOther.task;
       delayed_run_time = aOther.delayed_run_time;

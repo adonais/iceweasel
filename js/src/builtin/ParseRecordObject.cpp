@@ -36,14 +36,14 @@ ParseRecordObject* ParseRecordObject::create(JSContext* cx,
   }
 
   if (parseNode) {
-    obj->initSlot(ParseNodeSlot, StringValue(parseNode));
+    obj->initReservedSlot(ParseNodeSlot, StringValue(parseNode));
   }
-  obj->initSlot(ValueSlot, val);
+  obj->initReservedSlot(ValueSlot, val);
   return obj;
 }
 
 JS::PropertyKey ParseRecordObject::getKey(JSContext* cx) const {
-  Rooted<Value> slot(cx, getSlot(KeySlot));
+  Rooted<Value> slot(cx, getReservedSlot(KeySlot));
   Rooted<JS::PropertyKey> key(cx);
   MOZ_ALWAYS_TRUE(JS_ValueToId(cx, slot, &key));
   return key;
@@ -54,7 +54,7 @@ bool ParseRecordObject::setKey(JSContext* cx, const JS::PropertyKey& key) {
   if (!JS_IdToValue(cx, key, &val)) {
     return false;
   }
-  setSlot(KeySlot, val);
+  setReservedSlot(KeySlot, val);
   return true;
 }
 

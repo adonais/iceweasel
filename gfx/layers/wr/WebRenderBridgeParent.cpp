@@ -28,6 +28,7 @@
 #include "mozilla/layers/APZUpdater.h"
 #include "mozilla/layers/Compositor.h"
 #include "mozilla/layers/CompositorBridgeParent.h"
+#include "mozilla/layers/CompositorManagerParent.h"
 #include "mozilla/layers/CompositorAnimationStorage.h"
 #include "mozilla/layers/CompositorThread.h"
 #include "mozilla/layers/CompositorVsyncScheduler.h"
@@ -205,7 +206,7 @@ static void ResetDirtyPageModifier() {
   moz_set_max_dirty_page_modifier(0);
 
   wr::RenderThread* renderThread = wr::RenderThread::Get();
-  if (renderThread) {
+  if (renderThread && !renderThread->HasShutdown()) {
     renderThread->NotifyIdle();
   }
 
@@ -400,9 +401,9 @@ WebRenderBridgeParent::~WebRenderBridgeParent() {
 }
 
 /* static */
-WebRenderBridgeParent* WebRenderBridgeParent::CreateDestroyed(
+already_AddRefed<WebRenderBridgeParent> WebRenderBridgeParent::CreateDestroyed(
     const wr::PipelineId& aPipelineId, nsCString&& aError) {
-  return new WebRenderBridgeParent(aPipelineId, std::move(aError));
+  return MakeAndAddRef<WebRenderBridgeParent>(aPipelineId, std::move(aError));
 }
 
 bool WebRenderBridgeParent::EnsureInitialized() {
@@ -869,6 +870,12 @@ bool WebRenderBridgeParent::AddSharedExternalImage(
   if (!MatchesNamespace(aKey)) {
     MOZ_ASSERT_UNREACHABLE("Stale shared external image key (add)!");
     return true;
+  }
+
+  if (!GetCompositorBridge()->GetCompositorManager()->OwnsExternalImageId(
+          aExtId)) {
+    gfxCriticalNote << "We do not own extId:" << wr::AsUint64(aExtId);
+    return false;
   }
 
   auto key = wr::AsUint64(aKey);
@@ -1648,6 +1655,7 @@ bool WebRenderBridgeParent::ProcessWebRenderParentCommands(
       case WebRenderParentCommand::TOpAddPipelineIdForCompositable: {
         const OpAddPipelineIdForCompositable& op =
             cmd.get_OpAddPipelineIdForCompositable();
+
         AddPipelineIdForCompositable(op.pipelineId(), op.handle(), op.owner(),
                                      aTxn, txnForImageBridge);
         break;
@@ -1655,6 +1663,7 @@ bool WebRenderBridgeParent::ProcessWebRenderParentCommands(
       case WebRenderParentCommand::TOpRemovePipelineIdForCompositable: {
         const OpRemovePipelineIdForCompositable& op =
             cmd.get_OpRemovePipelineIdForCompositable();
+
         auto* pendingOps =
             mLateInit->mApi->GetPendingAsyncImagePipelineOps(aTxn);
 
@@ -1687,6 +1696,7 @@ bool WebRenderBridgeParent::ProcessWebRenderParentCommands(
       case WebRenderParentCommand::TOpUpdatedAsyncImagePipeline: {
         const OpUpdatedAsyncImagePipeline& op =
             cmd.get_OpUpdatedAsyncImagePipeline();
+
         aTxn.InvalidateRenderedFrame(wr::RenderReasons::ASYNC_IMAGE);
 
         auto* pendingOps =
@@ -2030,8 +2040,12 @@ void WebRenderBridgeParent::AddPipelineIdForCompositable(
     return;
   }
 
-  MOZ_ASSERT(mAsyncCompositables.find(wr::AsUint64(aPipelineId)) ==
-             mAsyncCompositables.end());
+  if (mAsyncCompositables.find(wr::AsUint64(aPipelineId)) !=
+      mAsyncCompositables.end()) {
+    gfxCriticalNote << "Content attempted AddPipelineIdForCompositable with "
+                       "existing pipelineId";
+    return;
+  }
 
   RefPtr<CompositableHost> host;
   switch (aOwner) {
@@ -2058,9 +2072,6 @@ void WebRenderBridgeParent::AddPipelineIdForCompositable(
   if (!wrHost) {
     gfxCriticalNote
         << "Incompatible CompositableHost at WebRenderBridgeParent.";
-  }
-
-  if (!wrHost) {
     return;
   }
 
@@ -2454,7 +2465,10 @@ mozilla::ipc::IPCResult WebRenderBridgeParent::RecvEndWheelTransaction(
   return IPC_OK();
 }
 
-void WebRenderBridgeParent::ActorDestroy(ActorDestroyReason aWhy) { Destroy(); }
+void WebRenderBridgeParent::ActorDestroy(ActorDestroyReason aWhy) {
+  Destroy();
+  CompositorBridgeParent::DisconnectWrBridge(this);
+}
 
 void WebRenderBridgeParent::ResetPreviousSampleTime() {
   if (RefPtr<OMTASampler> sampler = GetOMTASampler()) {

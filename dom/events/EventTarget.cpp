@@ -219,15 +219,6 @@ void EventTarget::DispatchEvent(Event& aEvent, ErrorResult& aRv) {
   (void)DispatchEvent(aEvent, CallerType::NonSystem, IgnoreErrors());
 }
 
-Nullable<WindowProxyHolder> EventTarget::GetOwnerGlobalForBindings() {
-  nsPIDOMWindowOuter* win = GetOwnerGlobalForBindingsInternal();
-  if (!win) {
-    return nullptr;
-  }
-
-  return WindowProxyHolder(win->GetBrowsingContext());
-}
-
 nsPIDOMWindowInner* EventTarget::GetAsInnerWindow() {
   return IsInnerWindow() ? static_cast<nsGlobalWindowInner*>(this) : nullptr;
 }

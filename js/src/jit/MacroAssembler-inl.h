@@ -192,6 +192,9 @@ ABIFunctionType MacroAssembler::signature() const {
     case Args_Int32_Float32:
     case Args_Double_Double:
     case Args_Double_Int:
+    case Args_Double_IntInt:
+    case Args_Double_IntIntInt:
+    case Args_Double_IntInt64:
     case Args_Double_DoubleInt:
     case Args_Double_DoubleDouble:
     case Args_Double_IntDouble:

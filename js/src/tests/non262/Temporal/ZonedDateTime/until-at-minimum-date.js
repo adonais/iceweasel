@@ -74,5 +74,19 @@ const minZoned = new Temporal.ZonedDateTime(-8640000000000000000000n, "UTC");
   assertEq(tryUntil(other, minZoned, { smallestUnit: "years" }), "Invalid");
 }
 
+{
+  // minZoned with one month added and one day subtracted.
+  let other = minZoned.add("P1M").subtract("P1D");
+  let oneDayLess = other.subtract("P1D");
+
+  let options = {smallestUnit: "days", roundingIncrement: 2, roundingMode: "expand"};
+  assertEq(tryUntil(oneDayLess, other, { largestUnit: "weeks", ...options }), "P2D");
+  assertEq(tryUntil(other, oneDayLess, { largestUnit: "weeks", ...options }), "-P2D");
+  assertEq(tryUntil(oneDayLess, other, { largestUnit: "months", ...options }), "P2D");
+  assertEq(tryUntil(other, oneDayLess, { largestUnit: "months", ...options }), "Invalid");
+  assertEq(tryUntil(oneDayLess, other, { largestUnit: "years", ...options }), "P2D");
+  assertEq(tryUntil(other, oneDayLess, { largestUnit: "years", ...options }), "Invalid");
+}
+
 if (typeof reportCompare === "function")
   reportCompare(true, true);

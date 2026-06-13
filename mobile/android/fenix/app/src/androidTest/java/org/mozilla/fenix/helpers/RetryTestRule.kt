@@ -5,6 +5,7 @@
 package org.mozilla.fenix.helpers
 
 import android.util.Log
+import androidx.compose.ui.test.ComposeTimeoutException
 import androidx.test.espresso.IdlingResourceTimeoutException
 import androidx.test.espresso.NoMatchingViewException
 import androidx.test.uiautomator.UiObjectNotFoundException
@@ -88,6 +89,7 @@ class RetryTestRule(private val retryCount: Int = 3) : TestRule {
         is IdlingResourceTimeoutException,
         is RuntimeException,
         is NullPointerException,
+        is ComposeTimeoutException,
         is IllegalStateException,
              -> true // Added for Coroutine/Compose flakiness
         else -> false

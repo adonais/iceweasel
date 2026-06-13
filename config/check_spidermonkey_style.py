@@ -55,6 +55,7 @@ ignored_js_src_dirs = [
 # We ignore #includes of these files, because they don't follow the usual rules.
 included_inclnames_to_ignore = set([
     "ffi.h",  # generated in ctypes/libffi/
+    "builtin/intl/glue/Locale.h",  # generated
     "devtools/Instruments.h",  # we ignore devtools/ in general
     "double-conversion/double-conversion.h",  # strange MFBT case
     "frontend/ReservedWordsGenerated.h",  # generated in $OBJDIR

@@ -7,8 +7,7 @@ package org.mozilla.fenix.trackingprotection
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.distinctUntilChanged
-import mozilla.components.feature.protection.dashboard.ProtectionsStorage
+import mozilla.components.feature.session.TrackingProtectionUseCases.FetchTotalTrackersBlockedUseCase
 import mozilla.components.lib.state.helpers.AbstractBinding
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction
@@ -16,23 +15,28 @@ import org.mozilla.fenix.components.appstate.AppState
 
 /**
  * View-bound feature that dispatches tracker blocked count changes to the [AppStore]
- * when the [ProtectionsStorage] is updated.
+ * when tracker data is fetched from Gecko.
  *
  * @param appStore The [AppStore] to dispatch actions to.
- * @param protectionsStorage The [ProtectionsStorage] to observe for tracker count updates.
+ * @param fetchTotalTrackersBlocked Use case to fetch the total number of blocked trackers.
  * @param ioDispatcher The [CoroutineDispatcher] for database operations. Defaults to [Dispatchers.IO].
  */
 class TrackersBlockedFeature(
     private val appStore: AppStore,
-    private val protectionsStorage: ProtectionsStorage,
+    private val fetchTotalTrackersBlocked: FetchTotalTrackersBlockedUseCase,
     ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : AbstractBinding<AppState>(appStore, ioDispatcher) {
 
-    override suspend fun onState(flow: Flow<AppState>) {
-        protectionsStorage.getTotalCountAllTime()
-            .distinctUntilChanged()
-            .collect { count ->
+    override fun start() {
+        super.start()
+        fetchTotalTrackersBlocked(
+            onSuccess = { count ->
                 appStore.dispatch(AppAction.UpdateTrackersBlockedCount(count))
-            }
+            },
+        )
+    }
+
+    override suspend fun onState(flow: Flow<AppState>) {
+        // No-op: tracker count is fetched once on start rather than observed from a Flow.
     }
 }

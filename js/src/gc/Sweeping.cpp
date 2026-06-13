@@ -685,8 +685,6 @@ IncrementalProgress GCRuntime::markWeakReferences(
         markedAny |= WeakMapBase::markZoneIteratively(zone, &marker());
       }
     }
-
-    markedAny |= jit::JitRuntime::MarkJitcodeGlobalTableIteratively(&marker());
   }
 
   assertNoMarkingWork();
@@ -1958,7 +1956,9 @@ void GCRuntime::beginSweepPhase(AutoGCSession& session) {
 #endif
 
 #ifdef JS_GC_ZEAL
-  computeNonIncrementalMarkingForValidation(session);
+  if (hasZealMode(ZealMode::IncrementalMarkingValidator) && isIncremental) {
+    computeNonIncrementalMarkingForValidation(session);
+  }
 #endif
 
   gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::SWEEP);

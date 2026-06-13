@@ -29,35 +29,35 @@ class LogoControllerTest {
     val fakeLongFoxFeature = FakeLongFoxFeature()
 
     @Test
-    fun `if longfox is disabled, do nothing when logo clicked`() {
+    fun `if longfox is disabled, do nothing when entry point clicked`() {
         val logoController = LogoController(
             longFoxFeature = fakeLongFoxFeature,
             container = FakeViewGroup(),
             longFoxEnabled = false,
         )
-        logoController.handleLogoLongClicked()
+        logoController.handleLongfoxEntryPointClicked()
         assertFalse(fakeLongFoxFeature.started)
     }
 
     @Test
-    fun `if longfox is enabled but no container exists, do nothing when logo clicked`() {
+    fun `if longfox is enabled but no container exists, do nothing when entry point clicked`() {
         val logoController = LogoController(
             longFoxFeature = fakeLongFoxFeature,
             container = null,
             longFoxEnabled = true,
         )
-        logoController.handleLogoLongClicked()
+        logoController.handleLongfoxEntryPointClicked()
         assertFalse(fakeLongFoxFeature.started)
     }
 
     @Test
-    fun `if longfox is enabled and container exists, launch game when logo clicked`() {
+    fun `if longfox is enabled and container exists, launch game when entry point clicked`() {
         val logoController = LogoController(
             longFoxFeature = fakeLongFoxFeature,
             container = FakeViewGroup(),
             longFoxEnabled = true,
         )
-        logoController.handleLogoLongClicked()
+        logoController.handleLongfoxEntryPointClicked()
         assertTrue(fakeLongFoxFeature.started)
     }
 }

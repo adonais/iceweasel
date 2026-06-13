@@ -12,6 +12,10 @@
 #include <unistd.h>
 #include <fcntl.h>
 
+#ifdef DEBUG
+#  include <numeric>
+#endif
+
 namespace mozilla {
 namespace ipc {
 
@@ -58,7 +62,7 @@ bool FileDescriptorShuffle::Init(MappingRef aMapping) {
     // Try to find a value that will create a nontrivial partition.
     int fd0 = aMapping[0].first;
     int fdn = aMapping.rbegin()->first;
-    maxDst = std::max(maxDst, (fd0 + fdn) / 2);
+    maxDst = std::max(maxDst, std::midpoint(fd0, fdn));
   }
 #endif
 

@@ -46,6 +46,9 @@ class RenderRootStateManager;
 
 class SharedSurfacesChild {
  public:
+  SharedSurfacesChild() = delete;
+  ~SharedSurfacesChild() = delete;
+
   /**
    * Request that the surface be mapped into the compositor thread's memory
    * space. This is useful for when the caller itself has no present need for
@@ -125,9 +128,6 @@ class SharedSurfacesChild {
   };
 
  private:
-  SharedSurfacesChild() = delete;
-  ~SharedSurfacesChild() = delete;
-
   friend class SharedSurfacesAnimation;
 
   class SharedUserData final : public Runnable {

@@ -6,6 +6,7 @@
 
 #include "mozilla/Assertions.h"
 #include "nsError.h"
+#include "nsString.h"
 #include "sdp/RsdparsaSdpInc.h"
 #include "sdp/RsdparsaSdpMediaSection.h"
 
@@ -15,6 +16,8 @@
 #define CRLF "\r\n"
 
 namespace mozilla {
+
+namespace ffi = mozilla::sdp::ffi;
 
 RsdparsaSdp::RsdparsaSdp(RsdparsaSessionHandle session, const SdpOrigin& origin)
     : mSession(std::move(session)), mOrigin(origin) {
@@ -40,7 +43,8 @@ Sdp* RsdparsaSdp::Clone() const { return new RsdparsaSdp(*this); }
 const SdpOrigin& RsdparsaSdp::GetOrigin() const { return mOrigin; }
 
 uint32_t RsdparsaSdp::GetBandwidth(const std::string& type) const {
-  return get_sdp_bandwidth(mSession.get(), type.c_str());
+  nsDependentCString bwType(type.data(), type.size());
+  return get_sdp_bandwidth(mSession.get(), &bwType);
 }
 
 const SdpMediaSection& RsdparsaSdp::GetMediaSection(size_t level) const {
@@ -54,10 +58,12 @@ SdpMediaSection& RsdparsaSdp::GetMediaSection(size_t level) {
 }
 
 SdpMediaSection& RsdparsaSdp::AddMediaSection(
-    SdpMediaSection::MediaType mediaType, SdpDirectionAttribute::Direction dir,
-    uint16_t port, SdpMediaSection::Protocol protocol, sdp::AddrType addrType,
+    const SdpMediaSection::MediaType mediaType,
+    const SdpDirectionAttribute::Direction dir, const uint16_t port,
+    const SdpMediaSection::Protocol protocol, const sdp::AddrType addrType,
     const std::string& addr) {
-  StringView rustAddr{addr.c_str(), addr.size()};
+  sdp::ffi::StringView rustAddr{reinterpret_cast<const uint8_t*>(addr.c_str()),
+                                addr.size()};
   auto nr = sdp_add_media_section(mSession.get(), mediaType, dir, port,
                                   protocol, addrType, rustAddr);
 
@@ -82,12 +88,10 @@ void RsdparsaSdp::Serialize(std::ostream& os) const {
   // We don't support creating i=, u=, e=, p=
   // We don't generate c= at the session level (only in media)
 
-  BandwidthVec* bwVec = sdp_get_session_bandwidth_vec(mSession.get());
-  char* bwString = sdp_serialize_bandwidth(bwVec);
-  if (bwString) {
-    os << bwString;
-    sdp_free_string(bwString);
-  }
+  nsAutoCString bwString;
+  sdp_serialize_bandwidth(sdp_get_session_bandwidth_vec(mSession.get()),
+                          &bwString);
+  os << bwString.get();
 
   os << "t=0 0" << CRLF;
 

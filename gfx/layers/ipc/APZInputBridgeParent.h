@@ -12,12 +12,14 @@ namespace layers {
 
 class IAPZCTreeManager;
 
-class APZInputBridgeParent : public PAPZInputBridgeParent {
-  NS_INLINE_DECL_REFCOUNTING(APZInputBridgeParent, final)
+class APZInputBridgeParent final : public PAPZInputBridgeParent {
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(APZInputBridgeParent, final)
 
  public:
-  static APZInputBridgeParent* Create(
-      const LayersId& aLayersId, Endpoint<PAPZInputBridgeParent>&& aEndpoint);
+  explicit APZInputBridgeParent(const LayersId& aLayersId);
+
+  static void Create(const LayersId& aLayersId,
+                     Endpoint<PAPZInputBridgeParent>&& aEndpoint);
 
   mozilla::ipc::IPCResult RecvReceiveMultiTouchInputEvent(
       const MultiTouchInput& aEvent, bool aWantsCallback,
@@ -60,7 +62,6 @@ class APZInputBridgeParent : public PAPZInputBridgeParent {
   void ActorDestroy(ActorDestroyReason aWhy) override;
 
  protected:
-  explicit APZInputBridgeParent(const LayersId& aLayersId);
   virtual ~APZInputBridgeParent();
 
  private:

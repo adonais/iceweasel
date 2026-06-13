@@ -5,13 +5,18 @@
 #ifndef mozilla_NativeKeyBindingsType_h
 #define mozilla_NativeKeyBindingsType_h
 
+#include <stdint.h>
+
+#include "mozilla/DefineEnum.h"
+
 namespace mozilla {
 
-enum class NativeKeyBindingsType : uint8_t {
-  SingleLineEditor,  // <input type="text"> etc
-  MultiLineEditor,   // <textarea>
-  RichTextEditor,    // contenteditable or designMode
-};
+MOZ_DEFINE_ENUM_CLASS_WITH_BASE(
+    NativeKeyBindingsType, uint8_t,
+    (SingleLineEditor,  // <input type="text"> etc
+     MultiLineEditor,   // <textarea>
+     RichTextEditor     // contenteditable or designMode
+     ));
 
 }  // namespace mozilla
 

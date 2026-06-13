@@ -15,6 +15,13 @@ extern "C" {
 #if defined(MOZ_USE_HWDECODE) && defined(MOZ_WIDGET_GTK)
 #  include "libavutil/hwcontext_drm.h"
 #  include "libavutil/hwcontext_vaapi.h"
+#  if LIBAVCODEC_VERSION_MAJOR >= 60 && !defined(FFVPX_VERSION)
+#    include <vulkan/vulkan_core.h>
+#    ifndef FF_API_VULKAN_FIXED_QUEUES
+#      define FF_API_VULKAN_FIXED_QUEUES (LIBAVUTIL_VERSION_MAJOR < 61)
+#    endif
+#    include "libavutil/hwcontext_vulkan.h"
+#  endif
 #endif
 #ifdef __GNUC__
 #  pragma GCC visibility pop

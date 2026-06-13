@@ -112,7 +112,9 @@ if [[ $(uname -o) == "Msys" ]]; then
   pushd "$WINDOWSSDKDIR"
   mkdir -p Debuggers/x64/
   popd
-  mv $MOZ_FETCHES_DIR/VS/VC/Redist/MSVC/14.50.35710/x64/Microsoft.VC145.CRT/* chrome_dll/system32/
+  MSVC_REDIST_VERSION=$(ls "$MOZ_FETCHES_DIR/VS/VC/Redist/MSVC" | grep -E '^[0-9]' | sort -V | tail -1)
+  [[ -n "$MSVC_REDIST_VERSION" ]] || { echo "ERROR: no numeric MSVC redist version found"; exit 1; }
+  mv "$MOZ_FETCHES_DIR/VS/VC/Redist/MSVC/$MSVC_REDIST_VERSION/x64"/Microsoft.VC*.CRT/* chrome_dll/system32/
   mv "$WINDOWSSDKDIR/App Certification Kit/"* "$WINDOWSSDKDIR"/Debuggers/x64/
   export WINDIR="$PWD/chrome_dll"
 
@@ -151,6 +153,11 @@ if [[ $(uname -o) == "Msys" ]]; then
   # This is ok because we are not doing any development here and don't need
   # the development history, but this file is still needed to proceed.
   python3 build/util/lastchange.py -o build/util/LASTCHANGE
+
+  # Override the SDK version hardcoded upstream to match our fetched Windows SDK.
+  echo "Using Windows SDK version: ${SDK_VERSION}"
+  sed -i "s/SDK_VERSION = '[0-9.]*'/SDK_VERSION = '${SDK_VERSION}'/" build/vs_toolchain.py
+  sed -i "s/SDK_VERSION = '[0-9.]*'/SDK_VERSION = '${SDK_VERSION}'/" build/toolchain/win/setup_toolchain.py
 fi
 
 if [[ $(uname -s) == "Linux" ]] || [[ $(uname -s) == "Darwin" ]]; then

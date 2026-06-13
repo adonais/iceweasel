@@ -20,8 +20,6 @@
 #include "mozilla/StickyTimeDuration.h"
 #include "nsThreadSyncDispatch.h"
 
-#include <mutex>
-
 using namespace mozilla;
 
 static LazyLogModule sThreadPoolLog("nsThreadPool");

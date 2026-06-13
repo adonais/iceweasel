@@ -14,6 +14,8 @@ MOZ_SRC_FILES += [
     "ConfigSearchEngine.sys.mjs",
     "OpenSearchEngine.sys.mjs",
     "OpenSearchLoader.sys.mjs",
+    "OpenSearchLoaderChild.sys.mjs",
+    "OpenSearchParser.sys.mjs",
     "PolicySearchEngine.sys.mjs",
     "SearchEngine.sys.mjs",
     "SearchEngineSelector.sys.mjs",

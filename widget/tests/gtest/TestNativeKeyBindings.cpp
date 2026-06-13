@@ -161,6 +161,161 @@ TEST(NativeKeyBindings, AltMetaArrowRightNoOp)
   CheckCommands(test);
 }
 
+TEST(NativeKeyBindings, AltArrowUpParagraphMovement)
+{
+  NativeKeyBindingsTestCase test{
+      NS_VK_UP,
+      KEY_NAME_INDEX_ArrowUp,
+      MODIFIER_ALT,
+      0,
+      NativeKeyBindingsType::MultiLineEditor,
+      {Command::CharPrevious, Command::BeginParagraph},
+      "Alt+ArrowUp should move to beginning of paragraph"};
+  CheckCommands(test);
+}
+
+TEST(NativeKeyBindings, AltArrowDownParagraphMovement)
+{
+  NativeKeyBindingsTestCase test{
+      NS_VK_DOWN,
+      KEY_NAME_INDEX_ArrowDown,
+      MODIFIER_ALT,
+      0,
+      NativeKeyBindingsType::MultiLineEditor,
+      {Command::CharNext, Command::EndParagraph},
+      "Alt+ArrowDown should move to end of paragraph"};
+  CheckCommands(test);
+}
+
+TEST(NativeKeyBindings, AltShiftArrowUpParagraphSelection)
+{
+  NativeKeyBindingsTestCase test{
+      NS_VK_UP,
+      KEY_NAME_INDEX_ArrowUp,
+      MODIFIER_ALT | MODIFIER_SHIFT,
+      0,
+      NativeKeyBindingsType::MultiLineEditor,
+      {Command::SelectBeginParagraph},
+      "Alt+Shift+ArrowUp should select to beginning of paragraph"};
+  CheckCommands(test);
+}
+
+TEST(NativeKeyBindings, AltShiftArrowDownParagraphSelection)
+{
+  NativeKeyBindingsTestCase test{
+      NS_VK_DOWN,
+      KEY_NAME_INDEX_ArrowDown,
+      MODIFIER_ALT | MODIFIER_SHIFT,
+      0,
+      NativeKeyBindingsType::MultiLineEditor,
+      {Command::SelectEndParagraph},
+      "Alt+Shift+ArrowDown should select to end of paragraph"};
+  CheckCommands(test);
+}
+
+TEST(NativeKeyBindings, CtrlABeginParagraph)
+{
+  NativeKeyBindingsTestCase test{
+      NS_VK_A,
+      KEY_NAME_INDEX_USE_STRING,
+      MODIFIER_CONTROL,
+      'a',
+      NativeKeyBindingsType::MultiLineEditor,
+      {Command::BeginParagraph},
+      "Ctrl+A should move to beginning of paragraph"};
+  CheckCommands(test);
+}
+
+TEST(NativeKeyBindings, CtrlEEndParagraph)
+{
+  NativeKeyBindingsTestCase test{NS_VK_E,
+                                 KEY_NAME_INDEX_USE_STRING,
+                                 MODIFIER_CONTROL,
+                                 'e',
+                                 NativeKeyBindingsType::MultiLineEditor,
+                                 {Command::EndParagraph},
+                                 "Ctrl+E should move to end of paragraph"};
+  CheckCommands(test);
+}
+
+TEST(NativeKeyBindings, CtrlShiftASelectBeginParagraph)
+{
+  NativeKeyBindingsTestCase test{
+      NS_VK_A,
+      KEY_NAME_INDEX_USE_STRING,
+      MODIFIER_CONTROL | MODIFIER_SHIFT,
+      'A',
+      NativeKeyBindingsType::MultiLineEditor,
+      {Command::SelectBeginParagraph},
+      "Ctrl+Shift+A should select to beginning of paragraph"};
+  CheckCommands(test);
+}
+
+TEST(NativeKeyBindings, CtrlShiftESelectEndParagraph)
+{
+  NativeKeyBindingsTestCase test{
+      NS_VK_E,
+      KEY_NAME_INDEX_USE_STRING,
+      MODIFIER_CONTROL | MODIFIER_SHIFT,
+      'E',
+      NativeKeyBindingsType::MultiLineEditor,
+      {Command::SelectEndParagraph},
+      "Ctrl+Shift+E should select to end of paragraph"};
+  CheckCommands(test);
+}
+
+TEST(NativeKeyBindings, MetaArrowLeftMoveToLeftEndOfLine)
+{
+  NativeKeyBindingsTestCase test{
+      NS_VK_LEFT,
+      KEY_NAME_INDEX_ArrowLeft,
+      MODIFIER_META,
+      0,
+      NativeKeyBindingsType::MultiLineEditor,
+      {Command::MoveLeft3},
+      "Meta+ArrowLeft should move to left end of line"};
+  CheckCommands(test);
+}
+
+TEST(NativeKeyBindings, MetaArrowRightMoveToRightEndOfLine)
+{
+  NativeKeyBindingsTestCase test{
+      NS_VK_RIGHT,
+      KEY_NAME_INDEX_ArrowRight,
+      MODIFIER_META,
+      0,
+      NativeKeyBindingsType::MultiLineEditor,
+      {Command::MoveRight3},
+      "Meta+ArrowRight should move to right end of line"};
+  CheckCommands(test);
+}
+
+TEST(NativeKeyBindings, MetaShiftArrowLeftSelectToLeftEndOfLine)
+{
+  NativeKeyBindingsTestCase test{
+      NS_VK_LEFT,
+      KEY_NAME_INDEX_ArrowLeft,
+      MODIFIER_META | MODIFIER_SHIFT,
+      0,
+      NativeKeyBindingsType::MultiLineEditor,
+      {Command::SelectLeft3},
+      "Meta+Shift+ArrowLeft should select to left end of line"};
+  CheckCommands(test);
+}
+
+TEST(NativeKeyBindings, MetaShiftArrowRightSelectToRightEndOfLine)
+{
+  NativeKeyBindingsTestCase test{
+      NS_VK_RIGHT,
+      KEY_NAME_INDEX_ArrowRight,
+      MODIFIER_META | MODIFIER_SHIFT,
+      0,
+      NativeKeyBindingsType::MultiLineEditor,
+      {Command::SelectRight3},
+      "Meta+Shift+ArrowRight should select to right end of line"};
+  CheckCommands(test);
+}
+
 }  // namespace mozilla
 
 #endif  // XP_MACOSX

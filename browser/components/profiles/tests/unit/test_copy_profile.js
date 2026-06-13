@@ -9,6 +9,9 @@ const { sinon } = ChromeUtils.importESModule(
 const { BackupService } = ChromeUtils.importESModule(
   "resource:///modules/backup/BackupService.sys.mjs"
 );
+const { ProfileAge } = ChromeUtils.importESModule(
+  "resource://gre/modules/ProfileAge.sys.mjs"
+);
 const { OSKeyStoreTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/OSKeyStoreTestUtils.sys.mjs"
 );
@@ -74,9 +77,13 @@ add_task(async function test_copy_profile() {
     SelectableProfileService.currentProfile.path
   );
   Assert.ok(!encState, "No encryption state before copyProfile called");
+  let donorProfileAge = await ProfileAge();
+  donorProfileAge._times.source = "profile-copy-test";
+  await donorProfileAge.writeTimes();
 
   let copiedProfile =
     await SelectableProfileService.currentProfile.copyProfile();
+  let copiedProfileAge = await ProfileAge(copiedProfile.path);
 
   encState = await backupServiceInstance.loadEncryptionState(
     SelectableProfileService.currentProfile.path
@@ -109,6 +116,11 @@ add_task(async function test_copy_profile() {
     copiedProfile.theme.themeId,
     SelectableProfileService.currentProfile.theme.themeId,
     "Copied profile has the same theme"
+  );
+  Assert.equal(
+    copiedProfileAge.source,
+    "copy",
+    "Copied profile should use the correct source"
   );
 
   let prefsPath = PathUtils.join(copiedProfile.path, "prefs.js");

@@ -49,7 +49,7 @@ export var DOMFullscreenTestUtils = {
       };
       Services.obs.addObserver(observe, "fullscreen-painted");
 
-      browser.ownerGlobal.addEventListener(
+      browser.documentGlobal.addEventListener(
         `MozDOMFullscreen:${state ? "Entered" : "Exited"}`,
         () => {
           eventReceived = true;
@@ -77,7 +77,7 @@ export var DOMFullscreenTestUtils = {
       );
     }
     await new Promise(resolve =>
-      testContext.scope.SimpleTest.waitForFocus(resolve, browser.ownerGlobal)
+      testContext.scope.SimpleTest.waitForFocus(resolve, browser.documentGlobal)
     );
     let fullScreenChange = DOMFullscreenTestUtils.waitForFullScreenState(
       browser,

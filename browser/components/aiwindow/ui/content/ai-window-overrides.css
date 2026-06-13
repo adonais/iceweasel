@@ -3,7 +3,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 /* This file is intended to be used specifically by aiWindow.html */
+
+@import url("chrome://browser/skin/urlbar/tokens.css");
 @import url("chrome://browser/skin/urlbar/variables.css");
+@import url("chrome://browser/skin/urlbar/view.css");
 
 .ai-window {
   background: transparent;

@@ -5,7 +5,6 @@
 #ifndef GFX_VR_SERVICE_VRPUPPETCOMMANDBUFFER_H
 #define GFX_VR_SERVICE_VRPUPPETCOMMANDBUFFER_H
 
-#include <inttypes.h>
 #include "mozilla/Mutex.h"
 #include "nsTArray.h"
 #include "moz_external_vr.h"

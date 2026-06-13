@@ -266,8 +266,20 @@ add_task(async function test_firstrun_explainer_page_opens() {
       () => content.document.querySelector(".screen.AI_WINDOW_MEMORIES")
     );
 
+    const memoriesNextButton =
+      content.document.getElementById("additional_button");
+    Assert.ok(memoriesNextButton, "Next button exists on memories screen");
+
+    EventUtils.synthesizeMouseAtCenter(memoriesNextButton, {}, content);
+
+    await ContentTaskUtils.waitForMutationCondition(
+      root,
+      { childList: true, subtree: true, attributes: true },
+      () => content.document.querySelector(".screen.AI_WINDOW_SET_DEFAULT")
+    );
+
     const letsGoButton = content.document.getElementById("additional_button");
-    Assert.ok(letsGoButton, "Let's go button exists on memories screen");
+    Assert.ok(letsGoButton, "Let's go button exists on set default screen");
 
     EventUtils.synthesizeMouseAtCenter(letsGoButton, {}, content);
   });
@@ -351,8 +363,20 @@ add_task(async function test_firstrun_telemetry() {
       () => content.document.querySelector(".screen.AI_WINDOW_MEMORIES")
     );
 
+    const memoriesNextButton =
+      content.document.getElementById("additional_button");
+    Assert.ok(memoriesNextButton, "Next button exists on memories screen");
+
+    EventUtils.synthesizeMouseAtCenter(memoriesNextButton, {}, content);
+
+    await ContentTaskUtils.waitForMutationCondition(
+      root,
+      { childList: true, subtree: true, attributes: true },
+      () => content.document.querySelector(".screen.AI_WINDOW_SET_DEFAULT")
+    );
+
     const letsGoButton = content.document.getElementById("additional_button");
-    Assert.ok(letsGoButton, "Let's go button exists on memories screen");
+    Assert.ok(letsGoButton, "Let's go button exists on set default screen");
 
     EventUtils.synthesizeMouseAtCenter(letsGoButton, {}, content);
   });
@@ -366,8 +390,8 @@ add_task(async function test_firstrun_telemetry() {
     Glean.smartWindow.onboardingScreenImpression.testGetValue();
   Assert.equal(
     impressionEvents?.length,
-    3,
-    "Three screen impression events were recorded"
+    4,
+    "Four screen impression events were recorded"
   );
   Assert.ok(
     impressionEvents[0].extra.message_id.includes("AI_WINDOW_INTRO"),
@@ -380,6 +404,10 @@ add_task(async function test_firstrun_telemetry() {
   Assert.ok(
     impressionEvents[2].extra.message_id.includes("AI_WINDOW_MEMORIES"),
     "Third impression is for AI_WINDOW_MEMORIES"
+  );
+  Assert.ok(
+    impressionEvents[3].extra.message_id.includes("AI_WINDOW_SET_DEFAULT"),
+    "Fourth impression is for AI_WINDOW_SET_DEFAULT"
   );
 
   const modelSelectedEvents =
@@ -419,6 +447,27 @@ add_task(async function test_firstrun_telemetry() {
     memoriesSettingsEvents[0].extra.source,
     "memories-chats,memories-browsing",
     "Memories settings event records both default-checked checkbox ids"
+  );
+
+  const setdefaultNavigateEvents =
+    Glean.smartWindow.onboardingSetdefaultNavigate.testGetValue();
+  Assert.equal(
+    setdefaultNavigateEvents?.length,
+    1,
+    "One set default navigate event was recorded"
+  );
+
+  const setdefaultSettingsEvents =
+    Glean.smartWindow.onboardingSetdefaultSettings.testGetValue();
+  Assert.equal(
+    setdefaultSettingsEvents?.length,
+    1,
+    "One set default settings event was recorded"
+  );
+  Assert.equal(
+    setdefaultSettingsEvents[0].extra.source,
+    "set-default-window",
+    "Set default settings event records the default-checked checkbox id"
   );
 
   const completeEvents = Glean.smartWindow.onboardingComplete.testGetValue();

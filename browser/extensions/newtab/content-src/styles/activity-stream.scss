@@ -171,9 +171,13 @@ panel-item::part(button) {
 
 // Widget Components
 @import '../components/Widgets/Widgets';
+@import '../components/Widgets/WidgetWrapper';
+@import '../components/Widgets/WidgetCelebration';
 @import '../components/Widgets/Lists/Lists';
 @import '../components/Widgets/FocusTimer/FocusTimer';
+@import '../components/Widgets/SportsWidget/SportsWidget';
 @import '../components/Widgets/Weather/Weather';
+@import '../components/Widgets/Clocks/Clocks';
 @import '../components/Widgets/WeatherForecast/WeatherForecast';
 
 // Discovery Stream Components
@@ -197,6 +201,7 @@ panel-item::part(button) {
 @import '../components/DiscoveryStreamComponents/FeatureHighlight/FollowSectionButtonHighlight';
 @import '../components/DiscoveryStreamComponents/FeatureHighlight/WallpaperFeatureHighlight';
 @import '../components/DiscoveryStreamComponents/FeatureHighlight/ShortcutFeatureHighlight';
+@import '../components/DiscoveryStreamComponents/FeatureHighlight/WidgetsRowFeatureHighlight';
 @import '../components/DiscoveryStreamComponents/TopicSelection/TopicSelection';
 @import '../components/DiscoveryStreamComponents/AdBanner/AdBanner';
 @import '../components/DiscoveryStreamComponents/AdBannerContextMenu/AdBannerContextMenu';

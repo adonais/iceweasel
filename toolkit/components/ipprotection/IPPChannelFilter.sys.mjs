@@ -198,14 +198,6 @@ export class IPPChannelFilter {
   }
 
   /**
-   * Uninitializes the IPPChannelFilter, removing the proxyInfo and aborting any pending channels.
-   * After this step, the filter will pause channels that should be proxied until a new proxyInfo is set through initialize() again, or the filter is stopped.
-   */
-  uninitialize() {
-    this.proxyInfo = null;
-  }
-
-  /**
    * @param {Array<string>} [excludedPages]
    */
   constructor(excludedPages = []) {
@@ -344,6 +336,16 @@ export class IPPChannelFilter {
         return true;
       }
 
+      // DoH traffic must bypass the proxy: in TRR_ONLY mode (Max Protection)
+      // sending DNS-over-HTTPS through the proxy creates a circular
+      // resolution dependency that breaks all DNS.
+      if (
+        channel instanceof Ci.nsIHttpChannelInternal &&
+        channel.isTRRServiceChannel
+      ) {
+        return true;
+      }
+
       // Only get the principal from the channel URI when both loadingPrincipal
       // and triggeringPrincipal are system principals.
       let { loadingPrincipal, triggeringPrincipal } = channel.loadInfo ?? {};
@@ -433,7 +435,7 @@ export class IPPChannelFilter {
 
     lazy.ProxyService.unregisterChannelFilter(this);
 
-    this.#abortPendingChannels();
+    this.abortPendingChannels();
 
     this.#active = false;
     this.#abort.abort();
@@ -455,18 +457,27 @@ export class IPPChannelFilter {
   }
 
   /**
-   * Replaces the authentication token used by the proxy connection.
+   * Suspends the filter: new channels that should be proxied are queued until
+   * replaceAuthTokenAndResume() is called.
+   */
+  suspend() {
+    this.proxyInfo = null;
+  }
+
+  /**
+   * Replaces the authentication token and flushes any queued channels.
    * --> Important <--: This Changes the isolationKey of the Connection!
    *
    * @param {string} newToken - The new authentication token.
    */
-  replaceAuthToken(newToken) {
+  replaceAuthTokenAndResume(newToken) {
     const proxyInfo = IPPChannelFilter.serverToProxyInfo(
       newToken,
       this.#server
     );
     Object.freeze(proxyInfo);
     this.proxyInfo = proxyInfo;
+    this.#processPendingChannels();
   }
 
   /**
@@ -520,7 +531,7 @@ export class IPPChannelFilter {
     }
   }
 
-  #abortPendingChannels() {
+  abortPendingChannels() {
     if (this.#pendingChannels.length) {
       this.#pendingChannels.forEach(data =>
         data.channel.cancel(Cr.NS_BINDING_ABORTED)

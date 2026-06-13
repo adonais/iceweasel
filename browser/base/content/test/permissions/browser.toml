@@ -27,6 +27,9 @@ skip-if = [
 
 ["browser_canvas_rfp_exclusion.js"]
 
+["browser_geolocation_replaced_prompt.js"]
+support-files = ["empty.html"]
+
 ["browser_notification_permission_telemetry.js"]
 support-files = ["empty.html"]
 

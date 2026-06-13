@@ -99,9 +99,9 @@ class WebSocketImplProxy final : public nsIWebSocketImpl,
     mOwner = nullptr;
   }
 
-  void BindToOwner(nsIGlobalObject* aOwner) {
-    GlobalTeardownObserver::BindToOwner(aOwner);
-    GlobalFreezeObserver::BindToOwner(aOwner);
+  void BindToGlobal(nsIGlobalObject* aGlobal) {
+    GlobalTeardownObserver::BindToGlobal(aGlobal);
+    GlobalFreezeObserver::BindToGlobal(aGlobal);
   }
 
   void DisconnectFromOwner() override;
@@ -662,7 +662,7 @@ void WebSocketImpl::Disconnect(const RefPtr<WebSocketImpl>& aProofOfRef) {
 
   // If we haven't called WebSocket::DisconnectFromOwner yet, update
   // web socket count here.
-  if (nsIGlobalObject* global = mWebSocket->GetOwnerGlobal()) {
+  if (nsIGlobalObject* global = mWebSocket->GetRelevantGlobal()) {
     global->UpdateWebSocketCount(-1);
   }
 
@@ -1589,7 +1589,7 @@ void WebSocket::DisconnectFromOwner() {
   // If we haven't called WebSocketImpl::Disconnect yet, update web
   // socket count here.
   if (mImpl && !mImpl->mDisconnectingOrDisconnected) {
-    GetOwnerGlobal()->UpdateWebSocketCount(-1);
+    GetRelevantGlobal()->UpdateWebSocketCount(-1);
   }
 
   DOMEventTargetHelper::DisconnectFromOwner();
@@ -1645,7 +1645,7 @@ nsresult WebSocketImpl::Init(nsIGlobalObject* aWindowGlobal, JSContext* aCx,
   RefPtr<WebSocketImplProxy> proxy;
   if (mIsMainThread) {
     proxy = new WebSocketImplProxy(this);
-    proxy->BindToOwner(aWindowGlobal);
+    proxy->BindToGlobal(aWindowGlobal);
   }
 
   if (!mIsMainThread) {
@@ -2014,7 +2014,7 @@ nsresult WebSocket::CreateAndDispatchMessageEvent(const nsACString& aData,
   AssertIsOnTargetThread();
 
   AutoJSAPI jsapi;
-  if (NS_WARN_IF(!jsapi.Init(GetOwnerGlobal()))) {
+  if (NS_WARN_IF(!jsapi.Init(GetRelevantGlobal()))) {
     return NS_ERROR_FAILURE;
   }
 
@@ -2034,7 +2034,7 @@ nsresult WebSocket::CreateAndDispatchMessageEvent(const nsACString& aData,
       messageType = nsIWebSocketEventListener::TYPE_BLOB;
 
       RefPtr<Blob> blob =
-          Blob::CreateStringBlob(GetOwnerGlobal(), aData, u""_ns);
+          Blob::CreateStringBlob(GetRelevantGlobal(), aData, u""_ns);
       if (NS_WARN_IF(!blob)) {
         return NS_ERROR_FAILURE;
       }

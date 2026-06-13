@@ -73,7 +73,7 @@ add_task(async function test_contextmenu_share_macosx() {
     );
     ok(true, "Got Share item");
 
-    await openMenuPopup(contextMenu);
+    await openShareMenuPopup(contextMenu);
     ok(getSharingProvidersSpy.calledOnce, "getSharingProviders called");
 
     info(
@@ -118,7 +118,7 @@ add_task(async function test_contextmenu_share_macosx() {
 
     info("Test the copy link button");
     contextMenu = await openTabContextMenu(gBrowser.selectedTab);
-    await openMenuPopup(contextMenu);
+    await openShareMenuPopup(contextMenu);
     // Since the tab context menu was collapsed previously, the popup needs to get the
     // providers again.
     ok(getSharingProvidersSpy.calledTwice, "getSharingProviders called again");
@@ -144,7 +144,7 @@ add_task(async function test_contextmenu_share_macosx() {
 
     info("Test the More... item");
     contextMenu = await openTabContextMenu(gBrowser.selectedTab);
-    await openMenuPopup(contextMenu);
+    await openShareMenuPopup(contextMenu);
     // Since the tab context menu was collapsed previously, the popup needs to get the
     // providers again.
     is(getSharingProvidersSpy.callCount, 3, "getSharingProviders called again");
@@ -190,7 +190,7 @@ add_task(async function test_contextmenu_share_multiselect_macosx() {
     () => contextMenu.querySelector(".share-tab-url-item")
   );
 
-  await openMenuPopup(contextMenu);
+  await openShareMenuPopup(contextMenu);
 
   let popup = contextMenu.querySelector(".share-tab-url-item").menupopup;
   let items = Array.from(popup.querySelectorAll("menuitem"));
@@ -222,7 +222,7 @@ add_task(async function test_contextmenu_share_multiselect_macosx() {
 
   info("Verify that tab multiselect is enabled");
   contextMenu = await openTabContextMenu(tab2);
-  await openMenuPopup(contextMenu);
+  await openShareMenuPopup(contextMenu);
   popup = contextMenu.querySelector(".share-tab-url-item").menupopup;
   items = Array.from(popup.querySelectorAll("menuitem"));
 
@@ -290,7 +290,7 @@ add_task(
       () => contextMenu.querySelector(".share-tab-url-item")
     );
 
-    await openMenuPopup(contextMenu);
+    await openShareMenuPopup(contextMenu);
 
     let popup = contextMenu.querySelector(".share-tab-url-item").menupopup;
     let copyLinkItem = Array.from(popup.querySelectorAll("menuitem")).find(
@@ -338,7 +338,7 @@ add_task(async function test_contextmenu_share_multiselect_all_blank_macosx() {
     () => contextMenu.querySelector(".share-tab-url-item")
   );
 
-  await openMenuPopup(contextMenu);
+  await openShareMenuPopup(contextMenu);
 
   let popup = contextMenu.querySelector(".share-tab-url-item").menupopup;
   let copyLinkItem = Array.from(popup.querySelectorAll("menuitem")).find(item =>
@@ -361,26 +361,3 @@ add_task(async function test_contextmenu_share_multiselect_all_blank_macosx() {
   BrowserTestUtils.removeTab(tab1);
   BrowserTestUtils.removeTab(tab2);
 });
-
-/**
- * Helper for opening the toolbar context menu.
- */
-async function openTabContextMenu(tab) {
-  info("Opening tab context menu");
-  let contextMenu = document.getElementById("tabContextMenu");
-  let openTabContextMenuPromise = BrowserTestUtils.waitForPopupEvent(
-    contextMenu,
-    "shown"
-  );
-
-  EventUtils.synthesizeMouseAtCenter(tab, { type: "contextmenu" });
-  await openTabContextMenuPromise;
-  return contextMenu;
-}
-
-async function openMenuPopup(contextMenu) {
-  info("Opening Share menu popup.");
-  let shareItem = contextMenu.querySelector(".share-tab-url-item");
-  shareItem.openMenu(true);
-  await BrowserTestUtils.waitForPopupEvent(shareItem.menupopup, "shown");
-}

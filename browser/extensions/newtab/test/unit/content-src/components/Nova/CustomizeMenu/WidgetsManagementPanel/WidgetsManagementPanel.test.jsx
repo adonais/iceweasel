@@ -25,7 +25,6 @@ describe("<WidgetsManagementPanel>", () => {
     sandbox = sinon.createSandbox();
 
     DEFAULT_PROPS = {
-      exitEventFired: false,
       onSubpanelToggle: sandbox.stub(),
       togglePanel: sandbox.stub(),
       showPanel: false,
@@ -117,56 +116,6 @@ describe("<WidgetsManagementPanel>", () => {
     });
 
     assert.called(DEFAULT_PROPS.onSubpanelToggle);
-  });
-
-  it("should call togglePanel when exitEventFired becomes true and showPanel is true", () => {
-    wrapper = mount(
-      <WrapWithProvider>
-        <WidgetsManagementPanel
-          {...DEFAULT_PROPS}
-          showPanel={true}
-          exitEventFired={false}
-        />
-      </WrapWithProvider>
-    );
-
-    wrapper.setProps({
-      children: (
-        <WidgetsManagementPanel
-          {...DEFAULT_PROPS}
-          showPanel={true}
-          exitEventFired={true}
-          togglePanel={DEFAULT_PROPS.togglePanel}
-        />
-      ),
-    });
-
-    assert.called(DEFAULT_PROPS.togglePanel);
-  });
-
-  it("should not call togglePanel when exitEventFired becomes true but showPanel is false", () => {
-    wrapper = mount(
-      <WrapWithProvider>
-        <WidgetsManagementPanel
-          {...DEFAULT_PROPS}
-          showPanel={false}
-          exitEventFired={false}
-        />
-      </WrapWithProvider>
-    );
-
-    wrapper.setProps({
-      children: (
-        <WidgetsManagementPanel
-          {...DEFAULT_PROPS}
-          showPanel={false}
-          exitEventFired={true}
-          togglePanel={DEFAULT_PROPS.togglePanel}
-        />
-      ),
-    });
-
-    assert.notCalled(DEFAULT_PROPS.togglePanel);
   });
 
   it("should call togglePanel when arrow button is clicked", () => {
@@ -314,7 +263,7 @@ describe("<WidgetsManagementPanel>", () => {
         </Provider>
       );
 
-      wrapper.find("#weather-toggle").prop("ontoggle")({
+      wrapper.find("#weather-toggle").prop("onToggle")({
         target: {
           dataset: { preference: "showWeather", eventSource: "WEATHER" },
           pressed: true,
@@ -335,7 +284,7 @@ describe("<WidgetsManagementPanel>", () => {
         </WrapWithProvider>
       );
 
-      wrapper.find("#weather-toggle").prop("ontoggle")({
+      wrapper.find("#weather-toggle").prop("onToggle")({
         target: {
           dataset: { preference: "showWeather", eventSource: "WEATHER" },
           pressed: true,
@@ -356,7 +305,7 @@ describe("<WidgetsManagementPanel>", () => {
         </Provider>
       );
 
-      wrapper.find("#lists-toggle").prop("ontoggle")({
+      wrapper.find("#lists-toggle").prop("onToggle")({
         target: {
           dataset: {
             preference: "widgets.lists.enabled",
@@ -380,7 +329,7 @@ describe("<WidgetsManagementPanel>", () => {
         </WrapWithProvider>
       );
 
-      wrapper.find("#lists-toggle").prop("ontoggle")({
+      wrapper.find("#lists-toggle").prop("onToggle")({
         target: {
           dataset: {
             preference: "widgets.lists.enabled",
@@ -404,7 +353,7 @@ describe("<WidgetsManagementPanel>", () => {
         </Provider>
       );
 
-      wrapper.find("#timer-toggle").prop("ontoggle")({
+      wrapper.find("#timer-toggle").prop("onToggle")({
         target: {
           dataset: {
             preference: "widgets.focusTimer.enabled",
@@ -428,7 +377,7 @@ describe("<WidgetsManagementPanel>", () => {
         </WrapWithProvider>
       );
 
-      wrapper.find("#timer-toggle").prop("ontoggle")({
+      wrapper.find("#timer-toggle").prop("onToggle")({
         target: {
           dataset: {
             preference: "widgets.focusTimer.enabled",
@@ -456,7 +405,7 @@ describe("<WidgetsManagementPanel>", () => {
         </Provider>
       );
 
-      wrapper.find("#weather-toggle").prop("ontoggle")({
+      wrapper.find("#weather-toggle").prop("onToggle")({
         target: {
           dataset: { preference: "showWeather", eventSource: "WEATHER" },
           pressed: false,
@@ -486,7 +435,7 @@ describe("<WidgetsManagementPanel>", () => {
         </Provider>
       );
 
-      wrapper.find("#weather-toggle").prop("ontoggle")({
+      wrapper.find("#weather-toggle").prop("onToggle")({
         target: {
           dataset: { preference: "showWeather", eventSource: "WEATHER" },
           pressed: true,
@@ -522,7 +471,7 @@ describe("<WidgetsManagementPanel>", () => {
         </Provider>
       );
 
-      wrapper.find("#weather-toggle").prop("ontoggle")({
+      wrapper.find("#weather-toggle").prop("onToggle")({
         target: {
           dataset: { preference: "showWeather", eventSource: "WEATHER" },
           pressed: true,
@@ -558,7 +507,7 @@ describe("<WidgetsManagementPanel>", () => {
         </Provider>
       );
 
-      wrapper.find("#weather-toggle").prop("ontoggle")({
+      wrapper.find("#weather-toggle").prop("onToggle")({
         target: {
           dataset: { preference: "showWeather", eventSource: "WEATHER" },
           pressed: true,
@@ -592,7 +541,7 @@ describe("<WidgetsManagementPanel>", () => {
         </Provider>
       );
 
-      wrapper.find("#timer-toggle").prop("ontoggle")({
+      wrapper.find("#timer-toggle").prop("onToggle")({
         target: {
           dataset: {
             preference: "widgets.focusTimer.enabled",
@@ -629,7 +578,7 @@ describe("<WidgetsManagementPanel>", () => {
         </Provider>
       );
 
-      wrapper.find("#timer-toggle").prop("ontoggle")({
+      wrapper.find("#timer-toggle").prop("onToggle")({
         target: {
           dataset: {
             preference: "widgets.focusTimer.enabled",

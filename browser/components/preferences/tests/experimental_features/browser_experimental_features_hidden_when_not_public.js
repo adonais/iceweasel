@@ -54,28 +54,26 @@ add_task(async function testNonPublicFeaturesShouldntGetDisplayed() {
   );
   const doc = gBrowser.contentDocument;
 
-  // When there are no features, paneExperimental redirects to paneGeneral.
+  const expectedPane = SRD_PREF_VALUE ? "paneSync" : "paneGeneral";
+
+  // When there are no features, paneExperimental redirects to the default
+  // pane (paneSync with SRD enabled, paneGeneral otherwise).
   // Wait for the redirect to complete.
   await TestUtils.waitForCondition(
     () =>
-      doc.getElementById("categories").currentView === "paneGeneral" &&
-      doc.getElementById("category-experimental").hidden &&
-      doc.getElementById("firefoxExperimentalCategory").hidden,
-    "Wait for redirect to general and elements to be hidden"
+      doc.getElementById("categories").currentView === expectedPane &&
+      doc.getElementById("category-experimental").hidden,
+    `Wait for redirect to ${expectedPane} and nav button to be hidden`
   );
 
   ok(
     doc.getElementById("category-experimental").hidden,
     "Experimental Features section should be hidden when all features are hidden"
   );
-  ok(
-    doc.getElementById("firefoxExperimentalCategory").hidden,
-    "Experimental Features header should be hidden when all features are hidden"
-  );
   is(
     doc.getElementById("categories").currentView,
-    "paneGeneral",
-    "When the experimental features section is hidden, navigating to #experimental should redirect to #general"
+    expectedPane,
+    `When the experimental features section is hidden, navigating to #experimental should redirect to the default pane (${expectedPane})`
   );
 
   BrowserTestUtils.removeTab(gBrowser.selectedTab);

@@ -32,6 +32,7 @@ enum class StyleRuleChangeKind : uint32_t;
 enum class StyleRelativeSelectorNthEdgeInvalidateFor : uint8_t;
 union StylePositionTryFallbacksItem;
 struct StyleRuleChange;
+struct StyleCascadeLevel;
 
 class ErrorResult;
 
@@ -260,8 +261,8 @@ class ServoStyleSet {
       ComputedStyle* aParentStyle, const AtomArray& aInputWord);
 
   already_AddRefed<ComputedStyle> ResolvePositionTry(
-      dom::Element& aElement, const ComputedStyle& aStyle,
-      const StylePositionTryFallbacksItem&);
+      StyleCascadeLevel aScope, dom::Element& aElement,
+      const ComputedStyle& aStyle, const StylePositionTryFallbacksItem&);
 
   size_t SheetCount(Origin) const;
   StyleSheet* SheetAt(Origin, size_t aIndex) const;

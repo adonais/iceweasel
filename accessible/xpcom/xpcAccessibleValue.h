@@ -18,6 +18,9 @@ class LocalAccessible;
  */
 class xpcAccessibleValue : public nsIAccessibleValue {
  public:
+  xpcAccessibleValue(const xpcAccessibleValue&) = delete;
+  xpcAccessibleValue& operator=(const xpcAccessibleValue&) = delete;
+
   NS_IMETHOD GetMaximumValue(double* aValue) final;
   NS_IMETHOD GetMinimumValue(double* aValue) final;
   NS_IMETHOD GetCurrentValue(double* aValue) final;
@@ -25,14 +28,11 @@ class xpcAccessibleValue : public nsIAccessibleValue {
   NS_IMETHOD GetMinimumIncrement(double* aMinIncrement) final;
 
  protected:
-  xpcAccessibleValue() {}
-  virtual ~xpcAccessibleValue() {}
+  xpcAccessibleValue() = default;
+  virtual ~xpcAccessibleValue() = default;
 
  private:
   Accessible* Intl();
-
-  xpcAccessibleValue(const xpcAccessibleValue&) = delete;
-  xpcAccessibleValue& operator=(const xpcAccessibleValue&) = delete;
 };
 
 }  // namespace a11y

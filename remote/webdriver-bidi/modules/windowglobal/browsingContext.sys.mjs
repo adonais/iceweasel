@@ -45,7 +45,7 @@ class BrowsingContextModule extends WindowGlobalBiDiModule {
 
     // Set of event names which have active subscriptions.
     this.#subscribedEvents = new Set();
-    this.contextCreatedHandled = false;
+    this.#contextCreatedHandled = false;
   }
 
   destroy() {

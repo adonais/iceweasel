@@ -577,10 +577,7 @@ bool CacheStorage::HasStorageAccess(UseCounter aLabel,
     }
   }
 
-  return access > StorageAccess::eDeny ||
-         (StaticPrefs::
-              privacy_partition_always_partition_third_party_non_cookie_storage() &&
-          ShouldPartitionStorage(access));
+  return access > StorageAccess::eDeny || ShouldPartitionStorage(access);
 }
 
 }  // namespace mozilla::dom::cache

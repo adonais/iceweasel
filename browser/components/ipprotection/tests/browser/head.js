@@ -25,8 +25,8 @@ const { IPPSignInWatcher } = ChromeUtils.importESModule(
   "moz-src:///toolkit/components/ipprotection/fxa/IPPSignInWatcher.sys.mjs"
 );
 
-const { IPPEnrollAndEntitleManager } = ChromeUtils.importESModule(
-  "moz-src:///toolkit/components/ipprotection/fxa/IPPEnrollAndEntitleManager.sys.mjs"
+const { IPPFxaAuthProvider } = ChromeUtils.importESModule(
+  "moz-src:///toolkit/components/ipprotection/fxa/IPPFxaAuthProvider.sys.mjs"
 );
 
 const { HttpServer, HTTP_403 } = ChromeUtils.importESModule(
@@ -49,7 +49,7 @@ ChromeUtils.defineESModuleGetters(this, {
 });
 
 const { ProxyPass, ProxyUsage, Entitlement } = ChromeUtils.importESModule(
-  "moz-src:///toolkit/components/ipprotection/GuardianClient.sys.mjs"
+  "moz-src:///toolkit/components/ipprotection/GuardianTypes.sys.mjs"
 );
 const { RemoteSettings } = ChromeUtils.importESModule(
   "resource://services-settings/remote-settings.sys.mjs"
@@ -107,7 +107,7 @@ async function openPanel(state, win = window) {
   let panel = IPProtection.getPanel(win);
   if (state) {
     panel.setState({
-      isCheckingEntitlement: false,
+      isEnrolling: false,
       unauthenticated: false,
       ...state,
     });
@@ -265,10 +265,8 @@ let DEFAULT_EXPERIMENT = {
 /* exported SETUP_EXPERIMENT */
 
 let DEFAULT_SERVICE_STATUS = {
-  isSignedIn: false,
-  isEnrolledAndEntitled: undefined,
+  isReady: false,
   canEnroll: true,
-  isLinkedToGuardian: false,
   entitlement: {
     status: 200,
     error: undefined,
@@ -286,17 +284,15 @@ let DEFAULT_SERVICE_STATUS = {
 /* exported DEFAULT_SERVICE_STATUS */
 
 let STUBS = {
-  isEnrolledAndEntitled: undefined,
+  isReady: undefined,
   hasUpgraded: undefined,
   isEnrolling: undefined,
-  isCheckingEntitlement: undefined,
   updateEntitlement: undefined,
-  refetchEntitlement: undefined,
-  enrollWithFxa: undefined,
-  fetchUserInfo: undefined,
+  checkForUpgrade: undefined,
+  enrollAndEntitle: undefined,
   fetchProxyPass: undefined,
   fetchProxyUsage: undefined,
-  isLinkedToGuardian: undefined,
+  getEntitlement: undefined,
   fxaSignInFlow: undefined,
 };
 /* exported STUBS */
@@ -388,73 +384,57 @@ add_setup(async function setupVPN() {
 });
 
 function setupStubs(stubs = STUBS) {
-  stubs.isSignedIn = setupSandbox.stub(IPPSignInWatcher, "isSignedIn");
-  stubs.isEnrolledAndEntitled = setupSandbox.stub(
-    IPPEnrollAndEntitleManager,
-    "isEnrolledAndEntitled"
-  );
-  stubs.hasUpgraded = setupSandbox.stub(
-    IPPEnrollAndEntitleManager,
-    "hasUpgraded"
-  );
-  // Stub isEnrolling, isCheckingEntitlement, updateEntitlement, and refetchEntitlement
+  setupSandbox.stub(IPPFxaAuthProvider, "aboutToStart").resolves(null);
+  stubs.isReady = setupSandbox.stub(IPPFxaAuthProvider, "isReady");
+  stubs.hasUpgraded = setupSandbox.stub(IPPFxaAuthProvider, "hasUpgraded");
+  // Stub isEnrolling, updateEntitlement, and checkForUpgrade
   // to prevent loading skeleton from rendering unexpectedly during tests.
   stubs.isEnrolling = setupSandbox
-    .stub(IPPEnrollAndEntitleManager, "isEnrolling")
-    .get(() => false);
-  stubs.isCheckingEntitlement = setupSandbox
-    .stub(IPPEnrollAndEntitleManager, "isCheckingEntitlement")
+    .stub(IPPFxaAuthProvider, "isEnrolling")
     .get(() => false);
   stubs.updateEntitlement = setupSandbox
-    .stub(IPPEnrollAndEntitleManager, "updateEntitlement")
+    .stub(IPPFxaAuthProvider, "updateEntitlement")
     .resolves();
-  stubs.refetchEntitlement = setupSandbox
-    .stub(IPPEnrollAndEntitleManager, "refetchEntitlement")
+  stubs.checkForUpgrade = setupSandbox
+    .stub(IPPFxaAuthProvider, "checkForUpgrade")
     .resolves();
 
-  const guardianStub = {
-    enrollWithFxa: setupSandbox.stub(),
-    fetchUserInfo: setupSandbox.stub(),
-    fetchProxyPass: setupSandbox.stub(),
-    fetchProxyUsage: setupSandbox.stub(),
-  };
-  stubs.enrollWithFxa = guardianStub.enrollWithFxa;
-  stubs.fetchUserInfo = guardianStub.fetchUserInfo;
-  stubs.fetchProxyPass = guardianStub.fetchProxyPass;
-  stubs.fetchProxyUsage = guardianStub.fetchProxyUsage;
-  stubs.isLinkedToGuardian = setupSandbox.stub(
-    IPPEnrollAndEntitleManager,
-    "isLinkedToGuardian"
+  stubs.enrollAndEntitle = setupSandbox.stub(
+    IPPFxaAuthProvider,
+    "enrollAndEntitle"
   );
+  stubs.fetchProxyPass = setupSandbox.stub(
+    IPPFxaAuthProvider,
+    "fetchProxyPass"
+  );
+  stubs.fetchProxyUsage = setupSandbox.stub(
+    IPPFxaAuthProvider,
+    "fetchProxyUsage"
+  );
+  stubs.getEntitlement = setupSandbox
+    .stub(IPPFxaAuthProvider, "getEntitlement")
+    .resolves({ entitlement: DEFAULT_SERVICE_STATUS.entitlement?.entitlement });
   stubs.fxaSignInFlow = setupSandbox.stub(
     SpecialMessageActions,
     "fxaSignInFlow"
   );
-
-  setupSandbox.stub(IPProtectionService, "guardian").get(() => guardianStub);
 }
 /* exported setupStubs */
 
 function setupService(
   {
-    isSignedIn,
-    isEnrolledAndEntitled,
+    isReady,
     hasUpgraded,
     canEnroll,
     entitlement,
     proxyPass,
     usageInfo,
-    isLinkedToGuardian,
     signInFlow,
   } = DEFAULT_SERVICE_STATUS,
   stubs = STUBS
 ) {
-  if (typeof isSignedIn != "undefined") {
-    stubs.isSignedIn.get(() => isSignedIn);
-  }
-
-  if (typeof isEnrolledAndEntitled != "undefined") {
-    stubs.isEnrolledAndEntitled.get(() => isEnrolledAndEntitled);
+  if (typeof isReady != "undefined") {
+    stubs.isReady.get(() => isReady);
   }
 
   if (typeof hasUpgraded != "undefined") {
@@ -462,15 +442,16 @@ function setupService(
   }
 
   if (typeof canEnroll != "undefined") {
-    stubs.enrollWithFxa.resolves({
-      ok: canEnroll,
+    stubs.enrollAndEntitle.resolves({
+      isEnrolledAndEntitled: canEnroll,
+      entitlement: canEnroll
+        ? DEFAULT_SERVICE_STATUS.entitlement?.entitlement
+        : undefined,
     });
   }
 
   if (typeof entitlement != "undefined") {
-    stubs.fetchUserInfo.resolves(entitlement);
-  } else {
-    stubs.fetchUserInfo.resolves(DEFAULT_SERVICE_STATUS.entitlement);
+    stubs.getEntitlement.resolves({ entitlement: entitlement?.entitlement });
   }
 
   if (typeof proxyPass != "undefined") {
@@ -479,10 +460,6 @@ function setupService(
 
   if (typeof usageInfo != "undefined") {
     stubs.fetchProxyUsage.resolves(usageInfo);
-  }
-
-  if (typeof isLinkedToGuardian != "undefined") {
-    stubs.isLinkedToGuardian.resolves(isLinkedToGuardian);
   }
 
   if (typeof signInFlow != "undefined") {
@@ -668,6 +645,24 @@ function checkBandwidth(bandwidthEl, bandwidthUsage) {
     `MB used ${bandwidthUsage.mbCount} times`
   );
 }
+
+async function checkStatusBoxAriaLabel(statusBox) {
+  let titleEl = statusBox.titleEl;
+  Assert.ok(titleEl, "Status box title should be present");
+
+  await BrowserTestUtils.waitForMutationCondition(
+    titleEl,
+    { attributes: true, attributeFilter: ["aria-label"] },
+    () => titleEl.hasAttribute("aria-label")
+  );
+
+  Assert.equal(
+    titleEl.getAttribute("aria-label"),
+    titleEl.textContent.trim(),
+    "Status box title aria-label should match the displayed text"
+  );
+}
+/* exported checkStatusBoxAriaLabel */
 
 // Borrowed from browser_PanelMultiView_keyboard.js
 async function expectFocusAfterKey(aKey, aFocus) {

@@ -99,7 +99,7 @@ class SurfaceFilter {
  public:
   SurfaceFilter() : mRowPointer(nullptr), mCol(0), mPixelSize(0) {}
 
-  virtual ~SurfaceFilter() {}
+  virtual ~SurfaceFilter() = default;
 
   /**
    * Reset this surface to the first row. It's legal for this filter to throw
@@ -631,17 +631,20 @@ class SurfaceFilter {
  */
 class SurfacePipe {
  public:
-  SurfacePipe() {}
+  SurfacePipe() = default;
 
   SurfacePipe(SurfacePipe&& aOther) : mHead(std::move(aOther.mHead)) {}
 
-  ~SurfacePipe() {}
+  ~SurfacePipe() = default;
 
   SurfacePipe& operator=(SurfacePipe&& aOther) {
     MOZ_ASSERT(this != &aOther);
     mHead = std::move(aOther.mHead);
     return *this;
   }
+
+  SurfacePipe(const SurfacePipe&) = delete;
+  SurfacePipe& operator=(const SurfacePipe&) = delete;
 
   /// Begins a new pass, seeking to the first row of the surface.
   void ResetToFirstRow() {
@@ -745,9 +748,6 @@ class SurfacePipe {
 
   explicit SurfacePipe(UniquePtr<SurfaceFilter>&& aHead)
       : mHead(std::move(aHead)) {}
-
-  SurfacePipe(const SurfacePipe&) = delete;
-  SurfacePipe& operator=(const SurfacePipe&) = delete;
 
   UniquePtr<SurfaceFilter> mHead;  /// The first filter in the chain.
 };

@@ -36,7 +36,7 @@ using namespace mozilla;
 
 // We protect only the initialization with the mutex, such that we cannot
 // annotate the following static variables.
-static StaticMutex gInitLock MOZ_UNANNOTATED;
+static StaticMutex gInitLock MOZ_ANNOTATED;
 // The relaxed memory ordering is fine here as we write this only when holding
 // gInitLock and only ever set it true once during EnsureGlobalsAreInited.
 static Atomic<bool, MemoryOrdering::Relaxed> gInitialized(false);

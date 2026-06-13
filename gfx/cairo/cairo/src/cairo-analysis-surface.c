@@ -1,3 +1,4 @@
+/* -*- Mode: c; tab-width: 8; c-basic-offset: 4; indent-tabs-mode: t; -*- */
 /*
  * Copyright © 2006 Keith Packard
  * Copyright © 2007 Adrian Johnson
@@ -122,7 +123,7 @@ attach_proxy (cairo_surface_t *source,
 {
     struct proxy *proxy;
 
-    proxy = _cairo_malloc (sizeof (*proxy));
+    proxy = _cairo_calloc (sizeof (*proxy));
     if (unlikely (proxy == NULL))
 	return _cairo_surface_create_in_error (CAIRO_STATUS_NO_MEMORY);
 
@@ -952,7 +953,7 @@ _cairo_analysis_surface_create (cairo_surface_t		*target,
     if (unlikely (status))
 	return _cairo_surface_create_in_error (status);
 
-    surface = _cairo_malloc (sizeof (cairo_analysis_surface_t));
+    surface = _cairo_calloc (sizeof (cairo_analysis_surface_t));
     if (unlikely (surface == NULL))
 	return _cairo_surface_create_in_error (_cairo_error (CAIRO_STATUS_NO_MEMORY));
 
@@ -1212,7 +1213,7 @@ _cairo_null_surface_create (cairo_content_t content)
 {
     cairo_surface_t *surface;
 
-    surface = _cairo_malloc (sizeof (cairo_surface_t));
+    surface = _cairo_calloc (sizeof (cairo_surface_t));
     if (unlikely (surface == NULL)) {
 	return _cairo_surface_create_in_error (_cairo_error (CAIRO_STATUS_NO_MEMORY));
     }

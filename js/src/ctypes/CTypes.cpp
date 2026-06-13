@@ -456,16 +456,8 @@ static const JSClass sCABIClass = {
 // This exists to give said prototypes a class of "CType", and to provide
 // reserved slots for stashing various other prototype objects.
 static const JSClassOps sCTypeProtoClassOps = {
-    nullptr,            // addProperty
-    nullptr,            // delProperty
-    nullptr,            // enumerate
-    nullptr,            // newEnumerate
-    nullptr,            // resolve
-    nullptr,            // mayResolve
-    nullptr,            // finalize
-    ConstructAbstract,  // call
-    ConstructAbstract,  // construct
-    nullptr,            // trace
+    .call = ConstructAbstract,
+    .construct = ConstructAbstract,
 };
 static const JSClass sCTypeProtoClass = {
     "CType",
@@ -481,16 +473,10 @@ static const JSClass sCDataProtoClass = {
 };
 
 static const JSClassOps sCTypeClassOps = {
-    nullptr,               // addProperty
-    nullptr,               // delProperty
-    nullptr,               // enumerate
-    nullptr,               // newEnumerate
-    nullptr,               // resolve
-    nullptr,               // mayResolve
-    CType::Finalize,       // finalize
-    CType::ConstructData,  // call
-    CType::ConstructData,  // construct
-    CType::Trace,          // trace
+    .finalize = CType::Finalize,
+    .call = CType::ConstructData,
+    .construct = CType::ConstructData,
+    .trace = CType::Trace,
 };
 static const JSClass sCTypeClass = {
     "CType",
@@ -499,16 +485,9 @@ static const JSClass sCTypeClass = {
 };
 
 static const JSClassOps sCDataClassOps = {
-    nullptr,             // addProperty
-    nullptr,             // delProperty
-    nullptr,             // enumerate
-    nullptr,             // newEnumerate
-    nullptr,             // resolve
-    nullptr,             // mayResolve
-    CData::Finalize,     // finalize
-    FunctionType::Call,  // call
-    FunctionType::Call,  // construct
-    nullptr,             // trace
+    .finalize = CData::Finalize,
+    .call = FunctionType::Call,
+    .construct = FunctionType::Call,
 };
 static const JSClass sCDataClass = {
     "CData",
@@ -517,16 +496,8 @@ static const JSClass sCDataClass = {
 };
 
 static const JSClassOps sCClosureClassOps = {
-    nullptr,             // addProperty
-    nullptr,             // delProperty
-    nullptr,             // enumerate
-    nullptr,             // newEnumerate
-    nullptr,             // resolve
-    nullptr,             // mayResolve
-    CClosure::Finalize,  // finalize
-    nullptr,             // call
-    nullptr,             // construct
-    CClosure::Trace,     // trace
+    .finalize = CClosure::Finalize,
+    .trace = CClosure::Trace,
 };
 static const JSClass sCClosureClass = {
     "CClosure",
@@ -549,16 +520,7 @@ static const JSClass sCDataFinalizerProtoClass = {
  * |CDataFinalizer::Private|) and slots (see |CDataFinalizerSlots|).
  */
 static const JSClassOps sCDataFinalizerClassOps = {
-    nullptr,                   // addProperty
-    nullptr,                   // delProperty
-    nullptr,                   // enumerate
-    nullptr,                   // newEnumerate
-    nullptr,                   // resolve
-    nullptr,                   // mayResolve
-    CDataFinalizer::Finalize,  // finalize
-    nullptr,                   // call
-    nullptr,                   // construct
-    nullptr,                   // trace
+    .finalize = CDataFinalizer::Finalize,
 };
 static const JSClass sCDataFinalizerClass = {
     "CDataFinalizer",
@@ -753,16 +715,7 @@ static const JSClass sUInt64ProtoClass = {
 };
 
 static const JSClassOps sInt64ClassOps = {
-    nullptr,              // addProperty
-    nullptr,              // delProperty
-    nullptr,              // enumerate
-    nullptr,              // newEnumerate
-    nullptr,              // resolve
-    nullptr,              // mayResolve
-    Int64Base::Finalize,  // finalize
-    nullptr,              // call
-    nullptr,              // construct
-    nullptr,              // trace
+    .finalize = Int64Base::Finalize,
 };
 
 static const JSClass sInt64Class = {
@@ -7427,7 +7380,7 @@ void CClosure::Trace(JSTracer* trc, JSObject* obj) {
   TraceEdge(trc, &cinfo->closureObj, "closureObj");
   TraceEdge(trc, &cinfo->typeObj, "typeObj");
   TraceEdge(trc, &cinfo->jsfnObj, "jsfnObj");
-  TraceNullableEdge(trc, &cinfo->thisObj, "thisObj");
+  TraceEdge(trc, &cinfo->thisObj, "thisObj");
 }
 
 void CClosure::Finalize(JS::GCContext* gcx, JSObject* obj) {

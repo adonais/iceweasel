@@ -397,10 +397,10 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
   // Large buffers that have been swept.
   MutexData<LargeAllocList> sweptLargeTenuredAllocs;
 
-  // Flag to indicate that data from minor sweeping is available to be
-  // merged. This includes chunks in the |sweptMixedChunks| or
-  // |sweptTenuredChunks| lists and the minorSweepingFinished flag.
-  mozilla::Atomic<bool, mozilla::Relaxed> hasMinorSweepDataToMerge;
+  // Flag to indicate that data from sweeping is available to be merged. This
+  // includes chunks in the |sweptMixedChunks| or |sweptTenuredChunks| lists and
+  // the minorSweepingFinished flag.
+  mozilla::Atomic<bool, mozilla::Relaxed> hasSweepDataToMerge;
 
   // GC state for minor and major GC.
   MainThreadOrGCTaskData<State> minorState;
@@ -420,9 +420,9 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
   // cleanup will be deferred to the end of the minor sweeping.
   MainThreadOrGCTaskData<bool> majorFinishedWhileMinorSweeping;
 
-#ifdef DEBUG
+  // A mutex that must be held to call public APIs if the allocator is being
+  // used by multiple threads. This is checked in debug builds.
   Mutex* multiThreadedMutex = nullptr;
-#endif
 
  public:
   explicit BufferAllocator(JS::Zone* zone);
@@ -506,6 +506,7 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
  private:
   void checkAccess() const;
   void checkMainThread() const;
+  bool isUsedByMainThread() const;
 
   void markNurseryOwnedAlloc(void* alloc, bool nurseryOwned);
   friend class js::Nursery;
@@ -569,8 +570,8 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
   bool sweepSmallBufferRegion(BufferChunk* chunk, SmallBufferRegion* region,
                               SweepKind sweepKind);
   void addSweptRegion(SmallBufferRegion* region, uintptr_t freeStart,
-                      uintptr_t freeEnd, bool expectUnchanged,
-                      FreeLists& freeLists);
+                      uintptr_t freeEnd, bool shouldDecommit,
+                      bool expectUnchanged, FreeLists& freeLists);
   void freeMedium(void* alloc);
   bool growMedium(void* alloc, size_t newBytes);
   bool shrinkMedium(void* alloc, size_t newBytes);

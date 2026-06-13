@@ -20,7 +20,7 @@ async function openContextMenuInOptionsPage(optionsBrowser) {
       new content.MouseEvent("contextmenu", {
         bubbles: true,
         cancelable: true,
-        view: el.ownerGlobal,
+        view: el.documentGlobal,
       })
     );
   });

@@ -10,9 +10,9 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.compose.foundation.layout.padding
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.Fragment
+import androidx.fragment.compose.content
 import androidx.lifecycle.lifecycleScope
 import mozilla.components.feature.summarize.settings.SummarizationSettings
 import mozilla.components.feature.summarize.settings.SummarizeSettingsContent
@@ -54,14 +54,12 @@ class PageSummariesSettingsFragment : Fragment(), SystemInsetsPaddedFragment {
             ),
         )
 
-        return ComposeView(requireContext()).apply {
-            setContent {
-                FirefoxTheme {
-                    SummarizeSettingsContent(
-                        store = store,
-                        modifier = Modifier.padding(horizontal = 16.dp),
-                    )
-                }
+        return content {
+            FirefoxTheme {
+                SummarizeSettingsContent(
+                    store = store,
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                )
             }
         }
     }

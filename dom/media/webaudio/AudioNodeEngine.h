@@ -42,8 +42,8 @@ class ThreadSharedFloatArrayBufferList final : public ThreadSharedObject {
   }
   /**
    * Create with buffers suitable for transfer to
-   * JS::NewArrayBufferWithContents().  The buffer contents are uninitialized
-   * and so should be set using GetDataForWrite().
+   * JS::NewArrayBufferWithContents().  The buffer contents are
+   * zero-initialised; callers should set them using GetDataForWrite().
    */
   static already_AddRefed<ThreadSharedFloatArrayBufferList> Create(
       uint32_t aChannelCount, size_t aLength, const mozilla::fallible_t&);

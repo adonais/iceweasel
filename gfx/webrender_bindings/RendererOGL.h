@@ -185,7 +185,7 @@ class RendererOGL {
   // The id of the root WebRender pipeline.
   //
   // All other pipelines are considered content.
-  wr::PipelineId mRootPipelineId;
+  wr::PipelineId mRootPipelineId{};
 
   // A mapping of wr::PipelineId to the epochs when last they updated.
   //

@@ -89,6 +89,12 @@ FuzzySocketControl::GetEarlyDataAccepted(bool* aAccepted) {
 }
 
 NS_IMETHODIMP
+FuzzySocketControl::GetResumptionTokenPresent(bool* aPresent) {
+  *aPresent = false;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
 FuzzySocketControl::DriveHandshake() { return NS_OK; }
 
 NS_IMETHODIMP

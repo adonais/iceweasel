@@ -41,7 +41,7 @@ async function openPermissionsDialog(permissionType) {
 }
 
 add_task(async function openSitePermissionsDialog() {
-  await openPreferencesViaOpenPreferencesAPI("privacy", { leaveOpen: true });
+  await openPermissionsPane({ leaveOpen: true });
   await openPermissionsDialog("desktop-notification");
 });
 

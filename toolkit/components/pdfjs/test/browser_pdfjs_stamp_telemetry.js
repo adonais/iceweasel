@@ -13,7 +13,7 @@ const MockFilePicker = SpecialPowers.MockFilePicker;
 const file = new FileUtils.File(getTestFilePath("moz.png"));
 
 add_setup(async function () {
-  MockFilePicker.init(window.browsingContext);
+  MockFilePicker.init();
   MockFilePicker.setFiles([file]);
   MockFilePicker.returnValue = MockFilePicker.returnOK;
   registerCleanupFunction(function () {

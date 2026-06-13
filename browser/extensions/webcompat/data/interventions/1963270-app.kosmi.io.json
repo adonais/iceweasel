@@ -11,7 +11,7 @@
       "platforms": ["all"],
       "max_version": 148,
       "content_scripts": {
-        "js": ["bug1963270-app.kosmi.io-unprefix-mozCaptureStream.js"]
+        "js": ["unprefix-mozCaptureStream.js"]
       }
     },
     {
@@ -21,7 +21,7 @@
         "media.captureStream.enabled": false
       },
       "content_scripts": {
-        "js": ["bug1963270-app.kosmi.io-unprefix-mozCaptureStream.js"]
+        "js": ["unprefix-mozCaptureStream.js"]
       }
     }
   ]

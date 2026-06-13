@@ -13,10 +13,10 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/4e7b3c485e549e7e3
  1 file changed, 6 insertions(+)
 
 diff --git a/rtc_base/BUILD.gn b/rtc_base/BUILD.gn
-index 50484ee519..d2e66a199a 100644
+index 629b1d5ae4..66be5cf312 100644
 --- a/rtc_base/BUILD.gn
 +++ b/rtc_base/BUILD.gn
-@@ -1050,6 +1050,12 @@ rtc_library("threading") {
+@@ -1039,6 +1039,12 @@ rtc_library("threading") {
      "thread.cc",
      "thread.h",
    ]

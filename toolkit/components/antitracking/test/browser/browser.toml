@@ -94,6 +94,8 @@ support-files = [
 
 ["browser_fixed_ABA_partitionKey.js"]
 
+["browser_flushOnQuery.js"]
+
 ["browser_foreignWorker_eventSource.js"]
 support-files= [
   "eventsource_worker.js",
@@ -317,9 +319,6 @@ support-files = [
 ["browser_storageAccess_userActivation.js"]
 
 ["browser_subResources.js"]
-support-files = ["subResources.sjs"]
-
-["browser_subResourcesPartitioned.js"]
 support-files = ["subResources.sjs"]
 
 ["browser_thirdPartyChecks_sandboxed_context.js"]

@@ -28,7 +28,7 @@ async function testReturnStatus(expectedStatus) {
   }
 
   let MockFilePicker = SpecialPowers.MockFilePicker;
-  MockFilePicker.init(window.browsingContext);
+  MockFilePicker.init();
 
   if (expectedStatus == "replaced" || expectedStatus == "not_replaced") {
     MockFilePicker.returnValue = MockFilePicker.returnReplace;
@@ -124,7 +124,7 @@ async function testFileName(expectedFileName) {
   }
 
   let MockFilePicker = SpecialPowers.MockFilePicker;
-  MockFilePicker.init(window.browsingContext);
+  MockFilePicker.init();
 
   MockFilePicker.returnValue = MockFilePicker.returnOK;
 

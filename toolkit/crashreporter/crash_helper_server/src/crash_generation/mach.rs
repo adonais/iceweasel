@@ -4,4 +4,4 @@
 
 use crash_helper_common::SendRight;
 
-pub(crate) type PlatformData = SendRight;
+pub(crate) type NativeProcessHandle = SendRight;

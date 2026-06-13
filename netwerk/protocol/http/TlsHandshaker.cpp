@@ -257,6 +257,20 @@ void TlsHandshaker::Check0RttEnabled(nsITLSSocketControl* ssl) {
 
   m0RTTChecked = true;
 
+  // If a session token was loaded, a PSK was offered in the ClientHello.
+  // Notify the transaction so recovery (restart + token eviction) works if
+  // the server rejects the PSK. Do this before the proxy early-return below,
+  // since PSK resumption happens at the TLS layer regardless of proxying and
+  // its failure mode is the same.
+  bool resumptionTokenPresent = false;
+  if (NS_SUCCEEDED(ssl->GetResumptionTokenPresent(&resumptionTokenPresent)) &&
+      resumptionTokenPresent) {
+    RefPtr<nsAHttpTransaction> transaction = mOwner->Transaction();
+    if (transaction) {
+      (void)transaction->Do0RTT(/*aCanSendEarlyData=*/false);
+    }
+  }
+
   if (mConnInfo->UsingProxy()) {
     return;
   }

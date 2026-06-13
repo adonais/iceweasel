@@ -60,8 +60,6 @@ class GeckoInstance:
         "browser.translations.enable": False,
         # Disable UI tour
         "browser.uitour.enabled": False,
-        # Disable captive portal
-        "captivedetect.canonicalURL": "",
         # Defensively disable data reporting systems
         "datareporting.healthreport.documentServerURI": "http://%(server)s/dummy/healthreport/",
         "datareporting.healthreport.logging.consoleEnabled": False,
@@ -155,6 +153,8 @@ class GeckoInstance:
         # Allow scroll amount larger than one page on a single mouse wheel
         # event.
         "mousewheel.allow_scrolling_more_than_one_page": True,
+        # Disable captive portal
+        "network.captive-portal-service.enabled": False,
         # Disable connectivity service pings
         "network.connectivity-service.enabled": False,
         # Do not prompt for temporary redirects
@@ -395,6 +395,7 @@ class GeckoInstance:
     def _get_runner_args(self):
         process_args = {
             "processOutputLine": [NullOutput()],
+            "storeOutput": False,
             "universal_newlines": True,
         }
 
@@ -573,6 +574,7 @@ class FennecInstance(GeckoInstance):
     def _get_runner_args(self):
         process_args = {
             "processOutputLine": [NullOutput()],
+            "storeOutput": False,
             "universal_newlines": True,
         }
 

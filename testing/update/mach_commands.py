@@ -35,7 +35,7 @@ class ReleaseType(Enum):
 
 STAGING_POLICY_PAYLOAD = {
     "policies": {
-        "AppUpdateURL": "https://stage.balrog.nonprod.cloudops.mozgcp.net/update/6/Firefox/%VERSION%/%BUILD_ID%/%BUILD_TARGET%/%LOCALE%/%CHANNEL%/%OS_VERSION%/%SYSTEM_CAPABILITIES%/%DISTRIBUTION%/%DISTRIBUTION_VERSION%/update.xml"
+        "AppUpdateURL": "https://stage.balrog.nonprod.webservices.mozgcp.net/update/6/Firefox/%VERSION%/%BUILD_ID%/%BUILD_TARGET%/%LOCALE%/%CHANNEL%/%OS_VERSION%/%SYSTEM_CAPABILITIES%/%DISTRIBUTION%/%DISTRIBUTION_VERSION%/update.xml"
     }
 }
 

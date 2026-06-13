@@ -27,10 +27,32 @@ class nsINIParser {
    * other methods should be called. This method reads and parses the file,
    * the class does not hold a file handle open. An instance must only be
    * initialized once.
+   *
+   * This method will still return success even if the INI file contained
+   * invalid data, it will only fail on out of memory or other exceptional
+   * circumstances.
+   *
+   * @param aFile              The file to parse
+   * @param aContainedErrors   An out param that is set to true if the INI file
+   *                           contained errors
    */
-  nsresult Init(nsIFile* aFile);
+  nsresult Init(nsIFile* aFile, bool* aContainedErrors = nullptr);
 
-  nsresult InitFromString(const nsCString& aStr);
+  /**
+   * Initialize the by parsing the contents of a string. If this method fails,
+   * no other methods should be called. An instance must only be
+   * initialized once.
+   *
+   * This method will still return success even if the INI file contained
+   * invalid data, it will only fail on out of memory or other exceptional
+   * circumstances.
+   *
+   * @param aStr               The string to parse
+   * @param aContainedErrors   An out param that is set to true if the INI file
+   *                           contained errors
+   */
+  nsresult InitFromString(const nsCString& aStr,
+                          bool* aContainedErrors = nullptr);
 
   /**
    * Enumerate the sections within the INI file.

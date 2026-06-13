@@ -272,7 +272,16 @@ static void nr_ice_candidate_pair_stun_cb(NR_SOCKET s, int how, void *cb_arg)
           pair->stun_client->rtt_ms = 0;
         }
 
-        if(strlen(pair->stun_client->results.ice_binding_response.mapped_addr.as_string)==0){
+        if (pair->local->type == RELAYED) {
+          /* For a relay candidate pair, there may be address translation
+           * between the TURN server and the remote peer, so we cannot trust
+           * XOR-MAPPED-ADDRESS to match our relay address. Traffic continues
+           * to flow via the TURN relay regardless, so just accept the
+           * response as proof that the path works. A peer reflexive
+           * candidate would be wrong here -- it would bypass the relay. */
+          nr_ice_candidate_pair_set_state(pair->pctx,pair,NR_ICE_PAIR_STATE_SUCCEEDED);
+        }
+        else if(strlen(pair->stun_client->results.ice_binding_response.mapped_addr.as_string)==0){
           /* we're using the mapped_addr returned by the server to lookup our
            * candidate, but if the server fails to do that we can't perform
            * the lookup -- this may be a BUG because if we've gotten here

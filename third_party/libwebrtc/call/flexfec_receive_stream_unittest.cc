@@ -12,9 +12,9 @@
 
 #include <cstdint>
 #include <memory>
+#include <span>
 #include <vector>
 
-#include "api/array_view.h"
 #include "api/call/transport.h"
 #include "api/environment/environment_factory.h"
 #include "api/rtp_headers.h"
@@ -25,10 +25,10 @@
 #include "modules/rtp_rtcp/mocks/mock_rtcp_rtt_stats.h"
 #include "modules/rtp_rtcp/source/byte_io.h"
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
-#include "rtc_base/thread.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
 #include "test/mock_transport.h"
+#include "test/run_loop.h"
 
 namespace webrtc {
 
@@ -52,7 +52,7 @@ FlexfecReceiveStream::Config CreateDefaultConfig(
   return config;
 }
 
-RtpPacketReceived ParsePacket(ArrayView<const uint8_t> packet) {
+RtpPacketReceived ParsePacket(std::span<const uint8_t> packet) {
   RtpPacketReceived parsed_packet(nullptr);
   EXPECT_TRUE(parsed_packet.Parse(packet));
   return parsed_packet;
@@ -94,7 +94,7 @@ class FlexfecReceiveStreamTest : public ::testing::Test {
     receive_stream_->UnregisterFromTransport();
   }
 
-  AutoThread main_thread_;
+  test::RunLoop main_thread_;
   MockTransport rtcp_send_transport_;
   MockRtcEventLog log_;
   FlexfecReceiveStream::Config config_;

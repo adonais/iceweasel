@@ -6,15 +6,14 @@ support-files = [
 
 ["browser_a11y.js"]
 
+["browser_breakout_state.js"]
+
 ["browser_formatValue.js"]
 skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # Bug 1968567
 ]
 
 ["browser_formatValue_detachedTab.js"]
-skip-if = [
-  "os == 'win' && os_version == '11.26200' && asan", # Bug 2019745
-]
 
 ["browser_formatValue_strikeout.js"]
 support-files = ["mixed_active.html"]

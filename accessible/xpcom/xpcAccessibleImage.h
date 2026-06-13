@@ -24,12 +24,11 @@ class xpcAccessibleImage : public xpcAccessibleGeneric,
                               int32_t* aY) final;
   NS_IMETHOD GetImageSize(int32_t* aWidth, int32_t* aHeight) final;
 
- protected:
-  virtual ~xpcAccessibleImage() {}
-
- private:
   xpcAccessibleImage(const xpcAccessibleImage&) = delete;
   xpcAccessibleImage& operator=(const xpcAccessibleImage&) = delete;
+
+ protected:
+  virtual ~xpcAccessibleImage() = default;
 };
 
 }  // namespace a11y

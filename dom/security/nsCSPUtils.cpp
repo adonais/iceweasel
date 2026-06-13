@@ -378,6 +378,8 @@ CSPDirective CSP_ContentTypeToDirective(nsContentPolicyType aType) {
     case nsIContentPolicy::TYPE_WEB_TRANSPORT:
     case nsIContentPolicy::TYPE_JSON:
     case nsIContentPolicy::TYPE_INTERNAL_JSON_PRELOAD:
+    case nsIContentPolicy::TYPE_TEXT:
+    case nsIContentPolicy::TYPE_INTERNAL_TEXT_PRELOAD:
       return nsIContentSecurityPolicy::CONNECT_SRC_DIRECTIVE;
 
     case nsIContentPolicy::TYPE_OBJECT:
@@ -407,7 +409,6 @@ CSPDirective CSP_ContentTypeToDirective(nsContentPolicyType aType) {
 
     // Fall through to error for all other directives
     case nsIContentPolicy::TYPE_INVALID:
-    case nsIContentPolicy::TYPE_END:
       MOZ_ASSERT(false, "Can not map nsContentPolicyType to CSPDirective");
       // Do not add default: so that compilers can catch the missing case.
   }

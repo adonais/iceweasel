@@ -78,9 +78,7 @@ pid_t gettid_pthread() {
 
 #ifdef XP_WIN
 #  include "util/WindowsWrapper.h"
-#  include <codecvt>
 #  include <evntprov.h>
-#  include <locale>
 #  include <string>
 
 const GUID PROVIDER_JSCRIPT9 = {
@@ -648,8 +646,11 @@ static void PrintStackValue(JSContext* maybeCx, StackValue* stackVal,
 }
 #endif
 
+WasmBaselinePerfSpewer::WasmBaselinePerfSpewer()
+    : needsToRecordInstruction_(PerfIREnabled() || PerfSrcEnabled()) {}
+
 [[nodiscard]] bool WasmBaselinePerfSpewer::needsToRecordInstruction() const {
-  return PerfIREnabled() || PerfSrcEnabled();
+  return needsToRecordInstruction_;
 }
 
 void WasmBaselinePerfSpewer::recordInstruction(MacroAssembler& masm,

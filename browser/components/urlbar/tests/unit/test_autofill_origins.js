@@ -1060,6 +1060,12 @@ async function doTitleTest({ visits, input, expected }) {
   permanent private browsing mode), then the only information we have is the
   number of bookmarks per origin, and we're going to use that. */
 add_task(async function just_multiple_unvisited_bookmarks() {
+  // Bookmark-driven autofill is disabled when adaptive autofill is on.
+  Services.prefs.setBoolPref(
+    "browser.urlbar.autoFill.adaptiveHistory.enabled",
+    false
+  );
+
   // These are sorted to avoid confusion with natural sorting, so the one with
   // the highest score is added in the middle.
   let filledUrl = "https://www.tld2.com/";
@@ -1118,5 +1124,8 @@ add_task(async function just_multiple_unvisited_bookmarks() {
     ],
   });
 
+  Services.prefs.clearUserPref(
+    "browser.urlbar.autoFill.adaptiveHistory.enabled"
+  );
   await cleanup();
 });

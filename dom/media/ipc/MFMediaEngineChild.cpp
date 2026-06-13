@@ -245,6 +245,17 @@ mozilla::ipc::IPCResult MFMediaEngineChild::RecvNotifyResizing(
   return IPC_OK();
 }
 
+mozilla::ipc::IPCResult MFMediaEngineChild::RecvNotifyFrameServerMode() {
+  AssertOnManagerThread();
+  if (mShutdown) {
+    return IPC_OK();
+  }
+#ifdef MOZ_WMF_CDM
+  mOwner->NotifyFrameServerMode();
+#endif
+  return IPC_OK();
+}
+
 uint64_t MFMediaEngineChild::GetUpdatedRenderedFrames(
     const StatisticData& aData) {
   return mAccumulatedPresentedFramesFromPrevEngine
@@ -450,6 +461,14 @@ void MFMediaEngineWrapper::NotifyResizing(uint32_t aWidth, uint32_t aHeight) {
   WLOG("Video resizing, new size [%u,%u]", aWidth, aHeight);
   mOwner->NotifyResizing(aWidth, aHeight);
 }
+
+#ifdef MOZ_WMF_CDM
+void MFMediaEngineWrapper::NotifyFrameServerMode() {
+  AssertOnManagerThread();
+  WLOG("Engine switched to frame server mode");
+  mOwner->NotifyFrameServerMode();
+}
+#endif
 
 #undef CLOG
 #undef WLOG

@@ -43,7 +43,7 @@ add_task(async function test_reserved_shortcuts_prevented_by_content() {
     };
     gBrowser.tabContainer.addEventListener("TabOpen", tabOpenListener);
 
-    EventUtils.synthesizeKey("t", { accelKey: true }, browser.ownerGlobal);
+    EventUtils.synthesizeKey("t", { accelKey: true }, browser.documentGlobal);
 
     // Waiting for content to confirm receipt also ensures the keyboard IPC
     // reply has been processed by chrome (it is enqueued before this spawn's
@@ -92,7 +92,7 @@ add_task(async function test_reserved_shortcuts_prevented_by_content() {
     };
     Services.obs.addObserver(windowOpenListener, "domwindowopened");
 
-    EventUtils.synthesizeKey("n", { accelKey: true }, browser.ownerGlobal);
+    EventUtils.synthesizeKey("n", { accelKey: true }, browser.documentGlobal);
 
     keyReceived = await SpecialPowers.spawn(browser, [], async () => {
       const { ContentTaskUtils } = ChromeUtils.importESModule(
@@ -168,7 +168,7 @@ add_task(async function test_reserved_shortcuts_not_prevented_by_content() {
       "TabOpen"
     );
 
-    EventUtils.synthesizeKey("t", { accelKey: true }, browser.ownerGlobal);
+    EventUtils.synthesizeKey("t", { accelKey: true }, browser.documentGlobal);
     let newTab = (await tabOpened).target;
     await fullScreenExited;
 
@@ -226,10 +226,10 @@ add_task(async function test_fullscreen_exit_key_is_unconditionally_reserved() {
       EventUtils.synthesizeKey(
         "f",
         { accelKey: true, ctrlKey: true },
-        browser.ownerGlobal
+        browser.documentGlobal
       );
     } else {
-      EventUtils.synthesizeKey("KEY_F11", {}, browser.ownerGlobal);
+      EventUtils.synthesizeKey("KEY_F11", {}, browser.documentGlobal);
     }
     await fullScreenExited;
     await TestUtils.waitForTick();
@@ -281,7 +281,7 @@ add_task(async function test_reserved_shortcuts_without_keyboard_lock() {
       gBrowser.tabContainer,
       "TabOpen"
     );
-    EventUtils.synthesizeKey("t", { accelKey: true }, browser.ownerGlobal);
+    EventUtils.synthesizeKey("t", { accelKey: true }, browser.documentGlobal);
     let newTab = (await tabOpened).target;
     await fullScreenExited;
     await TestUtils.waitForTick();

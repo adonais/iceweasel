@@ -8,6 +8,15 @@
  * comm-central, which need the triggerNode information.
  */
 
+add_setup(async function () {
+  // This test relies on the legacy bookmarks sidebar panel's search-box
+  // element, so opt out of the updated bookmarks panel here.
+  // TODO(Bug 2039395): adapt this test to the new bookmarks sidebar panel and remove this sidebar.updateBookmarks.enabled pushPrefEnv)
+  await SpecialPowers.pushPrefEnv({
+    set: [["sidebar.updatedBookmarks.enabled", false]],
+  });
+});
+
 add_task(async function test_search_input_popupshowing() {
   let sidebar = document.getElementById("sidebar");
 

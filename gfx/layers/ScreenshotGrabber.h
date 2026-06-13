@@ -77,7 +77,7 @@ class Window {
       const gfx::IntSize& aSize) = 0;
 
  protected:
-  virtual ~Window() {}
+  virtual ~Window() = default;
 };
 
 class RenderSource {
@@ -88,7 +88,7 @@ class RenderSource {
 
  protected:
   explicit RenderSource(const gfx::IntSize& aSize) : mSize(aSize) {}
-  virtual ~RenderSource() {}
+  virtual ~RenderSource() = default;
 
   const gfx::IntSize mSize;
 };
@@ -106,7 +106,7 @@ class DownscaleTarget {
 
  protected:
   explicit DownscaleTarget(const gfx::IntSize& aSize) : mSize(aSize) {}
-  virtual ~DownscaleTarget() {}
+  virtual ~DownscaleTarget() = default;
 
   const gfx::IntSize mSize;
 };
@@ -123,7 +123,7 @@ class AsyncReadbackBuffer {
 
  protected:
   explicit AsyncReadbackBuffer(const gfx::IntSize& aSize) : mSize(aSize) {}
-  virtual ~AsyncReadbackBuffer() {}
+  virtual ~AsyncReadbackBuffer() = default;
 
   const gfx::IntSize mSize;
 };

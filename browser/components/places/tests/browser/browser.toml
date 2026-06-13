@@ -15,6 +15,8 @@ prefs = [
   # Disable tab previews as some tests click on the toolbar.
   "browser.tabs.hoverPreview.enabled=false",
   "browser.tabs.groups.hoverPreview.enabled=false",
+  # TODO(Bug 2039395): adapt this test to the new bookmarks sidebar panel and remove this sidebar.updateBookmarks.enabled pushPrefEnv
+  "sidebar.updatedBookmarks.enabled=false"
 ]
 
 ["browser_addBookmarkForFrame.js"]
@@ -67,9 +69,8 @@ skip-if = [
 ["browser_bookmark_change_location.js"]
 
 ["browser_bookmark_context_menu_contents.js"]
-skip-if = [
-  "os == 'win' && os_version == '11.26200'", # Bug 2019745
-]
+
+["browser_bookmark_context_on_gutter.js"]
 
 ["browser_bookmark_copy_folder_tree.js"]
 tags = "os_integration"

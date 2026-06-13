@@ -22,8 +22,12 @@ We'll be working in a separate checkout in this document, since a special
 | Rust | 1.76.0 | Newer versions break bindgen-generated bindings |
 | cbindgen | 0.24.3 | 0.29 is too strict: rejects duplicate TOML keys and treats `try` as a reserved keyword |
 | libclang | 16 (not 18) | bindgen 0.64 (used by gecko-profiler) generates incomplete bindings with clang 18 |
+| Python | <= 3.12 | Python 3.13 removes `cgi`, `pipes` and `pathlib.os` that build tools depend on |
 
 ## Setup
+
+If your system Python is 3.13 or later, prefix `./mach` invocations with
+`uv run -p 3.12` (or `uv run -p 3.11`).
 
 ### 1. Pin the Rust toolchain for the tree
 
@@ -40,28 +44,46 @@ Install the toolchain if not already present needed:
 rustup toolchain install 1.76.0
 ```
 
-### 2. Install a specific cbindgen
+### 2. mozconfig
 
-Install `cbindgen` version `0.24.3` in an isolated location so it does not
-interfere with other trees that need a newer version:
+```
+ac_add_options --enable-bootstrap
+```
+
+`--enable-bootstrap` downloads compatible `cbindgen` and `libclang` from the
+Taskcluster toolchain index into `~/.mozbuild/` automatically.
+
+## Cross-compiling for Windows (from Linux)
+
+This is useful for backporting patches to Windows 7 without needing a Windows
+machine. The build system supports cross-compiling with `clang-cl` (MSVC ABI,
+Tier-1).
+
+### 1. Install required tools
 
 ```sh
-cargo install cbindgen --version 0.24.3 --root ~/.local/cbindgen-0.24.3
+sudo apt install msitools
+rustup target add x86_64-pc-windows-msvc
 ```
 
-### 3. mozconfig
+`msitools` provides `msiextract`, which is required to unpack the Windows SDK
+`.msi` packages during the bootstrap step.
+
+### 2. mozconfig for Windows cross-compile
+
+Use a separate `mozconfig` (e.g. `mozconfig.win64`) or replace the Linux one
+when working on a Windows-only issue:
 
 ```
-ac_add_options --with-libclang-path=/usr/lib/llvm-16/lib
-export CBINDGEN=/home/YOU/.local/cbindgen-0.24.3/bin/cbindgen
+ac_add_options --target=x86_64-pc-windows-msvc
+ac_add_options --enable-bootstrap
 ```
 
-`--with-libclang-path` tells the build system which `libclang` to hand to
-`bindgen`. `CBINDGEN` overrides the `cbindgen` binary for this tree only; the
-system-wide `cbindgen` (used by other trees) is left untouched.
+`--enable-bootstrap` downloads the Visual Studio sysroot (headers, libs,
+Windows SDK) from the Taskcluster toolchain index into `~/.mozbuild/` and
+selects `clang-cl` and `lld-link` automatically. No manual SDK installation
+is needed.
 
-`llvm-16` must be installed (`apt install llvm-16 libclang-16-dev` or
-equivalent).
 
 ## Pushing to try
 

@@ -77,6 +77,7 @@ netwerk:
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1655566
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1906360
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037081
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1655566
     notification_emails:
@@ -85,7 +86,6 @@ netwerk:
       - succeeded
       - failed
     expires: never
-    telemetry_mirror: HTTP3_TIME_TO_REUSE_IDLE_CONNECTTION_MS
 
   happy_eyeballs_dns_resolution_time:
     type: labeled_custom_distribution
@@ -242,11 +242,11 @@ network:
       Desktop.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1877839
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037081
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1877839
     notification_emails:
       - necko@mozilla.com
-    telemetry_mirror: HTTP_PAGE_CACHE_READ_TIME_V2
     expires: never
 
   complete_load:
@@ -274,11 +274,11 @@ network:
       Desktop.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1877839
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037081
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1877839
     notification_emails:
       - necko@mozilla.com
-    telemetry_mirror: HTTP_PAGE_COMPLETE_LOAD_CACHED_V2
     expires: never
 
   complete_load_net:
@@ -290,11 +290,11 @@ network:
       Desktop.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1877839
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037081
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1877839
     notification_emails:
       - necko@mozilla.com
-    telemetry_mirror: HTTP_PAGE_COMPLETE_LOAD_NET_V2
     expires: never
 
   cors_authorization_header:
@@ -320,7 +320,6 @@ network:
   cache_hit_time:
     type: timing_distribution
     time_unit: millisecond
-    telemetry_mirror: NETWORK_CACHE_V2_HIT_TIME_MS
     description: >
       Time to open existing cache entry file.
       (Migrated from the geckoview metric of the same name).
@@ -328,6 +327,7 @@ network:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1489524
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1580077
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1877839
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037081
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1580077#c10
     notification_emails:
@@ -337,7 +337,6 @@ network:
   cache_miss_time:
     type: timing_distribution
     time_unit: millisecond
-    telemetry_mirror: NETWORK_CACHE_V2_MISS_TIME_MS
     description: >
       Time spent to find out a cache entry file is missing.
       (Migrated from the geckoview metric of the same name).
@@ -345,6 +344,7 @@ network:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1489524
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1580077
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1922661
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037081
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1580077#c10
     notification_emails:
@@ -383,7 +383,6 @@ network:
   font_download_end:
     type: timing_distribution
     time_unit: millisecond
-    telemetry_mirror: WEBFONT_DOWNLOAD_TIME_AFTER_START
     description: >
       Time after navigationStart that all webfont downloads are completed.
       (Migrated from the geckoview metric of the same name).
@@ -391,6 +390,7 @@ network:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1877839
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1580077
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1877839
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037081
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1580077#c10
     notification_emails:
@@ -501,11 +501,11 @@ network:
       Desktop.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1877839
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037081
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1877839
     notification_emails:
       - necko@mozilla.com
-    telemetry_mirror: HTTP_PAGE_REVALIDATION
     expires: never
 
   first_sent_to_last_received:
@@ -577,11 +577,11 @@ network:
       Desktop.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1877839
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037081
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1877839
     notification_emails:
       - necko@mozilla.com
-    telemetry_mirror: HTTP_SUB_CACHE_READ_TIME_V2
     expires: never
 
   sub_complete_load:
@@ -593,11 +593,11 @@ network:
       Desktop.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1877839
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037081
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1877839
     notification_emails:
       - necko@mozilla.com
-    telemetry_mirror: HTTP_SUB_COMPLETE_LOAD_V2
     expires: never
 
   sub_complete_load_cached:
@@ -609,11 +609,11 @@ network:
       Desktop.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1877839
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037081
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1877839
     notification_emails:
       - necko@mozilla.com
-    telemetry_mirror: HTTP_SUB_COMPLETE_LOAD_CACHED_V2
     expires: never
 
   sub_complete_load_net:
@@ -625,11 +625,11 @@ network:
       Desktop.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1877839
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037081
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1877839
     notification_emails:
       - necko@mozilla.com
-    telemetry_mirror: HTTP_SUB_COMPLETE_LOAD_NET_V2
     expires: never
 
   sub_dns_start:
@@ -642,11 +642,11 @@ network:
       (Migrated from the geckoview metric of the same name).
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1898247
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037081
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1898247
     notification_emails:
       - necko@mozilla.com
-    telemetry_mirror: HTTP_SUB_DNS_ISSUE_TIME
     expires: never
 
   sub_dns_end:
@@ -659,11 +659,11 @@ network:
       (Migrated from the geckoview metric of the same name).
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1898247
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037081
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1898247
     notification_emails:
       - necko@mozilla.com
-    telemetry_mirror: HTTP_SUB_DNS_LOOKUP_TIME
     expires: never
 
   sub_first_from_cache:
@@ -675,11 +675,11 @@ network:
       Desktop.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1877839
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037081
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1877839
     notification_emails:
       - necko@mozilla.com
-    telemetry_mirror: HTTP_SUB_OPEN_TO_FIRST_FROM_CACHE_V2
     expires: never
 
   sub_first_sent_to_last_received:
@@ -708,11 +708,11 @@ network:
       Desktop.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1877839
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037081
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1877839
     notification_emails:
       - necko@mozilla.com
-    telemetry_mirror: HTTP_SUB_REVALIDATION
     expires: never
 
   sub_open_to_first_sent:
@@ -760,11 +760,11 @@ network:
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=772589
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1898247
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037081
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1898247
     notification_emails:
       - necko@mozilla.com
-    telemetry_mirror: HTTP_SUB_TLS_HANDSHAKE
     expires: never
 
   sub_tcp_connection:
@@ -778,11 +778,11 @@ network:
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=772589
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1898247
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037081
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1898247
     notification_emails:
       - necko@mozilla.com
-    telemetry_mirror: HTTP_SUB_TCP_CONNECTION_2
     expires: never
 
   page_load_size:
@@ -856,13 +856,13 @@ network:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1654309
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1749881
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1898018
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037081
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1898018
     notification_emails:
       - necko@mozilla.com
       - vgosu@mozilla.com
     expires: never
-    telemetry_mirror: TLS_EARLY_DATA_BYTES_WRITTEN
 
   tls_handshake:
     type: timing_distribution
@@ -893,25 +893,25 @@ network:
           - acreskey@mozilla.com
           - necko@mozilla.com
 
-  http3_tls_handshake: &http3_tls_handshake
-    type: labeled_timing_distribution
-    time_unit: millisecond
-    description: >
-      In the HTTP channel (keys: uses_http3_page, uses_http3_sub, supports_http3_page, supports_http3_sub), time from secure connection start (after TCP SYN) to ready for HTTP
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1675500
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1907418
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1675500
-    notification_emails:
-      - necko@mozilla.com
-    labels:
-      - uses_http3_page
-      - uses_http3_sub
-      - supports_http3_page
-      - supports_http3_sub
-    telemetry_mirror: HTTP3_TLS_HANDSHAKE
-    expires: never
+  http3_tls_handshake:
+    <<: &http3_tls_handshake
+      type: labeled_timing_distribution
+      time_unit: millisecond
+      description: >
+        In the HTTP channel (keys: uses_http3_page, uses_http3_sub, supports_http3_page, supports_http3_sub), time from secure connection start (after TCP SYN) to ready for HTTP
+      bugs:
+        - https://bugzilla.mozilla.org/show_bug.cgi?id=1675500
+        - https://bugzilla.mozilla.org/show_bug.cgi?id=1907418
+      data_reviews:
+        - https://bugzilla.mozilla.org/show_bug.cgi?id=1675500
+      notification_emails:
+        - necko@mozilla.com
+      labels:
+        - uses_http3_page
+        - uses_http3_sub
+        - supports_http3_page
+        - supports_http3_sub
+      expires: never
 
   sup_http3_tcp_connection:
     <<: *http3_tls_handshake
@@ -920,55 +920,66 @@ network:
     labels:
       - supports_http3_page
       - supports_http3_sub
-    telemetry_mirror: SUP_HTTP3_TCP_CONNECTION
     expires: never
 
   http3_open_to_first_sent:
     <<: *http3_tls_handshake
     description: >
       In the HTTP channel (keys: uses_http3_page, uses_http3_sub, supports_http3_page, supports_http3_sub), time from open to first byte of request
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1675500
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1907418
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2032398
     labels:
       - uses_http3_page
       - uses_http3_sub
       - supports_http3_page
       - supports_http3_sub
-    telemetry_mirror: HTTP3_OPEN_TO_FIRST_SENT
     expires: never
 
   http3_first_sent_to_last_received:
     <<: *http3_tls_handshake
     description: >
       In the HTTP channel (keys: uses_http3_page, uses_http3_sub, supports_http3_page, supports_http3_sub), time from first byte of request sent to last byte of response received
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1675500
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1907418
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2032398
     labels:
       - uses_http3_page
       - uses_http3_sub
       - supports_http3_page
       - supports_http3_sub
-    telemetry_mirror: HTTP3_FIRST_SENT_TO_LAST_RECEIVED
     expires: never
 
   http3_open_to_first_received:
     <<: *http3_tls_handshake
     description: >
       In the HTTP channel (keys: uses_http3_page, uses_http3_sub, supports_http3_page, supports_http3_sub), time from open to first byte of reply received
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1675500
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1907418
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2032398
     labels:
       - uses_http3_page
       - uses_http3_sub
       - supports_http3_page
       - supports_http3_sub
-    telemetry_mirror: HTTP3_OPEN_TO_FIRST_RECEIVED
     expires: never
 
   http3_complete_load:
     <<: *http3_tls_handshake
     description: >
       In the HTTP channel (keys: uses_http3_page, uses_http3_sub, supports_http3_page, supports_http3_sub), overall load time
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1675500
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1907418
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2032398
     labels:
       - uses_http3_page
       - uses_http3_sub
       - supports_http3_page
       - supports_http3_sub
-    telemetry_mirror: HTTP3_COMPLETE_LOAD
     expires: never
 
   system_channel_success_or_failure: &system_channel_success_or_failure
@@ -1121,6 +1132,7 @@ network:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1616069
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1668513
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1700824
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037081
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1487559
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1524552
@@ -1130,7 +1142,6 @@ network:
     notification_emails:
       - necko@mozilla.com
     expires: never
-    telemetry_mirror: NETWORK_BACK_PRESSURE_SUSPENSION_CP_TYPE
 
   back_pressure_suspension_delay_time:
     type: timing_distribution
@@ -1146,6 +1157,7 @@ network:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1616069
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1668513
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1700824
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037081
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1498434
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1524552
@@ -1155,7 +1167,6 @@ network:
     notification_emails:
       - necko@mozilla.com
     expires: never
-    telemetry_mirror: NETWORK_BACK_PRESSURE_SUSPENSION_DELAY_TIME_MS
 
   trr_idle_close_time_h1: &trr_idle_close_time
     type: labeled_timing_distribution
@@ -1208,12 +1219,12 @@ networking:
       scalar networking.http3_enabled.
     bugs:
       - https://bugzil.la/1652104
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037081
     data_reviews:
       - https://bugzil.la/1652104
     notification_emails:
       - necko@mozilla.com
     expires: never
-    telemetry_mirror: NETWORKING_HTTP3_ENABLED
 
   https_rr_prefs_usage:
     type: quantity
@@ -1226,6 +1237,7 @@ networking:
       scalar networking.https_rr_prefs_usage.
     bugs:
       - https://bugzil.la/1686421
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037081
     data_reviews:
       - https://bugzil.la/1686421
     notification_emails:
@@ -1233,7 +1245,6 @@ networking:
       - kershaw@mozilla.com
     expires: never
     unit: bitfield
-    telemetry_mirror: NETWORKING_HTTPS_RR_PREFS_USAGE
 
   trr_connection_cycle_count:
     type: labeled_counter
@@ -1244,13 +1255,13 @@ networking:
       scalar networking.trr_connection_cycle_count.
     bugs:
       - https://bugzil.la/1737198
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037081
     data_reviews:
       - https://bugzil.la/1737198
     notification_emails:
       - necko@mozilla.com
       - nhnt11@mozilla.com
     expires: never
-    telemetry_mirror: NETWORKING_TRR_CONNECTION_CYCLE_COUNT
 
   data_transferred_v3_kb:
     type: labeled_counter
@@ -1521,6 +1532,7 @@ orb:
       - BEACON
       - WEB_TRANSPORT
       - EXCLUDED
+      - TEXT
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1833216
     data_reviews:
@@ -1680,12 +1692,12 @@ spdy:
     memory_unit: byte
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1324855
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037081
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1324855
     notification_emails:
       - necko@mozilla.com
     expires: never
-    telemetry_mirror: SPDY_CONTINUED_HEADERS
 
 http:
   subitem_open_latency_time:
@@ -1698,12 +1710,12 @@ http:
     time_unit: millisecond
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1935420
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037081
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1935420
     notification_emails:
       - necko@mozilla.com
     expires: never
-    telemetry_mirror: HTTP_SUBITEM_OPEN_LATENCY_TIME
 
   subitem_first_byte_latency_time:
     type: timing_distribution
@@ -1716,12 +1728,12 @@ http:
     time_unit: millisecond
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1935420
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037081
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1935420
     notification_emails:
       - necko@mozilla.com
     expires: never
-    telemetry_mirror: HTTP_SUBITEM_FIRST_BYTE_LATENCY_TIME
 
   request_per_page:
     type: custom_distribution
@@ -1736,12 +1748,12 @@ http:
     histogram_type: exponential
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1935420
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037081
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1935420
     notification_emails:
       - necko@mozilla.com
     expires: never
-    telemetry_mirror: HTTP_REQUEST_PER_PAGE
 
   request_per_page_from_cache:
     type: custom_distribution
@@ -1756,12 +1768,12 @@ http:
     histogram_type: linear
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1935420
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037081
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1935420
     notification_emails:
       - necko@mozilla.com
     expires: never
-    telemetry_mirror: HTTP_REQUEST_PER_PAGE_FROM_CACHE
 
   request_per_conn:
     type: custom_distribution
@@ -1891,12 +1903,12 @@ http:
     histogram_type: linear
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1935420
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037081
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1935420
     notification_emails:
       - necko@mozilla.com
     expires: never
-    telemetry_mirror: HTTP_RESPONSE_VERSION
 
   channel_disposition:
     type: custom_distribution
@@ -1912,12 +1924,12 @@ http:
     histogram_type: linear
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1341128
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037081
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1341128
     notification_emails:
       - necko@mozilla.com
     expires: never
-    telemetry_mirror: HTTP_CHANNEL_DISPOSITION
 
   channel_onstart_success:
     type: labeled_counter
@@ -1954,13 +1966,13 @@ http:
     histogram_type: linear
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1767417
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037081
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1767417
     notification_emails:
       - necko@mozilla.com
       - kershaw@mozilla.com
     expires: never
-    telemetry_mirror: HTTP_CHANNEL_PAGE_ONSTART_SUCCESS_TRR3
 
   channel_sub_onstart_success_trr:
     type: labeled_custom_distribution
@@ -1976,13 +1988,13 @@ http:
     histogram_type: linear
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1767417
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037081
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1767417
     notification_emails:
       - necko@mozilla.com
       - kershaw@mozilla.com
     expires: never
-    telemetry_mirror: HTTP_CHANNEL_SUB_ONSTART_SUCCESS_TRR3
 
   connection_entry_cache_hit:
     type: labeled_counter
@@ -2016,12 +2028,12 @@ http:
     histogram_type: linear
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1935420
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037081
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1935420
     notification_emails:
       - necko@mozilla.com
     expires: never
-    telemetry_mirror: HTTP_CONTENT_ENCODING
 
   transaction_ech_retry_with_ech_count:
     type: custom_distribution
@@ -2037,13 +2049,13 @@ http:
     histogram_type: exponential
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1671886
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037081
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1671886
     notification_emails:
       - necko@mozilla.com
       - kershaw@mozilla.com
     expires: never
-    telemetry_mirror: TRANSACTION_ECH_RETRY_WITH_ECH_COUNT
 
   transaction_ech_retry_without_ech_count:
     type: custom_distribution
@@ -2059,13 +2071,13 @@ http:
     histogram_type: exponential
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1671886
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037081
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1671886
     notification_emails:
       - necko@mozilla.com
       - kershaw@mozilla.com
     expires: never
-    telemetry_mirror: TRANSACTION_ECH_RETRY_WITHOUT_ECH_COUNT
 
   transaction_ech_retry_ech_failed_count:
     type: custom_distribution
@@ -2081,13 +2093,13 @@ http:
     histogram_type: exponential
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1671886
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037081
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1671886
     notification_emails:
       - necko@mozilla.com
       - kershaw@mozilla.com
     expires: never
-    telemetry_mirror: TRANSACTION_ECH_RETRY_ECH_FAILED_COUNT
 
   transaction_ech_retry_others_count:
     type: custom_distribution
@@ -2103,13 +2115,13 @@ http:
     histogram_type: exponential
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1671886
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037081
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1671886
     notification_emails:
       - necko@mozilla.com
       - kershaw@mozilla.com
     expires: never
-    telemetry_mirror: TRANSACTION_ECH_RETRY_OTHERS_COUNT
 
   transaction_wait_time_http:
     type: timing_distribution
@@ -2175,6 +2187,7 @@ http:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1296288
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1654309
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1749881
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037081
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1296288
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1654309
@@ -2183,7 +2196,6 @@ http:
       - necko@mozilla.com
       - vgosu@mozilla.com
     expires: never
-    telemetry_mirror: TLS_EARLY_DATA_NEGOTIATED
 
   tls_early_data_accepted:
     type: labeled_counter
@@ -2261,12 +2273,12 @@ http:
     histogram_type: linear
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1956726
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037081
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1956726
     notification_emails:
       - necko@mozilla.com
     expires: never
-    telemetry_mirror: DNT_USAGE
 
   dns_httpssvc_record_receiving_stage:
     type: custom_distribution
@@ -2281,13 +2293,13 @@ http:
     histogram_type: linear
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1652667
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037081
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1652667
     notification_emails:
       - necko@mozilla.com
       - kershaw@mozilla.com
     expires: never
-    telemetry_mirror: DNS_HTTPSSVC_RECORD_RECEIVING_STAGE
 
   script_block_incorrect_mime:
     type: labeled_counter
@@ -2394,12 +2406,12 @@ http:
           HTTP_CACHE_DISPOSITION_3.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1611185
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037081
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1611185
     notification_emails:
       - necko@mozilla.com
     expires: never
-    telemetry_mirror: HTTP_CACHE_DISPOSITION_3
 
   traffic_analysis:
     type: dual_labeled_counter
@@ -2488,6 +2500,7 @@ http3:
     histogram_type: linear
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1822876
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037081
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1822876
     notification_emails:
@@ -2499,7 +2512,6 @@ http3:
       - NONE
       - GREASE
       - REAL
-    telemetry_mirror: HTTP3_ECH_OUTCOME
 
   connection_close_code:
     type: labeled_custom_distribution
@@ -2644,12 +2656,12 @@ http3:
     unit: streams
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1655566
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037081
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1655566
     notification_emails:
       - necko@mozilla.com
     expires: never
-    telemetry_mirror: HTTP3_SENDING_BLOCKED_BY_FLOW_CONTROL_PER_TRANS
 
   loss_ratio:
     type: custom_distribution
@@ -2685,6 +2697,7 @@ http3:
     histogram_type: exponential
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1677951
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037081
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1677951
     notification_emails:
@@ -2693,7 +2706,6 @@ http3:
     labels:
       - ack
       - pto
-    telemetry_mirror: HTTP3_LATE_ACK_RATIO
 
   late_ack:
     type: labeled_custom_distribution
@@ -2709,6 +2721,7 @@ http3:
     unit: retransmissions
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1677951
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037081
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1677951
     notification_emails:
@@ -2717,7 +2730,6 @@ http3:
     labels:
       - ack
       - pto
-    telemetry_mirror: HTTP3_LATE_ACK
 
   counts_pto:
     type: labeled_custom_distribution
@@ -2732,12 +2744,12 @@ http3:
     histogram_type: exponential
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1677951
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037081
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1677951
     notification_emails:
       - necko@mozilla.com
     expires: never
-    telemetry_mirror: HTTP3_COUNTS_PTO
 
   drop_dgrams:
     type: custom_distribution
@@ -2753,12 +2765,12 @@ http3:
     unit: datagrams
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1677951
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037081
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1677951
     notification_emails:
       - necko@mozilla.com
     expires: never
-    telemetry_mirror: HTTP3_DROP_DGRAMS
 
   saved_dgrams:
     type: custom_distribution
@@ -2775,12 +2787,12 @@ http3:
     unit: datagrams
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1677951
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037081
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1677951
     notification_emails:
       - necko@mozilla.com
     expires: never
-    telemetry_mirror: HTTP3_SAVED_DGRAMS
 
   received_sent_dgrams:
     type: labeled_custom_distribution
@@ -2796,6 +2808,7 @@ http3:
     unit: packets
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1677951
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037081
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1677951
     notification_emails:
@@ -2804,4 +2817,3 @@ http3:
     labels:
       - received
       - sent
-    telemetry_mirror: HTTP3_RECEIVED_SENT_DGRAMS

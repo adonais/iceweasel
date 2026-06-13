@@ -516,10 +516,11 @@ export class MemoriesManager {
    *
    * @param {string} memoryId       ID of the memory to hard-delete
    * @param {string} trigger        What was the trigger (assistant, settings, other)
+   * @param {number|null} inUse     Number of memories still applied to the message after removal, or null if not triggered by assistant
    * @returns {Promise<boolean>}    True if the memory was found and deleted, false otherwise
    */
-  static async hardDeleteMemoryById(memoryId, trigger) {
-    return await MemoryStore.hardDeleteMemory(memoryId, trigger);
+  static async hardDeleteMemoryById(memoryId, trigger, inUse) {
+    return await MemoryStore.hardDeleteMemory(memoryId, trigger, inUse);
   }
 
   /**

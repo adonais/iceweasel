@@ -115,10 +115,6 @@ void DOMEventTargetHelper::DisconnectFromOwner() {
   MaybeDontKeepAlive();
 }
 
-nsPIDOMWindowOuter* DOMEventTargetHelper::GetOwnerGlobalForBindingsInternal() {
-  return nsPIDOMWindowOuter::GetFromCurrentInner(GetOwnerWindow());
-}
-
 nsPIDOMWindowInner* DOMEventTargetHelper::GetWindowIfCurrent() const {
   if (NS_FAILED(CheckCurrentGlobalCorrectness())) {
     return nullptr;

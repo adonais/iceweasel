@@ -36,6 +36,8 @@ namespace gfx {
   _(DMABUF, Feature, "DMABUF")                                               \
   _(WINDOW_OCCLUSION, Feature, "WINDOW_OCCLUSION")                           \
   _(HARDWARE_VIDEO_DECODING, Feature, "Hardware video decoding")             \
+  _(HARDWARE_VIDEO_DECODING_VULKAN, Feature,                                 \
+    "Hardware video decoding (Vulkan)")                                      \
   _(HARDWARE_VIDEO_ENCODING, Feature, "Hardware video encoding")             \
   _(VIDEO_HARDWARE_OVERLAY, Feature, "hardware decoded video overlay")       \
   _(VIDEO_SOFTWARE_OVERLAY, Feature, "software decoded video overlay")       \

@@ -400,14 +400,6 @@ want to exist in the index before they even run/complete. Our current use is to 
 unfinished cached task in future pushes. This avoids extra overhead from multiple tasks running, and
 can allow us to have our results in just a bit earlier.
 
-required_signoffs
-=================
-A list of release signoffs that this kind requires, should the release also
-require these signoffs. For example, ``mar-signing`` signoffs may be required
-by some releases in the future; for any releases that require ``mar-signing``
-signoffs, the kinds that also require that signoff are marked with this
-attribute.
-
 update-channel
 ==============
 The update channel the build is configured to use.
@@ -614,3 +606,10 @@ flatpak_name
 ============
 
 name of the built flatpak app (e.g. `org.mozilla.firefox`)
+
+msi_display_name
+================
+
+The human-readable product name for the MSI installer (e.g. ``Firefox Nightly``,
+``Firefox Beta``, ``Firefox``). Used by downstream signing tasks to construct
+the Authenticode comment embedded in the installer signature.

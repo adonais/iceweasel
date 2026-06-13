@@ -72,7 +72,7 @@ class RecordedTextureData final : public TextureData {
   RefPtr<gfx::DrawTargetRecording> mDT;
   RefPtr<gfx::SourceSurface> mSnapshot;
   RefPtr<gfx::SourceSurface> mSnapshotWrapper;
-  OpenMode mLockedMode;
+  OpenMode mLockedMode = OpenMode::OPEN_NONE;
   RemoteTextureId mLastRemoteTextureId;
   RefPtr<layers::FwdTransactionTracker> mFwdTransactionTracker;
   bool mUsedRemoteTexture = false;

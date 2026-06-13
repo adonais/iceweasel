@@ -8,12 +8,13 @@
       ]
     }
   },
+  "css": {
+    "fix_overlapping_table_cells": ".hermespjm-projektuebersicht-row { height: unset; } .hermespjm-projektuebersicht-cell-verantwortlicher { position: static; }"
+  },
   "interventions": [
     {
       "platforms": ["all"],
-      "content_scripts": {
-        "css": ["bug1974686-hermes_admin_ch.css"]
-      }
+      "css": ["fix_overlapping_table_cells"]
     }
   ]
 }

@@ -120,7 +120,7 @@ class SMILTimeValueSpec {
   TimeReferenceTracker mReferencedElement;
 
   class EventListener final : public nsIDOMEventListener {
-    ~EventListener() {}
+    ~EventListener() = default;
 
    public:
     explicit EventListener(SMILTimeValueSpec* aOwner) : mSpec(aOwner) {}

@@ -850,7 +850,7 @@ struct NewPartResult final {
         mShouldResetCacheEntry(false) {}
 
   nsAutoCString mContentType;
-  int64_t mContentLength;
+  int64_t mContentLength = 0;
   nsAutoCString mContentDisposition;
   RefPtr<image::Image> mImage;
   const bool mIsFirstPart;
@@ -906,7 +906,7 @@ static NewPartResult PrepareForNewPart(nsIRequest* aRequest,
   // Create the new image and give it ownership of our ProgressTracker.
   if (aIsMultipart) {
     // Create the ProgressTracker and image for this part.
-    RefPtr<ProgressTracker> progressTracker = new ProgressTracker();
+    auto progressTracker = MakeRefPtr<ProgressTracker>();
     RefPtr<image::Image> partImage = image::ImageFactory::CreateImage(
         aRequest, progressTracker, result.mContentType, aURI,
         /* aIsMultipart = */ true, aInnerWindowId);
@@ -952,7 +952,7 @@ class FinishPreparingForNewPartRunnable final : public Runnable {
                                     NewPartResult&& aResult)
       : Runnable("FinishPreparingForNewPartRunnable"),
         mImgRequest(aImgRequest),
-        mResult(aResult) {
+        mResult(std::move(aResult)) {
     MOZ_ASSERT(aImgRequest);
   }
 

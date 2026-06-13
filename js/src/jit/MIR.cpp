@@ -4,6 +4,7 @@
 
 #include "jit/MIR.h"
 
+#include "mozilla/Casting.h"
 #include "mozilla/FloatingPoint.h"
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/Maybe.h"
@@ -13,6 +14,7 @@
 #include <bit>
 #include <utility>
 
+#include "builtin/Date.h"
 #include "builtin/Math.h"
 #include "builtin/Number.h"
 #include "builtin/RegExp.h"
@@ -26,6 +28,7 @@
 #include "jit/WarpBuilderShared.h"
 #include "jit/WarpSnapshot.h"
 #include "js/Conversions.h"
+#include "js/Date.h"
 #include "js/experimental/JitInfo.h"  // JSJitInfo, JSTypedMethodJitInfo
 #include "js/ScalarType.h"            // js::Scalar::Type
 #include "util/PortableMath.h"
@@ -2236,6 +2239,18 @@ MDefinition* MCodePointAt::foldsTo(TempAllocator& alloc) {
     }
   }
   return MConstant::NewInt32(alloc, first);
+}
+
+MDefinition* MLinearizeString::foldsTo(TempAllocator& alloc) {
+  MDefinition* string = this->string();
+  if (!string->isConstant()) {
+    return this;
+  }
+
+  // Constant strings are atoms, which are guaranteed to be linear.
+  static_assert(std::is_same_v<decltype(string->toConstant()->toString()),
+                               JSOffThreadAtom*>);
+  return string;
 }
 
 MDefinition* MToRelativeStringIndex::foldsTo(TempAllocator& alloc) {
@@ -5686,6 +5701,80 @@ MDefinition* MCompare::tryFoldStringIndexOf(TempAllocator& alloc) {
   return MNot::New(alloc, startsWith);
 }
 
+/**
+ * Most architectures can generate smaller code for comparison against zero, so
+ * the macro-assemblers special-case a zero immediate when emitting
+ * compare-and-branch instructions.
+ *
+ * Some comparisons against one resp. negative one can instead be written as a
+ * comparison against zero. Handle these cases here to avoid duplicating the
+ * same code across all architectures.
+ */
+static bool CanCompareAgainstZero(int64_t value, JSOp op, bool isSigned) {
+  switch (op) {
+    case JSOp::Lt:
+    case JSOp::Ge:
+      // Can rewrite |operand < 1| as |operand <= 0|.
+      // Can rewrite |operand >= 1| as |operand > 0|.
+      return value == 1;
+
+    case JSOp::Le:
+    case JSOp::Gt:
+      // Can rewrite |operand <= -1| as |operand < 0|.
+      // Can rewrite |operand > -1| as |operand >= 0|.
+      return isSigned && value == -1;
+
+    default:
+      return false;
+  }
+}
+
+MCompare* MCompare::newCompareInt(TempAllocator& alloc, MDefinition* operand,
+                                  int64_t value, JSOp op, bool isSigned) {
+  MOZ_ASSERT(IsIntType(operand->type()) || operand->type() == MIRType::BigInt);
+  MOZ_ASSERT_IF(operand->type() == MIRType::BigInt, isSigned);
+
+  // Prefer comparison against zero if possible.
+  if (CanCompareAgainstZero(value, op, isSigned)) {
+    value = 0;
+
+    // Update operator: (Lt -> Le), (Le -> Lt), (Gt -> Ge), (Ge -> Gt).
+    op = ReverseCompareOp(NegateCompareOp(op));
+  }
+
+  MConstant* cst;
+  CompareType compareType;
+  switch (operand->type()) {
+    case MIRType::Int32:
+      cst = MConstant::NewInt32(alloc, mozilla::AssertedCast<int32_t>(value));
+      compareType = isSigned ? Compare_Int32 : Compare_UInt32;
+      break;
+
+    case MIRType::Int64:
+      cst = MConstant::NewInt64(alloc, value);
+      compareType = isSigned ? Compare_Int64 : Compare_UInt64;
+      break;
+
+    case MIRType::IntPtr:
+      cst = MConstant::NewIntPtr(alloc, mozilla::AssertedCast<intptr_t>(value));
+      compareType = isSigned ? Compare_IntPtr : Compare_UIntPtr;
+      break;
+
+    case MIRType::BigInt:
+      cst = MConstant::NewInt32(alloc, mozilla::AssertedCast<int32_t>(value));
+      compareType = Compare_BigInt_Int32;
+      break;
+
+    default:
+      MOZ_CRASH("unexpected operand type");
+  }
+  block()->insertBefore(this, cst);
+
+  auto* ins = MCompare::New(alloc, operand, cst, op, compareType);
+  ins->setResultType(type());
+  return ins;
+}
+
 MDefinition* MCompare::tryFoldBigInt64(TempAllocator& alloc) {
   if (compareType() == Compare_BigInt) {
     auto* left = lhs();
@@ -5783,17 +5872,11 @@ MDefinition* MCompare::tryFoldBigInt64(TempAllocator& alloc) {
       return MConstant::NewBoolean(alloc, result);
     }
 
-    auto* cst = MConstant::NewInt64(alloc, *value);
-    block()->insertBefore(this, cst);
-
-    auto compareType =
-        isSigned ? MCompare::Compare_Int64 : MCompare::Compare_UInt64;
-    if (left == int64ToBigInt) {
-      return MCompare::New(alloc, int64ToBigInt->input(), cst, jsop_,
-                           compareType);
+    JSOp op = jsop();
+    if (right == int64ToBigInt) {
+      op = ReverseCompareOp(op);
     }
-    return MCompare::New(alloc, cst, int64ToBigInt->input(), jsop_,
-                         compareType);
+    return newCompareInt(alloc, int64ToBigInt->input(), *value, op, isSigned);
   }
 
   if (compareType() == Compare_BigInt_Int32) {
@@ -5819,13 +5902,8 @@ MDefinition* MCompare::tryFoldBigInt64(TempAllocator& alloc) {
       return MConstant::NewBoolean(alloc, result);
     }
 
-    auto* cst = MConstant::NewInt64(alloc, int64_t(constInt32));
-    block()->insertBefore(this, cst);
-
-    auto compareType =
-        isSigned ? MCompare::Compare_Int64 : MCompare::Compare_UInt64;
-    return MCompare::New(alloc, int64ToBigInt->input(), cst, jsop_,
-                         compareType);
+    return newCompareInt(alloc, int64ToBigInt->input(), constInt32, jsop(),
+                         isSigned);
   }
 
   return this;
@@ -5880,17 +5958,11 @@ MDefinition* MCompare::tryFoldBigIntPtr(TempAllocator& alloc) {
       return MConstant::NewBoolean(alloc, result);
     }
 
-    auto* cst = MConstant::NewIntPtr(alloc, value);
-    block()->insertBefore(this, cst);
-
-    if (left == intPtrToBigInt) {
-      left = intPtrToBigInt->input();
-      right = cst;
-    } else {
-      left = cst;
-      right = intPtrToBigInt->input();
+    JSOp op = jsop();
+    if (right == intPtrToBigInt) {
+      op = ReverseCompareOp(op);
     }
-    return MCompare::New(alloc, left, right, jsop_, MCompare::Compare_IntPtr);
+    return newCompareInt(alloc, intPtrToBigInt->input(), value, op);
   }
 
   if (compareType() == Compare_BigInt_Int32) {
@@ -5905,12 +5977,8 @@ MDefinition* MCompare::tryFoldBigIntPtr(TempAllocator& alloc) {
       return this;
     }
 
-    auto* cst =
-        MConstant::NewIntPtr(alloc, intptr_t(right->toConstant()->toInt32()));
-    block()->insertBefore(this, cst);
-
-    return MCompare::New(alloc, left->toIntPtrToBigInt()->input(), cst, jsop_,
-                         MCompare::Compare_IntPtr);
+    return newCompareInt(alloc, left->toIntPtrToBigInt()->input(),
+                         right->toConstant()->toInt32(), jsop());
   }
 
   return this;
@@ -5942,9 +6010,6 @@ MDefinition* MCompare::tryFoldBigInt(TempAllocator& alloc) {
     return this;
   }
 
-  MConstant* int32Const = MConstant::NewInt32(alloc, x);
-  block()->insertBefore(this, int32Const);
-
   auto op = jsop();
   if (IsStrictEqualityOp(op)) {
     // Compare_BigInt_Int32 is only valid for loose comparison.
@@ -5953,9 +6018,87 @@ MDefinition* MCompare::tryFoldBigInt(TempAllocator& alloc) {
     // Reverse the comparison operator if the operands were reordered.
     op = ReverseCompareOp(op);
   }
+  return newCompareInt(alloc, operand, x, op);
+}
 
-  return MCompare::New(alloc, operand, int32Const, op,
-                       MCompare::Compare_BigInt_Int32);
+MDefinition* MCompare::tryFoldIntZero(TempAllocator& alloc) {
+  // Expect signed or unsigned integer relational comparison.
+  if (!IsRelationalOp(jsop())) {
+    return this;
+  }
+
+  bool isSigned;
+  switch (compareType()) {
+    case Compare_Int32:
+    case Compare_Int64:
+    case Compare_IntPtr:
+      isSigned = true;
+      break;
+
+    case Compare_UInt32:
+    case Compare_UInt64:
+    case Compare_UIntPtr:
+      isSigned = false;
+      break;
+
+    case Compare_Undefined:
+    case Compare_Null:
+    case Compare_Double:
+    case Compare_Float32:
+    case Compare_String:
+    case Compare_Symbol:
+    case Compare_Object:
+    case Compare_BigInt:
+    case Compare_BigInt_Int32:
+    case Compare_BigInt_Double:
+    case Compare_BigInt_String:
+    case Compare_WasmAnyRef:
+      return this;
+  }
+
+  auto* left = lhs();
+  auto* right = rhs();
+
+  // Both operands have the same Int type.
+  MOZ_ASSERT(left->type() == right->type());
+  MOZ_ASSERT(IsIntType(left->type()));
+
+  // One operand must be a constant.
+  if (!left->isConstant() && !right->isConstant()) {
+    return this;
+  }
+
+  auto* constant =
+      left->isConstant() ? left->toConstant() : right->toConstant();
+  auto* operand = left->isConstant() ? right : left;
+
+  int64_t value;
+  switch (constant->type()) {
+    case MIRType::Int32:
+      value = constant->toInt32();
+      break;
+
+    case MIRType::Int64:
+      value = constant->toInt64();
+      break;
+
+    case MIRType::IntPtr:
+      value = constant->toIntPtr();
+      break;
+
+    default:
+      MOZ_CRASH("unexpected int type");
+  }
+
+  auto op = jsop();
+  if (operand == right) {
+    op = ReverseCompareOp(op);
+  }
+
+  if (!CanCompareAgainstZero(value, op, isSigned)) {
+    return this;
+  }
+  return newCompareInt(alloc, operand, value, op, isSigned);
 }
 
 MDefinition* MCompare::foldsTo(TempAllocator& alloc) {
@@ -5999,6 +6142,10 @@ MDefinition* MCompare::foldsTo(TempAllocator& alloc) {
   }
 
   if (MDefinition* folded = tryFoldBigInt(alloc); folded != this) {
+    return folded;
+  }
+
+  if (MDefinition* folded = tryFoldIntZero(alloc); folded != this) {
     return folded;
   }
 
@@ -7706,6 +7853,41 @@ MDefinition* MToIntegerIndex::foldsTo(TempAllocator& alloc) {
   }
 
   return this;
+}
+
+MDefinition* MDateParse::foldsTo(TempAllocator& alloc) {
+  auto* string = this->string();
+  if (!string->isConstant()) {
+    return this;
+  }
+  JSOffThreadAtom* str = string->toConstant()->toString();
+
+  ParsedDate parsed;
+  if (!DateParse(str, &parsed)) {
+    // Can't parse as date, always NaN.
+    return MConstant::NewDouble(alloc, JS::GenericNaN());
+  }
+  auto [date, isLocalTime] = parsed;
+
+  if (isLocalTime) {
+    auto* localTime = MConstant::NewInt64(alloc, date);
+    block()->insertBefore(this, localTime);
+    return MLocalTimeToUTC::New(alloc, localTime);
+  }
+
+  MOZ_ASSERT(JS::TimeClip(date).isValid());
+  return MConstant::NewDouble(alloc, double(date));
+}
+
+MDefinition* MTimeClip::foldsTo(TempAllocator& alloc) {
+  auto* time = this->time();
+  if (!time->isConstant()) {
+    return this;
+  }
+
+  // NB: TimeClip can return non-canonicalize doubles.
+  auto clipped = JS::TimeClip(time->toConstant()->toDouble());
+  return MConstant::NewDouble(alloc, JS::CanonicalizeNaN(clipped.toDouble()));
 }
 
 // Returns `false` if it can be proven that (1) both `mtyA` and `mtyB` are

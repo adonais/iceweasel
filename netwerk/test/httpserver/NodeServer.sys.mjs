@@ -98,6 +98,220 @@ class ADB {
   }
 }
 
+// Helper that runs in a forked node child. Generates an RSA leaf
+// certificate covering the given DNS hostnames, signed by the same key
+// the test CA (http2-ca.pem) uses (which is the key in
+// testing/xpcshell/moz-http2/http2-cert.key — pykey's shared default).
+// Uses only Node builtins: `crypto` and `fs`.
+class CertGenCode {
+  static derLen(n) {
+    if (n < 0x80) {
+      return Buffer.from([n]);
+    }
+    let bytes = [];
+    let v = n;
+    while (v > 0) {
+      bytes.unshift(v & 0xff);
+      v >>>= 8;
+    }
+    return Buffer.from([0x80 | bytes.length, ...bytes]);
+  }
+  static derTLV(tag, content) {
+    return Buffer.concat([
+      Buffer.from([tag]),
+      CertGenCode.derLen(content.length),
+      content,
+    ]);
+  }
+  static derIntFromNumber(n) {
+    if (n === 0) {
+      return CertGenCode.derTLV(0x02, Buffer.from([0]));
+    }
+    let bytes = [];
+    let v = n;
+    while (v > 0) {
+      bytes.unshift(v & 0xff);
+      v = Math.floor(v / 256);
+    }
+    if (bytes[0] & 0x80) {
+      bytes.unshift(0);
+    }
+    return CertGenCode.derTLV(0x02, Buffer.from(bytes));
+  }
+  static derOID(parts) {
+    const out = [40 * parts[0] + parts[1]];
+    for (let i = 2; i < parts.length; i++) {
+      let v = parts[i];
+      let stack = [v & 0x7f];
+      v >>>= 7;
+      while (v > 0) {
+        stack.unshift((v & 0x7f) | 0x80);
+        v >>>= 7;
+      }
+      out.push(...stack);
+    }
+    return CertGenCode.derTLV(0x06, Buffer.from(out));
+  }
+  static derSeq(...parts) {
+    return CertGenCode.derTLV(0x30, Buffer.concat(parts));
+  }
+  static derSet(...parts) {
+    return CertGenCode.derTLV(0x31, Buffer.concat(parts));
+  }
+  static derNull() {
+    return Buffer.from([0x05, 0x00]);
+  }
+  static derUTF8(s) {
+    return CertGenCode.derTLV(0x0c, Buffer.from(s, "utf8"));
+  }
+  static derUTCTime(d) {
+    const pad = n => String(n).padStart(2, "0");
+    const s =
+      pad(d.getUTCFullYear() % 100) +
+      pad(d.getUTCMonth() + 1) +
+      pad(d.getUTCDate()) +
+      pad(d.getUTCHours()) +
+      pad(d.getUTCMinutes()) +
+      pad(d.getUTCSeconds()) +
+      "Z";
+    return CertGenCode.derTLV(0x17, Buffer.from(s, "ascii"));
+  }
+  static derBitStr(buf) {
+    return CertGenCode.derTLV(
+      0x03,
+      Buffer.concat([Buffer.from([0]), Buffer.from(buf)])
+    );
+  }
+  static derOctet(buf) {
+    return CertGenCode.derTLV(0x04, buf);
+  }
+  static derCtx(tag, content) {
+    return CertGenCode.derTLV(0xa0 | tag, content);
+  }
+  static derBool(b) {
+    return CertGenCode.derTLV(0x01, Buffer.from([b ? 0xff : 0]));
+  }
+
+  static algSha256RSA() {
+    return CertGenCode.derSeq(
+      CertGenCode.derOID([1, 2, 840, 113549, 1, 1, 11]),
+      CertGenCode.derNull()
+    );
+  }
+
+  static commonName(cn) {
+    return CertGenCode.derSeq(
+      CertGenCode.derSet(
+        CertGenCode.derSeq(
+          CertGenCode.derOID([2, 5, 4, 3]),
+          CertGenCode.derUTF8(cn)
+        )
+      )
+    );
+  }
+
+  static sanExtension(hostnames) {
+    const names = hostnames.map(h =>
+      CertGenCode.derTLV(0x82, Buffer.from(h, "ascii"))
+    );
+    return CertGenCode.derSeq(
+      CertGenCode.derOID([2, 5, 29, 17]),
+      CertGenCode.derOctet(CertGenCode.derSeq(...names))
+    );
+  }
+
+  static basicConstraintsExt() {
+    return CertGenCode.derSeq(
+      CertGenCode.derOID([2, 5, 29, 19]),
+      CertGenCode.derBool(true),
+      CertGenCode.derOctet(CertGenCode.derSeq())
+    );
+  }
+
+  static keyUsageExt() {
+    // bits: digitalSignature(0), keyEncipherment(2). Unused bits = 5.
+    const bits = CertGenCode.derTLV(0x03, Buffer.from([0x05, 0xa0]));
+    return CertGenCode.derSeq(
+      CertGenCode.derOID([2, 5, 29, 15]),
+      CertGenCode.derBool(true),
+      CertGenCode.derOctet(bits)
+    );
+  }
+
+  static ekuExt() {
+    return CertGenCode.derSeq(
+      CertGenCode.derOID([2, 5, 29, 37]),
+      CertGenCode.derOctet(
+        CertGenCode.derSeq(CertGenCode.derOID([1, 3, 6, 1, 5, 5, 7, 3, 1]))
+      )
+    );
+  }
+
+  static generate(hostnames) {
+    const nodeCrypto = require("crypto");
+    const fs = require("fs");
+
+    const caKey = nodeCrypto.createPrivateKey(
+      fs.readFileSync(__dirname + "/http2-cert.key")
+    );
+
+    const { publicKey, privateKey } = nodeCrypto.generateKeyPairSync("rsa", {
+      modulusLength: 2048,
+    });
+    const spkiDer = publicKey.export({ type: "spki", format: "der" });
+    const leafKeyPem = privateKey.export({ type: "pkcs8", format: "pem" });
+
+    const serial = nodeCrypto.randomBytes(16);
+    serial[0] &= 0x7f;
+    if (serial[0] === 0) {
+      serial[0] = 1;
+    }
+
+    const now = new Date();
+    const notBefore = new Date(now.getTime() - 5 * 60 * 1000);
+    const notAfter = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000);
+
+    const tbs = CertGenCode.derSeq(
+      CertGenCode.derCtx(0, CertGenCode.derIntFromNumber(2)),
+      CertGenCode.derTLV(0x02, serial),
+      CertGenCode.algSha256RSA(),
+      // Leading space is intentional: must byte-match the CA's subject DN
+      // (pycert/http2-ca.pem encodes the CN as " HTTP2 Test CA").
+      CertGenCode.commonName(" HTTP2 Test CA"),
+      CertGenCode.derSeq(
+        CertGenCode.derUTCTime(notBefore),
+        CertGenCode.derUTCTime(notAfter)
+      ),
+      CertGenCode.commonName(hostnames[0]),
+      spkiDer,
+      CertGenCode.derCtx(
+        3,
+        CertGenCode.derSeq(
+          CertGenCode.sanExtension(hostnames),
+          CertGenCode.basicConstraintsExt(),
+          CertGenCode.keyUsageExt(),
+          CertGenCode.ekuExt()
+        )
+      )
+    );
+
+    const sig = nodeCrypto.sign("sha256", tbs, caKey);
+    const cert = CertGenCode.derSeq(
+      tbs,
+      CertGenCode.algSha256RSA(),
+      CertGenCode.derBitStr(sig)
+    );
+
+    const certB64 = cert.toString("base64");
+    const certPem =
+      "-----BEGIN CERTIFICATE-----\n" +
+      certB64.match(/.{1,64}/g).join("\n") +
+      "\n-----END CERTIFICATE-----\n";
+
+    return { keyPem: leafKeyPem, certPem, certBase64: certB64 };
+  }
+}
+
 export class BaseNodeServer {
   protocol() {
     return this._protocol;
@@ -106,16 +320,49 @@ export class BaseNodeServer {
     return this._version;
   }
   origin() {
-    return `${this.protocol()}://localhost:${this.port()}`;
+    return `${this.protocol()}://${this.domain()}:${this.port()}`;
   }
   port() {
     return this._port;
   }
   domain() {
-    return `localhost`;
+    return this._domain || `localhost`;
   }
 
-  static async installCert(filename) {
+  // Static form: install a CA certificate file (default http2-ca.pem) into
+  // the NSS db so that test servers using the matching pre-shipped leaf
+  // certs are trusted. Kept for backward compatibility with callers that
+  // pass a filename string.
+  static async installCert(filename = "http2-ca.pem") {
+    return BaseNodeServer._installCertFromDisk(filename);
+  }
+
+  // Instance form: takes an optional list of hostnames. Always installs
+  // http2-ca.pem in NSS. When hostnames are provided, also asks the node
+  // child to mint a fresh leaf cert (signed by the same key the test CA
+  // uses) covering those hostnames as DNS SANs and stores it on `this`
+  // for `start()` to pass to the server.
+  async installCert(hostnames) {
+    if (Services.appinfo.processType != Ci.nsIXULRuntime.PROCESS_TYPE_DEFAULT) {
+      return;
+    }
+    await BaseNodeServer._installCertFromDisk("http2-ca.pem");
+
+    if (!Array.isArray(hostnames) || !hostnames.length) {
+      return;
+    }
+
+    this.processId = this.processId || (await NodeServer.fork());
+    await this.execute(CertGenCode);
+    let result = await this.execute(
+      `CertGenCode.generate(${JSON.stringify(hostnames)})`
+    );
+    this._keyPem = result.keyPem;
+    this._certPem = result.certPem;
+    this._domain = hostnames[0];
+  }
+
+  static async _installCertFromDisk(filename) {
     if (Services.appinfo.processType != Ci.nsIXULRuntime.PROCESS_TYPE_DEFAULT) {
       // Can't install cert from content process.
       return;
@@ -218,6 +465,19 @@ export class BaseNodeServer {
     }
   }
 
+  // Pushes the generated TLS material into the node child as globals so
+  // that *ServerCode.startServer can pick it up. Server-code helpers fall
+  // back to the on-disk pre-shipped cert files when these are unset.
+  async _pushGeneratedTLSMaterial() {
+    if (!this._keyPem || !this._certPem) {
+      return;
+    }
+    await this.execute(
+      `global.tlsKey = ${JSON.stringify(this._keyPem)};
+       global.tlsCert = ${JSON.stringify(this._certPem)};`
+    );
+  }
+
   /// Stops the server
   async stop() {
     if (this.processId) {
@@ -238,6 +498,96 @@ export class BaseNodeServer {
   async registerPathHandler(path, handler) {
     return this.execute(
       `global.path_handlers["${path}"] = ${handler.toString()}`
+    );
+  }
+}
+
+// TCP Echo server
+
+class NodeTCPEchoServerCode {
+  static async startServer(port) {
+    const net = require("net");
+
+    // Simple TCP echo server
+    global.server = net.createServer(socket => {
+      socket.on("data", data => {
+        try {
+          console.log("got data:" + data);
+          socket.write(data);
+        } catch (e) {
+          console.log(`echo write error: ${e}`);
+        }
+      });
+
+      socket.on("error", err => {
+        console.log(`socket error: ${err}`);
+      });
+    });
+
+    const serverPort = await ADB.listenAndForwardPort(global.server, port);
+    return serverPort;
+  }
+}
+
+export class NodeTCPEchoServer extends BaseNodeServer {
+  _protocol = "tcp";
+  _version = "tcp";
+
+  /// Starts the TCP echo server
+  async start(port = 0) {
+    this.processId = await NodeServer.fork();
+
+    await this.execute(ADB);
+    await this.execute(NodeTCPEchoServerCode);
+
+    this._port = await this.execute(
+      `NodeTCPEchoServerCode.startServer(${port})`
+    );
+  }
+}
+
+// TCP Echo server
+
+class NodeTLSEchoServerCode {
+  static async startServer(port) {
+    const tls = require("tls");
+    const fs = require("fs");
+    const options = {
+      key: global.tlsKey || fs.readFileSync(__dirname + "/http2-cert.key"),
+      cert: global.tlsCert || fs.readFileSync(__dirname + "/http2-cert.pem"),
+    };
+    global.server = tls.createServer(options, socket => {
+      socket.on("data", data => {
+        try {
+          console.log("tls: got data:", data);
+          socket.write(data);
+        } catch (e) {
+          console.log(`tls echo write error: ${e}`);
+        }
+      });
+      socket.on("error", err => {
+        console.log(`tls socket error: ${err}`);
+      });
+    });
+    const serverPort = await ADB.listenAndForwardPort(global.server, port);
+    return serverPort;
+  }
+}
+
+export class NodeTLSEchoServer extends BaseNodeServer {
+  _protocol = "tls";
+  _version = "tls";
+
+  async start(port = 0, hostnames) {
+    if (!this._skipCert) {
+      await this.installCert(hostnames);
+    }
+    this.processId = this.processId || (await NodeServer.fork());
+    await this.execute(ADB);
+    await this.execute(NodeTLSEchoServerCode);
+    await this._pushGeneratedTLSMaterial();
+    this._port = await this.execute(
+      `NodeTLSEchoServerCode.startServer(${port})`
     );
   }
 }
@@ -277,8 +627,8 @@ class NodeHTTPSServerCode extends BaseNodeHTTPServerCode {
   static async startServer(port) {
     const fs = require("fs");
     const options = {
-      key: fs.readFileSync(__dirname + "/http2-cert.key"),
-      cert: fs.readFileSync(__dirname + "/http2-cert.pem"),
+      key: global.tlsKey || fs.readFileSync(__dirname + "/http2-cert.key"),
+      cert: global.tlsCert || fs.readFileSync(__dirname + "/http2-cert.pem"),
       maxHeaderSize: 128 * 1024,
     };
     const https = require("https");
@@ -298,15 +648,19 @@ export class NodeHTTPSServer extends BaseNodeServer {
   /// Starts the server
   /// @port - default 0
   ///    when provided, will attempt to listen on that port.
-  async start(port = 0) {
+  /// @hostnames - optional array of DNS hostnames. When provided, a
+  ///    fresh leaf cert covering those hostnames is generated and used
+  ///    by the server; otherwise the pre-shipped http2-cert is used.
+  async start(port = 0, hostnames) {
     if (!this._skipCert) {
-      await BaseNodeServer.installCert("http2-ca.pem");
+      await this.installCert(hostnames);
     }
-    this.processId = await NodeServer.fork();
+    this.processId = this.processId || (await NodeServer.fork());
 
     await this.execute(BaseNodeHTTPServerCode);
     await this.execute(NodeHTTPSServerCode);
     await this.execute(ADB);
+    await this._pushGeneratedTLSMaterial();
     this._port = await this.execute(`NodeHTTPSServerCode.startServer(${port})`);
     await this.execute(`global.path_handlers = {};`);
   }
@@ -318,8 +672,8 @@ class NodeHTTP2ServerCode extends BaseNodeHTTPServerCode {
   static async startServer(port) {
     const fs = require("fs");
     const options = {
-      key: fs.readFileSync(__dirname + "/http2-cert.key"),
-      cert: fs.readFileSync(__dirname + "/http2-cert.pem"),
+      key: global.tlsKey || fs.readFileSync(__dirname + "/http2-cert.key"),
+      cert: global.tlsCert || fs.readFileSync(__dirname + "/http2-cert.pem"),
     };
     const http2 = require("http2");
     global.server = http2.createSecureServer(
@@ -352,15 +706,16 @@ export class NodeHTTP2Server extends BaseNodeServer {
   /// Starts the server
   /// @port - default 0
   ///    when provided, will attempt to listen on that port.
-  async start(port = 0) {
+  async start(port = 0, hostnames) {
     if (!this._skipCert) {
-      await BaseNodeServer.installCert("http2-ca.pem");
+      await this.installCert(hostnames);
     }
-    this.processId = await NodeServer.fork();
+    this.processId = this.processId || (await NodeServer.fork());
 
     await this.execute(BaseNodeHTTPServerCode);
     await this.execute(NodeHTTP2ServerCode);
     await this.execute(ADB);
+    await this._pushGeneratedTLSMaterial();
     this._port = await this.execute(`NodeHTTP2ServerCode.startServer(${port})`);
     await this.execute(`global.path_handlers = {};`);
   }
@@ -586,8 +941,8 @@ class HTTPSProxyCode {
   static async startServer(port) {
     const fs = require("fs");
     const options = {
-      key: fs.readFileSync(__dirname + "/proxy-cert.key"),
-      cert: fs.readFileSync(__dirname + "/proxy-cert.pem"),
+      key: global.tlsKey || fs.readFileSync(__dirname + "/proxy-cert.key"),
+      cert: global.tlsCert || fs.readFileSync(__dirname + "/proxy-cert.pem"),
     };
     const https = require("https");
     global.proxy = https.createServer(options, BaseProxyCode.proxyHandler);
@@ -603,16 +958,21 @@ export class NodeHTTPSProxyServer extends BaseHTTPProxy {
   /// Starts the server
   /// @port - default 0
   ///    when provided, will attempt to listen on that port.
-  async start(port = 0) {
+  async start(port = 0, hostnames) {
     if (!this._skipCert) {
-      await BaseNodeServer.installCert("proxy-ca.pem");
+      if (Array.isArray(hostnames) && hostnames.length) {
+        await this.installCert(hostnames);
+      } else {
+        await BaseNodeServer.installCert("proxy-ca.pem");
+      }
     }
-    this.processId = await NodeServer.fork();
+    this.processId = this.processId || (await NodeServer.fork());
 
     await this.execute(BaseProxyCode);
     await this.execute(HTTPSProxyCode);
     await this.execute(ADB);
     await this.execute(`global.connect_handler = null;`);
+    await this._pushGeneratedTLSMaterial();
     this._port = await this.execute(`HTTPSProxyCode.startServer(${port})`);
 
     this.registerFilter();
@@ -625,8 +985,8 @@ class HTTP2ProxyCode {
   static async startServer(port, auth, maxConcurrentStreams) {
     const fs = require("fs");
     const options = {
-      key: fs.readFileSync(__dirname + "/proxy-cert.key"),
-      cert: fs.readFileSync(__dirname + "/proxy-cert.pem"),
+      key: global.tlsKey || fs.readFileSync(__dirname + "/proxy-cert.key"),
+      cert: global.tlsCert || fs.readFileSync(__dirname + "/proxy-cert.pem"),
       settings: {
         maxConcurrentStreams,
       },
@@ -820,21 +1180,36 @@ export class NodeHTTP2ProxyServer extends BaseHTTPProxy {
   /// Starts the server
   /// @port - default 0
   ///    when provided, will attempt to listen on that port.
-  async start(port = 0, auth, maxConcurrentStreams = 100) {
-    await this.startWithoutProxyFilter(port, auth, maxConcurrentStreams);
+  async start(port = 0, auth, maxConcurrentStreams = 100, hostnames) {
+    await this.startWithoutProxyFilter(
+      port,
+      auth,
+      maxConcurrentStreams,
+      hostnames
+    );
     this.registerFilter();
   }
 
-  async startWithoutProxyFilter(port = 0, auth, maxConcurrentStreams = 100) {
+  async startWithoutProxyFilter(
+    port = 0,
+    auth,
+    maxConcurrentStreams = 100,
+    hostnames
+  ) {
     if (!this._skipCert) {
-      await BaseNodeServer.installCert("proxy-ca.pem");
+      if (Array.isArray(hostnames) && hostnames.length) {
+        await this.installCert(hostnames);
+      } else {
+        await BaseNodeServer.installCert("proxy-ca.pem");
+      }
     }
-    this.processId = await NodeServer.fork();
+    this.processId = this.processId || (await NodeServer.fork());
 
     await this.execute(BaseProxyCode);
     await this.execute(HTTP2ProxyCode);
     await this.execute(ADB);
     await this.execute(`global.connect_handler = null;`);
+    await this._pushGeneratedTLSMaterial();
     this._port = await this.execute(
       `HTTP2ProxyCode.startServer(${port}, ${auth}, ${maxConcurrentStreams})`
     );
@@ -861,8 +1236,8 @@ class NodeWebSocketServerCode extends BaseNodeHTTPServerCode {
   static async startServer(port) {
     const fs = require("fs");
     const options = {
-      key: fs.readFileSync(__dirname + "/http2-cert.key"),
-      cert: fs.readFileSync(__dirname + "/http2-cert.pem"),
+      key: global.tlsKey || fs.readFileSync(__dirname + "/http2-cert.key"),
+      cert: global.tlsCert || fs.readFileSync(__dirname + "/http2-cert.pem"),
     };
     const https = require("https");
     global.server = https.createServer(
@@ -890,15 +1265,16 @@ export class NodeWebSocketServer extends BaseNodeServer {
   /// Starts the server
   /// @port - default 0
   ///    when provided, will attempt to listen on that port.
-  async start(port = 0) {
+  async start(port = 0, hostnames) {
     if (!this._skipCert) {
-      await BaseNodeServer.installCert("http2-ca.pem");
+      await this.installCert(hostnames);
     }
-    this.processId = await NodeServer.fork();
+    this.processId = this.processId || (await NodeServer.fork());
 
     await this.execute(BaseNodeHTTPServerCode);
     await this.execute(NodeWebSocketServerCode);
     await this.execute(ADB);
+    await this._pushGeneratedTLSMaterial();
     this._port = await this.execute(
       `NodeWebSocketServerCode.startServer(${port})`
     );
@@ -964,8 +1340,8 @@ class NodeWebSocketHttp2ServerCode extends BaseNodeHTTPServerCode {
   static async startServer(port, fallbackToH1) {
     const fs = require("fs");
     const options = {
-      key: fs.readFileSync(__dirname + "/http2-cert.key"),
-      cert: fs.readFileSync(__dirname + "/http2-cert.pem"),
+      key: global.tlsKey || fs.readFileSync(__dirname + "/http2-cert.key"),
+      cert: global.tlsCert || fs.readFileSync(__dirname + "/http2-cert.pem"),
       settings: {
         enableConnectProtocol: !fallbackToH1,
         allowHTTP1: fallbackToH1,
@@ -1027,15 +1403,16 @@ export class NodeWebSocketHttp2Server extends BaseNodeServer {
   /// Starts the server
   /// @port - default 0
   ///    when provided, will attempt to listen on that port.
-  async start(port = 0, fallbackToH1 = false) {
+  async start(port = 0, fallbackToH1 = false, hostnames) {
     if (!this._skipCert) {
-      await BaseNodeServer.installCert("http2-ca.pem");
+      await this.installCert(hostnames);
     }
-    this.processId = await NodeServer.fork();
+    this.processId = this.processId || (await NodeServer.fork());
 
     await this.execute(BaseNodeHTTPServerCode);
     await this.execute(NodeWebSocketHttp2ServerCode);
     await this.execute(ADB);
+    await this._pushGeneratedTLSMaterial();
     this._port = await this.execute(
       `NodeWebSocketHttp2ServerCode.startServer(${port}, ${fallbackToH1})`
     );
@@ -1206,26 +1583,24 @@ export class HTTP3Server {
     );
     this.processId = result.id;
 
-    /* eslint-disable no-control-regex */
-    const regex =
-      /HTTP3 server listening on ports (\d+), (\d+), (\d+), (\d+), (\d+) and (\d+). EchConfig is @([\x00-\x7F]+)@/;
-
-    // Execute the regex on the input string
-    let match = regex.exec(result.output);
-
-    if (!match) {
+    const lineMatch = result.output.match(
+      /HTTP3 server listening on ports ([\d, ]+ and \d+)\./
+    );
+    if (!lineMatch) {
       throw new Error(
         `HTTP3Server: unexpected server output: ${result.output.slice(0, 500)}`
       );
     }
 
-    // Extract the ports as an array of numbers
-    let ports = match.slice(1, 7).map(Number);
+    // Remove the ports.length guard once esr140 (5-port binary) is EOL.
+    const ports = lineMatch[1].match(/\d+/g).map(Number);
     this._port = ports[0];
-    this._reverse_proxy_port = ports[3];
-    this._no_response_port = ports[4];
-    this._masque_proxy_port = ports[5];
-    return ports[0];
+    if (ports.length >= 6) {
+      this._reverse_proxy_port = ports[3];
+      this._no_response_port = ports[4];
+      this._masque_proxy_port = ports[5];
+    }
+    return this._port;
   }
 }
 

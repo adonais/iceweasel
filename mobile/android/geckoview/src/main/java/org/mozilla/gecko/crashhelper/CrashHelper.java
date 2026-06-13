@@ -29,6 +29,7 @@ public final class CrashHelper extends Service {
   private static final boolean DEBUG = !BuildConfig.MOZILLA_OFFICIAL;
 
   private static boolean sNativeLibLoaded;
+  private static boolean sDisconnected = false;
 
   private final Binder mBinder = new CrashHelperBinder();
 
@@ -43,6 +44,7 @@ public final class CrashHelper extends Service {
   private static class CrashHelperBinder extends ICrashHelper.Stub {
     @Override
     public boolean start(
+        final int browserPid,
         final ParcelFileDescriptor breakpadFd,
         final String minidumpPath,
         final ParcelFileDescriptor serverFd) {
@@ -55,7 +57,7 @@ public final class CrashHelper extends Service {
       // additional separation within the crash generation code to prevent this
       // from happening even though it's very unlikely.
       CrashHelper.crash_generator(
-          Process.myPid(), breakpadFd.detachFd(), minidumpPath, serverFd.detachFd());
+          browserPid, breakpadFd.detachFd(), minidumpPath, serverFd.detachFd());
 
       return false;
     }
@@ -82,9 +84,16 @@ public final class CrashHelper extends Service {
 
       @Override
       public void onServiceConnected(final ComponentName name, final IBinder service) {
+        if (sDisconnected) {
+          // We do not support restarting the service at the moment as Breakpad
+          // has no mechanism to reconnect the pipes that it uses to talk to
+          // the exception handler.
+          return;
+        }
+
         final ICrashHelper helper = ICrashHelper.Stub.asInterface(service);
         try {
-          helper.start(mBreakpadFd, mMinidumpPath, mServerFd);
+          helper.start(Process.myPid(), mBreakpadFd, mMinidumpPath, mServerFd);
         } catch (final DeadObjectException e) {
           // The crash helper process died before we could start it, presumably
           // because of an out-of-memory condition. We don't attempt to restart
@@ -97,7 +106,7 @@ public final class CrashHelper extends Service {
 
       @Override
       public void onServiceDisconnected(final ComponentName name) {
-        // Nothing to do here
+        sDisconnected = true;
       }
 
       ParcelFileDescriptor mBreakpadFd;

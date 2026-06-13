@@ -27,6 +27,7 @@ def Libxul(name, output_category=None):
         "avrt.dll",
         "comdlg32.dll",
         "credui.dll",
+        "crypt32.dll",
         "d3d11.dll",
         "D3DCompiler_47.dll",
         "dhcpcsvc.dll",
@@ -39,6 +40,7 @@ def Libxul(name, output_category=None):
         "iphlpapi.dll",
         "msi.dll",
         "msimg32.dll",
+        "ncrypt.dll",
         "netapi32.dll",
         "ole32.dll",
         "oleaut32.dll",
@@ -54,6 +56,7 @@ def Libxul(name, output_category=None):
         "wininet.dll",
         "winmm.dll",
         "winspool.drv",
+        "wintrust.dll",
         "wtsapi32.dll",
     ]
 
@@ -146,6 +149,7 @@ USE_LIBS += [
 ]
 
 USE_LIBS += [
+    "abseil",
     "gkcodecs",
     "lgpllibs",
     "nspr",

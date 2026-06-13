@@ -51,18 +51,18 @@ add_task(async function test_addTokens_builds_followupSuggestions_array() {
     );
     Assert.equal(
       mockMessage.followUpSuggestions[0],
-      "What are the best cat breeds?",
-      "First followup question should match"
+      "What are the best cat breeds",
+      "First followup question should match (trailing '?' stripped by normalization)"
     );
     Assert.equal(
       mockMessage.followUpSuggestions[1],
-      "How do I train my cat?",
-      "Second followup question should match"
+      "How do I train my cat",
+      "Second followup question should match (trailing '?' stripped by normalization)"
     );
     Assert.equal(
       mockMessage.followUpSuggestions[2],
-      "What foods are safe for cats?",
-      "Third followup question should match"
+      "What foods are safe for cats",
+      "Third followup question should match (trailing '?' stripped by normalization)"
     );
 
     // Verify all tokens (including non-followup) were added to tokens object
@@ -105,18 +105,77 @@ add_task(async function test_addTokens_builds_followupSuggestions_array() {
     // Verify followup tokens were added to the tokens.followup array
     Assert.equal(
       mockMessage.tokens.followup[0],
-      "What are the best cat breeds?",
-      "First followup token should match in tokens array"
+      "What are the best cat breeds",
+      "First followup token should match in tokens array (normalized)"
     );
     Assert.equal(
       mockMessage.tokens.followup[1],
-      "How do I train my cat?",
-      "Second followup token should match in tokens array"
+      "How do I train my cat",
+      "Second followup token should match in tokens array (normalized)"
     );
     Assert.equal(
       mockMessage.tokens.followup[2],
-      "What foods are safe for cats?",
-      "Third followup token should match in tokens array"
+      "What foods are safe for cats",
+      "Third followup token should match in tokens array (normalized)"
+    );
+  });
+
+  await BrowserTestUtils.closeWindow(newAIWindow);
+  await SpecialPowers.popPrefEnv();
+});
+
+add_task(async function test_addTokens_normalizes_followup_values() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.aiwindow.enabled", true]],
+  });
+
+  const newAIWindow = await BrowserTestUtils.openNewBrowserWindow({
+    openerWindow: null,
+    aiWindow: true,
+  });
+  const browser = newAIWindow.gBrowser.selectedBrowser;
+
+  await SpecialPowers.spawn(browser, [], async () => {
+    const { ChatMessage } = ChromeUtils.importESModule(
+      "moz-src:///browser/components/aiwindow/ui/modules/ChatMessage.sys.mjs"
+    );
+
+    const mockMessage = new ChatMessage({
+      ordinal: 0,
+      role: 1, // ASSISTANT
+      content: { body: "Test message" },
+      memoriesApplied: [],
+      webSearchQueries: [],
+      followUpSuggestions: [],
+    });
+
+    mockMessage.addTokens([
+      // whitespace before terminal punctuation + trailing period
+      { key: "followup", value: "What is this ." },
+      // surrounding whitespace + trailing question mark
+      { key: "followup", value: "  How are you?  " },
+      // doubled internal whitespace + multiple trailing terminals
+      { key: "followup", value: "Tell me  more!!!" },
+      // trailing ellipsis (single codepoint)
+      { key: "followup", value: "Wait…" },
+      // internal comma must be preserved, only trailing period stripped
+      { key: "followup", value: "Hello, world." },
+      // empty / whitespace-only / punctuation-only entries should be dropped
+      { key: "followup", value: "" },
+      { key: "followup", value: "   " },
+      { key: "followup", value: "..." },
+    ]);
+
+    Assert.deepEqual(
+      mockMessage.followUpSuggestions,
+      ["What is this", "How are you", "Tell me more", "Wait", "Hello, world"],
+      "Follow-ups should be normalized: whitespace before punctuation removed, doubled whitespace collapsed, trailing terminal punctuation stripped, empty entries dropped"
+    );
+
+    Assert.deepEqual(
+      mockMessage.tokens.followup,
+      mockMessage.followUpSuggestions,
+      "tokens.followup should hold the same normalized values as followUpSuggestions"
     );
   });
 
@@ -180,8 +239,8 @@ add_task(async function test_chatMessage_with_null_followUpSuggestions() {
     );
     Assert.equal(
       mockMessage.followUpSuggestions[0],
-      "What should I do next?",
-      "Followup question should match"
+      "What should I do next",
+      "Followup question should match (trailing '?' stripped by normalization)"
     );
   });
 

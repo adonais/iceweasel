@@ -47,13 +47,8 @@ nsresult AsyncStatementJSHelper::getParams(AsyncStatement* aStatement,
     nsCOMPtr<nsPIDOMWindowInner> window =
         do_QueryInterface(global.GetAsSupports());
 
-    RefPtr<AsyncStatementParams> params(
-        new AsyncStatementParams(window, aStatement));
-    NS_ENSURE_TRUE(params, NS_ERROR_OUT_OF_MEMORY);
-
-    RefPtr<AsyncStatementParamsHolder> paramsHolder =
-        new AsyncStatementParamsHolder(params);
-    NS_ENSURE_TRUE(paramsHolder, NS_ERROR_OUT_OF_MEMORY);
+    auto params = MakeRefPtr<AsyncStatementParams>(window, aStatement);
+    auto paramsHolder = MakeRefPtr<AsyncStatementParamsHolder>(params);
 
     aStatement->mStatementParamsHolder =
         new nsMainThreadPtrHolder<AsyncStatementParamsHolder>(

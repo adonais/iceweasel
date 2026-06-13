@@ -56,15 +56,20 @@ class BrotliWrapper {
   BrotliWrapper() = default;
   ~BrotliWrapper() { BrotliDecoderStateCleanup(&mState); }
 
-  bool Init(nsIRequest* aRequest) {
+  bool Init(nsIRequest* aRequest, nsHTTPCompressConv::CompressMode aMode) {
     if (!BrotliDecoderStateInit(&mState, nullptr, nullptr, nullptr)) {
       return false;
+    }
+
+    if (aMode != nsHTTPCompressConv::HTTP_COMPRESS_BROTLI_DICTIONARY) {
+      return true;
     }
 
     nsCOMPtr<nsIHttpChannel> httpchannel(do_QueryInterface(aRequest));
     if (!httpchannel) {
       return false;
     }
+
     if (NS_SUCCEEDED(httpchannel->GetDecompressDictionary(
             getter_AddRefs(mDictionary))) &&
         mDictionary) {
@@ -86,6 +91,7 @@ class BrotliWrapper {
         }
       }
     }
+
     return true;
   }
 
@@ -227,6 +233,19 @@ void nsHTTPCompressConv::ReportDecodingErrorWithSite(const nsACString& aLabel) {
 
 NS_IMETHODIMP
 nsHTTPCompressConv::GetDecodedDataLength(uint64_t* aDecodedDataLength) {
+  // When multiple Content-Encodings are stacked (e.g. "gzip, gzip"), the
+  // converters form a chain where this instance's mDecodedDataLength only
+  // reflects the bytes emitted after a single decoding pass. The fully
+  // decoded body size is what the innermost converter forwards to the real
+  // listener, so walk the chain to return that.
+  nsCOMPtr<nsIStreamListener> listener;
+  {
+    MutexAutoLock lock(mMutex);
+    listener = mListener;
+  }
+  if (nsCOMPtr<nsICompressConvStats> inner = do_QueryInterface(listener)) {
+    return inner->GetDecodedDataLength(aDecodedDataLength);
+  }
   *aDecodedDataLength = mDecodedDataLength;
   return NS_OK;
 }
@@ -884,7 +903,7 @@ nsHTTPCompressConv::OnDataAvailable(nsIRequest* request, nsIInputStream* iStr,
     case HTTP_COMPRESS_BROTLI_DICTIONARY: {
       if (!mBrotli) {
         mBrotli = MakeUnique<BrotliWrapper>();
-        if (!mBrotli->Init(request)) {
+        if (!mBrotli->Init(request, mMode)) {
           return NS_ERROR_FAILURE;
         }
       }

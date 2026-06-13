@@ -501,10 +501,7 @@ add_task(function showSearchSuggestionsFirst_smartbar_resultGroups() {
 
 // Tests whether observer.onNimbusChanged works.
 add_task(async function onNimbusChanged() {
-  Services.prefs.setBoolPref(
-    "browser.urlbar.autoFill.adaptiveHistory.enabled",
-    false
-  );
+  Services.prefs.setBoolPref("browser.urlbar.addons.featureGate", false);
 
   // Add an observer that throws an Error and an observer that does not define
   // anything to check whether the other observers can get notifications.
@@ -531,24 +528,19 @@ add_task(async function onNimbusChanged() {
   UrlbarPrefs.addObserver(observer);
 
   const doCleanup = await UrlbarTestUtils.initNimbusFeature({
-    autoFillAdaptiveHistoryEnabled: true,
+    addonsFeatureGate: true,
   });
   Assert.equal(observer.prefChangedList.length, 0);
-  Assert.ok(
-    observer.nimbusChangedList.includes("autoFillAdaptiveHistoryEnabled")
-  );
+  Assert.ok(observer.nimbusChangedList.includes("addonsFeatureGate"));
   await doCleanup();
 });
 
 // Tests whether observer.onPrefChanged works.
 add_task(async function onPrefChanged() {
   const doCleanup = await UrlbarTestUtils.initNimbusFeature({
-    autoFillAdaptiveHistoryEnabled: false,
+    addonsFeatureGate: false,
   });
-  Services.prefs.setBoolPref(
-    "browser.urlbar.autoFill.adaptiveHistory.enabled",
-    false
-  );
+  Services.prefs.setBoolPref("browser.urlbar.addons.featureGate", false);
 
   // Add an observer that throws an Error and an observer that does not define
   // anything to check whether the other observers can get notifications.
@@ -577,18 +569,13 @@ add_task(async function onPrefChanged() {
   observer.nimbusChangedList = [];
   UrlbarPrefs.addObserver(observer);
 
-  Services.prefs.setBoolPref(
-    "browser.urlbar.autoFill.adaptiveHistory.enabled",
-    true
-  );
+  Services.prefs.setBoolPref("browser.urlbar.addons.featureGate", true);
   await deferred.promise;
   Assert.equal(observer.prefChangedList.length, 1);
-  Assert.equal(observer.prefChangedList[0], "autoFill.adaptiveHistory.enabled");
+  Assert.equal(observer.prefChangedList[0], "addons.featureGate");
   Assert.equal(observer.nimbusChangedList.length, 0);
 
-  Services.prefs.clearUserPref(
-    "browser.urlbar.autoFill.adaptiveHistory.enabled"
-  );
+  Services.prefs.clearUserPref("browser.urlbar.addons.featureGate");
   await doCleanup();
 });
 

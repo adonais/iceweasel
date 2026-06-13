@@ -938,9 +938,11 @@ bool RenderThread::Resume(wr::WindowId aWindowId) {
 
 void RenderThread::NotifyIdle() {
   if (!IsInRenderThread()) {
-    PostRunnable(NewRunnableMethod("RenderThread::NotifyIdle", this,
-                                   &RenderThread::NotifyIdle));
-
+    PostRunnable(NS_NewRunnableFunction("RenderThread::NotifyIdle", []() {
+      if (auto* rt = RenderThread::Get()) {
+        rt->NotifyIdle();
+      }
+    }));
     return;
   }
 

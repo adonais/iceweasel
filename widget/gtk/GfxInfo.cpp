@@ -4,7 +4,6 @@
 
 #include "GfxInfo.h"
 
-#include <cctype>
 #include <errno.h>
 #include <unistd.h>
 #include <string>
@@ -38,10 +37,12 @@
 #define GFX_TEST_TIMEOUT 4000
 #define VAAPI_TEST_TIMEOUT 2000
 #define V4L2_TEST_TIMEOUT 2000
+#define VULKAN_TEST_TIMEOUT 2000
 
 #define GLX_PROBE_BINARY u"glxtest"_ns
 #define VAAPI_PROBE_BINARY u"vaapitest"_ns
 #define V4L2_PROBE_BINARY u"v4l2test"_ns
+#define VULKAN_PROBE_BINARY u"vulkantest"_ns
 
 namespace mozilla::widget {
 
@@ -747,6 +748,81 @@ void GfxInfo::GetDataV4L2() {
 #endif  // MOZ_ENABLE_V4L2
 }
 
+void GfxInfo::GetDataVulkan() {
+  if (mIsVulkanSupported.isSome()) {
+    return;
+  }
+  mIsVulkanSupported = Some(false);
+  mVulkanSupportedCodecs = 0;
+
+#if defined(MOZ_ENABLE_VULKAN_VIDEO)
+  char* vulkanData = nullptr;
+  auto freeVulkan = mozilla::MakeScopeExit([&] { g_free((void*)vulkanData); });
+
+  int vulkanPipe = -1;
+  int vulkanPID = 0;
+  const char* args[3];
+  if (mDrmRenderDevice.IsEmpty()) {
+    args[0] = "-p";
+    args[1] = nullptr;
+  } else {
+    args[0] = "-d";
+    args[1] = mDrmRenderDevice.get();
+    args[2] = nullptr;
+  }
+  vulkanPID = FireTestProcess(VULKAN_PROBE_BINARY, &vulkanPipe, args);
+  if (!vulkanPID) {
+    gfxCriticalNote << "Failed to start vulkantest process\n";
+    return;
+  }
+
+  if (!ManageChildProcess("vulkantest", &vulkanPID, &vulkanPipe,
+                          VULKAN_TEST_TIMEOUT, &vulkanData)) {
+    gfxCriticalNote << "vulkantest: ManageChildProcess failed\n";
+    return;
+  }
+
+  char* bufptr = vulkanData;
+  char* line;
+  while ((line = NS_strtok("\n", &bufptr))) {
+    if (!strcmp(line, "VULKAN_SUPPORTED")) {
+      line = NS_strtok("\n", &bufptr);
+      if (!line) {
+        gfxCriticalNote << "vulkantest: Failed to get Vulkan support\n";
+        return;
+      }
+      mIsVulkanSupported = Some(!strcmp(line, "TRUE"));
+    } else if (!strcmp(line, "VULKAN_HWCODECS")) {
+      line = NS_strtok("\n", &bufptr);
+      if (!line) {
+        gfxCriticalNote << "vulkantest: Failed to get Vulkan codecs\n";
+        return;
+      }
+      std::istringstream(line) >> mVulkanSupportedCodecs;
+
+#  define VULKAN_CODEC_CHECK(name)                          \
+    if (mVulkanSupportedCodecs & CODEC_HW_DEC_##name) {     \
+      media::MCSInfo::AddSupport(                           \
+          media::MediaCodecsSupport::name##HardwareDecode); \
+    }
+      VULKAN_CODEC_CHECK(H264)
+      VULKAN_CODEC_CHECK(VP8)
+      VULKAN_CODEC_CHECK(VP9)
+      VULKAN_CODEC_CHECK(AV1)
+      VULKAN_CODEC_CHECK(HEVC)
+#  undef VULKAN_CODEC_CHECK
+    } else if (!strcmp(line, "WARNING") || !strcmp(line, "ERROR")) {
+      gfxCriticalNote << "vulkantest: " << line;
+      line = NS_strtok("\n", &bufptr);
+      if (line) {
+        gfxCriticalNote << "vulkantest: " << line << "\n";
+      }
+      return;
+    }
+  }
+#endif
+}
+
 // Check the capabilities of a single V4L2 device.  If the device doesn't work
 // or doesn't support any codecs we recognise, then we just ignore it.  If it
 // does support recognised codecs then add these codecs to the supported list
@@ -1199,16 +1275,7 @@ const nsTArray<RefPtr<GfxDriverInfo>>& GfxInfo::GetGfxDriverInfo() {
         "FEATURE_HARDWARE_VIDEO_ZERO_COPY_LINUX_AMD_DISABLE", "Mesa 24.2.0.0");
 
     ////////////////////////////////////
-    // FEATURE_VIDEO_HDR - ALLOWLIST
-
-    // Allow HDR video on Wayland - this is also controlled by the pref
-    // gfx.color_management.hdr which is currently false as of this writing (see
-    // https://bugzilla.mozilla.org/show_bug.cgi?id=1642854)
-    APPEND_TO_DRIVER_BLOCKLIST_EXT(
-        OperatingSystem::Linux, ScreenSizeStatus::All, BatteryStatus::All,
-        WindowProtocol::Wayland, DriverVendor::All, DeviceFamily::All,
-        nsIGfxInfo::FEATURE_VIDEO_HDR, nsIGfxInfo::FEATURE_ALLOW_ALWAYS,
-        DRIVER_COMPARISON_IGNORED, V(0, 0, 0, 0), "FEATURE_ROLLOUT_ALL", "");
+    // FEATURE_VIDEO_HDR
 
     ////////////////////////////////////
     // FEATURE_WEBRENDER_PARTIAL_PRESENT
@@ -1415,7 +1482,8 @@ nsresult GfxInfo::GetFeatureStatusImpl(
       continue;
     }
     if ((mVAAPISupportedCodecs & pair.mCodec) ||
-        (mV4L2SupportedCodecs & pair.mCodec)) {
+        (mV4L2SupportedCodecs & pair.mCodec) ||
+        (mVulkanSupportedCodecs & pair.mCodec)) {
       *aStatus = nsIGfxInfo::FEATURE_STATUS_OK;
     } else {
       *aStatus = nsIGfxInfo::FEATURE_BLOCKED_PLATFORM_TEST;
@@ -1427,7 +1495,33 @@ nsresult GfxInfo::GetFeatureStatusImpl(
   auto ret = GfxInfoBase::GetFeatureStatusImpl(
       aFeature, aStatus, aSuggestedDriverVersion, aDriverInfo, aFailureId, &os);
 
-  // Probe VA-API/V4L2 on supported devices only
+  // Probe Vulkan first
+  if (aFeature == nsIGfxInfo::FEATURE_HARDWARE_VIDEO_DECODING_VULKAN) {
+    if (!StaticPrefs::
+            media_hardware_video_decoding_vulkan_enabled_AtStartup()) {
+      *aStatus = nsIGfxInfo::FEATURE_BLOCKED_PLATFORM_TEST;
+      aFailureId = "FEATURE_HARDWARE_VIDEO_DECODING_VULKAN_PREF_DISABLED"_ns;
+      return NS_OK;
+    }
+    if (!StaticPrefs::media_hardware_video_decoding_enabled_AtStartup()) {
+      return ret;
+    }
+    bool probeHWDecode =
+        mIsAccelerated &&
+        (*aStatus == nsIGfxInfo::FEATURE_STATUS_OK ||
+         StaticPrefs::media_hardware_video_decoding_force_enabled_AtStartup());
+    if (probeHWDecode) {
+      GetDataVulkan();
+    } else {
+      mIsVulkanSupported = Some(false);
+    }
+    if (!mIsVulkanSupported.value()) {
+      *aStatus = nsIGfxInfo::FEATURE_BLOCKED_PLATFORM_TEST;
+      aFailureId = "FEATURE_FAILURE_VIDEO_DECODING_VULKAN_TEST_FAILED";
+    }
+  }
+
+  // Probe VA-API/V4L2/Vulkan on supported devices only
   if (aFeature == nsIGfxInfo::FEATURE_HARDWARE_VIDEO_DECODING) {
     if (!StaticPrefs::media_hardware_video_decoding_enabled_AtStartup()) {
       return ret;

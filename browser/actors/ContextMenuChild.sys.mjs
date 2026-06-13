@@ -450,6 +450,44 @@ export class ContextMenuChild extends JSWindowActorChild {
     return true;
   }
 
+  /**
+   * Finds a video element at the given coordinates using nodesFromRect,
+   * which can detect videos beneath overlays (e.g. custom player controls).
+   *
+   * @param {number} clientX
+   * @param {number} clientY
+   * @returns {HTMLVideoElement|null}
+   */
+  _maybeGetVideoElementAtPoint(clientX, clientY) {
+    if (
+      !Services.prefs.getBoolPref(
+        "media.contextmenu.video-overlay-detection",
+        false
+      )
+    ) {
+      return null;
+    }
+
+    let elements = this.contentWindow.windowUtils.nodesFromRect(
+      clientX,
+      clientY,
+      1,
+      1,
+      1,
+      1,
+      true,
+      false,
+      true,
+      0
+    );
+    for (let el of elements) {
+      if (this.contentWindow.HTMLVideoElement.isInstance(el)) {
+        return el;
+      }
+    }
+    return null;
+  }
+
   _isTargetATextBox(node) {
     if (this.contentWindow.HTMLInputElement.isInstance(node)) {
       return node.mozIsTextField(false);
@@ -758,6 +796,8 @@ export class ContextMenuChild extends JSWindowActorChild {
     context.screenXDevPx = aEvent.screenX * this.contentWindow.devicePixelRatio;
     context.screenYDevPx = aEvent.screenY * this.contentWindow.devicePixelRatio;
     context.inputSource = aEvent.inputSource;
+    context.clientX = aEvent.clientX;
+    context.clientY = aEvent.clientY;
 
     let node = aEvent.composedTarget;
 
@@ -922,6 +962,8 @@ export class ContextMenuChild extends JSWindowActorChild {
       return;
     }
 
+    let videoElement;
+
     // See if the user clicked on an image. This check mirrors
     // nsDocumentViewer::GetInImage. Make sure to update both if this is
     // changed.
@@ -1005,7 +1047,18 @@ export class ContextMenuChild extends JSWindowActorChild {
       this.contentWindow.HTMLCanvasElement.isInstance(context.target)
     ) {
       context.onCanvas = true;
-    } else if (this.contentWindow.HTMLVideoElement.isInstance(context.target)) {
+    } else if (
+      (videoElement = this.contentWindow.HTMLVideoElement.isInstance(
+        context.target
+      )
+        ? context.target
+        : this._maybeGetVideoElementAtPoint(context.clientX, context.clientY))
+    ) {
+      // If the target isn't already a video, it means we found one under an
+      // overlay via nodesFromRect. Update target and targetIdentifier so that
+      // context menu actions (play, pause, mute, etc.) operate on the video.
+      context.target = videoElement;
+      context.targetIdentifier = lazy.ContentDOMReference.get(videoElement);
       const mediaURL = context.target.currentSrc || context.target.src;
 
       if (this._isMediaURLReusable(mediaURL)) {

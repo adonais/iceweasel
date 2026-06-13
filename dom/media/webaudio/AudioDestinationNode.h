@@ -83,6 +83,13 @@ class AudioDestinationNode final : public AudioNode,
   void DestroyAudioChannelAgentIfExists();
   RefPtr<AudioChannelAgent> mAudioChannelAgent;
 
+  // Registers the AudioContext as an uncontrollable receiver with the
+  // media-control infrastructure, reports audibility, and reacts to media
+  // control keys (e.g. Stop on audio focus loss).
+  class MediaSharedKeysListener;
+  // Started in Init() and stopped in Close().
+  RefPtr<MediaSharedKeysListener> mSharedKeysListener;
+
   // These members are related to audio capturing. We would start capturing
   // audio if we're starting capturing audio from whole window, and MUST stop
   // capturing explicitly when we don't need to capture audio any more, because

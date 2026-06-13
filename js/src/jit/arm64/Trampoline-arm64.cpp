@@ -329,9 +329,11 @@ JitRuntime::getCppEntryRegisters(JitFrameLayout* frameStackAddress) {
 }
 
 static void PushRegisterDump(MacroAssembler& masm) {
-  const LiveRegisterSet First28GeneralRegisters = LiveRegisterSet(
+  const LiveRegisterSet First20GeneralRegisters = LiveRegisterSet(
       GeneralRegisterSet(Registers::AllMask &
-                         ~(1 << 31 | 1 << 30 | 1 << 29 | 1 << 28)),
+                         ~(1 << 31 | 1 << 30 | 1 << 29 | 1 << 28 | 1 << 27 |
+                           1 << 26 | 1 << 25 | 1 << 24 | 1 << 23 | 1 << 22 |
+                           1 << 21 | 1 << 20)),
       FloatRegisterSet(FloatRegisters::NoneMask));
 
   const LiveRegisterSet AllFloatRegisters =
@@ -347,12 +349,14 @@ static void PushRegisterDump(MacroAssembler& masm) {
   //
   // See block comment in MacroAssembler.h for further required invariants.
 
-  // First, push the last four registers, passing zero for sp.
-  // Zero is pushed for x28 and x31: the pseudo-SP and SP, respectively.
-  masm.asVIXL().Push(xzr, x30, x29, xzr);
+  // First, push the last twelve registers, passing zero for sp.
+  // Zero is pushed for x20 and x31: the pseudo-SP and SP, respectively.
+  masm.asVIXL().Push(xzr, x30, x29, x28);
+  masm.asVIXL().Push(x27, x26, x25, x24);
+  masm.asVIXL().Push(x23, x22, x21, xzr);
 
-  // Second, push the first 28 registers that serve no special purpose.
-  masm.PushRegsInMask(First28GeneralRegisters);
+  // Second, push the first 20 registers that serve no special purpose.
+  masm.PushRegsInMask(First20GeneralRegisters);
 
   // Finally, push all floating-point registers, completing the RegisterDump.
   masm.PushRegsInMask(AllFloatRegisters);

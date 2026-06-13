@@ -93,16 +93,11 @@ add_task(async function testProviderSteering() {
   await testNetChangeResult(AUTO_TRR_URI, "disable_doh");
   gDNSOverride.clearHostOverride(googleDomain);
   gDNSOverride.addIPOverride(googleDomain, googleIP);
-  checkScalars(
-    [
-      [
-        "networking.doh_heuristics_result",
-        { value: Heuristics.Telemetry.google },
-      ],
-      ["networking.doh_heuristic_ever_tripped", { value: true, key: "google" }],
-      // All of the other heuristics must be false.
-    ].concat(falseExpectations(["google"]))
-  );
+  await assertGleanValues([
+    [Glean.networking.dohHeuristicsResult, Heuristics.Telemetry.google],
+    [Glean.networking.dohHeuristicEverTripped.google, true],
+    ...allHeuristicsFalseExpectations(["google"]),
+  ]);
 
   // Check that provider steering is enabled again after we reset above.
   await testNetChangeResult(provider.uri, "enable_doh", provider.id);
@@ -111,14 +106,10 @@ add_task(async function testProviderSteering() {
   gDNSOverride.clearHostOverride(TEST_DOMAIN);
   await testNetChangeResult(AUTO_TRR_URI, "enable_doh");
 
-  checkScalars(
-    [
-      [
-        "networking.doh_heuristics_result",
-        { value: Heuristics.Telemetry.pass },
-      ],
-      ["networking.doh_heuristic_ever_tripped", { value: true, key: "google" }],
-      // All of the other heuristics must be false.
-    ].concat(falseExpectations(["google"]))
-  );
+  await assertGleanValues([
+    [Glean.networking.dohHeuristicsResult, Heuristics.Telemetry.pass],
+    // Was tripped earlier this session.
+    [Glean.networking.dohHeuristicEverTripped.google, true],
+    ...allHeuristicsFalseExpectations(["google"]),
+  ]);
 });

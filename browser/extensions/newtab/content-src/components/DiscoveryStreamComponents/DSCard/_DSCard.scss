@@ -259,8 +259,7 @@ $ds-card-image-gradient-solid: rgba(0, 0, 0, 100%);
       @include limit-visible-lines(3, $header-line-height, $header-font-size);
 
       margin-block: 0;
-      // @backward-compat { version 150 } D281466/D283723 renamed design tokens; remove once Firefox 150 is on Release.
-      font-weight: var(--font-weight-heading, var(--heading-font-weight));
+      font-weight: var(--font-weight-heading);
     }
 
     .excerpt {
@@ -376,8 +375,7 @@ $ds-card-image-gradient-solid: rgba(0, 0, 0, 100%);
     .cta-header {
       background: var(--button-background-color);
       font-size: var(--font-size-root);
-      // @backward-compat { version 150 } D281466/D283723 renamed design tokens; remove once Firefox 150 is on Release.
-      font-weight: var(--font-weight-heading, var(--heading-font-weight));
+      font-weight: var(--font-weight-heading);
       text-align: end;
       padding: var(--space-xsmall) var(--space-large);
       color: var(--newtab-text-primary-color);
@@ -433,8 +431,7 @@ $ds-card-image-gradient-solid: rgba(0, 0, 0, 100%);
 
     @media (forced-colors: active) {
       &:not(.placeholder) {
-        // @backward-compat { version 150 } D281466/D283723 renamed design tokens; remove once Firefox 150 is on Release.
-        border: var(--border-width) solid var(--card-border-color, var(--border-color-card));
+        border: var(--border-width) solid var(--card-border-color);
       }
 
       &:not(.placeholder):hover {
@@ -463,8 +460,7 @@ $ds-card-image-gradient-solid: rgba(0, 0, 0, 100%);
         -webkit-line-clamp: 3;
         font-size: var(--font-size-root);
         margin-block-end: var(--space-small);
-        // @backward-compat { version 150 } D281466/D283723 renamed design tokens; remove once Firefox 150 is on Release.
-        font-weight: var(--font-weight-heading, var(--heading-font-weight));
+        font-weight: var(--font-weight-heading);
       }
 
       .excerpt {

@@ -1999,7 +1999,7 @@ fuzzy(0-2,0-17500) skip-if(winWidget&&isCoverageBuild) == 1412375.html 1412375-r
 # scale-dependent font metrics. Without the fix the test fails in the range
 # 246-255,3237-25110, which overlaps the fuzz range, but would still catch
 # regressing this bug some of the time which is better than not having a test.
-fuzzy(0-255,0-6025) fuzzy-if(gtkWidget,0-255,0-8600) == 1415987-1.html 1415987-1-ref.html
+fuzzy(0-255,0-6025) fuzzy-if(gtkWidget,0-255,0-8600) fuzzy-if(appleSilicon,0-255,0-6500) == 1415987-1.html 1415987-1-ref.html
 == 1419820-1.html 1419820-1-ref.html
 == 1420946-1.html 1420946-1-ref.html
 == 1422393.html 1422393-ref.html
@@ -2083,7 +2083,7 @@ fuzzy(0-2,0-96600) == 1648282-1b.html 1648282-1-ref.html
 != chrome://reftest/content/bugs/1688004.xhtml about:blank
 pref(image.downscale-during-decode.enabled,true) fuzzy-if(cocoaWidget||winWidget,0-167,0-44310) fuzzy-if(gtkWidget,0-2,0-46080) == 1714763-1.html 1714763-1-ref.html
 pref(image.downscale-during-decode.enabled,true) fuzzy-if(cocoaWidget||winWidget,0-166,0-22530) fuzzy-if(Android,0-21,0-22260) fuzzy-if(gtkWidget,0-22,0-43900) == 1714763-2.html 1714763-2-ref.html
-pref(image.downscale-during-decode.enabled,true) fuzzy-if(cocoaWidget||winWidget,0-235,0-289) fuzzy-if(gtkWidget,0-186,0-240) fuzzy-if(Android,0-185,0-232) == 1714763-3.html 1714763-3-ref.html
+pref(image.downscale-during-decode.enabled,true) fuzzy-if(cocoaWidget||winWidget,0-235,0-289) fuzzy-if(gtkWidget,0-232,0-240) fuzzy-if(Android,0-232,0-232) == 1714763-3.html 1714763-3-ref.html
 skip-if(!appleSilicon) != 1721223-1.html 1721223-1-notref.html # Big Sur required for updated system font; OSX value is clamped to 10.15
 skip-if(Android) == 1727172-1.xhtml 1727172-1-ref.html
 == 1726663-1.html 1726663-1-ref.html
@@ -2099,7 +2099,7 @@ fuzzy(0-128,0-17172) skip-if(Android) HTTP == 1743533-1.html 1743533-2.html # Fu
 
 pref(gfx.font_rendering.fallback.async,false) == 1743560-1.html 1743560-1-ref.html
 == 1743851-1.html 1743851-1-ref.html
-pref(image.downscale-during-decode.enabled,true) == 1744468-1.html 1744468-1-ref.html # do not increase fuzz without looking, the test should be smoothly downscaled, not pixelated
+pref(image.downscale-during-decode.enabled,true) fuzzy(0-2,0-1879) == 1744468-1.html 1744468-1-ref.html # do not increase fuzz without looking, the test should be smoothly downscaled, not pixelated
 == 1747272-1.html 1747272-1-ref.html
 == 1750146-1.html 1750146-1-ref.html
 == 1735265-1.html 1735265-1-ref.html

@@ -92,7 +92,7 @@ export class DecoderDoctorParent extends JSWindowActorParent {
     // The top level browsing context's embedding element should be a xul browser element.
     let browser = this.browsingContext.top.embedderElement;
     // The xul browser is owned by a window.
-    let window = browser?.ownerGlobal;
+    let window = browser?.documentGlobal;
 
     if (!browser || !window) {
       // We don't have a browser or window so bail!

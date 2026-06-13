@@ -6,12 +6,13 @@
       "matches": ["*://omegleapp.me/chat*"]
     }
   },
+  "css": {
+    "fix_scrollbars": ".chatAndVideo .chatSection .chatBox_messages { scrollbar-width: thin; } .chatAndVideo .chatSection .chatBox { scrollbar-width: none; }"
+  },
   "interventions": [
     {
       "platforms": ["desktop"],
-      "content_scripts": {
-        "css": ["bug1950053-omegleapp.me-fix-scrollbars.css"]
-      }
+      "css": ["fix_scrollbars"]
     }
   ]
 }

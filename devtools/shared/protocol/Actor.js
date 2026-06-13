@@ -149,6 +149,10 @@ class Actor extends Pool {
         error == "out of memory"
           ? ChromeUtils.getLastOOMStackTrace()
           : error.stack,
+      // DevToolsProcessParent may convey yet another stack if the exception happened in the content process
+      // (in this edgecase, this code runs in the parent process and will emit the stack up to the client)
+      contentProcessStack:
+        typeof error == "object" ? error.contentProcessStack : undefined,
     });
   }
 

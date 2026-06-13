@@ -93,14 +93,14 @@ fn test_secure_delete_nonexistent_key() {
 fn test_cipher_suite_str_roundtrip() {
     for cs in [CipherSuite::Aes256Gcm, CipherSuite::ChaCha20Poly1305] {
         let s = cs.as_str();
-        assert_eq!(CipherSuite::from_str(s), Some(cs));
+        assert_eq!(CipherSuite::parse(s), Some(cs));
     }
 }
 
 #[test]
 fn test_cipher_suite_from_str_unknown() {
-    assert_eq!(CipherSuite::from_str("unknown"), None);
-    assert_eq!(CipherSuite::from_str(""), None);
+    assert_eq!(CipherSuite::parse("unknown"), None);
+    assert_eq!(CipherSuite::parse(""), None);
 }
 
 #[test]

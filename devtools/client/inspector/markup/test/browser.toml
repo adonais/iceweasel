@@ -73,6 +73,8 @@ run-if = [
 
 ["browser_markup_anonymous_04.js"]
 
+["browser_markup_comments.js"]
+
 ["browser_markup_container_badge.js"]
 
 ["browser_markup_copy_html.js"]

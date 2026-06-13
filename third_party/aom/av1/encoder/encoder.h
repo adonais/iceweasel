@@ -3649,6 +3649,11 @@ typedef struct AV1_COMP {
   uint64_t *src_sad_blk_64x64;
 
   /*!
+   * Size of allocated buffer to store 64x64 SAD, in units of uint64_t.
+   */
+  int src_sad_blk_alloc_size;
+
+  /*!
    * SSE between the current frame and the reconstructed last frame
    * It is only used for CBR mode.
    * It is not used if the reference frame has a different frame size.

@@ -198,6 +198,32 @@ void RemoteAccessible::ApplyCache(CacheUpdateType aUpdateType,
     for (auto id : *maybeViewportCache) {
       AsDoc()->mOnScreenAccessibles.Insert(id);
     }
+#ifdef MOZ_WIDGET_COCOA
+    // If our viewport cache has updated, we've seen at least one of the
+    // following:
+    // - bounds changed for an accessible
+    // - APZ changed
+    // - text bounds changed
+    // - scroll position changed
+    // - a transform changed
+    // - the selected element in a selectable container changed
+    // This means our focused acc may have moved.
+    // XXX: Bug 1469779 probably wants this on windows too :)
+    if (PlatformShouldTrackFocusedAccLocation()) {
+      RemoteAccessible* focusedAcc = AsDoc()->GetFocusedAcc();
+      // Sometimes we get a viewport update before the remote and local trees
+      // are connected. If we try to proceed when that is the case, we'll be
+      // unable to construct useful event data. To avoid trouble, check we can
+      // reach the OuterDoc.
+      if (focusedAcc && focusedAcc->OuterDocOfRemoteBrowser()) {
+        LayoutDeviceIntRect bounds = focusedAcc->Bounds();
+        if (Some(bounds) != AsDoc()->mFocusedAccBounds) {
+          AsDoc()->mFocusedAccBounds = Some(bounds);
+          PlatformFocusedAccLocationChanged(focusedAcc);
+        }
+      }
+    }
+#endif
   }
 
   if (aUpdateType == CacheUpdateType::Initial) {
@@ -1717,7 +1743,7 @@ already_AddRefed<AccAttributes> RemoteAccessible::DefaultTextAttributes() {
     return nullptr;
   }
 
-  RefPtr<AccAttributes> result = new AccAttributes();
+  auto result = MakeRefPtr<AccAttributes>();
   for (RemoteAccessible* parent = this; parent;
        parent = parent->RemoteParent()) {
     if (!parent->IsHyperText()) {
@@ -1828,7 +1854,7 @@ uint64_t RemoteAccessible::State() {
 }
 
 already_AddRefed<AccAttributes> RemoteAccessible::Attributes() {
-  RefPtr<AccAttributes> attributes = new AccAttributes();
+  auto attributes = MakeRefPtr<AccAttributes>();
   if (RequestDomainsIfInactive(CacheDomain::ARIA |  // GetCachedARIAAttributes
                                CacheDomain::NameAndDescription |  // Name
                                CacheDomain::Text |                // Name

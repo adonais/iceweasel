@@ -130,10 +130,10 @@ class HttpTransactionParent final : public PHttpTransactionParent,
 
   nsCOMPtr<nsITransportEventSink> mEventsink;
   nsCOMPtr<nsIStreamListener> mChannel;
-  nsCOMPtr<nsISerialEventTarget> mTargetThread;
-  nsCOMPtr<nsISerialEventTarget> mODATarget;
-  Mutex mEventTargetMutex MOZ_UNANNOTATED{
-      "HttpTransactionParent::EventTargetMutex"};
+  nsCOMPtr<nsISerialEventTarget> mTargetThread
+      MOZ_GUARDED_BY(mEventTargetMutex);
+  nsCOMPtr<nsISerialEventTarget> mODATarget MOZ_GUARDED_BY(mEventTargetMutex);
+  Mutex mEventTargetMutex{"HttpTransactionParent::EventTargetMutex"};
   nsCOMPtr<nsITransportSecurityInfo> mSecurityInfo;
   UniquePtr<nsHttpResponseHead> mResponseHead;
   UniquePtr<nsHttpHeaderArray> mResponseTrailers;

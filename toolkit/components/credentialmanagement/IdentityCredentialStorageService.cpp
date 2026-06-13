@@ -647,7 +647,9 @@ NS_IMETHODIMP IdentityCredentialStorageService::SetState(
   nsCString credentialID(aCredentialID);
   mBackgroundThread->Dispatch(
       NS_NewRunnableFunction("IdentityCredentialStorageService::Init",
-                             [self, rpPrincipal, idpPrincipal, credentialID,
+                             [self, rpPrincipal = std::move(rpPrincipal),
+                              idpPrincipal = std::move(idpPrincipal),
+                              credentialID = std::move(credentialID),
                               aRegistered, aAllowLogout]() {
                                nsresult rv = UpsertData(
                                    self->mDiskDatabaseConnection, rpPrincipal,
@@ -738,7 +740,9 @@ NS_IMETHODIMP IdentityCredentialStorageService::Delete(
   nsCString credentialID(aCredentialID);
   mBackgroundThread->Dispatch(
       NS_NewRunnableFunction("IdentityCredentialStorageService::Init",
-                             [self, rpPrincipal, idpPrincipal, credentialID]() {
+                             [self, rpPrincipal = std::move(rpPrincipal),
+                              idpPrincipal = std::move(idpPrincipal),
+                              credentialID = std::move(credentialID)]() {
                                nsresult rv = DeleteData(
                                    self->mDiskDatabaseConnection, rpPrincipal,
                                    idpPrincipal, credentialID);
@@ -877,7 +881,7 @@ IdentityCredentialStorageService::DeleteFromOriginAttributesPattern(
   mBackgroundThread->Dispatch(
       NS_NewRunnableFunction(
           "IdentityCredentialStorageService::Init",
-          [self, oaPattern]() {
+          [self, oaPattern = std::move(oaPattern)]() {
             nsresult rv = DeleteDataFromOriginAttributesPattern(
                 self->mDiskDatabaseConnection, oaPattern);
             self->DecrementPendingWrites();
@@ -949,7 +953,7 @@ NS_IMETHODIMP IdentityCredentialStorageService::DeleteFromBaseDomain(
   nsCString baseDomain(aBaseDomain);
   mBackgroundThread->Dispatch(
       NS_NewRunnableFunction("IdentityCredentialStorageService::Init",
-                             [self, baseDomain]() {
+                             [self, baseDomain = std::move(baseDomain)]() {
                                nsresult rv = DeleteDataFromBaseDomain(
                                    self->mDiskDatabaseConnection, baseDomain);
                                self->DecrementPendingWrites();

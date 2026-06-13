@@ -70,7 +70,8 @@ export var BackgroundTasksUtils = {
         // Sadly this writes to `profiles.ini`, but there's little to be done.
         this._defaultProfile = lazy.ProfileService.createProfile(
           tmpd,
-          `MOZ_BACKGROUNDTASKS_DEFAULT_PROFILE_PATH-${Date.now()}`
+          `MOZ_BACKGROUNDTASKS_DEFAULT_PROFILE_PATH-${Date.now()}`,
+          "backgroundtasks"
         );
       } else if (noDefaultProfile) {
         lazy.log.info(`getDefaultProfile: setting default profile to null`);
@@ -334,9 +335,8 @@ export var BackgroundTasksUtils = {
           // written, that's not the norm.
           recipe = recipe.data;
         }
-        let branch = recipe.branches.find(b => b.slug == branchSlug);
 
-        await lazy.ExperimentAPI.manager.forceEnroll(recipe, branch);
+        await lazy.ExperimentAPI.manager.forceEnroll(recipe, branchSlug);
         lazy.log.info(`Forced enrollment into: ${path}, branch: ${branchSlug}`);
       }
     }

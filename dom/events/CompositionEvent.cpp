@@ -78,7 +78,7 @@ void CompositionEvent::GetRanges(TextClauseArray& aRanges) {
   if (!textRangeArray) {
     return;
   }
-  nsCOMPtr<nsPIDOMWindowInner> window = do_QueryInterface(mOwner);
+  nsCOMPtr<nsPIDOMWindowInner> window = do_QueryInterface(mGlobal);
   const TextRange* targetRange = textRangeArray->GetTargetClause();
   for (size_t i = 0; i < textRangeArray->Length(); i++) {
     const TextRange& range = textRangeArray->ElementAt(i);

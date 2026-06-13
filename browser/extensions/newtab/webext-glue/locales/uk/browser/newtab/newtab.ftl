@@ -8,9 +8,13 @@
 newtab-page-title = Нова вкладка
 newtab-settings-button =
     .title = Налаштуйте свою сторінку нової вкладки
+#  (developer note): @nova-cleanup(remove-string): Remove newtab-customize-panel-icon-button once Nova lands, will be using newtab-customize-panel-label instead
 newtab-customize-panel-icon-button =
     .title = Налаштувати цю сторінку
+#  (developer note): @nova-cleanup(remove-string): Remove newtab-customize-panel-icon-button-label once Nova lands, will be using newtab-customize-panel-label instead
 newtab-customize-panel-icon-button-label = Налаштувати
+newtab-customize-panel-label =
+    .label = Налаштувати
 newtab-personalize-settings-icon-label =
     .title = Персоналізувати нову вкладку
     .aria-label = Налаштування
@@ -673,10 +677,16 @@ newtab-widget-lists-label-beta =
 newtab-widget-lists-completed-list = Завершено ({ $number })
 newtab-widget-task-list-menu-copy = Копіювати
 newtab-widget-lists-menu-edit = Редагувати назву списку
+newtab-widget-lists-menu-edit2 =
+    .aria-label = Редагувати назву списку
 newtab-widget-lists-menu-create = Створити новий список
 newtab-widget-lists-menu-delete = Видалити цей список
 newtab-widget-lists-menu-copy = Копіювати список до буфера обміну
 newtab-widget-lists-menu-learn-more = Докладніше
+newtab-widget-lists-button-add-item = Додати запис
+newtab-widget-lists-input-add-an-item2 =
+    .placeholder = Додати запис
+    .aria-label = Додати запис
 newtab-widget-lists-input-add-an-item =
     .placeholder = Додати запис
 newtab-widget-lists-input-error = Введіть текст, щоб додати запис
@@ -693,6 +703,10 @@ newtab-widget-lists-name-label-default =
 newtab-widget-lists-name-placeholder-default =
     .placeholder = Список завдань
 # The placeholder value of the name field for a newly created list
+newtab-widget-lists-name-placeholder-new2 =
+    .placeholder = Новий список
+    .aria-label = Редагувати назву списку
+# The placeholder value of the name field for a newly created list
 newtab-widget-lists-name-placeholder-new =
     .placeholder = Новий список
 newtab-widget-section-title = Віджети
@@ -706,9 +720,9 @@ newtab-widget-section-maximize =
 newtab-widget-section-minimize =
     .title = Згорнути віджети
     .aria-label = Згорнути всі віджети до компактного розміру
+newtab-widget-section-menu-manage = Керувати віджетами
 
-## Strings for timer productivity widget
-## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown
+## Strings introduced by the Nova redesign of the Timer widget
 
 newtab-widget-timer-notification-title = Таймер
 newtab-widget-timer-notification-focus = Час зосередження вичерпано. Гарна робота. Потрібна перерва?

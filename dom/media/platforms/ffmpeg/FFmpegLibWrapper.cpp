@@ -96,6 +96,16 @@ FFmpegLibWrapper::LinkResult FFmpegLibWrapper::Link() {
                           AV_FUNC_61 | AV_FUNC_62,
     AV_FUNC_AVUTIL_ALL = AV_FUNC_AVCODEC_ALL | AV_FUNC_AVUTIL_MASK
   };
+  // AV_FUNC_N = 1 << (N - 53), so these two checks enforce that
+  // FFMPEG_MAX_MAJOR_VERSION matches AV_FUNC_AVCODEC_ALL exactly.
+  static_assert(
+      (AV_FUNC_AVCODEC_ALL & (1 << (FFMPEG_MAX_MAJOR_VERSION - 53))) != 0,
+      "FFMPEG_MAX_MAJOR_VERSION has no AV_FUNC entry; add bindings or lower "
+      "the version");
+  static_assert(
+      (AV_FUNC_AVCODEC_ALL & (1 << (FFMPEG_MAX_MAJOR_VERSION - 53 + 1))) == 0,
+      "New FFmpeg version added to AV_FUNC_AVCODEC_ALL; bump "
+      "FFMPEG_MAX_MAJOR_VERSION");
 
   switch (macro) {
     case 53:
@@ -290,6 +300,10 @@ FFmpegLibWrapper::LinkResult FFmpegLibWrapper::Link() {
                         AV_FUNC_AVUTIL_58 | AV_FUNC_AVUTIL_59 |
                             AV_FUNC_AVUTIL_60 | AV_FUNC_AVUTIL_61 |
                             AV_FUNC_AVUTIL_62)
+  AV_FUNC_OPTION_SILENT(av_hwdevice_ctx_create,
+                        AV_FUNC_AVUTIL_58 | AV_FUNC_AVUTIL_59 |
+                            AV_FUNC_AVUTIL_60 | AV_FUNC_AVUTIL_61 |
+                            AV_FUNC_AVUTIL_62)
   AV_FUNC_OPTION_SILENT(av_hwdevice_ctx_alloc,
                         AV_FUNC_AVUTIL_58 | AV_FUNC_AVUTIL_59 |
                             AV_FUNC_AVUTIL_60 | AV_FUNC_AVUTIL_61 |
@@ -309,6 +323,13 @@ FFmpegLibWrapper::LinkResult FFmpegLibWrapper::Link() {
                         AV_FUNC_AVUTIL_58 | AV_FUNC_AVUTIL_59 |
                             AV_FUNC_AVUTIL_60 | AV_FUNC_AVUTIL_61 |
                             AV_FUNC_AVUTIL_62)
+  AV_FUNC_OPTION_SILENT(av_hwframe_map, AV_FUNC_AVUTIL_58 | AV_FUNC_AVUTIL_59 |
+                                            AV_FUNC_AVUTIL_60 |
+                                            AV_FUNC_AVUTIL_61 |
+                                            AV_FUNC_AVUTIL_62)
+  AV_FUNC_OPTION_SILENT(
+      avcodec_get_hw_frames_parameters,
+      AV_FUNC_58 | AV_FUNC_59 | AV_FUNC_60 | AV_FUNC_61 | AV_FUNC_62)
 
 #ifdef MOZ_WIDGET_GTK
   AV_FUNC_OPTION_SILENT(av_hwdevice_hwconfig_alloc, AV_FUNC_58 | AV_FUNC_59 |
@@ -326,6 +347,10 @@ FFmpegLibWrapper::LinkResult FFmpegLibWrapper::Link() {
   AV_FUNC_OPTION_SILENT(
       av_hwdevice_ctx_create_derived,
       AV_FUNC_58 | AV_FUNC_59 | AV_FUNC_60 | AV_FUNC_61 | AV_FUNC_62)
+  AV_FUNC_OPTION_SILENT(av_hwdevice_get_type_name,
+                        AV_FUNC_AVUTIL_58 | AV_FUNC_AVUTIL_59 |
+                            AV_FUNC_AVUTIL_60 | AV_FUNC_AVUTIL_61 |
+                            AV_FUNC_AVUTIL_62)
   AV_FUNC_OPTION_SILENT(avcodec_get_name, AV_FUNC_57 | AV_FUNC_58 | AV_FUNC_59 |
                                               AV_FUNC_60 | AV_FUNC_61 |
                                               AV_FUNC_62)

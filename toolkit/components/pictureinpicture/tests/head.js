@@ -39,6 +39,10 @@ const SHARED_DATA_KEY = "PictureInPicture:SiteOverrides";
 // Used for clearing the size and location of the PiP window
 const PLAYER_URI = "chrome://global/content/pictureinpicture/player.xhtml";
 const ACCEPTABLE_DIFFERENCE = 2;
+const AUTO_CLOSE_ENABLED_PREF =
+  "media.videocontrols.picture-in-picture.auto-close.enabled";
+const AUTO_CLOSE_TIMEOUT_PREF =
+  "media.videocontrols.picture-in-picture.auto-close.timeoutMs";
 
 /**
  * We currently ship with a few different variations of the

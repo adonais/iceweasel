@@ -102,7 +102,7 @@ tab-context-close-multiple-tabs =
     .accesskey = M
 tab-context-close-duplicate-tabs =
     .label = Close Duplicate Tabs
-    .accesskey = u
+    .accesskey = x
 tab-context-share-url =
     .label = Share
     .accesskey = h
@@ -148,14 +148,6 @@ tab-context-send-to-mobile =
            *[other] Send { $tabCount } Tabs to Mobile
         }
     .accesskey = n
-
-# The following strings are for displaying elements in the tab context send tab submenu to prompt users to sign in, enable sync, or pair a device
-tab-context-send-to-mobile-enable-sync =
-    .label = Enable sync to send a tab
-tab-context-send-to-mobile-connect-phone =
-    .label = Connect your phone
-tab-context-send-to-mobile-device-missing =
-    .label = Don’t see your device?
 
 # Verb: share a collection of selected tabs as a link
 tab-context-share-selected-tabs =

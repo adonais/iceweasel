@@ -1,25 +1,69 @@
 {
   "gray": {
+    "0": {
+      "override": true,
+      "value": "unset"
+    },
     "05": {
       "value": "#fbfbfe"
+    },
+    "10": {
+      "override": true,
+      "value": "unset"
+    },
+    "15": {
+      "override": true,
+      "value": "unset"
     },
     "20": {
       "value": "#f0f0f4"
     },
+    "25": {
+      "override": true,
+      "value": "unset"
+    },
     "30": {
       "value": "#bac2ca"
+    },
+    "35": {
+      "override": true,
+      "value": "unset"
+    },
+    "40": {
+      "override": true,
+      "value": "unset"
+    },
+    "45": {
+      "override": true,
+      "value": "unset"
     },
     "50": {
       "value": "#bfbfc9"
     },
+    "55": {
+      "override": true,
+      "value": "unset"
+    },
     "60": {
       "value": "#8f8f9d"
+    },
+    "65": {
+      "override": true,
+      "value": "unset"
     },
     "70": {
       "value": "#5b5b66"
     },
+    "75": {
+      "override": true,
+      "value": "unset"
+    },
     "80": {
       "value": "#23222b"
+    },
+    "85": {
+      "override": true,
+      "value": "unset"
     },
     "90": {
       "value": "#1c1b22"
@@ -436,48 +480,6 @@
       "90": {
         "value": "oklch(0 0 0 / 90%)"
       }
-    }
-  },
-  "neutral": {
-    "0": {
-      "override": true,
-      "value": "unset"
-    },
-    "10": {
-      "override": true,
-      "value": "unset"
-    },
-    "20": {
-      "override": true,
-      "value": "unset"
-    },
-    "30": {
-      "override": true,
-      "value": "unset"
-    },
-    "40": {
-      "override": true,
-      "value": "unset"
-    },
-    "50": {
-      "override": true,
-      "value": "unset"
-    },
-    "60": {
-      "override": true,
-      "value": "unset"
-    },
-    "70": {
-      "override": true,
-      "value": "unset"
-    },
-    "80": {
-      "override": true,
-      "value": "unset"
-    },
-    "90": {
-      "override": true,
-      "value": "unset"
     }
   },
   "purple-desaturated": {

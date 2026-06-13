@@ -12,10 +12,10 @@ import mozilla.components.browser.state.state.SearchState
 import mozilla.components.support.test.mock
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import kotlin.test.assertNotNull
 
 class SearchActionTest {
     @Test
@@ -285,7 +285,7 @@ class SearchActionTest {
         )
 
         assertNotNull(state.search.region)
-        assertEquals("DE", state.search.region!!.home)
+        assertEquals("DE", state.search.region.home)
         assertEquals("FR", state.search.region.current)
     }
 

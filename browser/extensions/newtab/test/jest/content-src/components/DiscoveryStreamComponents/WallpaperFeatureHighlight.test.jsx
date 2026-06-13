@@ -26,4 +26,37 @@ describe("<WallpaperFeatureHighlight>", () => {
       container.querySelector(".wallpaper-feature-highlight")
     ).toBeInTheDocument();
   });
+
+  it("should render the Nova image class when nova.enabled is true", () => {
+    const state = {
+      ...INITIAL_STATE,
+      Prefs: {
+        ...INITIAL_STATE.Prefs,
+        values: {
+          ...INITIAL_STATE.Prefs.values,
+          "nova.enabled": true,
+        },
+      },
+      Messages: {
+        ...INITIAL_STATE.Messages,
+        messageData: { content: { feature: "WALLPAPER" } },
+      },
+    };
+    const { container } = render(
+      <WrapWithProvider state={state}>
+        <WallpaperFeatureHighlight
+          dispatch={jest.fn()}
+          handleDismiss={jest.fn()}
+          handleClick={jest.fn()}
+          handleBlock={jest.fn()}
+        />
+      </WrapWithProvider>
+    );
+    expect(
+      container.querySelector(".wallpaper-feature-highlight-image")
+    ).toBeInTheDocument();
+    expect(
+      container.querySelector(".follow-section-button-highlight-image")
+    ).not.toBeInTheDocument();
+  });
 });

@@ -12,24 +12,4 @@
 interface mixin HTMLHyperlinkElementUtils {
   [CEReactions, SetterThrows]
   stringifier attribute UTF8String href;
-
-  readonly attribute UTF8String origin;
-  [CEReactions]
-           attribute UTF8String protocol;
-  [CEReactions]
-           attribute UTF8String username;
-  [CEReactions]
-           attribute UTF8String password;
-  [CEReactions]
-           attribute UTF8String host;
-  [CEReactions]
-           attribute UTF8String hostname;
-  [CEReactions]
-           attribute UTF8String port;
-  [CEReactions]
-           attribute UTF8String pathname;
-  [CEReactions]
-           attribute UTF8String search;
-  [CEReactions]
-           attribute UTF8String hash;
 };

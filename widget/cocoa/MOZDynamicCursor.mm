@@ -101,44 +101,104 @@ static constexpr nsCursor kCustomCursor = eCursorCount;
     // Resize Cursors:
     // North
     case eCursor_n_resize:
+      if (@available(macOS 15.0, *)) {
+        return [NSCursor
+            frameResizeCursorFromPosition:NSCursorFrameResizePositionTop
+                             inDirections:NSCursorFrameResizeDirectionsOutward];
+      }
       return [NSCursor resizeUpCursor];
     // North East
     case eCursor_ne_resize:
+      if (@available(macOS 15.0, *)) {
+        return [NSCursor
+            frameResizeCursorFromPosition:NSCursorFrameResizePositionTopRight
+                             inDirections:NSCursorFrameResizeDirectionsOutward];
+      }
       return [NSCursor cursorWithImageNamed:@"sizeNE"
                                     hotSpot:NSMakePoint(12, 11)];
     // East
     case eCursor_e_resize:
+      if (@available(macOS 15.0, *)) {
+        return [NSCursor
+            frameResizeCursorFromPosition:NSCursorFrameResizePositionRight
+                             inDirections:NSCursorFrameResizeDirectionsOutward];
+      }
       return [NSCursor resizeRightCursor];
     // South East
     case eCursor_se_resize:
+      if (@available(macOS 15.0, *)) {
+        return [NSCursor
+            frameResizeCursorFromPosition:NSCursorFrameResizePositionBottomRight
+                             inDirections:NSCursorFrameResizeDirectionsOutward];
+      }
       return [NSCursor cursorWithImageNamed:@"sizeSE"
                                     hotSpot:NSMakePoint(12, 12)];
     // South
     case eCursor_s_resize:
+      if (@available(macOS 15.0, *)) {
+        return [NSCursor
+            frameResizeCursorFromPosition:NSCursorFrameResizePositionBottom
+                             inDirections:NSCursorFrameResizeDirectionsOutward];
+      }
       return [NSCursor resizeDownCursor];
     // South West
     case eCursor_sw_resize:
+      if (@available(macOS 15.0, *)) {
+        return [NSCursor
+            frameResizeCursorFromPosition:NSCursorFrameResizePositionBottomLeft
+                             inDirections:NSCursorFrameResizeDirectionsOutward];
+      }
       return [NSCursor cursorWithImageNamed:@"sizeSW"
                                     hotSpot:NSMakePoint(10, 12)];
     // West
     case eCursor_w_resize:
+      if (@available(macOS 15.0, *)) {
+        return [NSCursor
+            frameResizeCursorFromPosition:NSCursorFrameResizePositionLeft
+                             inDirections:NSCursorFrameResizeDirectionsOutward];
+      }
       return [NSCursor resizeLeftCursor];
     // North West
     case eCursor_nw_resize:
+      if (@available(macOS 15.0, *)) {
+        return [NSCursor
+            frameResizeCursorFromPosition:NSCursorFrameResizePositionTopLeft
+                             inDirections:NSCursorFrameResizeDirectionsOutward];
+      }
       return [NSCursor cursorWithImageNamed:@"sizeNW"
                                     hotSpot:NSMakePoint(11, 11)];
     // North & South
     case eCursor_ns_resize:
+      if (@available(macOS 15.0, *)) {
+        return [NSCursor
+            frameResizeCursorFromPosition:NSCursorFrameResizePositionTop
+                             inDirections:NSCursorFrameResizeDirectionsAll];
+      }
       return [NSCursor resizeUpDownCursor];
     // East & West
     case eCursor_ew_resize:
+      if (@available(macOS 15.0, *)) {
+        return [NSCursor
+            frameResizeCursorFromPosition:NSCursorFrameResizePositionLeft
+                             inDirections:NSCursorFrameResizeDirectionsAll];
+      }
       return [NSCursor resizeLeftRightCursor];
     // North East & South West
     case eCursor_nesw_resize:
+      if (@available(macOS 15.0, *)) {
+        return [NSCursor
+            frameResizeCursorFromPosition:NSCursorFrameResizePositionTopRight
+                             inDirections:NSCursorFrameResizeDirectionsAll];
+      }
       return [NSCursor cursorWithImageNamed:@"sizeNESW"
                                     hotSpot:NSMakePoint(12, 12)];
     // North West & South East
     case eCursor_nwse_resize:
+      if (@available(macOS 15.0, *)) {
+        return [NSCursor
+            frameResizeCursorFromPosition:NSCursorFrameResizePositionTopLeft
+                             inDirections:NSCursorFrameResizeDirectionsAll];
+      }
       return [NSCursor cursorWithImageNamed:@"sizeNWSE"
                                     hotSpot:NSMakePoint(12, 12)];
     // Column Resize
@@ -146,15 +206,13 @@ static constexpr nsCursor kCustomCursor = eCursorCount;
       if (@available(macOS 15.0, *)) {
         return [NSCursor columnResizeCursor];
       }
-      return [NSCursor cursorWithImageNamed:@"colResize"
-                                    hotSpot:NSMakePoint(12, 12)];
+      return [NSCursor resizeLeftRightCursor];
     // Row Resize
     case eCursor_row_resize:
       if (@available(macOS 15.0, *)) {
         return [NSCursor rowResizeCursor];
       }
-      return [NSCursor cursorWithImageNamed:@"rowResize"
-                                    hotSpot:NSMakePoint(12, 12)];
+      return [NSCursor resizeUpDownCursor];
     default:
       return [NSCursor arrowCursor];
   }
@@ -254,6 +312,19 @@ static constexpr nsCursor kCustomCursor = eCursorCount;
 // operation, after a menu closes, or when the mouse enters a window.
 - (void)set {
   [mCurrentCursor set];
+}
+
+- (void)reassertCurrentCursor {
+  // [NSCursor hide] is reference-counted: each hide must be balanced by
+  // unhide. Pairing unhide+hide here is a no-op when our hide is still
+  // on the stack and re-establishes the hide if AppKit dropped it under
+  // us during a window transition.
+  if (mCurrentCursorType == eCursor_none) {
+    [NSCursor unhide];
+    [NSCursor hide];
+  } else {
+    [mCurrentCursor set];
+  }
 }
 
 - (void)dealloc {

@@ -53,7 +53,7 @@ class JSStringPtr(Common):
             0xE5E5E5E5: "jemalloc freed memory",
         }.get(flags & 0xFFFFFFFF)
         if corrupt:
-            yield from "<CORRUPT:%s>" % corrupt
+            yield from f"<CORRUPT:{corrupt}>"
             return
         is_rope = (flags & self.stringFlags.LINEAR_BIT) == 0
         if is_rope:
@@ -93,7 +93,7 @@ class JSStringPtr(Common):
                     break
                 else:
                     invalid_chars_allowed -= 1
-                    s += "\\x%04x" % (c & 0xFFFF)
+                    s += f"\\x{c & 0xFFFF:04x}"
         return s
 
 

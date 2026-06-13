@@ -176,7 +176,7 @@ impl Parse for AnimationDuration {
 
 /// https://drafts.csswg.org/css-animations/#animation-iteration-count
 #[derive(
-    Copy, Clone, Debug, MallocSizeOf, PartialEq, Parse, SpecifiedValueInfo, ToCss, ToShmem, ToTyped,
+    Clone, Debug, MallocSizeOf, PartialEq, Parse, SpecifiedValueInfo, ToCss, ToShmem, ToTyped,
 )]
 pub enum AnimationIterationCount {
     /// A `<number>` value.
@@ -854,6 +854,7 @@ impl ViewTransitionClass {
     Copy,
     Clone,
     Debug,
+    Eq,
     MallocSizeOf,
     Parse,
     PartialEq,

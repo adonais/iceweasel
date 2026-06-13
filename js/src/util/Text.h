@@ -103,6 +103,13 @@ inline int32_t CompareChars(const Char1* s1, size_t len1, const Char2* s2,
   return int32_t(len1 - len2);
 }
 
+template <typename Char1, typename Char2>
+inline bool CharsStartsWith(mozilla::Span<const Char1> str,
+                            mozilla::Span<const Char2> prefix) {
+  return str.Length() >= prefix.Length() &&
+         EqualChars(str.data(), prefix.data(), prefix.Length());
+}
+
 // Return s advanced past any Unicode white space characters.
 template <typename CharT>
 static inline const CharT* SkipSpace(const CharT* s, const CharT* end) {

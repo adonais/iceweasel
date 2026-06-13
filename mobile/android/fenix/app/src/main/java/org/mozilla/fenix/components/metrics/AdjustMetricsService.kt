@@ -26,6 +26,7 @@ import org.mozilla.fenix.components.metrics.AdjustThirdPartySharingController.Co
 import org.mozilla.fenix.components.metrics.AdjustThirdPartySharingController.Companion.META_PARTNER_ID
 import org.mozilla.fenix.components.metrics.AdjustThirdPartySharingController.Companion.REDDIT_PARTNER_ID
 import org.mozilla.fenix.components.metrics.AdjustThirdPartySharingController.Companion.TIKTOK_PARTNER_ID
+import org.mozilla.fenix.components.metrics.AdjustThirdPartySharingController.Companion.X_TWITTER_PARTNER_ID
 import org.mozilla.fenix.distributions.DistributionAdjustStartupStrategy
 import org.mozilla.fenix.distributions.DistributionIdManager
 import org.mozilla.fenix.ext.components
@@ -117,12 +118,17 @@ class AdjustMetricsService(
                 isUserMetaAttributed = settings.isUserMetaAttributed,
                 isUserTikTokAttributed = settings.isUserTikTokAttributed,
                 isUserRedditAttributed = settings.isUserRedditAttributed,
+                isUserXTwitterAttributed = settings.isUserXTwitterAttributed,
             )
 
             // All configuration have to be done before this.
             Adjust.initSdk(config)
             Adjust.enable()
             logger.info("Adjust SDK enabled")
+
+            // This is a temporary race condition workaround until
+            // https://bugzilla.mozilla.org/show_bug.cgi?id=2016858 is fixed
+            track(Event.GrowthData.ConversionEvent6)
         }
     }
 
@@ -216,6 +222,7 @@ class AdjustMetricsService(
             isUserMetaAttributed: Boolean,
             isUserTikTokAttributed: Boolean,
             isUserRedditAttributed: Boolean,
+            isUserXTwitterAttributed: Boolean,
             controller: ThirdPartySharingController = AdjustThirdPartySharingController(),
         ) {
             when (distribution) {
@@ -230,6 +237,8 @@ class AdjustMetricsService(
                             controller.enableThirdPartySharingForPartner(TIKTOK_PARTNER_ID)
                         isUserRedditAttributed ->
                             controller.enableThirdPartySharingForPartner(REDDIT_PARTNER_ID)
+                        isUserXTwitterAttributed ->
+                            controller.enableThirdPartySharingForPartner(X_TWITTER_PARTNER_ID)
                         else ->
                             controller.enableThirdPartySharingForPartner(GOOGLE_PARTNER_ID)
                     }

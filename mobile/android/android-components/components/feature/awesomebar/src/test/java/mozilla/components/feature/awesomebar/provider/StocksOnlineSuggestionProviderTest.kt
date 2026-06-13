@@ -17,6 +17,8 @@ import org.junit.Before
 import org.junit.Test
 import java.util.Locale
 
+private const val ARTIFICIAL_DELAY = 350L
+
 /**
  * Tests for [StocksOnlineSuggestionProvider].
  *
@@ -25,15 +27,13 @@ import java.util.Locale
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class StocksOnlineSuggestionProviderTest {
-    private lateinit var fakeDataSource: FakeStocksSuggestionDataSource
+    private lateinit var fakeDataSource: FakeCombinedOnlineSuggestionDataSource
     private lateinit var provider: StocksOnlineSuggestionProvider
 
     @Before
     fun setUp() {
-        fakeDataSource = FakeStocksSuggestionDataSource(
-            results = listOf(
-                sampleStockItem(query = "VOO stock", ticker = "VOO"),
-            ),
+        fakeDataSource = FakeCombinedOnlineSuggestionDataSource(
+            stockResults = listOf(sampleStockItem(query = "VOO stock", ticker = "VOO")),
         )
 
         provider = StocksOnlineSuggestionProvider(
@@ -82,7 +82,7 @@ class StocksOnlineSuggestionProviderTest {
             sampleStockItem(query = "c stock", ticker = "C"),
         )
 
-        val localDataSource = FakeStocksSuggestionDataSource(results = manyResults)
+        val localDataSource = FakeCombinedOnlineSuggestionDataSource(stockResults = manyResults)
 
         val limitedProvider = StocksOnlineSuggestionProvider(
             searchUseCase = mock(),
@@ -102,7 +102,7 @@ class StocksOnlineSuggestionProviderTest {
     fun `id is stable per instance`() = runTest {
         val p = StocksOnlineSuggestionProvider(
             searchUseCase = mock(),
-            dataSource = FakeStocksSuggestionDataSource(results = listOf(sampleStockItem())),
+            dataSource = FakeCombinedOnlineSuggestionDataSource(stockResults = listOf(sampleStockItem())),
             suggestionsHeader = null,
             maxNumberOfSuggestions = 1,
         )
@@ -118,7 +118,7 @@ class StocksOnlineSuggestionProviderTest {
 
     @Test
     fun `cancellation before delay prevents data source call`() = runTest {
-        val localDataSource = FakeStocksSuggestionDataSource(results = listOf(sampleStockItem()))
+        val localDataSource = FakeCombinedOnlineSuggestionDataSource(stockResults = listOf(sampleStockItem()))
         val cancellableProvider = StocksOnlineSuggestionProvider(
             searchUseCase = mock(),
             dataSource = localDataSource,
@@ -165,21 +165,6 @@ class StocksOnlineSuggestionProviderTest {
     fun `change percent formatted correctly in Germany`() {
         val result = provider.parseChangePercent("1.53", Locale.GERMANY)
         assertEquals("+1,53", (result as AwesomeBar.ChangePercent.Positive).value)
-    }
-}
-
-/**
- * Simple fake data source used for unit tests.
- * Records calls and returns the specified results.
- */
-private class FakeStocksSuggestionDataSource(
-    private val results: List<AwesomeBar.StockItem> = emptyList(),
-) : AwesomeBar.StocksSuggestionDataSource {
-    val calls = mutableListOf<String>()
-
-    override suspend fun fetch(query: String): List<AwesomeBar.StockItem> {
-        calls += query
-        return results
     }
 }
 

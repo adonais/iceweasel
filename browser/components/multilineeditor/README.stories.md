@@ -8,7 +8,7 @@
 
 ## Code
 
-The source for `moz-multiline-editor` can be found under [browser/components/multilineeditor/](https://searchfox.org/mozilla-central/source/browser/components/multilineeditor)
+The source for `moz-multiline-editor` can be found under [browser/components/multilineeditor/](https://searchfox.org/firefox-main/source/browser/components/multilineeditor)
 
 ## How to use `moz-multiline-editor`
 

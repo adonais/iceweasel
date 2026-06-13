@@ -10,5 +10,4 @@ browser.jar:
     content/browser/protections.css                       (content/protections.css)
     content/browser/protections.html                      (content/protections.html)
     content/browser/protections.mjs                        (content/protections.mjs)
-    content/browser/proxy-card.mjs                         (content/proxy-card.mjs)
     content/browser/vpn-card.mjs                           (content/vpn-card.mjs)

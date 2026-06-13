@@ -55,10 +55,19 @@ class AutoAutoreleasePool {
 @interface MacApplicationDelegate : NSObject <NSApplicationDelegate> {
 }
 
-// This is used as a workaround for bug 1478347 in order to make OS-provided
-// menu items such as the emoji picker available in the Edit menu, especially
-// in multi-language environments.
+// Standard Edit menu selectors. Setting these as the action on our Edit
+// menu items lets native text fields (e.g. an NSSavePanel sheet's
+// filename field, bug 2036608) handle Cmd+C/V/X/Z/A natively via the
+// responder chain. When no responder handles them, these forwarders
+// route to [nsMenuBarX::sNativeEventTarget menuItemHit:] so the
+// command still reaches Gecko via the normal menu path.
+- (IBAction)undo:(id)aSender;
+- (IBAction)redo:(id)aSender;
+- (IBAction)cut:(id)aSender;
 - (IBAction)copy:(id)aSender;
+- (IBAction)paste:(id)aSender;
+- (IBAction)delete:(id)aSender;
+- (IBAction)selectAll:(id)aSender;
 
 @end
 
@@ -153,7 +162,31 @@ nsTArray<nsCString> TakeStartupURLs() { return std::move(StartupURLs()); }
 
 @implementation MacApplicationDelegate
 
+- (IBAction)undo:(id)aSender {
+  [nsMenuBarX::sNativeEventTarget menuItemHit:aSender];
+}
+
+- (IBAction)redo:(id)aSender {
+  [nsMenuBarX::sNativeEventTarget menuItemHit:aSender];
+}
+
+- (IBAction)cut:(id)aSender {
+  [nsMenuBarX::sNativeEventTarget menuItemHit:aSender];
+}
+
 - (IBAction)copy:(id)aSender {
+  [nsMenuBarX::sNativeEventTarget menuItemHit:aSender];
+}
+
+- (IBAction)paste:(id)aSender {
+  [nsMenuBarX::sNativeEventTarget menuItemHit:aSender];
+}
+
+- (IBAction)delete:(id)aSender {
+  [nsMenuBarX::sNativeEventTarget menuItemHit:aSender];
+}
+
+- (IBAction)selectAll:(id)aSender {
   [nsMenuBarX::sNativeEventTarget menuItemHit:aSender];
 }
 

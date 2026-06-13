@@ -235,6 +235,12 @@ def setup_argument_parser():
 
     global parser
     parser = MochitestArgumentParser()
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        default=False,
+        help="Force reinstallation of test symlinks even if up to date.",
+    )
     return parser
 
 
@@ -371,8 +377,9 @@ def run_mochitest_general(
 
         log.add_handler(ResourceHandler(command_context))
 
+    force = kwargs.pop("force", False)
     driver = command_context._spawn(BuildDriver)
-    driver.install_tests()
+    driver.install_tests(force=force)
 
     subsuite = kwargs.get("subsuite")
     if subsuite == "default":

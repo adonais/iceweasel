@@ -48,13 +48,6 @@ ScriptHashKey::ScriptHashKey(
   MOZ_COUNT_CTOR(ScriptHashKey);
 }
 
-ScriptHashKey::ScriptHashKey(ScriptLoader* aLoader,
-                             const JS::loader::ScriptLoadRequest* aRequest,
-                             const JS::loader::LoadedScript* aLoadedScript)
-    : ScriptHashKey(aLoader, aRequest, aLoadedScript->ReferrerPolicy(),
-                    aLoadedScript->GetFetchOptions(), aLoadedScript->GetURI()) {
-}
-
 ScriptHashKey::ScriptHashKey(const ScriptLoadData& aLoadData)
     : ScriptHashKey(aLoadData.CacheKey()) {}
 
@@ -244,10 +237,12 @@ NS_IMPL_ISUPPORTS(ScriptLoadData, nsISupports)
 
 ScriptLoadData::ScriptLoadData(ScriptLoader* aLoader,
                                JS::loader::ScriptLoadRequest* aRequest,
+                               CacheExpirationTime aExpirationTime,
                                JS::loader::LoadedScript* aLoadedScript)
-    : mExpirationTime(aRequest->ExpirationTime()),
+    : mExpirationTime(aExpirationTime),
       mLoader(aLoader),
-      mKey(aLoader, aRequest, aLoadedScript),
+      mKey(aLoader, aRequest, aRequest->ReferrerPolicy(),
+           aRequest->FetchOptions(), aLoadedScript->GetURI()),
       mLoadedScript(aLoadedScript),
       mNetworkMetadata(aRequest->mNetworkMetadata) {}
 
@@ -281,6 +276,14 @@ bool SharedScriptCache::ShouldIgnoreMemoryPressure() {
   // in order to get the deterministic result.
   return !StaticPrefs::
       dom_script_loader_experimental_navigation_cache_check_memory_pressure();
+}
+
+void SharedScriptCache::ClearInProcessForMemoryPressure() {
+  for (auto iter = mComplete.Iter(); !iter.Done(); iter.Next()) {
+    iter.Data().mResource->InvalidateCachedStencil();
+  }
+
+  SharedSubResourceCache::ClearInProcessForMemoryPressure();
 }
 
 void SharedScriptCache::LoadCompleted(SharedScriptCache* aCache,
@@ -353,9 +356,14 @@ bool SharedScriptCache::GetCachedScriptSource(
   JS::Stencil* stencil = nullptr;
   if (auto lookup = sSingleton->mComplete.Lookup(*maybeKey)) {
     JS::loader::LoadedScript* loadedScript = lookup.Data().mResource;
+    if (loadedScript->IsInvalidatedCachedStencil()) {
+      aRetval.setUndefined();
+      return true;
+    }
+
     // NOTE: We don't check the SRIMetadata here, because this is not a
     //       request from <script> element.
-    stencil = loadedScript->GetStencil();
+    stencil = loadedScript->GetCachedStencil();
   } else {
     aRetval.setUndefined();
     return true;
@@ -388,6 +396,7 @@ void SharedScriptCache::PrepareForLastCC() {
 }
 
 static bool ShouldSave(JS::loader::LoadedScript* aLoadedScript,
+                       JS::Stencil* aStencil,
                        ScriptLoader::DiskCacheStrategy aStrategy) {
   if (!aLoadedScript->HasDiskCacheReference()) {
     return false;
@@ -398,7 +407,7 @@ static bool ShouldSave(JS::loader::LoadedScript* aLoadedScript,
   }
 
   if (aStrategy.mHasSourceLengthMin) {
-    size_t len = JS::GetScriptSourceLength(aLoadedScript->GetStencil());
+    size_t len = JS::GetScriptSourceLength(aStencil);
     if (len < aStrategy.mSourceLengthMin) {
       return false;
     }
@@ -422,7 +431,12 @@ bool SharedScriptCache::MaybeScheduleUpdateDiskCache() {
   bool hasSaveable = false;
   for (auto iter = mComplete.Iter(); !iter.Done(); iter.Next()) {
     JS::loader::LoadedScript* loadedScript = iter.Data().mResource;
-    if (ShouldSave(loadedScript, strategy)) {
+    if (loadedScript->IsInvalidatedCachedStencil()) {
+      continue;
+    }
+
+    JS::Stencil* stencil = loadedScript->GetCachedStencil();
+    if (ShouldSave(loadedScript, stencil, strategy)) {
       hasSaveable = true;
       break;
     }
@@ -529,12 +543,16 @@ void SharedScriptCache::UpdateDiskCache() {
 
   for (auto iter = mComplete.Iter(); !iter.Done(); iter.Next()) {
     JS::loader::LoadedScript* loadedScript = iter.Data().mResource;
-    if (!ShouldSave(loadedScript, strategy)) {
+    if (loadedScript->IsInvalidatedCachedStencil()) {
       continue;
     }
 
-    if (!mEncodeItems.emplaceBack(loadedScript->GetStencil(),
-                                  std::move(loadedScript->SRI()),
+    RefPtr<JS::Stencil> stencil = loadedScript->GetCachedStencil();
+    if (!ShouldSave(loadedScript, stencil, strategy)) {
+      continue;
+    }
+
+    if (!mEncodeItems.emplaceBack(stencil, std::move(loadedScript->SRI()),
                                   loadedScript)) {
       continue;
     }

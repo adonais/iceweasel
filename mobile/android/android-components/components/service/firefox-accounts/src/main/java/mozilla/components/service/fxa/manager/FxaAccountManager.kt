@@ -17,6 +17,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import mozilla.appservices.fxaclient.FxaEvent
 import mozilla.appservices.fxaclient.FxaException
+import mozilla.appservices.fxaclient.FxaRustAuthState
 import mozilla.appservices.fxaclient.FxaState
 import mozilla.appservices.syncmanager.DeviceSettings
 import mozilla.components.concept.base.crash.Breadcrumb
@@ -30,7 +31,6 @@ import mozilla.components.concept.sync.DeviceConfig
 import mozilla.components.concept.sync.FxAEntryPoint
 import mozilla.components.concept.sync.OAuthAccount
 import mozilla.components.concept.sync.Profile
-import mozilla.components.concept.sync.UserData
 import mozilla.components.service.fxa.AccessTokenUnexpectedlyWithoutKey
 import mozilla.components.service.fxa.AccountManagerException
 import mozilla.components.service.fxa.AccountStorage
@@ -138,6 +138,8 @@ open class FxaAccountManager(
     // We always obtain a "profile" scope, as that's assumed to be needed for any application integration.
     // We obtain a sync scope only if this was requested by the application via SyncConfig.
     // Additionally, we obtain any scopes that the application requested explicitly.
+    // XXX - We need to rethink this - with "sync decoupling" and VPN etc, there aren't really any "default scopes",
+    // other than maybe "profile".
     private val scopes: Set<String>
         get() = if (syncConfig != null) {
             setOf(SCOPE_PROFILE, SCOPE_SYNC)
@@ -263,17 +265,25 @@ open class FxaAccountManager(
      * Get the [OAuthAccount] instance if it's not disconnected.
      * Returned [OAuthAccount] may need to be re-authenticated; consumers are expected to check [accountNeedsReauth].
      */
-    fun authenticatedAccount(): OAuthAccount? = when (state) {
-        FxaState.Connected, FxaState.AuthIssues -> account
-        else -> null
+    fun authenticatedAccount(): OAuthAccount? = state.let {
+        when (it) {
+            FxaState.Connected, FxaState.AuthIssues -> account
+            // Bug 2030890 - we may not leave the `FxaState.Authenticating` state.
+            is FxaState.Authenticating if it.initialState == FxaRustAuthState.CONNECTED -> account
+            else -> null
+        }
     }
 
     /**
      * Get the [OAuthAccount] instance if it's connected.
      */
-    fun connectedAccount(): OAuthAccount? = when (state) {
-        FxaState.Connected -> account
-        else -> null
+    fun connectedAccount(): OAuthAccount? = state.let {
+        when (it) {
+            FxaState.Connected -> account
+            // While authenticating from a connected state we should return the account.
+            is FxaState.Authenticating if it.initialState == FxaRustAuthState.CONNECTED -> account
+            else -> null
+        }
     }
 
     /**
@@ -292,7 +302,7 @@ open class FxaAccountManager(
      * @return [Profile] if one is available and account is an authenticated state.
      */
     fun accountProfile(): Profile? = when (state) {
-        FxaState.Connected, FxaState.AuthIssues -> profile
+        is FxaState.Connected, is FxaState.Authenticating, is FxaState.AuthIssues -> profile
         else -> null
     }
 
@@ -315,17 +325,20 @@ open class FxaAccountManager(
      * the entrypoint is used in telemetry.
      * @param authScopes The oAuth scopes being requested, if none are provided
      * we default to the scopes provided when constructing [FxaAccountManager]
+     * @param service The name fo the service being enabled. This may change the UX
+     * shown by the FxA content servers.
      * @return An authentication url which is to be presented to the user.
      */
     suspend fun beginAuthentication(
         pairingUrl: String? = null,
         entrypoint: FxAEntryPoint,
         authScopes: Set<String> = scopes,
+        service: String = "",
     ): String? = withContext(coroutineContext) {
         val event = if (pairingUrl != null) {
-            Event.Account.BeginPairingFlow(pairingUrl, entrypoint, authScopes)
+            Event.Account.BeginPairingFlow(pairingUrl, service, entrypoint, authScopes)
         } else {
-            Event.Account.BeginEmailFlow(entrypoint, authScopes)
+            Event.Account.BeginEmailFlow(service, entrypoint, authScopes)
         }
 
         // Process the event, then use the new state to check the result of the operation
@@ -341,13 +354,11 @@ open class FxaAccountManager(
     }
 
     /**
-     * Sets the user's data received from the web content.
-     * **NOTE**: This is only useful for applications that are user agents, that
-     *           require the user's session token, and thus isn't a part of the state machine
-     * @param userData: The user's data as given by the web channel, including the session token
+     * Stores the session token from a WebChannel login JSON payload without exposing it to the
+     * browser layer.
      */
-    suspend fun setUserData(userData: UserData) = withContext(coroutineContext) {
-        account.setUserData(userData)
+    suspend fun handleWebChannelLogin(jsonPayload: String) = withContext(coroutineContext) {
+        account.handleWebChannelLogin(jsonPayload)
     }
 
     /**
@@ -453,10 +464,19 @@ open class FxaAccountManager(
                 capabilities = ArrayList(deviceConfig.capabilities.map { it.into() }),
             ),
         )
-        is Event.Account.BeginEmailFlow -> FxaEvent.BeginOAuthFlow(ArrayList(scopes), event.entrypoint.entryName)
+        is Event.Account.BeginEmailFlow -> FxaEvent.BeginOAuthFlow(
+            service = event.service,
+            scopes = ArrayList(event.scopes),
+            entrypoint = event.entrypoint.entryName,
+        )
         is Event.Account.BeginPairingFlow -> {
             if (event.pairingUrl != null) {
-                FxaEvent.BeginPairingFlow(event.pairingUrl, ArrayList(scopes), event.entrypoint.entryName)
+                FxaEvent.BeginPairingFlow(
+                    pairingUrl = event.pairingUrl,
+                    service = event.service,
+                    scopes = ArrayList(event.scopes),
+                    entrypoint = event.entrypoint.entryName,
+                )
             } else {
                 crashReporter?.recordCrashBreadcrumb(Breadcrumb("event.pairingUrl is null"))
                 null

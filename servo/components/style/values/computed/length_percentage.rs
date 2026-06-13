@@ -4,25 +4,9 @@
 
 //! `<length-percentage>` computed values, and related ones.
 //!
-//! The over-all design is a tagged pointer, with the lower bits of the pointer
-//! being non-zero if it is a non-calc value.
-//!
-//! It is expected to take 64 bits both in x86 and x86-64. This is implemented
-//! as a `union`, with 4 different variants:
-//!
-//!  * The length and percentage variants have a { tag, f32 } (effectively)
-//!    layout. The tag has to overlap with the lower 2 bits of the calc variant.
-//!
-//!  * The `calc()` variant is a { tag, pointer } in x86 (so same as the
-//!    others), or just a { pointer } in x86-64 (so that the two bits of the tag
-//!    can be obtained from the lower bits of the pointer).
-//!
-//!  * There's a `tag` variant just to make clear when only the tag is intended
-//!    to be read. Note that the tag needs to be masked always by `TAG_MASK`, to
-//!    deal with the pointer variant in x86-64.
-//!
-//! The assertions in the constructor methods ensure that the tag getter matches
-//! our expectations.
+//! The over-all design is a tagged pointer, with the lower bit of the pointer
+//! being non-zero if it is a non-calc value. See `tagged_numeric` for the
+//! shared implementation details.
 
 use super::{position::AnchorSide, Context, Length, Percentage, ToComputedValue};
 use crate::derives::*;
@@ -34,148 +18,48 @@ use crate::values::animated::{
 };
 use crate::values::computed::position::TryTacticAdjustment;
 use crate::values::distance::{ComputeSquaredDistance, SquaredDistance};
-use crate::values::generics::calc::{CalcUnits, PositivePercentageBasis};
+use crate::values::generics::calc::{
+    CalcUnits, GenericAnchorFunctionFallback, PositivePercentageBasis,
+};
 #[cfg(feature = "gecko")]
 use crate::values::generics::length::AnchorResolutionResult;
 use crate::values::generics::position::GenericAnchorSide;
 use crate::values::generics::{calc, ClampToNonNegative, NonNegative};
 use crate::values::resolved::{Context as ResolvedContext, ToResolvedValue};
 use crate::values::specified::length::{EqualsPercentage, FontBaseSize, LineHeightBase};
+use crate::values::specified::number::NoCalcNumber;
+use crate::values::specified::percentage::NoCalcPercentage;
+use crate::values::tagged_numeric::{self as tagged, NumericUnion};
 use crate::values::{specified, CSSFloat};
 use crate::{Zero, ZeroNoPercent};
 use app_units::Au;
 use debug_unreachable::debug_unreachable;
-use malloc_size_of::{MallocSizeOf, MallocSizeOfOps};
 use serde::{Deserialize, Serialize};
 use std::fmt::{self, Write};
 use style_traits::values::specified::AllowedNumericType;
 use style_traits::{CssWriter, ToCss, ToTyped, TypedValue};
 use thin_vec::ThinVec;
 
-#[doc(hidden)]
-#[derive(Clone, Copy)]
-#[repr(C)]
-pub struct LengthVariant {
-    tag: u8,
-    length: Length,
-}
-
-#[doc(hidden)]
-#[derive(Clone, Copy)]
-#[repr(C)]
-pub struct PercentageVariant {
-    tag: u8,
-    percentage: Percentage,
-}
-
-// NOTE(emilio): cbindgen only understands the #[cfg] on the top level
-// definition.
-#[doc(hidden)]
-#[derive(Clone, Copy)]
-#[repr(C)]
-#[cfg(target_pointer_width = "32")]
-pub struct CalcVariant {
-    tag: u8,
-    // Ideally CalcLengthPercentage, but that would cause circular references
-    // for leaves referencing LengthPercentage.
-    ptr: *mut (),
-}
-
-#[doc(hidden)]
-#[derive(Clone, Copy)]
-#[repr(C)]
-#[cfg(target_pointer_width = "64")]
-pub struct CalcVariant {
-    ptr: usize, // In little-endian byte order
-}
-
-// `CalcLengthPercentage` is `Send + Sync` as asserted below.
-unsafe impl Send for CalcVariant {}
-unsafe impl Sync for CalcVariant {}
-
-#[doc(hidden)]
-#[derive(Clone, Copy)]
-#[repr(C)]
-pub struct TagVariant {
-    tag: u8,
+/// The discriminator used for inline LengthPercentage variants.
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToShmem)]
+#[repr(u8)]
+pub enum LengthPercentageTag {
+    /// A `<length>` value.
+    Length = 0,
+    /// A `<percentage>` value.
+    Percentage = 1,
 }
 
 /// A `<length-percentage>` value. This can be either a `<length>`, a
 /// `<percentage>`, or a combination of both via `calc()`.
 ///
-/// cbindgen:private-default-tagged-enum-constructor=false
-/// cbindgen:derive-mut-casts=true
-///
 /// https://drafts.csswg.org/css-values-4/#typedef-length-percentage
 ///
-/// The tag is stored in the lower two bits.
-///
-/// We need to use a struct instead of the union directly because unions with
-/// Drop implementations are unstable, looks like.
-///
-/// Also we need the union and the variants to be `pub` (even though the member
-/// is private) so that cbindgen generates it. They're not part of the public
-/// API otherwise.
-#[repr(transparent)]
-pub struct LengthPercentage(LengthPercentageUnion);
-
-#[doc(hidden)]
+/// cbindgen:derive-eq=false
+/// cbindgen:derive-neq=false
+#[derive(MallocSizeOf)]
 #[repr(C)]
-pub union LengthPercentageUnion {
-    length: LengthVariant,
-    percentage: PercentageVariant,
-    calc: CalcVariant,
-    tag: TagVariant,
-}
-
-impl LengthPercentageUnion {
-    #[doc(hidden)] // Need to be public so that cbindgen generates it.
-    pub const TAG_CALC: u8 = 0;
-    #[doc(hidden)]
-    pub const TAG_LENGTH: u8 = 1;
-    #[doc(hidden)]
-    pub const TAG_PERCENTAGE: u8 = 2;
-    #[doc(hidden)]
-    pub const TAG_MASK: u8 = 0b11;
-}
-
-#[derive(Clone, Copy, Debug, PartialEq)]
-#[repr(u8)]
-enum Tag {
-    Calc = LengthPercentageUnion::TAG_CALC,
-    Length = LengthPercentageUnion::TAG_LENGTH,
-    Percentage = LengthPercentageUnion::TAG_PERCENTAGE,
-}
-
-// All the members should be 64 bits, even in 32-bit builds.
-#[allow(unused)]
-unsafe fn static_assert() {
-    fn assert_send_and_sync<T: Send + Sync>() {}
-    std::mem::transmute::<u64, LengthVariant>(0u64);
-    std::mem::transmute::<u64, PercentageVariant>(0u64);
-    std::mem::transmute::<u64, CalcVariant>(0u64);
-    std::mem::transmute::<u64, LengthPercentage>(0u64);
-    assert_send_and_sync::<LengthVariant>();
-    assert_send_and_sync::<PercentageVariant>();
-    assert_send_and_sync::<CalcLengthPercentage>();
-}
-
-impl Drop for LengthPercentage {
-    fn drop(&mut self) {
-        if self.tag() == Tag::Calc {
-            let _ = unsafe { Box::from_raw(self.calc_ptr()) };
-        }
-    }
-}
-
-impl MallocSizeOf for LengthPercentage {
-    fn size_of(&self, ops: &mut MallocSizeOfOps) -> usize {
-        match self.unpack() {
-            Unpacked::Length(..) | Unpacked::Percentage(..) => 0,
-            Unpacked::Calc(c) => unsafe { ops.malloc_size_of(c) },
-        }
-    }
-}
+pub struct LengthPercentage(NumericUnion<LengthPercentageTag, f32, CalcLengthPercentage>);
 
 impl ToAnimatedValue for LengthPercentage {
     type AnimatedValue = Self;
@@ -291,27 +175,19 @@ impl LengthPercentage {
     /// Constructs a length value.
     #[inline]
     pub fn new_length(length: Length) -> Self {
-        let length = Self(LengthPercentageUnion {
-            length: LengthVariant {
-                tag: LengthPercentageUnion::TAG_LENGTH,
-                length,
-            },
-        });
-        debug_assert_eq!(length.tag(), Tag::Length);
-        length
+        Self(NumericUnion::inline(
+            LengthPercentageTag::Length,
+            length.px(),
+        ))
     }
 
     /// Constructs a percentage value.
     #[inline]
     pub fn new_percent(percentage: Percentage) -> Self {
-        let percent = Self(LengthPercentageUnion {
-            percentage: PercentageVariant {
-                tag: LengthPercentageUnion::TAG_PERCENTAGE,
-                percentage,
-            },
-        });
-        debug_assert_eq!(percent.tag(), Tag::Percentage);
-        percent
+        Self(NumericUnion::inline(
+            LengthPercentageTag::Percentage,
+            percentage.0,
+        ))
     }
 
     /// Given a `LengthPercentage` value `v`, construct the value representing
@@ -382,45 +258,17 @@ impl LengthPercentage {
     /// Private version of new_calc() that constructs a calc() variant without
     /// checking.
     fn new_calc_unchecked(calc: Box<CalcLengthPercentage>) -> Self {
-        let ptr = Box::into_raw(calc);
-
-        #[cfg(target_pointer_width = "32")]
-        let calc = CalcVariant {
-            tag: LengthPercentageUnion::TAG_CALC,
-            ptr: ptr as *mut (),
-        };
-
-        #[cfg(target_pointer_width = "64")]
-        let calc = CalcVariant {
-            #[cfg(target_endian = "little")]
-            ptr: ptr as usize,
-            #[cfg(target_endian = "big")]
-            ptr: (ptr as usize).swap_bytes(),
-        };
-
-        let calc = Self(LengthPercentageUnion { calc });
-        debug_assert_eq!(calc.tag(), Tag::Calc);
-        calc
-    }
-
-    #[inline]
-    fn tag(&self) -> Tag {
-        match unsafe { self.0.tag.tag & LengthPercentageUnion::TAG_MASK } {
-            LengthPercentageUnion::TAG_CALC => Tag::Calc,
-            LengthPercentageUnion::TAG_LENGTH => Tag::Length,
-            LengthPercentageUnion::TAG_PERCENTAGE => Tag::Percentage,
-            _ => unsafe { debug_unreachable!("Bogus tag?") },
-        }
+        Self(NumericUnion::boxed(calc))
     }
 
     #[inline]
     fn unpack_mut<'a>(&'a mut self) -> UnpackedMut<'a> {
-        unsafe {
-            match self.tag() {
-                Tag::Calc => UnpackedMut::Calc(&mut *self.calc_ptr()),
-                Tag::Length => UnpackedMut::Length(self.0.length.length),
-                Tag::Percentage => UnpackedMut::Percentage(self.0.percentage.percentage),
-            }
+        match self.0.unpack_mut() {
+            tagged::UnpackedMut::Boxed(calc) => UnpackedMut::Calc(calc),
+            tagged::UnpackedMut::Inline(t, n) => match *t {
+                LengthPercentageTag::Length => UnpackedMut::Length(Length::new(*n)),
+                LengthPercentageTag::Percentage => UnpackedMut::Percentage(Percentage(*n)),
+            },
         }
     }
 
@@ -428,24 +276,14 @@ impl LengthPercentage {
     /// representation with separate tag and value.
     #[inline]
     pub fn unpack<'a>(&'a self) -> Unpacked<'a> {
-        unsafe {
-            match self.tag() {
-                Tag::Calc => Unpacked::Calc(&*self.calc_ptr()),
-                Tag::Length => Unpacked::Length(self.0.length.length),
-                Tag::Percentage => Unpacked::Percentage(self.0.percentage.percentage),
-            }
-        }
-    }
-
-    #[inline]
-    unsafe fn calc_ptr(&self) -> *mut CalcLengthPercentage {
-        #[cfg(not(all(target_endian = "big", target_pointer_width = "64")))]
-        {
-            self.0.calc.ptr as *mut _
-        }
-        #[cfg(all(target_endian = "big", target_pointer_width = "64"))]
-        {
-            self.0.calc.ptr.swap_bytes() as *mut _
+        match self.0.unpack() {
+            tagged::Unpacked::Boxed(calc) => Unpacked::Calc(calc),
+            tagged::Unpacked::Inline(LengthPercentageTag::Length, v) => {
+                Unpacked::Length(Length::new(v))
+            },
+            tagged::Unpacked::Inline(LengthPercentageTag::Percentage, v) => {
+                Unpacked::Percentage(Percentage(v))
+            },
         }
     }
 
@@ -618,7 +456,9 @@ impl ToComputedValue for specified::LengthPercentage {
             specified::LengthPercentage::Length(ref value) => {
                 LengthPercentage::new_length(value.to_computed_value(context))
             },
-            specified::LengthPercentage::Percentage(value) => LengthPercentage::new_percent(value),
+            specified::LengthPercentage::Percentage(value) => {
+                LengthPercentage::new_percent(value.to_computed_value(context))
+            },
             specified::LengthPercentage::Calc(ref calc) => (**calc).to_computed_value(context),
         }
     }
@@ -628,7 +468,9 @@ impl ToComputedValue for specified::LengthPercentage {
             Unpacked::Length(ref l) => {
                 specified::LengthPercentage::Length(ToComputedValue::from_computed_value(l))
             },
-            Unpacked::Percentage(p) => specified::LengthPercentage::Percentage(p),
+            Unpacked::Percentage(p) => {
+                specified::LengthPercentage::Percentage(NoCalcPercentage::new(p.0))
+            },
             Unpacked::Calc(c) => {
                 // We simplify before constructing the LengthPercentage if
                 // needed, so this is always fine.
@@ -1035,7 +877,10 @@ impl CalcLengthPercentage {
         };
 
         fn resolve_anchor_function<'a>(
-            f: &'a GenericAnchorFunction<Box<CalcNode>, Box<CalcNode>>,
+            f: &'a GenericAnchorFunction<
+                Box<CalcNode>,
+                Box<GenericAnchorFunctionFallback<CalcLengthPercentageLeaf>>,
+            >,
             side: PhysicalSide,
             params: &AnchorPosOffsetResolutionParams,
         ) -> AnchorResolutionResult<'a, Box<CalcNode>> {
@@ -1051,7 +896,7 @@ impl CalcLengthPercentage {
                     let Some(fb) = f.fallback.as_ref() else {
                         return AnchorResolutionResult::Invalid;
                     };
-                    let mut node = fb.clone();
+                    let mut node = Box::new(fb.node.clone());
                     let result = node.map_node(|node| {
                         resolve_anchor_functions(
                             node,
@@ -1073,7 +918,9 @@ impl CalcLengthPercentage {
         }
 
         fn resolve_anchor_size_function<'a>(
-            f: &'a GenericAnchorSizeFunction<Box<CalcNode>>,
+            f: &'a GenericAnchorSizeFunction<
+                Box<GenericAnchorFunctionFallback<CalcLengthPercentageLeaf>>,
+            >,
             allowed: AllowAnchorPosResolutionInCalcPercentage,
             params: &AnchorPosOffsetResolutionParams,
         ) -> AnchorResolutionResult<'a, Box<CalcNode>> {
@@ -1089,7 +936,7 @@ impl CalcLengthPercentage {
                     let Some(fb) = f.fallback.as_ref() else {
                         return AnchorResolutionResult::Invalid;
                     };
-                    let mut node = fb.clone();
+                    let mut node = Box::new(fb.node.clone());
                     let result =
                         node.map_node(|node| resolve_anchor_functions(node, allowed, params));
                     if result.is_err() {
@@ -1172,8 +1019,8 @@ impl specified::CalcLengthPercentage {
     {
         use crate::values::specified::calc::Leaf;
 
-        let node = self.node.map_leaves(|leaf| match *leaf {
-            Leaf::Percentage(p) => CalcLengthPercentageLeaf::Percentage(Percentage(p)),
+        let node = self.0.node.map_leaves(|leaf| match *leaf {
+            Leaf::Percentage(p) => CalcLengthPercentageLeaf::Percentage(Percentage(p.get())),
             Leaf::Length(l) => CalcLengthPercentageLeaf::Length({
                 let result =
                     l.to_computed_value_with_base_size(context, base_size, line_height_base);
@@ -1183,13 +1030,13 @@ impl specified::CalcLengthPercentage {
                     result
                 }
             }),
-            Leaf::Number(n) => CalcLengthPercentageLeaf::Number(n),
+            Leaf::Number(n) => CalcLengthPercentageLeaf::Number(n.get()),
             Leaf::Angle(..) | Leaf::Time(..) | Leaf::Resolution(..) | Leaf::ColorComponent(..) => {
                 unreachable!("Shouldn't have parsed")
             },
         });
 
-        LengthPercentage::new_calc(node, self.clamping_mode)
+        LengthPercentage::new_calc(node, self.0.clamping_mode)
     }
 
     /// Compute font-size or line-height taking into account text-zoom if necessary.
@@ -1211,12 +1058,13 @@ impl specified::CalcLengthPercentage {
     /// so it returns Err(()) if there is any non-absolute unit.
     pub fn to_computed_pixel_length_without_context(&self) -> Result<CSSFloat, ()> {
         use crate::values::specified::calc::Leaf;
-        use crate::values::specified::length::NoCalcLength;
 
         // Simplification should've turned this into an absolute length,
         // otherwise it wouldn't have been able to.
-        match self.node {
-            calc::CalcNode::Leaf(Leaf::Length(NoCalcLength::Absolute(ref l))) => Ok(l.to_px()),
+        match self.0.node {
+            calc::CalcNode::Leaf(Leaf::Length(ref l)) => {
+                l.to_computed_pixel_length_without_context()
+            },
             _ => Err(()),
         }
     }
@@ -1229,16 +1077,10 @@ impl specified::CalcLengthPercentage {
         get_font_metrics: Option<impl Fn() -> GeckoFontMetrics>,
     ) -> Result<CSSFloat, ()> {
         use crate::values::specified::calc::Leaf;
-        use crate::values::specified::length::NoCalcLength;
 
-        match self.node {
-            calc::CalcNode::Leaf(Leaf::Length(NoCalcLength::Absolute(ref l))) => Ok(l.to_px()),
-            calc::CalcNode::Leaf(Leaf::Length(NoCalcLength::FontRelative(ref l))) => {
-                if let Some(getter) = get_font_metrics {
-                    l.to_computed_pixel_length_with_font_metrics(getter)
-                } else {
-                    Err(())
-                }
+        match self.0.node {
+            calc::CalcNode::Leaf(Leaf::Length(ref l)) => {
+                l.to_computed_pixel_length_with_font_metrics(get_font_metrics)
             },
             _ => Err(()),
         }
@@ -1259,16 +1101,18 @@ impl specified::CalcLengthPercentage {
         use crate::values::specified::calc::Leaf;
         use crate::values::specified::length::NoCalcLength;
 
-        specified::CalcLengthPercentage {
+        specified::CalcLengthPercentage(specified::CalcNumeric {
             clamping_mode: computed.clamping_mode,
             node: computed.node.map_leaves(|l| match l {
                 CalcLengthPercentageLeaf::Length(ref l) => {
                     Leaf::Length(NoCalcLength::from_px(l.px()))
                 },
-                CalcLengthPercentageLeaf::Percentage(ref p) => Leaf::Percentage(p.0),
-                CalcLengthPercentageLeaf::Number(n) => Leaf::Number(*n),
+                CalcLengthPercentageLeaf::Percentage(ref p) => {
+                    Leaf::Percentage(NoCalcPercentage::new(p.0))
+                },
+                CalcLengthPercentageLeaf::Number(n) => Leaf::Number(NoCalcNumber::new(*n)),
             }),
-        }
+        })
     }
 }
 
@@ -1339,6 +1183,12 @@ impl TryTacticAdjustment for LengthPercentage {
             },
             UnpackedMut::Length(..) => {},
         }
+    }
+}
+
+impl TryTacticAdjustment for GenericAnchorFunctionFallback<CalcLengthPercentageLeaf> {
+    fn try_tactic_adjustment(&mut self, old_side: PhysicalSide, new_side: PhysicalSide) {
+        self.node.try_tactic_adjustment(old_side, new_side)
     }
 }
 

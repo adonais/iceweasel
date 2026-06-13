@@ -851,7 +851,7 @@ class BackupTest(MarionetteTestCase):
           (async () => {
             let feed = AboutNewTab.activityStream.store.feeds.get("feeds.wallpaperfeed");
             let wallpaperFile = await File.createFromNsIFile(await IOUtils.getFile(wallpaperPath));
-            await feed.wallpaperUpload(wallpaperFile);
+            await feed.wallpaperUpload(wallpaperFile, "light");
             Services.prefs.setStringPref("browser.newtabpage.activity-stream.newtabWallpapers.wallpaper", "custom");
           })().then(outerResolve);
         """,

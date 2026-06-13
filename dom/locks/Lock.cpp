@@ -11,7 +11,7 @@
 
 namespace mozilla::dom {
 
-NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(Lock, mOwner, mWaitingPromise,
+NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(Lock, mGlobal, mWaitingPromise,
                                       mReleasedPromise)
 NS_IMPL_CYCLE_COLLECTING_ADDREF(Lock)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(Lock)
@@ -24,7 +24,7 @@ Lock::Lock(nsIGlobalObject* aGlobal,
            const WeakPtr<locks::LockRequestChild>& aLockRequestChild,
            const nsString& aName, LockMode aMode,
            const RefPtr<Promise>& aReleasedPromise, ErrorResult& aRv)
-    : mOwner(aGlobal),
+    : mGlobal(aGlobal),
       mLockRequestChild(aLockRequestChild),
       mName(aName),
       mMode(aMode),

@@ -44,10 +44,10 @@ class nsLayoutStatics {
     }
   }
 
- private:
   // not to be called!
-  nsLayoutStatics();
+  nsLayoutStatics() = delete;
 
+ private:
   static void Shutdown();
 
   static nsrefcnt sLayoutStaticRefcnt;

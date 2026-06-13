@@ -12,9 +12,12 @@
 #ifndef XSIMD_NEON64_HPP
 #define XSIMD_NEON64_HPP
 
+#include <cassert>
 #include <complex>
 #include <cstddef>
+#include <cstring>
 #include <tuple>
+#include <utility>
 
 #include "../types/xsimd_neon64_register.hpp"
 #include "../types/xsimd_utils.hpp"
@@ -27,6 +30,13 @@ namespace xsimd
     namespace kernel
     {
         using namespace types;
+
+        // first
+        template <class A>
+        XSIMD_INLINE double first(batch<double, A> const& self, requires_arch<neon64>) noexcept
+        {
+            return vgetq_lane_f64(self, 0);
+        }
 
         /*******
          * all *
@@ -168,6 +178,99 @@ namespace xsimd
         XSIMD_INLINE void store_unaligned(double* dst, batch<double, A> const& src, requires_arch<neon64>) noexcept
         {
             return store_aligned<A>(dst, src, A {});
+        }
+
+        /****************
+         * store_stream *
+         ****************/
+
+#if defined(__GNUC__)
+        template <class A>
+        XSIMD_INLINE void store_stream(float* mem, batch<float, A> const& val, requires_arch<neon64>) noexcept
+        {
+            float32x2_t lo = vget_low_f32(val);
+            float32x2_t hi = vget_high_f32(val);
+            __asm__ __volatile__("stnp %d[lo], %d[hi], [%[mem]]"
+                                 :
+                                 : [lo] "w"(lo), [hi] "w"(hi), [mem] "r"(mem)
+                                 : "memory");
+        }
+
+        template <class A>
+        XSIMD_INLINE void store_stream(double* mem, batch<double, A> const& val, requires_arch<neon64>) noexcept
+        {
+            float64x1_t lo = vget_low_f64(val);
+            float64x1_t hi = vget_high_f64(val);
+            __asm__ __volatile__("stnp %d[lo], %d[hi], [%[mem]]"
+                                 :
+                                 : [lo] "w"(lo), [hi] "w"(hi), [mem] "r"(mem)
+                                 : "memory");
+        }
+
+        template <class A, class T, class = typename std::enable_if<std::is_integral<T>::value, void>::type>
+        XSIMD_INLINE void store_stream(T* mem, batch<T, A> const& val, requires_arch<neon64>) noexcept
+        {
+            uint64x2_t u64;
+            std::memcpy(&u64, &val, sizeof(u64));
+            uint64x1_t lo = vget_low_u64(u64);
+            uint64x1_t hi = vget_high_u64(u64);
+            __asm__ __volatile__("stnp %d[lo], %d[hi], [%[mem]]"
+                                 :
+                                 : [lo] "w"(lo), [hi] "w"(hi), [mem] "r"(mem)
+                                 : "memory");
+        }
+#endif
+
+        /***************
+         * load_stream *
+         ***************/
+
+#if defined(__GNUC__)
+        template <class A>
+        XSIMD_INLINE batch<float, A> load_stream(float const* mem, convert<float>, requires_arch<neon64>) noexcept
+        {
+            float32x2_t lo, hi;
+            __asm__ __volatile__("ldnp %d[lo], %d[hi], [%[mem]]"
+                                 : [lo] "=w"(lo), [hi] "=w"(hi)
+                                 : [mem] "r"(mem)
+                                 : "memory");
+            return vcombine_f32(lo, hi);
+        }
+
+        template <class A>
+        XSIMD_INLINE batch<double, A> load_stream(double const* mem, convert<double>, requires_arch<neon64>) noexcept
+        {
+            float64x1_t lo, hi;
+            __asm__ __volatile__("ldnp %d[lo], %d[hi], [%[mem]]"
+                                 : [lo] "=w"(lo), [hi] "=w"(hi)
+                                 : [mem] "r"(mem)
+                                 : "memory");
+            return vcombine_f64(lo, hi);
+        }
+
+        template <class A, class T, class = typename std::enable_if<std::is_integral<T>::value, void>::type>
+        XSIMD_INLINE batch<T, A> load_stream(T const* mem, convert<T>, requires_arch<neon64>) noexcept
+        {
+            uint64x1_t lo, hi;
+            __asm__ __volatile__("ldnp %d[lo], %d[hi], [%[mem]]"
+                                 : [lo] "=w"(lo), [hi] "=w"(hi)
+                                 : [mem] "r"(mem)
+                                 : "memory");
+            uint64x2_t u64 = vcombine_u64(lo, hi);
+            batch<T, A> result;
+            std::memcpy(&result, &u64, sizeof(u64));
+            return result;
+        }
+#endif
+
+        /*********************
+         * store<batch_bool> *
+         *********************/
+
+        template <class A>
+        XSIMD_INLINE void store(batch_bool<double, A> b, bool* mem, requires_arch<neon>) noexcept
+        {
+            store(batch_bool<uint64_t, A>(b.data), mem, A {});
         }
 
         /****************
@@ -590,6 +693,77 @@ namespace xsimd
             return vmaxq_f64(lhs, rhs);
         }
 
+        /********
+         * mask *
+         ********/
+
+        template <class A, class T, detail::enable_sized_t<T, 1> = 0>
+        XSIMD_INLINE uint64_t mask(batch_bool<T, A> const& self, requires_arch<neon64>) noexcept
+        {
+            // From https://github.com/DLTcollab/sse2neon/blob/master/sse2neon.h
+            // Extract most significant bit
+            uint8x16_t msbs = vshrq_n_u8(self, 7);
+            // Position it appropriately
+            static constexpr int8_t shift_table[16] = { 0, 1, 2, 3, 4, 5, 6, 7, 0, 1, 2, 3, 4, 5, 6, 7 };
+            int8x16_t shifts = vld1q_s8(shift_table);
+            uint8x16_t positioned = vshlq_u8(msbs, shifts);
+            // Horizontal reduction
+            return vaddv_u8(vget_low_u8(positioned)) | (vaddv_u8(vget_high_u8(positioned)) << 8);
+        }
+
+        template <class A, class T, detail::enable_sized_t<T, 2> = 0>
+        XSIMD_INLINE uint64_t mask(batch_bool<T, A> const& self, requires_arch<neon64>) noexcept
+        {
+            // Extract most significant bit
+            uint16x8_t msbs = vshrq_n_u16(self, 15);
+            // Position it appropriately
+            static constexpr int16_t shift_table[8] = { 0, 1, 2, 3, 4, 5, 6, 7 };
+            int16x8_t shifts = vld1q_s16(shift_table);
+            uint16x8_t positioned = vshlq_u16(msbs, shifts);
+            // Horizontal reduction
+            return vaddvq_u16(positioned);
+        }
+
+        template <class A, class T, detail::enable_sized_t<T, 4> = 0>
+        XSIMD_INLINE uint64_t mask(batch_bool<T, A> const& self, requires_arch<neon64>) noexcept
+        {
+            // Extract most significant bit
+            uint32x4_t msbs = vshrq_n_u32(self, 31);
+            // Position it appropriately
+            static constexpr int32_t shift_table[4] = { 0, 1, 2, 3 };
+            int32x4_t shifts = vld1q_s32(shift_table);
+            uint32x4_t positioned = vshlq_u32(msbs, shifts);
+            // Horizontal reduction
+            return vaddvq_u32(positioned);
+        }
+
+        /*********
+         * count *
+         *********/
+        template <class A, class T, detail::enable_sized_t<T, 1> = 0>
+        XSIMD_INLINE size_t count(batch_bool<T, A> const& self, requires_arch<neon64>) noexcept
+        {
+            return vaddvq_u8(vshrq_n_u8(self, 7));
+        }
+
+        template <class A, class T, detail::enable_sized_t<T, 2> = 0>
+        XSIMD_INLINE size_t count(batch_bool<T, A> const& self, requires_arch<neon64>) noexcept
+        {
+            return vaddvq_u16(vshrq_n_u16(self, 15));
+        }
+
+        template <class A, class T, detail::enable_sized_t<T, 4> = 0>
+        XSIMD_INLINE size_t count(batch_bool<T, A> const& self, requires_arch<neon64>) noexcept
+        {
+            return vaddvq_u32(vshrq_n_u32(self, 31));
+        }
+
+        template <class A, class T, detail::enable_sized_t<T, 8> = 0>
+        XSIMD_INLINE size_t count(batch_bool<T, A> const& self, requires_arch<neon64>) noexcept
+        {
+            return vaddvq_u64(vshrq_n_u64(self, 63));
+        }
+
         /*******
          * abs *
          *******/
@@ -840,8 +1014,8 @@ namespace xsimd
                                                                          uint64x2_t, int64x2_t,
                                                                          float32x4_t, float64x2_t>;
             template <class T>
-            using enable_neon64_type_t = typename std::enable_if<std::is_integral<T>::value || std::is_same<T, float>::value || std::is_same<T, double>::value,
-                                                                 int>::type;
+            using enable_neon64_type_t = std::enable_if_t<std::is_integral<T>::value || std::is_same<T, float>::value || std::is_same<T, double>::value,
+                                                          int>;
         }
 
         /**************
@@ -1115,7 +1289,7 @@ namespace xsimd
         {
             template <class A, size_t I, size_t... Is>
             XSIMD_INLINE batch<double, A> extract_pair(batch<double, A> const& lhs, batch<double, A> const& rhs, std::size_t n,
-                                                       ::xsimd::detail::index_sequence<I, Is...>) noexcept
+                                                       std::index_sequence<I, Is...>) noexcept
             {
                 if (n == I)
                 {
@@ -1123,7 +1297,7 @@ namespace xsimd
                 }
                 else
                 {
-                    return extract_pair(lhs, rhs, n, ::xsimd::detail::index_sequence<Is...>());
+                    return extract_pair(lhs, rhs, n, std::index_sequence<Is...>());
                 }
             }
         }
@@ -1133,7 +1307,7 @@ namespace xsimd
         {
             constexpr std::size_t size = batch<double, A>::size;
             assert(n < size && "index in bounds");
-            return detail::extract_pair(lhs, rhs, n, ::xsimd::detail::make_index_sequence<size>());
+            return detail::extract_pair(lhs, rhs, n, std::make_index_sequence<size>());
         }
 
         /******************
@@ -1147,9 +1321,11 @@ namespace xsimd
         }
 
         template <class A, class T, detail::enable_sized_unsigned_t<T, 8> = 0>
-        XSIMD_INLINE batch<T, A> bitwise_rshift(batch<T, A> const& lhs, batch<as_signed_integer_t<T>, A> const& rhs, requires_arch<neon64>) noexcept
+        XSIMD_INLINE batch<T, A> bitwise_rshift(batch<T, A> const& lhs, batch<T, A> const& rhs, requires_arch<neon64>) noexcept
         {
-            return vshlq_u64(lhs, vnegq_s64(rhs));
+            // Blindly converting to signed since out of bounds shifts are UB anyways
+            assert(detail::shifts_all_positive(rhs));
+            return vshlq_u64(lhs, vnegq_s64(vreinterpretq_s64_u64(rhs)));
         }
 
         template <class A, class T, detail::enable_sized_signed_t<T, 8> = 0>
@@ -1223,7 +1399,7 @@ namespace xsimd
                 V apply(float64x2_t rhs) const
                 {
                     using func_type = V (*)(float64x2_t);
-                    auto func = xsimd::detail::get<func_type>(m_func);
+                    auto func = std::get<func_type>(m_func);
                     return func(rhs);
                 }
             };
@@ -1379,8 +1555,6 @@ namespace xsimd
         namespace detail
         {
             using ::xsimd::batch_constant;
-            using ::xsimd::detail::integer_sequence;
-            using ::xsimd::detail::make_integer_sequence;
 
             template <class CB1, class CB2, class IS>
             struct index_burst_impl;
@@ -1388,7 +1562,7 @@ namespace xsimd
             template <typename T1, class A, typename T2, T2... V,
                       T2... incr>
             struct index_burst_impl<batch_constant<T1, A>, batch_constant<T2, A, V...>,
-                                    integer_sequence<T2, incr...>>
+                                    std::integer_sequence<T2, incr...>>
             {
                 using type = batch_constant<T2, A, V...>;
             };
@@ -1396,11 +1570,11 @@ namespace xsimd
             template <typename T1, class A, T1 V0, T1... V1,
                       typename T2, T2... V2, T2... incr>
             struct index_burst_impl<batch_constant<T1, A, V0, V1...>, batch_constant<T2, A, V2...>,
-                                    integer_sequence<T2, incr...>>
+                                    std::integer_sequence<T2, incr...>>
             {
                 using next_input = batch_constant<T1, A, V1...>;
                 using next_output = batch_constant<T2, A, V2..., (V0 + incr)...>;
-                using type = typename index_burst_impl<next_input, next_output, integer_sequence<T2, incr...>>::type;
+                using type = typename index_burst_impl<next_input, next_output, std::integer_sequence<T2, incr...>>::type;
             };
 
             template <class B, class T>
@@ -1412,7 +1586,7 @@ namespace xsimd
                 static constexpr size_t mul = sizeof(Tp) / sizeof(T);
                 using input = batch_constant<Tp, A, (mul * V)...>;
                 using output = batch_constant<T, A>;
-                using type = typename index_burst_impl<input, output, make_integer_sequence<T, mul>>::type;
+                using type = typename index_burst_impl<input, output, std::make_integer_sequence<T, mul>>::type;
             };
 
             template <class B, typename T>
@@ -1529,6 +1703,15 @@ namespace xsimd
                                                             requires_arch<neon64>) noexcept
         {
             return batch<std::complex<double>>(swizzle(self.real(), idx, A()), swizzle(self.imag(), idx, A()));
+        }
+
+        /*********
+         * widen *
+         *********/
+        template <class A>
+        XSIMD_INLINE std::array<batch<double, A>, 2> widen(batch<float, A> const& x, requires_arch<neon64>) noexcept
+        {
+            return { batch<double, A>(vcvt_f64_f32(vget_low_f32(x))), batch<double, A>(vcvt_high_f64_f32(x)) };
         }
     }
 }

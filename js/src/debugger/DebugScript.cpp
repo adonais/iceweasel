@@ -47,16 +47,8 @@ const JSClass DebugScriptObject::class_ = {
 };
 
 const JSClassOps DebugScriptObject::classOps_ = {
-    nullptr,                      // addProperty
-    nullptr,                      // delProperty
-    nullptr,                      // enumerate
-    nullptr,                      // newEnumerate
-    nullptr,                      // resolve
-    nullptr,                      // mayResolve
-    DebugScriptObject::finalize,  // finalize
-    nullptr,                      // call
-    nullptr,                      // construct
-    DebugScriptObject::trace,     // trace
+    .finalize = DebugScriptObject::finalize,
+    .trace = DebugScriptObject::trace,
 };
 
 /* static */

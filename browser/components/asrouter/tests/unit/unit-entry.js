@@ -125,7 +125,7 @@ const TEST_GLOBAL = {
       prefix: "ASRouter",
     }),
   },
-  AWScreenUtils: {
+  ASRouterScreenUtils: {
     evaluateTargetingAndRemoveScreens() {
       return true;
     },
@@ -139,6 +139,9 @@ const TEST_GLOBAL = {
   BrowserUtils: {
     sendToDeviceEmailsSupported() {
       return true;
+    },
+    isChinaRepack() {
+      return false;
     },
   },
   UpdateUtils: { getUpdateChannel() {} },
@@ -565,6 +568,12 @@ const TEST_GLOBAL = {
   },
   Logger: FakeLogger,
   getFxAccountsSingleton() {},
+  AWEnsureAddonInstalled() {
+    return Promise.resolve("complete");
+  },
+  AWWaitForNimbus() {
+    return Promise.resolve("ready");
+  },
   AboutNewTab: {},
   Glean: {
     messagingExperiments: {

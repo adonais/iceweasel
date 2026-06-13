@@ -12,7 +12,7 @@ use minidump_writer::minidump_writer::{AuxvType, DirectAuxvDumpInfo};
 #[cfg(target_os = "android")]
 use std::os::fd::RawFd;
 #[cfg(target_os = "windows")]
-use std::os::windows::io::OwnedHandle;
+use std::os::windows::io::{BorrowedHandle, OwnedHandle, RawHandle};
 use std::{
     ffi::{c_char, CString, OsString},
     hint::spin_loop,
@@ -21,10 +21,13 @@ use std::{
         atomic::{AtomicBool, Ordering},
         OnceLock,
     },
-    thread::{self, JoinHandle},
+    thread::JoinHandle,
 };
 #[cfg(target_os = "windows")]
-use windows_sys::Win32::System::Diagnostics::Debug::{CONTEXT, EXCEPTION_RECORD};
+use windows_sys::Win32::{
+    Foundation::HANDLE,
+    System::Diagnostics::Debug::{CONTEXT, EXCEPTION_RECORD},
+};
 
 extern crate num_traits;
 
@@ -35,6 +38,8 @@ mod platform;
 pub struct CrashHelperClient {
     connector: IPCConnector,
     spawner_thread: Option<JoinHandle<Result<ProcessHandle>>>,
+    #[allow(unused)]
+    pid: Pid,
 }
 
 impl CrashHelperClient {
@@ -44,7 +49,7 @@ impl CrashHelperClient {
         Ok(())
     }
 
-    fn register_child_process(&mut self) -> Result<IPCConnector> {
+    fn register_child_process(&mut self, id: GeckoChildId) -> Result<IPCConnector> {
         let ipc_channel = IPCClientChannel::new()?;
         let (server_endpoint, client_endpoint) = ipc_channel.deconstruct();
 
@@ -60,10 +65,21 @@ impl CrashHelperClient {
             self.connector.set_process(process_handle);
         }
 
-        let message = messages::RegisterChildProcess::new(server_endpoint.into_ancillary());
+        let message = messages::RegisterChildProcess::new(id, server_endpoint.into_ancillary());
         self.connector.send_message(message)?;
 
         Ok(client_endpoint)
+    }
+
+    #[cfg(target_os = "windows")]
+    fn child_process_proxy_rendezvous(
+        &mut self,
+        id: GeckoChildId,
+        pid: Pid,
+        handle: OwnedHandle,
+    ) -> bool {
+        let message = messages::ProcessRendezVous::new(/*dumpable */ true, pid, id, [handle]);
+        self.connector.send_message(message).is_ok()
     }
 
     #[cfg(any(target_os = "android", target_os = "linux"))]
@@ -180,6 +196,20 @@ pub unsafe extern "C" fn crash_helper_shutdown(client: *mut CrashHelperClient) {
     let _crash_helper_box = Box::from_raw(client);
 }
 
+/// Return the PID of the crash helper.
+///
+/// # Safety
+///
+/// The `client` parameter must be a valid pointer to the crash helper client
+/// object returned by the [`crash_helper_launch()`] or
+/// [`crash_helper_connect()`] functions.
+#[no_mangle]
+pub unsafe extern "C" fn crash_helper_pid(client: *mut CrashHelperClient) -> Pid {
+    let client = client.as_mut().unwrap();
+
+    client.pid
+}
+
 #[repr(C)]
 pub struct CrashReport {
     path: *mut BreakpadChar,
@@ -219,10 +249,11 @@ pub unsafe extern "C" fn set_crash_report_path(
 #[no_mangle]
 pub unsafe extern "C" fn register_child_ipc_channel(
     client: *mut CrashHelperClient,
+    id: GeckoChildId,
     connector: *mut RawIPCConnector,
 ) -> bool {
     let client = client.as_mut().unwrap();
-    if let Ok(client_endpoint) = client.register_child_process() {
+    if let Ok(client_endpoint) = client.register_child_process(id) {
         let raw_connector = client_endpoint.into_raw_connector();
         unsafe {
             connector.write(raw_connector);
@@ -327,6 +358,33 @@ fn collect_exception_records(
     }
 }
 
+/// Sends the rendez-vous message of a child process from the main process
+/// instead of from the child itself. This is used on Windows where the main
+/// process has access to the child handle and can duplicate handles into the
+/// crash helper, but the child cannot.
+///
+/// # Safety
+///
+/// The `client` parameter must be a valid pointer to the crash helper client
+/// object returned by the [`crash_helper_launch()`] or
+/// [`crash_helper_connect()`] functions. The `handle` parameter must contain
+/// a valid process handle.
+#[cfg(target_os = "windows")]
+#[no_mangle]
+pub unsafe extern "C" fn child_process_proxy_rendezvous(
+    client: *mut CrashHelperClient,
+    id: GeckoChildId,
+    pid: Pid,
+    handle: HANDLE,
+) -> bool {
+    let client = client.as_mut().unwrap();
+
+    let Ok(handle) = BorrowedHandle::borrow_raw(handle as RawHandle).try_clone_to_owned() else {
+        return false;
+    };
+    client.child_process_proxy_rendezvous(id, pid, handle)
+}
+
 /// Send the auxiliary vector information for the process identified by `id`
 /// to the crash helper.
 ///
@@ -395,36 +453,30 @@ static RENDEZVOUS_FAILED: AtomicBool = AtomicBool::new(false);
 /// a valid pipe handle (on Windows) or a valid file descriptor (on all other
 /// platforms).
 #[no_mangle]
-pub unsafe extern "C" fn crash_helper_rendezvous(raw_connector: RawIPCConnector, id: GeckoChildId) {
+pub unsafe extern "C" fn crash_helper_rendezvous(
+    raw_connector: RawIPCConnector,
+    id: GeckoChildId,
+    crash_helper_pid: Option<&Pid>,
+) {
     let Ok(connector) = IPCConnector::from_raw_connector(raw_connector) else {
         RENDEZVOUS_FAILED.store(true, Ordering::Relaxed);
         return;
     };
 
-    let join_handle = thread::spawn(move || {
-        if let Ok(message) = connector.recv_reply::<messages::ChildProcessRendezVous>() {
-            let reply = CrashHelperClient::prepare_for_minidump(message.crash_helper_pid, id);
-            if connector.send_message(reply).is_ok() {
-                assert!(
-                    CHILD_IPC_ENDPOINT
-                        .set(Box::new(connector.into_raw_connector()))
-                        .is_ok(),
-                    "The crash_helper_rendezvous() function must only be called once"
-                );
-                return;
-            }
+    let rendezvous = CrashHelperClient::prepare_for_minidump(crash_helper_pid.copied(), id);
+    if let Some(rendezvous) = rendezvous {
+        if connector.send_message(rendezvous).is_err() {
+            RENDEZVOUS_FAILED.store(true, Ordering::Relaxed);
+            return;
         }
-
-        RENDEZVOUS_FAILED.store(true, Ordering::Relaxed);
-    });
-
-    // If we couldn't spawn a thread the join handle will be already marked as
-    // finished, check for this and flag the rendez-vous as failed. Don't wait
-    // for the thread though, other failures will be dealt with within the
-    // thread itself.
-    if join_handle.is_finished() && join_handle.join().is_err() {
-        RENDEZVOUS_FAILED.store(true, Ordering::Relaxed);
     }
+
+    assert!(
+        CHILD_IPC_ENDPOINT
+            .set(Box::new(connector.into_raw_connector()))
+            .is_ok(),
+        "The crash_helper_rendezvous() function must only be called once"
+    );
 }
 
 /// Ensure that the rendez-vous with the crash helper has happened. This method

@@ -85,7 +85,7 @@
     border-radius: var(--border-radius-small);
 
     &[disabled] {
-      opacity: var(--toolbarbutton-disabled-opacity);
+      opacity: var(--toolbarbutton-opacity-disabled);
     }
 
     &:not([disabled]):hover {
@@ -129,7 +129,6 @@
 #placesList {
   background-color: var(--organizer-pane-background);
   width: 200px;
-  min-width: 100px;
   max-width: 400px;
 }
 

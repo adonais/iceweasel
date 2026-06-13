@@ -31,8 +31,8 @@ OUTPUT = TOPSRCDIR / "browser/components/aiwindow/models/PreferencesNavMap.sys.m
 TOPLEVEL_PANE_L10N_IDS = {
     "general": "pane-general-title",
     "home": "pane-home-title",
-    "search": "pane-search-title",
-    "privacy": "pane-privacy-title",
+    "search": "pane-search-title2",
+    "privacy": "pane-privacy-title3",
     "sync": "pane-sync-title3",
 }
 

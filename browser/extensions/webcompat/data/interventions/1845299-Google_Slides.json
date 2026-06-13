@@ -6,14 +6,13 @@
       "matches": ["*://docs.google.com/presentation/*"]
     }
   },
+  "css": {
+    "hide_extra_scrollbars": "#speakernotes { overflow-y: auto; }"
+  },
   "interventions": [
     {
       "platforms": ["desktop"],
-      "content_scripts": {
-        "css": [
-          "bug1845299-docs.google.com-hide-extra-scrollbar-on-speaker-notes.css"
-        ]
-      }
+      "css": ["hide_extra_scrollbars"]
     }
   ]
 }

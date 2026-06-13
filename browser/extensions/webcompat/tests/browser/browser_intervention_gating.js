@@ -28,7 +28,7 @@ function getConfig(
       if (css || js) {
         delete i.css;
         delete i.js;
-        i.content_scripts = { css, js };
+        i.content_scripts = { css, js, no_console_message: true };
       }
       return i;
     }),

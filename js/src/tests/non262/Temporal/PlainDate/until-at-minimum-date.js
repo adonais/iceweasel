@@ -74,5 +74,19 @@ const minDate = new Temporal.PlainDate(-271821, 4, 19);
   assertEq(tryUntil(other, minDate, { smallestUnit: "years" }), "Invalid");
 }
 
+{
+  // minDate with one month added.
+  let other = new Temporal.PlainDate(-271821, 4 + 1, 19);
+  let oneDayLess = new Temporal.PlainDate(-271821, 4 + 1, 18);
+
+  let options = {smallestUnit: "days", roundingIncrement: 2, roundingMode: "expand"};
+  assertEq(tryUntil(oneDayLess, other, { largestUnit: "weeks", ...options }), "P2D");
+  assertEq(tryUntil(other, oneDayLess, { largestUnit: "weeks", ...options }), "-P2D");
+  assertEq(tryUntil(oneDayLess, other, { largestUnit: "months", ...options }), "P2D");
+  assertEq(tryUntil(other, oneDayLess, { largestUnit: "months", ...options }), "-P2D");
+  assertEq(tryUntil(oneDayLess, other, { largestUnit: "years", ...options }), "P2D");
+  assertEq(tryUntil(other, oneDayLess, { largestUnit: "years", ...options }), "-P2D");
+}
+
 if (typeof reportCompare === "function")
   reportCompare(true, true);

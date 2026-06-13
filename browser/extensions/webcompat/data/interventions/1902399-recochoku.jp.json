@@ -9,10 +9,12 @@
   "interventions": [
     {
       "platforms": ["all"],
-      "content_scripts": {
-        "isolated": true,
-        "js": ["bug1902399-recochoku.jp-hide-unsupported-browser-warning.js"]
-      }
+      "hide_messages": [
+        {
+          "container": ".header-caution",
+          "message": "Chrome"
+        }
+      ]
     }
   ]
 }

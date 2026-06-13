@@ -716,7 +716,7 @@ nsresult RTCDataChannel::DoOnMessageAvailable(const nsACString& aData,
   if (aBinary) {
     if (mBinaryType == RTCDataChannelType::Blob) {
       RefPtr<Blob> blob =
-          Blob::CreateStringBlob(GetOwnerGlobal(), aData, u""_ns);
+          Blob::CreateStringBlob(GetRelevantGlobal(), aData, u""_ns);
       if (NS_WARN_IF(!blob)) {
         DC_ERROR(("%p: RTCDataChannel::%s: CreateStringBlob failed", this,
                   __func__));

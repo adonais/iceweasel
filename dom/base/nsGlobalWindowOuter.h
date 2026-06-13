@@ -251,16 +251,11 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
                   const nsAString& aOptions,
                   mozilla::dom::BrowsingContext** _retval);
 
-  virtual mozilla::EventListenerManager* GetExistingListenerManager()
-      const override;
-
-  virtual mozilla::EventListenerManager* GetOrCreateListenerManager() override;
-
+  mozilla::EventListenerManager* GetExistingListenerManager() const override;
+  mozilla::EventListenerManager* GetOrCreateListenerManager() override;
   bool ComputeDefaultWantsUntrusted(mozilla::ErrorResult& aRv) final;
 
-  virtual nsPIDOMWindowOuter* GetOwnerGlobalForBindingsInternal() override;
-
-  virtual nsIGlobalObject* GetOwnerGlobal() const override;
+  nsIGlobalObject* GetRelevantGlobal() const override;
 
   EventTarget* GetTargetForEventTargetChain() override;
 
@@ -282,7 +277,8 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
       mozilla::dom::EventTarget* aChromeEventHandler) override;
 
   // Outer windows only.
-  virtual void SetInitialPrincipal(nsIPrincipal* aNewWindowPrincipal) override;
+  MOZ_CAN_RUN_SCRIPT virtual void SetInitialPrincipal(
+      nsIPrincipal* aNewWindowPrincipal) override;
 
   virtual bool IsSuspended() const override;
   virtual bool IsFrozen() const override;

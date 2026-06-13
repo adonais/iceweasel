@@ -62,11 +62,11 @@ use crate::hit_test::HitTestingScene;
 use crate::intern::Interner;
 use crate::internal_types::{FastHashMap, LayoutPrimitiveInfo, Filter, PlaneSplitterIndex, PipelineInstanceId};
 use crate::svg_filter::{FilterGraphNode, FilterGraphOp, FilterGraphPictureReference};
-use crate::picture::{Picture3DContext, PictureCompositeMode, PicturePrimitive};
+use crate::picture::{Picture3DContext, PictureCompositeMode, PictureInstance};
 use crate::picture::{BlitReason, OrderedPictureChild, PrimitiveList, SurfaceInfo, PictureFlags};
 use crate::picture_graph::PictureGraph;
 use crate::prim_store::{PrimitiveInstance, PrimitiveStoreStats};
-use crate::prim_store::{PrimitiveInstanceKind, NinePatchDescriptor, PrimitiveStore};
+use crate::prim_store::{PrimitiveKind, NinePatchDescriptor, PrimitiveStore};
 use crate::prim_store::{InternablePrimitive, PictureIndex};
 use crate::prim_store::PolygonKey;
 use crate::prim_store::rectangle::RectanglePrim;
@@ -78,7 +78,7 @@ use crate::prim_store::gradient::{
     optimize_linear_gradient,
 };
 use crate::prim_store::image::{Image, YuvImage};
-use crate::prim_store::line_dec::{LineDecoration, LineDecorationCacheKey, get_line_decoration_size};
+use crate::prim_store::line_dec::LineDecoration;
 use crate::prim_store::picture::{Picture, PictureKey};
 use crate::picture_composite_mode::PictureCompositeKey;
 use crate::prim_store::text_run::TextRun;
@@ -324,7 +324,7 @@ impl PictureChainBuilder {
 
         let pic_index = PictureIndex(prim_store.pictures
             .alloc()
-            .init(PicturePrimitive::new_image(
+            .init(PictureInstance::new_image(
                 Some(composite_mode.clone()),
                 context_3d,
                 self.flags,
@@ -396,7 +396,7 @@ impl PictureChainBuilder {
 
                 let pic_index = PictureIndex(prim_store.pictures
                     .alloc()
-                    .init(PicturePrimitive::new_image(
+                    .init(PictureInstance::new_image(
                         composite_mode,
                         Picture3DContext::Out,
                         self.flags,
@@ -704,7 +704,7 @@ impl<'a> SceneBuilder<'a> {
     fn finalize_picture(
         pic_index: PictureIndex,
         prim_index: Option<usize>,
-        pictures: &mut [PicturePrimitive],
+        pictures: &mut [PictureInstance],
         parent_spatial_node_index: Option<SpatialNodeIndex>,
         clip_tree_builder: &ClipTreeBuilder,
         prim_instances: &[PrimitiveInstance],
@@ -793,8 +793,8 @@ impl<'a> SceneBuilder<'a> {
             .map(|node_id| clip_tree_builder.get_node(node_id));
         let lca_node = lca_tree_node
             .map(|tree_node| &clip_interner[tree_node.handle]);
-        let lca_clip_rect_origin = lca_tree_node
-            .map(|tree_node| tree_node.clip_rect_origin);
+        let lca_clip_rect = lca_tree_node
+            .map(|tree_node| tree_node.clip_rect);
         let pic_node_id = prim_index
             .map(|prim_index| clip_tree_builder.get_leaf(prim_instances[prim_index].clip_leaf_id).node_id)
             .and_then(|node_id| (node_id != ClipNodeId::NONE).then_some(node_id));
@@ -802,8 +802,8 @@ impl<'a> SceneBuilder<'a> {
             .map(|node_id| clip_tree_builder.get_node(node_id));
         let pic_node = pic_tree_node
             .map(|tree_node| &clip_interner[tree_node.handle]);
-        let pic_clip_rect_origin = pic_tree_node
-            .map(|tree_node| tree_node.clip_rect_origin);
+        let pic_clip_rect = pic_tree_node
+            .map(|tree_node| tree_node.clip_rect);
 
         // The logic behind this optimisation is that there's no need to clip
         // the contents of a picture when the crop will be applied anyway as
@@ -837,7 +837,7 @@ impl<'a> SceneBuilder<'a> {
             // simplest to just test for ClipItemKey equality (which includes
             // both spatial node and the actual clip).
             lca_node.key == pic_node.key &&
-            lca_clip_rect_origin == pic_clip_rect_origin &&
+            lca_clip_rect == pic_clip_rect &&
             !has_blur && direct_parent
         });
 
@@ -848,7 +848,7 @@ impl<'a> SceneBuilder<'a> {
         // Update the spatial node of any child pictures
         for cluster in &prim_list.clusters {
             for prim_instance_index in cluster.prim_range() {
-                if let PrimitiveInstanceKind::Picture { pic_index: child_pic_index, .. } = prim_instances[prim_instance_index].kind {
+                if let PrimitiveKind::Picture { pic_index: child_pic_index, .. } = prim_instances[prim_instance_index].kind {
                     let child_pic = &mut pictures[child_pic_index.0];
 
                     if child_pic.spatial_node_index == SpatialNodeIndex::UNKNOWN {
@@ -2015,7 +2015,7 @@ impl<'a> SceneBuilder<'a> {
         PrimitiveInstance::new(
             instance_kind,
             clip_leaf_id,
-            info.rect.min,
+            info.rect,
         )
     }
 
@@ -2522,7 +2522,7 @@ impl<'a> SceneBuilder<'a> {
                 // Add picture for this actual stacking context contents to render into.
                 let pic_index = PictureIndex(self.prim_store.pictures
                     .alloc()
-                    .init(PicturePrimitive::new_image(
+                    .init(PictureInstance::new_image(
                         composite_mode.clone(),
                         Picture3DContext::In { root_data: None, ancestor_index, plane_splitter_index },
                         stacking_context.prim_flags,
@@ -2567,7 +2567,7 @@ impl<'a> SceneBuilder<'a> {
                     // Add picture for this actual stacking context contents to render into.
                     let pic_index = PictureIndex(self.prim_store.pictures
                         .alloc()
-                        .init(PicturePrimitive::new_image(
+                        .init(PictureInstance::new_image(
                             composite_mode.clone(),
                             Picture3DContext::Out,
                             stacking_context.prim_flags,
@@ -2676,7 +2676,7 @@ impl<'a> SceneBuilder<'a> {
             // This is the acttual picture representing our 3D hierarchy root.
             let pic_index = PictureIndex(self.prim_store.pictures
                 .alloc()
-                .init(PicturePrimitive::new_image(
+                .init(PictureInstance::new_image(
                     None,
                     context_3d,
                     stacking_context.prim_flags,
@@ -2905,10 +2905,8 @@ impl<'a> SceneBuilder<'a> {
             polygon_handle = Some(handle);
         }
 
-        let clip_rect_origin = snapped_mask_rect.min;
-
         let item = ClipItemKey {
-            kind: ClipItemKeyKind::image_mask(image_mask, snapped_mask_rect.size(), polygon_handle),
+            kind: ClipItemKeyKind::image_mask(image_mask, polygon_handle),
         };
 
         let handle = self
@@ -2924,7 +2922,7 @@ impl<'a> SceneBuilder<'a> {
             new_node_id,
             handle,
             spatial_node_index,
-            clip_rect_origin,
+            snapped_mask_rect,
         );
     }
 
@@ -2942,10 +2940,8 @@ impl<'a> SceneBuilder<'a> {
             spatial_node_index,
         );
 
-        let clip_rect_origin = snapped_clip_rect.min;
-
         let item = ClipItemKey {
-            kind: ClipItemKeyKind::rectangle(snapped_clip_rect.size(), ClipMode::Clip),
+            kind: ClipItemKeyKind::rectangle(ClipMode::Clip),
         };
         let handle = self
             .interners
@@ -2960,7 +2956,7 @@ impl<'a> SceneBuilder<'a> {
             new_node_id,
             handle,
             spatial_node_index,
-            clip_rect_origin,
+            snapped_clip_rect,
         );
     }
 
@@ -2977,11 +2973,8 @@ impl<'a> SceneBuilder<'a> {
             spatial_node_index,
         );
 
-        let clip_rect_origin = snapped_region_rect.min;
-
         let item = ClipItemKey {
             kind: ClipItemKeyKind::rounded_rect(
-                snapped_region_rect.size(),
                 clip.radii,
                 clip.mode,
             ),
@@ -3000,7 +2993,7 @@ impl<'a> SceneBuilder<'a> {
             new_node_id,
             handle,
             spatial_node_index,
-            clip_rect_origin,
+            snapped_region_rect,
         );
     }
 
@@ -3167,7 +3160,7 @@ impl<'a> SceneBuilder<'a> {
                         // Create the primitive to draw the shadow picture into the scene.
                         let shadow_pic_index = PictureIndex(self.prim_store.pictures
                             .alloc()
-                            .init(PicturePrimitive::new_image(
+                            .init(PictureInstance::new_image(
                                 composite_mode,
                                 Picture3DContext::Out,
                                 PrimitiveFlags::IS_BACKFACE_VISIBLE,
@@ -3190,12 +3183,12 @@ impl<'a> SceneBuilder<'a> {
                         let clip_node_id = self.clip_tree_builder.build_clip_set(api::ClipChainId::INVALID);
 
                         let shadow_prim_instance = PrimitiveInstance::new(
-                            PrimitiveInstanceKind::Picture {
+                            PrimitiveKind::Picture {
                                 data_handle: shadow_prim_data_handle,
                                 pic_index: shadow_pic_index,
                             },
                             self.clip_tree_builder.build_for_picture(clip_node_id),
-                            LayoutPoint::zero(),
+                            LayoutRect::zero(),
                         );
 
                         // Add the shadow primitive. This must be done before pushing this
@@ -3318,32 +3311,15 @@ impl<'a> SceneBuilder<'a> {
         color: ColorF,
         style: LineStyle,
     ) {
-        // For line decorations, we can construct the render task cache key
-        // here during scene building, since it doesn't depend on device
-        // pixel ratio or transform.
-        let size = get_line_decoration_size(
-            &info.rect.size(),
-            orientation,
-            style,
-            wavy_line_thickness,
-        );
-
-        let cache_key = size.map(|size| {
-            LineDecorationCacheKey {
-                style,
-                orientation,
-                wavy_line_thickness: Au::from_f32_px(wavy_line_thickness),
-                size: size.to_au(),
-            }
-        });
-
         self.add_primitive(
             spatial_node_index,
             clip_node_id,
             &info,
             Vec::new(),
             LineDecoration {
-                cache_key,
+                style,
+                orientation,
+                wavy_line_thickness: Au::from_f32_px(wavy_line_thickness),
                 color: color.into(),
             },
         );
@@ -3516,11 +3492,13 @@ impl<'a> SceneBuilder<'a> {
             (start_point, end_point)
         };
 
+        let stretch_ratio = compute_stretch_ratio(stretch_size, info.rect.size());
+
         Some(LinearGradient {
             extend_mode,
             start_point: sp.into(),
             end_point: ep.into(),
-            stretch_size: stretch_size.into(),
+            stretch_ratio: stretch_ratio.into(),
             tile_spacing: tile_spacing.into(),
             stops,
             reverse_stops,
@@ -3552,11 +3530,13 @@ impl<'a> SceneBuilder<'a> {
             ratio_xy,
         };
 
+        let stretch_ratio = compute_stretch_ratio(stretch_size, info.rect.size());
+
         RadialGradient {
             extend_mode,
             center: center.into(),
             params,
-            stretch_size: stretch_size.into(),
+            stretch_ratio: stretch_ratio.into(),
             tile_spacing: tile_spacing.into(),
             nine_patch,
             stops,
@@ -3586,11 +3566,13 @@ impl<'a> SceneBuilder<'a> {
             }
         }).collect();
 
+        let stretch_ratio = compute_stretch_ratio(stretch_size, info.rect.size());
+
         ConicGradient {
             extend_mode,
             center: center.into(),
             params: ConicGradientParams { angle, start_offset, end_offset },
-            stretch_size: stretch_size.into(),
+            stretch_ratio: stretch_ratio.into(),
             tile_spacing: tile_spacing.into(),
             nine_patch,
             stops,
@@ -3644,17 +3626,34 @@ impl<'a> SceneBuilder<'a> {
                 flags,
             );
 
+            // Recover the DL-space prim rect origin. `prim_info.rect.min` is in
+            // normalized space (eso added for interning stability across pre-scroll
+            // changes); subtract `offset` to get the DL-space prim origin that
+            // Gecko's glyph positions are relative to.
+            let dl_prim_origin = prim_info.rect.min.to_vector() - offset;
+
+            // Anchor the run on the first glyph's pen position. `run_origin` is the
+            // offset from the DL prim origin to the run pen origin -- invariant
+            // under pre-scroll because both terms are in DL space and shift
+            // together. Per-glyph positions are stored relative to the first
+            // glyph, also invariant.
+            //
             // TODO(gw): It'd be nice not to have to allocate here for creating
             //           the primitive key, when the common case is that the
             //           hash will match and we won't end up creating a new
             //           primitive template.
-            let prim_offset = prim_info.rect.min.to_vector() - offset;
+            let first_glyph_origin = glyph_range
+                .iter()
+                .next()
+                .map(|g| g.point.to_vector())
+                .unwrap_or_else(LayoutVector2D::zero);
+            let run_origin = first_glyph_origin - dl_prim_origin;
             let glyphs = glyph_range
                 .iter()
                 .map(|glyph| {
                     GlyphInstance {
                         index: glyph.index,
-                        point: glyph.point - prim_offset,
+                        point: glyph.point - first_glyph_origin,
                     }
                 })
                 .collect();
@@ -3669,6 +3668,7 @@ impl<'a> SceneBuilder<'a> {
             TextRun {
                 glyphs,
                 font,
+                run_origin,
                 shadow: false,
                 requested_raster_space,
             }
@@ -3861,7 +3861,7 @@ impl<'a> SceneBuilder<'a> {
             // Extract the pic index for the intermediate surface. We need to
             // supply this to the capture prim below.
             let output_pic_index = match filtered_instance.kind {
-                PrimitiveInstanceKind::Picture { pic_index, .. } => pic_index,
+                PrimitiveKind::Picture { pic_index, .. } => pic_index,
                 _ => panic!("bug: not a picture"),
             };
 
@@ -3907,7 +3907,7 @@ impl<'a> SceneBuilder<'a> {
             // Set up the picture index for the backdrop-filter output in the prim
             // that will draw it
             match backdrop_render_instance.kind {
-                PrimitiveInstanceKind::BackdropRender { ref mut pic_index, .. } => {
+                PrimitiveKind::BackdropRender { ref mut pic_index, .. } => {
                     assert_eq!(*pic_index, PictureIndex::INVALID);
                     *pic_index = output_pic_index;
                 }
@@ -4642,7 +4642,7 @@ impl FlattenedStackingContext {
 
         let pic_index = PictureIndex(prim_store.pictures
             .alloc()
-            .init(PicturePrimitive::new_image(
+            .init(PictureInstance::new_image(
                 composite_mode.clone(),
                 flat_items_context_3d,
                 self.prim_flags,
@@ -4744,14 +4744,14 @@ fn create_prim_instance(
         .intern(&pic_key, || ());
 
     PrimitiveInstance::new(
-        PrimitiveInstanceKind::Picture {
+        PrimitiveKind::Picture {
             data_handle,
             pic_index,
         },
         clip_tree_builder.build_for_picture(
             clip_node_id,
         ),
-        LayoutPoint::zero(),
+        LayoutRect::zero(),
     )
 }
 
@@ -4813,6 +4813,31 @@ fn process_repeat_size(
             repeat_size.height
         },
     )
+}
+
+/// Encode a gradient's per-tile stretch as a fraction of its prim_size.
+/// Per-axis: ratio = stretch_size / prim_size, clamped to [0, 1] (the upper
+/// bound matches the old `stretch_size.min(prim_size)` clamp on the radial
+/// and conic templates and avoids over-allocating render-task pixels).
+///
+/// If prim_size isn't finite-positive on both axes we fall back to a uniform
+/// (1.0, 1.0) ratio, not per-axis. A per-axis fallback can mix a sentinel
+/// 1.0 (NaN axis) with a real ratio (finite axis), which at prep produces a
+/// partially-NaN stretch_size — that breaks downstream invariants like
+/// image_tiling::repetitions's `stride > 0` assertion (NaN width passes the
+/// finite-height needs_repetition check and reaches the assert before the
+/// NaN-aware intersection short-circuit fires).
+fn compute_stretch_ratio(stretch_size: LayoutSize, prim_size: LayoutSize) -> LayoutSize {
+    let prim_ok = prim_size.width.is_finite()
+        && prim_size.width > 0.0
+        && prim_size.height.is_finite()
+        && prim_size.height > 0.0;
+    if !prim_ok {
+        return LayoutSize::new(1.0, 1.0);
+    }
+    let w = (stretch_size.width / prim_size.width).min(1.0);
+    let h = (stretch_size.height / prim_size.height).min(1.0);
+    LayoutSize::new(w, h)
 }
 
 fn read_gradient_stops(stops: ItemRange<GradientStop>) -> Vec<GradientStopKey> {

@@ -84,7 +84,6 @@ pub(crate) fn run_tests(
     to_installer: &Path,
     channel: &str,
     appname: &str,
-    cert_replace_script: Option<&Path>,
     cert_dir: Option<&Path>,
     cert_overrides: &Vec<CertOverride>,
     tests: Vec<Test>,
@@ -134,11 +133,9 @@ pub(crate) fn run_tests(
                             let result = prepare_updater(
                                 updater_package,
                                 appname,
-                                cert_replace_script,
                                 cert_dir,
                                 cert_overrides,
                                 unpack_dir,
-                                runner,
                             );
 
                             // And return the package along with the
@@ -382,7 +379,6 @@ mod tests {
             &PathBuf::from("/fake/to_installer"),
             "release",
             "firefox",
-            None,
             None,
             &vec![],
             vec![test],

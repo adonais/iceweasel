@@ -66,8 +66,8 @@ nsStreamLoader::OnStartRequest(nsIRequest* request) {
       }
     }
   }
-  if (mRequestObserver) {
-    mRequestObserver->OnStartRequest(request);
+  if (nsCOMPtr<nsIRequestObserver> requestObserver = mRequestObserver) {
+    requestObserver->OnStartRequest(request);
   }
   return NS_OK;
 }
@@ -94,8 +94,8 @@ nsStreamLoader::OnStopRequest(nsIRequest* request, nsresult aStatus) {
     mObserver = nullptr;
   }
 
-  if (mRequestObserver) {
-    mRequestObserver->OnStopRequest(request, aStatus);
+  if (nsCOMPtr<nsIRequestObserver> requestObserver = mRequestObserver) {
+    requestObserver->OnStopRequest(request, aStatus);
     mRequestObserver = nullptr;
   }
 

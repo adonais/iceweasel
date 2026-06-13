@@ -218,7 +218,7 @@ class FilterNodeColorMatrixWebgl : public FilterNodeWebgl {
 
  protected:
   Matrix5x4 mMatrix;
-  AlphaMode mAlphaMode;
+  AlphaMode mAlphaMode = ALPHA_MODE_PREMULTIPLIED;
 
   int32_t InputIndex(uint32_t aInputEnumIndex) const override;
 };

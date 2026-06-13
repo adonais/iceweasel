@@ -25,16 +25,9 @@ static bool Services_MayResolve(const JSAtomState& names, jsid id,
                                 JSObject* maybeObj);
 
 static const JSClassOps sServices_ClassOps = {
-    nullptr,                // addProperty
-    nullptr,                // delProperty
-    nullptr,                // enumerate
-    Services_NewEnumerate,  // newEnumerate
-    Services_Resolve,       // resolve
-    Services_MayResolve,    // mayResolve
-    nullptr,                // finalize
-    nullptr,                // call
-    nullptr,                // construct
-    nullptr,                // trace
+    .newEnumerate = Services_NewEnumerate,
+    .resolve = Services_Resolve,
+    .mayResolve = Services_MayResolve,
 };
 
 static const JSClass sServices_Class = {"JSServices", 0, &sServices_ClassOps};

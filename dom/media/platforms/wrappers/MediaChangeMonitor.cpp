@@ -481,6 +481,9 @@ class HEVCChangeMonitor : public MediaChangeMonitor::CodecChangeMonitor {
             hvcc.GetFirstAvaiableNALU(H265NALU::NAL_TYPES::PREFIX_SEI_NUT)) {
       mSEI.Clear();
       mSEI.AppendElements(nalu->mNALU);
+      if (auto hdrMetadata = H265::ParseSEIHDRMetadata(*nalu)) {
+        mCurrentConfig.mHDRMetadata = std::move(hdrMetadata);
+      }
     }
 
     // Construct a new extradata. A situation we encountered previously involved
@@ -785,6 +788,10 @@ class AV1ChangeMonitor : public MediaChangeMonitor::CodecChangeMonitor {
     }
 
     UpdateConfig(info);
+
+    if (auto hdrMetadata = AOMDecoder::ReadMetadataOBUHDR(dataSpan)) {
+      mCurrentConfig.mHDRMetadata = std::move(hdrMetadata);
+    }
 
     if (rv == NS_ERROR_DOM_MEDIA_NEED_NEW_DECODER) {
       mTrackInfo = new TrackInfoSharedPtr(mCurrentConfig, mStreamID++);

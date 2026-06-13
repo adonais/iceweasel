@@ -100,7 +100,10 @@ class BrowsingContextGroup;
   /* If this field is `true`, it means that this WindowContext's         \
    * CloseWatcherManager has active CloseWatchers, which some UIs may    \
    * want to dismiss (for example the Android "back button"). */         \
-  FIELD(HasActiveCloseWatcher, bool)
+  FIELD(HasActiveCloseWatcher, bool)                                     \
+  /* Whether this window is allowed to navigate the top-level            \
+   * without user interaction. */                                        \
+  FIELD(IsFramebustingAllowed, bool)
 
 class WindowContext : public nsISupports, public nsWrapperCache {
   MOZ_DECL_SYNCED_CONTEXT(WindowContext, MOZ_EACH_WC_FIELD)
@@ -366,6 +369,9 @@ class WindowContext : public nsISupports, public nsWrapperCache {
   bool CanSet(FieldIndex<IDX_HasActiveCloseWatcher>, bool, ContentParent*) {
     return true;
   }
+
+  bool CanSet(FieldIndex<IDX_IsFramebustingAllowed>, const bool& aValue,
+              ContentParent* aSource);
 
   // Overload `DidSet` to get notifications for a particular field being set.
   //

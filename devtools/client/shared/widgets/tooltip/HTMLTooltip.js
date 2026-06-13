@@ -1069,7 +1069,7 @@ class HTMLTooltip extends EventEmitter {
     // script. Our current shadow set-up only supports one margin, so it's fine
     // to use the margin top in both directions.
     const margin = parseFloat(
-      this.xulPanelWrapper.ownerGlobal.getComputedStyle(this.xulPanelWrapper)
+      this.xulPanelWrapper.documentGlobal.getComputedStyle(this.xulPanelWrapper)
         .marginTop
     );
     this.xulPanelWrapper.moveTo(left + margin, top + margin);

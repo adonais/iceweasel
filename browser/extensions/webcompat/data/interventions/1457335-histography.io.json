@@ -8,9 +8,9 @@
   },
   "interventions": [
     {
-      "platforms": ["desktop"],
+      "platforms": ["all"],
       "content_scripts": {
-        "js": ["bug1457335-histography.io-ua-change.js"]
+        "js": ["add_chrome_to_useragent.js", "use_chrome_vendor.js"]
       }
     }
   ]

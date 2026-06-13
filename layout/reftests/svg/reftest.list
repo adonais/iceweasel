@@ -281,7 +281,7 @@ fuzzy(0-1,0-800000) == markers-and-group-opacity-01.svg markers-and-group-opacit
 fuzzy(0-1,0-1) == marker-dynamic-opacity.html marker-dynamic-opacity-ref.html
 == marker-css-transform.html marker-css-transform-ref.html
 == marker-effects-01.svg marker-effects-01-ref.svg
-fuzzy(0-1,0-100) == marker-viewBox-01.svg marker-viewBox-01-ref.svg
+fuzzy(0-9,0-12) == marker-viewBox-01.svg marker-viewBox-01-ref.svg
 fuzzy(0-65,0-570) == marker-orientation-01.svg marker-orientation-01-ref.svg
 fuzzy(0-65,0-570) == marker-orientation-02.svg marker-orientation-02-ref.svg
 == marker-orientation-03.svg pass.svg

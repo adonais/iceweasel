@@ -221,7 +221,7 @@ FifoWatcher* FifoWatcher::GetSingleton() {
   if (!sSingleton) {
     nsAutoCString dirPath;
     Preferences::GetCString("memory_info_dumper.watch_fifo.directory", dirPath);
-    sSingleton = new FifoWatcher(dirPath);
+    sSingleton = new FifoWatcher(std::move(dirPath));
     sSingleton->Init();
     ClearOnShutdown(&sSingleton);
   }

@@ -17,7 +17,6 @@ import mozilla.components.concept.awesomebar.optimizedsuggestions.SportSuggestio
 import mozilla.components.feature.search.SearchUseCases.SearchUseCase
 import mozilla.components.support.test.mock
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -26,6 +25,10 @@ import org.mockito.Mockito.verify
 import java.time.LocalDate
 import java.time.ZoneId
 import java.util.Locale
+import kotlin.test.assertIs
+import kotlin.test.assertNotNull
+
+private const val ARTIFICIAL_DELAY = 350L
 
 /**
  * Tests for [SportsOnlineSuggestionProvider].
@@ -35,18 +38,15 @@ import java.util.Locale
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class SportsOnlineSuggestionProviderTest {
-    private lateinit var fakeDataSource: FakeSportsSuggestionDataSource
+    private lateinit var fakeDataSource: FakeCombinedOnlineSuggestionDataSource
     private lateinit var provider: SportsOnlineSuggestionProvider
 
     @Before
     fun setUp() {
-        fakeDataSource = FakeSportsSuggestionDataSource(
-            results = listOf(
-                sampleSportItem(),
-            ),
-        )
+        fakeDataSource = FakeCombinedOnlineSuggestionDataSource(sportResults = listOf(sampleSportItem()))
 
         provider = SportsOnlineSuggestionProvider(
+            icons = mock(),
             searchUseCase = mock(),
             dataSource = fakeDataSource,
             suggestionsHeader = null,
@@ -80,12 +80,11 @@ class SportsOnlineSuggestionProviderTest {
     @Test
     fun `onSuggestionClicked invokes search use case with query`() = runTest {
         val searchUseCase: SearchUseCase = mock()
-        val localDateSource = FakeSportsSuggestionDataSource(
-            results = listOf(
-                sampleSportItem("test query"),
-            ),
+        val localDateSource = FakeCombinedOnlineSuggestionDataSource(
+            sportResults = listOf(sampleSportItem("test query")),
         )
         val localProvider = SportsOnlineSuggestionProvider(
+            icons = mock(),
             searchUseCase = searchUseCase,
             dataSource = localDateSource,
             suggestionsHeader = null,
@@ -111,9 +110,10 @@ class SportsOnlineSuggestionProviderTest {
             sampleSportItem(query = "c sport", sport = "C"),
         )
 
-        val localDataSource = FakeSportsSuggestionDataSource(results = manyResults)
+        val localDataSource = FakeCombinedOnlineSuggestionDataSource(sportResults = manyResults)
 
         val limitedProvider = SportsOnlineSuggestionProvider(
+            icons = mock(),
             searchUseCase = mock(),
             dataSource = localDataSource,
             suggestionsHeader = null,
@@ -130,8 +130,9 @@ class SportsOnlineSuggestionProviderTest {
     @Test
     fun `id is stable per instance`() = runTest {
         val p = SportsOnlineSuggestionProvider(
+            icons = mock(),
             searchUseCase = mock(),
-            dataSource = FakeSportsSuggestionDataSource(results = listOf(sampleSportItem())),
+            dataSource = FakeCombinedOnlineSuggestionDataSource(sportResults = listOf(sampleSportItem())),
             suggestionsHeader = null,
             maxNumberOfSuggestions = 1,
         )
@@ -147,8 +148,9 @@ class SportsOnlineSuggestionProviderTest {
 
     @Test
     fun `cancellation before delay prevents data source call`() = runTest {
-        val localDataSource = FakeSportsSuggestionDataSource(results = listOf(sampleSportItem()))
+        val localDataSource = FakeCombinedOnlineSuggestionDataSource(sportResults = listOf(sampleSportItem()))
         val cancellableProvider = SportsOnlineSuggestionProvider(
+            icons = mock(),
             searchUseCase = mock(),
             dataSource = localDataSource,
             suggestionsHeader = null,
@@ -193,8 +195,8 @@ class SportsOnlineSuggestionProviderTest {
 
         val result = provider.parseDate(isoDate, Locale.US, timeZone)
 
-        assertTrue(result is SportSuggestionDate.Tomorrow)
-        assertEquals("5:00 PM", (result as SportSuggestionDate.Tomorrow).time)
+        assertIs<SportSuggestionDate.Tomorrow>(result)
+        assertEquals("5:00 PM", result.time)
     }
 
     @Test
@@ -226,8 +228,8 @@ class SportsOnlineSuggestionProviderTest {
 
         val result = provider.parseDate(isoDate, Locale.US, timeZone)
 
-        assertTrue(result is SportSuggestionDate.General)
-        assertEquals("29 Oct 2025", (result as SportSuggestionDate.General).date)
+        assertIs<SportSuggestionDate.General>(result)
+        assertEquals("29 Oct 2025", result.date)
     }
 
     @Test
@@ -260,7 +262,7 @@ class SportsOnlineSuggestionProviderTest {
         val result = provider.parseDate(isoDate, Locale.US, timeZone)
 
         // 15:00 UTC = 00:00 JST next day, which is "tomorrow" in JST
-        assertTrue(result is SportSuggestionDate.Tomorrow)
+        assertIs<SportSuggestionDate.Tomorrow>(result)
     }
 
     // --- parseStatus tests ---
@@ -350,13 +352,13 @@ class SportsOnlineSuggestionProviderTest {
     // --- parseTeam tests ---
 
     @Test
-    fun `parseTeam returns team with name and score`() {
+    fun `parseTeam returns team with name and score`() = runTest {
         val team = AwesomeBar.SportItem.Team(
             key = "MIN",
             name = "Minnesota Wild",
             colors = listOf("0E4431"),
             score = 3,
-            iconUrl = null,
+            icon = null,
         )
 
         val result = provider.parseTeam(team)
@@ -366,13 +368,13 @@ class SportsOnlineSuggestionProviderTest {
     }
 
     @Test
-    fun `parseTeam returns null for blank team name`() {
+    fun `parseTeam returns null for blank team name`() = runTest {
         val team = AwesomeBar.SportItem.Team(
             key = "MIN",
             name = "   ",
             colors = listOf("0E4431"),
             score = 3,
-            iconUrl = null,
+            icon = null,
         )
 
         assertNull(provider.parseTeam(team))
@@ -424,21 +426,6 @@ class SportsOnlineSuggestionProviderTest {
     }
 }
 
-/**
- * Simple fake data source used for unit tests.
- * Records calls and returns the specified results.
- */
-private class FakeSportsSuggestionDataSource(
-    private val results: List<AwesomeBar.SportItem> = emptyList(),
-) : AwesomeBar.SportsSuggestionDataSource {
-    val calls = mutableListOf<String>()
-
-    override suspend fun fetch(query: String): List<AwesomeBar.SportItem> {
-        calls += query
-        return results
-    }
-}
-
 /** Convenience factory for creating sample [AwesomeBar.SportItem] objects for tests. */
 private fun sampleSportItem(
     query: String = "NHL Winnipeg Jets at Minnesota Wild 28 Oct 2025",
@@ -466,12 +453,12 @@ private val sampleHomeTeam = AwesomeBar.SportItem.Team(
     name = "Minnesota Wild",
     colors = listOf("0E4431", "AC1A2E", "EAAA00", "DDC9A3"),
     score = 3,
-    iconUrl = null,
+    icon = null,
 )
 private val sampleAwayTeam = AwesomeBar.SportItem.Team(
     key = "WPG",
     name = "Winnipeg Jets",
     colors = listOf("041E42", "004A98", "A2AAAD", "A6192E"),
     score = 4,
-    iconUrl = null,
+    icon = null,
 )

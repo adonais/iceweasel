@@ -751,13 +751,12 @@ class DocAccessible : public HyperTextAccessible,
     AttrRelProvider(nsAtom* aRelAttr, nsIContent* aContent)
         : mRelAttr(aRelAttr), mContent(aContent) {}
 
+    AttrRelProvider() = delete;
+    AttrRelProvider(const AttrRelProvider&) = delete;
+    AttrRelProvider& operator=(const AttrRelProvider&) = delete;
+
     nsAtom* mRelAttr;
     nsCOMPtr<nsIContent> mContent;
-
-   private:
-    AttrRelProvider();
-    AttrRelProvider(const AttrRelProvider&);
-    AttrRelProvider& operator=(const AttrRelProvider&);
   };
 
   typedef nsTArray<mozilla::UniquePtr<AttrRelProvider>> AttrRelProviders;

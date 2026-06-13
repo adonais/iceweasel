@@ -14,3 +14,4 @@ lockstore_rs = { path = "../lockstore_rs" }
 
 thin-vec = { version = "^0.2.12", features = ["gecko-ffi"] }
 log = "^0.4.20"
+zeroize = "1.8"

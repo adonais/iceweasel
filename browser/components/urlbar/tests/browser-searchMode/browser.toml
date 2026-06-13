@@ -25,8 +25,6 @@ support-files = ["../browser/dummy_page.html"]
 ["browser_excludeResults.js"]
 skip-if = [
   "os == 'mac' && os_version == '10.15' && arch == 'x86_64' && opt", # Bug 1938142
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && opt", # Bug 1938142
-  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && opt", # Bug 1938142
 ]
 
 ["browser_heuristic.js"]
@@ -71,9 +69,6 @@ support-files = ["has-a-link.html"]
 ["browser_searchModeSwitcher_emptyInput.js"]
 
 ["browser_searchModeSwitcher_keyNavigation.js"]
-skip-if = [
-  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && opt", # Bug 2028824 - fails permanently with Windows 11 25H2
-]
 
 ["browser_searchModeSwitcher_opensearchInstall.js"]
 

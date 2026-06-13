@@ -803,8 +803,6 @@ def test_release_promotion(
             "project": "try",
             "level": "1",
             "pushlog_id": "100",
-            "required_signoffs": [],
-            "signoff_urls": {},
             "release_product": "firefox",
             "release_type": "nightly",
         }),

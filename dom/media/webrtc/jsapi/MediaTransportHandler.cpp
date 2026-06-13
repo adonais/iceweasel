@@ -337,21 +337,21 @@ static Maybe<NrIceCtx::NatSimulatorConfig> GetNatConfig() {
     natConfig.mBlockTcp = block_tcp;
     natConfig.mBlockTls = block_tls;
     natConfig.mErrorCodeForDrop = error_code_for_drop;
-    natConfig.mFilteringType = filtering_type;
-    natConfig.mMappingType = mapping_type;
+    natConfig.mFilteringType = std::move(filtering_type);
+    natConfig.mMappingType = std::move(mapping_type);
     natConfig.mNetworkDelayMs = network_delay_ms;
     if (redirect_address.Length()) {
       CSFLogDebug(LOGTAG, "Redirect address: %s", redirect_address.get());
       CSFLogDebug(LOGTAG, "Redirect targets: %s", redirect_targets.get());
-      natConfig.mRedirectAddress = redirect_address;
+      natConfig.mRedirectAddress = std::move(redirect_address);
       std::stringstream str(redirect_targets.get());
       std::string target;
       while (getline(str, target, ',')) {
         CSFLogDebug(LOGTAG, "Adding target: %s", target.c_str());
-        natConfig.mRedirectTargets.AppendElement(target);
+        natConfig.mRedirectTargets.AppendElement(std::move(target));
       }
     }
-    return Some(natConfig);
+    return Some(std::move(natConfig));
   }
   return Nothing();
 }

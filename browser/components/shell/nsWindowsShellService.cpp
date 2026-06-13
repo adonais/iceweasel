@@ -500,8 +500,10 @@ nsWindowsShellService::LaunchOpenWithDefaultPickerForFileType(
   // Make sure the dialog is foregrounded.
   CoAllowSetForegroundWindow(pOWL, nullptr);
 
-  // The flag is a bit of a mystery. We use 0x84 based on experimentation.
-  hr = pOWL->Launch(nullptr, aFileType.Data(), 0x84);
+  // The flag is a bit of a mystery; on Win11+ 0x84 gives ideal messaging, on
+  // Win10 we use 0x2004.
+  int flag = mozilla::IsWin11OrLater() ? 0x84 : 0x2004;
+  hr = pOWL->Launch(nullptr, aFileType.Data(), flag);
 
   return SUCCEEDED(hr) ? NS_OK : NS_ERROR_FAILURE;
 }
@@ -1593,8 +1595,7 @@ static bool IsCurrentAppPinnedToTaskbarSync(const nsAString& aumid) {
   // Right now only run this check on MSIX to avoid
   // false positives when only private browsing is pinned.
   if (widget::WinUtils::HasPackageIdentity()) {
-    auto pinWithWin11TaskbarAPIResults =
-        IsCurrentAppPinnedToTaskbarWin11(false);
+    auto pinWithWin11TaskbarAPIResults = IsCurrentAppPinnedToTaskbarWin11();
     switch (pinWithWin11TaskbarAPIResults.result) {
       case Win11PinToTaskBarResultStatus::NotPinned:
         return false;

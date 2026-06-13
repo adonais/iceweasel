@@ -5,6 +5,7 @@
 #include "jsapi/RTCEncodedFrameBase.h"
 
 #include <cstddef>
+#include <span>
 
 #include "api/frame_transformer_interface.h"
 #include "js/ArrayBuffer.h"
@@ -52,10 +53,14 @@ RTCEncodedFrameBase::RTCEncodedFrameBase(nsIGlobalObject* aGlobal,
 
   mozilla::HoldJSObjects(this);
 
-  // Avoid a copy
-  mData = JS::NewArrayBufferWithUserOwnedContents(
-      jsapi.cx(), mState.mFrame->GetData().size(),
-      (void*)(mState.mFrame->GetData().data()));
+  if (mState.mFrame->GetData().data()) {
+    // Avoid a copy
+    mData = JS::NewArrayBufferWithUserOwnedContents(
+        jsapi.cx(), mState.mFrame->GetData().size(),
+        (void*)(mState.mFrame->GetData().data()));
+  } else {
+    mData = JS::NewArrayBuffer(jsapi.cx(), 0);
+  }
 }
 
 RTCEncodedFrameState::RTCEncodedFrameState(
@@ -98,7 +103,7 @@ void RTCEncodedFrameBase::SetData(const ArrayBuffer& aData) {
   if (mState.mFrame) {
     aData.ProcessData([&](const Span<uint8_t>& aData, JS::AutoCheckCannotGC&&) {
       mState.mFrame->SetData(
-          webrtc::ArrayView<const uint8_t>(aData.Elements(), aData.Length()));
+          std::span<const uint8_t>(aData.Elements(), aData.Length()));
     });
   }
 }

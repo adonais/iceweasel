@@ -29,6 +29,7 @@ include "mozilla/layers/LayersMessageUtils.h";
 
 using mozilla::dom::JSActorMessageKind from "mozilla/dom/JSActor.h";
 using mozilla::gfx::IntRect from "mozilla/gfx/Rect.h";
+using mozilla::gfx::CrossProcessPaintFlags from "mozilla/gfx/CrossProcessPaint.h";
 [MoveOnly] using mozilla::gfx::PaintFragment from "mozilla/gfx/CrossProcessPaint.h";
 using nscolor from "nsColor.h";
 using mozilla::dom::XPCOMPermitUnloadAction from "nsIDocumentViewer.h";
@@ -85,7 +86,7 @@ child:
                         TabId aTabId, LayersId aLayersId) returns (bool success);
 
   async DrawSnapshot(IntRect? aRect, float aScale, nscolor aBackgroundColor,
-                     uint32_t aFlags) returns (PaintFragment retval);
+                     CrossProcessPaintFlags aFlags) returns (PaintFragment retval);
 
   async DispatchSecurityPolicyViolation(nsString aViolationEventJSON,
                                         nsString aReportGroupName);

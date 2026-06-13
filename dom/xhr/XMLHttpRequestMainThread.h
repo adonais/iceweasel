@@ -5,8 +5,6 @@
 #ifndef mozilla_dom_XMLHttpRequestMainThread_h
 #define mozilla_dom_XMLHttpRequestMainThread_h
 
-#include <bitset>
-
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/DOMEventTargetHelper.h"
@@ -87,6 +85,10 @@ class ArrayBufferBuilder {
 
   ArrayBufferBuilder();
 
+  ArrayBufferBuilder(const ArrayBufferBuilder&) = delete;
+  ArrayBufferBuilder& operator=(const ArrayBufferBuilder&) = delete;
+  ArrayBufferBuilder& operator=(const ArrayBufferBuilder&&) = delete;
+
   // Will truncate if aNewCap is < Length().
   bool SetCapacity(uint32_t aNewCap);
 
@@ -115,10 +117,6 @@ class ArrayBufferBuilder {
 
  private:
   ~ArrayBufferBuilder();
-
-  ArrayBufferBuilder(const ArrayBufferBuilder&) = delete;
-  ArrayBufferBuilder& operator=(const ArrayBufferBuilder&) = delete;
-  ArrayBufferBuilder& operator=(const ArrayBufferBuilder&&) = delete;
 
   bool SetCapacityInternal(uint32_t aNewCap, const MutexAutoLock& aProofOfLock)
       MOZ_REQUIRES(mMutex);

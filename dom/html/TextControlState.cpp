@@ -283,6 +283,8 @@ class TextInputSelectionController final : public nsSupportsWeakReference,
   MOZ_CAN_RUN_SCRIPT NS_IMETHOD LineMove(bool aForward, bool aExtend) override;
   MOZ_CAN_RUN_SCRIPT NS_IMETHOD IntraLineMove(bool aForward,
                                               bool aExtend) override;
+  MOZ_CAN_RUN_SCRIPT NS_IMETHOD ParagraphMove(bool aForward,
+                                              bool aExtend) override;
   MOZ_CAN_RUN_SCRIPT NS_IMETHOD PageMove(bool aForward, bool aExtend) override;
   NS_IMETHOD CompleteScroll(bool aForward) override;
   MOZ_CAN_RUN_SCRIPT NS_IMETHOD CompleteMove(bool aForward,
@@ -473,16 +475,12 @@ TextInputSelectionController::SetCaretReadOnly(bool aReadOnly) {
   if (!presShell) {
     return NS_ERROR_FAILURE;
   }
-  RefPtr<nsCaret> caret = presShell->GetCaret();
-  if (!caret) {
-    return NS_ERROR_FAILURE;
-  }
 
   if (!mFrameSelection) {
     return NS_ERROR_FAILURE;
   }
 
-  caret->SetCaretReadOnly(aReadOnly);
+  presShell->SetCaretReadOnly(aReadOnly);
   return NS_OK;
 }
 
@@ -501,7 +499,7 @@ TextInputSelectionController::GetCaretVisible(bool* _retval) {
   if (!presShell) {
     return NS_ERROR_FAILURE;
   }
-  RefPtr<nsCaret> caret = presShell->GetCaret();
+  RefPtr<nsCaret> caret = presShell->GetOriginalCaret();
   if (!caret) {
     return NS_ERROR_FAILURE;
   }
@@ -520,12 +518,7 @@ TextInputSelectionController::SetCaretVisibilityDuringSelection(
   if (!presShell) {
     return NS_ERROR_FAILURE;
   }
-  RefPtr<nsCaret> caret = presShell->GetCaret();
-  if (!caret) {
-    return NS_ERROR_FAILURE;
-  }
-
-  caret->SetVisibilityDuringSelection(aVisibility);
+  presShell->SetCaretVisibilityDuringSelection(aVisibility);
   return NS_OK;
 }
 
@@ -577,6 +570,15 @@ TextInputSelectionController::IntraLineMove(bool aForward, bool aExtend) {
   }
   RefPtr<nsFrameSelection> frameSelection = mFrameSelection;
   return frameSelection->IntraLineMove(aForward, aExtend);
+}
+
+NS_IMETHODIMP
+TextInputSelectionController::ParagraphMove(bool aForward, bool aExtend) {
+  if (!mFrameSelection) {
+    return NS_ERROR_NULL_POINTER;
+  }
+  RefPtr<nsFrameSelection> frameSelection = mFrameSelection;
+  return frameSelection->ParagraphMove(aForward, aExtend);
 }
 
 NS_IMETHODIMP
@@ -1464,7 +1466,7 @@ nsresult TextControlState::InitializeSelection(PresShell* aPresShell) {
   //      to its internal array.
   Selection* selection = mSelCon->GetSelection(SelectionType::eNormal);
   if (selection) {
-    RefPtr<nsCaret> caret = aPresShell->GetCaret();
+    RefPtr<nsCaret> caret = aPresShell->GetOriginalCaret();
     if (caret) {
       selection->AddSelectionListener(caret);
     }
@@ -1473,7 +1475,7 @@ nsresult TextControlState::InitializeSelection(PresShell* aPresShell) {
 
   // If an editor exists from before, prepare it for usage
   if (mTextEditor) {
-    nsContentUtils::AddScriptRunner(new PrepareEditorEvent(*this));
+    nsContentUtils::AddScriptRunner(MakeAndAddRef<PrepareEditorEvent>(*this));
   }
 
   return NS_OK;

@@ -355,7 +355,7 @@ ipc::IPCResult WebGPUChild::RecvUncapturedError(RawId aDeviceId,
 
   // We don't want to spam the errors to the console indefinitely
   if (device->CheckNewWarning(aMessage)) {
-    JsWarning(device->GetOwnerGlobal(), aMessage);
+    JsWarning(device->GetRelevantGlobal(), aMessage);
 
     dom::GPUUncapturedErrorEventInit init;
     switch (aType) {
@@ -377,7 +377,8 @@ ipc::IPCResult WebGPUChild::RecvUncapturedError(RawId aDeviceId,
   return IPC_OK();
 }
 
-ipc::IPCResult WebGPUChild::RecvDeviceLost(RawId aDeviceId, uint8_t aReason,
+ipc::IPCResult WebGPUChild::RecvDeviceLost(RawId aDeviceId,
+                                           const GPUDeviceLostReason aReason,
                                            const nsACString& aMessage) {
   // There might have been a race between getting back the response to a
   // `device.destroy()` call and actual device loss. If that was the case,
@@ -401,9 +402,7 @@ ipc::IPCResult WebGPUChild::RecvDeviceLost(RawId aDeviceId, uint8_t aReason,
         return IPC_OK();
       }
 
-      dom::GPUDeviceLostReason reason =
-          static_cast<dom::GPUDeviceLostReason>(aReason);
-      device->ResolveLost(reason, message);
+      device->ResolveLost(aReason, message);
     }
   }
 

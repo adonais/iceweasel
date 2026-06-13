@@ -36,10 +36,10 @@ index cbb3bf1ce9..06dcbf8a6d 100644
      ~VideoStreamFactoryInterface() override {}
    };
 diff --git a/video/video_stream_encoder.cc b/video/video_stream_encoder.cc
-index 0b50e4ee33..22bc4dcdab 100644
+index 3b5df4e521..f5770ca3c2 100644
 --- a/video/video_stream_encoder.cc
 +++ b/video/video_stream_encoder.cc
-@@ -1106,6 +1106,7 @@ void VideoStreamEncoder::ReconfigureEncoder() {
+@@ -1109,6 +1109,7 @@ void VideoStreamEncoder::ReconfigureEncoder() {
    std::vector<VideoStream> streams;
    if (encoder_config_.video_stream_factory) {
      // Note: only tests set their own EncoderStreamFactory...

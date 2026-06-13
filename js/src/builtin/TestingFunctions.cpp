@@ -141,6 +141,7 @@
 #include "wasm/WasmIonCompile.h"
 #include "wasm/WasmJS.h"
 #include "wasm/WasmModule.h"
+#include "wasm/WasmProcess.h"
 #include "wasm/WasmValType.h"
 #include "wasm/WasmValue.h"
 
@@ -1006,46 +1007,118 @@ static bool WasmHugeMemorySupported(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
+static bool WasmHugeMemoryEnabled(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  wasm::AddressType addressType = wasm::AddressType::I32;
+  if (args.length() >= 1) {
+    if (!wasm::ToAddressType(cx, args.get(0), &addressType)) {
+      return false;
+    }
+  }
+
+  wasm::PageSize pageSize = wasm::PageSize::Standard;
+  if (args.length() >= 2) {
+    if (!wasm::ToPageSize(cx, args.get(1), &pageSize)) {
+      return false;
+    }
+  }
+
+  args.rval().setBoolean(wasm::IsHugeMemoryEnabled(addressType, pageSize));
+  return true;
+}
+
 static bool WasmMaxMemoryPages(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
   if (args.length() < 1) {
     JS_ReportErrorASCII(cx, "not enough arguments");
     return false;
   }
-  if (!args.get(0).isString()) {
-    JS_ReportErrorASCII(cx, "address type must be a string");
+
+  wasm::AddressType addressType;
+  if (!wasm::ToAddressType(cx, args.get(0), &addressType)) {
     return false;
   }
-  RootedString s(cx, args.get(0).toString());
-  Rooted<JSLinearString*> ls(cx, s->ensureLinear(cx));
-  if (!ls) {
-    return false;
-  }
+
   wasm::PageSize pageSize = wasm::PageSize::Standard;
-  if (argc > 1 && args.get(1).isInt32()) {
-    uint32_t pageSizeBytes = args.get(1).toInt32();
-    if (pageSizeBytes != PageSizeInBytes(wasm::PageSize::Standard)) {
-      JS_ReportErrorASCII(cx, "bad page size");
+  if (args.length() >= 2) {
+    if (!wasm::ToPageSize(cx, args.get(1), &pageSize)) {
       return false;
     }
   }
-  if (StringEqualsLiteral(ls, "i32")) {
-    wasm::Pages pages = wasm::MaxMemoryPages(wasm::AddressType::I32, pageSize);
-    args.rval().setInt32(pages.pageCount());
-    return true;
-  }
-  if (StringEqualsLiteral(ls, "i64")) {
-    wasm::Pages pages = wasm::MaxMemoryPages(wasm::AddressType::I64, pageSize);
-    args.rval().setNumber(pages.pageCount());
-    return true;
-  }
-  JS_ReportErrorASCII(cx, "bad address type");
-  return false;
+
+  wasm::Pages pages = wasm::MaxMemoryPages(addressType, pageSize);
+  args.rval().setNumber(pages.pageCount());
+  return true;
 }
 
 static bool WasmThreadsEnabled(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
   args.rval().setBoolean(wasm::ThreadsAvailable(cx));
+  return true;
+}
+
+static bool GetWasmSupportedFeatures(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  RootedObject features(cx, JS_NewPlainObject(cx));
+  if (!features) {
+    return false;
+  }
+  RootedValue value(cx);
+
+#define WASM_FEATURE(NAME, SHORT_NAME, COMPILE_PRED, ...)  \
+  value.setBoolean(COMPILE_PRED ? true : false);           \
+  if (!JS_SetProperty(cx, features, #SHORT_NAME, value)) { \
+    return false;                                          \
+  }
+  JS_FOR_WASM_FEATURES(WASM_FEATURE);
+#undef WASM_FEATURE
+
+#ifdef ENABLE_WASM_SIMD
+  value.setBoolean(true);
+#else
+  value.setBoolean(false);
+#endif
+  if (!JS_SetProperty(cx, features, "simd", value)) {
+    return false;
+  }
+
+  value.setBoolean(true);
+  if (!JS_SetProperty(cx, features, "threads", value)) {
+    return false;
+  }
+
+  args.rval().setObject(*features.get());
+  return true;
+}
+
+static bool GetWasmEnabledFeatures(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  RootedObject features(cx, JS_NewPlainObject(cx));
+  if (!features) {
+    return false;
+  }
+  RootedValue value(cx);
+
+#define WASM_FEATURE(NAME, SHORT_NAME, ...)                \
+  value.setBoolean(wasm::NAME##Available(cx));             \
+  if (!JS_SetProperty(cx, features, #SHORT_NAME, value)) { \
+    return false;                                          \
+  }
+  JS_FOR_WASM_FEATURES(WASM_FEATURE);
+#undef WASM_FEATURE
+
+  value.setBoolean(wasm::SimdAvailable(cx));
+  if (!JS_SetProperty(cx, features, "simd", value)) {
+    return false;
+  }
+
+  value.setBoolean(wasm::ThreadsAvailable(cx));
+  if (!JS_SetProperty(cx, features, "threads", value)) {
+    return false;
+  }
+
+  args.rval().setObject(*features.get());
   return true;
 }
 
@@ -3663,16 +3736,7 @@ static bool NewObjectWithAddPropertyHook(JSContext* cx, unsigned argc,
   };
 
   static const JSClassOps classOps = {
-      addPropHook,  // addProperty
-      nullptr,      // delProperty
-      nullptr,      // enumerate
-      nullptr,      // newEnumerate
-      nullptr,      // resolve
-      nullptr,      // mayResolve
-      nullptr,      // finalize
-      nullptr,      // call
-      nullptr,      // construct
-      nullptr,      // trace
+      .addProperty = addPropHook,
   };
   static const JSClass cls = {
       "ObjectWithAddPropHook",
@@ -3772,16 +3836,8 @@ static bool NewObjectWithCallHook(JSContext* cx, unsigned argc, Value* vp) {
   };
 
   static const JSClassOps classOps = {
-      nullptr,        // addProperty
-      nullptr,        // delProperty
-      nullptr,        // enumerate
-      nullptr,        // newEnumerate
-      nullptr,        // resolve
-      nullptr,        // mayResolve
-      nullptr,        // finalize
-      callHook,       // call
-      constructHook,  // construct
-      nullptr,        // trace
+      .call = callHook,
+      .construct = constructHook,
   };
   static const JSClass cls = {
       "ObjectWithCallHook",
@@ -4531,7 +4587,7 @@ class MOZ_STACK_CLASS IterativeFailureTest {
 
   JSContext* const cx;
   FailureSimulator& simulator;
-  size_t compartmentCount;
+  size_t compartmentCount = 0;
 
   // Test parameters set by initParams.
   RootedFunction testFunction;
@@ -5031,16 +5087,7 @@ static void finalize_counter_finalize(JS::GCContext* gcx, JSObject* obj) {
 }
 
 static const JSClassOps FinalizeCounterClassOps = {
-    nullptr,                    // addProperty
-    nullptr,                    // delProperty
-    nullptr,                    // enumerate
-    nullptr,                    // newEnumerate
-    nullptr,                    // resolve
-    nullptr,                    // mayResolve
-    finalize_counter_finalize,  // finalize
-    nullptr,                    // call
-    nullptr,                    // construct
-    nullptr,                    // trace
+    .finalize = finalize_counter_finalize,
 };
 
 static const JSClass FinalizeCounterClass = {
@@ -5909,16 +5956,7 @@ class CloneBufferObject : public NativeObject {
 };
 
 static const JSClassOps CloneBufferObjectClassOps = {
-    nullptr,                      // addProperty
-    nullptr,                      // delProperty
-    nullptr,                      // enumerate
-    nullptr,                      // newEnumerate
-    nullptr,                      // resolve
-    nullptr,                      // mayResolve
-    CloneBufferObject::Finalize,  // finalize
-    nullptr,                      // call
-    nullptr,                      // construct
-    nullptr,                      // trace
+    .finalize = CloneBufferObject::Finalize,
 };
 
 const JSClass CloneBufferObject::class_ = {
@@ -6683,16 +6721,8 @@ class ShapeSnapshotObject : public NativeObject {
 };
 
 /*static */ const JSClassOps ShapeSnapshotObject::classOps_ = {
-    nullptr,                        // addProperty
-    nullptr,                        // delProperty
-    nullptr,                        // enumerate
-    nullptr,                        // newEnumerate
-    nullptr,                        // resolve
-    nullptr,                        // mayResolve
-    ShapeSnapshotObject::finalize,  // finalize
-    nullptr,                        // call
-    nullptr,                        // construct
-    ShapeSnapshotObject::trace,     // trace
+    .finalize = ShapeSnapshotObject::finalize,
+    .trace = ShapeSnapshotObject::trace,
 };
 
 /*static */ const JSClass ShapeSnapshotObject::class_ = {
@@ -9749,6 +9779,103 @@ static bool HasBaselineHint(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
+static bool RecordIonCompilationForHints(JSContext* cx, unsigned argc,
+                                         Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  RootedObject callee(cx, &args.callee());
+
+  if (args.length() != 1) {
+    ReportUsageErrorASCII(cx, callee, "Wrong number of arguments");
+    return false;
+  }
+
+  RootedScript script(cx, TestingFunctionArgumentToScript(cx, args[0]));
+  if (!script) {
+    return false;
+  }
+
+  if (!cx->runtime()->jitRuntime() ||
+      !cx->runtime()->jitRuntime()->hasJitHintsMap() ||
+      !script->hasJitScript()) {
+    args.rval().setUndefined();
+    return true;
+  }
+
+  jit::JitHintsMap* jitHints = cx->runtime()->jitRuntime()->getJitHintsMap();
+  jitHints->setEagerBaselineHint(script);
+  if (!jitHints->recordIonCompilation(script)) {
+    return false;
+  }
+
+  args.rval().setUndefined();
+  return true;
+}
+
+static bool HasMegamorphicIC(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  RootedObject callee(cx, &args.callee());
+
+  if (args.length() != 1) {
+    ReportUsageErrorASCII(cx, callee, "Wrong number of arguments");
+    return false;
+  }
+
+  RootedScript script(cx, TestingFunctionArgumentToScript(cx, args[0]));
+  if (!script) {
+    return false;
+  }
+
+  if (!script->hasJitScript()) {
+    args.rval().setBoolean(false);
+    return true;
+  }
+
+  uint32_t numEntries = script->jitScript()->numICEntries();
+  for (uint32_t i = 0; i < numEntries; i++) {
+    jit::ICState::Mode mode =
+        script->jitScript()->fallbackStub(i)->state().mode();
+    if (mode >= jit::ICState::Mode::Megamorphic) {
+      args.rval().setBoolean(true);
+      return true;
+    }
+  }
+
+  args.rval().setBoolean(false);
+  return true;
+}
+
+static bool ResetFallbackStubStates(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  RootedObject callee(cx, &args.callee());
+
+  if (args.length() != 1) {
+    ReportUsageErrorASCII(cx, callee, "Wrong number of arguments");
+    return false;
+  }
+
+  RootedScript script(cx, TestingFunctionArgumentToScript(cx, args[0]));
+  if (!script) {
+    return false;
+  }
+
+  if (!script->hasJitScript()) {
+    args.rval().setUndefined();
+    return true;
+  }
+
+  jit::ICScript* icScript = script->jitScript()->icScript();
+  uint32_t numEntries = script->jitScript()->numICEntries();
+  JS::Zone* zone = script->zone();
+  for (uint32_t i = 0; i < numEntries; i++) {
+    jit::ICFallbackStub* stub = script->jitScript()->fallbackStub(i);
+    stub->discardStubs(zone, &icScript->icEntry(i));
+    stub->state().reset();
+  }
+
+  args.rval().setUndefined();
+  return true;
+}
+
 static bool ClearKeptObjects(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
   JS::ClearKeptObjects(cx);
@@ -10659,6 +10786,12 @@ gc::ZealModeHelpText),
 "  Returns a boolean indicating whether WebAssembly supports using a large"
 "  virtual memory reservation in order to elide bounds checks on this platform."),
 
+    JS_FN_HELP("wasmHugeMemoryEnabled", WasmHugeMemoryEnabled, 0, 0,
+"wasmHugeMemoryEnabled([addressType[, pageSizeBytes]])",
+"  Returns a boolean indicating whether WebAssembly huge memory is enabled at"
+"  runtime for the given address type (\"i32\" or \"i64\", default \"i32\") and"
+"  page size in bytes (default 65536)."),
+
     JS_FN_HELP("wasmMaxMemoryPages", WasmMaxMemoryPages, 1, 0,
 "wasmMaxMemoryPages(addressType)",
 "  Returns an int with the maximum number of pages that can be allocated to a memory."
@@ -10667,6 +10800,14 @@ gc::ZealModeHelpText),
 "  a given combination of those; there is no guarantee that that size allocation will"
 "  always succeed, only that it can succeed in principle.  The addressType is a string,"
 "  'i32' or 'i64'."),
+
+    JS_FN_HELP("getWasmSupportedFeatures", GetWasmSupportedFeatures, 0, 0,
+"getWasmSupportedFeatures()",
+"  Get the wasm features SpiderMonkey was built with support for.\n"),
+
+    JS_FN_HELP("getWasmEnabledFeatures", GetWasmEnabledFeatures, 0, 0,
+"getWasmEnabledFeatures()",
+"  Get the wasm features that are runtime enabled in SpiderMonkey.\n"),
 
 #define WASM_FEATURE(NAME, ...) \
     JS_FN_HELP("wasm" #NAME "Enabled", Wasm##NAME##Enabled, 0, 0, \
@@ -11163,6 +11304,18 @@ JS_FOR_WASM_FEATURES(WASM_FEATURE)
     JS_FN_HELP("hasBaselineHint", HasBaselineHint, 1, 0,
 "hasBaselineHint(fun)",
 "  Returns true if the given function has a baseline JIT hint set.\n"),
+    JS_FN_HELP("recordIonCompilationForHints", RecordIonCompilationForHints, 1,
+               0,
+"recordIonCompilationForHints(fun)",
+"  Records Ion compilation hints for the given function's current IC states.\n"
+"  The function must already be baseline compiled.\n"),
+    JS_FN_HELP("hasMegamorphicIC", HasMegamorphicIC, 1, 0,
+"hasMegamorphicIC(fun)",
+"  Returns true if any fallback stub in the function's JIT script is at\n"
+"  Megamorphic or Generic IC mode.\n"),
+    JS_FN_HELP("resetFallbackStubStates", ResetFallbackStubStates, 1, 0,
+"resetFallbackStubStates(fun)",
+"  Resets all fallback stub IC states to Specialized mode.\n"),
 
     JS_FN_HELP("encodeAsUtf8InBuffer", EncodeAsUtf8InBuffer, 2, 0,
 "encodeAsUtf8InBuffer(str, uint8Array)",

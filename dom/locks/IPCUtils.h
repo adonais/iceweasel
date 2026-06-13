@@ -5,16 +5,14 @@
 #ifndef DOM_LOCKS_IPCUTILS_H_
 #define DOM_LOCKS_IPCUTILS_H_
 
-#include "ipc/EnumSerializer.h"
 #include "ipc/IPCMessageUtilsSpecializations.h"
+#include "mozilla/dom/BindingIPCUtils.h"
 #include "mozilla/dom/LockManagerBinding.h"
 
 namespace IPC {
-using LockMode = mozilla::dom::LockMode;
 template <>
-struct ParamTraits<LockMode>
-    : public ContiguousEnumSerializerInclusive<LockMode, LockMode::Shared,
-                                               LockMode::Exclusive> {};
+struct ParamTraits<mozilla::dom::LockMode>
+    : public mozilla::dom::WebIDLEnumSerializer<mozilla::dom::LockMode> {};
 
 DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::dom::LockInfo, mName, mMode,
                                   mClientId);

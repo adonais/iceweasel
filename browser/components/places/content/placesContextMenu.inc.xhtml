@@ -62,12 +62,14 @@
             node-type="link_bookmark"
             hide-if-not-search="true"
             selection-type="single"/>
-  <menuseparator id="placesContext_openSeparator"/>
   <menuitem id="contentsharing_sharefolder"
-            data-l10n-id="places-share-folder"
+            class="badge-new"
+            data-l10n-attrs="badge"
+            data-l10n-id="places-share-folder2"
             selection-type="single|multiple"
             node-type="folder"
             hide-if-content-sharing-disabled="true" />
+  <menuseparator id="placesContext_openSeparator"/>
   <menuitem id="placesContext_show_bookmark:info"
             command="placesCmd_show:info"
             data-l10n-id="places-edit-bookmark"

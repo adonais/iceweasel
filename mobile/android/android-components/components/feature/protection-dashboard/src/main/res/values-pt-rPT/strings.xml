@@ -20,17 +20,17 @@
   </plurals>
   <plurals name="mozac_protections_dashboard_data_saved">
     <!-- Label showing data saved in megabytes. %1$d is the number of MB saved -->
-    <item quantity="one">%1$d MB guardados</item>
+    <item quantity="one">%1$d MB guardado</item>
     <item quantity="other">%1$d MB guardados</item>
   </plurals>
   <!-- Section header for tracker category breakdown -->
-  <string name="protections_dashboard_where_they_came_from">De onde veio</string>
+  <string name="protections_dashboard_where_they_came_from">De onde vieram</string>
   <!-- Tracker category: Advertising trackers -->
-  <string name="protections_dashboard_category_ads">Anúncios</string>
+  <string name="protections_dashboard_category_ads">Publicidade</string>
   <!-- Tracker category: Analytics trackers -->
   <string name="protections_dashboard_category_analytics">Analíticos</string>
   <!-- Tracker category: Social media trackers -->
-  <string name="protections_dashboard_category_social">Social</string>
+  <string name="protections_dashboard_category_social">Redes sociais</string>
   <!-- Tracker category: Other trackers -->
   <string name="protections_dashboard_category_others">Outros</string>
   <!-- Title shown in the protection dashboard header next to the shield icon -->
@@ -47,7 +47,7 @@
       Label used for the number of trackers blocked.
       %1$d is the number of trackers.
     -->
-    <item quantity="one">%1$d rastreadores</item>
+    <item quantity="one">%1$d rastreador</item>
     <item quantity="other">%1$d rastreadores</item>
   </plurals>
   <plurals name="mozac_protections_dashboard_total_blocked_since">
@@ -56,7 +56,7 @@
       since a specific date. %1$s is the trackers count phrase (e.g.
       "5,305 trackers"). %2$s is the formatted date (e.g. "February 23, 2026").
     -->
-    <item quantity="one">%1$s bloqueados desde %2$s</item>
+    <item quantity="one">%1$s bloqueado desde %2$s</item>
     <item quantity="other">%1$s bloqueados desde %2$s</item>
   </plurals>
 </resources>

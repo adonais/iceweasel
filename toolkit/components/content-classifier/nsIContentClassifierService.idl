@@ -1,0 +1,39 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+#include "nsISupports.idl"
+
+/**
+ * Interface for the content classifier service, allowing JS code to
+ * provide filter list data (e.g. from RemoteSettings).
+ */
+[scriptable, uuid(1AFC121B-6849-4BA4-A515-C7E91F20D0DC)]
+interface nsIContentClassifierService : nsISupports {
+    /**
+     * Store filter list data for a named list. The data is the raw
+     * content of a filter list file (adblock format). Engines are not
+     * rebuilt until applyFilterLists() is called.
+     */
+    void setFilterListData(in ACString aName, in Array<uint8_t> aData);
+
+    /**
+     * Remove a previously stored filter list by name.
+     */
+    void removeFilterList(in ACString aName);
+
+    /**
+     * Rebuild classification engines from the currently stored filter
+     * list data, using the active list name preferences to select
+     * which lists to use for blocking and annotation.
+     */
+    void applyFilterLists();
+};
+
+%{C++
+// Fired after filter list engines have been rebuilt, when the testing
+// pref (privacy.trackingprotection.content.testing) is set. Not fired
+// in production.
+#define NS_CONTENT_CLASSIFIER_FILTER_LISTS_LOADED_TOPIC \
+  "test-content-classifier-filter-lists-loaded"
+%}

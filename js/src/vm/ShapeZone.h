@@ -150,8 +150,7 @@ struct PropMapShapeHasher {
            lookup.mapLength == shape->propMapLength() &&
            lookup.objectFlags == shape->objectFlags();
   }
-  static void rekey(WeakHeapPtr<SharedShape*>& k,
-                    const WeakHeapPtr<SharedShape*>& newKey) {
+  static void rekey(WeakHeapPtr<SharedShape*>& k, SharedShape* newKey) {
     k = newKey;
   }
 };

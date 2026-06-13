@@ -6195,42 +6195,16 @@ bool TypedArrayObject::getElements(JSContext* cx,
  */
 
 static const JSClassOps TypedArrayClassOps = {
-    nullptr,                                // addProperty
-    nullptr,                                // delProperty
-    nullptr,                                // enumerate
-    nullptr,                                // newEnumerate
-    nullptr,                                // resolve
-    nullptr,                                // mayResolve
-    FixedLengthTypedArrayObject::finalize,  // finalize
-    nullptr,                                // call
-    nullptr,                                // construct
-    ArrayBufferViewObject::trace,           // trace
+    .finalize = FixedLengthTypedArrayObject::finalize,
+    .trace = ArrayBufferViewObject::trace,
 };
 
 static const JSClassOps ResizableTypedArrayClassOps = {
-    nullptr,                       // addProperty
-    nullptr,                       // delProperty
-    nullptr,                       // enumerate
-    nullptr,                       // newEnumerate
-    nullptr,                       // resolve
-    nullptr,                       // mayResolve
-    nullptr,                       // finalize
-    nullptr,                       // call
-    nullptr,                       // construct
-    ArrayBufferViewObject::trace,  // trace
+    .trace = ArrayBufferViewObject::trace,
 };
 
 static const JSClassOps ImmutableTypedArrayClassOps = {
-    nullptr,                       // addProperty
-    nullptr,                       // delProperty
-    nullptr,                       // enumerate
-    nullptr,                       // newEnumerate
-    nullptr,                       // resolve
-    nullptr,                       // mayResolve
-    nullptr,                       // finalize
-    nullptr,                       // call
-    nullptr,                       // construct
-    ArrayBufferViewObject::trace,  // trace
+    .trace = ArrayBufferViewObject::trace,
 };
 
 static const ClassExtension TypedArrayClassExtension = {

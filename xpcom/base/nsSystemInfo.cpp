@@ -122,7 +122,7 @@ static void SimpleParseKeyValuePairs(
       // We want the value even if there was just one token, to cover the
       // case where we had the key, and the value was blank (seems to be
       // a valid scenario some files.)
-      aKeyValuePairs[key] = value;
+      aKeyValuePairs[key] = std::move(value);
     }
   }
 }

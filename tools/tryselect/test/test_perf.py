@@ -1813,5 +1813,72 @@ def test_unknown_framework():
     assert PerfParser.push_info.framework == 1
 
 
+EXPANDED_CATEGORIES = {
+    "Critical Desktop Performance desktop firefox": {
+        "try-config-defaults": {"rebuild": 20},
+    },
+    "Benchmarks desktop firefox": {
+        "try-config-defaults": {},
+    },
+}
+
+
+@pytest.mark.parametrize(
+    "selected_categories, try_config_params, expected_rebuild",
+    [
+        (["Critical Desktop Performance desktop firefox"], {}, 20),
+        (
+            ["Critical Desktop Performance desktop firefox"],
+            {"try_task_config": {"rebuild": 5}},
+            5,
+        ),
+        (
+            [
+                "Critical Desktop Performance desktop firefox",
+                "Benchmarks desktop firefox",
+            ],
+            {},
+            1,
+        ),
+    ],
+)
+def test_category_default_rebuild(
+    selected_categories, try_config_params, expected_rebuild
+):
+    with category_reset():
+        from tryselect.selectors.perfselector.classification import (
+            ClassificationProvider,
+        )
+
+        PerfParser.categories = ClassificationProvider().categories
+
+        with mock.patch(
+            "tryselect.selectors.perf.PerfParser.perf_push_to_try"
+        ) as perf_push_to_try_mock, mock.patch(
+            "tryselect.selectors.perf.fzf_bootstrap", return_value=mock.MagicMock()
+        ), mock.patch(
+            "tryselect.selectors.perf.PerfParser.get_perf_tasks"
+        ) as get_perf_tasks_mock, mock.patch(
+            "tryselect.selectors.perf.PerfParser.get_tasks"
+        ), mock.patch(
+            "tryselect.selectors.perf.PerfParser.get_majority_framework"
+        ), mock.patch(
+            "tryselect.selectors.perf.PerfParser.build_category_description"
+        ), mock.patch(
+            "tryselect.selectors.perf.PerfParser.get_categories",
+            return_value=EXPANDED_CATEGORIES,
+        ):
+            get_perf_tasks_mock.return_value = ["a-task"], selected_categories, []
+
+            run(try_config_params=try_config_params, push_to_vcs=True)
+
+            assert perf_push_to_try_mock.call_count == 1
+            actual_try_config = perf_push_to_try_mock.call_args[0][3]
+            actual_rebuild = (
+                (actual_try_config or {}).get("try_task_config", {}).get("rebuild", 1)
+            )
+            assert actual_rebuild == expected_rebuild
+
+
 if __name__ == "__main__":
     mozunit.main()

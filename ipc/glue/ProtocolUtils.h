@@ -660,6 +660,9 @@ void AnnotateSystemError();
 // references!
 class ActorLifecycleProxy {
  public:
+  ActorLifecycleProxy(const ActorLifecycleProxy&) = delete;
+  ActorLifecycleProxy& operator=(const ActorLifecycleProxy&) = delete;
+
   NS_INLINE_DECL_REFCOUNTING_ONEVENTTARGET(ActorLifecycleProxy)
 
   IProtocol* Get() { return mActor; }
@@ -671,9 +674,6 @@ class ActorLifecycleProxy {
 
   explicit ActorLifecycleProxy(IProtocol* aActor);
   ~ActorLifecycleProxy();
-
-  ActorLifecycleProxy(const ActorLifecycleProxy&) = delete;
-  ActorLifecycleProxy& operator=(const ActorLifecycleProxy&) = delete;
 
   IProtocol* MOZ_NON_OWNING_REF mActor;
 

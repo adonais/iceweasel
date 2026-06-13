@@ -83,7 +83,8 @@ nsresult ChannelMediaResource::Listener::OnStartRequest(nsIRequest* aRequest) {
   AssertIsOnMainThread();
   mLock.NoteOnMainThread();
   if (!mResource) return NS_OK;
-  return mResource->OnStartRequest(aRequest, mOffset);
+  RefPtr<ChannelMediaResource> resource = mResource;
+  return resource->OnStartRequest(aRequest, mOffset);
 }
 
 nsresult ChannelMediaResource::Listener::OnStopRequest(nsIRequest* aRequest,
@@ -91,7 +92,8 @@ nsresult ChannelMediaResource::Listener::OnStopRequest(nsIRequest* aRequest,
   AssertIsOnMainThread();
   mLock.NoteOnMainThread();
   if (!mResource) return NS_OK;
-  return mResource->OnStopRequest(aRequest, aStatus);
+  RefPtr<ChannelMediaResource> resource = mResource;
+  return resource->OnStopRequest(aRequest, aStatus);
 }
 
 nsresult ChannelMediaResource::Listener::OnDataAvailable(
@@ -289,6 +291,17 @@ nsresult ChannelMediaResource::OnStartRequest(nsIRequest* aRequest,
   } else {
     // Not an HTTP channel. Assume data will be sent from position zero.
     startOffset = 0;
+
+    // Pick up the content length the channel reports up front (data:, jar:,
+    // resource:, ...). Without this, the resource is treated as a live
+    // stream of unknown size and demuxers that estimate duration from the
+    // stream length (e.g. CBR mp3 with no Xing/Info header) report
+    // Infinity.
+    int64_t channelLength = -1;
+    if (NS_SUCCEEDED(mChannel->GetContentLength(&channelLength)) &&
+        channelLength >= 0) {
+      length = channelLength;
+    }
   }
 
   // Update principals before OnDataAvailable() putting the data in the cache.

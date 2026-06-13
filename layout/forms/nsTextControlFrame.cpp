@@ -13,6 +13,7 @@
 #include "mozilla/IMEContentObserver.h"
 #include "mozilla/IMEStateManager.h"
 #include "mozilla/PresShell.h"
+#include "mozilla/ReflowInput.h"
 #include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/TextEditor.h"
 #include "mozilla/dom/HTMLInputElement.h"

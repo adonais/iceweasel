@@ -108,7 +108,7 @@ WaylandSurface::~WaylandSurface() {
   MOZ_RELEASE_ASSERT(!mSurfaceLock, "We can't release locked WaylandSurface!");
   MOZ_RELEASE_ASSERT(mBufferTransactions.Length() == 0,
                      "We can't release surface with buffers tracked!");
-  MOZ_RELEASE_ASSERT(!mEmulatedFrameCallbackTimerID,
+  MOZ_RELEASE_ASSERT(!mEmulatedVSyncCallbackTimerID,
                      "We can't release WaylandSurface with active timer");
   MOZ_RELEASE_ASSERT(!mIsPendingGdkCleanup,
                      "We can't release WaylandSurface with Gdk resources!");
@@ -117,230 +117,235 @@ WaylandSurface::~WaylandSurface() {
       "We can't release WaylandSurface with DMABufFormatRefreshCallback!");
   MOZ_RELEASE_ASSERT(!mGdkCommitCallback,
                      "We can't release WaylandSurface with GdkCommitCallback!");
+  MOZ_RELEASE_ASSERT(!mMapCallback,
+                     "We can't release WaylandSurface with map callback!");
   MOZ_RELEASE_ASSERT(!mUnmapCallback,
-                     "We can't release WaylandSurface with numap callback!");
+                     "We can't release WaylandSurface with unmap callback!");
 }
 
-bool WaylandSurface::HasEmulatedFrameCallbackLocked(
+bool WaylandSurface::HasEmulatedVSyncCallbackLocked(
     const WaylandSurfaceLock& aProofOfLock) const {
-  return mFrameCallbackHandler.IsSet() && mFrameCallbackHandler.mEmulated;
+  return mVSyncCallbackHandler.IsSet() && mVSyncCallbackHandler.mEmulated;
 }
 
-void WaylandSurface::FrameCallbackHandler(struct wl_callback* aCallback,
-                                          uint32_t aTime,
+void WaylandSurface::VSyncCallbackHandler(struct wl_callback* aCallback,
+                                          uint32_t aTime, bool aEmulated,
                                           bool aRoutedFromChildSurface) {
   // We're supposed to run on main thread only.
   AssertIsOnMainThread();
 
-  bool emulatedCallback = !aCallback && !aTime;
-
-  FrameCallback cb;
+  VSyncCallback cb;
   {
     WaylandSurfaceLock lock(this);
 
-    // Don't run emulated callbacks on unmapped surfaces
-    if ((emulatedCallback || aRoutedFromChildSurface) && !mIsMapped) {
-      LOGVERBOSE(
-          "WaylandSurface::FrameCallbackHandler() quit, emulatedCallback %d "
-          "aRoutedFromChildSurface %d mIsMapped %d",
-          emulatedCallback, aRoutedFromChildSurface, !!mIsMapped);
-      return;
-    }
-
     LOGVERBOSE(
-        "WaylandSurface::FrameCallbackHandler() "
+        "WaylandSurface::VSyncCallbackHandler() "
         "set %d emulated %d routed %d",
-        mFrameCallbackHandler.IsSet(), emulatedCallback,
-        aRoutedFromChildSurface);
+        mVSyncCallbackHandler.IsSet(), aEmulated, aRoutedFromChildSurface);
 
-    // It's possible to get regular frame callback right after unmap
+    // It's possible to get regular VSync frame callback right after unmap
     // if frame callbacks was already in event queue so ignore it.
-    if (!emulatedCallback && !aRoutedFromChildSurface && !mFrameCallback) {
+    if (!aEmulated && !aRoutedFromChildSurface && !mVSyncFrameCallback) {
       MOZ_DIAGNOSTIC_ASSERT(!mIsMapped);
       return;
     }
 
-    MOZ_DIAGNOSTIC_ASSERT(aCallback == nullptr || mFrameCallback == aCallback);
+    MOZ_DIAGNOSTIC_ASSERT(aCallback == nullptr ||
+                          mVSyncFrameCallback == aCallback);
 
+    // Clear already fired frame callback so we can register a new one.
     if (aCallback) {
-      ClearFrameCallbackLocked(lock);
+      MOZ_DIAGNOSTIC_ASSERT(mVSyncFrameCallback);
+      MozClearPointer(mVSyncFrameCallback, wl_callback_destroy);
     }
 
-    // We're getting regular frame callback from this surface so we must
+    // We're getting regular VSync frame callback from this surface so we must
     // have buffer attached.
-    if (!emulatedCallback && !aRoutedFromChildSurface) {
+    if (!aEmulated && !aRoutedFromChildSurface) {
       LOGVERBOSE(
-          "WaylandSurface::FrameCallbackHandler() marked as visible & has "
+          "WaylandSurface::VSyncCallbackHandler() marked as visible & has "
           "buffer");
       mIsVisible = true;
       mBufferAttached = true;
     }
 
-    cb = mFrameCallbackHandler;
+    cb = mVSyncCallbackHandler;
 
-    // Fire frame callback again if there's any pending frame callback
-    RequestFrameCallbackLocked(lock);
+    // Fire VSync frame callback again if there's any pending frame callback
+    SetVSyncCallbackLocked(lock);
   }
 
   // We can't run the callbacks under WaylandSurfaceLock
-  LOGVERBOSE("  frame callback fire");
-  if (emulatedCallback && !cb.mEmulated) {
+  if (aEmulated && !cb.mEmulated) {
+    LOGVERBOSE("  skip emulated VSync");
     return;
   }
   if (cb.IsSet()) {
-    cb.mCb(aCallback, aTime);
+    LOGVERBOSE("  fire VSync callback aEmulated [%d] cb.mEmulated [%d]",
+               aEmulated, cb.mEmulated);
+    cb.mCb(aCallback, aTime, aEmulated);
   }
 }
 
-void WaylandSurface::RequestFrameCallbackLocked(
+bool WaylandSurface::IsEmulatedVSyncEnabledLocked(
     const WaylandSurfaceLock& aProofOfLock) {
-  LOGVERBOSE(
-      "WaylandSurface::RequestFrameCallbackLocked(), enabled %d mapped %d "
-      " mFrameCallback %d",
-      mFrameCallbackEnabled, !!mIsMapped, !!mFrameCallback);
+  return HasEmulatedVSyncCallbackLocked(aProofOfLock) &&
+         !mEmulatedVSyncCallbackTimerID && mVSyncEmulateCheck &&
+         mVSyncEmulateCheck();
+}
 
+void WaylandSurface::RequestEmulatedVSyncLocked(
+    const WaylandSurfaceLock& aProofOfLock) {
+  LOGVERBOSE("WaylandSurface::RequestEmulatedVSyncLocked()");
+
+  MOZ_DIAGNOSTIC_ASSERT(!mEmulatedVSyncCallbackTimerID, "Already created?");
+
+  mEmulatedVSyncCallbackTimerID = g_timeout_add(
+      sEmulatedVSyncCallbackTimeoutMs,
+      [](void* data) -> gint {
+        RefPtr surface = static_cast<WaylandSurface*>(data);
+        LOGS_VERBOSE("[%p]: WaylandSurface emulated frame callbacks",
+                     surface->GetLoggingWidget());
+        // Clear timer ID as we're going to remove this timer
+        surface->mEmulatedVSyncCallbackTimerID = 0;
+
+        // Get some timestamp for emulated callback.
+        // We don't compare between emulated / none-emulated ones
+        // so we're safe here.
+        uint32_t timestampTime =
+            static_cast<uint32_t>(g_get_monotonic_time() / 1000);
+        surface->VSyncCallbackHandler(
+            /* wl_callback */ nullptr, timestampTime,
+            /* aEmulated */ true,
+            /* aRoutedFromChildSurface */ false);
+        return G_SOURCE_REMOVE;
+      },
+      this);
+}
+
+void WaylandSurface::SetVSyncCallbackLocked(
+    const WaylandSurfaceLock& aProofOfLock) {
   MOZ_DIAGNOSTIC_ASSERT(&aProofOfLock == mSurfaceLock);
-
-  // Frame callback will be added by Map.
-  if (!mIsMapped) {
+  if (!mVSyncCallbackEnabled || !mVSyncCallbackHandler.IsSet()) {
     LOGVERBOSE(
-        "WaylandSurface::RequestFrameCallbackLocked(): is not mapped, quit.");
-    return;
-  }
-
-  if (mPendingOpaqueRegion && !mOpaqueRegionFrameCallback) {
-    LOGVERBOSE(
-        "WaylandSurface::RequestFrameCallbackLocked(): add opaque frame "
-        "callback handler");
-    static const struct wl_callback_listener listener{
-        [](void* aData, struct wl_callback* callback, uint32_t time) {
-          RefPtr waylandSurface = static_cast<WaylandSurface*>(aData);
-          waylandSurface->OpaqueCallbackHandler();
-        }};
-    mOpaqueRegionFrameCallback = wl_surface_frame(mSurface);
-    wl_callback_add_listener(mOpaqueRegionFrameCallback, &listener, this);
-    // Apply opaque changes only if we have buffer attached to avoid painting
-    // of empty window.
-    if (mBufferAttached) {
-      mSurfaceNeedsCommit = true;
-    }
-  }
-
-  if (!mFrameCallbackEnabled || !mFrameCallbackHandler.IsSet()) {
-    LOGVERBOSE(
-        "WaylandSurface::RequestFrameCallbackLocked(): quit, frame callback is "
+        "WaylandSurface::SetVSyncCallbackLocked(): quit, frame callback is "
         "not set/enabled.");
     return;
   }
 
-  if (!mFrameCallback) {
+  LOGVERBOSE(
+      "WaylandSurface::SetVSyncCallbackLocked(), enabled %d mapped %d "
+      " mVSyncFrameCallback %d",
+      mVSyncCallbackEnabled, !!mIsMapped, !!mVSyncFrameCallback);
+
+  if (!mVSyncFrameCallback) {
     LOGVERBOSE(
-        "WaylandSurface::RequestFrameCallbackLocked(): adding frame callback");
+        "WaylandSurface::SetVSyncCallbackLocked(): adding frame callback");
     static const struct wl_callback_listener listener{
         [](void* aData, struct wl_callback* callback, uint32_t time) {
           RefPtr waylandSurface = static_cast<WaylandSurface*>(aData);
-          waylandSurface->FrameCallbackHandler(
+          waylandSurface->VSyncCallbackHandler(
               callback, time,
+              /* aEmulated */ false,
               /* aRoutedFromChildSurface */ false);
         }};
-    mFrameCallback = wl_surface_frame(mSurface);
-    wl_callback_add_listener(mFrameCallback, &listener, this);
+    mVSyncFrameCallback = wl_surface_frame(mSurface);
+    wl_callback_add_listener(mVSyncFrameCallback, &listener, this);
     mSurfaceNeedsCommit = true;
   }
 
-  // Request frame callback emulation if:
-  // - we have registered any emulated frame callbacks
-  // - we don't have buffer attached so we can't get regular frame callback
-  // - emulated frame callback is not already pending
-  if (HasEmulatedFrameCallbackLocked(aProofOfLock) && !mBufferAttached &&
-      !mEmulatedFrameCallbackTimerID) {
-    LOGVERBOSE(
-        "WaylandSurface::RequestFrameCallbackLocked() emulated, schedule "
-        "next check");
-    // Frame callback needs to be run from main thread
-    NS_DispatchToMainThread(NS_NewRunnableFunction(
-        "WaylandSurface::RequestFrameCallbackLocked",
-        [this, self = RefPtr{this}]() {
-          MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread());
-          WaylandSurfaceLock lock(this);
-          if (mIsMapped && !mEmulatedFrameCallbackTimerID) {
-            mIsPendingGdkCleanup = true;
-            mEmulatedFrameCallbackTimerID = g_timeout_add(
-                sEmulatedFrameCallbackTimeoutMs,
-                [](void* data) -> gint {
-                  RefPtr surface = static_cast<WaylandSurface*>(data);
-                  LOGS_VERBOSE("[%p]: WaylandSurface emulated frame callbacks",
-                               surface->GetLoggingWidget());
-                  // Clear timer ID as we're going to remove this timer
-                  surface->mEmulatedFrameCallbackTimerID = 0;
-
-                  if (!surface->mGdkAfterPaintId &&
-                      !surface->mIsOpaqueSurfaceHandlerSet) {
-                    surface->mIsPendingGdkCleanup = false;
-                  }
-
-                  surface->FrameCallbackHandler(
-                      nullptr, 0, /* aRoutedFromChildSurface */ false);
-                  return G_SOURCE_REMOVE;
-                },
-                this);
-          }
-        }));
-  }
-}
-
-void WaylandSurface::ClearFrameCallbackLocked(
-    const WaylandSurfaceLock& aProofOfLock) {
-  LOGVERBOSE("WaylandSurface::ClearFrameCallbackLocked()");
-  MOZ_DIAGNOSTIC_ASSERT(&aProofOfLock == mSurfaceLock);
-  MozClearPointer(mFrameCallback, wl_callback_destroy);
-}
-
-void WaylandSurface::ClearFrameCallbackHandlerLocked(
-    const WaylandSurfaceLock& aProofOfLock) {
-  LOGVERBOSE("WaylandSurface::ClearFrameCallbackHandlerLocked()");
-  MOZ_DIAGNOSTIC_ASSERT(&aProofOfLock == mSurfaceLock);
-  mFrameCallbackHandler = FrameCallback{};
-}
-
-void WaylandSurface::SetFrameCallbackLocked(
-    const WaylandSurfaceLock& aProofOfLock,
-    const std::function<void(wl_callback*, uint32_t)>& aFrameCallbackHandler,
-    bool aEmulateFrameCallback) {
-  MOZ_DIAGNOSTIC_ASSERT(&aProofOfLock == mSurfaceLock);
-
-  LOGWAYLAND("WaylandSurface::SetFrameCallbackLocked()");
-
-  mFrameCallbackHandler =
-      FrameCallback{aFrameCallbackHandler, aEmulateFrameCallback};
-  RequestFrameCallbackLocked(aProofOfLock);
-}
-
-void WaylandSurface::SetFrameCallbackStateLocked(
-    const WaylandSurfaceLock& aProofOfLock, bool aEnabled) {
-  LOGWAYLAND("WaylandSurface::SetFrameCallbackState() state %d", aEnabled);
-  if (mFrameCallbackEnabled == aEnabled) {
+  if (!IsEmulatedVSyncEnabledLocked(aProofOfLock)) {
     return;
   }
-  mFrameCallbackEnabled = aEnabled;
+
+  // Queue emulated VSync directly on main thread
+  if (NS_IsMainThread()) {
+    RequestEmulatedVSyncLocked(aProofOfLock);
+    return;
+  }
+
+  LOGVERBOSE(
+      "WaylandSurface::SetVSyncCallbackLocked() schedule emulated VSync to "
+      "main thread");
+
+  // VSync needs to be run from main thread
+  NS_DispatchToMainThread(NS_NewRunnableFunction(
+      "WaylandSurface::SetVSyncCallbackLocked", [this, self = RefPtr{this}]() {
+        MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread());
+        WaylandSurfaceLock lock(this);
+        if (!IsEmulatedVSyncEnabledLocked(lock)) {
+          return;
+        }
+        RequestEmulatedVSyncLocked(lock);
+      }));
+}
+
+void WaylandSurface::ClearVSyncCallbackLocked(
+    const WaylandSurfaceLock& aProofOfLock) {
+  LOGVERBOSE("WaylandSurface::ClearVSyncCallbackLocked()");
+  MOZ_DIAGNOSTIC_ASSERT(&aProofOfLock == mSurfaceLock);
+  MozClearPointer(mVSyncFrameCallback, wl_callback_destroy);
+}
+
+void WaylandSurface::ClearVSyncCallbackHandlerLocked(
+    const WaylandSurfaceLock& aProofOfLock) {
+  LOGVERBOSE("WaylandSurface::ClearVSyncCallbackHandlerLocked()");
+  MOZ_DIAGNOSTIC_ASSERT(&aProofOfLock == mSurfaceLock);
+  mVSyncCallbackHandler = VSyncCallback{};
+}
+
+void WaylandSurface::SetVSyncCallbackHandlerLocked(
+    const WaylandSurfaceLock& aProofOfLock,
+    const std::function<void(wl_callback*, uint32_t, bool)>&
+        aVSyncCallbackHandler,
+    bool aEmulateVSyncCallback) {
+  MOZ_DIAGNOSTIC_ASSERT(&aProofOfLock == mSurfaceLock);
+
+  LOGWAYLAND("WaylandSurface::SetVSyncCallbackLocked()");
+
+  mVSyncCallbackHandler =
+      VSyncCallback{aVSyncCallbackHandler, aEmulateVSyncCallback};
+  SetVSyncCallbackLocked(aProofOfLock);
+}
+
+void WaylandSurface::SetVSyncCallbackStateLocked(
+    const WaylandSurfaceLock& aProofOfLock, bool aEnabled) {
+  LOGWAYLAND("WaylandSurface::SetVSyncCallbackState() state %d", aEnabled);
+  if (mVSyncCallbackEnabled == aEnabled) {
+    return;
+  }
+  mVSyncCallbackEnabled = aEnabled;
 
   // If there's any frame callback waiting, register the handler.
-  if (mFrameCallbackEnabled) {
-    RequestFrameCallbackLocked(aProofOfLock);
+  if (mVSyncCallbackEnabled) {
+    SetVSyncCallbackLocked(aProofOfLock);
   } else {
-    ClearFrameCallbackLocked(aProofOfLock);
+    ClearVSyncCallbackLocked(aProofOfLock);
   }
-  if (mFrameCallbackStateHandler) {
-    mFrameCallbackStateHandler(aEnabled);
+  if (mVSyncCallbackStateHandler) {
+    mVSyncCallbackStateHandler(aEnabled);
   }
 }
 
-void WaylandSurface::SetFrameCallbackStateHandlerLocked(
+void WaylandSurface::SetVSyncCallbackStateHandlerLocked(
     const WaylandSurfaceLock& aProofOfLock,
-    const std::function<void(bool)>& aFrameCallbackStateHandler) {
-  LOGVERBOSE("WaylandSurface::SetFrameCallbackStateHandlerLocked()");
+    const std::function<void(bool)>& aVSyncCallbackStateHandler) {
+  LOGVERBOSE("WaylandSurface::SetVSyncCallbackStateHandlerLocked()");
   MOZ_DIAGNOSTIC_ASSERT(&aProofOfLock == mSurfaceLock);
-  mFrameCallbackStateHandler = aFrameCallbackStateHandler;
+  mVSyncCallbackStateHandler = aVSyncCallbackStateHandler;
+}
+
+void WaylandSurface::SetVSyncEmulateCheckLocked(
+    const WaylandSurfaceLock& aProofOfLock,
+    const std::function<bool(void)>& aVSyncEmulateCheck, bool aForce) {
+  LOGVERBOSE("WaylandSurface::SetVSyncEmulateCheckLocked()");
+  MOZ_DIAGNOSTIC_ASSERT(&aProofOfLock == mSurfaceLock);
+  if (!mVSyncEmulateCheck || aForce) {
+    mVSyncEmulateCheck = aVSyncEmulateCheck;
+  }
+  if (!mVSyncEmulateCheck) {
+    MozClearHandleID(mEmulatedVSyncCallbackTimerID, g_source_remove);
+  }
 }
 
 bool WaylandSurface::CreateViewportLocked(
@@ -465,8 +470,7 @@ bool WaylandSurface::MapLocked(const WaylandSurfaceLock& aProofOfLock,
 
   mIsMapped = true;
 
-  LOGWAYLAND("  register frame callback");
-  RequestFrameCallbackLocked(aProofOfLock);
+  SetVSyncCallbackLocked(aProofOfLock);
 
   CommitLocked(aProofOfLock, /* aForceCommit */ true,
                /* aForceDisplayFlush */ true);
@@ -491,6 +495,24 @@ bool WaylandSurface::MapLocked(const WaylandSurfaceLock& aProofOfLock,
   return MapLocked(aProofOfLock, nullptr, aParentWaylandSurfaceLock,
                    aSubsurfacePosition,
                    /* aSubsurfaceDesync */ false);
+}
+
+void WaylandSurface::SetMapCallbackLocked(
+    const WaylandSurfaceLock& aProofOfLock,
+    const std::function<void(WaylandSurfaceLock& aProofOfLock)>& aMapCB) {
+  mMapCallback = aMapCB;
+}
+
+void WaylandSurface::ClearMapCallbackLocked(
+    const WaylandSurfaceLock& aProofOfLock) {
+  mMapCallback = nullptr;
+}
+
+void WaylandSurface::RunMapCallbackLocked(WaylandSurfaceLock& aProofOfLock) {
+  AssertIsOnMainThread();
+  if (mMapCallback) {
+    mMapCallback(aProofOfLock);
+  }
 }
 
 void WaylandSurface::SetUnmapCallbackLocked(
@@ -520,8 +542,6 @@ void WaylandSurface::GdkCleanUpLocked(const WaylandSurfaceLock& aProofOfLock) {
     RemoveOpaqueSurfaceHandlerLocked(aProofOfLock);
     mGdkWindow = nullptr;
   }
-  MozClearHandleID(mEmulatedFrameCallbackTimerID, g_source_remove);
-
   mIsPendingGdkCleanup = false;
 }
 
@@ -547,8 +567,9 @@ void WaylandSurface::UnmapLocked(WaylandSurfaceLock& aSurfaceLock) {
   LOGWAYLAND("WaylandSurface::UnmapLocked()");
 
   RemoveAttachedBufferLocked(aSurfaceLock);
-  ClearFrameCallbackLocked(aSurfaceLock);
+  ClearVSyncCallbackLocked(aSurfaceLock);
   ClearScaleLocked(aSurfaceLock);
+  ClearOpaqueCallbackLocked(aSurfaceLock);
 
   MozClearPointer(mViewport, wp_viewport_destroy);
   mViewportDestinationSize = DesktopIntSize(-1, -1);
@@ -562,9 +583,6 @@ void WaylandSurface::UnmapLocked(WaylandSurfaceLock& aSurfaceLock) {
   MozClearPointer(mImageDescription, wp_image_description_v1_destroy);
   mParentSurface = nullptr;
   mFormats = nullptr;
-
-  MozClearPointer(mPendingOpaqueRegion, wl_region_destroy);
-  MozClearPointer(mOpaqueRegionFrameCallback, wl_callback_destroy);
 
   MozClearPointer(mVisibleFrameCallback, wl_callback_destroy);
 
@@ -644,15 +662,48 @@ bool WaylandSurface::DisableUserInputLocked(
   return true;
 }
 
+void WaylandSurface::SetOpaqueCallbackLocked(
+    const WaylandSurfaceLock& aProofOfLock) {
+  MOZ_DIAGNOSTIC_ASSERT(&aProofOfLock == mSurfaceLock);
+  LOGVERBOSE(
+      "WaylandSurface::SetOpaqueCallbackLocked(): mPendingOpaqueRegion [%p] "
+      "mOpaqueRegionFrameCallback [%p]",
+      mPendingOpaqueRegion, mOpaqueRegionFrameCallback);
+
+  if (mPendingOpaqueRegion && !mOpaqueRegionFrameCallback) {
+    LOGVERBOSE(
+        "WaylandSurface::SetOpaqueCallbackLocked(): add opaque frame callback "
+        "handler");
+    static const struct wl_callback_listener listener{
+        [](void* aData, struct wl_callback* callback, uint32_t time) {
+          RefPtr waylandSurface = static_cast<WaylandSurface*>(aData);
+          waylandSurface->OpaqueCallbackHandler();
+        }};
+    mOpaqueRegionFrameCallback = wl_surface_frame(mSurface);
+    wl_callback_add_listener(mOpaqueRegionFrameCallback, &listener, this);
+    // Apply opaque changes only if we have buffer attached to avoid painting
+    // of empty window.
+    if (mBufferAttached) {
+      mSurfaceNeedsCommit = true;
+    }
+  }
+}
+
+void WaylandSurface::ClearOpaqueCallbackLocked(
+    const WaylandSurfaceLock& aProofOfLock) {
+  MOZ_DIAGNOSTIC_ASSERT(&aProofOfLock == mSurfaceLock);
+  MozClearPointer(mPendingOpaqueRegion, wl_region_destroy);
+  MozClearPointer(mOpaqueRegionFrameCallback, wl_callback_destroy);
+}
+
 void WaylandSurface::OpaqueCallbackHandler() {
   WaylandSurfaceLock lock(this);
   if (mPendingOpaqueRegion) {
     LOGVERBOSE("WaylandSurface::SetOpaqueRegionCallbackHandler()");
     wl_surface_set_opaque_region(mSurface, mPendingOpaqueRegion);
-    MozClearPointer(mPendingOpaqueRegion, wl_region_destroy);
     mSurfaceNeedsCommit = true;
   }
-  MozClearPointer(mOpaqueRegionFrameCallback, wl_callback_destroy);
+  ClearOpaqueCallbackLocked(lock);
 }
 
 void WaylandSurface::SetOpaqueLocked(const WaylandSurfaceLock& aProofOfLock) {
@@ -665,7 +716,7 @@ void WaylandSurface::SetOpaqueLocked(const WaylandSurfaceLock& aProofOfLock) {
   mPendingOpaqueRegion =
       wl_compositor_create_region(WaylandDisplayGet()->GetCompositor());
   wl_region_add(mPendingOpaqueRegion, 0, 0, INT32_MAX, INT32_MAX);
-  RequestFrameCallbackLocked(aProofOfLock);
+  SetOpaqueCallbackLocked(aProofOfLock);
 }
 
 void WaylandSurface::SetOpaqueRegionLocked(
@@ -690,7 +741,7 @@ void WaylandSurface::SetOpaqueRegionLocked(
         "WaylandSurface::SetOpaqueRegionLocked() region [%d, %d] -> [%d x %d]",
         rect.x, rect.y, rect.Width(), rect.Height());
   }
-  RequestFrameCallbackLocked(aProofOfLock);
+  SetOpaqueCallbackLocked(aProofOfLock);
 }
 
 void WaylandSurface::SetOpaqueRegion(const gfx::IntRegion& aRegion) {
@@ -705,7 +756,7 @@ void WaylandSurface::ClearOpaqueRegionLocked(
   MozClearPointer(mPendingOpaqueRegion, wl_region_destroy);
   mPendingOpaqueRegion =
       wl_compositor_create_region(WaylandDisplayGet()->GetCompositor());
-  RequestFrameCallbackLocked(aProofOfLock);
+  SetOpaqueCallbackLocked(aProofOfLock);
 }
 
 void WaylandSurface::FractionalScaleHandler(void* data,

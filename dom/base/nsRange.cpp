@@ -26,6 +26,7 @@
 #include "mozilla/dom/DocumentFragment.h"
 #include "mozilla/dom/DocumentType.h"
 #include "mozilla/dom/InspectorFontFace.h"
+#include "mozilla/dom/NodeList.h"
 #include "mozilla/dom/RangeBinding.h"
 #include "mozilla/dom/Selection.h"
 #include "mozilla/dom/Text.h"
@@ -40,7 +41,6 @@
 #include "nsFrameSelection.h"
 #include "nsGkAtoms.h"
 #include "nsIContent.h"
-#include "nsINodeList.h"
 #include "nsLayoutUtils.h"
 #include "nsReadableUtils.h"
 #include "nsString.h"
@@ -2447,7 +2447,7 @@ void nsRange::InsertNode(nsINode& aNode, ErrorResult& aRv) {
   nsCOMPtr<nsINode> referenceParentNode = tStartContainer;
 
   RefPtr<Text> startTextNode = tStartContainer->GetAsText();
-  nsCOMPtr<nsINodeList> tChildList;
+  RefPtr<NodeList> tChildList;
   if (startTextNode) {
     referenceParentNode = tStartContainer->GetParentNode();
     if (!referenceParentNode) {
@@ -2568,7 +2568,7 @@ void nsRange::SurroundContents(nsINode& aNewParent, ErrorResult& aRv) {
   // Spec says we need to remove all of aNewParent's
   // children prior to insertion.
 
-  nsCOMPtr<nsINodeList> children = aNewParent.ChildNodes();
+  RefPtr<NodeList> children = aNewParent.ChildNodes();
   if (!children) {
     aRv.Throw(NS_ERROR_FAILURE);
     return;

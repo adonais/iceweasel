@@ -25,16 +25,7 @@ using namespace js;
 // FinalizationRecordObject
 
 const JSClassOps FinalizationRecordObject::classOps_ = {
-    nullptr,   // addProperty
-    nullptr,   // delProperty
-    nullptr,   // enumerate
-    nullptr,   // newEnumerate
-    nullptr,   // resolve
-    nullptr,   // mayResolve
-    finalize,  // finalize
-    nullptr,   // call
-    nullptr,   // construct
-    nullptr,   // trace
+    .finalize = finalize,
 };
 
 const JSClass FinalizationRecordObject::class_ = {
@@ -155,16 +146,8 @@ const JSClass FinalizationRegistryObject::protoClass_ = {
 };
 
 const JSClassOps FinalizationRegistryObject::classOps_ = {
-    nullptr,                               // addProperty
-    nullptr,                               // delProperty
-    nullptr,                               // enumerate
-    nullptr,                               // newEnumerate
-    nullptr,                               // resolve
-    nullptr,                               // mayResolve
-    FinalizationRegistryObject::finalize,  // finalize
-    nullptr,                               // call
-    nullptr,                               // construct
-    FinalizationRegistryObject::trace,     // trace
+    .finalize = FinalizationRegistryObject::finalize,
+    .trace = FinalizationRegistryObject::trace,
 };
 
 const ClassSpec FinalizationRegistryObject::classSpec_ = {
@@ -637,16 +620,8 @@ const JSClass FinalizationQueueObject::class_ = {
 };
 
 const JSClassOps FinalizationQueueObject::classOps_ = {
-    nullptr,                            // addProperty
-    nullptr,                            // delProperty
-    nullptr,                            // enumerate
-    nullptr,                            // newEnumerate
-    nullptr,                            // resolve
-    nullptr,                            // mayResolve
-    FinalizationQueueObject::finalize,  // finalize
-    nullptr,                            // call
-    nullptr,                            // construct
-    FinalizationQueueObject::trace,     // trace
+    .finalize = FinalizationQueueObject::finalize,
+    .trace = FinalizationQueueObject::trace,
 };
 
 /* static */
@@ -672,8 +647,8 @@ FinalizationQueueObject* FinalizationQueueObject::create(
   // you don't know how far to unwrap it to get the original object
   // back. Instead store a CCW to a plain object in the same compartment as the
   // global (this uses Object.prototype).
-  Rooted<JSObject*> hostDefinedData(cx);
-  if (!GetObjectFromHostDefinedData(cx, &hostDefinedData)) {
+  Rooted<JSObject*> incumbentGlobalRepresentative(cx);
+  if (!GetIncumbentGlobalRepresentative(cx, &incumbentGlobalRepresentative)) {
     return nullptr;
   }
 
@@ -684,8 +659,8 @@ FinalizationQueueObject* FinalizationQueueObject::create(
   }
 
   queue->initReservedSlot(CleanupCallbackSlot, ObjectValue(*cleanupCallback));
-  queue->initReservedSlot(HostDefinedDataSlot,
-                          JS::ObjectOrNullValue(hostDefinedData));
+  queue->initReservedSlot(IncumbentGlobalRepresentative,
+                          JS::ObjectOrNullValue(incumbentGlobalRepresentative));
   InitReservedSlot(queue, RecordsToBeCleanedUpSlot,
                    recordsToBeCleanedUp.release(),
                    MemoryUse::FinalizationRegistryRecordVector);
@@ -745,8 +720,8 @@ inline JSObject* FinalizationQueueObject::cleanupCallback() const {
   return &value.toObject();
 }
 
-JSObject* FinalizationQueueObject::getHostDefinedData() const {
-  Value value = getReservedSlot(HostDefinedDataSlot);
+JSObject* FinalizationQueueObject::getIncumbentGlobalRepresentative() const {
+  Value value = getReservedSlot(IncumbentGlobalRepresentative);
   if (value.isUndefined()) {
     return nullptr;
   }

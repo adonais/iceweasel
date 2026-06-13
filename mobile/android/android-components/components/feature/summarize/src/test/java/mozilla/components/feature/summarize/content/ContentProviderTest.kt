@@ -6,8 +6,9 @@ package mozilla.components.feature.summarize.content
 
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
 import org.junit.Test
+import kotlin.test.assertIs
+import kotlin.test.assertTrue
 
 class ContentProviderTest {
     @Test
@@ -24,14 +25,14 @@ class ContentProviderTest {
     }
 
     @Test
-    fun `that if we fail to extract content we return a failure`() = runTest {
+    fun `when the content extractor provides a module error type, it is preserved`() = runTest {
         val content = ContentProvider.fromPage(
             "",
-            { Result.failure(PageContentExtractor.Exception()) },
+            { Result.failure(PageContentExtractor.Exception(IllegalStateException())) },
             { Result.success(PageMetadata()) },
         ).getContent().exceptionOrNull()
 
-        assertTrue(content is PageContentExtractor.Exception)
+        assertIs<PageContentExtractor.Exception>(content)
     }
 
     @Test
@@ -44,5 +45,18 @@ class ContentProviderTest {
 
         assertEquals("This is the page content", content.body)
         assertEquals(PageMetadata(), content.metadata)
+    }
+
+    @Test
+    fun `that if page content provider provides a platform error type, it is mapped to a module type`() = runTest {
+        val title = "title"
+        val result = ContentProvider.fromPage(
+            pageTitle = title,
+            { Result.failure(NullPointerException()) },
+            { Result.success(PageMetadata(wordCount = 500)) },
+        ).getContent().exceptionOrNull()
+
+        assertIs<ContentProvider.Exception>(result)
+        assertEquals(true, result.message?.contains("Could not extract content"))
     }
 }

@@ -17,11 +17,11 @@
 #include <map>
 #include <memory>
 #include <optional>
+#include <span>
 #include <string>
 #include <utility>
 #include <vector>
 
-#include "api/array_view.h"
 #include "api/audio/audio_device.h"
 #include "api/audio/audio_mixer.h"
 #include "api/audio_codecs/audio_decoder_factory.h"
@@ -222,7 +222,7 @@ class ChannelReceive : public ChannelReceiveInterface,
 
   int GetRtpTimestampRateHz() const;
 
-  void OnReceivedPayloadData(ArrayView<const uint8_t> payload,
+  void OnReceivedPayloadData(std::span<const uint8_t> payload,
                              const RTPHeader& header,
                              Timestamp receive_time)
       RTC_RUN_ON(worker_thread_checker_);
@@ -336,7 +336,7 @@ class ChannelReceive : public ChannelReceiveInterface,
       RTC_GUARDED_BY(worker_thread_checker_);
 };
 
-void ChannelReceive::OnReceivedPayloadData(ArrayView<const uint8_t> payload,
+void ChannelReceive::OnReceivedPayloadData(std::span<const uint8_t> payload,
                                            const RTPHeader& header,
                                            Timestamp receive_time) {
   if (!playing_) {
@@ -381,7 +381,7 @@ void ChannelReceive::InitFrameTransformerDelegate(
   // Pass a callback to ChannelReceive::OnReceivedPayloadData, to be called by
   // the delegate to receive transformed audio.
   ChannelReceiveFrameTransformerDelegate::ReceiveFrameCallback
-      receive_audio_callback = [this](ArrayView<const uint8_t> packet,
+      receive_audio_callback = [this](std::span<const uint8_t> packet,
                                       const RTPHeader& header,
                                       Timestamp receive_time) {
         RTC_DCHECK_RUN_ON(&worker_thread_checker_);
@@ -736,7 +736,7 @@ void ChannelReceive::ReceivePacket(const uint8_t* packet,
         frame_decryptor_->Decrypt(
             MediaType::AUDIO, csrcs,
             /*additional_data=*/{},
-            ArrayView<const uint8_t>(payload, payload_data_length),
+            std::span<const uint8_t>(payload, payload_data_length),
             decrypted_audio_payload);
 
     if (decrypt_result.IsOk()) {
@@ -754,7 +754,7 @@ void ChannelReceive::ReceivePacket(const uint8_t* packet,
     payload_data_length = 0;
   }
 
-  ArrayView<const uint8_t> payload_data(payload, payload_data_length);
+  std::span<const uint8_t> payload_data(payload, payload_data_length);
   if (frame_transformer_delegate_) {
     // Asynchronously transform the received payload. After the payload is
     // transformed, the delegate will call OnReceivedPayloadData to handle it.
@@ -777,7 +777,7 @@ void ChannelReceive::ReceivedRTCPPacket(const uint8_t* data, size_t length) {
   UpdatePlayoutTimestamp(true, env_.clock().CurrentTime());
 
   // Deliver RTCP packet to RTP/RTCP module for parsing
-  rtp_rtcp_->IncomingRtcpPacket(MakeArrayView(data, length));
+  rtp_rtcp_->IncomingRtcpPacket(std::span(data, length));
 
   std::optional<TimeDelta> rtt = rtp_rtcp_->LastRtt();
   if (!rtt.has_value()) {

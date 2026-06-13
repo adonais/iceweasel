@@ -258,7 +258,8 @@ function CreateProfileWizard() {
     "",
     "centerscreen,chrome,modal,titlebar",
     gProfileService,
-    { CreateProfile }
+    { CreateProfile },
+    "profile-manager"
   );
 }
 

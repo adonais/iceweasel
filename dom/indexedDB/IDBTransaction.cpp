@@ -274,7 +274,7 @@ void IDBTransaction::SetBackgroundActor(
 }
 
 BackgroundRequestChild* IDBTransaction::StartRequest(
-    MovingNotNull<RefPtr<mozilla::dom::IDBRequest> > aRequest,
+    MovingNotNull<RefPtr<mozilla::dom::IDBRequest>> aRequest,
     const RequestParams& aParams) {
   AssertIsOnOwningThread();
   MOZ_ASSERT(aParams.type() != RequestParams::T__None);
@@ -330,6 +330,55 @@ void IDBTransaction::OnNewRequest() {
   ++mPendingRequestCount;
 }
 
+void IDBTransaction::TransitionToActive() {
+  AssertIsOnOwningThread();
+  MOZ_ASSERT(mReadyState == ReadyState::Inactive);
+
+  if (!mDeferralActive) {
+    MOZ_DIAGNOSTIC_ASSERT(mDeferredRunnables.IsEmpty());
+
+    mReadyState = ReadyState::Active;
+    return;
+  }
+
+  mDeferralActive = false;
+
+  DrainDeferredResponses();
+
+  mReadyState = ReadyState::Active;
+}
+
+void IDBTransaction::TransitionToInactiveWithDeferral() {
+  AssertIsOnOwningThread();
+  MOZ_ASSERT(mReadyState == ReadyState::Active);
+
+  mReadyState = ReadyState::Inactive;
+  mDeferralActive = true;
+}
+
+void IDBTransaction::QueueDeferredResponse(
+    already_AddRefed<nsIRunnable> aRunnable) {
+  AssertIsOnOwningThread();
+  MOZ_ASSERT(mDeferralActive);
+
+  nsCOMPtr<nsIRunnable> runnable(aRunnable);
+  mDeferredRunnables.AppendElement(std::move(runnable));
+}
+
+void IDBTransaction::DrainDeferredResponses() {
+  AssertIsOnOwningThread();
+
+  while (!mDeferredRunnables.IsEmpty()) {
+    nsTArray<nsCOMPtr<nsIRunnable>> responses;
+    responses.SwapElements(mDeferredRunnables);
+    for (const auto& runnable : responses) {
+      runnable->Run();
+      MOZ_ASSERT(mPendingRequestCount);
+      --mPendingRequestCount;
+    }
+  }
+}
+
 void IDBTransaction::OnRequestFinished(
     const bool aRequestCompletedSuccessfully) {
   AssertIsOnOwningThread();
@@ -340,6 +389,7 @@ void IDBTransaction::OnRequestFinished(
   --mPendingRequestCount;
 
   if (!mPendingRequestCount) {
+    MOZ_ASSERT(mDeferredRunnables.IsEmpty());
     if (mSentCommitOrAbort) {
       return;
     }
@@ -722,6 +772,7 @@ void IDBTransaction::Commit(ErrorResult& aRv) {
 void IDBTransaction::FireCompleteOrAbortEvents(const nsresult aResult) {
   AssertIsOnOwningThread();
   MOZ_ASSERT(!mFiredCompleteOrAbort);
+  MOZ_ASSERT(mDeferredRunnables.IsEmpty());
 
   mReadyState = ReadyState::Finished;
 

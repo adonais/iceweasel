@@ -47,7 +47,7 @@ function moduleEnvVarPresent() {
  *   as markers.
  *
  * [1]: The keys of the `presets` object defined in
- * https://searchfox.org/mozilla-central/source/devtools/client/performance-new/shared/background.sys.mjs
+ * https://searchfox.org/firefox-main/source/devtools/client/performance-new/shared/background.sys.mjs
  */
 
 const gOsSpecificLoggingPresets = (() => {
@@ -124,7 +124,7 @@ const gLoggingPresets = {
   },
   /*
     Please update the WebRTC debugging docs with any changes to this preset.
-    See: https://searchfox.org/mozilla-central/source/docs/contributing/debugging/debugging_webrtc_calls.rst
+    See: https://searchfox.org/firefox-main/source/docs/contributing/debugging/debugging_webrtc_calls.rst
   */
   webrtc: {
     modules:

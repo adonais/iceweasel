@@ -114,15 +114,12 @@ var PrintUtils = {
         );
       }
     }
-    try {
-      var PRINTDIALOGSVC = Cc[
-        "@mozilla.org/widget/printdialog-service;1"
-      ].getService(Ci.nsIPrintDialogService);
-      PRINTDIALOGSVC.showPageSetupDialog(window, printSettings, null);
-    } catch (e) {
+    var PRINTDIALOGSVC = Cc[
+      "@mozilla.org/widget/printdialog-service;1"
+    ].getService(Ci.nsIPrintDialogService);
+    PRINTDIALOGSVC.showPageSetupDialog(window, printSettings).catch(e => {
       dump("showPageSetup " + e + "\n");
-      return false;
-    }
+    });
     return true;
   },
 

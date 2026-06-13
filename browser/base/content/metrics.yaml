@@ -416,12 +416,12 @@ networking:
       scalar networking.captive_portal_banner_displayed.
     bugs:
       - https://bugzil.la/1868145
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037081
     data_reviews:
       - https://bugzil.la/1868145
     notification_emails:
       - necko@mozilla.com
     expires: never
-    telemetry_mirror: NETWORKING_CAPTIVE_PORTAL_BANNER_DISPLAYED
 
   captive_portal_banner_display_time:
     type: labeled_counter
@@ -435,6 +435,7 @@ networking:
       scalar networking.captive_portal_banner_display_time.
     bugs:
       - https://bugzil.la/1868145
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037081
     data_reviews:
       - https://bugzil.la/1868145
     notification_emails:
@@ -444,7 +445,6 @@ networking:
       - success
       - abort
       - dismiss
-    telemetry_mirror: NETWORKING_CAPTIVE_PORTAL_BANNER_DISPLAY_TIME
 
 browser.timings:
   tab_click:
@@ -461,8 +461,14 @@ browser.timings:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1950710
     notification_emails:
       - mconley@mozilla.com
+      - perf-telemetry-alerts@mozilla.com
     expires: never
-    telemetry_mirror: FX_TAB_CLICK_MS
+    metadata:
+      monitor:
+        alert: False
+        lower_is_better: True
+        platforms:
+          - All
 
   new_window:
     type: timing_distribution
@@ -478,8 +484,15 @@ browser.timings:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1489524
     notification_emails:
       - mconley@mozilla.com
+      - perf-telemetry-alerts@mozilla.com
     expires: never
     telemetry_mirror: FX_NEW_WINDOW_MS
+    metadata:
+      monitor:
+        alert: False
+        lower_is_better: True
+        platforms:
+          - All
 
   page_load:
     type: timing_distribution
@@ -502,6 +515,12 @@ browser.timings:
       - product-metrics-telemetry-alerts@mozilla.com
     expires: never
     telemetry_mirror: FX_PAGE_LOAD_MS_2
+    metadata:
+      monitor:
+        alert: False
+        lower_is_better: True
+        platforms:
+          - All
 
   page_reload_normal:
     type: timing_distribution
@@ -564,3 +583,17 @@ browser.timings:
       - delayedStartupStarted
       - delayedStartupFinished
       - blankWindowShown
+
+browser.applicationmenu:
+  set_as_default:
+    type: event
+    description: >
+      The user used Set As Default in the macOS application menu.
+    bugs:
+      - https://bugzil.la/2018752
+    data_reviews:
+      - https://bugzil.la/2018752
+    notification_emails:
+      - rfambro@mozilla.com
+      - iholmes@mozilla.com
+    expires: never

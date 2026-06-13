@@ -18,6 +18,7 @@ namespace mozilla::dom {
 class Animation;
 class Document;
 class ScrollTimeline;
+class ViewTimeline;
 
 struct AnimationRange;
 
@@ -113,6 +114,7 @@ class AnimationTimeline : public nsISupports, public nsWrapperCache {
   virtual bool IsScrollTimeline() const { return false; }
   virtual const ScrollTimeline* AsScrollTimeline() const { return nullptr; }
   virtual bool IsViewTimeline() const { return false; }
+  virtual const ViewTimeline* AsViewTimeline() const { return nullptr; }
 
   // For a monotonic timeline, there is no upper bound on current time, and
   // timeline duration is unresolved. For a non-monotonic (e.g. scroll)

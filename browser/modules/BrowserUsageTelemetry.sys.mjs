@@ -144,16 +144,24 @@ const ENTRYPOINT_TRACKED_CONTEXT_MENU_IDS = {
 
 // A list of the expected panes in about:preferences
 const PREFERENCES_PANES = [
-  "paneHome",
+  "paneAbout",
+  "paneAccessibility",
+  "paneAi",
+  "paneAppearance",
+  "paneContainers",
+  "paneDownloads",
+  "paneExperimental",
   "paneGeneral",
+  "paneHome",
+  "paneLanguages",
+  "paneMoreFromMozilla",
+  "panePasswordsAutofill",
+  "panePermissionsData",
   "panePrivacy",
   "paneSearch",
   "paneSearchResults",
   "paneSync",
-  "paneContainers",
-  "paneExperimental",
-  "paneMoreFromMozilla",
-  "paneAi",
+  "paneTabsBrowsing",
 ];
 
 const IGNORABLE_EVENTS = new WeakMap();
@@ -295,9 +303,7 @@ function getPinnedTabsCount() {
   let pinnedTabs = 0;
 
   for (let win of Services.wm.getEnumerator("navigator:browser")) {
-    pinnedTabs += [...win.ownerGlobal.gBrowser.tabs].filter(
-      t => t.pinned
-    ).length;
+    pinnedTabs += [...win.gBrowser.tabs].filter(t => t.pinned).length;
   }
 
   return pinnedTabs;
@@ -361,7 +367,7 @@ export let URICountListener = {
 
     // Don't include URI and domain counts when in private mode.
     let shouldCountURI =
-      !lazy.PrivateBrowsingUtils.isWindowPrivate(browser.ownerGlobal) ||
+      !lazy.PrivateBrowsingUtils.isWindowPrivate(browser.documentGlobal) ||
       Services.prefs.getBoolPref(
         "browser.engagement.total_uri_count.pbm",
         false
@@ -382,7 +388,7 @@ export let URICountListener = {
 
     // Don't count about:blank and similar pages, as they would artificially
     // inflate the counts.
-    if (browser.ownerGlobal.gInitialPages.includes(uriSpec)) {
+    if (browser.documentGlobal.gInitialPages.includes(uriSpec)) {
       return;
     }
 
@@ -406,16 +412,12 @@ export let URICountListener = {
     }
 
     if (!(flags & Ci.nsIWebProgressListener.LOCATION_CHANGE_SAME_DOCUMENT)) {
-      lazy.SearchSERPTelemetry.updateTrackingStatus(
-        browser,
-        uriSpec,
-        webProgress.loadType
-      );
+      lazy.SearchSERPTelemetry.updateTrackingStatus(browser, uri, webProgress);
     } else {
       lazy.SearchSERPTelemetry.updateTrackingSinglePageApp(
         browser,
         uriSpec,
-        webProgress.loadType,
+        webProgress,
         flags
       );
     }
@@ -836,6 +838,14 @@ export let BrowserUsageTelemetry = {
         : "context-copy-url";
     }
 
+    if (node.classList?.contains("share-qrcode-item")) {
+      return "generate-qr-code";
+    }
+
+    if (node.classList?.contains("share-windows-item")) {
+      return "microsoft-system-share";
+    }
+
     if (node.hasAttribute("data-share-name")) {
       return "share-macos-provider";
     }
@@ -1076,7 +1086,7 @@ export let BrowserUsageTelemetry = {
     if (item && source) {
       this.recordInteractionEvent(item, source);
       if (isAboutPreferences) {
-        node.ownerGlobal.recordSettingChangeTelemetry?.(item);
+        node.documentGlobal.recordSettingChangeTelemetry?.(item);
       }
       let name = source
         .replace(/-/g, "_")

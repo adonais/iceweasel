@@ -106,4 +106,4 @@ with Files("tools/**"):
     BUG_COMPONENT = ("Firefox", "General")
 
 with Files("l10n-registry.manifest"):
-    BUG_COMPONENT = ("Core", "Localization")
+    BUG_COMPONENT = ("Core", "Internationalization: Localization")

@@ -3,8 +3,7 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/.
  *
  * Transition events are defined in:
- * http://www.w3.org/TR/css3-transitions/#transition-events-
- * http://dev.w3.org/csswg/css3-transitions/#transition-events-
+ * https://drafts.csswg.org/css-transitions-1/#transition-events
  *
  * Copyright © 2012 W3C® (MIT, ERCIM, Keio), All Rights Reserved. W3C
  * liability, trademark and document use rules apply.
@@ -17,10 +16,12 @@ interface TransitionEvent : Event {
   readonly attribute DOMString propertyName;
   readonly attribute float     elapsedTime;
   readonly attribute DOMString pseudoElement;
+  readonly attribute CSSTransition? animation;
 };
 
 dictionary TransitionEventInit : EventInit {
   DOMString propertyName = "";
   float elapsedTime = 0;
   DOMString pseudoElement = "";
+  CSSTransition? animation = null;
 };

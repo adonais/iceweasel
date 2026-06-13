@@ -9,11 +9,13 @@
   "interventions": [
     {
       "platforms": ["all"],
-      "content_scripts": {
-        "js": [
-          "bug1930440-online.singaporepools.com-prevent-unsupported-alert.js"
-        ]
-      }
+      "hide_alerts": ["unsupported browser"],
+      "hide_messages": [
+        {
+          "container": ".alert.views-row",
+          "message": "Chrome"
+        }
+      ]
     }
   ]
 }

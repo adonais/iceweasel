@@ -89,6 +89,9 @@ var willNotRetry = 1;
 var willRetry = 2;
 
 function run_test() {
+  Services.fog.initializeFOG();
+  Services.fog.testResetFOG();
+
   let ocspResponder = new HttpServer();
   ocspResponder.registerPrefixHandler("/", function (request, response) {
     if (gCurrentOCSPResponse) {
@@ -291,9 +294,7 @@ function run_test() {
 }
 
 function check_ocsp_stapling_telemetry() {
-  let histogram = Services.telemetry
-    .getHistogramById("SSL_OCSP_STAPLING")
-    .snapshot();
+  let histogram = Glean.ssl.ocspStapling.testGetValue();
   equal(
     histogram.values[0] || 0,
     0,

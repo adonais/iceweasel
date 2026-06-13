@@ -253,6 +253,8 @@ static const char* WorkerKindName(WorkerKind aWorkerKind) {
  */
 static IsolationBehavior IsolationBehaviorForURI(nsIURI* aURI, bool aIsSubframe,
                                                  bool aForChannelCreationURI) {
+  MOZ_ASSERT(NS_IsMainThread());
+
   nsAutoCString scheme;
   MOZ_ALWAYS_SUCCEEDS(aURI->GetScheme(scheme));
 
@@ -1230,12 +1232,6 @@ bool ValidatePrincipalCouldPotentiallyBeLoadedBy(
     return true;
   }
 
-  // We can load a `resource://` URI in any process. This usually comes up due
-  // to pdf.js and the JSON viewer. See bug 1686200.
-  if (aPrincipal->SchemeIs("resource")) {
-    return true;
-  }
-
   // Only allow expanded principals if AllowExpanded is passed. Each
   // sub-principal will be validated independently.
   if (aPrincipal->GetIsExpandedPrincipal()) {
@@ -1257,9 +1253,26 @@ bool ValidatePrincipalCouldPotentiallyBeLoadedBy(
     return true;
   }
 
+  // At this point we know we're working with a content principal.
+  MOZ_ASSERT(aPrincipal->GetIsContentPrincipal());
+  nsAutoCString originNoSuffix;
+  MOZ_ALWAYS_SUCCEEDS(aPrincipal->GetOriginNoSuffix(originNoSuffix));
+
+  // NOTE: We intentionally do scheme checks against the origin here, rather
+  // than the principal's URI. This is because nested URIs like `view-source:`
+  // are preserved in the principal, but do not impact the origin.
+  nsAutoCString originScheme;
+  MOZ_ALWAYS_SUCCEEDS(net_ExtractURLScheme(originNoSuffix, originScheme));
+
+  // We can load a `resource://` URI in any process. This usually comes up due
+  // to pdf.js and the JSON viewer. See bug 1686200.
+  if (originScheme == "resource"_ns) {
+    return true;
+  }
+
   // A URI with a file:// scheme can never load in a non-file content process
   // due to sandboxing.
-  if (aPrincipal->SchemeIs("file")) {
+  if (originScheme == "file"_ns) {
     // If we don't support a separate 'file' process, then we can return here.
     if (!StaticPrefs::browser_tabs_remote_separateFileUriProcess()) {
       return true;
@@ -1267,25 +1280,48 @@ bool ValidatePrincipalCouldPotentiallyBeLoadedBy(
     return aRemoteType == FILE_REMOTE_TYPE;
   }
 
-  if (aPrincipal->SchemeIs("about")) {
-    uint32_t flags = 0;
-    nsresult rv = aPrincipal->GetAboutModuleFlags(&flags);
-    // In tests, we can race between about: pages being unregistered, and a
-    // content process unregistering a Blob URL. To be safe here, we fail open
-    // if no about module is present.
-    if (NS_FAILED(rv)) {
+  if (originScheme == "about"_ns) {
+    nsCOMPtr<nsIURI> aboutURI;
+    if (NS_FAILED(NS_NewURI(getter_AddRefs(aboutURI), originNoSuffix))) {
+      MOZ_DIAGNOSTIC_ASSERT(false, "The originNoSuffix isn't a valid URI?");
       return false;
+    }
+    MOZ_ASSERT(aboutURI->SchemeIs("about"));
+
+    // We cannot validate about module flags off-main-thread, as about modules
+    // are not threadsafe, and can be implemented in JS.
+    if (!NS_IsMainThread()) {
+      return true;
     }
 
-    // Block principals for about: URIs which can't load in this process.
-    if (!(flags & (nsIAboutModule::URI_CAN_LOAD_IN_CHILD |
-                   nsIAboutModule::URI_MUST_LOAD_IN_CHILD))) {
-      return false;
+    // NOTE: The logic for about URIs is somewhat complex, so we lean on
+    // IsolationBehaviorForURI to ensure it matches.
+    switch (IsolationBehaviorForURI(aboutURI, /* aIsSubframe */ false,
+                                    /* aForChannelCreationURI */ true)) {
+      case IsolationBehavior::Parent:
+        return false;
+      case IsolationBehavior::Anywhere:
+        return true;
+      case IsolationBehavior::AboutReader:
+        // Allow about:reader to load anywhere, as it is process-allocated based
+        // on the content it displays, and which content is being displayed is
+        // unfortunately not part of the principal.
+        return true;
+      case IsolationBehavior::Extension:
+        return aRemoteType == EXTENSION_REMOTE_TYPE;
+      case IsolationBehavior::PrivilegedAbout:
+        return aRemoteType == PRIVILEGEDABOUT_REMOTE_TYPE;
+      case IsolationBehavior::ForceWebRemoteType:
+        return aRemoteType == WEB_REMOTE_TYPE;
+      case IsolationBehavior::WebContent:
+      case IsolationBehavior::Error:
+        // NOTE: We can encounter races around about: pages being unregistered.
+        // To avoid false positives, we fail open if no about module is present.
+        return true;
+      default:
+        MOZ_CRASH("Unexpected IsolationBehaviorForURI for about: URI");
+        return false;
     }
-    if (flags & nsIAboutModule::URI_MUST_LOAD_IN_EXTENSION_PROCESS) {
-      return aRemoteType == EXTENSION_REMOTE_TYPE;
-    }
-    return true;
   }
 
   // Web content can contain extension content frames, so any content process
@@ -1293,7 +1329,7 @@ bool ValidatePrincipalCouldPotentiallyBeLoadedBy(
   // NOTE: We don't check AddonPolicy here, as that can disappear if the add-on
   // is disabled or uninstalled. As this is a lax check, looking at the scheme
   // should be sufficient.
-  if (aPrincipal->SchemeIs("moz-extension")) {
+  if (originScheme == "moz-extension"_ns) {
     return true;
   }
 
@@ -1319,11 +1355,17 @@ bool ValidatePrincipalCouldPotentiallyBeLoadedBy(
   int32_t suffixIdx = typeOrigin.RFindChar('^');
   nsDependentCSubstring typeOriginNoSuffix(typeOrigin, 0, suffixIdx);
 
+  // If the origin perfectly matches, we can skip computing the site origin.
+  if (typeOriginNoSuffix == originNoSuffix) {
+    return true;
+  }
+
   // NOTE: Currently every webIsolated remote type is site-origin keyed, meaning
   // we can unconditionally compare site origins. If this changes in the future,
   // this logic will need to be updated to reflect that.
   nsAutoCString siteOriginNoSuffix;
   if (NS_FAILED(aPrincipal->GetSiteOriginNoSuffix(siteOriginNoSuffix))) {
+    MOZ_ASSERT_UNREACHABLE("Failed when not late in shutdown?");
     return false;
   }
   return siteOriginNoSuffix == typeOriginNoSuffix;

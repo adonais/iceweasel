@@ -152,6 +152,10 @@ class WebrtcVideoConduit : public VideoSessionConduit,
                      const TrackingId& aRecvTrackingId);
   virtual ~WebrtcVideoConduit();
 
+  // Don't allow copying/assigning.
+  WebrtcVideoConduit(const WebrtcVideoConduit&) = delete;
+  void operator=(const WebrtcVideoConduit&) = delete;
+
   // Call thread.
   void InitControl(VideoConduitControlInterface* aControl) override;
 
@@ -252,10 +256,6 @@ class WebrtcVideoConduit : public VideoSessionConduit,
                         FrameTransformerProxy* aProxy) override;
 
  private:
-  // Don't allow copying/assigning.
-  WebrtcVideoConduit(const WebrtcVideoConduit&) = delete;
-  void operator=(const WebrtcVideoConduit&) = delete;
-
   // Utility function to dump recv codec database
   void DumpCodecDB() const;
 

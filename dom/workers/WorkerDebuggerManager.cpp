@@ -299,7 +299,7 @@ void WorkerDebuggerManager::RegisterDebuggerMainThread(
     WorkerPrivate* aWorkerPrivate, bool aNotifyListeners) {
   AssertIsOnMainThread();
 
-  RefPtr<WorkerDebugger> debugger = new WorkerDebugger(aWorkerPrivate);
+  RefPtr<WorkerDebugger> debugger = WorkerDebugger::Create(aWorkerPrivate);
   mDebuggers.AppendElement(debugger);
 
   aWorkerPrivate->SetDebugger(debugger);

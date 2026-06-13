@@ -16,9 +16,7 @@ from operator import itemgetter
 # Skip all tests which use features not supported in SpiderMonkey.
 UNSUPPORTED_FEATURES = set([
     "tail-call-optimization",
-    "Intl.Locale-info",  # Bug 1693576
     "import-defer",
-    "import-text",
     "nonextensible-applies-to-private",  # Bug 1991478
     "ShadowRealm",
 ])
@@ -31,24 +29,32 @@ FEATURE_CHECK_NEEDED = {
     "Atomics.pause": "!this.hasOwnProperty('Atomics')||!Atomics.pause",  # Bug 1918717
     "Error.isError": "!Error.isError",  # Bug 1923733
     "iterator-sequencing": "!Iterator.concat",  # Bug 1923732
+    "iterator-includes": "!Iterator.prototype.includes",  # Bug 2025779
+    "Iterator.prototype.join": "!Iterator.prototype.join",  # Bug 2003341
     "immutable-arraybuffer": "!ArrayBuffer.prototype.sliceToImmutable",  # Bug 1952253
     "await-dictionary": "!Promise.allKeyed",
     "source-phase-imports": "!(this.hasOwnProperty('getBuildConfiguration')&&getBuildConfiguration('source-phase-imports'))",
+    "Intl.Locale-info": "!this.hasOwnProperty('Intl')||!this.Intl.Locale.prototype.hasOwnProperty('firstDayOfWeek')",
 }
 RELEASE_OR_BETA = set([
     "legacy-regexp",
     "import-bytes",
+    "import-text",
 ])
 SHELL_OPTIONS = {
     "symbols-as-weakmap-keys": "--enable-symbols-as-weakmap-keys",
     "explicit-resource-management": "--enable-explicit-resource-management",
     "iterator-sequencing": "--enable-iterator-sequencing",
+    "iterator-includes": "--enable-iterator-includes",
+    "Iterator.prototype.join": "--enable-iterator-join",
     "Atomics.waitAsync": "--setpref=atomics_wait_async",
     "immutable-arraybuffer": "--enable-arraybuffer-immutable",
     "import-bytes": "--enable-import-bytes",
+    "import-text": "--enable-import-text",
     "await-dictionary": "--enable-promise-allkeyed",
     "source-phase-imports": "--enable-source-phase-imports",
     "source-phase-imports-module-source": "--enable-source-phase-imports-test262-module-source",
+    "Intl.Locale-info": "--enable-intl-locale-info",
 }
 
 INCLUDE_FEATURE_DETECTED_OPTIONAL_SHELL_OPTIONS = {}

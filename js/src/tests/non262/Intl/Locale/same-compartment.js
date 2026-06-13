@@ -13,6 +13,10 @@ for (var [key, {get, value = get}] of Object.entries(Object.getOwnPropertyDescri
                 assertEq(value.call(scwLocale), expectedValue, key);
             } else if (expectedValue instanceof Intl.Locale) {
                 assertEq(value.call(scwLocale).toString(), expectedValue.toString(), key);
+            } else if (expectedValue instanceof Array) {
+                assertEq(value.call(scwLocale).toString(), expectedValue.toString(), key);
+            } else if (expectedValue instanceof Object) {
+                assertEq(JSON.stringify(value.call(scwLocale)), JSON.stringify(expectedValue), key);
             } else {
                 throw new Error("unexpected result value");
             }

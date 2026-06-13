@@ -94,7 +94,7 @@ auto OriginParser::Parse(nsACString& aSpec) -> ResultType {
       }
     }
 
-    aSpec = spec;
+    aSpec = std::move(spec);
 
     return ValidOrigin;
   }
@@ -117,7 +117,7 @@ auto OriginParser::Parse(nsACString& aSpec) -> ResultType {
     spec.AppendInt(mPort.Value());
   }
 
-  aSpec = spec;
+  aSpec = std::move(spec);
 
   return mScheme.EqualsLiteral("app") ? ObsoleteOrigin : ValidOrigin;
 }

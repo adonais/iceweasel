@@ -41,8 +41,6 @@ release_partners: []
 release_product: null
 release_type: ''
 repository_type: hg
-required_signoffs: []
-signoff_urls: {}
 target_tasks_method: autoland_tasks
 tasks_for: hg-push
 test_manifest_loader: bugbug

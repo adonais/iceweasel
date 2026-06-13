@@ -6,6 +6,12 @@ const { sinon } = ChromeUtils.importESModule(
   "resource://testing-common/Sinon.sys.mjs"
 );
 
+add_setup(async function () {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.privatebrowsing.felt-privacy-v1", false]],
+  });
+});
+
 add_task(async function test_experiment_messaging_system() {
   const LOCALE = Services.locale.appLocaleAsBCP47;
   let doExperimentCleanup = await setupMSExperimentWithMessage({

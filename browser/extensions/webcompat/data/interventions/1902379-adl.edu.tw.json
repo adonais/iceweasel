@@ -10,7 +10,7 @@
     {
       "platforms": ["all"],
       "content_scripts": {
-        "js": ["bug1902379-adl.edu.tw-hide-unsupported-popup.js"]
+        "js": ["use_chrome_useragent.js", "use_chrome_vendor.js"]
       }
     }
   ]

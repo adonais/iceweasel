@@ -549,15 +549,31 @@
     }
 
     /**
+     * Temporarily hide split view panels when switching to a non-split-view tab.
+     * Preserves the split-view-panel class and column attribute so panels re-enter
+     * the flex layout at their correct size when reactivated.
+     *
+     * @param {MozTabbrowserTab[]} tabs
+     */
+    suspendSplitViewPanels(tabs) {
+      for (const tab of tabs) {
+        const panelEl = document.getElementById(tab.linkedPanel);
+        panelEl?.classList.remove("split-view-panel-active");
+      }
+      this.setSplitViewActive(!!this.#splitViewPanels.length);
+    }
+
+    /**
      * Updates attributes on panels such as the blue outline for active splitview tabs,
      * panel ordering and aria attributes.
      *
      * @param {boolean} updatedValue
      */
     setSplitViewActive(updatedValue) {
-      let isActive = gBrowser.selectedTab.splitview && updatedValue;
-      this.toggleAttribute("splitview", isActive);
-      this.splitViewSplitter.hidden = !isActive;
+      const splitViewTabSelected =
+        gBrowser.selectedTab.splitview && updatedValue;
+      this.toggleAttribute("splitview", updatedValue);
+      this.splitViewSplitter.hidden = !splitViewTabSelected;
       const selectedPanel = this.selectedPanel;
 
       /**
@@ -582,7 +598,7 @@
         return isAfterA && isBeforeB;
       };
 
-      if (isActive) {
+      if (splitViewTabSelected) {
         // Ensure panels are in the correct DOM order so that focus moves
         // as expected when tabbing across a splitview
         const firstPanel = document.getElementById(this.splitViewPanels[0]);

@@ -239,7 +239,7 @@ private fun MoveToNonPrivateTabMenuItem(
     if (isPrivate) {
         MenuItem(
             label = stringResource(id = R.string.browser_menu_move_to_non_private_tab),
-            beforeIconPainter = painterResource(id = iconsR.drawable.mozac_ic_open_in),
+            beforeIconPainter = painterResource(id = iconsR.drawable.mozac_ic_external_link_24),
             onClick = onMoveToNonPrivateTabMenuClick,
         )
     }

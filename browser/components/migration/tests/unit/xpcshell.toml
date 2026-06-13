@@ -72,11 +72,15 @@ run-if = [
 ["test_Chrome_permissions.js"]
 
 ["test_Edge_db_migration.js"]
+prefs = ["browser.migrate.edge.enabled=true"]
+
 run-if = [
   "os == 'win'",
 ]
 
 ["test_Edge_registry_migration.js"]
+prefs = ["browser.migrate.edge.enabled=true"]
+
 run-if = [
   "os == 'win'",
 ]

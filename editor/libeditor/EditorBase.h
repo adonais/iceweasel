@@ -192,7 +192,7 @@ class EditorBase : public nsIEditor,
 
   PresShell* GetPresShell() const;
   nsPresContext* GetPresContext() const;
-  already_AddRefed<nsCaret> GetCaret() const;
+  already_AddRefed<nsCaret> GetCaretForSelection() const;
 
   already_AddRefed<nsIWidget> GetWidget() const;
 
@@ -606,7 +606,8 @@ class EditorBase : public nsIEditor,
    *
    * @param aEventTarget        The event target of the blur event.
    */
-  virtual nsresult OnBlur(const dom::EventTarget* aEventTarget) = 0;
+  MOZ_CAN_RUN_SCRIPT virtual nsresult OnBlur(
+      const dom::EventTarget* aEventTarget) = 0;
 
   /** Resyncs spellchecking state (enabled/disabled).  This should be called
    * when anything that affects spellchecking state changes, such as the
@@ -820,6 +821,8 @@ class EditorBase : public nsIEditor,
   struct MOZ_STACK_CLASS TopLevelEditSubActionData final {
     friend class AutoEditActionDataSetter;
 
+    TopLevelEditSubActionData(const TopLevelEditSubActionData& aOther) = delete;
+
     // Set selected range before edit.  Then, RangeUpdater keep modifying
     // the range while we're changing the DOM tree.
     RefPtr<RangeItem> mSelectedRange;
@@ -941,7 +944,6 @@ class EditorBase : public nsIEditor,
                                     const EditorRawDOMPoint& aEnd);
 
     TopLevelEditSubActionData() = default;
-    TopLevelEditSubActionData(const TopLevelEditSubActionData& aOther) = delete;
   };
 
   struct MOZ_STACK_CLASS EditSubActionData final {

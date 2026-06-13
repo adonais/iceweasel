@@ -6,7 +6,6 @@ package org.mozilla.fenix.syncintegration
 
 import android.os.SystemClock.sleep
 import android.widget.EditText
-import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.action.ViewActions.click
 import androidx.test.espresso.matcher.ViewMatchers.withId
@@ -27,6 +26,7 @@ import org.mozilla.fenix.helpers.ext.waitNotNull
 import org.mozilla.fenix.ui.robots.accountSettings
 import org.mozilla.fenix.ui.robots.homeScreen
 import org.mozilla.fenix.ui.robots.settingsSubMenuLoginsAndPassword
+import androidx.compose.ui.test.junit4.v2.AndroidComposeTestRule as AndroidComposeTestRuleV2
 
 @Suppress("RECEIVER_NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
 class SyncIntegrationTest {
@@ -35,7 +35,7 @@ class SyncIntegrationTest {
     val fenixTestRule: FenixTestRule = FenixTestRule()
 
     @get:Rule
-    val composeTestRule = AndroidComposeTestRule(HomeActivityIntentTestRule()) { it.activity }
+    val composeTestRule = AndroidComposeTestRuleV2(HomeActivityIntentTestRule()) { it.activity }
 
     // TestRail link: https://testrail.stage.mozaws.net/index.php?/cases/view/352905
     // History item Desktop -> Fenix

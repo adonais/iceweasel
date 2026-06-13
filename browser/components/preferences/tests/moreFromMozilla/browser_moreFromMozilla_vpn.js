@@ -20,10 +20,10 @@ add_task(async function test_VPN_promo_enabled() {
     ],
   });
 
-  let { vpnPromoCard, mobileCard } = await getPromoCards();
+  let { vpnPromoCard, mobilePromo } = await getPromoCards();
 
   ok(vpnPromoCard, "The VPN promo is visible");
-  ok(mobileCard, "The Mobile promo is visible");
+  ok(mobilePromo, "The Mobile promo is visible");
 
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
@@ -34,10 +34,10 @@ add_task(async function test_VPN_promo_disabled() {
     set: [["browser.vpn_promo.enabled", false]],
   });
 
-  let { vpnPromoCard, mobileCard } = await getPromoCards();
+  let { vpnPromoCard, mobilePromo } = await getPromoCards();
 
   ok(!vpnPromoCard, "The VPN promo is not visible");
-  ok(mobileCard, "The Mobile promo is visible");
+  ok(mobilePromo, "The Mobile promo is visible");
 
   Services.prefs.clearUserPref("browser.vpn_promo.enabled");
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
@@ -53,10 +53,10 @@ add_task(async function test_VPN_promo_in_disallowed_home_region() {
     set: [["browser.vpn_promo.enabled", true]],
   });
 
-  let { vpnPromoCard, mobileCard } = await getPromoCards();
+  let { vpnPromoCard, mobilePromo } = await getPromoCards();
 
   ok(!vpnPromoCard, "The VPN promo is not visible");
-  ok(mobileCard, "The Mobile promo is visible");
+  ok(mobilePromo, "The Mobile promo is visible");
 
   setupRegions(initialHomeRegion, initialCurrentRegion);
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
@@ -72,10 +72,10 @@ add_task(async function test_VPN_promo_in_illegal_home_region() {
     set: [["browser.vpn_promo.disallowedRegions", "SY, CU"]],
   });
 
-  let { vpnPromoCard, mobileCard } = await getPromoCards();
+  let { vpnPromoCard, mobilePromo } = await getPromoCards();
 
   ok(!vpnPromoCard, "The VPN promo is not visible");
-  ok(mobileCard, "The Mobile promo is visible");
+  ok(mobilePromo, "The Mobile promo is visible");
 
   setupRegions(initialHomeRegion, initialCurrentRegion);
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
@@ -92,10 +92,10 @@ add_task(async function test_VPN_promo_in_disallowed_current_region() {
     set: [["browser.vpn_promo.enabled", true]],
   });
 
-  let { vpnPromoCard, mobileCard } = await getPromoCards();
+  let { vpnPromoCard, mobilePromo } = await getPromoCards();
 
   ok(!vpnPromoCard, "The VPN promo is not visible");
-  ok(mobileCard, "The Mobile promo is visible");
+  ok(mobilePromo, "The Mobile promo is visible");
 
   setupRegions(initialHomeRegion, initialCurrentRegion);
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
@@ -112,10 +112,10 @@ add_task(async function test_VPN_promo_in_illegal_current_region() {
     set: [["browser.vpn_promo.disallowedRegions", "SY, CU"]],
   });
 
-  let { vpnPromoCard, mobileCard } = await getPromoCards();
+  let { vpnPromoCard, mobilePromo } = await getPromoCards();
 
   ok(!vpnPromoCard, "The VPN promo is not visible");
-  ok(mobileCard, "The Mobile promo is visible");
+  ok(mobilePromo, "The Mobile promo is visible");
 
   setupRegions(initialHomeRegion, initialCurrentRegion);
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
@@ -129,10 +129,10 @@ add_task(
 
     setupRegions(supportedRegion, unsupportedRegion);
 
-    let { vpnPromoCard, mobileCard } = await getPromoCards();
+    let { vpnPromoCard, mobilePromo } = await getPromoCards();
 
     ok(vpnPromoCard, "The VPN promo is visible");
-    ok(mobileCard, "The Mobile promo is visible");
+    ok(mobilePromo, "The Mobile promo is visible");
 
     setupRegions(initialHomeRegion, initialCurrentRegion);
     BrowserTestUtils.removeTab(gBrowser.selectedTab);
@@ -147,10 +147,10 @@ add_task(
 
     setupRegions(unsupportedRegion, supportedRegion);
 
-    let { vpnPromoCard, mobileCard } = await getPromoCards();
+    let { vpnPromoCard, mobilePromo } = await getPromoCards();
 
     ok(vpnPromoCard, "The VPN promo is visible");
-    ok(mobileCard, "The Mobile promo is visible");
+    ok(mobilePromo, "The Mobile promo is visible");
 
     setupRegions(initialHomeRegion, initialCurrentRegion);
     BrowserTestUtils.removeTab(gBrowser.selectedTab);
@@ -166,9 +166,9 @@ add_task(async function test_VPN_promo_with_active_enterprise_policy() {
     },
   });
 
-  let { vpnPromoCard, mobileCard } = await getPromoCards();
+  let { vpnPromoCard, mobilePromo } = await getPromoCards();
   ok(!vpnPromoCard, "The VPN promo is not visible");
-  ok(mobileCard, "The Mobile promo is visible");
+  ok(mobilePromo, "The Mobile promo is visible");
 
   setupRegions(initialHomeRegion, initialCurrentRegion);
   await clearPolicies();

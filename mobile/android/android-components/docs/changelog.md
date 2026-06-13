@@ -4,7 +4,13 @@ title: Changelog
 permalink: /changelog/
 ---
 
-# 151.0 (In Development)
+# 152.0 (In Development)
+* **browser-engine-gecko**
+    * 🆕 New `getTrackingProtectionEventsByDateRange`, `sumAllTrackingProtectionEvents` and `getEarliestTrackingProtectionDate` APIs to query the tracking protection database from Gecko. [Bug 2031989](https://bugzilla.mozilla.org/show_bug.cgi?id=2031989)
+* **feature-session**
+    * 🆕 New `FetchTrackingEventsUseCase`, `FetchTotalTrackersBlockedUseCase` and `FetchEarliestTrackingDateUseCase` usecases to query for tracking protection related dertails from the current engine. [Bug 2031989](https://bugzilla.mozilla.org/show_bug.cgi?id=2031989)
+
+# 151.0
 * **browser-engine-gecko**
   * 🆕 New Engine Settings API - `useContentBlockingDatabase` that allows controlling whether the content blocking database is enabled. [Bug 2030082](https://bugzilla.mozilla.org/show_bug.cgi?id=2030082)
 

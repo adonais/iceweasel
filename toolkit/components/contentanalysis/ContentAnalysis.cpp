@@ -2140,8 +2140,8 @@ nsresult ContentAnalysis::RunAnalyzeRequestTask(
 
   CallClientWithRetry<std::nullptr_t>(
       __func__,
-      [userActionId, pbRequest = std::move(pbRequest), aAutoAcknowledge,
-       ignoreCanceled](
+      [userActionId = userActionId, pbRequest = std::move(pbRequest),
+       aAutoAcknowledge, ignoreCanceled](
           std::shared_ptr<content_analysis::sdk::Client> client) mutable {
         MOZ_ASSERT(!NS_IsMainThread());
         return DoAnalyzeRequest(std::move(userActionId), std::move(pbRequest),
@@ -2149,7 +2149,8 @@ nsresult ContentAnalysis::RunAnalyzeRequestTask(
       })
       ->Then(
           GetMainThreadSerialEventTarget(), __func__, []() { /* do nothing */ },
-          [userActionId, requestToken](nsresult rv) mutable {
+          [userActionId = std::move(userActionId),
+           requestToken = std::move(requestToken)](nsresult rv) mutable {
             LOGD(
                 "RunAnalyzeRequestTask failed to get client a second time for "
                 "requestToken=%s, userActionId=%s",

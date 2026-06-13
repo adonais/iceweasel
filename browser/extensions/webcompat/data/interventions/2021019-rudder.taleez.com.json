@@ -6,15 +6,16 @@
       "matches": ["*://rudder.taleez.com/*"]
     }
   },
+  "css": {
+    "fix_overlapping_content": "html { height: initial; }"
+  },
   "interventions": [
     {
       "platforms": ["all"],
       "pref_check": {
         "layout.css.webkit-fill-available.enabled": true
       },
-      "content_scripts": {
-        "css": ["bug2021019-rudder.taleez.com-fix-overlapping-content.css"]
-      }
+      "css": ["fix_overlapping_content"]
     }
   ]
 }

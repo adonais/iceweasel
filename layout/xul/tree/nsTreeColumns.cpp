@@ -242,7 +242,7 @@ nsTreeColumns::nsTreeColumns(nsTreeBodyFrame* aTree) : mTree(aTree) {}
 
 nsTreeColumns::~nsTreeColumns() { nsTreeColumns::InvalidateColumns(); }
 
-NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE_0(nsTreeColumns)
+NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(nsTreeColumns, mFirstColumn)
 
 // QueryInterface implementation for nsTreeColumns
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(nsTreeColumns)

@@ -6,12 +6,13 @@
       "matches": ["*://tsu-results.rf.gd/tsu_results/*"]
     }
   },
+  "css": {
+    "fix-table-headers": "@-moz-document url-prefix() { .sortable th { text-align: unset; transform: skew(-45deg) rotate(-180deg) matrix(1.3, 0.6, 0.2, 1, -69, 10); vertical-align: unset; } .sortable td { text-align: unset; } }"
+  },
   "interventions": [
     {
       "platforms": ["all"],
-      "content_scripts": {
-        "css": ["bug1911243-tsu-results.rf.gd-fix-table-headers.css"]
-      }
+      "css": ["fix-table-headers"]
     }
   ]
 }

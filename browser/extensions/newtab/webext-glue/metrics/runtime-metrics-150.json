@@ -1,0 +1,14 @@
+{
+  "metrics": {
+    "newtab": {
+      "widgets_enabled_list": {
+        "description": "The list of widget telemetry names currently enabled by the user. Recorded at startup and whenever a widget is enabled or disabled.\n",
+        "disabled": false,
+        "lifetime": "application",
+        "pings": ["newtab"],
+        "type": "string_list"
+      }
+    }
+  },
+  "pings": {}
+}

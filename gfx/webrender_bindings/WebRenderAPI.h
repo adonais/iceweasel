@@ -944,9 +944,9 @@ class MOZ_RAII SpaceAndClipChainHelper final {
     mBuilder.mCurrentSpaceAndClipChain = mOldSpaceAndClipChain;
   }
 
- private:
   SpaceAndClipChainHelper(const SpaceAndClipChainHelper&) = delete;
 
+ private:
   DisplayListBuilder& mBuilder;
   wr::WrSpaceAndClipChain mOldSpaceAndClipChain;
 };

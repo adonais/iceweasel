@@ -186,6 +186,7 @@ class DownloadsFeature(
      * to be processed.
      */
     override fun start() {
+        downloadManager.registerListeners()
         // Dismiss the previous prompts when the user navigates to another site.
         // This prevents prompts from the previous page from covering content.
         dismissPromptScope = store.flowScoped(dispatcher = mainDispatcher) { flow ->

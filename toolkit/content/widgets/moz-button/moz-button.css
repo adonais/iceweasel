@@ -263,6 +263,7 @@ button {
   }
 
   img {
+    content: var(--button-icon-content);
     width: var(--icon-size);
     height: var(--icon-size);
     pointer-events: none;

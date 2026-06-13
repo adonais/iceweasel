@@ -342,7 +342,7 @@ void DnsAndConnectSocket::CancelBackupTimer() {
   // performed the backup connection.
 }
 
-void DnsAndConnectSocket::Abandon(bool aReenqueueTransaction) {
+void DnsAndConnectSocket::Abandon() {
   LOG(("DnsAndConnectSocket::Abandon [this=%p ent=%s] %p %p %p %p", this,
        mConnInfo->Origin(), mPrimaryTransport.mSocketTransport.get(),
        mBackupTransport.mSocketTransport.get(),
@@ -608,7 +608,10 @@ nsresult DnsAndConnectSocket::SetupConn(bool isPrimary, nsresult status) {
 
   // This half-open socket has created a connection.  This flag excludes it
   // from counter of actual connections used for checking limits.
-  mHasConnected = true;
+  if (!mHasConnected) {
+    mHasConnected = true;
+    ent->OnConnectionAttemptConnected();
+  }
 
   // if this is still in the pending list, remove it and dispatch it
   RefPtr<PendingTransactionInfo> pendingTransInfo =

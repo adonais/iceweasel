@@ -30,6 +30,28 @@ class LensActionTest {
     }
 
     @Test
+    fun `WHEN Lens is requested with an image URL THEN state reflects the pending image URL`() {
+        val initialState = AppState()
+        val imageUrl = "https://example.com/image.jpg"
+
+        val finalState = AppStoreReducer.reduce(
+            initialState,
+            AppAction.LensAction.LensRequestedWithImageUrl(imageUrl),
+        )
+
+        val expectedState = AppState(
+            lensState = LensState(
+                isRequesting = true,
+                inProgress = false,
+                resultUrl = null,
+                pendingImageUrl = imageUrl,
+            ),
+        )
+
+        assertEquals(expectedState, finalState)
+    }
+
+    @Test
     fun `WHEN the Lens request is consumed THEN the state should reflect that`() {
         var state = AppState()
 

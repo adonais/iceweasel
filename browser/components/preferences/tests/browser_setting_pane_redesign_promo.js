@@ -55,7 +55,7 @@ describe("setting-pane redesign promo", () => {
       leaveOpen: true,
     });
     const doc = gBrowser.selectedBrowser.contentDocument;
-    const win = doc.ownerGlobal;
+    const win = doc.documentGlobal;
     assertPromosExistence(doc, true);
     const currentPane = doc.querySelector(
       'setting-pane[data-category="paneHome"]'

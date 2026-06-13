@@ -4,6 +4,7 @@
 
 package org.mozilla.fenix.library.history
 
+import android.annotation.SuppressLint
 import android.app.Dialog
 import android.content.DialogInterface
 import android.content.Intent
@@ -107,6 +108,7 @@ import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.history.DefaultPagedHistoryProvider
 import org.mozilla.fenix.components.metrics.MetricsUtils
 import org.mozilla.fenix.components.search.HISTORY_SEARCH_ENGINE_ID
+import org.mozilla.fenix.components.share.ShareSource
 import org.mozilla.fenix.databinding.FragmentHistoryBinding
 import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.components
@@ -138,6 +140,7 @@ import org.mozilla.fenix.search.createInitialSearchFragmentState
 import org.mozilla.fenix.tabstray.redux.state.Page
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.utils.allowUndo
+import androidx.appcompat.R as appcompatR
 import org.mozilla.fenix.GleanMetrics.History as GleanHistory
 
 private const val MATERIAL_DESIGN_SCRIM = "#52000000"
@@ -196,6 +199,10 @@ class HistoryFragment :
     private val lensLauncher: ActivityResultLauncher<Intent> =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             lensFeature?.get()?.handleImageResult(result.resultCode, result.data)
+        }
+    private val lensCameraPermissionLauncher: ActivityResultLauncher<String> =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+            lensFeature?.get()?.onCameraPermissionResult(isGranted)
         }
 
     private val menuBinding by lazy {
@@ -308,11 +315,9 @@ class HistoryFragment :
         super.onViewCreated(view, savedInstanceState)
         requireActivity().addMenuProvider(this, viewLifecycleOwner, Lifecycle.State.RESUMED)
 
-        if (requireContext().settings().shouldUseComposableToolbar) {
-            qrScanFenixFeature = QrScanFenixFeature.register(this, qrScanLauncher)
-            voiceSearchFeature = VoiceSearchFeature.register(this, voiceSearchLauncher)
-            lensFeature = LensFeature.register(this, lensLauncher)
-        }
+        qrScanFenixFeature = QrScanFenixFeature.register(this, qrScanLauncher)
+        voiceSearchFeature = VoiceSearchFeature.register(this, voiceSearchLauncher)
+        lensFeature = LensFeature.register(this, lensLauncher, lensCameraPermissionLauncher)
 
         consumeFrom(historyStore) {
             historyView.update(it)
@@ -363,10 +368,9 @@ class HistoryFragment :
     override fun onResume() {
         super.onResume()
 
-        val shouldUseComposableToolbar = context?.settings()?.shouldUseComposableToolbar == true
         val isSearchActive = context?.components?.appStore?.state?.searchState?.isSearchActive == true
 
-        if (shouldUseComposableToolbar && isSearchActive) {
+        if (isSearchActive) {
             handleShowingSearchUX()
         } else {
             (activity as NavHostActivity).getSupportActionBarAndInflateIfNecessary().show()
@@ -379,7 +383,7 @@ class HistoryFragment :
             menu.findItem(R.id.share_history_multi_select)?.isVisible = true
             menu.findItem(R.id.delete_history_multi_select)?.title =
                 SpannableString(getString(R.string.bookmark_menu_delete_button)).apply {
-                    setTextColor(requireContext(), R.attr.textCritical)
+                    setTextColor(requireContext(), appcompatR.attr.colorError)
                 }
         } else {
             inflater.inflate(R.menu.history_menu, menu)
@@ -438,15 +442,8 @@ class HistoryFragment :
             true
         }
         R.id.history_search -> {
-            if (context?.settings()?.shouldUseComposableToolbar == true) {
-                historyStore.dispatch(SearchClicked)
-                handleShowingSearchUX()
-            } else {
-                findNavController().nav(
-                    R.id.historyFragment,
-                    HistoryFragmentDirections.actionGlobalSearchDialog(null),
-                )
-            }
+            historyStore.dispatch(SearchClicked)
+            handleShowingSearchUX()
             true
         }
         R.id.history_delete -> {
@@ -699,10 +696,17 @@ class HistoryFragment :
 
     private fun share(data: List<ShareData>) {
         GleanHistory.shared.record(NoExtras())
-        val directions = HistoryFragmentDirections.actionGlobalShareFragment(
-            data = data.toTypedArray(),
+
+        requireComponents.useCases.shareUseCases.shareItems(
+            items = data,
+            source = ShareSource.HISTORY,
+            navigateToShareFragment = {
+                val directions = HistoryFragmentDirections.actionGlobalShareFragment(
+                    data = data.toTypedArray(),
+                )
+                navigateToHistoryFragment(directions)
+            },
         )
-        navigateToHistoryFragment(directions)
     }
 
     private fun navigateToHistoryFragment(directions: NavDirections) {
@@ -775,6 +779,7 @@ class HistoryFragment :
     internal class DeleteConfirmationDialogFragment(
         private val onDeleteTimeRange: (selectedTimeFrame: RemoveTimeFrame?) -> Unit,
     ) : DialogFragment() {
+        @SuppressLint("InflateParams")
         override fun onCreateDialog(savedInstanceState: Bundle?): Dialog =
             MaterialAlertDialogBuilder(requireContext()).apply {
                 val layout = getLayoutInflater().inflate(R.layout.delete_history_time_range_dialog, null)

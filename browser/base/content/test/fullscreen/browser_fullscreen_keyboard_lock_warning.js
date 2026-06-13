@@ -8,7 +8,10 @@ add_setup(async () => {
     set: [
       ["test.wait300msAfterTabSwitch", true],
       ["dom.fullscreen.keyboard_lock.enabled", true],
-      ["dom.fullscreen.keyboard_lock.long_press_interval", 0],
+      [
+        "dom.fullscreen.keyboard_lock.long_press_interval",
+        KEYBOARD_LOCK_LONGPRESS_TIME,
+      ],
       ["full-screen-api.allow-trusted-requests-only", false],
       ["full-screen-api.warning.timeout", 1000],
       ["full-screen-api.keyboardlock-warning.timeout", 1000],
@@ -328,10 +331,15 @@ add_task(async function test_keyboard_lock_change_warning_change_iframe() {
     EventUtils.synthesizeKey("KEY_Escape", {});
     await warningShownPromise;
 
-    info("Log press to exit fullscreen");
-    // Synthesize a long-press of the Escape key by repeating 2 keydown events.
-    // This works as the long_press_interval is set to 0 on setup.
-    EventUtils.synthesizeKey("KEY_Escape", { repeat: 2 });
+    info("Long press to exit fullscreen");
+    let fullscreenExited = BrowserTestUtils.waitForEvent(
+      document,
+      "fullscreenchange",
+      false,
+      () => !document.fullscreenElement
+    );
+    await synthesizeLongPressEsc(browser);
+    await fullscreenExited;
   });
 });
 

@@ -12,7 +12,7 @@ add_task(async function test_remove_many() {
   await PlacesUtils.bookmarks.eraseEverything();
 
   info("Adding a witness page");
-  let WITNESS_URI = NetUtil.newURI(
+  let WITNESS_URI = Services.io.newURI(
     "http://mozilla.com/test_browserhistory/test_remove/" + Math.random()
   );
   await PlacesTestUtils.addVisits(WITNESS_URI);
@@ -21,7 +21,7 @@ add_task(async function test_remove_many() {
   info("Generating samples");
   let pages = [];
   for (let i = 0; i < SIZE; ++i) {
-    let uri = NetUtil.newURI(
+    let uri = Services.io.newURI(
       "http://mozilla.com/test_browserhistory/test_remove?sample=" +
         i +
         "&salt=" +
@@ -62,7 +62,7 @@ add_task(async function test_remove_many() {
   for (let i = 0; i < SIZE; ++i) {
     if (i % 4 == 0) {
       keys.push(pages[i].uri);
-      keys.push(NetUtil.newURI("http://example.org/dangling/nsIURI/" + i));
+      keys.push(Services.io.newURI("http://example.org/dangling/nsIURI/" + i));
     } else if (i % 4 == 1) {
       keys.push(new URL(pages[i].uri.spec));
       keys.push(new URL("http://example.org/dangling/URL/" + i));

@@ -12,7 +12,6 @@
 #include "mozilla/SyncRunnable.h"
 #include "nsIThread.h"
 #include "nsNSSComponent.h"
-#include "nsPK11TokenDB.h"
 #include "nsXULAppAPI.h"
 
 /* Implementing OSKeyStore when there is no platform specific one.

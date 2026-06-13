@@ -18,7 +18,7 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/d92a578327f524ec3
  4 files changed, 24 insertions(+), 7 deletions(-)
 
 diff --git a/call/rtp_video_sender.cc b/call/rtp_video_sender.cc
-index c25fe194bf..615db18574 100644
+index 7267add42b..ef3a0a5538 100644
 --- a/call/rtp_video_sender.cc
 +++ b/call/rtp_video_sender.cc
 @@ -528,6 +528,7 @@ void RtpVideoSender::SetModuleIsActive(bool sending,
@@ -30,7 +30,7 @@ index c25fe194bf..615db18574 100644
    rtp_module.SetSendingMediaStatus(sending);
    if (sending) {
 diff --git a/modules/rtp_rtcp/source/rtcp_sender.cc b/modules/rtp_rtcp/source/rtcp_sender.cc
-index 3a5c4d94e3..4fb1702e91 100644
+index 4f32926c2c..b84bc66316 100644
 --- a/modules/rtp_rtcp/source/rtcp_sender.cc
 +++ b/modules/rtp_rtcp/source/rtcp_sender.cc
 @@ -198,10 +198,25 @@ bool RTCPSender::Sending() const {

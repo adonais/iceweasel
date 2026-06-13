@@ -49,4 +49,11 @@ sealed interface TabManagerNavDestination {
      * @property group The tab group to be deleted.
      */
     data class DeleteTabGroupConfirmationDialog(val group: TabsTrayItem.TabGroup) : TabManagerNavDestination
+
+    /**
+     * [TabManagerNavDestination] representing the [CloseTabAndDeleteGroupConfirmationDialog].
+     *
+     * @property group The tab group to be deleted along with the currently focused tab.
+     */
+    data class CloseTabAndDeleteGroupConfirmationDialog(val group: TabsTrayItem.TabGroup) : TabManagerNavDestination
 }

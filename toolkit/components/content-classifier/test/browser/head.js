@@ -8,3 +8,7 @@ const TEST_TOP_PAGE = TEST_DOMAIN + TEST_PATH + "page.html";
 const BLOCK_LIST_URL = "https://example.net/" + TEST_PATH + "block_list.txt";
 const ANNOTATE_LIST_URL =
   "https://example.net/" + TEST_PATH + "annotate_list.txt";
+
+// Must match NS_CONTENT_CLASSIFIER_FILTER_LISTS_LOADED_TOPIC in
+// nsIContentClassifierService.idl.
+const LISTS_LOADED_TOPIC = "test-content-classifier-filter-lists-loaded";

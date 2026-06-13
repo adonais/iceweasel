@@ -218,7 +218,7 @@ class SyncedTabsInSidebar extends SidebarPage {
   }
 
   handleNavigateToLink(e) {
-    navigateToLink(e);
+    navigateToLink(e, undefined, { forceNewTab: false });
     // TO DO: update the below to handle multiple links opened at once. Bug 2024639
     Glean.sidebar.link.synced_tabs.add(1);
     this.treeView.resetSelection();

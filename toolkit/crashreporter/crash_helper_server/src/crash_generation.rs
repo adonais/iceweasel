@@ -7,37 +7,29 @@ pub mod crash_annotations {
 }
 
 use super::{
-    breakpad_crash_generator::{BreakpadCrashGenerator, BreakpadProcessId},
+    breakpad_crash_generator::BreakpadProcessId,
     phc::{self, StackTrace},
 };
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
 mod linux;
 #[cfg(any(target_os = "android", target_os = "linux"))]
-pub(crate) use linux::{get_auxv_info, PlatformData};
+pub(crate) use linux::get_auxv_info;
 
 #[cfg(target_os = "windows")]
 mod windows;
-#[cfg(target_os = "windows")]
-pub(crate) use windows::PlatformData;
-
-#[cfg(any(target_os = "ios", target_os = "macos"))]
-mod mach;
-#[cfg(any(target_os = "ios", target_os = "macos"))]
-pub(crate) use mach::PlatformData;
 
 use anyhow::{Context, Result};
 use crash_annotations::{
     should_include_annotation, type_of_annotation, CrashAnnotation, CrashAnnotationType,
 };
-use crash_helper_common::{BreakpadChar, BreakpadData, BreakpadString, GeckoChildId, Pid};
+use crash_helper_common::{BreakpadChar, BreakpadString, GeckoChildId, Pid};
 use mozannotation_server::{AnnotationData, CAnnotation};
 use num_traits::FromPrimitive;
-use once_cell::sync::Lazy;
 use std::{
     collections::HashMap,
     convert::TryInto,
-    ffi::{c_char, CStr, CString, OsStr, OsString},
+    ffi::{c_char, c_void, CStr, CString, OsStr, OsString},
     fs::File,
     io::{Seek, SeekFrom, Write},
     mem::size_of,
@@ -59,14 +51,6 @@ impl CrashReport {
     }
 }
 
-// Table holding all the crash reports we've generated. It's indexed by PID and
-// new crash reports are insterted in the corresponding vector in order of
-// arrival. When crashes are retrieved they're similarly pulled out in the
-// order they've arrived.
-static CRASH_REPORTS: Lazy<Mutex<HashMap<Pid, Vec<CrashReport>>>> = Lazy::new(Default::default);
-static CRASH_REPORTS_BY_ID: Lazy<Mutex<HashMap<GeckoChildId, CrashReport>>> =
-    Lazy::new(Default::default);
-
 /******************************************************************************
  * Crash generator                                                            *
  ******************************************************************************/
@@ -77,56 +61,44 @@ enum MinidumpOrigin {
     WindowsErrorReporting,
 }
 
-pub(crate) struct CrashGenerator {
-    // This will be used for generating hangs
-    _minidump_path: OsString,
-    breakpad_server: BreakpadCrashGenerator,
+pub(crate) struct CrashGenerator
+where
+    // A reference to the `CrashGenerator` object is stored in the
+    // `BreakpadContext` object and transferred in turn to the Breakpad crash
+    // generation thread, so it needs to be `Send`.
+    Self: Send,
+{
+    #[allow(unused)]
+    minidump_path: OsString,
+    reports_by_pid: HashMap<Pid, Vec<CrashReport>>,
+    reports_by_id: HashMap<GeckoChildId, CrashReport>,
 }
 
 impl CrashGenerator {
-    pub(crate) fn new(
-        breakpad_data: BreakpadData,
-        minidump_path: OsString,
-    ) -> Result<CrashGenerator> {
-        let breakpad_server = BreakpadCrashGenerator::new(
-            breakpad_data,
-            minidump_path.clone(),
-            finalize_breakpad_minidump,
-        )?;
-
-        Ok(CrashGenerator {
-            _minidump_path: minidump_path,
-            breakpad_server,
-        })
-    }
-
-    pub(crate) fn set_path(&mut self, path: OsString) {
-        self.breakpad_server.set_path(path);
-    }
-
-    pub(crate) fn move_report_to_id(&self, pid: Pid, id: GeckoChildId) {
-        let mut map = CRASH_REPORTS.lock().unwrap();
-        let mut id_map = CRASH_REPORTS_BY_ID.lock().unwrap();
-
-        if let Some(mut entry) = map.remove(&pid) {
-            let crash_report = entry.remove(0);
-
-            if !entry.is_empty() {
-                map.insert(pid, entry);
-            }
-
-            id_map.insert(id, crash_report);
+    pub(crate) fn new(minidump_path: OsString) -> CrashGenerator {
+        CrashGenerator {
+            minidump_path,
+            reports_by_pid: HashMap::<Pid, Vec<CrashReport>>::new(),
+            reports_by_id: HashMap::<GeckoChildId, CrashReport>::new(),
         }
     }
 
-    pub(crate) fn retrieve_minidump_by_pid(&self, pid: Pid) -> Option<CrashReport> {
-        let mut map = CRASH_REPORTS.lock().unwrap();
+    pub(crate) fn set_path(&mut self, path: OsString) {
+        self.minidump_path = path.clone();
+    }
 
-        if let Some(mut entry) = map.remove(&pid) {
+    pub(crate) fn move_report_to_id(&mut self, pid: Pid, id: GeckoChildId) {
+        if let Some(crash_report) = self.retrieve_minidump_by_pid(pid) {
+            self.reports_by_id.insert(id, crash_report);
+        }
+    }
+
+    pub(crate) fn retrieve_minidump_by_pid(&mut self, pid: Pid) -> Option<CrashReport> {
+        if let Some(mut entry) = self.reports_by_pid.remove(&pid) {
             let crash_report = entry.remove(0);
 
             if !entry.is_empty() {
-                map.insert(pid, entry);
+                self.reports_by_pid.insert(pid, entry);
             }
 
             return Some(crash_report);
@@ -135,9 +107,36 @@ impl CrashGenerator {
         None
     }
 
-    pub(crate) fn retrieve_minidump_by_id(&self, id: GeckoChildId) -> Option<CrashReport> {
-        let mut map = CRASH_REPORTS_BY_ID.lock().unwrap();
-        map.remove(&id)
+    pub(crate) fn retrieve_minidump_by_id(&mut self, id: GeckoChildId) -> Option<CrashReport> {
+        self.reports_by_id.remove(&id)
+    }
+
+    fn finalize_crash_report(
+        &mut self,
+        process_id: BreakpadProcessId,
+        error: Option<CString>,
+        minidump_path: &Path,
+        origin: MinidumpOrigin,
+    ) {
+        let mut extra_path = PathBuf::from(minidump_path);
+        extra_path.set_extension("extra");
+
+        let annotations = retrieve_annotations(&process_id, origin);
+        let extra_file_written = annotations
+            .map(|annotations| write_extra_file(&annotations, &extra_path))
+            .is_ok();
+
+        let path = minidump_path.as_os_str();
+        let error = if !extra_file_written {
+            Some(CString::new("MissingAnnotations").unwrap())
+        } else {
+            error
+        };
+
+        let entry = self.reports_by_pid.entry(process_id.pid);
+        entry
+            .and_modify(|entry| entry.push(CrashReport::new(path, &error)))
+            .or_insert_with(|| vec![CrashReport::new(path, &error)]);
     }
 }
 
@@ -211,49 +210,29 @@ fn serialize_phc_stack(stack_trace: &StackTrace) -> String {
 
 /// This reads the crash annotations, writes them to the .extra file and
 /// finally stores the resulting minidump in the global hash table.
-extern "C" fn finalize_breakpad_minidump(
+///
+/// # Safety
+///
+/// The caller must guarantee that the `generator` parameter points to a
+/// Mutex<CrashGenerator> object and that `error_ptr` and `minidump_path_ptr`
+/// point to valid strings.
+pub(crate) unsafe extern "C" fn finalize_breakpad_minidump(
+    generator: *const c_void,
     process_id: BreakpadProcessId,
     error_ptr: *const c_char,
     minidump_path_ptr: *const BreakpadChar,
 ) {
-    let minidump_path =
-        PathBuf::from(unsafe { <OsString as BreakpadString>::from_ptr(minidump_path_ptr) });
+    let generator = generator as *const Mutex<CrashGenerator>;
+    let minidump_path = PathBuf::from(<OsString as BreakpadString>::from_ptr(minidump_path_ptr));
     let error = if !error_ptr.is_null() {
         // SAFETY: The string is a valid C string we passed in ourselves.
-        Some(unsafe { CStr::from_ptr(error_ptr) }.to_owned())
+        Some(CStr::from_ptr(error_ptr).to_owned())
     } else {
         None
     };
 
-    finalize_crash_report(process_id, error, &minidump_path, MinidumpOrigin::Breakpad);
-}
-
-fn finalize_crash_report(
-    process_id: BreakpadProcessId,
-    error: Option<CString>,
-    minidump_path: &Path,
-    origin: MinidumpOrigin,
-) {
-    let mut extra_path = PathBuf::from(minidump_path);
-    extra_path.set_extension("extra");
-
-    let annotations = retrieve_annotations(&process_id, origin);
-    let extra_file_written = annotations
-        .map(|annotations| write_extra_file(&annotations, &extra_path))
-        .is_ok();
-
-    let path = minidump_path.as_os_str();
-    let error = if !extra_file_written {
-        Some(CString::new("MissingAnnotations").unwrap())
-    } else {
-        error
-    };
-
-    let map = &mut CRASH_REPORTS.lock().unwrap();
-    let entry = map.entry(process_id.pid);
-    entry
-        .and_modify(|entry| entry.push(CrashReport::new(path, &error)))
-        .or_insert_with(|| vec![CrashReport::new(path, &error)]);
+    let mut generator = generator.as_ref().unwrap().lock().unwrap();
+    generator.finalize_crash_report(process_id, error, &minidump_path, MinidumpOrigin::Breakpad);
 }
 
 fn retrieve_annotations(
@@ -274,13 +253,15 @@ fn retrieve_annotations(
     }
 
     // Add a unique identifier for this crash event.
-    let crash_id = uuid::Uuid::new_v4()
+    let crash_event_id = uuid::Uuid::new_v4()
         .as_hyphenated()
         .encode_lower(&mut uuid::Uuid::encode_buffer())
         .to_string();
     annotations.push(CAnnotation {
-        id: CrashAnnotation::CrashID as u32,
-        data: AnnotationData::String(CString::new(crash_id).context("uuid contains nul byte")?),
+        id: CrashAnnotation::CrashEventID as u32,
+        data: AnnotationData::String(
+            CString::new(crash_event_id).context("uuid contains nul byte")?,
+        ),
     });
 
     Ok(annotations)

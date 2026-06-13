@@ -17,6 +17,7 @@ import org.mozilla.fenix.nimbus.FakeNimbusEventStore
 import org.mozilla.fenix.nimbus.RecordEventMode.CompleteSuccessfully
 import org.mozilla.fenix.nimbus.RecordEventMode.ThrowException
 import org.mozilla.fenix.reviewprompt.ReviewPromptState.Eligible.Type
+import kotlin.test.assertIs
 
 class ReviewPromptMiddlewareTest {
 
@@ -111,7 +112,7 @@ class ReviewPromptMiddlewareTest {
 
         store.dispatch(ReviewPromptAction.CheckIfEligibleForReviewPrompt)
 
-        assertTrue(store.state.reviewPrompt is ReviewPromptState.Eligible)
+        assertIs<ReviewPromptState.Eligible>(store.state.reviewPrompt)
     }
 
     @Test
@@ -136,7 +137,7 @@ class ReviewPromptMiddlewareTest {
 
         store.dispatch(ReviewPromptAction.CheckIfEligibleForReviewPrompt)
 
-        assertTrue(store.state.reviewPrompt is ReviewPromptState.Eligible)
+        assertIs<ReviewPromptState.Eligible>(store.state.reviewPrompt)
     }
 
     @Test

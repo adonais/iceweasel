@@ -170,20 +170,24 @@ internal fun emitRecentSearchSuggestionsDisplayedFact(
 
 internal fun emitOptimizedSuggestionCardDisplayedFact(
     cardType: SuggestionCardType,
+    extra: String? = null,
 ) {
     emitAwesomebarFact(
         Action.DISPLAY,
         AwesomeBarFacts.Items.OPTIMIZED_SUGGESTION_CARD_DISPLAYED,
         cardType.value,
+        extra?.let { mapOf("extra" to it) },
     )
 }
 
 internal fun emitOptimizedSuggestionCardClickedFact(
     cardType: SuggestionCardType,
+    extra: String? = null,
 ) {
     emitAwesomebarFact(
         Action.INTERACTION,
         AwesomeBarFacts.Items.OPTIMIZED_SUGGESTION_CARD_CLICKED,
         cardType.value,
+        extra?.let { mapOf("extra" to it) },
     )
 }

@@ -131,9 +131,7 @@ class JSTracer;
 class PolicyContainer;
 class gfxUserFontSet;
 class mozIDOMWindowProxy;
-class nsCachableElementsByNameNodeList;
 class nsCommandManager;
-class nsContentList;
 class nsCycleCollectionTraversalCallback;
 class nsDOMCaretPosition;
 class nsDOMNavigationTiming;
@@ -159,7 +157,6 @@ class nsIDocumentObserver;
 class nsIEventTarget;
 class nsIFrame;
 class nsIGlobalObject;
-class nsIHTMLCollection;
 class nsIInputStream;
 class nsILayoutHistoryState;
 class nsIObjectLoadingContent;
@@ -176,7 +173,6 @@ class nsNodeInfoManager;
 class nsPIWindowRoot;
 class nsPresContext;
 class nsRange;
-class nsSimpleContentList;
 class nsTextNode;
 class nsViewManager;
 class nsViewportInfo;
@@ -241,6 +237,7 @@ class DocumentType;
 class DOMImplementation;
 class DOMIntersectionObserver;
 class DOMStringList;
+class EditContext;
 class Event;
 class EventListener;
 struct FailedCertSecurityInfo;
@@ -251,6 +248,7 @@ class FrameRequestCallback;
 class HighlightRegistry;
 class HTMLAllCollection;
 class HTMLBodyElement;
+class HTMLCollection;
 class HTMLInputElement;
 class HTMLMetaElement;
 class HTMLDialogElement;
@@ -276,6 +274,7 @@ class ScriptLoader;
 class Selection;
 class ServiceWorkerDescriptor;
 class ShadowRoot;
+class SimpleContentList;
 class SVGDocument;
 class SVGElement;
 class SVGSVGElement;
@@ -564,13 +563,11 @@ class Document : public nsINode,
   friend class DocumentOrShadowRoot;
   friend class LinkedList<Document>;
   friend class LinkedListElement<Document>;
+  friend class AutoRestoreCloningForSVGUse;
 
  protected:
   Document(const char* aContentType, LoadedAsData aLoadedAsData);
   virtual ~Document();
-
-  Document(const Document&) = delete;
-  Document& operator=(const Document&) = delete;
 
  public:
   using ExternalResourceLoad = dom::ExternalResourceMap::ExternalResourceLoad;
@@ -581,6 +578,8 @@ class Document : public nsINode,
   // nsINode overrides the new operator for DOM Arena allocation.
   // to use the default one, we need to bring it back again
   void* operator new(size_t aSize) { return ::operator new(aSize); }
+  Document(const Document&) = delete;
+  Document& operator=(const Document&) = delete;
 
   /**
    * Called when XPCOM shutdown.
@@ -1473,7 +1472,7 @@ class Document : public nsINode,
   // This array contains nodes that have been blocked to prevent
   // user tracking. They most likely have had their nsIChannel
   // canceled by the URL classifier (Safebrowsing).
-  already_AddRefed<nsSimpleContentList> BlockedNodesByClassifier() const;
+  already_AddRefed<SimpleContentList> BlockedNodesByClassifier() const;
 
   // Helper method that returns true if the document has storage-access sandbox
   // flag.
@@ -1574,6 +1573,10 @@ class Document : public nsINode,
    * Called when this Document's editor is destroyed.
    */
   void TearingDownEditor();
+
+  EditContext* GetActiveEditContext() const { return mActiveEditContext; }
+  // https://w3c.github.io/edit-context/#dfn-update-the-text-edit-context
+  MOZ_CAN_RUN_SCRIPT void UpdateTextEditContext();
 
   void SetKeyPressEventModel(uint16_t aKeyPressEventModel);
 
@@ -1991,8 +1994,7 @@ class Document : public nsINode,
  private:
   void RequestFullscreenInContentProcess(UniquePtr<FullscreenRequest> aRequest,
                                          bool aApplyFullscreenDirectly);
-  void RequestFullscreenInParentProcess(UniquePtr<FullscreenRequest> aRequest,
-                                        bool aApplyFullscreenDirectly);
+  void RequestFullscreenInParentProcess(UniquePtr<FullscreenRequest> aRequest);
 
   // Pushes aElement onto the top layer
   void TopLayerPush(Element&);
@@ -3384,9 +3386,14 @@ class Document : public nsINode,
   // features values changing.
   void NotifyMediaFeatureValuesChanged();
 
+  // Returns cached value of dom.image.sizes_auto.enabled, so that
+  // changing the pref while the document is loaded doesn't cause issues.
+  bool AutoSizesEnabled() const { return mAutoSizesEnabled; }
   // Observe loading=lazy sizes=auto image for size changes.
   void ObserveAutoSizesImage(HTMLImageElement& aElement);
   void UnobserveAutoSizesImage(HTMLImageElement& aElement);
+  // Returns whether we are observing |aElement| for sizes=auto size changes.
+  bool ObservesAutoSizesImage(HTMLImageElement& aElement) const;
 
   nsresult GetStateObject(JS::MutableHandle<JS::Value> aState);
 
@@ -3399,7 +3406,7 @@ class Document : public nsINode,
     mPageloadEventData.SetDocumentFeature(aFeature);
   }
 
-  nsContentList* ImageMapList();
+  ContentList* ImageMapList();
 
   // Add aLink to the set of links that need their status resolved.
   void RegisterPendingLinkUpdate(Link* aLink);
@@ -3560,14 +3567,14 @@ class Document : public nsINode,
   void SetTitle(const nsAString& aTitle, ErrorResult& rv);
   void GetDir(nsAString& aDirection) const;
   void SetDir(const nsAString& aDirection);
-  nsIHTMLCollection* Images();
-  nsIHTMLCollection* Embeds();
-  nsIHTMLCollection* Plugins() { return Embeds(); }
-  nsIHTMLCollection* Links();
-  nsIHTMLCollection* Forms();
-  nsIHTMLCollection* Scripts();
-  already_AddRefed<nsContentList> GetElementsByName(const nsAString& aName) {
-    return GetFuncStringContentList<nsCachableElementsByNameNodeList>(
+  HTMLCollection* Images();
+  HTMLCollection* Embeds();
+  HTMLCollection* Plugins() { return Embeds(); }
+  HTMLCollection* Links();
+  HTMLCollection* Forms();
+  HTMLCollection* Scripts();
+  already_AddRefed<ContentList> GetElementsByName(const nsAString& aName) {
+    return GetFuncStringContentList<CachableElementsByNameNodeList>(
         this, MatchNameAttribute, nullptr, UseExistingNameString, aName);
   }
   MOZ_CAN_RUN_SCRIPT
@@ -3625,10 +3632,18 @@ class Document : public nsINode,
   MOZ_CAN_RUN_SCRIPT void QueryCommandValue(const nsAString& aHTMLCommandName,
                                             nsAString& aValue,
                                             mozilla::ErrorResult& aRv);
-  nsIHTMLCollection* Applets();
-  nsIHTMLCollection* Anchors();
+  HTMLCollection* Applets();
+  HTMLCollection* Anchors();
   TimeStamp LastFocusTime() const;
   void SetLastFocusTime(const TimeStamp& aFocusTime);
+
+  void SetFocusNavigationStartingPoint(nsIContent* aContent,
+                                       bool aWillBeRemoved = false);
+  nsIContent* GetFocusNavigationStartingPoint() const {
+    return mFocusNavigationStartingPoint;
+  }
+  bool WasFocusedElementRemoved() const { return mWasFocusedElementRemoved; }
+
   // Event handlers are all on nsINode already
   bool MozSyntheticDocument() const { return IsSyntheticDocument(); }
   Element* GetCurrentScript();
@@ -3844,7 +3859,7 @@ class Document : public nsINode,
   void UnlockAllWakeLocks(WakeLockType aType);
 
   // ParentNode
-  nsIHTMLCollection* Children();
+  HTMLCollection* Children();
   uint32_t ChildElementCount();
 
   /**
@@ -4329,17 +4344,15 @@ class Document : public nsINode,
   }
 
  private:
-  void DoCacheAllKnownLangPrefs();
   void RecomputeLanguageFromCharset();
   bool GetSHEntryHasUserInteraction();
 
   void AppendAutoFocusCandidateToTopDocument(Element* aAutoFocusCandidate);
 
+  // https://w3c.github.io/edit-context/#dfn-determine-the-active-editcontext
+  EditContext* DetermineActiveEditContext() const;
+
  public:
-  void SetMayNeedFontPrefsUpdate() { mMayNeedFontPrefsUpdate = true; }
-
-  bool MayNeedFontPrefsUpdate() { return mMayNeedFontPrefsUpdate; }
-
   void SetSHEntryHasUserInteraction(bool aHasInteraction);
 
   nsAtom* GetContentLanguageAsAtomForStyle() const;
@@ -4349,22 +4362,7 @@ class Document : public nsINode,
    * Fetch the user's font preferences for the given aLanguage's
    * language group.
    */
-  const LangGroupFontPrefs* GetFontPrefsForLang(
-      nsAtom* aLanguage, bool* aNeedsToCache = nullptr) const;
-
-  void ForceCacheLang(nsAtom* aLanguage) {
-    if (!mLanguagesUsed.EnsureInserted(aLanguage)) {
-      return;
-    }
-    GetFontPrefsForLang(aLanguage);
-  }
-
-  void CacheAllKnownLangPrefs() {
-    if (!mMayNeedFontPrefsUpdate) {
-      return;
-    }
-    DoCacheAllKnownLangPrefs();
-  }
+  const LangGroupFontPrefs* GetFontPrefsForLang(nsAtom* aLanguage) const;
 
   nsINode* GetServoRestyleRoot() const { return mServoRestyleRoot; }
 
@@ -4955,19 +4953,25 @@ class Document : public nsINode,
   nsPropertyTable mPropertyTable;
 
   // Our cached .children collection
-  nsCOMPtr<nsIHTMLCollection> mChildrenCollection;
+  RefPtr<HTMLCollection> mChildrenCollection;
 
   // Various DOM lists
-  RefPtr<nsContentList> mImages;
-  RefPtr<nsContentList> mEmbeds;
-  RefPtr<nsContentList> mLinks;
-  RefPtr<nsContentList> mForms;
-  RefPtr<nsContentList> mScripts;
-  nsCOMPtr<nsIHTMLCollection> mApplets;
-  RefPtr<nsContentList> mAnchors;
+  RefPtr<ContentList> mImages;
+  RefPtr<ContentList> mEmbeds;
+  RefPtr<ContentList> mLinks;
+  RefPtr<ContentList> mForms;
+  RefPtr<ContentList> mScripts;
+  RefPtr<HTMLCollection> mApplets;
+  RefPtr<ContentList> mAnchors;
 
   // container for per-context fonts (downloadable, SVG, etc.)
   RefPtr<FontFaceSet> mFontFaceSet;
+
+  // Points to the focus navigation starting point if the focused element is
+  // removed or becomes non-focusable, so that focus navigation isn't reset when
+  // that happens.
+  // https://html.spec.whatwg.org/#sequential-focus-navigation-starting-point
+  RefPtr<nsIContent> mFocusNavigationStartingPoint;
 
   // Last time this document or a one of its sub-documents was focused.  If
   // focus has never occurred then mLastFocusTime.IsNull() will be true.
@@ -5009,8 +5013,6 @@ class Document : public nsINode,
 
   // True if BIDI is enabled.
   bool mBidiEnabled : 1;
-  // True if we may need to recompute the language prefs for this document.
-  bool mMayNeedFontPrefsUpdate : 1;
 
   // True if we are trying to fire the load event for the initial about:blank.
   // Since the initial about:blank is already in READYSTATE_COMPLETE when
@@ -5309,6 +5311,14 @@ class Document : public nsINode,
 
   // https://html.spec.whatwg.org/#has-been-revealed
   bool mHasBeenRevealed : 1;
+
+  // Cached value of dom.image.sizes_auto.enabled
+  const bool mAutoSizesEnabled : 1;
+
+  // If false, mFocusNavigationStartingPoint is the previously-focused element.
+  // If true, mFocusNavigationStartingPoint is the previously-focused element's
+  // previous sibling in the flat tree.
+  bool mWasFocusedElementRemoved : 1;
 
   // The fingerprinting protections overrides for this document. The value will
   // override the default enabled fingerprinting protections for this document.
@@ -5641,7 +5651,11 @@ class Document : public nsINode,
 
   RefPtr<DOMImplementation> mDOMImplementation;
 
-  RefPtr<nsContentList> mImageMaps;
+  // This document's active edit context
+  // https://w3c.github.io/edit-context/#dfn-active-editcontext
+  RefPtr<EditContext> mActiveEditContext;
+
+  RefPtr<ContentList> mImageMaps;
 
   // A set of responsive images keyed by address pointer.
   nsTHashSet<HTMLImageElement*> mResponsiveContent;
@@ -5724,8 +5738,6 @@ class Document : public nsINode,
   // We lazily calculate declaration blocks for elements with mapped
   // attributes. This set contains all elements which need lazy resolution.
   nsTHashSet<Element*> mLazyPresElements;
-
-  nsTHashSet<RefPtr<nsAtom>> mLanguagesUsed;
 
   // TODO(emilio): Is this hot enough to warrant to be cached?
   // EncodingToLang.cpp keeps the atom alive until shutdown, so

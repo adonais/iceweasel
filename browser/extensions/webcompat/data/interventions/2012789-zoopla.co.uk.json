@@ -10,7 +10,7 @@
     {
       "platforms": ["desktop"],
       "content_scripts": {
-        "js": ["bug2012789-zoopla.co.uk-fix-drawing.js"]
+        "js": ["define_TouchEvent.js"]
       }
     }
   ]

@@ -16,12 +16,12 @@ import io.mockk.verify
 import mozilla.components.browser.icons.BrowserIcons
 import mozilla.components.browser.icons.IconRequest
 import mozilla.components.ui.widgets.WidgetSiteItemView
-import org.junit.Assert.assertNotNull
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.exceptions.ExceptionsInteractor
 import org.mozilla.fenix.helpers.MockkRetryTestRule
+import kotlin.test.assertNotNull
 
 class ExceptionsListItemViewHolderTest {
 

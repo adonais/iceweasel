@@ -431,9 +431,10 @@ interface nsIDocShell : nsIDocShellTreeItem
    *        document.
    * @param aPolicyContainer the policyContainer to use for the new document.
    */
-  void createAboutBlankDocumentViewer(in nsIPrincipal aPrincipal,
-                                     in nsIPrincipal aPartitionedPrincipal,
-                                     [optional] in nsIPolicyContainer aPolicyContainer);
+  [can_run_script] void createAboutBlankDocumentViewer(
+    in nsIPrincipal aPrincipal,
+    in nsIPrincipal aPartitionedPrincipal,
+    [optional] in nsIPolicyContainer aPolicyContainer);
 
   /**
    * Upon getting, returns the canonical encoding label of the document

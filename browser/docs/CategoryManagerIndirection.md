@@ -26,7 +26,7 @@ The "value" part is an `Object.method` notation, where the expectation is that
 and `method` is some method on that object.
 
 At compile-time, registration can happen with an entry in a `.manifest` file
-like [BrowserComponents.manifest](https://searchfox.org/mozilla-central/source/browser/components/BrowserComponents.manifest).
+like [BrowserComponents.manifest](https://searchfox.org/firefox-main/source/browser/components/BrowserComponents.manifest).
 Note that any manifest successfully processed by the build system would do,
 we don't need to use `BrowserComponents.manifest` specifically. In fact, it
 would be preferable if components used their own manifest files.

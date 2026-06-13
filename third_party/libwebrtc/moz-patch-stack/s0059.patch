@@ -23,7 +23,7 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/8e9a326a99cd5eaa6
  4 files changed, 55 insertions(+)
 
 diff --git a/api/video/frame_buffer.cc b/api/video/frame_buffer.cc
-index 467ceaa42d..b6e67a4309 100644
+index 77834e7d1f..4c41c74ab7 100644
 --- a/api/video/frame_buffer.cc
 +++ b/api/video/frame_buffer.cc
 @@ -25,6 +25,7 @@
@@ -116,7 +116,7 @@ index 467ceaa42d..b6e67a4309 100644
    num_discarded_packets_ += num_discarded_packets;
  }
 diff --git a/video/receive_statistics_proxy.cc b/video/receive_statistics_proxy.cc
-index cefdeca50b..f6ac41b17e 100644
+index 9b19015161..050f9261b0 100644
 --- a/video/receive_statistics_proxy.cc
 +++ b/video/receive_statistics_proxy.cc
 @@ -39,6 +39,7 @@
@@ -127,7 +127,7 @@ index cefdeca50b..f6ac41b17e 100644
  #include "system_wrappers/include/clock.h"
  #include "system_wrappers/include/metrics.h"
  #include "video/stats_counter.h"
-@@ -783,6 +784,9 @@ void ReceiveStatisticsProxy::OnCompleteFrame(bool is_keyframe,
+@@ -787,6 +788,9 @@ void ReceiveStatisticsProxy::OnCompleteFrame(bool is_keyframe,
                                               VideoContentType content_type) {
    RTC_DCHECK_RUN_ON(&main_thread_);
  
@@ -137,7 +137,7 @@ index cefdeca50b..f6ac41b17e 100644
    if (is_keyframe) {
      ++stats_.frame_counts.key_frames;
    } else {
-@@ -814,6 +818,8 @@ void ReceiveStatisticsProxy::OnCompleteFrame(bool is_keyframe,
+@@ -818,6 +822,8 @@ void ReceiveStatisticsProxy::OnCompleteFrame(bool is_keyframe,
  void ReceiveStatisticsProxy::OnDroppedFrames(uint32_t frames_dropped) {
    // Can be called on either the decode queue or the worker thread
    // See FrameBuffer2 for more details.
@@ -146,7 +146,7 @@ index cefdeca50b..f6ac41b17e 100644
    worker_thread_->PostTask(
        SafeTask(task_safety_.flag(), [frames_dropped, this]() {
          RTC_DCHECK_RUN_ON(&main_thread_);
-@@ -824,6 +830,9 @@ void ReceiveStatisticsProxy::OnDroppedFrames(uint32_t frames_dropped) {
+@@ -828,6 +834,9 @@ void ReceiveStatisticsProxy::OnDroppedFrames(uint32_t frames_dropped) {
  void ReceiveStatisticsProxy::OnDiscardedPackets(uint32_t packets_discarded) {
    // Can be called on either the decode queue or the worker thread
    // See FrameBuffer2 for more details.
@@ -156,7 +156,7 @@ index cefdeca50b..f6ac41b17e 100644
    worker_thread_->PostTask(
        SafeTask(task_safety_.flag(), [packets_discarded, this]() {
          RTC_DCHECK_RUN_ON(&main_thread_);
-@@ -852,6 +861,8 @@ void ReceiveStatisticsProxy::OnStreamInactive() {
+@@ -856,6 +865,8 @@ void ReceiveStatisticsProxy::OnStreamInactive() {
  
  void ReceiveStatisticsProxy::OnRttUpdate(int64_t avg_rtt_ms) {
    RTC_DCHECK_RUN_ON(&main_thread_);
@@ -188,10 +188,10 @@ index 3dfb4b2bf6..34ea9b7a7a 100644
      }
      reference_finder_->ClearTo(seq_num);
 diff --git a/video/video_stream_buffer_controller.cc b/video/video_stream_buffer_controller.cc
-index 1137c3fb5a..d830750c5d 100644
+index 6ae6a6c82c..88db5d9b53 100644
 --- a/video/video_stream_buffer_controller.cc
 +++ b/video/video_stream_buffer_controller.cc
-@@ -37,6 +37,7 @@
+@@ -36,6 +36,7 @@
  #include "rtc_base/checks.h"
  #include "rtc_base/experiments/field_trial_parser.h"
  #include "rtc_base/logging.h"
@@ -199,7 +199,7 @@ index 1137c3fb5a..d830750c5d 100644
  #include "video/frame_decode_scheduler.h"
  #include "video/frame_decode_timing.h"
  #include "video/video_receive_stream_timeout_tracker.h"
-@@ -157,6 +158,9 @@ std::optional<int64_t> VideoStreamBufferController::InsertFrame(
+@@ -156,6 +157,9 @@ std::optional<int64_t> VideoStreamBufferController::InsertFrame(
      std::unique_ptr<EncodedFrame> frame) {
    RTC_DCHECK_RUN_ON(&worker_sequence_checker_);
    FrameMetadata metadata(*frame);
@@ -209,7 +209,7 @@ index 1137c3fb5a..d830750c5d 100644
    int complete_units = buffer_->GetTotalNumberOfContinuousTemporalUnits();
    if (buffer_->InsertFrame(std::move(frame))) {
      RTC_DCHECK(metadata.receive_time) << "Frame receive time must be set!";
-@@ -167,6 +171,9 @@ std::optional<int64_t> VideoStreamBufferController::InsertFrame(
+@@ -166,6 +170,9 @@ std::optional<int64_t> VideoStreamBufferController::InsertFrame(
                                   *metadata.receive_time);
      }
      if (complete_units < buffer_->GetTotalNumberOfContinuousTemporalUnits()) {

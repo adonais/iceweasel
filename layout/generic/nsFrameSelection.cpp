@@ -509,7 +509,7 @@ nsresult nsFrameSelection::DesiredCaretPos::FetchPos(
     return NS_OK;
   }
 
-  RefPtr<nsCaret> caret = aPresShell.GetCaret();
+  RefPtr<nsCaret> caret = aPresShell.GetActiveCaret();
   if (!caret) {
     return NS_ERROR_NULL_POINTER;
   }
@@ -664,7 +664,7 @@ void nsFrameSelection::SetCaretBidiLevelAndMaybeSchedulePaint(
   mCaret.mBidiLevel = aLevel;
 
   RefPtr<nsCaret> caret;
-  if (mPresShell && (caret = mPresShell->GetCaret())) {
+  if (mPresShell && (caret = mPresShell->GetActiveCaret())) {
     caret->SchedulePaint();
   }
 }
@@ -990,6 +990,11 @@ nsFrameSelection::CreatePeekOffsetOptionsForCaretMove(
   if (static_cast<bool>(aForceEditableRegion)) {
     options += PeekOffsetOption::ForceEditableRegion;
   }
+  // A caret move wants paragraph peeking to resolve to a leaf frame at a block
+  // boundary so the caret has a precise text position for scrolling-into-view
+  // (bug 2041228). Selection paths build their own options and intentionally
+  // omit this so the block container remains the boundary.
+  options += PeekOffsetOption::ForCaretMove;
   return options;
 }
 
@@ -1615,8 +1620,10 @@ void nsFrameSelection::PopulateHighlightSelection(
   MOZ_ASSERT(GetPresShell());
   AutoFrameSelectionBatcher selectionBatcher(__FUNCTION__);
   selectionBatcher.AddFrameSelection(this);
+  const Document* doc = GetPresShell()->GetDocument();
   for (const RefPtr<AbstractRange>& range : aHighlight.Ranges()) {
-    if (range->GetComposedDocOfContainers() == GetPresShell()->GetDocument()) {
+    const Document* rangeDoc = range->GetComposedDocOfContainers();
+    if (!rangeDoc || rangeDoc == doc) {
       // since this is run in a context guarded by a selection batcher,
       // no strong reference is needed to keep `range` alive.
       aSelection.AddHighlightRangeAndSelectFramesAndNotifyListeners(
@@ -1974,7 +1981,7 @@ nsresult nsFrameSelection::PhysicalMove(int16_t aDirection, int16_t aAmount,
   }
 
   // Check that parameters are safe
-  if (aDirection < 0 || aDirection > 3 || aAmount < 0 || aAmount > 1) {
+  if (aDirection < 0 || aDirection > 3 || aAmount < 0 || aAmount > 2) {
     return NS_ERROR_FAILURE;
   }
 
@@ -2037,6 +2044,21 @@ nsresult nsFrameSelection::PhysicalMove(int16_t aDirection, int16_t aAmount,
     }
   }
 
+  if (aAmount == 2) {
+    // Amount 2 is visual intra-line movement (move to line edge).
+    // Determine the logical forward direction from the physical direction
+    // and the writing mode's bidi direction, then use IntraLineMove which
+    // handles eLogical movement correctly.
+    bool isLeftOrUp = (aDirection == nsISelectionController::MOVE_LEFT ||
+                       aDirection == nsISelectionController::MOVE_UP);
+    // In LTR, left/up = backward (beginning), right/down = forward (end).
+    // In RTL, left/up = forward (end), right/down = backward (beginning).
+    bool forward = wm.IsBidiRTL() ? isLeftOrUp : !isLeftOrUp;
+    return IntraLineMove(forward, aExtend);
+  }
+
+  MOZ_ASSERT(aAmount <= 1, "aAmount == 2 should have been handled above");
+
   const PhysicalToLogicalMapping& mapping =
       wm.IsVertical()
           ? wm.IsVerticalLR() ? verticalLR[aDirection] : verticalRL[aDirection]
@@ -2086,6 +2108,11 @@ nsresult nsFrameSelection::IntraLineMove(bool aForward, bool aExtend) {
   }
   return MoveCaret(eDirPrevious, ExtendSelection(aExtend), eSelectBeginLine,
                    eLogical);
+}
+
+nsresult nsFrameSelection::ParagraphMove(bool aForward, bool aExtend) {
+  return MoveCaret(aForward ? eDirNext : eDirPrevious, ExtendSelection(aExtend),
+                   eSelectParagraph, eLogical);
 }
 
 // static

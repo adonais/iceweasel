@@ -12,6 +12,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import mozilla.components.concept.fetch.Response
+import mozilla.components.lib.llm.mlpa.service.ChatService
 import mozilla.components.lib.llm.mlpa.service.ChatServiceError
 import kotlin.collections.joinToString
 
@@ -24,10 +25,10 @@ private const val END_OF_STREAM_MARKER = "[DONE]"
  * Lines are filtered, stripped of the `data: ` prefix, deserialized as [Event] objects, and
  * mapped to their text content.
  */
-internal val Response.contentFlow: Flow<String> get() = lineFlow
+internal fun Response.contentFlow(retryAfter: Long?): Flow<String> = lineFlow
         .filterNot { it.isEmpty() || it.contains(END_OF_STREAM_MARKER) }
         .map { it.drop(DATA_PREFIX.length) }
-        .events()
+        .events(retryAfter)
         .content()
 
 private val Response.lineFlow get() = channelFlow {
@@ -38,26 +39,32 @@ private val Response.lineFlow get() = channelFlow {
     }
 }
 
-private fun Flow<String>.events(): Flow<Event> {
+private fun Flow<String>.events(retryAfter: Long?): Flow<Event> {
     val json = Json {
         ignoreUnknownKeys = true
     }
-
-    return map {
+    return map { line ->
         try {
-            json.decodeFromString(it)
+            json.decodeFromString(line)
         } catch (e: SerializationException) {
-            if (it.contains("error")) {
-                throw ChatServiceError.StreamError(e)
-            } else {
-                throw ChatServiceError.StreamEventParseError(e)
-            }
+            throw json.rateLimitDetailedError(line, retryAfter)
         }
     }
 }
 
 private fun Flow<Event>.content() = map {
     it.choices.joinToString { choice -> choice.content }
+}
+
+internal fun Json.rateLimitDetailedError(serialized: String, retryAfter: Long?) = try {
+    val rateLimitStatus = 429
+    when (this.decodeFromString<ChatService.ResponseErrorCode>(serialized).error) {
+        1 -> ChatServiceError.BudgetExceeded(retryAfter)
+        2 -> ChatServiceError.RateLimited(retryAfter)
+        else -> ChatServiceError.ServerError(rateLimitStatus)
+    }
+} catch (e: SerializationException) {
+    ChatServiceError.RateLimitResponseParseError(e)
 }
 
 @Serializable

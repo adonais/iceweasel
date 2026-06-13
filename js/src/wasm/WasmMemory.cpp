@@ -60,6 +60,25 @@ bool wasm::ToAddressType(JSContext* cx, HandleValue value,
   return true;
 }
 
+bool wasm::ToPageSize(JSContext* cx, HandleValue value, PageSize* pageSize) {
+  if (!value.isInt32()) {
+    JS_ReportErrorASCII(cx, "page size must be an integer");
+    return false;
+  }
+  uint32_t pageSizeBytes = uint32_t(value.toInt32());
+  if (pageSizeBytes == PageSizeInBytes(PageSize::Standard)) {
+    *pageSize = PageSize::Standard;
+#ifdef ENABLE_WASM_CUSTOM_PAGE_SIZES
+  } else if (pageSizeBytes == PageSizeInBytes(PageSize::Tiny)) {
+    *pageSize = PageSize::Tiny;
+#endif
+  } else {
+    JS_ReportErrorASCII(cx, "bad page size");
+    return false;
+  }
+  return true;
+}
+
 /*
  * [SMDOC] Linear memory addresses and bounds checking
  *

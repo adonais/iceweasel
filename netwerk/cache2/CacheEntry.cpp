@@ -704,10 +704,10 @@ bool CacheEntry::InvokeCallbacks(bool aReadOnly) MOZ_REQUIRES(mLock) {
 
     if (NS_SUCCEEDED(rv) && !InvokeCallback(callback)) {
       // Callback didn't fire, put it back and go to another one in line.
-      // Only reason InvokeCallback returns false is that onCacheEntryCheck
-      // returns RECHECK_AFTER_WRITE_FINISHED.  If we would stop the loop, other
-      // readers or potential writers would be unnecessarily kept from being
-      // invoked.
+      // InvokeCallback returns false if onCacheEntryCheck returns
+      // RECHECK_AFTER_WRITE_FINISHED or if the state changed while
+      // unlocked.  If we would stop the loop, other readers or potential
+      // writers would be unnecessarily kept from being invoked.
       size_t pos = std::min(mCallbacks.Length(), static_cast<size_t>(i));
       mCallbacks.InsertElementAt(pos, callback);
       ++i;
@@ -775,8 +775,6 @@ bool CacheEntry::InvokeCallback(Callback& aCallback) MOZ_REQUIRES(mLock) {
         // Metadata present, validate the entry
         uint32_t checkResult;
         {
-          // mayhemer: TODO check and solve any potential races of concurent
-          // OnCacheEntryCheck
           mozilla::MutexAutoUnlock unlock(mLock);
 
           RefPtr<CacheEntryHandle> handle = NewHandle();
@@ -787,6 +785,12 @@ bool CacheEntry::InvokeCallback(Callback& aCallback) MOZ_REQUIRES(mLock) {
                static_cast<uint32_t>(rv), static_cast<uint32_t>(checkResult)));
 
           if (NS_FAILED(rv)) checkResult = ENTRY_NOT_WANTED;
+        }
+
+        if (mState != READY) {
+          LOG(("  state changed during OnCacheEntryCheck, was READY now %s",
+               StateString(mState)));
+          return false;
         }
 
         aCallback.mRevalidating = checkResult == ENTRY_NEEDS_REVALIDATION;
@@ -808,9 +812,6 @@ bool CacheEntry::InvokeCallback(Callback& aCallback) MOZ_REQUIRES(mLock) {
 
           case ENTRY_NEEDS_REVALIDATION:
             LOG(("  will be holding callbacks until entry is revalidated"));
-            // State is READY now and from that state entry cannot transit to
-            // any other state then REVALIDATING for which cocurrency is not an
-            // issue.  Potentially no need to lock here.
             mState = REVALIDATING;
             break;
 

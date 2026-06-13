@@ -700,6 +700,33 @@ falling back to not using job objects for managing child processes""",
                 cases where we want to clean these without killing _handle
                 (i.e. if we fail to create the job object in the first place)
                 """
+                # Signal the manager thread to exit before closing handles,
+                # to avoid ERROR_ABANDONED_WAIT_0 race conditions.
+                if (
+                    getattr(self, "_io_port", None)
+                    and self._io_port != winprocess.INVALID_HANDLE_VALUE
+                ):
+                    try:
+                        winprocess.PostQueuedCompletionStatus(
+                            self._io_port,
+                            0,
+                            winprocess.COMPKEY_TERMINATE.value,
+                            None,
+                        )
+                    except Exception:
+                        self.debug(
+                            "Failed to post completion status to IO port (may already be closed)"
+                        )
+
+                if getattr(self, "_procmgrthread", None):
+                    if self._procmgrthread.is_alive():
+                        self._procmgrthread.join(timeout=10)
+                        if self._procmgrthread.is_alive():
+                            self.debug(
+                                "Process manager thread still alive after 10s timeout"
+                            )
+                    self._procmgrthread = None
+
                 if (
                     getattr(self, "_job")
                     and self._job != winprocess.INVALID_HANDLE_VALUE
@@ -719,9 +746,6 @@ falling back to not using job objects for managing child processes""",
                     self._io_port = None
                 else:
                     self._io_port = None
-
-                if getattr(self, "_procmgrthread", None):
-                    self._procmgrthread = None
 
             def _cleanup(self):
                 self._cleanup_lock.acquire()

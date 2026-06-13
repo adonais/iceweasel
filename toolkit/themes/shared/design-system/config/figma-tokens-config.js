@@ -484,7 +484,8 @@ function attemptShadowDestructuring(token, originalVal) {
 function attemptPaddingMarginDestructuring(token, originalVal) {
   if (
     typeof originalVal !== "string" ||
-    (!token.path.includes("padding") && !token.path.includes("margin"))
+    (!token.path.includes("padding") && !token.path.includes("margin")) ||
+    token.path.includes("@base")
   ) {
     return undefined;
   }

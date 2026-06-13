@@ -6,12 +6,13 @@
       "matches": ["*://*.theaa.com/route-planner/*"]
     }
   },
+  "css": {
+    "fix_blank_print_preview": "@media print { @page { size: a3 !important; } }"
+  },
   "interventions": [
     {
       "platforms": ["all"],
-      "content_scripts": {
-        "css": ["bug1848849-theaa.com-printing-mode-fix.css"]
-      }
+      "css": ["fix_blank_print_preview"]
     }
   ]
 }

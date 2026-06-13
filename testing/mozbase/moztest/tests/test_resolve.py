@@ -322,6 +322,71 @@ def test_load(resolver):
     assert "/_mozilla/html" in resolver.tests_by_manifest
 
 
+def _setup_stale_backend_loader(tmpdir, topsrcdir, all_tests, defaults, monkeypatch):
+    topobjdir = tmpdir.strpath
+    with open(os.path.join(topobjdir, "all-tests.pkl"), "wb") as fh:
+        pickle.dump(all_tests, fh)
+    with open(os.path.join(topobjdir, "test-defaults.pkl"), "wb") as fh:
+        pickle.dump(defaults, fh)
+
+    calls = []
+
+    def fake_gen_test_backend():
+        calls.append("gen")
+
+    def fake_install_test_files(srcdir, objdir, tests_root):
+        calls.append(("install", srcdir, objdir, tests_root))
+
+    class BuildBackendLoaderAlwaysOutOfDate(BuildBackendLoader):
+        def backend_out_of_date(self, backend_file):
+            return True
+
+    monkeypatch.setattr(
+        "mozbuild.gen_test_backend.gen_test_backend", fake_gen_test_backend
+    )
+    monkeypatch.setattr("moztest.resolve.install_test_files", fake_install_test_files)
+
+    return (
+        BuildBackendLoaderAlwaysOutOfDate(topsrcdir, None, None, topobjdir=topobjdir),
+        calls,
+        topobjdir,
+    )
+
+
+def test_build_backend_loader_stale_backend_installs_tests(
+    monkeypatch, tmpdir, topsrcdir, all_tests, defaults
+):
+    loader, calls, topobjdir = _setup_stale_backend_loader(
+        tmpdir.mkdir("objdir"), topsrcdir, all_tests, defaults, monkeypatch
+    )
+
+    # Simulate a prior full build by creating the harness install manifest.
+    manifests_dir = os.path.join(topobjdir, "_build_manifests", "install")
+    os.makedirs(manifests_dir)
+    with open(os.path.join(manifests_dir, "_tests"), "w") as fh:
+        fh.write("")
+
+    assert list(loader())
+    assert calls[0] == "gen"
+    assert calls[1][0] == "install"
+    assert os.path.normpath(calls[1][1]) == os.path.normpath(loader.topsrcdir)
+    assert os.path.normpath(calls[1][2]) == os.path.normpath(topobjdir)
+    assert calls[1][3] == "_tests"
+
+
+def test_build_backend_loader_skips_install_without_harness_manifest(
+    monkeypatch, tmpdir, topsrcdir, all_tests, defaults
+):
+    loader, calls, _ = _setup_stale_backend_loader(
+        tmpdir.mkdir("objdir"), topsrcdir, all_tests, defaults, monkeypatch
+    )
+
+    # No _build_manifests/install/_tests was created; install must be skipped
+    # to avoid leaving a half-populated _tests/ tree.
+    assert list(loader())
+    assert calls == ["gen"]
+
+
 def test_resolve_all(resolver):
     assert len(list(resolver._resolve())) == 13
 

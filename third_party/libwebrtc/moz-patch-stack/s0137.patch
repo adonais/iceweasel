@@ -1,22 +1,63 @@
 From: Michael Froman <mfroman@mozilla.com>
-Date: Thu, 26 Mar 2026 10:16:00 -0500
-Subject: Bug 2025559 - (fix-72a64cb437) readd the api/audio:aec3_factory build
- dep
+Date: Tue, 7 Apr 2026 19:06:00 -0500
+Subject: Bug 2030139 - (fix-15fd636394) disable perfetto usage to avoid new
+ third_party library.
 
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/17f6c61e65b9ac586e6022278094ea039eab8b46
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/f1981bae2720ec8087be98eb7f5f323c1d233640
 ---
- BUILD.gn | 1 +
- 1 file changed, 1 insertion(+)
+ video/video_stream_encoder.cc | 20 ++++++++------------
+ 1 file changed, 8 insertions(+), 12 deletions(-)
 
-diff --git a/BUILD.gn b/BUILD.gn
-index 33eecadcc1..afc1321a2d 100644
---- a/BUILD.gn
-+++ b/BUILD.gn
-@@ -601,6 +601,7 @@ if (!build_with_chromium) {
-       # Added when we removed deps in other places to avoid building
-       # unreachable sources.  See Bug 1820869.
-       deps += [
-+        "api/audio:aec3_factory",
-         "api/video_codecs:video_codecs_api",
-         "api/video_codecs:rtc_software_fallback_wrappers",
-         "media:rtc_simulcast_encoder_adapter",
+diff --git a/video/video_stream_encoder.cc b/video/video_stream_encoder.cc
+index f5770ca3c2..0fa5ea7a2a 100644
+--- a/video/video_stream_encoder.cc
++++ b/video/video_stream_encoder.cc
+@@ -871,13 +871,11 @@ void VideoStreamEncoder::AddAdaptationResource(
+   // Map any externally added resources as kCpu for the sake of stats reporting.
+   // TODO(hbos): Make the manager map any unknown resources to kCpu and get rid
+   // of this MapResourceToReason() call.
+-  TRACE_EVENT_BEGIN("webrtc",
+-                    "VideoStreamEncoder::AddAdaptationResource(latency)",
+-                    perfetto::Track::FromPointer(this));
++  TRACE_EVENT_ASYNC_BEGIN0(
++      "webrtc", "VideoStreamEncoder::AddAdaptationResource(latency)", this);
+   encoder_queue_->PostTask([this, resource = std::move(resource)] {
+-    TRACE_EVENT_END("webrtc",
+-                    /* VideoStreamEncoder::AddAdaptationResource(latency) */
+-                    perfetto::Track::FromPointer(this));
++    TRACE_EVENT_ASYNC_END0(
++        "webrtc", "VideoStreamEncoder::AddAdaptationResource(latency)", this);
+     RTC_DCHECK_RUN_ON(encoder_queue_.get());
+     additional_resources_.push_back(resource);
+     stream_resource_manager_.AddResource(resource, VideoAdaptationReason::kCpu);
+@@ -1736,8 +1734,7 @@ void VideoStreamEncoder::TraceFrameDropStart() {
+   RTC_DCHECK_RUN_ON(encoder_queue_.get());
+   // Start trace event only on the first frame after encoder is paused.
+   if (!encoder_paused_and_dropped_frame_) {
+-    TRACE_EVENT_BEGIN("webrtc", "EncoderPaused",
+-                      perfetto::Track::FromPointer(this));
++    TRACE_EVENT_ASYNC_BEGIN0("webrtc", "EncoderPaused", this);
+   }
+   encoder_paused_and_dropped_frame_ = true;
+ }
+@@ -1746,8 +1743,7 @@ void VideoStreamEncoder::TraceFrameDropEnd() {
+   RTC_DCHECK_RUN_ON(encoder_queue_.get());
+   // End trace event on first frame after encoder resumes, if frame was dropped.
+   if (encoder_paused_and_dropped_frame_) {
+-    TRACE_EVENT_END("webrtc", /* EncoderPaused */
+-                    perfetto::Track::FromPointer(this));
++    TRACE_EVENT_ASYNC_END0("webrtc", "EncoderPaused", this);
+   }
+   encoder_paused_and_dropped_frame_ = false;
+ }
+@@ -2206,8 +2202,8 @@ void VideoStreamEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
+   }
+   accumulated_update_rect_is_valid_ = true;
+ 
+-  TRACE_EVENT_INSTANT("webrtc", "Encode", perfetto::Track::FromPointer(this),
+-                      "render_time", video_frame.render_time_ms());
++  TRACE_EVENT_ASYNC_STEP_INTO0("webrtc", "Video", video_frame.render_time_ms(),
++                               "Encode");
+ 
+   stream_resource_manager_.OnEncodeStarted(out_frame, time_when_posted_us);
+ 

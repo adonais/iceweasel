@@ -42,6 +42,7 @@ dependencies {
     debugImplementation libs.androidx.compose.ui.tooling
 
     testImplementation libs.androidx.test.junit
+    testImplementation libs.kotlin.test
     testImplementation libs.kotlinx.coroutines.test
 
     testImplementation project(':components:support-test-fakes')

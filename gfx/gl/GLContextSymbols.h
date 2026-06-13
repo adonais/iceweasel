@@ -94,7 +94,7 @@ struct GLContextSymbols final {
   void(GLAPIENTRY* fTexParameteri)(GLenum, GLenum, GLint);
   void(GLAPIENTRY* fTexParameteriv)(GLenum, GLenum, const GLint*);
   void(GLAPIENTRY* fTexParameterf)(GLenum, GLenum, GLfloat);
-  GLubyte*(GLAPIENTRY* fGetString)(GLenum);
+  const GLubyte*(GLAPIENTRY* fGetString)(GLenum);
   void(GLAPIENTRY* fGetTexImage)(GLenum, GLint, GLenum, GLenum, GLvoid*);
   void(GLAPIENTRY* fGetTexLevelParameteriv)(GLenum, GLint, GLenum, GLint*);
   void(GLAPIENTRY* fGetTexParameterfv)(GLenum, GLenum, GLfloat*);
@@ -280,6 +280,15 @@ struct GLContextSymbols final {
   // ARB_copy_buffer / OpenGL 3.1 / OpenGL ES 3.0
   void(GLAPIENTRY* fCopyBufferSubData)(GLenum, GLenum, GLintptr, GLintptr,
                                        GLsizeiptr);
+
+  // ARB_copy_image / OpenGL 4.3 / OpenGL ES 3.2
+  void(GLAPIENTRY* fCopyImageSubData)(GLuint srcName, GLenum srcTarget,
+                                      GLint srcLevel, GLint srcX, GLint srcY,
+                                      GLint srcZ, GLuint dstName,
+                                      GLenum dstTarget, GLint dstLevel,
+                                      GLint dstX, GLint dstY, GLint dstZ,
+                                      GLsizei srcWidth, GLsizei srcHeight,
+                                      GLsizei srcDepth);
 
   GLenum(GLAPIENTRY* fGetGraphicsResetStatus)();
 

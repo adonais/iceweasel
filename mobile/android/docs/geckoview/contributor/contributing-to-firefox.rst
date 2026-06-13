@@ -1,5 +1,3 @@
-.. -*- Mode: rst; fill-column: 80; -*-
-
 =========================
 Firefox Contributor Guide
 =========================

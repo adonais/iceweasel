@@ -218,15 +218,10 @@ class AssemblerBuffer {
 
 class GenericAssembler {
 #ifdef JS_JITSPEW
-  Sprinter* printer;
+  Sprinter* printer = nullptr;
 #endif
  public:
-  GenericAssembler()
-#ifdef JS_JITSPEW
-      : printer(nullptr)
-#endif
-  {
-  }
+  GenericAssembler() = default;
 
   void setPrinter(Sprinter* sp) {
 #ifdef JS_JITSPEW

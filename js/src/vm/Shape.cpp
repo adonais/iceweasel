@@ -1147,16 +1147,6 @@ bool JSObject::setProtoUnchecked(JSContext* cx, HandleObject obj,
                              numFixed);
 }
 
-/* static */
-bool NativeObject::changeNumFixedSlotsAfterSwap(JSContext* cx,
-                                                Handle<NativeObject*> obj,
-                                                uint32_t nfixed) {
-  MOZ_ASSERT(nfixed != obj->shape()->numFixedSlots());
-
-  return Shape::replaceShape(cx, obj, obj->shape()->objectFlags(),
-                             obj->shape()->proto(), nfixed);
-}
-
 BaseShape::BaseShape(JSContext* cx, const JSClass* clasp, JS::Realm* realm,
                      TaggedProto proto)
     : TenuredCellWithNonGCPointer(clasp), realm_(realm), proto_(proto) {
@@ -1376,6 +1366,9 @@ void ForEachObjectFlag(ObjectFlags flags, KnownF known, UnknownF unknown) {
         break;
       case ObjectFlag::HasNonFunctionAccessor:
         known("HasNonFunctionAccessor");
+        break;
+      case ObjectFlag::LegacyFeaturesDisabled:
+        known("LegacyFeaturesDisabled");
         break;
       default:
         unknown(i);

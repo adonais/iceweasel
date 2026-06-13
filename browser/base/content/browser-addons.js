@@ -372,7 +372,7 @@ customElements.define(
         domainItem.textContent = domain;
         domainsList.appendChild(domainItem);
       }
-      const { DocumentFragment } = this.ownerGlobal;
+      const { DocumentFragment } = this.documentGlobal;
       const fragment = new DocumentFragment();
       fragment.append(label);
       fragment.append(domainsList);
@@ -1229,7 +1229,7 @@ var gXPInstallObserver = {
       PopupNotifications.getNotification(id, browser)
     ).filter(notification => notification != null);
 
-    PopupNotifications.remove(notifications, true);
+    PopupNotifications.remove(notifications, /* withoutUserResponse = */ true);
 
     return !!notifications.length;
   },
@@ -1485,9 +1485,14 @@ var gXPInstallObserver = {
         if (isSitePermissionAddon) {
           // Restrict this to site permission add-ons for now pending a decision
           // from product about how to approach this for extensions.
+          const permissionType =
+            installInfo.installs[0].addon.sitePermissions?.[0];
           declineActions.push(
             buildNotificationAction(neverAllowAndReportMsg, () => {
-              AMTelemetry.recordSuspiciousSiteEvent({ displayURI });
+              AMTelemetry.recordSuspiciousSiteEvent({
+                displayURI,
+                permissionType,
+              });
               neverAllowCallback();
             })
           );
@@ -3022,7 +3027,7 @@ var gUnifiedExtensions = {
   onWidgetOverflow(aNode) {
     // We register a CUI listener for each window so we make sure that we
     // handle the event for the right window here.
-    if (window !== aNode.ownerGlobal) {
+    if (window !== aNode.documentGlobal) {
       return;
     }
 
@@ -3032,7 +3037,7 @@ var gUnifiedExtensions = {
   onWidgetUnderflow(aNode) {
     // We register a CUI listener for each window so we make sure that we
     // handle the event for the right window here.
-    if (window !== aNode.ownerGlobal) {
+    if (window !== aNode.documentGlobal) {
       return;
     }
 
@@ -3042,7 +3047,7 @@ var gUnifiedExtensions = {
   onAreaNodeRegistered(aArea, aContainer) {
     // We register a CUI listener for each window so we make sure that we
     // handle the event for the right window here.
-    if (window !== aContainer.ownerGlobal) {
+    if (window !== aContainer.documentGlobal) {
       return;
     }
 

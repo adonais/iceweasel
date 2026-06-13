@@ -14,6 +14,7 @@ import mozilla.components.lib.llm.gemini.nano.fakes.FakeGenerativeModel
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import kotlin.test.assertIs
 
 class GeminiNanoLlmTest {
     @Test
@@ -43,7 +44,7 @@ class GeminiNanoLlmTest {
         val result = runCatching { llm.prompt(Prompt("test prompt")).toList() }
 
         assertTrue(result.isFailure)
-        assertTrue(result.exceptionOrNull() is Llm.Exception)
+        assertIs<Llm.Exception>(result.exceptionOrNull())
         assertEquals("Gemini Nano inference failed: [ErrorCode 4] Request doesn't pass certain policy check. Please try a different input.", result.exceptionOrNull()?.message)
     }
 

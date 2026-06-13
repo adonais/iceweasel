@@ -38,6 +38,7 @@
 #include "api/rtp_sender_interface.h"
 #include "api/scoped_refptr.h"
 #include "api/sequence_checker.h"
+#include "api/sframe/sframe_encrypter_interface.h"
 #include "api/task_queue/pending_task_safety_flag.h"
 #include "api/task_queue/task_queue_base.h"
 #include "api/video_codecs/video_encoder_factory.h"
@@ -261,9 +262,15 @@ void RtpSenderBase::SetEncoderSelectorOnChannel() {
   });
 }
 
-void RtpSenderBase::SetCachedParameters(RtpParameters parameters) {
+void RtpSenderBase::SetCachedParameters(
+    std::optional<RtpParameters> parameters) {
   RTC_DCHECK_RUN_ON(signaling_thread_);
-  cached_parameters_ = std::move(parameters);
+  if (parameters.has_value()) {
+    cached_parameters_ = std::move(*parameters);
+  } else {
+    cached_parameters_.reset();
+    last_transaction_id_.reset();
+  }
 }
 
 void RtpSenderBase::SetMediaChannel(MediaSendChannelInterface* media_channel) {
@@ -383,10 +390,8 @@ RtpParameters RtpSenderBase::GetParameters() const {
           << "Cached: " << cached_filtered << "\n"
           << "Result: " << result;
     }
-    // TODO(b/478050997): Re-enable this check once the downstream issue is
-    // resolved.
-    // RTC_DCHECK(cached_filtered == result)
-    //    << "The cached value should have been equal (filtered)";
+    RTC_DCHECK(cached_filtered == result)
+        << "The cached value should have been equal (filtered)";
   }
 #endif
   return result;
@@ -910,6 +915,15 @@ void RtpSenderBase::SetFrameTransformer(
       }
     });
   }
+}
+
+RTCErrorOr<scoped_refptr<SframeEncrypterInterface>>
+RtpSenderBase::CreateSframeEncrypterOrError(
+    const SframeEncrypterInit& options) {
+  RTC_DCHECK_RUN_ON(signaling_thread_);
+  // TODO(bugs.webrtc.org/479862368): Implement Sframe encrypter creation.
+  return RTCError(RTCErrorType::UNSUPPORTED_OPERATION,
+                  "Sframe encrypter not yet implemented");
 }
 
 LocalAudioSinkAdapter::LocalAudioSinkAdapter() : sink_(nullptr) {}

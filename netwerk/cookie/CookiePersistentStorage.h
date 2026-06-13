@@ -147,7 +147,7 @@ class CookiePersistentStorage final : public CookieStorage,
   // Synchronized by the same mMonitor + mInitialized pattern as mReadArray.
   nsTArray<CookieDomainTuple> mCleanupArray;
 
-  Monitor mMonitor MOZ_UNANNOTATED;
+  Monitor mMonitor MOZ_ANNOTATED;
 
   Atomic<bool> mInitialized;
   Atomic<bool> mInitializedDBConn;
@@ -158,7 +158,7 @@ class CookiePersistentStorage final : public CookieStorage,
   nsCOMPtr<mozIStorageAsyncStatement> mStmtDelete;
   nsCOMPtr<mozIStorageAsyncStatement> mStmtUpdate;
 
-  CorruptFlag mCorruptFlag;
+  Atomic<CorruptFlag, Relaxed> mCorruptFlag;
 
   // Various parts representing asynchronous read state. These are useful
   // while the background read is taking place.

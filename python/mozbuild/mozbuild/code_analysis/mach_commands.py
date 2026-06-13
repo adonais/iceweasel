@@ -3,11 +3,11 @@
 # file, # You can obtain one at http://mozilla.org/MPL/2.0/.
 import concurrent.futures
 import functools
+import glob
+import itertools
 import json
 import logging
 import os
-import pathlib
-import posixpath
 import re
 import shutil
 import subprocess
@@ -223,10 +223,10 @@ def static_analysis(command_context):
     "static-analysis", "check", "Run the checks using the helper tool"
 )
 @CommandArgument(
-    "source",
+    "patterns",
     nargs="*",
-    default=[".*"],
-    help="Source files to be analyzed (regex on path). "
+    default=["**"],
+    help="Source files to be analyzed (glob on path). "
     "Can be omitted, in which case the entire code base "
     "is analyzed.  The source argument is ignored if "
     "there is anything fed through stdin, in which case "
@@ -291,7 +291,7 @@ def static_analysis(command_context):
 )
 def check(
     command_context,
-    source,
+    patterns,
     jobs,
     strip,
     verbose,
@@ -325,29 +325,51 @@ def check(
     if rc != 0:
         return rc
 
-    # Use outgoing files instead of source files
-    if outgoing:
-        repo = get_repository_object(command_context.topsrcdir)
-        files = repo.get_outgoing_files()
-        source = get_abspath_files(command_context, files)
-
     # Split in several chunks to avoid hitting Python's limit of 100 groups in re
     compile_db = json.loads(open(_compile_db).read())
-    import re
 
-    chunk_size = 50
+    if outgoing:
+        # Use outgoing files instead of source files
+        repo = get_repository_object(command_context.topsrcdir)
+        files = repo.get_outgoing_files()
+    else:
+        # Or resolve pattern
+        files = itertools.chain(*[
+            glob.glob(pattern, recursive=True) for pattern in patterns
+        ])
 
-    sources = []
+    abs_files = get_abspath_files(command_context, files)
 
-    for offset in range(0, len(source), chunk_size):
-        source_chunks = [f for f in source[offset : offset + chunk_size]]
-        name_re = re.compile("(" + ")|(".join(source_chunks) + ")")
-        for f in compile_db:
-            if name_re.search(f["file"]):
-                sources.append(f["file"])
+    def to_source(filename):
+        basename, ext = os.path.splitext(filename)
+        if ext != ".h":
+            return filename
+        for src_ext in [".cpp", ".c", ".mm", ".cc", ".cxx"]:
+            if os.path.exists(basename + src_ext):
+                return basename + src_ext
+        return filename
+
+    sources = {}
+    header_sources = {}
+    compile_db_files = {f["file"] for f in compile_db}
+    for candidate in abs_files:
+        associated_entry = to_source(candidate)
+        if associated_entry in compile_db_files:
+            if candidate != associated_entry:
+                header_sources[associated_entry] = candidate
+            # Check we're not erasing an existing entry
+            elif associated_entry not in sources:
+                sources[associated_entry] = None
 
     # Filter source to remove excluded files
-    source = _generate_path_list(command_context, sources, verbose=verbose)
+    header_sources = _generate_path_list(
+        command_context, header_sources, verbose=verbose
+    )
+    sources = _generate_path_list(command_context, sources, verbose=verbose)
+
+    # Do not process files already in header_sources again in sources
+    for header_src in header_sources:
+        sources.pop(header_src, None)
 
     cwd = command_context.topobjdir
 
@@ -355,24 +377,24 @@ def check(
         command_context.topsrcdir,
         command_context.topobjdir,
         get_clang_tidy_config(command_context).checks_with_data,
-        len(sources),
+        len(sources) + len(header_sources),
     )
 
-    footer = StaticAnalysisFooter(command_context.log_manager.terminal, monitor)
+    footer = StaticAnalysisFooter(monitor)
 
     with StaticAnalysisOutputManager(
         command_context.log_manager, monitor, footer
     ) as output_manager:
         rc = 0
         arg_max = 512  # The actual shell limit is way above
-        for batch in batched(source, arg_max):
+        for batch in batched(list(sources.items()), arg_max):
             args = _get_clang_tidy_command(
                 command_context,
                 clang_paths,
                 compilation_commands_path,
                 checks=checks,
                 header_filter=header_filter,
-                sources=batch,
+                sources=dict(batch),
                 jobs=jobs,
                 fix=fix,
                 warnings_as_errors=True,
@@ -385,6 +407,38 @@ def check(
                 cwd=cwd,
             )
 
+        with concurrent.futures.ThreadPoolExecutor(
+            max_workers=jobs or cpu_count()
+        ) as executor:
+            futures = []
+            # process header independently, because we need per-instance
+            # header-filter for it to work
+            for header_src, header_hdr in header_sources.items():
+                args = _get_clang_tidy_command(
+                    command_context,
+                    clang_paths,
+                    compilation_commands_path,
+                    checks=checks,
+                    header_filter=header_filter,
+                    sources={header_src: header_hdr},
+                    jobs=1,
+                    fix=fix,
+                    warnings_as_errors=True,
+                    verbose=verbose,
+                )
+                futures.append(
+                    executor.submit(
+                        command_context.run_process,
+                        args=args,
+                        ensure_exit_code=False,
+                        line_handler=output_manager.on_line,
+                        cwd=cwd,
+                    )
+                )
+            for future in concurrent.futures.as_completed(futures):
+                # Wait for every task to finish
+                rc |= future.result()
+
         command_context.log(
             logging.WARNING,
             "warning_summary",
@@ -396,7 +450,7 @@ def check(
         if output is not None:
             output_manager.write(output, format)
 
-    if not sources or not source:
+    if not sources and not header_sources:
         command_context.log(
             logging.WARNING,
             "static-analysis",
@@ -413,7 +467,7 @@ def get_abspath_files(command_context, files):
     return [mozpath.join(command_context.topsrcdir, f) for f in files]
 
 
-def get_files_with_commands(command_context, compile_db, source):
+def get_files_with_commands(command_context, compile_db, sources):
     """
     Returns an array of dictionaries having file_path with build command
     """
@@ -422,14 +476,14 @@ def get_files_with_commands(command_context, compile_db, source):
 
     commands_list = []
 
-    for f in source:
+    for src in sources:
         # It must be a C/C++ file
-        _, ext = os.path.splitext(f)
+        _, ext = os.path.splitext(src)
 
         if ext.lower() not in _format_include_extensions:
-            command_context.log(logging.INFO, "static-analysis", {}, f"Skipping {f}")
+            command_context.log(logging.INFO, "static-analysis", {}, f"Skipping {src}")
             continue
-        file_with_abspath = os.path.join(command_context.topsrcdir, f)
+        file_with_abspath = os.path.join(command_context.topsrcdir, src)
         for f in compile_db:
             # Found for a file that we are looking
             if file_with_abspath == f["file"]:
@@ -545,8 +599,16 @@ def _get_clang_tidy_command(
     # the source files or folders.
     common_args += [
         "-header-filter=%s"
-        % (header_filter if len(header_filter) else "|".join(sources))
+        % (
+            header_filter
+            if header_filter
+            else "|".join(v or k for k, v in sources.items())
+        )
     ]
+
+    # headers we do not want to scan
+    if header_skiplist := get_clang_tidy_config(command_context).header_skiplist:
+        common_args += ["-exclude-header-filter={}".format("|".join(header_skiplist))]
 
     # From our configuration file, config.yaml, we build the configuration list, for
     # the checkers that are used. These configuration options are used to better fit
@@ -887,10 +949,11 @@ def _run_analysis_batch(command_context, clang_paths, compilation_commands_path,
         compilation_commands_path,
         checks="-*," + ",".join(items),
         header_filter="",
-        sources=[
-            mozpath.join(clang_paths._clang_tidy_base_path, "test", checker) + ".cpp"
+        sources={
+            mozpath.join(clang_paths._clang_tidy_base_path, "test", checker)
+            + ".cpp": None
             for checker in items
-        ],
+        },
         print_out=True,
     )
 
@@ -1115,7 +1178,7 @@ def _verify_checker(
         compilation_commands_path,
         checks="-*," + check,
         header_filter="",
-        sources=[test_file_path_cpp],
+        sources={test_file_path_cpp: None},
     )
     if issues is None:
         return TOOLS_CHECKER_FAILED_FILE
@@ -1437,30 +1500,18 @@ def _generate_path_list(command_context, paths, verbose=True):
     ignored_dir_re = "(%s)" % "|".join(ignored_dir)
     extensions = _format_include_extensions
 
-    path_list = []
-    for f in paths:
+    path_entries = {}
+    for f, h in paths.items():
         if _is_ignored_path(command_context, ignored_dir_re, f):
             # Early exit if we have provided an ignored directory
             if verbose:
                 print(f"static-analysis: Ignored third party code '{f}'")
             continue
-
-        if os.path.isdir(f):
-            # Processing a directory, generate the file list
-            for folder, subs, files in os.walk(f):
-                subs.sort()
-                for filename in sorted(files):
-                    f_in_dir = posixpath.join(pathlib.Path(folder).as_posix(), filename)
-                    if f_in_dir.endswith(extensions) and not _is_ignored_path(
-                        command_context, ignored_dir_re, f_in_dir
-                    ):
-                        # Supported extension and accepted path
-                        path_list.append(f_in_dir)
         # Make sure that the file exists and it has a supported extension
         elif os.path.isfile(f) and f.endswith(extensions):
-            path_list.append(f)
+            path_entries[f] = h
 
-    return path_list
+    return path_entries
 
 
 @StaticAnalysisSubCommand("static-analysis", "unittest", "Run unittest")
@@ -1485,42 +1536,49 @@ def unittest(command_context, verbose=True):
         )
         assert result.returncode == 0, "in-tree files should pass the linter"
 
-        # And when errors are emitted
-        with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as fd:
-            try:
-                fd.close()
+        # And when errors are emitted, both for headers and sources
+        faulty_srcs = (
+            "js/src/builtin/TestingFunctions.cpp",
+            "js/src/builtin/TestingFunctions.h",
+        )
+        for src in faulty_srcs:
+            with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as fd:
+                try:
+                    fd.close()
 
-                # modernize-use-auto is an unsupported check, and it generates
-                # plenty of warnings on js/src/builtin/TestingFunctions.cpp
-                failing_flag = "modernize-use-auto"
-                result = subprocess.run(
-                    [
-                        sys.executable,
-                        "mach",
-                        "static-analysis",
-                        "check",
-                        f"--checks=-*,{failing_flag}",
-                        f"--output={fd.name}",
-                        "--format=json",
-                        "js/src/builtin/TestingFunctions.cpp",
-                    ],
-                    check=False,
-                    env=env,
-                    cwd=command_context.topsrcdir,
-                )
-                with open(fd.name) as fd:
-                    errors = json.load(fd)
-            finally:
-                # FIXME: use delete_on_close=False once we move to 3.12
-                os.remove(fd.name)
+                    # modernize-use-auto is an unsupported check, and it generates
+                    # plenty of warnings on js/src/builtin/TestingFunctions.cpp
+                    failing_flag = "modernize-use-auto"
+                    result = subprocess.run(
+                        [
+                            sys.executable,
+                            "mach",
+                            "static-analysis",
+                            "check",
+                            f"--checks=-*,{failing_flag}",
+                            f"--output={fd.name}",
+                            "--format=json",
+                            "js/src/builtin/TestingFunctions.cpp",
+                        ],
+                        check=False,
+                        env=env,
+                        cwd=command_context.topsrcdir,
+                    )
+                    with open(fd.name) as json_fd:
+                        errors = json.load(json_fd)
+                finally:
+                    # FIXME: use delete_on_close=False once we move to 3.12
+                    os.remove(fd.name)
 
-        assert result.returncode != 0, f"{failing_flag} check should find warnings"
-        assert len(errors["files"]) > 0, "warnings should be present in the log file"
+            assert result.returncode != 0, f"{failing_flag} check should find warnings"
+            assert len(errors["files"]) > 0, (
+                "warnings should be present in the log file"
+            )
 
-        file_with_warning = next(iter(errors["files"].values()))
-        assert (
-            file_with_warning["warnings"][0]["flag"]
-            == f"{failing_flag},-warnings-as-errors"
-        ), f"warnings should mention {failing_flag}"
+            file_with_warning = next(iter(errors["files"].values()))
+            assert (
+                file_with_warning["warnings"][0]["flag"]
+                == f"{failing_flag},-warnings-as-errors"
+            ), f"warnings should mention {failing_flag}"
     finally:
         shutil.rmtree(moz_objdir)

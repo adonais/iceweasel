@@ -10,7 +10,7 @@
 struct ZSTD_DCtx_s;
 
 // See the zstd manual in https://facebook.github.io/zstd/zstd_manual.html or in
-// https://searchfox.org/mozilla-central/source/third_party/zstd/lib/zstd.h
+// https://searchfox.org/firefox-main/source/third_party/zstd/lib/zstd.h
 
 namespace mozilla::dom::compression {
 

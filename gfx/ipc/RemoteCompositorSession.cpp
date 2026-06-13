@@ -23,10 +23,10 @@ using namespace widget;
 
 RemoteCompositorSession::RemoteCompositorSession(
     nsIWidget* aWidget, CompositorBridgeChild* aChild,
-    CompositorWidgetDelegate* aWidgetDelegate, APZCTreeManagerChild* aAPZ,
-    const LayersId& aRootLayerTreeId)
+    CompositorWidgetDelegate* aWidgetDelegate,
+    RefPtr<APZCTreeManagerChild>&& aAPZ, const LayersId& aRootLayerTreeId)
     : CompositorSession(aWidget, aWidgetDelegate, aChild, aRootLayerTreeId),
-      mAPZ(aAPZ) {
+      mAPZ(std::move(aAPZ)) {
   MOZ_ASSERT(!gfxPlatform::IsHeadless());
   GPUProcessManager::Get()->RegisterRemoteProcessSession(this);
   if (mAPZ) {

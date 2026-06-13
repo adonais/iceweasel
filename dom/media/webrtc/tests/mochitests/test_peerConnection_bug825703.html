@@ -89,6 +89,7 @@ runNetworkTest(async () => {
   // Test getConfiguration
   const config = {
     bundlePolicy: "max-bundle",
+    rtcpMuxPolicy: "require",
     iceTransportPolicy: "relay",
     peerIdentity: null,
     certificates: [],

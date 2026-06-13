@@ -19,7 +19,7 @@ const spellColour = color => (color === "grey" ? "gray" : color);
  * @param {integer} tabIndex The desired position of the group in the window
  */
 function validateTabIndexForMove(group, window, tabIndex) {
-  if (group.ownerGlobal === window) {
+  if (group.documentGlobal === window) {
     let group_tabs = group.tabs;
     if (tabIndex > group_tabs[0]._tPos) {
       // When group is moving to a higher index, we need to increase the
@@ -86,7 +86,7 @@ this.tabGroups = class extends ExtensionAPIPersistent {
       color: group.color === "gray" ? "grey" : group.color,
       id: getExtTabGroupIdForInternalTabGroupId(group.id),
       title: group.name,
-      windowId: windowTracker.getId(group.ownerGlobal),
+      windowId: windowTracker.getId(group.documentGlobal),
     };
   }
 
@@ -97,7 +97,9 @@ this.tabGroups = class extends ExtensionAPIPersistent {
           // Tab group moved from a different window.
           return;
         }
-        if (!this.extension.canAccessWindow(event.originalTarget.ownerGlobal)) {
+        if (
+          !this.extension.canAccessWindow(event.originalTarget.documentGlobal)
+        ) {
           return;
         }
         fire.async(this.convert(event.originalTarget));
@@ -114,7 +116,9 @@ this.tabGroups = class extends ExtensionAPIPersistent {
     },
     onMoved({ fire }) {
       let onMove = event => {
-        if (!this.extension.canAccessWindow(event.originalTarget.ownerGlobal)) {
+        if (
+          !this.extension.canAccessWindow(event.originalTarget.documentGlobal)
+        ) {
           return;
         }
         fire.async(this.convert(event.originalTarget));
@@ -124,7 +128,9 @@ this.tabGroups = class extends ExtensionAPIPersistent {
           // We are only interested in tab groups moved from a different window.
           return;
         }
-        if (!this.extension.canAccessWindow(event.originalTarget.ownerGlobal)) {
+        if (
+          !this.extension.canAccessWindow(event.originalTarget.documentGlobal)
+        ) {
           return;
         }
         fire.async(this.convert(event.originalTarget));
@@ -147,7 +153,9 @@ this.tabGroups = class extends ExtensionAPIPersistent {
           // Tab group moved to a different window.
           return;
         }
-        if (!this.extension.canAccessWindow(event.originalTarget.ownerGlobal)) {
+        if (
+          !this.extension.canAccessWindow(event.originalTarget.documentGlobal)
+        ) {
           return;
         }
         fire.async(this.convert(event.originalTarget), {
@@ -176,7 +184,9 @@ this.tabGroups = class extends ExtensionAPIPersistent {
     },
     onUpdated({ fire }) {
       let onUpdate = event => {
-        if (!this.extension.canAccessWindow(event.originalTarget.ownerGlobal)) {
+        if (
+          !this.extension.canAccessWindow(event.originalTarget.documentGlobal)
+        ) {
           return;
         }
         fire.async(this.convert(event.originalTarget));
@@ -207,12 +217,12 @@ this.tabGroups = class extends ExtensionAPIPersistent {
 
         move: (groupId, { index, windowId }) => {
           let group = this.get(groupId);
-          let win = group.ownerGlobal;
+          let win = group.documentGlobal;
 
           if (windowId != null) {
             win = windowTracker.getWindow(windowId, context);
             if (
-              PrivateBrowsingUtils.isWindowPrivate(group.ownerGlobal) !==
+              PrivateBrowsingUtils.isWindowPrivate(group.documentGlobal) !==
               PrivateBrowsingUtils.isWindowPrivate(win)
             ) {
               throw new ExtensionError(
@@ -229,7 +239,7 @@ this.tabGroups = class extends ExtensionAPIPersistent {
           let maxIndex = win.gBrowser.tabs.length;
           let tabIndex = index === -1 ? maxIndex : Math.min(maxIndex, index);
           validateTabIndexForMove(group, win, tabIndex);
-          if (win !== group.ownerGlobal) {
+          if (win !== group.documentGlobal) {
             group = win.gBrowser.adoptTabGroup(group, { tabIndex });
           } else {
             win.gBrowser.moveTabTo(group, { tabIndex });

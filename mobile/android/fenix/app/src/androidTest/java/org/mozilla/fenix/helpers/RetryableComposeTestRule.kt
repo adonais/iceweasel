@@ -9,7 +9,6 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.IdlingResource
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
-import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import kotlinx.coroutines.test.TestScope
 import org.junit.rules.TestRule
 import org.junit.runner.Description
@@ -27,39 +26,60 @@ import org.mozilla.fenix.helpers.Constants.TAG
  * a fresh [AndroidComposeTestRule] and a new [Activity] for every retry attempt
  * triggered by an outer [RetryTestRule].
  *
+ * The type parameters are inferred from the factory's return type at the call site, so
+ * callers typically write `RetryableComposeTestRule { AndroidComposeTestRuleV2(...) { ... } }`
+ * without spelling them out.
+ *
+ * Pair this rule with a [RetryTestRule] declared at a *lower* [order][org.junit.Rule.order]
+ * value so the retry rule wraps this one and re-invokes our [evaluate] on each attempt
+ * (lower [order][org.junit.Rule.order] = outermost in JUnit). Without that ordering, retries
+ * re-run only the test method inside a single [evaluate], reusing the same inner rule:
+ *
+ * ```
+ * @get:Rule(order = 1)
+ * val retryTestRule = RetryTestRule(3)
+ *
+ * @get:Rule(order = 2)
+ * val retryableComposeTestRule = RetryableComposeTestRule {
+ *     AndroidComposeTestRuleV2(MyActivityTestRule()) { it.activity }
+ * }
+ * ```
+ *
  * @param composeRuleFactory A lambda that constructs the specific Compose rule configuration.
  */
-class RetryableComposeTestRule<T : ComponentActivity, R : TestRule>(
-    private val composeRuleFactory: () -> ComposeContentTestRule,
+class RetryableComposeTestRule<R : TestRule, T : ComponentActivity>(
+    private val composeRuleFactory: () -> AndroidComposeTestRule<R, T>,
 ) : TestRule {
 
-    private var _innerRule: ComposeContentTestRule? = null
+    private var _innerRule: AndroidComposeTestRule<R, T>? = null
 
     /**
      * Provides access to the current instance of the compose rule.
      * Use this inside your test methods: composeTestRule.onNodeWithText(...)
      */
-    @Suppress("UNCHECKED_CAST")
     val current: AndroidComposeTestRule<R, T>
-        get() {
-            Log.i(TAG, "RetryableComposeTestRule: Accessing current compose rule.")
-            return (_innerRule ?: error("Compose rule was not initialized by the RetryRule!")) as AndroidComposeTestRule<R, T>
-        }
+        get() = _innerRule
+            ?: error("RetryableComposeTestRule.current accessed before apply() initialized the inner rule")
 
     override fun apply(base: Statement, description: Description): Statement {
         return object : Statement() {
             override fun evaluate() {
                 Log.i(TAG, "RetryableComposeTestRule: Creating new compose rule for ${description.className}.${description.methodName}")
-                _innerRule = composeRuleFactory()
-                try {
-                    Log.i(TAG, "RetryableComposeTestRule: Applying inner compose rule.")
-                    // Apply the new AndroidComposeTestRule to the base statement
-                    _innerRule!!.apply(base, description).evaluate()
-                    Log.i(TAG, "RetryableComposeTestRule: Test execution finished successfully.")
-                } finally {
-                    Log.i(TAG, "RetryableComposeTestRule: Clearing compose rule instance.")
-                    _innerRule = null
-                }
+                val rule = composeRuleFactory()
+                _innerRule = rule
+                Log.i(TAG, "RetryableComposeTestRule: Applying inner compose rule.")
+                // Apply the new AndroidComposeTestRule to the base statement.
+                //
+                // Note: we deliberately do NOT clear _innerRule on exit. JUnit constructs a fresh
+                // test class instance per test method, so there is no stale-state risk between
+                // tests, and the next retry's evaluate overwrites the field. Leaving _innerRule
+                // populated also lets an outer rule read .current after evaluate returns, should
+                // a future caller ever need that.
+                rule.apply(base, description).evaluate()
+                // Reached only when the inner statement returned without throwing; on a failure
+                // the outer RetryTestRule catches the exception, re-invokes our apply(), and
+                // composeRuleFactory() builds a fresh inner rule for the next attempt.
+                Log.i(TAG, "RetryableComposeTestRule: Inner compose rule evaluation completed without throwing.")
             }
         }
     }

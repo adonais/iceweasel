@@ -14,6 +14,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
 
   assert: "chrome://remote/content/shared/webdriver/Assert.sys.mjs",
   CacheBehavior: "chrome://remote/content/shared/NetworkCacheManager.sys.mjs",
+  ContextDescriptorType:
+    "chrome://remote/content/shared/messagehandler/MessageHandler.sys.mjs",
   error: "chrome://remote/content/shared/webdriver/Errors.sys.mjs",
   generateUUID: "chrome://remote/content/shared/UUID.sys.mjs",
   Log: "chrome://remote/content/shared/Log.sys.mjs",
@@ -31,6 +33,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   parseURLPattern:
     "chrome://remote/content/shared/webdriver/URLPattern.sys.mjs",
   pprint: "chrome://remote/content/shared/Format.sys.mjs",
+  SessionDataMethod:
+    "chrome://remote/content/shared/messagehandler/sessiondata/SessionData.sys.mjs",
   truncate: "chrome://remote/content/shared/Format.sys.mjs",
   updateCacheBehavior:
     "chrome://remote/content/shared/NetworkCacheManager.sys.mjs",
@@ -537,7 +541,7 @@ class NetworkModule extends RootBiDiModule {
    * @throws {InvalidArgumentError}
    *     Raised if an argument is of an invalid type or value.
    */
-  addDataCollector(options = {}) {
+  async addDataCollector(options = {}) {
     const {
       dataTypes,
       maxEncodedDataSize,
@@ -654,6 +658,12 @@ class NetworkModule extends RootBiDiModule {
     };
 
     this.#networkCollectors.set(collectorId, collector);
+
+    await this.#updateCollectorSessionData(
+      collectorId,
+      collector,
+      lazy.SessionDataMethod.Add
+    );
 
     return {
       collector: collectorId,
@@ -1561,7 +1571,7 @@ class NetworkModule extends RootBiDiModule {
    *     Raised if the collector id could not be found in the internal collectors
    *     map.
    */
-  removeDataCollector(options = {}) {
+  async removeDataCollector(options = {}) {
     const { collector } = options;
 
     lazy.assert.string(
@@ -1575,11 +1585,18 @@ class NetworkModule extends RootBiDiModule {
       );
     }
 
+    const collectorData = this.#networkCollectors.get(collector);
     this.#networkCollectors.delete(collector);
 
     for (const [, collectedData] of this.#collectedNetworkData) {
       this.#removeCollectorFromData(collectedData, collector);
     }
+
+    await this.#updateCollectorSessionData(
+      collector,
+      collectorData,
+      lazy.SessionDataMethod.Remove
+    );
   }
 
   /**
@@ -3024,6 +3041,64 @@ class NetworkModule extends RootBiDiModule {
     if (this.constructor.supportedEvents.includes(event)) {
       this.#stopListening(event);
     }
+  }
+
+  /**
+   * Update SessionData when a response data collector is added or removed.
+   *
+   * @param {string} collectorId
+   *     The id of the collector.
+   * @param {Collector} collector
+   *     The collector object.
+   * @param {SessionDataMethod} method
+   *     Whether to add or remove the item.
+   */
+  async #updateCollectorSessionData(collectorId, collector, method) {
+    const sessionDataItems = [];
+
+    if (!collector.dataTypes.includes(DataType.Response)) {
+      // windowglobal modules only need to know whether responses are collected
+      // in order to capture cached content held in the content process.
+      return;
+    }
+
+    const sessionDataItem = {
+      category: "response-collector",
+      method,
+      moduleName: "network",
+      values: [collectorId],
+    };
+
+    if (collector.contexts.size) {
+      for (const contextId of collector.contexts) {
+        sessionDataItems.push({
+          ...sessionDataItem,
+          contextDescriptor: {
+            type: lazy.ContextDescriptorType.TopBrowsingContext,
+            id: contextId,
+          },
+        });
+      }
+    } else if (collector.userContexts.size) {
+      for (const userContextId of collector.userContexts) {
+        sessionDataItems.push({
+          ...sessionDataItem,
+          contextDescriptor: {
+            type: lazy.ContextDescriptorType.UserContext,
+            id: userContextId,
+          },
+        });
+      }
+    } else {
+      sessionDataItems.push({
+        ...sessionDataItem,
+        contextDescriptor: {
+          type: lazy.ContextDescriptorType.All,
+        },
+      });
+    }
+
+    await this.messageHandler.updateSessionData(sessionDataItems);
   }
 
   /**

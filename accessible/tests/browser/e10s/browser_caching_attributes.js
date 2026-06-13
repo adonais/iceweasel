@@ -7,6 +7,10 @@
 /* import-globals-from ../../mochitest/attributes.js */
 loadScripts({ name: "attributes.js", dir: MOCHITESTS_DIR });
 
+// This file has a lot of tests and may fail in the slower environments (such as
+// test-verify).
+requestLongerTimeout(2);
+
 /**
  * Default textbox accessible attributes.
  */
@@ -853,6 +857,22 @@ addAccessibleTask(
       "true",
       "dlg has-actions attribute re-added with hidden target"
     );
+  },
+  { chrome: true, topLevel: true }
+);
+
+// Test that a native modal dialog doesn't expose a "modal" object attribute.
+// We expose the modal state instead, which is tested elsewhere.
+addAccessibleTask(
+  `<dialog id="modal_dialog"></dialog>`,
+  async function testModalDialogNoAttr(browser, _docAcc) {
+    info("Showing modal dialog");
+    let shown = waitForEvent(EVENT_SHOW, "modal_dialog");
+    await invokeContentTask(browser, [], () => {
+      content.document.getElementById("modal_dialog").showModal();
+    });
+    const modal = (await shown).accessible;
+    testAbsentAttrs(modal, { modal: "true" });
   },
   { chrome: true, topLevel: true }
 );

@@ -33,6 +33,7 @@
 #include "js/experimental/JitInfo.h"  // JSJitInfo
 #include "js/friend/ErrorMessages.h"  // js::GetErrorMessage, JSMSG_*
 #include "js/friend/StackLimits.h"    // js::AutoCheckRecursionLimit
+#include "js/Printf.h"                // JS_smprintf
 #include "threading/Mutex.h"
 #include "util/Memory.h"
 #include "util/Poison.h"
@@ -847,7 +848,7 @@ void wasm::HandleExceptionWasm(JSContext* cx, JitFrameIter& iter,
     wasm::ContStack* wasmStack = wasmFrame.contStack();
     if (wasmFrame.currentFrameStackSwitched()) {
       if (wasmPreviousStack) {
-        ContStack::unwind(cx, wasmPreviousStack->handlers());
+        ContStack::unwind(wasmPreviousStack->handlers());
       }
       wasmPreviousStack = wasmStack;
     } else {
@@ -1037,7 +1038,24 @@ static void* WasmHandleTrap() {
       return nullptr;
     }
     case Trap::OutOfBounds: {
-      ReportTrapError(cx, JSMSG_WASM_OUT_OF_BOUNDS);
+      const wasm::TrapData& td = activation->wasmTrapData();
+      if (JS::Prefs::wasm_memory_debugging() && td.faultInfo.isSome()) {
+        UniqueChars memIdxStr(JS_smprintf("%u", td.faultInfo->memoryIndex));
+        UniqueChars offsetStr(
+            JS_smprintf("%llu", (unsigned long long)td.faultInfo->byteOffset));
+        if (!memIdxStr || !offsetStr) {
+          ReportOutOfMemory(cx);
+          return nullptr;
+        }
+        JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
+                                 JSMSG_WASM_OUT_OF_BOUNDS_AT, memIdxStr.get(),
+                                 offsetStr.get());
+        if (!cx->isThrowingOutOfMemory()) {
+          wasm::MarkPendingExceptionAsTrap(cx);
+        }
+      } else {
+        ReportTrapError(cx, JSMSG_WASM_OUT_OF_BOUNDS);
+      }
       return nullptr;
     }
     case Trap::UnalignedAccess: {
@@ -2203,7 +2221,7 @@ struct BuiltinThunks {
   CodeRangeVector codeRanges;
   TypedNativeToCodeRangeMap typedNativeToCodeRange;
   SymbolicAddressToCodeRangeArray symbolicAddressToCodeRange;
-  uint32_t provisionalLazyJitEntryOffset;
+  uint32_t provisionalLazyJitEntryOffset = 0;
 
   BuiltinThunks() : codeBase(nullptr), codeSize(0) {}
 

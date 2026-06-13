@@ -10,6 +10,7 @@
 #include "RubyUtils.h"
 #include "nsContainerFrame.h"
 
+class nsLineLayout;
 namespace mozilla {
 class PresShell;
 }  // namespace mozilla

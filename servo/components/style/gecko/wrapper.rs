@@ -40,7 +40,6 @@ use crate::gecko_bindings::bindings::Gecko_GetUnvisitedLinkAttrDeclarationBlock;
 use crate::gecko_bindings::bindings::Gecko_GetVisitedLinkAttrDeclarationBlock;
 use crate::gecko_bindings::bindings::Gecko_IsSignificantChild;
 use crate::gecko_bindings::bindings::Gecko_MatchLang;
-use crate::gecko_bindings::bindings::Gecko_UnsetDirtyStyleAttr;
 use crate::gecko_bindings::bindings::Gecko_UpdateAnimations;
 use crate::gecko_bindings::structs;
 use crate::gecko_bindings::structs::nsChangeHint;
@@ -921,14 +920,6 @@ impl<'le> GeckoElement<'le> {
     pub fn slow_selector_flags(&self) -> ElementSelectorFlags {
         slow_selector_flags_from_node_selector_flags(self.as_node().selector_flags())
     }
-
-    /// Returns whether this element is an HTML <video> or <audio> element.
-    #[inline]
-    pub fn is_html_media_element(&self) -> bool {
-        self.is_html_element()
-            && (self.local_name().as_ptr() == local_name!("video").as_ptr()
-                || self.local_name().as_ptr() == local_name!("audio").as_ptr())
-    }
 }
 
 /// Convert slow selector flags from the raw `NodeSelectorFlags`.
@@ -1097,6 +1088,13 @@ impl<'le> TElement for GeckoElement<'le> {
     }
 
     #[inline]
+    fn is_html_media_element(&self) -> bool {
+        self.is_html_element()
+            && (self.local_name().as_ptr() == local_name!("video").as_ptr()
+                || self.local_name().as_ptr() == local_name!("audio").as_ptr())
+    }
+
+    #[inline]
     fn subtree_bloom_filter(&self) -> u64 {
         unsafe { bindings::Gecko_Element_GetSubtreeBloomFilter(self.0) }
     }
@@ -1220,22 +1218,11 @@ impl<'le> TElement for GeckoElement<'le> {
         }
     }
 
-    fn unset_dirty_style_attribute(&self) {
-        if !self.may_have_style_attribute() {
-            return;
-        }
-
-        unsafe { Gecko_UnsetDirtyStyleAttr(self.0) };
-    }
-
     fn smil_override(&self) -> Option<ArcBorrow<'_, Locked<PropertyDeclarationBlock>>> {
         unsafe {
             let slots = self.extended_slots()?;
-
-            let declaration: &structs::DeclarationBlock =
+            let raw: &structs::StyleLockedDeclarationBlock =
                 slots.mSMILOverrideStyleDeclaration.mRawPtr.as_ref()?;
-
-            let raw: &structs::StyleLockedDeclarationBlock = declaration.mRaw.mRawPtr.as_ref()?;
             Some(ArcBorrow::from_ref(raw))
         }
     }

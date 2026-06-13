@@ -35,8 +35,8 @@ class DohSettingsStoreIntegrationTest {
         middleware = DohSettingsMiddleware(
             getNavController = { navController },
             getSettingsProvider = { settingsProvider },
-            getHomeActivity = { mockk() },
-            exitDohSettings = { mockk() },
+            openUrlInBrowser = { },
+            exitDohSettings = { },
         )
     }
 

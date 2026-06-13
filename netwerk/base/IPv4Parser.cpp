@@ -65,6 +65,12 @@ nsresult ParseIPv4Number10(const nsACString& input, uint32_t& number,
     MOZ_ASSERT(c >= '0' && c <= '9');
     value *= 10;
     value += c - '0';
+    // Any IPv4 number must fit in 32 bits. Bail out as soon as we exceed
+    // that to avoid silently wrapping the uint64_t accumulator.
+    if (value > 0xffffffffu) {
+      number = 0;
+      return NS_ERROR_FAILURE;
+    }
   }
   if (value <= maxNumber) {
     number = value;
@@ -105,6 +111,12 @@ nsresult ParseIPv4Number(const nsACString& input, int32_t base,
       value += c - 'a' + 10;
     } else if (c >= 'A' && c <= 'F') {
       value += c - 'A' + 10;
+    }
+    // Any IPv4 number must fit in 32 bits. Bail out as soon as we exceed
+    // that to avoid silently wrapping the uint64_t accumulator.
+    if (value > 0xffffffffu) {
+      number = 0;
+      return NS_ERROR_FAILURE;
     }
   }
 

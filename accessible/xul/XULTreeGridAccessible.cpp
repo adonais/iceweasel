@@ -202,7 +202,7 @@ role XULTreeGridAccessible::NativeRole() const {
 
 already_AddRefed<XULTreeItemAccessibleBase>
 XULTreeGridAccessible::CreateTreeItemAccessible(int32_t aRow) const {
-  RefPtr<XULTreeItemAccessibleBase> accessible = new XULTreeGridRowAccessible(
+  auto accessible = MakeRefPtr<XULTreeGridRowAccessible>(
       mContent, mDoc, const_cast<XULTreeGridAccessible*>(this), mTree,
       mTreeView, aRow);
 
@@ -318,7 +318,7 @@ XULTreeGridCellAccessible* XULTreeGridRowAccessible::GetCellAccessible(
   XULTreeGridCellAccessible* cachedCell = mAccessibleCache.GetWeak(key);
   if (cachedCell) return cachedCell;
 
-  RefPtr<XULTreeGridCellAccessible> cell = new XULTreeGridCellAccessible(
+  auto cell = MakeRefPtr<XULTreeGridCellAccessible>(
       mContent, mDoc, const_cast<XULTreeGridRowAccessible*>(this), mTree,
       mTreeView, mRow, aColumn);
   mAccessibleCache.InsertOrUpdate(key, RefPtr{cell});
@@ -521,7 +521,7 @@ bool XULTreeGridCellAccessible::Selected() {
 // XULTreeGridCellAccessible: LocalAccessible public implementation
 
 already_AddRefed<AccAttributes> XULTreeGridCellAccessible::NativeAttributes() {
-  RefPtr<AccAttributes> attributes = new AccAttributes();
+  auto attributes = MakeRefPtr<AccAttributes>();
 
   // "table-cell-index" attribute
   TableAccessible* table = Table();
@@ -586,8 +586,8 @@ bool XULTreeGridCellAccessible::CellInvalidated() {
     mTreeView->GetCellValue(mRow, mColumn, textEquiv);
     if (mCachedTextEquiv != textEquiv) {
       bool isEnabled = textEquiv.EqualsLiteral("true");
-      RefPtr<AccEvent> accEvent =
-          new AccStateChangeEvent(this, states::CHECKED, isEnabled);
+      auto accEvent =
+          MakeRefPtr<AccStateChangeEvent>(this, states::CHECKED, isEnabled);
       nsEventShell::FireEvent(accEvent);
 
       mCachedTextEquiv = textEquiv;

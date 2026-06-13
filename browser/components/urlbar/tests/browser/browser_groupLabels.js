@@ -638,7 +638,7 @@ async function checkLabels(resultCount, labelsByIndex) {
     if (labelsByIndex.hasOwnProperty(i)) {
       Assert.equal(
         before.content,
-        "attr(label)",
+        `"${labelsByIndex[i]}"`,
         `::before.content is correct at index ${i}`
       );
       Assert.equal(

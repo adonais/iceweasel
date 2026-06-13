@@ -6,7 +6,6 @@ package org.mozilla.fenix.ui
 
 import android.content.Context
 import android.content.pm.ActivityInfo
-import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import org.json.JSONObject
 import org.junit.Assert.assertNotEquals
 import org.junit.Before
@@ -22,6 +21,7 @@ import org.mozilla.fenix.nimbus.FxNimbus
 import org.mozilla.fenix.nimbus.HomeScreenSection
 import org.mozilla.fenix.nimbus.Homescreen
 import org.mozilla.fenix.ui.robots.surveyScreen
+import androidx.compose.ui.test.junit4.v2.AndroidComposeTestRule as AndroidComposeTestRuleV2
 
 /**
  *  Tests for verifying basic functionality of the Nimbus Survey surface message
@@ -36,9 +36,11 @@ class NimbusMessagingSurveyTest {
     @get:Rule(order = 0)
     val fenixTestRule: FenixTestRule = FenixTestRule()
 
-    @get:Rule
+    @get:Rule(order = 1)
     val composeTestRule =
-        AndroidComposeTestRule(HomeActivityIntentTestRule.withDefaultSettingsOverrides(skipOnboarding = true)) { it.activity }
+        AndroidComposeTestRuleV2(
+            HomeActivityIntentTestRule.withDefaultSettingsOverrides(skipOnboarding = true),
+        ) { it.activity }
 
     @Before
     fun setUp() {

@@ -2,13 +2,15 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
+
 const lazy = {};
 
 /**
  * Type Imports
  *
- * @typedef {import("./GuardianClient.sys.mjs").Entitlement} Entitlement
- * @typedef {import("./GuardianClient.sys.mjs").ProxyUsage} ProxyUsage
+ * @typedef {import("./GuardianTypes.sys.mjs").Entitlement} Entitlement
+ * @typedef {import("./GuardianTypes.sys.mjs").ProxyUsage} ProxyUsage
  */
 ChromeUtils.defineESModuleGetters(lazy, {
   IPProtectionService:
@@ -18,9 +20,9 @@ ChromeUtils.defineESModuleGetters(lazy, {
   IPPProxyManager:
     "moz-src:///toolkit/components/ipprotection/IPPProxyManager.sys.mjs",
   Entitlement:
-    "moz-src:///toolkit/components/ipprotection/GuardianClient.sys.mjs",
+    "moz-src:///toolkit/components/ipprotection/GuardianTypes.sys.mjs",
   ProxyUsage:
-    "moz-src:///toolkit/components/ipprotection/GuardianClient.sys.mjs",
+    "moz-src:///toolkit/components/ipprotection/GuardianTypes.sys.mjs",
 });
 
 const STATE_CACHE_PREF = "browser.ipProtection.stateCache";
@@ -47,6 +49,14 @@ class IPPStartupCacheSingleton {
     }
 
     this.handleEvent = this.#handleEvent.bind(this);
+
+    // Android has no `sessionstore-windows-restored` notification; mark
+    // startup as completed so IPProtectionService.init() runs
+    // initOnStartupCompleted() synchronously.
+    if (AppConstants.platform === "android") {
+      this.#startupCompleted = true;
+      return;
+    }
 
     const stateFromCache = Services.prefs.getCharPref(
       STATE_CACHE_PREF,
@@ -196,9 +206,10 @@ class IPPStartupCacheSingleton {
       );
     }
     const serialized = JSON.stringify({
-      max: usageInfo.max.toString(),
-      remaining: usageInfo.remaining.toString(),
-      reset: usageInfo.reset.toString(),
+      max: usageInfo.max?.toString() ?? null,
+      remaining: usageInfo.remaining?.toString() ?? null,
+      reset: usageInfo.reset?.toString() ?? null,
+      unlimited: usageInfo.unlimited,
     });
     Services.prefs.setCharPref(USAGE_CACHE_PREF, serialized);
   }
@@ -215,7 +226,12 @@ class IPPStartupCacheSingleton {
         return null;
       }
       const data = JSON.parse(usageInfo_string);
-      return new lazy.ProxyUsage(data.max, data.remaining, data.reset);
+      return new lazy.ProxyUsage(
+        data.max,
+        data.remaining,
+        data.reset,
+        data.unlimited ?? false
+      );
     } catch (e) {
       return null;
     }

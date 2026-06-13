@@ -1658,9 +1658,8 @@ static void BuildTextRuns(DrawTarget* aDrawTarget, nsTextFrame* aForFrame,
     BuildTextRunsScanner::FindBoundaryState state = {
         stopAtFrame, nullptr, nullptr, bool(seenTextRunBoundaryOnLaterLine),
         false,       false,   buffer};
-    nsIFrame* child = line->mFirstChild;
     bool foundBoundary = false;
-    for (int32_t i = line->GetChildCount() - 1; i >= 0; --i) {
+    for (nsIFrame* child : line->ChildFrames()) {
       BuildTextRunsScanner::FindBoundaryResult result =
           scanner.FindBoundaries(child, &state);
       if (result == BuildTextRunsScanner::FB_FOUND_VALID_TEXTRUN_BOUNDARY) {
@@ -1669,7 +1668,6 @@ static void BuildTextRuns(DrawTarget* aDrawTarget, nsTextFrame* aForFrame,
       } else if (result == BuildTextRunsScanner::FB_STOPPED_AT_STOP_FRAME) {
         break;
       }
-      child = child->GetNextSibling();
     }
     if (foundBoundary) {
       break;
@@ -1706,10 +1704,8 @@ static void BuildTextRuns(DrawTarget* aDrawTarget, nsTextFrame* aForFrame,
     line->SetInvalidateTextRuns(false);
     scanner.SetAtStartOfLine();
     scanner.SetCommonAncestorWithLastFrame(nullptr);
-    nsIFrame* child = line->mFirstChild;
-    for (int32_t i = line->GetChildCount() - 1; i >= 0; --i) {
+    for (nsIFrame* child : line->ChildFrames()) {
       scanner.ScanFrame(child);
-      child = child->GetNextSibling();
     }
     if (line.get() == startLine.get()) {
       seenStartLine = true;
@@ -2658,14 +2654,15 @@ already_AddRefed<gfxTextRun> BuildTextRunsScanner::BuildTextRunForFrames(
         // want to create new nsTransformedCharStyle for them anyway.
         if (sc != f->Style() || sc->IsTextCombined()) {
           sc = f->Style();
-          defaultStyle = new nsTransformedCharStyle(sc, f->PresContext());
+          auto* pc = f->PresContext();
+          defaultStyle = MakeRefPtr<nsTransformedCharStyle>(sc, pc);
           if (sc->IsTextCombined() && f->CountGraphemeClusters() > 1) {
             defaultStyle->mForceNonFullWidth = true;
           }
           if (needsToMaskPassword) {
             defaultStyle->mMaskPassword = true;
             if (unmaskStart != unmaskEnd) {
-              unmaskStyle = new nsTransformedCharStyle(sc, f->PresContext());
+              unmaskStyle = MakeRefPtr<nsTransformedCharStyle>(sc, pc);
               unmaskStyle->mForceNonFullWidth =
                   defaultStyle->mForceNonFullWidth;
             }
@@ -5296,10 +5293,8 @@ static nscoord LazyGetLineBaselineOffset(nsIFrame* aChildFrame,
   if (!offsetFound) {
     for (const auto& line : aBlockFrame->Lines()) {
       if (line.IsInline()) {
-        int32_t n = line.GetChildCount();
         nscoord lineBaseline = line.BStart() + line.GetLogicalAscent();
-        for (auto* lineFrame = line.mFirstChild; n > 0;
-             lineFrame = lineFrame->GetNextSibling(), --n) {
+        for (nsIFrame* lineFrame : line.ChildFrames()) {
           offset = lineBaseline - lineFrame->GetNormalPosition().y;
           lineFrame->SetProperty(nsIFrame::LineBaselineOffset(), offset);
         }
@@ -11155,11 +11150,7 @@ void nsTextFrame::ReflowText(nsLineLayout& aLineLayout, nscoord aAvailableWidth,
     nscoord width = finalSize.ISize(wm);
     nscoord em = fm->EmHeight();
     // Compress the characters in horizontal axis if necessary.
-    auto* data = GetProperty(TextCombineDataProperty());
-    if (!data) {
-      data = new TextCombineData;
-      SetProperty(TextCombineDataProperty(), data);
-    }
+    auto* data = GetOrCreateDeletableProperty(TextCombineDataProperty());
     data->mNaturalWidth = width;
     finalSize.ISize(wm) = em;
     // If we're going to have to adjust the block-size to make it 1em, make an

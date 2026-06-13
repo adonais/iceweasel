@@ -56,6 +56,11 @@
 #include "nsTextNode.h"
 #include "nsUnicharUtils.h"
 
+// from vs/Windows Kits/10/.../rpcndr.h
+#ifdef small
+#  undef small
+#endif
+
 namespace mozilla {
 
 using namespace dom;

@@ -97,7 +97,7 @@ class IDBRequest : public DOMEventTargetHelper {
     MOZ_ASSERT(!mError);
 
     // Already disconnected from the owner.
-    if (!GetOwnerGlobal()) {
+    if (!GetRelevantGlobal()) {
       SetError(NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR);
       return;
     }
@@ -109,7 +109,7 @@ class IDBRequest : public DOMEventTargetHelper {
     }
 
     AutoJSAPI autoJS;
-    if (!autoJS.Init(GetOwnerGlobal())) {
+    if (!autoJS.Init(GetRelevantGlobal())) {
       IDB_WARNING("Failed to initialize AutoJSAPI!");
       SetError(NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR);
       return;
@@ -173,7 +173,7 @@ class IDBRequest : public DOMEventTargetHelper {
 
   void SetLoggingSerialNumber(uint64_t aLoggingSerialNumber);
 
-  nsIGlobalObject* GetParentObject() const { return GetOwnerGlobal(); }
+  nsIGlobalObject* GetParentObject() const { return GetRelevantGlobal(); }
 
   void GetResult(JS::MutableHandle<JS::Value> aResult, ErrorResult& aRv) const;
 

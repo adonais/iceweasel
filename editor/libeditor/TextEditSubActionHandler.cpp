@@ -32,8 +32,8 @@
 #include "nsDebug.h"
 #include "nsError.h"
 #include "nsGkAtoms.h"
+#include "mozilla/dom/ContentList.h"
 #include "nsIContent.h"
-#include "nsIHTMLCollection.h"
 #include "nsINode.h"
 #include "nsISupports.h"
 #include "nsLiteralString.h"
@@ -334,7 +334,7 @@ void TextEditor::HandleNewLinesInStringForSingleLineEditor(
           ++offset;
         }
       }
-      aString = result;
+      aString = std::move(result);
       break;
     }
     case nsIEditor::eNewlinesPasteIntact:

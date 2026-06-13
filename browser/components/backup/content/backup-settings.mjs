@@ -139,6 +139,7 @@ export default class BackupSettings extends MozLitElement {
             detail: {
               backupFile: event.detail.backupFile,
               backupPassword: event.detail.backupPassword,
+              source: "preferences",
             },
           })
         );
@@ -214,6 +215,7 @@ export default class BackupSettings extends MozLitElement {
       @close=${this.handleTurnOnScheduledBackupsDialogClose}
     >
       <turn-on-scheduled-backups
+        source="preferences"
         defaultlabel=${fileName}
         defaultpath=${path}
         defaulticonurl=${iconURL}
@@ -224,7 +226,9 @@ export default class BackupSettings extends MozLitElement {
 
   turnOffScheduledBackupsDialogTemplate() {
     return html`<dialog id="turn-off-scheduled-backups-dialog">
-      <turn-off-scheduled-backups></turn-off-scheduled-backups>
+      <turn-off-scheduled-backups
+        source="preferences"
+      ></turn-off-scheduled-backups>
     </dialog>`;
   }
 
@@ -249,6 +253,13 @@ export default class BackupSettings extends MozLitElement {
 
   handleShowRestoreDialog() {
     if (this.restoreFromBackupDialogEl) {
+      this.dispatchEvent(
+        new CustomEvent("BackupUI:FindBackupsInWellKnownLocations", {
+          bubbles: true,
+          composed: true,
+          detail: { source: "preferences" },
+        })
+      );
       this.restoreFromBackupDialogEl.showModal();
       this.restoreFromBackupEl.resizeTextarea();
     }

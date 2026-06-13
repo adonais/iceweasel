@@ -2064,7 +2064,6 @@ angle::Result Renderer11::drawLineLoop(const gl::Context *context,
     GetLineLoopIndices(indices, type, static_cast<GLuint>(count),
                        glState.isPrimitiveRestartEnabled(), &mScratchIndexDataBuffer);
 
-
     uint64_t spaceNeeded64 = sizeof(GLuint) * mScratchIndexDataBuffer.size();
     ANGLE_CHECK(GetImplAs<Context11>(context), spaceNeeded64 <= std::numeric_limits<int>::max(),
                 "Failed to create a 32-bit looping index buffer for "

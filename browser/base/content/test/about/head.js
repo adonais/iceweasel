@@ -59,7 +59,15 @@ async function openErrorPage(src, useFrame, sandboxed) {
   if (useFrame) {
     info("Loading cert error page in an iframe");
     tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, dummyPage);
+    let errorCardReady = BrowserTestUtils.waitForContentEvent(
+      tab.linkedBrowser,
+      "AboutNetErrorLoad",
+      false,
+      null,
+      true
+    );
     await injectErrorPageFrame(tab, src, sandboxed);
+    await errorCardReady;
   } else {
     let certErrorLoaded;
     tab = await BrowserTestUtils.openNewForegroundTab(

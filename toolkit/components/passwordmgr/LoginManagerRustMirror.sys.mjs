@@ -7,138 +7,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   LoginHelper: "resource://gre/modules/LoginHelper.sys.mjs",
 });
 
-const rustMirrorTelemetryVersion = "6";
-
-// checks validity of an origin
-function checkOrigin(origin) {
-  try {
-    new URL(origin);
-    return true;
-  } catch (e) {
-    return false;
-  }
-}
-
-/**
- * Validate an origin string.
- *
- * Returns:
- * [
- *   "ErrorName" or null,
- *   fixedOrigin or null,
- * ]
- *
- * Possible ErrorName values include:
- * - FalsyOrigin
- * - SurroundingWhitespace
- * - SingleDot
- * - ProtocolNameOnly
- * - ProtocolFragmentOnly
- * - ProtocolOnly
- * - MissingProtocol
- * - ProtocolTypo
- * - MissingProtocol
- * - UnknownError
- */
-function validateOrigin(origin) {
-  // valid origin
-  if (checkOrigin(origin)) {
-    return [null, null];
-  }
-
-  // falsy origin
-  if (!origin) {
-    return ["FalsyOrigin", null];
-  }
-
-  // surrounding white-space
-  {
-    const fixedOrigin = origin.trim();
-    if (checkOrigin(fixedOrigin)) {
-      return ["SurroundingWhitespace", fixedOrigin];
-    }
-  }
-
-  const lower = origin.toLowerCase();
-
-  // some protocol-only urls we won't try to fix
-  const wontfix = {
-    ".": "SingleDot",
-
-    http: "ProtocolNameOnly",
-    "http:": "ProtocolFragmentOnly",
-    "http://": "ProtocolOnly",
-
-    https: "ProtocolNameOnly",
-    "https:": "ProtocolFragmentOnly",
-    "https://": "ProtocolOnly",
-
-    file: "ProtocolNameOnly",
-    "file:": "ProtocolFragmentOnly",
-    "file://": "ProtocolOnly",
-  };
-  if (lower in wontfix) {
-    return [wontfix[lower], null];
-  }
-
-  // leading "//"
-  if (origin.startsWith("//")) {
-    const fixedOrigin = "https:" + origin;
-    if (checkOrigin(fixedOrigin)) {
-      return ["MissingProtocol", fixedOrigin];
-    }
-  }
-
-  // protocol typos
-  const brokenPrefixes = [
-    "http//",
-    "https//",
-    "htp//",
-    "htttp//",
-    "hptts//",
-    "htpps//",
-    "http:/",
-    "https:/",
-  ];
-  for (const prefix of brokenPrefixes) {
-    if (lower.startsWith(prefix)) {
-      const fixedOrigin = "https://" + origin.slice(prefix.length);
-      if (checkOrigin(fixedOrigin)) {
-        return ["ProtocolTypo", fixedOrigin];
-      }
-    }
-  }
-
-  // no protocol
-  if (!lower.match(/^[a-z]{2,20}\:\/\//)) {
-    const fixedOrigin = "https://" + origin;
-    if (checkOrigin(fixedOrigin)) {
-      return ["MissingProtocol", fixedOrigin];
-    }
-  }
-
-  // the rest is unknown
-  return ["UnknownError", null];
-}
-
-/* Check if an url has punicode encoded hostname */
-function isPunycodeOrigin(origin) {
-  try {
-    return origin && new URL(origin).hostname.startsWith("xn--");
-  } catch (_) {
-    return false;
-  }
-}
-
-/* Check if a string contains line breaks */
-function containsLineBreaks(str) {
-  return str.includes("\n") || str.includes("\r");
-}
-
-/* Check if a string contains Nul string */
-function containsNul(str) {
-  return str.includes("\0");
-}
+const rustMirrorTelemetryVersion = "8";
 
 /* Normalize different errors */
 function normalizeRustStorageErrorMessage(error) {
@@ -150,8 +19,18 @@ function normalizeRustStorageErrorMessage(error) {
     .replace(/\{[0-9a-fA-F-]{36}\}/, "{UUID}");
 }
 
-function isInvalidOriginError(message) {
-  return message.includes("illegal origin");
+// Replace an origin's scheme with `moz-pwmngr-fixed-<prefix extracted from
+// login guid>://`.
+// Used during migration when two JSON logins collapse onto the same Rust dedup
+// key after origin normalization: rewriting the loser's scheme gives it a
+// distinct origin in Rust so both records can be persisted.
+function rewriteOriginToFixedScheme(origin, guid) {
+  const id = guid.replace(/\W/, "").split("-", 1)[0];
+  const idx = origin.indexOf("://");
+  if (idx === -1) {
+    return `moz-pwmngr-fixed-${id}://${origin}`;
+  }
+  return `moz-pwmngr-fixed-${id}://${origin.slice(idx + 3)}`;
 }
 
 //Normalize a Unix timestamp (ms) to the first day of its month at 00:00 UTC
@@ -164,22 +43,10 @@ function roundToMonthUTC(timestampMs) {
   return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1, 0, 0, 0, 0);
 }
 
-function isFtpOrigin(origin) {
-  if (!origin || typeof origin !== "string") {
-    return false;
-  }
-
-  return origin.toLowerCase().includes("ftp");
-}
-
 function recordMirrorFailure(runId, operation, error, login = null) {
   // lookup poisoned status
   const poisoned = Services.prefs.getBoolPref(
     "signon.rustMirror.poisoned",
-    false
-  );
-  const collectFailedOrigins = Services.prefs.getBoolPref(
-    "signon.rustMirror.collectFailedOrigins",
     false
   );
 
@@ -197,19 +64,6 @@ function recordMirrorFailure(runId, operation, error, login = null) {
     has_form_action_origin: false,
     has_http_realm: false,
 
-    origin_error: null,
-    origin_fixable: false,
-    form_action_origin_error: null,
-    form_action_origin_fixable: false,
-
-    has_punycode_origin: false,
-    has_punycode_form_action_origin: false,
-    has_ftp_origin: false,
-
-    has_empty_password: false,
-    has_username_line_break: false,
-    has_username_nul: false,
-
     time_created: null,
     time_last_used: null,
   };
@@ -223,43 +77,8 @@ function recordMirrorFailure(runId, operation, error, login = null) {
     data.has_form_action_origin = !!login.formActionOrigin;
     data.has_http_realm = !!login.httpRealm;
 
-    const [originError, fixedOrigin] = validateOrigin(login.origin);
-    data.origin_error = originError;
-    data.origin_fixable = !!fixedOrigin;
-    let formActionOriginError = null;
-    let fixedFormActionOrigin = null;
-    if (login.formActionOrigin) {
-      [formActionOriginError, fixedFormActionOrigin] = validateOrigin(
-        login.formActionOrigin
-      );
-    }
-    data.form_action_origin_error = formActionOriginError;
-    data.form_action_origin_fixable = !!fixedFormActionOrigin;
-
-    data.has_punycode_origin = isPunycodeOrigin(login.origin);
-    data.has_punycode_form_action_origin = isPunycodeOrigin(
-      login.formActionOrigin
-    );
-
-    data.has_ftp_origin = isFtpOrigin(login.origin);
-
-    data.has_empty_password = !login.password;
-    data.has_username_line_break = containsLineBreaks(login.username);
-    data.has_username_nul = containsNul(login.username);
-
     data.time_created = timeCreated;
     data.time_last_used = timeLastUsed;
-
-    const rustInvalidOrigin = isInvalidOriginError(data.error_message);
-
-    if (collectFailedOrigins && rustInvalidOrigin) {
-      recordOriginFailurePing(
-        login,
-        data.error_message,
-        timeCreated,
-        timeLastUsed
-      );
-    }
   }
 
   Glean.pwmgr.rustWriteFailure.record(data);
@@ -268,19 +87,6 @@ function recordMirrorFailure(runId, operation, error, login = null) {
   if (!poisoned) {
     Services.prefs.setBoolPref("signon.rustMirror.poisoned", true);
   }
-}
-
-function recordOriginFailurePing(login, error, timeCreated, timeLastUsed) {
-  const data = {
-    metric_version: rustMirrorTelemetryVersion,
-    origin: login.origin ?? "",
-    form_action_origin: login.formActionOrigin ?? "",
-    error_message: error,
-    time_created: timeCreated,
-    time_last_used: timeLastUsed,
-  };
-  Glean.pwmgr.rustOriginFailure.record(data);
-  GleanPings.pwmgrOriginFailure.submit();
 }
 
 function recordMirrorStatus(runId, operation, status) {
@@ -296,7 +102,8 @@ function recordMigrationStatus(
   runId,
   duration,
   numberOfLoginsToMigrate,
-  numberOfLoginsMigrated
+  numberOfLoginsMigrated,
+  numberOfLoginsQuarantined
 ) {
   const had_errors = numberOfLoginsMigrated < numberOfLoginsToMigrate;
 
@@ -306,6 +113,7 @@ function recordMigrationStatus(
     duration_ms: duration,
     number_of_logins_to_migrate: numberOfLoginsToMigrate,
     number_of_logins_migrated: numberOfLoginsMigrated,
+    number_of_logins_quarantined: numberOfLoginsQuarantined,
     had_errors,
   });
 }
@@ -572,9 +380,10 @@ export class LoginManagerRustMirror {
     const runId = Services.uuid.generateUUID();
     let numberOfLoginsToMigrate = 0;
     let numberOfLoginsMigrated = 0;
+    let numberOfLoginsQuarantined = 0;
 
     try {
-      this.#rustStorage.removeAllLogins();
+      await this.#rustStorage.removeAllLoginsAsync();
       await this.#rustStorage.clearAllPotentiallyVulnerablePasswords();
 
       this.#logger.log("Cleared existing Rust logins.");
@@ -585,14 +394,64 @@ export class LoginManagerRustMirror {
       const logins = await this.#jsonStorage.getAllLogins(false);
       numberOfLoginsToMigrate = logins.length;
 
-      const results = await this.#rustStorage.addLoginsAsync(logins, true);
-      for (const [i, { error }] of results.entries()) {
-        if (error) {
+      // AS Logins's origins are normalized, so they get implicitely merged,
+      // because origin is part of the key.
+      // Sort by timePasswordChanged descending so the login with the most
+      // recently changed password wins the bulk-add race; older-password
+      // duplicates are quarantined under moz-pwmngr-fixed:// later.
+      const sortedLogins = [...logins].sort(
+        (a, b) => (b.timePasswordChanged || 0) - (a.timePasswordChanged || 0)
+      );
+
+      const results = await this.#rustStorage.addLoginsAsync(
+        sortedLogins,
+        true
+      );
+      const failedLogins = results
+        .map(({ error }, i) => ({
+          login: sortedLogins[i],
+          error,
+          isDuplicate: /Login already exists/i.test(error?.message || ""),
+        }))
+        .filter(({ error }) => error);
+
+      numberOfLoginsMigrated += results.length - failedLogins.length;
+
+      const duplicates = [];
+      for (const { isDuplicate, error, login } of failedLogins) {
+        if (isDuplicate) {
+          const rescued = login.clone();
+          rescued.QueryInterface(Ci.nsILoginMetaInfo);
+          rescued.origin = rewriteOriginToFixedScheme(login.origin, login.guid);
+          duplicates.push(rescued);
+        } else {
           this.#logger.error("error during migration:", error.message);
-          recordMirrorFailure(runId, "migration", error, logins[i]);
+          recordMirrorFailure(runId, "migration", error, login);
+        }
+      }
+
+      const duplicatesResults = await this.#rustStorage.addLoginsAsync(
+        duplicates,
+        true
+      );
+
+      for (const [i, { error }] of duplicatesResults.entries()) {
+        if (error) {
+          this.#logger.error(
+            "error during migration of rescued duplicate:",
+            error.message
+          );
+          recordMirrorFailure(runId, "migration", error, duplicates[i]);
         } else {
           numberOfLoginsMigrated += 1;
+          numberOfLoginsQuarantined += 1;
         }
+      }
+
+      if (numberOfLoginsQuarantined) {
+        this.#logger.log(
+          `Quarantined ${numberOfLoginsQuarantined} duplicate logins during migration.`
+        );
       }
 
       this.#logger.log(
@@ -630,7 +489,8 @@ export class LoginManagerRustMirror {
         runId,
         duration,
         numberOfLoginsToMigrate,
-        numberOfLoginsMigrated
+        numberOfLoginsMigrated,
+        numberOfLoginsQuarantined
       );
       this.#migrationInProgress = false;
 

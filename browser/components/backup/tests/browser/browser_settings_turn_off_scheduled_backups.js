@@ -98,6 +98,12 @@ add_task(async function test_turn_off_scheduled_backups_confirm() {
     let events = Glean.browserBackup.toggleOff.testGetValue();
     Assert.equal(events.length, 1, "Found the toggleOff Glean event.");
 
+    Assert.equal(
+      Glean.browserBackup.schedulerToggleSource.testGetValue(),
+      "preferences",
+      "scheduler_toggle_source is credited to 'preferences' when disabled from the settings page."
+    );
+
     sandbox.restore();
   });
 });

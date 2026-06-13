@@ -6,12 +6,13 @@
       "matches": ["*://www.osmosis.org/notes/*"]
     }
   },
+  "css": {
+    "center_pages": ".justify-items-center { display: inline-grid; }"
+  },
   "interventions": [
     {
       "platforms": ["all"],
-      "content_scripts": {
-        "css": ["bug2010102-osmosis.org-center-pages.css"]
-      }
+      "css": ["center_pages"]
     }
   ]
 }

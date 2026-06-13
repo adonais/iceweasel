@@ -16,16 +16,15 @@ class xpcAccessibleTextLeafPoint final : public nsIAccessibleTextLeafPoint {
  public:
   xpcAccessibleTextLeafPoint(nsIAccessible* aAccessible, int32_t aOffset);
 
+  xpcAccessibleTextLeafPoint() = delete;
+  xpcAccessibleTextLeafPoint& operator=(const xpcAccessibleTextLeafPoint&) =
+      delete;
+
   NS_DECL_ISUPPORTS
   NS_DECL_NSIACCESSIBLETEXTLEAFPOINT
 
  private:
-  xpcAccessibleTextLeafPoint() = delete;
-
-  ~xpcAccessibleTextLeafPoint() {}
-
-  xpcAccessibleTextLeafPoint& operator=(const xpcAccessibleTextLeafPoint&) =
-      delete;
+  ~xpcAccessibleTextLeafPoint() = default;
 
   TextLeafPoint ToPoint();
 

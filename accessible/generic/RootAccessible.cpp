@@ -319,8 +319,8 @@ void RootAccessible::ProcessDOMEvent(Event* aDOMEvent, nsINode* aTarget) {
     uint64_t state = accessible->State();
     bool isEnabled = (state & states::EXPANDED) != 0;
 
-    RefPtr<AccEvent> accEvent =
-        new AccStateChangeEvent(accessible, states::EXPANDED, isEnabled);
+    auto accEvent = MakeRefPtr<AccStateChangeEvent>(
+        accessible, states::EXPANDED, isEnabled);
     nsEventShell::FireEvent(accEvent);
     return;
   }
@@ -354,7 +354,7 @@ void RootAccessible::ProcessDOMEvent(Event* aDOMEvent, nsINode* aTarget) {
         return;
       }
 
-      RefPtr<AccSelChangeEvent> selChangeEvent = new AccSelChangeEvent(
+      auto selChangeEvent = MakeRefPtr<AccSelChangeEvent>(
           treeAcc, treeItemAcc, AccSelChangeEvent::eSelectionAdd);
       nsEventShell::FireEvent(selChangeEvent);
       return;
@@ -394,8 +394,8 @@ void RootAccessible::ProcessDOMEvent(Event* aDOMEvent, nsINode* aTarget) {
       }
     }
   } else if (eventType.EqualsLiteral("DOMMenuItemActive")) {
-    RefPtr<AccEvent> event =
-        new AccStateChangeEvent(accessible, states::ACTIVE, true);
+    auto event =
+        MakeRefPtr<AccStateChangeEvent>(accessible, states::ACTIVE, true);
     nsEventShell::FireEvent(event);
     FocusMgr()->ActiveItemChanged(accessible);
 #ifdef A11Y_LOG
@@ -404,8 +404,8 @@ void RootAccessible::ProcessDOMEvent(Event* aDOMEvent, nsINode* aTarget) {
     }
 #endif
   } else if (eventType.EqualsLiteral("DOMMenuItemInactive")) {
-    RefPtr<AccEvent> event =
-        new AccStateChangeEvent(accessible, states::ACTIVE, false);
+    auto event =
+        MakeRefPtr<AccStateChangeEvent>(accessible, states::ACTIVE, false);
     nsEventShell::FireEvent(event);
 
     // Process DOMMenuItemInactive event for autocomplete only because this is
@@ -522,8 +522,8 @@ void RootAccessible::HandlePopupShownEvent(LocalAccessible* aAccessible) {
     if (!combobox) return;
 
     if (combobox->IsCombobox()) {
-      RefPtr<AccEvent> event =
-          new AccStateChangeEvent(combobox, states::EXPANDED, true);
+      auto event =
+          MakeRefPtr<AccStateChangeEvent>(combobox, states::EXPANDED, true);
       if (DocAccessible* doc = event->Document()) {
         doc->FireDelayedEvent(event);
       }
@@ -609,8 +609,8 @@ void RootAccessible::HandlePopupHidingEvent(nsINode* aPopupNode) {
 
   // Fire expanded state change event.
   if (widget->IsCombobox()) {
-    RefPtr<AccEvent> event =
-        new AccStateChangeEvent(widget, states::EXPANDED, false);
+    auto event =
+        MakeRefPtr<AccStateChangeEvent>(widget, states::EXPANDED, false);
     document->FireDelayedEvent(event);
   }
 }

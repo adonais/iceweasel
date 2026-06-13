@@ -707,3 +707,7 @@ nsDragSession::UpdateDragImage(nsINode* aImage, int32_t aImageX,
 
   return NS_OK;
 }
+
+#undef LOGD
+#undef LOGI
+#undef LOGE

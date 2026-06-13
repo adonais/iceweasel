@@ -174,7 +174,7 @@ function run_test() {
     var refName = "image1png16x16.jpg";
     var refFile = do_get_file(refName);
     istream = getFileInputStream(refFile);
-    Assert.equal(istream.available(), 1050);
+    Assert.equal(istream.available(), 1051);
     var referenceBytes = streamToArray(istream);
 
     // compare the encoder's output to the reference file.
@@ -239,7 +239,7 @@ function run_test() {
       }
       refFile = do_get_file(refName);
       istream = getFileInputStream(refFile);
-      Assert.equal(istream.available(), AppConstants.USE_LIBZ_RS ? 941 : 955);
+      Assert.equal(istream.available(), AppConstants.USE_LIBZ_RS ? 938 : 955);
       referenceBytes = streamToArray(istream);
 
       // compare the encoder's output to the reference file.

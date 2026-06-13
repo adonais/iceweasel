@@ -126,6 +126,8 @@ fun DownloadRenameDialog(
         fileNameState.text.contains("/") -> RenameFileError.InvalidFileName
         error is RenameFileError.NameAlreadyExists &&
                 error.proposedFileName == fileNameState.text -> error
+        error is RenameFileError.CaseOnlyNameChange &&
+            error.proposedFileName == fileNameState.text -> error
         else -> null
     }
 
@@ -192,6 +194,8 @@ fun DownloadRenameDialogTextField(
                 R.string.download_rename_error_exists_error,
                 currentError.proposedFileName,
             )
+        is RenameFileError.CaseOnlyNameChange ->
+            stringResource(R.string.download_rename_error_case_only_error)
         else -> null
     }
 

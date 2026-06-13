@@ -14,7 +14,7 @@ class MidiPermissionStatus final : public PermissionStatus {
   MidiPermissionStatus(nsIGlobalObject* aGlobal, bool aSysex);
 
  private:
-  ~MidiPermissionStatus() {}
+  ~MidiPermissionStatus() = default;
 
   nsLiteralCString GetPermissionType() const override;
 

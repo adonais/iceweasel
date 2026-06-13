@@ -16,7 +16,6 @@
 #include <sys/sysctl.h>
 #include <sys/types.h>
 
-#include <iostream>
 #include <sstream>
 #include <vector>
 

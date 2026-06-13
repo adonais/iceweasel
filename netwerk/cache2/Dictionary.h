@@ -253,7 +253,7 @@ class DictionaryOriginReader final : public nsICacheEntryOpenCallback,
   NS_DECL_NSIREQUESTOBSERVER
   NS_DECL_NSISTREAMLISTENER
 
-  DictionaryOriginReader() {}
+  DictionaryOriginReader() = default;
 
   void Start(
       bool aCreate, DictionaryOrigin* aOrigin, nsACString& aKey, nsIURI* aURI,
@@ -262,11 +262,11 @@ class DictionaryOriginReader final : public nsICacheEntryOpenCallback,
   void FinishMatch();
 
  private:
-  ~DictionaryOriginReader() {}
+  ~DictionaryOriginReader() = default;
 
   RefPtr<DictionaryOrigin> mOrigin;
   nsCOMPtr<nsIURI> mURI;
-  ExtContentPolicyType mType;
+  ExtContentPolicyType mType = ExtContentPolicyType::TYPE_INVALID;
   std::function<nsresult(bool, DictionaryCacheEntry*)> mCallback;
   RefPtr<DictionaryCache> mCache;
 };
@@ -304,7 +304,7 @@ class DictionaryOrigin : public nsICacheEntryMetaDataVisitor {
   }
 
  private:
-  virtual ~DictionaryOrigin() {}
+  virtual ~DictionaryOrigin() = default;
 
   nsCString mOrigin;
   nsCOMPtr<nsICacheEntry> mEntry;
@@ -330,7 +330,7 @@ class DictionaryCache final : public nsIObserver {
     (void)rv;
     MOZ_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv));
   }
-  ~DictionaryCache() {}
+  ~DictionaryCache() = default;
 
   friend class DictionaryOriginReader;
   friend class DictionaryCacheEntry;

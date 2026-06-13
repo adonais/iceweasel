@@ -1,3 +1,4 @@
+/* -*- Mode: c; c-basic-offset: 4; indent-tabs-mode: t; tab-width: 8; -*- */
 /* cairo - a vector graphics library with display and print output
  *
  * Copyright © 2002 University of Southern California
@@ -988,7 +989,7 @@ _cairo_xlib_font_create (cairo_xlib_display_t *display,
     cairo_xlib_font_t *priv;
     int i;
 
-    priv = _cairo_malloc (sizeof (cairo_xlib_font_t));
+    priv = _cairo_calloc (sizeof (cairo_xlib_font_t));
     if (unlikely (priv == NULL))
 	return NULL;
 
@@ -1087,7 +1088,7 @@ _cairo_xlib_glyph_attach (cairo_xlib_display_t	*display,
 {
     cairo_xlib_glyph_private_t *priv;
 
-    priv = _cairo_malloc (sizeof (*priv));
+    priv = _cairo_calloc (sizeof (*priv));
     if (unlikely (priv == NULL))
 	return _cairo_error (CAIRO_STATUS_NO_MEMORY);
 

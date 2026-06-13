@@ -10,7 +10,7 @@
     {
       "platforms": ["android"],
       "content_scripts": {
-        "js": ["bug1819678-free4talk.com-window-chrome-shim.js"]
+        "js": ["define_minimal_window_chrome.js"]
       },
       "ua_string": ["add_Chrome"]
     }

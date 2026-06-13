@@ -10,12 +10,13 @@
       "matches": ["https://*.directv.com.ec/*"]
     }
   },
+  "css": {
+    "hide_browser_notice": ".browser-compatible.compatible.incompatible { display: none; }"
+  },
   "interventions": [
     {
       "platforms": ["all"],
-      "content_scripts": {
-        "css": ["bug1610344-directv.com.co-hide-unsupported-message.css"]
-      }
+      "css": ["hide_browser_notice"]
     }
   ]
 }

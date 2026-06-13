@@ -38,13 +38,13 @@ class HTTPSRecordResolver : public nsIDNSListener {
   nsresult InvokeCallback();
 
   mozilla::Mutex mMutex{"HTTPSRecordResolver::mMutex"};
-  RefPtr<nsAHttpTransaction> mTransaction;
-  RefPtr<nsHttpConnectionInfo> mConnInfo;
+  RefPtr<nsAHttpTransaction> mTransaction MOZ_GUARDED_BY(mMutex);
+  RefPtr<nsHttpConnectionInfo> mConnInfo;  // Set in constructor only
   nsCOMPtr<nsICancelable> mCnameRequest MOZ_GUARDED_BY(mMutex);
   nsCOMPtr<nsICancelable> mHTTPSRecordRequest MOZ_GUARDED_BY(mMutex);
-  nsCOMPtr<nsIDNSAddrRecord> mAddrRecord;
-  nsCOMPtr<nsIDNSHTTPSSVCRecord> mHTTPSRecord;
-  bool mDone = false;
+  nsCOMPtr<nsIDNSAddrRecord> mAddrRecord MOZ_GUARDED_BY(mMutex);
+  nsCOMPtr<nsIDNSHTTPSSVCRecord> mHTTPSRecord MOZ_GUARDED_BY(mMutex);
+  bool mDone MOZ_GUARDED_BY(mMutex) = false;
 };
 
 }  // namespace net

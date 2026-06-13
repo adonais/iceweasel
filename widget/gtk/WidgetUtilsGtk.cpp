@@ -415,24 +415,9 @@ RefPtr<FocusRequestPromise> RequestWaylandFocusPromise() {
     return nullptr;
   }
 
-  RefPtr<nsWindow> sourceWindow = nsWindow::GetFocusedWindow();
-  if (!sourceWindow || sourceWindow->IsDestroyed()) {
-    LOGW("RequestWaylandFocusPromise() missing source window");
-    return nullptr;
-  }
-
   xdg_activation_v1* xdg_activation = WaylandDisplayGet()->GetXdgActivation();
   if (!xdg_activation) {
     LOGW("RequestWaylandFocusPromise() missing xdg_activation");
-    return nullptr;
-  }
-
-  GdkWindow* gdkWindow = sourceWindow->GetToplevelGdkWindow();
-  if (!gdkWindow) {
-    return nullptr;
-  }
-  wl_surface* surface = gdk_wayland_window_get_wl_surface(gdkWindow);
-  if (!surface) {
     return nullptr;
   }
 
@@ -444,10 +429,29 @@ RefPtr<FocusRequestPromise> RequestWaylandFocusPromise() {
   xdg_activation_token_v1_add_listener(
       aXdgToken, &token_listener,
       new XDGTokenRequest(aXdgToken, transferPromise));
-  xdg_activation_token_v1_set_serial(aXdgToken,
-                                     nsWaylandDisplay::GetLastEventSerial(),
-                                     WaylandDisplayGet()->GetSeat());
-  xdg_activation_token_v1_set_surface(aXdgToken, surface);
+
+  // If a Firefox window already has focus use it as the activation source so
+  // the token carries full focus-transfer rights.  On first launch there is
+  // no focused source window; we still commit a bare token (no serial/surface)
+  // so Mutter places the new window on the current workspace rather than a
+  // stale or phantom output.
+  RefPtr<nsWindow> sourceWindow = nsWindow::GetFocusedWindow();
+  if (sourceWindow && !sourceWindow->IsDestroyed()) {
+    GdkWindow* gdkWindow = sourceWindow->GetToplevelGdkWindow();
+    wl_surface* surface =
+        gdkWindow ? gdk_wayland_window_get_wl_surface(gdkWindow) : nullptr;
+    if (surface) {
+      xdg_activation_token_v1_set_serial(aXdgToken,
+                                         nsWaylandDisplay::GetLastEventSerial(),
+                                         WaylandDisplayGet()->GetSeat());
+      xdg_activation_token_v1_set_surface(aXdgToken, surface);
+    }
+  } else {
+    LOGW(
+        "RequestWaylandFocusPromise() no source window, "
+        "requesting bare token for workspace placement");
+  }
+
   xdg_activation_token_v1_commit(aXdgToken);
 
   LOGW("RequestWaylandFocusPromise() XDG Token sent");

@@ -29,7 +29,7 @@ function handleEventLocal(aEvent) {
     return;
   }
   // Ignore <browser> element in about:preferences and any other special pages
-  if ("gBrowser" in aEvent.target.ownerGlobal) {
+  if ("gBrowser" in aEvent.target.documentGlobal) {
     xulFrameLoaderCreatedCounter.numCalledSoFar++;
   }
 }
@@ -121,7 +121,7 @@ add_task(async function testReopen() {
 
       // Add a listener for XULFrameLoaderCreated
       initXulFrameLoaderCreatedCounter(xulFrameLoaderCreatedCounter);
-      regularPage.tab.ownerGlobal.gBrowser.addEventListener(
+      regularPage.tab.documentGlobal.gBrowser.addEventListener(
         "XULFrameLoaderCreated",
         handleEventLocal
       );
@@ -149,7 +149,7 @@ add_task(async function testReopen() {
         1,
         `XULFrameLoaderCreated was fired once when reopening ${uri} in container ${userCtxId}`
       );
-      regularPage.tab.ownerGlobal.gBrowser.removeEventListener(
+      regularPage.tab.documentGlobal.gBrowser.removeEventListener(
         "XULFrameLoaderCreated",
         handleEventLocal
       );

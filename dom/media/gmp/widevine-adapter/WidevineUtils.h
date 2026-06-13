@@ -46,6 +46,10 @@ class WidevineBuffer : public CDMBuffer {
  public:
   explicit WidevineBuffer(size_t aSize);
   ~WidevineBuffer() override;
+
+  WidevineBuffer(const WidevineBuffer&) = delete;
+  void operator=(const WidevineBuffer&) = delete;
+
   void Destroy() override;
   uint32_t Capacity() const override;
   uint8_t* Data() override;
@@ -60,8 +64,6 @@ class WidevineBuffer : public CDMBuffer {
 
  private:
   nsTArray<uint8_t> mBuffer;
-  WidevineBuffer(const WidevineBuffer&);
-  void operator=(const WidevineBuffer&);
 };
 
 class WidevineDecryptedBlock : public cdm::DecryptedBlock {

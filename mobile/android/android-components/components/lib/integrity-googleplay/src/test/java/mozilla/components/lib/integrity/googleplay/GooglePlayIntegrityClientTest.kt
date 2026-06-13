@@ -13,6 +13,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.mockito.Mockito.`when`
+import kotlin.test.assertIs
 
 class GooglePlayIntegrityClientTest {
     @Test
@@ -51,9 +52,9 @@ class GooglePlayIntegrityClientTest {
 
         val result = tokenProvider.create()
 
-        assertTrue(
+        assertIs<InvalidProjectNumber>(
+            result.exceptionOrNull(),
             "Result should be InvalidProjectNumber",
-            result.exceptionOrNull() is InvalidProjectNumber,
         )
     }
 
@@ -63,9 +64,9 @@ class GooglePlayIntegrityClientTest {
             { mock() },
             GoogleProjectNumber.Valid(100L),
         )
-        assertTrue(
+        assertIs<GooglePlayTokenProviderFactory>(
+            tokenProvider,
             "Result should be an instance of GooglePlayTokenProviderFactory",
-            tokenProvider is GooglePlayTokenProviderFactory,
         )
     }
 

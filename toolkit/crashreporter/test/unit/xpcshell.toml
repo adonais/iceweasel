@@ -166,6 +166,8 @@ skip-if = [
 
 ["test_crashreporter_omnijar_loading.js"]
 
+["test_crashreports.js"]
+
 ["test_event_files.js"]
 
 ["test_kill.js"]

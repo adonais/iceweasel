@@ -25,6 +25,7 @@ LOCAL_INCLUDES += [
     "..",
     "/media/ffvpx",
     "/media/mozva",
+    "/third_party/khronos/vulkan-headers/include",
 ]
 
 CXXFLAGS += ["-Wno-deprecated-declarations"]

@@ -21,7 +21,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -34,6 +33,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.net.toUri
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.compose.content
+import mozilla.components.compose.base.button.IconButton
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.share.QR_CODE_URI_KEY
 import org.mozilla.fenix.theme.FirefoxTheme
@@ -120,10 +120,13 @@ fun QRCodeDisplayScreen(
                 )
             },
             navigationIcon = {
-                IconButton(onClick = { onClose() }) {
+                IconButton(
+                    onClick = { onClose() },
+                    contentDescription = stringResource(R.string.qr_code_display_close),
+                ) {
                     Icon(
                         imageVector = Icons.Default.Close,
-                        contentDescription = stringResource(R.string.qr_code_display_close),
+                        contentDescription = null,
                     )
                 }
             },

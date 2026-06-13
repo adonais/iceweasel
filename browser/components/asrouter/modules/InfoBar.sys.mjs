@@ -177,11 +177,11 @@ class InfoBarNotification {
    */
   async showNotification(browser) {
     let { content } = this.message;
-    let { gBrowser } = browser.ownerGlobal;
+    let { gBrowser } = browser.documentGlobal;
     let doc = gBrowser.ownerDocument;
     let notificationContainer;
     if ([TYPES.GLOBAL, TYPES.UNIVERSAL].includes(content.type)) {
-      notificationContainer = browser.ownerGlobal.gNotificationBox;
+      notificationContainer = browser.documentGlobal.gNotificationBox;
     } else {
       notificationContainer = gBrowser.getNotificationBox(browser);
     }
@@ -376,7 +376,7 @@ class InfoBarNotification {
   buttonCallback(notificationBox, btnDescription, target) {
     this.dispatchUserAction(
       btnDescription.action,
-      target.ownerGlobal.gBrowser.selectedBrowser
+      target.documentGlobal.gBrowser.selectedBrowser
     );
     let isPrimary = target.classList.contains("primary");
     let eventName = isPrimary
@@ -617,7 +617,7 @@ export const InfoBar = {
    * @returns {Promise<InfoBarNotification|null>} The notification instance, or null if not shown.
    */
   async showInfoBarMessage(browser, message, dispatch, universalInNewWin) {
-    const win = browser?.ownerGlobal;
+    const win = browser?.documentGlobal;
     if (!this.isValidInfobarWindow(win)) {
       return null;
     }
@@ -667,14 +667,14 @@ export const InfoBar = {
         () => {
           // Remove this window’s stale entry
           InfoBar._universalInfobars = InfoBar._universalInfobars.filter(
-            ({ box }) => box.ownerGlobal !== win
+            ({ box }) => box.documentGlobal !== win
           );
 
           if (isUniversal) {
             // If there’s still at least one live universal infobar,
             // make it the active infobar; otherwise clear the active infobar
             const nextEntry = InfoBar._universalInfobars.find(
-              ({ box }) => !box.ownerGlobal?.closed
+              ({ box }) => !box.documentGlobal?.closed
             );
             const nextNotification = nextEntry?.notification;
             InfoBar._activeInfobar = nextNotification

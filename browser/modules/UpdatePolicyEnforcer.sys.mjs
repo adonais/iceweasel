@@ -7,7 +7,7 @@ const PREF_APP_UPDATE_COMPULSORY_RESTART = "app.update.compulsory_restart";
 let deferredRestartTasks = null;
 
 ChromeUtils.defineESModuleGetters(lazy, {
-  DeferredTask: "resource://gre/modules/DeferredTask.sys.mjs",
+  ScheduledTask: "resource://gre/modules/ScheduledTask.sys.mjs",
   InfoBar: "resource:///modules/asrouter/InfoBar.sys.mjs",
 });
 
@@ -16,6 +16,7 @@ function forceRestart() {
   Services.startup.quit(
     Services.startup.eForceQuit | Services.startup.eRestart
   );
+  console.error(`Firefox is restarting`);
 }
 
 function infobarDispatchCallback(action, _selectedBrowser) {
@@ -62,7 +63,11 @@ function showNotificationToolbar(restartZonedDateTime) {
   if (!win) {
     return;
   }
-  lazy.InfoBar.showInfoBarMessage(win, message, infobarDispatchCallback);
+  lazy.InfoBar.showInfoBarMessage(
+    win.gBrowser.selectedBrowser,
+    message,
+    infobarDispatchCallback
+  );
 }
 
 /**
@@ -72,8 +77,8 @@ export function testingOnly_resetTasks() {
   if (!Cu.isInAutomation) {
     throw new Error("this method only usable in testing");
   }
-  deferredRestartTasks?.deferredNotificationTask?.disarm();
-  deferredRestartTasks?.deferredRestartTask?.disarm();
+  deferredRestartTasks?.notificationTask?.disarm();
+  deferredRestartTasks?.restartTask?.disarm();
   deferredRestartTasks = null;
 }
 
@@ -86,8 +91,8 @@ export function testingOnly_getTaskStatus() {
   }
   if (deferredRestartTasks) {
     const res = {
-      notificationTask: deferredRestartTasks.deferredNotificationTask?.isArmed,
-      restartTask: deferredRestartTasks.deferredRestartTask?.isArmed,
+      notificationTask: deferredRestartTasks.notificationTask?.isArmed,
+      restartTask: deferredRestartTasks.restartTask?.isArmed,
     };
     return res;
   }
@@ -99,66 +104,72 @@ export function testingOnly_getTaskStatus() {
 
 /**
  * Params:
- * now: A Temporal.ZonedDateTime object representing the current time.
+ * nowInstant: A Temporal.Instant object representing the current time.
  * notificationPeriodHours: The minimum amount of time in hours between when an update has been staged and when a warning will be displayed
- * restartTimeOfDay: The time of day, in local time, that the restart will take place
+ * restartTimeOfDay: The time of day, in local time, that the restart will take place, in the form of an object like: {hour: 3, minute: 14}
  *
  * Returns:
  * {
- *  notificationDelayMillis: the number of milliseconds before a warning is displayed
- *  restartDelayMillis: the number of milliseconds before the current Firefox instance will forcibly quit
- *  restartTimeOfDay: the wall-clock time of day when restart will happen.
+ *  notificationZonedDateTime: a Temporal.ZonedDateTime object representing the time when the notification bar should start to be shown.
+ *  restartZonedDateTime: a Temporal.ZonedDateTime object representing the time when the current Firefox instance will forcibly quit
  * }
  */
-export function calculateDelay(now, notificationPeriodHours, restartTimeOfDay) {
-  const delayBeforeNotification = Temporal.Duration.from({
+export function calculateSchedule(
+  nowInstant,
+  notificationPeriodHours,
+  restartTimeOfDay
+) {
+  // The notification time is nowInstant + notificationPeriodHours
+  const notificationDelay = Temporal.Duration.from({
     hours: notificationPeriodHours,
   });
+  const notificationInstant = nowInstant.add(notificationDelay);
+  const notificationZonedDateTime = notificationInstant.toZonedDateTimeISO(
+    Temporal.Now.timeZoneId()
+  );
 
-  // Figure out how long until compulsory restart time. The earliest is 1 hour past the notification time, the latest is 25 hours past the notification time.
+  // Figure out the compulsory restart time. The earliest is 1 hour past the notification time, the latest is 25 hours past the notification time.
   // restart time = if (there is an upcoming `restartTimeOfDay` on the notification day, an it's more than an hour in the future) then (notification day at restart time) else (notification day + 1 at restart time)
-  const notificationDateTime = now.add(delayBeforeNotification);
   const restartTime = Temporal.PlainTime.from({
     hour: restartTimeOfDay.Hour,
     minute: restartTimeOfDay.Minute,
   });
-  let scheduledRestartZonedDateTime =
-    Temporal.ZonedDateTime.from(notificationDateTime).withPlainTime(
-      restartTime
-    );
-  // if (restartTimeOnNotificationDay - notificationDateTime < 1 hour) then restartTimeOnNotificationDay += 1 day
+
+  let restartZonedDateTime =
+    notificationZonedDateTime.withPlainTime(restartTime);
+
+  // Make sure the user has at least 1 hour notification before restart time.
+  // If not, postpone the restart by 24 hours.
   if (
     Temporal.Duration.compare(
-      notificationDateTime.until(scheduledRestartZonedDateTime),
+      notificationZonedDateTime.until(restartZonedDateTime),
       Temporal.Duration.from({ hours: 1 })
     ) < 0
   ) {
     // it's less than 1 hour until the restart time.
-    scheduledRestartZonedDateTime = scheduledRestartZonedDateTime.add(
-      Temporal.Duration.from({ days: 1 })
+    restartZonedDateTime = restartZonedDateTime.add(
+      Temporal.Duration.from({ hours: 24 })
     );
   }
-  const restartDelay = now.until(scheduledRestartZonedDateTime);
-  const notificationDelay = now.until(notificationDateTime);
-  return { restartDelay, notificationDelay, scheduledRestartZonedDateTime };
+
+  return { notificationZonedDateTime, restartZonedDateTime };
 }
 
-// Create deferred tasks with requested delays
-export function createDeferredRestartTasks(
-  restartDelay,
-  notificationDelay,
-  scheduledRestartZonedDateTime
+// Create scheduled tasks with requested date/time
+export function createScheduledRestartTasks(
+  restartZonedDateTime,
+  notificationZonedDateTime
 ) {
-  const deferredNotificationTask = new lazy.DeferredTask(() => {
-    showNotificationToolbar(scheduledRestartZonedDateTime);
-  }, notificationDelay.total("milliseconds"));
-  const deferredRestartTask = new lazy.DeferredTask(
+  const notificationTask = new lazy.ScheduledTask(() => {
+    showNotificationToolbar(restartZonedDateTime);
+  }, notificationZonedDateTime.epochMilliseconds);
+  const restartTask = new lazy.ScheduledTask(
     forceRestart,
-    restartDelay.total("milliseconds")
+    restartZonedDateTime.epochMilliseconds
   );
-  deferredNotificationTask.arm();
-  deferredRestartTask.arm();
-  return { deferredNotificationTask, deferredRestartTask };
+  notificationTask.arm();
+  restartTask.arm();
+  return { notificationTask, restartTask };
 }
 
 // Read the policy from prefs and parse the JSON.
@@ -188,18 +199,23 @@ export function handleCompulsoryUpdatePolicy() {
   if (!deferredRestartTasks) {
     const compulsoryRestartSetting = getCompulsoryRestartPolicy();
     if (compulsoryRestartSetting) {
-      const now = Temporal.Now.zonedDateTimeISO();
-      const { restartDelay, notificationDelay, scheduledRestartZonedDateTime } =
-        calculateDelay(
+      const now = Temporal.Now.instant();
+      const { restartZonedDateTime, notificationZonedDateTime } =
+        calculateSchedule(
           now,
           compulsoryRestartSetting.NotificationPeriodHours,
           compulsoryRestartSetting.RestartTimeOfDay
         );
-      deferredRestartTasks = createDeferredRestartTasks(
-        restartDelay,
-        notificationDelay,
-        scheduledRestartZonedDateTime
-      );
+      if (restartZonedDateTime && notificationZonedDateTime) {
+        deferredRestartTasks = createScheduledRestartTasks(
+          restartZonedDateTime,
+          notificationZonedDateTime
+        );
+      } else {
+        console.error(
+          `Invalid restart settings: ${JSON.stringify(compulsoryRestartSetting)}`
+        );
+      }
     }
   }
 }
@@ -210,6 +226,7 @@ const observer = {
       case "update-downloaded":
       case "update-staged":
         handleCompulsoryUpdatePolicy();
+        break;
     }
   },
 };

@@ -49,16 +49,21 @@ class AppRequestInterceptor(
         }
 
         val services = context.components.services
-        return services.appLinksInterceptor.onLoadRequest(
-            engineSession,
-            uri,
-            lastUri,
-            hasUserGesture,
-            isSameDomain,
-            isRedirect,
-            isDirectNavigation,
-            isSubframeRequest,
-        )
+        return listOf(
+            services.appLinksInterceptor,
+            services.storyUTMRequestInterceptor,
+        ).firstNotNullOfOrNull {
+            it.onLoadRequest(
+                engineSession,
+                uri,
+                lastUri,
+                hasUserGesture,
+                isSameDomain,
+                isRedirect,
+                isDirectNavigation,
+                isSubframeRequest,
+            )
+        }
     }
 
     override fun onErrorRequest(

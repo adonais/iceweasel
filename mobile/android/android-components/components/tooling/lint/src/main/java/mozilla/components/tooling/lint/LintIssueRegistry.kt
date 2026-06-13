@@ -32,8 +32,12 @@ class LintIssueRegistry : IssueRegistry() {
         VisibleForTestingDetector.ISSUE_VISIBLE_FOR_TESTING_ANNOTATION,
         NoStaticOrObjectMockingDetector.ISSUE_NO_STATIC_MOCKING,
         NoStaticOrObjectMockingDetector.ISSUE_NO_OBJECT_MOCKING,
+        NoFunctionTypeMockingDetector.ISSUE_NO_FUNCTION_TYPE_MOCKING,
         NoDispatchersSetMainDetector.ISSUE_NO_DISPATCHERS_SET_MAIN,
         ShowSnackbarDetector.ISSUE_NO_DIRECT_SHOW_SNACKBAR,
+        ComposeIconButtonDetector.ISSUE_ICON_BUTTON_USAGE,
+        AssertIsDetector.ISSUE_USE_ASSERT_IS,
+        JUnitAssertNotNullDetector.ISSUE_USE_KOTLIN_TEST_ASSERT_NOT_NULL,
     ) + ConstraintLayoutPerfDetector.ISSUES + ContextCompatDetector.ISSUES
     override val vendor: Vendor = Vendor(
         vendorName = "Mozilla",

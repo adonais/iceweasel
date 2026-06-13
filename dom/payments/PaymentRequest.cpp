@@ -699,7 +699,7 @@ already_AddRefed<Promise> PaymentRequest::CanMakePayment(ErrorResult& aRv) {
     return nullptr;
   }
 
-  nsIGlobalObject* global = GetOwnerGlobal();
+  nsIGlobalObject* global = GetRelevantGlobal();
   RefPtr<Promise> promise = Promise::Create(global, aRv);
   if (aRv.Failed()) {
     return nullptr;
@@ -728,7 +728,7 @@ already_AddRefed<Promise> PaymentRequest::Show(
     return nullptr;
   }
 
-  nsIGlobalObject* global = GetOwnerGlobal();
+  nsIGlobalObject* global = GetRelevantGlobal();
   nsCOMPtr<nsPIDOMWindowInner> win = do_QueryInterface(global);
   Document* doc = win->GetExtantDoc();
 
@@ -846,7 +846,7 @@ already_AddRefed<Promise> PaymentRequest::Abort(ErrorResult& aRv) {
     return nullptr;
   }
 
-  nsIGlobalObject* global = GetOwnerGlobal();
+  nsIGlobalObject* global = GetRelevantGlobal();
   RefPtr<Promise> promise = Promise::Create(global, aRv);
   if (aRv.Failed()) {
     return nullptr;
@@ -1162,7 +1162,7 @@ void PaymentRequest::RejectedCallback(JSContext* aCx,
 }
 
 bool PaymentRequest::InFullyActiveDocument() {
-  nsIGlobalObject* global = GetOwnerGlobal();
+  nsIGlobalObject* global = GetRelevantGlobal();
   if (!global) {
     return false;
   }

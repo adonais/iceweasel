@@ -14,10 +14,9 @@
 class nsIFile;
 class nsILocalFileMac;
 @class NSArray;
+@class NSSavePanel;
 
 class nsFilePicker final : public nsBaseFilePicker {
-  class AsyncShowFilePicker;
-
  public:
   nsFilePicker();
   using nsIFilePicker::ResultCode;
@@ -49,20 +48,32 @@ class nsFilePicker final : public nsBaseFilePicker {
   virtual ~nsFilePicker();
 
   virtual void InitNative(nsIWidget* aParent, const nsAString& aTitle) override;
-  nsresult Show(ResultCode* _retval);
 
-  // actual implementations of get/put dialogs using NSOpenPanel & NSSavePanel
-  // aFile is an existing but unspecified file. These functions must specify it.
+  // Configure and present the requested panel asynchronously. The panel is
+  // shown as a window-modal sheet on the parent widget's NSWindow when one is
+  // available, or modelessly otherwise. Each method invokes aCallback->Done on
+  // the main thread when the user dismisses the panel.
+  void PresentOpenPanel(bool aAllowMultiple,
+                        nsIFilePickerShownCallback* aCallback);
+  void PresentFolderPanel(nsIFilePickerShownCallback* aCallback);
+  void PresentSavePanel(nsIFilePickerShownCallback* aCallback);
+
+  // Presents aPanel asynchronously using the best available AppKit API: as a
+  // sheet attached to the parent widget's NSWindow when one exists, otherwise
+  // as a modeless window. aHandler is invoked on the main thread once the user
+  // dismisses the panel.
   //
-  // will return |returnCancel| or |returnOK| as result.
-  ResultCode GetLocalFiles(bool inAllowMultiple, nsCOMArray<nsIFile>& outFiles);
-  ResultCode GetLocalFolder(nsIFile** outFile);
-  ResultCode PutLocalFile(nsIFile** outFile);
+  // The parameter is typed as NSSavePanel* because that is the common
+  // superclass in AppKit for NSSavePanel and NSOpenPanel; both inherit
+  // `beginSheetModalForWindow:completionHandler:` and
+  // `beginWithCompletionHandler:` from it. An NSOpenPanel may be passed here.
+  void BeginPanelAsync(NSSavePanel* aPanel, void (^aHandler)(NSModalResponse));
 
   void SetDialogTitle(const nsString& inTitle, id aDialog);
   NSString* PanelDefaultDirectory();
   NSView* GetAccessoryView();
 
+  nsCOMPtr<nsIWidget> mParentWidget;
   nsString mTitle;
   nsCOMArray<nsIFile> mFiles;
   nsString mDefaultFilename;

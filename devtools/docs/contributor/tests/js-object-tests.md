@@ -11,8 +11,8 @@ This includes:
 * ...
 
 This test framework consists in:
-* a manifest file, [AllJavaScriptTypes.mjs](https://searchfox.org/mozilla-central/source/devtools/shared/tests/objects/AllJavaScriptTypes.mjs) which defines all the JS objects that gecko can spawn
-* one xpcshell or one mochitest file, using [JSObjectsTestUtils](https://searchfox.org/mozilla-central/source/devtools/shared/tests/objects/JSObjectsTestUtils.sys.mjs) helper to evaluate all the JS Objects and generate a value for each of them.
+* a manifest file, [AllJavascriptTypes.mjs](https://searchfox.org/firefox-main/source/devtools/shared/tests/objects/AllJavascriptTypes.mjs) which defines all the JS objects that gecko can spawn
+* one xpcshell or one mochitest file, using [JSObjectsTestUtils](https://searchfox.org/firefox-main/source/devtools/shared/tests/objects/JSObjectsTestUtils.sys.mjs) helper to evaluate all the JS Objects and generate a value for each of them.
 * a snapshot file, read and written by JSObjectsTestUtils, specific to each xpcshell/mochitest and storing all its the generated values.
 
 You can run your test to execute the assertions:
@@ -57,7 +57,7 @@ It exposes only two methods:
 
   This method will receive a single argument which is an object with two attributes:
   * `context`
-    A string whose value can be one of [AllJavaScriptTypes.mjs](https://searchfox.org/mozilla-central/source/devtools/shared/tests/objects/AllJavaScriptTypes.mjs) `CONTEXTS` dictionary:
+    A string whose value can be one of [AllJavascriptTypes.mjs](https://searchfox.org/firefox-main/source/devtools/shared/tests/objects/AllJavascriptTypes.mjs) `CONTEXTS` dictionary:
       * "js": Basic JS value available from any possible JavaScript context (worker, page, chrome scopes)
       * "page": Values only available from a Web page global
       * "chrome": Privileged values, only available from a chrome, privileged scope
@@ -124,7 +124,7 @@ add_task(async function () {
 
 ## AllJavaScriptTypes manifest
 
-All the JavaScript object examples are stored in a manifest file located in the current folder: AllJavaScriptTypes.mjs.
+All the JavaScript object examples are stored in a manifest file located in the current folder: AllJavascriptTypes.mjs.
 
 This module exports an array of objects descriptions, which are objects with the two following attributes:
 * `context`:

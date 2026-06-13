@@ -1001,7 +1001,7 @@ class FontInspector {
       previewText,
       previewFillStyle: getCssVariableColor(
         "--theme-body-color",
-        this.document.ownerGlobal
+        this.document.documentGlobal
       ),
     };
 

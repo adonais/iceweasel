@@ -41,14 +41,9 @@ add_task(async function test_noConnection_illustration() {
       "noConnection illustration src is correct"
     );
     Assert.equal(
-      img.getAttribute("data-l10n-id"),
-      "fp-neterror-illustration-alt",
-      "noConnection illustration data-l10n-id is correct"
-    );
-    Assert.equal(
-      img.getAttribute("data-l10n-attrs"),
-      "alt",
-      "data-l10n-attrs is set to 'alt'"
+      img.getAttribute("alt"),
+      "",
+      "noConnection illustration is decorative"
     );
   });
 
@@ -85,14 +80,9 @@ add_task(async function test_workOffline_showsNoConnectionIllustration() {
       "work offline illustration src is correct"
     );
     Assert.equal(
-      img.getAttribute("data-l10n-id"),
-      "fp-neterror-illustration-alt",
-      "work offline illustration data-l10n-id is correct"
-    );
-    Assert.equal(
-      img.getAttribute("data-l10n-attrs"),
-      "alt",
-      "data-l10n-attrs is set to 'alt'"
+      img.getAttribute("alt"),
+      "",
+      "work offline illustration is decorative"
     );
   });
 
@@ -115,14 +105,9 @@ add_task(async function test_securityError_illustration() {
       "securityError illustration src is correct"
     );
     Assert.equal(
-      img.getAttribute("data-l10n-id"),
-      "fp-certerror-illustration-alt",
-      "securityError illustration data-l10n-id is correct"
-    );
-    Assert.equal(
-      img.getAttribute("data-l10n-attrs"),
-      "alt",
-      "data-l10n-attrs is set to 'alt'"
+      img.getAttribute("alt"),
+      "",
+      "securityError illustration is decorative"
     );
   });
 

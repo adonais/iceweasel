@@ -700,7 +700,6 @@ talos-xperf:
     worker-type:
         by-test-platform:
             windows11-64-25h2(-shippable)?/opt: win11-64-25h2-privileged
-            windows11-64-24h2(-shippable)?/opt: win11-64-24h2-privileged
             default: default
     run-as-administrator:
         by-test-platform:

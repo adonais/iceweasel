@@ -4,21 +4,25 @@
 "use strict";
 
 async function testOpenMenu(btn, method) {
-  let shown = BrowserTestUtils.waitForEvent(btn.ownerGlobal, "shown", true);
+  let shown = BrowserTestUtils.waitForEvent(btn.documentGlobal, "shown", true);
   await method();
   await shown;
   is(btn.getAttribute("aria-expanded"), "true", "expanded when open");
 }
 
 async function testCloseMenu(btn, method) {
-  let hidden = BrowserTestUtils.waitForEvent(btn.ownerGlobal, "hidden", true);
+  let hidden = BrowserTestUtils.waitForEvent(
+    btn.documentGlobal,
+    "hidden",
+    true
+  );
   await method();
   await hidden;
   is(btn.getAttribute("aria-expanded"), "false", "not expanded when closed");
 }
 
 async function testButton(btn) {
-  let win = btn.ownerGlobal;
+  let win = btn.documentGlobal;
 
   is(btn.getAttribute("aria-haspopup"), "menu", "it has a menu");
   is(btn.getAttribute("aria-expanded"), "false", "not expanded");

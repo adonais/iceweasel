@@ -169,12 +169,19 @@ static inline int64_t interpolation_filter_rd(
   this_rd_stats = *rd_stats_luma;
   const int_interpfilters last_best = mbmi->interp_filters;
   mbmi->interp_filters = filter_sets[filter_idx];
+
+  const int is_sharp =
+      (mbmi->interp_filters.as_filters.x_filter == MULTITAP_SHARP ||
+       mbmi->interp_filters.as_filters.y_filter == MULTITAP_SHARP);
+  const int mul =
+      (is_sharp && cpi->sf.interp_sf.use_more_sharp_interp) ? 90 : 100;
+
   const int tmp_rs =
       get_switchable_rate(x, mbmi->interp_filters, switchable_ctx,
                           cm->seq_params->enable_dual_filter);
 
   int64_t min_rd = RDCOST(x->rdmult, tmp_rs, 0);
-  if (min_rd > *rd) {
+  if (min_rd * mul / 100 > *rd) {
     mbmi->interp_filters = last_best;
     return 0;
   }
@@ -222,7 +229,7 @@ static inline int64_t interpolation_filter_rd(
       for (int plane = 1; plane < num_planes; ++plane) {
         int64_t tmp_rd =
             RDCOST(x->rdmult, tmp_rs + this_rd_stats.rate, this_rd_stats.dist);
-        if (tmp_rd >= *rd) {
+        if (tmp_rd * mul / 100 >= *rd) {
           mbmi->interp_filters = last_best;
           return 0;
         }
@@ -240,7 +247,7 @@ static inline int64_t interpolation_filter_rd(
   int64_t tmp_rd =
       RDCOST(x->rdmult, tmp_rs + this_rd_stats.rate, this_rd_stats.dist);
 
-  if (tmp_rd < *rd) {
+  if (tmp_rd * mul / 100 < *rd) {
     *rd = tmp_rd;
     *switchable_rate = tmp_rs;
     if (skip_pred != interp_search_flags->default_interp_skip_flags) {

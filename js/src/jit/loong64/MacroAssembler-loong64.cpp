@@ -3767,8 +3767,6 @@ static void AtomicExchange(MacroAssembler& masm,
                            Register offsetTemp, Register maskTemp,
                            Register output) {
   UseScratchRegisterScope temps(masm);
-  Register scratch = temps.Acquire();
-  Register scratch2 = temps.Acquire();
   bool signExtend = Scalar::isSignedIntType(type);
   unsigned nbytes = Scalar::byteSize(type);
 
@@ -3787,8 +3785,10 @@ static void AtomicExchange(MacroAssembler& masm,
 
   Label again;
 
-  Register memTemp = scratch2;
-  masm.computeEffectiveAddress(mem, memTemp);
+  Register scratch2 = temps.Acquire();
+  masm.computeEffectiveAddress(mem, scratch2);
+
+  Register scratch = temps.Acquire();
 
   if (nbytes == 4) {
     masm.memoryBarrierBefore(sync);
@@ -3799,9 +3799,9 @@ static void AtomicExchange(MacroAssembler& masm,
                   FaultingCodeOffset(masm.currentOffset()));
     }
 
-    masm.as_ll_w(output, memTemp, 0);
+    masm.as_ll_w(output, scratch2, 0);
     masm.as_or(scratch, value, zero);
-    masm.as_sc_w(scratch, memTemp, 0);
+    masm.as_sc_w(scratch, scratch2, 0);
     masm.ma_b(scratch, Register(scratch), &again, Assembler::Zero, ShortJump);
 
     masm.memoryBarrierAfter(sync);
@@ -3809,8 +3809,8 @@ static void AtomicExchange(MacroAssembler& masm,
     return;
   }
 
-  masm.as_andi(offsetTemp, memTemp, 3);
-  masm.subPtr(offsetTemp, memTemp);
+  masm.as_andi(offsetTemp, scratch2, 3);
+  masm.subPtr(offsetTemp, scratch2);
   masm.as_slli_w(offsetTemp, offsetTemp, 3);
   masm.ma_li(maskTemp, Imm32(UINT32_MAX >> ((4 - nbytes) * 8)));
   masm.as_sll_w(maskTemp, maskTemp, offsetTemp);
@@ -3834,11 +3834,11 @@ static void AtomicExchange(MacroAssembler& masm,
                 FaultingCodeOffset(masm.currentOffset()));
   }
 
-  masm.as_ll_w(output, memTemp, 0);
+  masm.as_ll_w(output, scratch2, 0);
   masm.as_and(scratch, output, maskTemp);
   masm.as_or(scratch, scratch, valueTemp);
 
-  masm.as_sc_w(scratch, memTemp, 0);
+  masm.as_sc_w(scratch, scratch2, 0);
 
   masm.ma_b(scratch, Register(scratch), &again, Assembler::Zero, ShortJump);
 
@@ -3906,8 +3906,6 @@ static void AtomicFetchOp(MacroAssembler& masm,
                           Register offsetTemp, Register maskTemp,
                           Register output) {
   UseScratchRegisterScope temps(masm);
-  Register scratch = temps.Acquire();
-  Register scratch2 = temps.Acquire();
   bool signExtend = Scalar::isSignedIntType(type);
   unsigned nbytes = Scalar::byteSize(type);
 
@@ -3926,8 +3924,10 @@ static void AtomicFetchOp(MacroAssembler& masm,
 
   Label again;
 
-  Register memTemp = scratch2;
-  masm.computeEffectiveAddress(mem, memTemp);
+  Register scratch2 = temps.Acquire();
+  masm.computeEffectiveAddress(mem, scratch2);
+
+  Register scratch = temps.Acquire();
 
   if (nbytes == 4) {
     masm.memoryBarrierBefore(sync);
@@ -3938,7 +3938,7 @@ static void AtomicFetchOp(MacroAssembler& masm,
                   FaultingCodeOffset(masm.currentOffset()));
     }
 
-    masm.as_ll_w(output, memTemp, 0);
+    masm.as_ll_w(output, scratch2, 0);
 
     switch (op) {
       case AtomicOp::Add:
@@ -3960,7 +3960,7 @@ static void AtomicFetchOp(MacroAssembler& masm,
         MOZ_CRASH();
     }
 
-    masm.as_sc_w(scratch, memTemp, 0);
+    masm.as_sc_w(scratch, scratch2, 0);
     masm.ma_b(scratch, Register(scratch), &again, Assembler::Zero, ShortJump);
 
     masm.memoryBarrierAfter(sync);
@@ -3968,8 +3968,8 @@ static void AtomicFetchOp(MacroAssembler& masm,
     return;
   }
 
-  masm.as_andi(offsetTemp, memTemp, 3);
-  masm.subPtr(offsetTemp, memTemp);
+  masm.as_andi(offsetTemp, scratch2, 3);
+  masm.subPtr(offsetTemp, scratch2);
   masm.as_slli_w(offsetTemp, offsetTemp, 3);
   masm.ma_li(maskTemp, Imm32(UINT32_MAX >> ((4 - nbytes) * 8)));
   masm.as_sll_w(maskTemp, maskTemp, offsetTemp);
@@ -3984,7 +3984,7 @@ static void AtomicFetchOp(MacroAssembler& masm,
                 FaultingCodeOffset(masm.currentOffset()));
   }
 
-  masm.as_ll_w(scratch, memTemp, 0);
+  masm.as_ll_w(scratch, scratch2, 0);
   masm.as_srl_w(output, scratch, offsetTemp);
 
   switch (op) {
@@ -4021,7 +4021,7 @@ static void AtomicFetchOp(MacroAssembler& masm,
   masm.as_and(scratch, scratch, maskTemp);
   masm.as_or(scratch, scratch, valueTemp);
 
-  masm.as_sc_w(scratch, memTemp, 0);
+  masm.as_sc_w(scratch, scratch2, 0);
 
   masm.ma_b(scratch, Register(scratch), &again, Assembler::Zero, ShortJump);
 

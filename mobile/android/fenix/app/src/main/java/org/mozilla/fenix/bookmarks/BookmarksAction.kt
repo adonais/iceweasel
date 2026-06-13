@@ -157,4 +157,16 @@ internal sealed class DeletionDialogAction : BookmarksAction {
 internal sealed class SnackbarAction : BookmarksAction {
     data object Dismissed : SnackbarAction()
     data object SelectFolderFailed : SnackbarAction()
+    data object ImportFailed : SnackbarAction()
+}
+
+internal data object RootOverflowMenuClicked : BookmarksAction
+internal data object RootOverflowMenuDismissed : BookmarksAction
+internal sealed class ImportAction : BookmarksAction {
+    internal data object ImportFailed : ImportAction()
+    internal data class ImportSucceeded(val count: Int) : ImportAction()
+    internal sealed class ImportFileClicked : ImportAction() {
+        internal data object FromMenu : ImportFileClicked()
+        internal data object FromButton : ImportFileClicked()
+    }
 }

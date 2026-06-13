@@ -562,11 +562,9 @@ export class DiscoveryStreamAdminUI extends React.PureComponent {
               <td className="min inferred-score-col" />
               <td>
                 <div className="toggle-wrapper">
-                  {/** @backward-compat { version 150 } React 16 (cached page) uses ontoggle; React 19 uses onToggle. Remove onToggle once Firefox 150 reaches Release. */}
                   <moz-toggle
                     id="inferred-personalization-overrides"
                     pressed={overridesEnabled || null}
-                    ontoggle={this.handleDebugOverridesToggle}
                     onToggle={this.handleDebugOverridesToggle}
                     label="Enable overrides"
                   />
@@ -788,12 +786,10 @@ export class DiscoveryStreamAdminUI extends React.PureComponent {
           <tbody>
             <Row>
               <td colSpan="2">
-                {/** @backward-compat { version 150 } React 16 (cached page) uses ontoggle; React 19 uses onToggle. Remove onToggle once Firefox 150 reaches Release. */}
                 <moz-toggle
                   id="sections-toggle"
                   disabled={!unifiedAdsSpocsEnabled || null}
                   pressed={allizomEnabled || null}
-                  ontoggle={this.handleAllizomToggle}
                   onToggle={this.handleAllizomToggle}
                   label="Toggle allizom"
                 />
@@ -924,11 +920,9 @@ export class DiscoveryStreamAdminUI extends React.PureComponent {
           Show Placeholder Cards
         </button>{" "}
         <div className="toggle-wrapper">
-          {/** @backward-compat { version 150 } React 16 (cached page) uses ontoggle; React 19 uses onToggle. Remove onToggle once Firefox 150 reaches Release. */}
           <moz-toggle
             id="sections-toggle"
             pressed={sectionsEnabled || null}
-            ontoggle={this.handleSectionsToggle}
             onToggle={this.handleSectionsToggle}
             label="Toggle DS Sections"
           />
@@ -937,31 +931,25 @@ export class DiscoveryStreamAdminUI extends React.PureComponent {
         <details className="details-section">
           <summary>IAB Banner Ad Sizes</summary>
           <div className="toggle-wrapper">
-            {/** @backward-compat { version 150 } React 16 (cached page) uses ontoggle; React 19 uses onToggle. Remove onToggle once Firefox 150 reaches Release. */}
             <moz-toggle
               id="newtab_leaderboard"
               pressed={leaderboardPressed || null}
-              ontoggle={this.toggleIABBanners}
               onToggle={this.toggleIABBanners}
               label="Enable IAB Leaderboard"
             />
           </div>
           <div className="toggle-wrapper">
-            {/** @backward-compat { version 150 } React 16 (cached page) uses ontoggle; React 19 uses onToggle. Remove onToggle once Firefox 150 reaches Release. */}
             <moz-toggle
               id="newtab_billboard"
               pressed={billboardPressed || null}
-              ontoggle={this.toggleIABBanners}
               onToggle={this.toggleIABBanners}
               label="Enable IAB Billboard"
             />
           </div>
           <div className="toggle-wrapper">
-            {/** @backward-compat { version 150 } React 16 (cached page) uses ontoggle; React 19 uses onToggle. Remove onToggle once Firefox 150 reaches Release. */}
             <moz-toggle
               id="newtab_rectangle"
               pressed={mediumRectangleEnabledPressed || null}
-              ontoggle={this.toggleIABBanners}
               onToggle={this.toggleIABBanners}
               label="Enable IAB Medium Rectangle (MREC)"
             />

@@ -155,3 +155,53 @@ panel-item {
     background-image: url("chrome://global/skin/icons/search-glass.svg");
   }
 }
+
+/* TODO: Bug 2033070 -  Nova tokens were implemented as the default value for the custom properties, and the fallbacks (and lint exceptions) will need to be removed after launch */
+/* stylelint-disable-next-line media-query-no-invalid */
+@media -moz-pref("browser.nova.enabled") {
+  @media not (forced-colors) {
+    moz-button {
+      &[type="split"].input-cta {
+        --button-icon-fill: var(--button-text-color-primary);
+      }
+
+      &.input-cta {
+        --button-background-color: var(--button-background-color-primary);
+        --button-background-color-active: var(--button-background-color-primary-active);
+        --button-background-color-disabled: var(--button-background-color-primary-disabled);
+        --button-background-color-hover: var(--button-background-color-primary-hover);
+        --button-background-color-selected: var(--button-background-color-primary-selected);
+        --button-text-color: var(--button-text-color-primary);
+        --button-text-color-active: var(--button-text-color-primary-active);
+        --button-text-color-disabled: var(--button-text-color-primary-disabled);
+        --button-text-color-hover: var(--button-text-color-primary);
+        --button-text-color-selected: var(--button-text-color-primary-selected);
+        --button-border-color: var(--button-border-color-primary);
+        --button-border-color-active: var(--button-border-color-primary-active);
+        --button-border-color-disabled: var(--button-border-color-primary-disabled);
+        --button-border-color-hover: var(--button-border-color-primary-hover);
+        --button-border-color-selected: var(--button-border-color-primary-selected);
+      }
+    }
+  }
+
+  panel-list {
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    min-width: 256px;
+    padding: var(--space-small) 0;
+    --panel-list-border-radius: var(--border-radius-large);
+
+    @media (not (forced-colors)) {
+      --panel-list-border-color: light-dark(var(--color-violet-desaturated-20), var(--color-violet-desaturated-50));
+    }
+  }
+
+  panel-item::part(button) {
+    background-position-x: var(--space-large);
+    padding: var(--space-small) var(--space-large) var(--space-small) calc(var(--space-medium) + var(--space-xxlarge));
+
+    @media (not (forced-colors)) {
+      --panel-icon-fill-color: light-dark(var(--color-violet-50), var(--color-violet-20));
+    }
+  }
+}

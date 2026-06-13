@@ -20,14 +20,14 @@
   --urlbar-icon-fill-opacity: 0.9;
 
   /* Urlbarview */
-  --urlbarview-background-color-hover: var(--panel-dimmed);
+  --urlbarview-background-color-hover: var(--panel-background-color-dimmed);
   --urlbarview-background-color-selected: SelectedItem;
   --urlbarview-border-radius: calc(var(--button-border-radius) + var(--dimension-2));
 
-  /* TODO Bug 2031910: Make sure the border radius is 24px for Nova. */
+  /* TODO Bug 2031910: Finalize the border radius for Nova. */
   /* stylelint-disable-next-line media-query-no-invalid */
   @media -moz-pref("browser.nova.enabled") {
-    --urlbarview-border-radius: var(--border-radius-large);
+    --urlbarview-border-radius: 1.8462em;
   }
 
   --urlbarview-separator-color: color-mix(in srgb, currentColor 14%, transparent);
@@ -55,7 +55,7 @@
     --urlbar-box-background-color: light-dark(white, rgb(66, 65, 77));
     --urlbar-icon-fill-opacity: 0.72;
 
-    --urlbarview-background-color-hover: light-dark(rgb(240, 240, 244), var(--panel-dimmed));
+    --urlbarview-background-color-hover: light-dark(rgb(240, 240, 244), var(--panel-background-color-dimmed));
     --urlbarview-background-color-selected: light-dark(#e0e0e6, rgb(43, 42, 51));
     --urlbarview-separator-color: light-dark(rgb(240, 240, 244), rgb(82, 82, 94));
     --urlbarview-text-color-action: light-dark(rgb(91, 91, 102), rgb(191, 191, 201));

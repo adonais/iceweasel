@@ -167,7 +167,7 @@ impl LoginDb {
     }
 
     pub fn count_by_form_action_origin(&self, form_action_origin: &str) -> Result<i64> {
-        match LoginEntry::validate_and_fixup_origin(form_action_origin) {
+        match LoginEntry::validate_and_normalize_form_action_origin(form_action_origin) {
             Ok(result) => {
                 let form_action_origin = result.unwrap_or(form_action_origin.to_string());
                 let mut stmt = self.db.prepare_cached(&COUNT_BY_FORM_ACTION_ORIGIN_SQL)?;
@@ -179,7 +179,10 @@ impl LoginDb {
             }
             Err(e) => {
                 // don't log the input string as it's PII.
-                warn!("count_by_origin was passed an invalid origin: {}", e);
+                warn!(
+                    "count_by_form_action_origin was passed an invalid origin: {}",
+                    e
+                );
                 Ok(0)
             }
         }
@@ -1321,7 +1324,7 @@ mod tests {
     use crate::db::test_utils::{get_local_guids, get_mirror_guids};
     use crate::encryption::test_utils::TEST_ENCDEC;
     use crate::sync::merge::LocalLogin;
-    use nss::ensure_initialized;
+    use nss_as::ensure_initialized;
     use std::{thread, time};
 
     #[test]
@@ -1491,6 +1494,25 @@ mod tests {
 
         assert_eq!(db.count_by_form_action_origin(origin_a).unwrap(), 1);
         assert_eq!(db.count_by_form_action_origin(origin_umlaut).unwrap(), 1);
+    }
+
+    #[test]
+    #[cfg(feature = "ignore_form_action_origin_validation_errors")]
+    fn test_count_by_invalid_form_action_origin() {
+        ensure_initialized();
+
+        let login = LoginEntry {
+            origin: "https://example.com".into(),
+            form_action_origin: Some("email".into()),
+            username: "test".into(),
+            password: "sekret".into(),
+            ..LoginEntry::default()
+        };
+
+        let db = LoginDb::open_in_memory();
+        db.add(login, &*TEST_ENCDEC)
+            .expect("should be able to add login with invalid form_action_origin");
+        assert_eq!(db.count_by_form_action_origin("email").unwrap(), 1);
     }
 
     #[test]

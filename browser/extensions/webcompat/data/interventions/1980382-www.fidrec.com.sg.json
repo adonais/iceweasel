@@ -6,12 +6,13 @@
       "matches": ["*://www.fidrec.com.sg/*"]
     }
   },
+  "css": {
+    "fix_radio_buttons": "input[type=radio] { -moz-appearance: radio !important; }"
+  },
   "interventions": [
     {
       "platforms": ["all"],
-      "content_scripts": {
-        "css": ["bug1980382-www.fidrec.com.sg-fix-radio-buttons.css"]
-      }
+      "css": ["fix_radio_buttons"]
     }
   ]
 }

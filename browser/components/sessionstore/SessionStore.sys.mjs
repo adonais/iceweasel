@@ -1077,10 +1077,6 @@ var SessionStoreInternal = {
   // they get restored).
   _crashedBrowsers: new WeakSet(),
 
-  // A map (xul:browser -> FrameLoader) that maps a browser to the last
-  // associated frameLoader we heard about.
-  _lastKnownFrameLoader: new WeakMap(),
-
   // A map (xul:browser -> object) that maps a browser associated with a
   // recently closed tab to all its necessary state information we need to
   // properly handle final update message.
@@ -1900,10 +1896,9 @@ var SessionStoreInternal = {
     if (listener) {
       let historychange =
         // If it is not the scheduled update (tab closed, window closed etc),
-        // try to store the loading non-web-controlled page opened in _blank
-        // first.
+        // try to store the loading non-web-controlled page first.
         (forStorage &&
-          lazy.SessionHistory.collectNonWebControlledBlankLoadingSession(
+          lazy.SessionHistory.collectNonWebControlledLoadingSession(
             browsingContext
           )) ||
         listener.collect(permanentKey, browsingContext, {
@@ -2007,10 +2002,6 @@ var SessionStoreInternal = {
           target.frameLoader &&
           target.permanentKey
         ) {
-          this._lastKnownFrameLoader.set(
-            target.permanentKey,
-            target.frameLoader
-          );
           this.resetEpoch(target.permanentKey, target.frameLoader);
         }
         break;
@@ -3290,10 +3281,6 @@ var SessionStoreInternal = {
     browser.addEventListener("oop-browser-crashed", this);
     browser.addEventListener("oop-browser-buildid-mismatch", this);
 
-    if (browser.frameLoader) {
-      this._lastKnownFrameLoader.set(browser.permanentKey, browser.frameLoader);
-    }
-
     // Only restore if browser has been lazy.
     if (
       TAB_LAZY_STATES.has(aTab) &&
@@ -3540,7 +3527,6 @@ var SessionStoreInternal = {
 
     aTab.setAttribute("pending", "true");
 
-    this._lastKnownFrameLoader.delete(browser.permanentKey);
     this._crashedBrowsers.delete(browser.permanentKey);
     aTab.removeAttribute("crashed");
 
@@ -4240,13 +4226,13 @@ var SessionStoreInternal = {
       aWindowOrOptions = this._getTopWindow();
     }
     if (aWindowOrOptions instanceof Ci.nsIDOMWindow) {
-      isPrivate = PrivateBrowsingUtils.isBrowserPrivate(aWindowOrOptions);
+      isPrivate = PrivateBrowsingUtils.isWindowPrivate(aWindowOrOptions);
     } else {
       isPrivate = Boolean(aWindowOrOptions.private);
     }
 
     const browserWindows = Array.from(this._browserWindows).filter(win => {
-      return PrivateBrowsingUtils.isBrowserPrivate(win) === isPrivate;
+      return PrivateBrowsingUtils.isWindowPrivate(win) === isPrivate;
     });
     return browserWindows;
   },
@@ -4833,7 +4819,7 @@ var SessionStoreInternal = {
       for (let win of browserWindows) {
         if (
           !searchPrivateWindows &&
-          PrivateBrowsingUtils.isBrowserPrivate(win)
+          PrivateBrowsingUtils.isWindowPrivate(win)
         ) {
           continue;
         }

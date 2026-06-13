@@ -234,8 +234,6 @@ class JS_PUBLIC_API PrefableCompileOptions {
 #endif
 
 #ifdef ENABLE_SOURCE_PHASE_IMPORTS
-  // The context has specified that source phase imports syntax
-  // should be parsed.
   bool sourcePhaseImports_ : 1;
 #endif
 

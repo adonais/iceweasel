@@ -274,7 +274,7 @@ add_task(async function activate() {
     await EventUtils.synthesizeMouseAtCenter(
       items[i],
       {},
-      items[i].ownerGlobal
+      items[i].documentGlobal
     );
     await onLocationChange;
     Assert.ok(true, `Expected URL is loaded [${expectedURL}]`);

@@ -103,7 +103,13 @@ class ProjectPlugin : Plugin<Project> {
         extraProperties: org.gradle.api.plugins.ExtraPropertiesExtension,
         substs: Map<String, Any>,
     ) {
-        if (substs["MOZ_APPSERVICES_IN_TREE"].isTruthy()) {
+        // Only substitute when the a-s subprojects are part of this Gradle build:
+        // either :geckoview is included (so the a-s subprojects are too), or we're
+        // downloading every Gradle dependency. When m/a/fenix builds on its own
+        // (e.g., the second pass of a fat-AAR build), :geckoview isn't in settings
+        // and fenix consumes a-s as Maven AARs from target.maven.zip instead of
+        // maven.mozilla.org.
+        if (substs["MOZ_APPSERVICES_IN_TREE"].isTruthy() && (substs["DOWNLOAD_ALL_GRADLE_DEPENDENCIES"].isTruthy() || project.findProject(":geckoview") != null)) {
             // In tree, so we update our legacy "external" dep name to a local project.
             // e.g., "org.mozilla.appservices:syncmanager:X.Y.Z" becomes project(':syncmanager')
             substituteDependencies(project, APP_SERVICES_GROUPS) { group, module, dependency ->
@@ -323,6 +329,19 @@ class ProjectPlugin : Plugin<Project> {
         }
         ktlintConfig.dependencies.addLater(ktlintDep)
 
+        // Resolve the include/exclude globs (with leading "!" meaning exclude)
+        // into a FileTree rooted at projectDir, so Gradle can use the actual
+        // Kotlin source set to compute UP-TO-DATE / build cache keys.
+        fun ktlintSourceTree() = project.fileTree(project.projectDir).matching {
+            sourcePaths.get().forEach { pattern ->
+                if (pattern.startsWith("!")) {
+                    exclude(pattern.removePrefix("!"))
+                } else {
+                    include(pattern)
+                }
+            }
+        }
+
         project.tasks.register("ktlint", JavaExec::class.java) {
             group = "verification"
             description = "Check Kotlin code style."
@@ -332,6 +351,13 @@ class ProjectPlugin : Plugin<Project> {
             sourcePaths.get().forEach { args(it) }
             args("--reporter=json,output=build/reports/ktlint/ktlint.json")
             args("--reporter=plain")
+            inputs.files(ktlintSourceTree())
+                .withPropertyName("ktlintSources")
+                .withPathSensitivity(org.gradle.api.tasks.PathSensitivity.RELATIVE)
+                .skipWhenEmpty()
+            outputs.file(project.file("build/reports/ktlint/ktlint.json"))
+                .withPropertyName("ktlintReport")
+            outputs.cacheIf { true }
         }
 
         project.tasks.register("ktlintFormat", JavaExec::class.java) {
@@ -345,6 +371,12 @@ class ProjectPlugin : Plugin<Project> {
             args("--reporter=json,output=build/reports/ktlint/ktlintFormat.json")
             args("--reporter=plain")
             jvmArgs("--add-opens", "java.base/java.lang=ALL-UNNAMED")
+            inputs.files(ktlintSourceTree())
+                .withPropertyName("ktlintFormatSources")
+                .withPathSensitivity(org.gradle.api.tasks.PathSensitivity.RELATIVE)
+                .skipWhenEmpty()
+            outputs.file(project.file("build/reports/ktlint/ktlintFormat.json"))
+                .withPropertyName("ktlintFormatReport")
         }
     }
 

@@ -37,7 +37,6 @@ enum OpcodeRISCVD : uint32_t {
   RO_FCVT_D_W = OP_FP | (0b1101001 << kFunct7Shift) | (0b00000 << kRs2Shift),
   RO_FCVT_D_WU = OP_FP | (0b1101001 << kFunct7Shift) | (0b00001 << kRs2Shift),
 
-#ifdef JS_CODEGEN_RISCV64
   // RV64D Standard Extension (in addition to RV32D)
   RO_FCVT_L_D = OP_FP | (0b1100001 << kFunct7Shift) | (0b00010 << kRs2Shift),
   RO_FCVT_LU_D = OP_FP | (0b1100001 << kFunct7Shift) | (0b00011 << kRs2Shift),
@@ -47,7 +46,6 @@ enum OpcodeRISCVD : uint32_t {
   RO_FCVT_D_LU = OP_FP | (0b1101001 << kFunct7Shift) | (0b00011 << kRs2Shift),
   RO_FMV_D_X = OP_FP | (0b000 << kFunct3Shift) | (0b1111001 << kFunct7Shift) |
                (0b00000 << kRs2Shift),
-#endif
 };
 }  // namespace jit
 }  // namespace js

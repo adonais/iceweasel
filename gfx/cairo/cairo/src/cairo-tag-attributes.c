@@ -1,3 +1,4 @@
+/* -*- Mode: c; c-basic-offset: 4; indent-tabs-mode: t; tab-width: 8; -*- */
 /* cairo - a vector graphics library with display and print output
  *
  * Copyright © 2016 Adrian Johnson
@@ -431,7 +432,7 @@ parse_attributes (const char *attributes, const attribute_spec_t *attrib_def, ca
 	    goto fail1;
 	}
 
-	attrib = calloc (1, sizeof (attribute_t));
+	attrib = _cairo_calloc (sizeof (attribute_t));
 	if (unlikely (attrib == NULL)) {
 	    status = _cairo_error (CAIRO_STATUS_NO_MEMORY);
 	    goto fail1;

@@ -1,4 +1,5 @@
 import { CONTENT_MESSAGE_TYPE } from "common/Actions.mjs";
+import { WIDGET_REGISTRY } from "common/WidgetsRegistry.mjs";
 import {
   ActivityStream,
   PREFS_CONFIG,
@@ -1068,4 +1069,22 @@ describe("ActivityStream", () => {
       });
     });
   });
+});
+
+describe("WIDGET_REGISTRY pref coverage", () => {
+  for (const widget of WIDGET_REGISTRY) {
+    it(`should have enabledPref registered for widget "${widget.id}"`, () => {
+      assert.ok(
+        PREFS_CONFIG.has(widget.enabledPref),
+        `Missing PREFS_CONFIG entry for ${widget.enabledPref}`
+      );
+    });
+
+    it(`should have sizePref registered for widget "${widget.id}"`, () => {
+      assert.ok(
+        PREFS_CONFIG.has(widget.sizePref),
+        `Missing PREFS_CONFIG entry for ${widget.sizePref}`
+      );
+    });
+  }
 });

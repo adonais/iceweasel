@@ -98,7 +98,7 @@ class Timer final : public mozilla::LinkedListElement<RefPtr<Timer>> {
   TimeStamp mStartTime{};
   nsString mBHRAnnotationKey;
   nsCString mBHRAnnotationValue;
-  bool mInSeconds;
+  bool mInSeconds = false;
 };
 
 #define TIMER_KEYS_IID \

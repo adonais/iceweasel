@@ -5,7 +5,7 @@ Our design tokens are stored in JSON, the benefit of which is that they can be c
 For more information on how design tokens are named and organized, see the [Acorn Design System docs](https://acorn.firefox.com/latest/desktop/design-tokens/how-design-tokens-work/overview-YYp6MVjt).
 
 ## Quick start
-`src/tokens` holds our source of truth for design tokens in `mozilla-central` under the [design-system](https://searchfox.org/mozilla-central/source/toolkit/themes/shared/design-system) folder in `toolkit/themes/shared`. The CSS design token files in that folder come from the JSON files. If you need to modify a design token file, you should be editing the JSON.
+`src/tokens` holds our source of truth for design tokens in `mozilla-central` under the [design-system](https://searchfox.org/firefox-main/source/toolkit/themes/shared/design-system) folder in `toolkit/themes/shared`. The CSS design token files in that folder come from the JSON files. If you need to modify a design token file, you should be editing the JSON.
 
 The tokens are organized into files with the `*.tokens.json` suffix, where the first part of the filename defines the top-level category of token. For example, `border.tokens.json` outputs `--border-*` tokens.
 
@@ -102,7 +102,7 @@ $ ./mach npm test --prefix=toolkit/themes/shared/design-system
 
 ## JSON format deep dive
 
-Style Dictionary works by ingesting JSON files with tokens data and performing various platform-specific transformations to output token files formatted for different languages. The library has certain quirks and limitations that we had to take into consideration when coming up with a JSON format for representing our tokens. The following is a bit of a "how to" guide for reading and adding to [`src/tokens`](https://searchfox.org/mozilla-central/source/toolkit/themes/shared/design-system/src/tokens) for anyone who needs to consume our tokens or add new tokens.
+Style Dictionary works by ingesting JSON files with tokens data and performing various platform-specific transformations to output token files formatted for different languages. The library has certain quirks and limitations that we had to take into consideration when coming up with a JSON format for representing our tokens. The following is a bit of a "how to" guide for reading and adding to [`src/tokens`](https://searchfox.org/firefox-main/source/toolkit/themes/shared/design-system/src/tokens) for anyone who needs to consume our tokens or add new tokens.
 
 ### Naming
 
@@ -258,7 +258,7 @@ The above JSON indicates that `--button-background-color-disabled` will have the
 
 #### Brand and platform themes
 
-The Firefox desktop client consists of [two distinct surfaces](https://acorn.firefox.com/latest/resources/browser-anatomy/desktop-ZaxCgqkt#section-anatomy-fd); "the chrome," or the UI of the browser application that surrounds web pages, and the web content itself which is often referred to as "in-content." Firefox UI development spans both surfaces since our `about:` pages are "in-content" pages. In our design system we distinguish between these surfaces by using the terminology of `platform` vs `brand`. Chrome specific token values live in [`tokens-platform.css`](https://searchfox.org/mozilla-central/source/toolkit/themes/shared/design-system/tokens-platform.css) and in-content specific token values live in [`tokens-brand.css`](https://searchfox.org/mozilla-central/source/toolkit/themes/shared/design-system/tokens-brand.css).
+The Firefox desktop client consists of [two distinct surfaces](https://acorn.firefox.com/latest/resources/browser-anatomy/desktop-ZaxCgqkt#section-anatomy-fd); "the chrome," or the UI of the browser application that surrounds web pages, and the web content itself which is often referred to as "in-content." Firefox UI development spans both surfaces since our `about:` pages are "in-content" pages. In our design system we distinguish between these surfaces by using the terminology of `platform` vs `brand`. Chrome specific token values live in [`tokens-platform.css`](https://searchfox.org/firefox-main/source/toolkit/themes/shared/design-system/tokens-platform.css) and in-content specific token values live in [`tokens-brand.css`](https://searchfox.org/firefox-main/source/toolkit/themes/shared/design-system/tokens-brand.css).
 
 We use `platform` and `brand` keys in our JSON to indicate when a token has a surface-specific value. For example this token definition:
 
@@ -319,7 +319,7 @@ If you need any help feel free to reach out in #firefox-reusable-components on S
 
 ### Overriding tokens
 
-Our build process provides a mechanism to override design tokens behind a pref. To do so, you will need to update [override-identifiers.js](https://searchfox.org/mozilla-central/source/toolkit/themes/shared/design-system/config/override-identifiers.js), adding a name and pref to classify the token overrides. For example, to override design tokens for Nova, we use this configuration:
+Our build process provides a mechanism to override design tokens behind a pref. To do so, you will need to update [override-identifiers.js](https://searchfox.org/firefox-main/source/toolkit/themes/shared/design-system/config/override-identifiers.js), adding a name and pref to classify the token overrides. For example, to override design tokens for Nova, we use this configuration:
 
 ```js
 {

@@ -11,8 +11,6 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/FloatingPoint.h"
 
-#include <inttypes.h>
-
 namespace mozilla {
 namespace non_crypto {
 

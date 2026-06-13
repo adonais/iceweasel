@@ -97,7 +97,7 @@ uint64_t HTMLListBulletAccessible::NativeState() const {
 }
 
 already_AddRefed<AccAttributes> HTMLListBulletAccessible::NativeAttributes() {
-  RefPtr<AccAttributes> attributes = new AccAttributes();
+  auto attributes = MakeRefPtr<AccAttributes>();
   return attributes.forget();
 }
 

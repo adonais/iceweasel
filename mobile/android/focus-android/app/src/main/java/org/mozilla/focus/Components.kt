@@ -143,7 +143,7 @@ class Components(
     val remoteSettingsSyncScheduler by lazy {
         DefaultRemoteSettingsSyncScheduler(
             context,
-            Frequency(24, TimeUnit.HOURS),
+            Frequency(2, TimeUnit.HOURS),
         )
     }
 

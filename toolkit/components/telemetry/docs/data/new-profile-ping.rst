@@ -53,7 +53,7 @@ scalars
 This section contains the Scalars that are valid for the ``new-profile`` ping,
 that is the ``record_into_store`` list contains ``new-profile``.
 Scalars are only submitted if data was added to them.
-The recorded scalars are described in the `Scalars.yaml <https://searchfox.org/mozilla-central/source/toolkit/components/telemetry/Scalars.yaml>`_ file.
+The recorded scalars are described in the :searchfox:`Scalars.yaml <toolkit/components/telemetry/Scalars.yaml>` file.
 
 Duplicate pings
 ---------------

@@ -631,11 +631,13 @@ set_config("MOZ_WAYLAND", depends_if(wayland_headers)(lambda _: True))
 set_define("MOZ_WAYLAND", depends_if(wayland_headers)(lambda _: True))
 
 
-# Hardware-accelerated video decode with VAAPI and V4L2 on Linux
-# ==============================================================
+# Hardware-accelerated video decode (VAAPI, Vulkan, V4L2) on Linux
+# ================================================================
 set_config("MOZ_ENABLE_VAAPI", True, when=toolkit_gtk)
 set_define("MOZ_ENABLE_VAAPI", True, when=toolkit_gtk)
 
+set_config("MOZ_ENABLE_VULKAN_VIDEO", True, when=toolkit_gtk)
+set_define("MOZ_ENABLE_VULKAN_VIDEO", True, when=toolkit_gtk)
 
 @depends(target, toolkit_gtk)
 def v4l2(target, toolkit_gtk):
@@ -874,9 +876,9 @@ set_config("MOZ_SYSTEM_AV1", True, when="--with-system-av1")
 option("--disable-jxl", help="Disable jxl image support")
 
 
-@depends("--disable-jxl", milestone.is_nightly)
-def jxl(value, is_nightly):
-    if is_nightly and value:
+@depends("--disable-jxl")
+def jxl(value):
+    if value:
         return True
 
 
@@ -1146,7 +1148,7 @@ include("../build/moz.configure/keyfiles.configure")
 
 simple_keyfile("Mozilla API")
 
-with only_when(depends(target.os)(lambda os: os != "Android")):
+with only_when(depends(target.os)(lambda os: os not in ("Android", "WINNT"))):
     simple_keyfile("Google Location Service API")
 
 simple_keyfile("Google Safebrowsing API")
@@ -1619,6 +1621,8 @@ with only_when(compile_environment & depends(target.os)(lambda os: os != "WINNT"
 # ==============================================================
 with only_when(compile_environment & depends(target.os)(lambda os: os != "WINNT")):
     set_define("HAVE_SYSIOCCOM_H", check_header("sys/ioccom.h"))
+
+    set_config("HAVE_EXECINFO", check_header("execinfo.h"))
 
 # Elfhack
 # ==============================================================
@@ -4329,3 +4333,18 @@ with only_when(target_is_windows):
 
     set_config("DESKTOP_LAUNCHER_ENABLED", True, when=desktop_launcher_enabled)
     set_define("DESKTOP_LAUNCHER_ENABLED", True, when=desktop_launcher_enabled)
+
+
+option(
+    "--enable-appservices-in-tree",
+    help="Enables building from an in-tree app-services",
+)
+
+
+@depends("--enable-appservices-in-tree")
+def enable_appservices_in_tree(value):
+    if value:
+        return True
+
+
+set_config("MOZ_APPSERVICES_IN_TREE", enable_appservices_in_tree)

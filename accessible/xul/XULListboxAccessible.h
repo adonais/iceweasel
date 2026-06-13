@@ -83,7 +83,7 @@ class XULListboxAccessible : public XULSelectControlAccessible,
   virtual LocalAccessible* ContainerWidget() const override;
 
  protected:
-  virtual ~XULListboxAccessible() {}
+  virtual ~XULListboxAccessible() = default;
 
   bool IsMulticolumn() const { return ColCount() > 1; }
 };

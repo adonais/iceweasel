@@ -411,7 +411,7 @@ export class LoginManagerParent extends JSWindowActorParent {
   }
 
   #onOpenImportableLearnMore() {
-    const window = this.getRootBrowser().ownerGlobal;
+    const window = this.getRootBrowser().documentGlobal;
     window.openTrustedLinkIn(
       Services.urlFormatter.formatURLPref("app.support.baseURL") +
         "password-import",
@@ -452,7 +452,7 @@ export class LoginManagerParent extends JSWindowActorParent {
     } else {
       // Open the migration wizard pre-selecting the appropriate browser.
       lazy.MigrationUtils.showMigrationWizard(
-        this.getRootBrowser().ownerGlobal,
+        this.getRootBrowser().documentGlobal,
         {
           entrypoint: lazy.MigrationUtils.MIGRATION_ENTRYPOINTS.PASSWORDS,
           migratorKey: browserId,
@@ -462,7 +462,7 @@ export class LoginManagerParent extends JSWindowActorParent {
   }
 
   #onOpenPreferences(hostname, entryPoint) {
-    const window = this.getRootBrowser().ownerGlobal;
+    const window = this.getRootBrowser().documentGlobal;
     lazy.LoginHelper.openPasswordManager(window, {
       filterString: hostname,
       entryPoint,
@@ -1455,7 +1455,8 @@ export class LoginManagerParent extends JSWindowActorParent {
       } else {
         lazy.log("No change to existing login.");
         // is there a doorhanger we should update?
-        let popupNotifications = promptBrowser.ownerGlobal.PopupNotifications;
+        let popupNotifications =
+          promptBrowser.documentGlobal.PopupNotifications;
         let notif = popupNotifications.getNotification("password", browser);
         lazy.log(
           `_onPasswordEditedOrGenerated: Has doorhanger? ${

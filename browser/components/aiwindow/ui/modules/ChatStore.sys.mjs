@@ -887,6 +887,16 @@ class ChatStore {
   async #openConnection() {
     lazy.log.debug("Opening new connection");
 
+    let markerData = null;
+    if (Services.profiler.IsActive()) {
+      let sizeLabel = "new";
+      try {
+        const stat = await IOUtils.stat(this.databaseFilePath);
+        sizeLabel = `${(stat.size / 1048576).toFixed(1)} MiB`;
+      } catch (_e) {}
+      markerData = { startTime: ChromeUtils.now(), sizeLabel };
+    }
+
     try {
       const confConfig = { path: this.databaseFilePath };
       this.#conn = await lazy.Sqlite.openConnection(confConfig);
@@ -912,6 +922,14 @@ class ChatStore {
       await this.#conn.execute("PRAGMA foreign_keys = ON;");
     } catch (e) {
       lazy.log.warn("Configuring SQLite PRAGMA settings: ", e.message);
+    }
+
+    if (markerData) {
+      ChromeUtils.addProfilerMarker(
+        "SmartWindow",
+        { startTime: markerData.startTime },
+        `ChatStore:open_db(${markerData.sizeLabel})`
+      );
     }
   }
 

@@ -8,13 +8,13 @@
 #include "mozilla/intl/Locale.h"
 #include "mozilla/Span.h"
 #include "mozilla/TextUtils.h"
+#include "mozilla/UsingEnum.h"
 
 #include <algorithm>
 #include <stddef.h>
 
 #include "builtin/intl/LocaleNegotiation.h"
 #include "builtin/intl/StringAsciiChars.h"
-#include "builtin/intl/UsingEnum.h"
 #include "builtin/String.h"
 #include "js/Conversions.h"
 #include "js/ErrorReport.h"
@@ -297,11 +297,7 @@ bool js::intl::GetNumberOption(JSContext* cx, Handle<JSObject*> options,
 
 static constexpr std::string_view LocaleMatcherToString(
     LocaleMatcher localeMatcher) {
-#ifndef USING_ENUM
-  using enum LocaleMatcher;
-#else
-  USING_ENUM(LocaleMatcher, BestFit, Lookup);
-#endif
+  MOZ_USING_ENUM(LocaleMatcher, BestFit, Lookup);
   switch (localeMatcher) {
     case BestFit:
       return "best fit";
@@ -321,12 +317,8 @@ bool js::intl::GetLocaleMatcherOption(JSContext* cx, Handle<JSObject*> options,
 }
 
 static auto ToUnicodeKeySpan(UnicodeExtensionKey key) {
-#ifndef USING_ENUM
-  using enum UnicodeExtensionKey;
-#else
-  USING_ENUM(UnicodeExtensionKey, Calendar, Collation, CollationCaseFirst,
-             CollationNumeric, HourCycle, NumberingSystem);
-#endif
+  MOZ_USING_ENUM(UnicodeExtensionKey, Calendar, Collation, CollationCaseFirst,
+                 CollationNumeric, FirstDayOfWeek, HourCycle, NumberingSystem);
   switch (key) {
     case Calendar:
       return mozilla::MakeStringSpan("ca");
@@ -336,6 +328,8 @@ static auto ToUnicodeKeySpan(UnicodeExtensionKey key) {
       return mozilla::MakeStringSpan("kf");
     case CollationNumeric:
       return mozilla::MakeStringSpan("kn");
+    case FirstDayOfWeek:
+      return mozilla::MakeStringSpan("fw");
     case HourCycle:
       return mozilla::MakeStringSpan("hc");
     case NumberingSystem:
@@ -346,12 +340,8 @@ static auto ToUnicodeKeySpan(UnicodeExtensionKey key) {
 
 static Handle<PropertyName*> ToPropertyName(JSContext* cx,
                                             UnicodeExtensionKey key) {
-#ifndef USING_ENUM
-  using enum UnicodeExtensionKey;
-#else
-  USING_ENUM(UnicodeExtensionKey, Calendar, Collation, CollationCaseFirst,
-             CollationNumeric, HourCycle, NumberingSystem);
-#endif
+  MOZ_USING_ENUM(UnicodeExtensionKey, Calendar, Collation, CollationCaseFirst,
+                 CollationNumeric, FirstDayOfWeek, HourCycle, NumberingSystem);
   switch (key) {
     case Calendar:
       return cx->names().calendar;
@@ -361,6 +351,8 @@ static Handle<PropertyName*> ToPropertyName(JSContext* cx,
       return cx->names().caseFirst;
     case CollationNumeric:
       return cx->names().numeric;
+    case FirstDayOfWeek:
+      return cx->names().firstDayOfWeek;
     case HourCycle:
       return cx->names().hourCycle;
     case NumberingSystem:
@@ -488,4 +480,16 @@ bool js::intl::GetUnicodeExtensionOption(
 
   result.set(unicodeType);
   return true;
+}
+
+/**
+ * GetOption ( options, property, type, values, default )
+ */
+JSLinearString* js::intl::GetUnicodeExtensionOption(
+    JSContext* cx, UnicodeExtensionKey key,
+    JS::Handle<JSLinearString*> option) {
+  // Steps 1-5. (Not applicable)
+
+  // Step 6.
+  return ValidateAndCanonicalizeUnicodeExtensionType(cx, key, option);
 }

@@ -28,6 +28,7 @@ ChromeUtils.defineLazyGetter(
 const PREF_CHAT_ENABLED = "browser.ml.chat.enabled";
 const PREF_CHAT_PAGE = "browser.ml.chat.page";
 const PREF_CHAT_PROVIDER = "browser.ml.chat.provider";
+const PREF_AI_CONTROL_SIDEBAR_CHATBOT = "browser.ai.control.sidebarChatbot";
 
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
@@ -374,7 +375,7 @@ export const GenAI = {
    */
   async addAskChatItems(browser, extraContext, itemAdder, entry, cleanup) {
     // Prepare context used for both targeting and handling prompts
-    const window = browser.ownerGlobal;
+    const window = browser.documentGlobal;
     const tab = window?.gBrowser?.getTabForBrowser(browser);
     const uri = browser.currentURI;
     const context = {
@@ -503,7 +504,7 @@ export const GenAI = {
         return button;
       };
 
-      const browser = document.ownerGlobal.gBrowser.selectedBrowser;
+      const browser = document.documentGlobal.gBrowser.selectedBrowser;
       const context = await this.addAskChatItems(
         browser,
         aiActionButton.data,
@@ -632,13 +633,13 @@ export const GenAI = {
       !browser ||
       this.ignoredInputs.has(data.inputType) ||
       !lazy.chatShortcuts ||
-      lazy.AIWindow.isAIWindowActive(browser.ownerGlobal) ||
+      lazy.AIWindow.isAIWindowActive(browser.documentGlobal) ||
       !this.canShowChatEntrypoint
     ) {
       return;
     }
 
-    const window = browser.ownerGlobal;
+    const window = browser.documentGlobal;
     const { document, devicePixelRatio } = window;
     const aiActionButton = document.getElementById("ai-action-button");
     this.initializeAIShortcut(aiActionButton);
@@ -735,8 +736,8 @@ export const GenAI = {
     if (
       uri?.startsWith("moz-extension:") ||
       lazy.AIWindow.isAIWindowActive(
-        browser.ownerGlobal?.browsingContext?.topChromeWindow ??
-          browser.ownerGlobal
+        browser.documentGlobal?.browsingContext?.topChromeWindow ??
+          browser.documentGlobal
       )
     ) {
       showItem(menu, false);
@@ -745,7 +746,7 @@ export const GenAI = {
 
     // Popups don't have a sidebar, so don't show the menu.
     // Also, it's not useful for most Document Picture-in-Picture API use-cases.
-    const isPopup = !browser.ownerGlobal.toolbar.visible;
+    const isPopup = !browser.documentGlobal.toolbar.visible;
     if (browser.browsingContext?.isDocumentPiP || isPopup) {
       showItem(menu, false);
       return;
@@ -853,7 +854,7 @@ export const GenAI = {
         );
       }
       openItem.addEventListener("command", () => {
-        const window = browser.ownerGlobal;
+        const window = browser.documentGlobal;
         window.SidebarController.show("viewGenaiChatSidebar");
         Glean.genaiChatbot.contextmenuChoose.record({
           provider: this.getProviderId(),
@@ -1335,15 +1336,26 @@ export const GenAI = {
     return "sidebar-chatbot";
   },
 
+  get hasDistinctEnabledState() {
+    // The sidebar chatbot has a distinct enabled state based on choosing a
+    // specific provider instead of using a single generic "Enabled" option.
+    return true;
+  },
+
   get isBlocked() {
     return !lazy.chatEnabled;
   },
 
   get isEnabled() {
-    return (lazy.chatEnabled && lazy.chatProvider != "") || lazy.chatPage;
+    return lazy.chatEnabled && lazy.chatProvider != "";
   },
 
   get isAllowed() {
+    return true;
+  },
+
+  get canRunOnDevice() {
+    // The sidebar chatbot has no known restrictions based on device hardware.
     return true;
   },
 
@@ -1358,10 +1370,7 @@ export const GenAI = {
   async makeAvailable() {
     // Set explicitly rather than clearing, so that a non-locked policy default
     // of "blocked" does not prevent the user from switching back to "available".
-    Services.prefs.setStringPref(
-      "browser.ai.control.sidebarChatbot",
-      "available"
-    );
+    Services.prefs.setStringPref(PREF_AI_CONTROL_SIDEBAR_CHATBOT, "available");
     Services.prefs.setBoolPref(PREF_CHAT_ENABLED, true);
     Services.prefs.clearUserPref(PREF_CHAT_PAGE);
     Services.prefs.clearUserPref(PREF_CHAT_PROVIDER);

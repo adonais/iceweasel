@@ -20,3 +20,6 @@ prefs = [
 
 ["browser_webextension_inspected_window_access.js"]
 support-files = ["csp_sandbox.sjs"]
+skip-if = [
+  "http3", # 1828838
+]

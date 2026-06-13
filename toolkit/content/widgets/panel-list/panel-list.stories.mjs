@@ -114,6 +114,7 @@ const Template = ({
               ?disabled=${item.disabled}
               type=${ifDefined(item.checked ? "checkbox" : undefined)}
               ?badged=${item.badged}
+              badge-type=${ifDefined(item.badgeType)}
               data-l10n-id=${item.l10nId ?? item}
               submenu=${ifDefined(subMenuId)}
               accesskey=${ifDefined(showAccesskeys ? accesskeys[index] : "")}
@@ -183,4 +184,13 @@ WithAccesskeys.args = {
   ...Simple.args,
   showAccesskeys: true,
   accesskeys: accesskeyOptions,
+};
+
+export const WithBadge = Template.bind({});
+WithBadge.args = {
+  ...Simple.args,
+  items: [
+    { l10nId: "panel-list-item-one", badgeType: "new" },
+    { l10nId: "panel-list-item-two", badgeType: "beta" },
+  ],
 };

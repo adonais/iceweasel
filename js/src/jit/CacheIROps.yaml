@@ -52,7 +52,15 @@
 # ========================
 # If true, the generated CacheIRWriter method will be private and has a trailing
 # '_'. This is useful for ops that need custom CacheIRWriter logic on top of the
-# generated code.
+# generated code. Note that custom writers should avoid side-effects that aren't
+# reflected in the generated CacheIR; the custom writer is not called when
+# cloning the op, so the side-effect could be lost.
+#
+# inlining_candidate (optional)
+# ========================
+# If true, the generated CacheIRWriter method and the generated CacheIRCloner
+# method will set the writer's TrialInliningState to Candidate to indicate that
+# this stub can be considered for inlining.
 #
 # args
 # ====
@@ -2039,6 +2047,7 @@
   transpile: true
   cost_estimate: 3
   custom_writer: true
+  inlining_candidate: true
   args:
     receiver: ObjId
     callee: ObjId
@@ -2143,7 +2152,7 @@
   shared: false
   transpile: true
   cost_estimate: 3
-  custom_writer: true
+  inlining_candidate: true
   args:
     callee: ObjId
     argc: Int32Id
@@ -2244,7 +2253,6 @@
   shared: false
   transpile: true
   cost_estimate: 4
-  custom_writer: true
   args:
     callee: ObjId
     argc: Int32Id
@@ -2558,6 +2566,14 @@
     obj: ObjId
     result: IntPtrId
 
+- name: LinearizeString
+  shared: true
+  transpile: true
+  cost_estimate: 4
+  args:
+    str: StringId
+    result: StringId
+
 - name: LinearizeForCharAccess
   shared: true
   transpile: true
@@ -2681,6 +2697,7 @@
   transpile: true
   cost_estimate: 5
   custom_writer: true
+  inlining_candidate: true
   args:
     receiver: ValId
     callee: ObjId
@@ -3822,6 +3839,37 @@
   cost_estimate: 2
   args:
     secondsIntoYear: ValId
+
+- name: DateNow
+  shared: true
+  transpile: true
+  cost_estimate: 4
+  args:
+    result: NumberId
+
+- name: DateParse
+  shared: true
+  transpile: true
+  cost_estimate: 4
+  args:
+    str: StringId
+    result: NumberId
+
+- name: TimeClip
+  shared: true
+  transpile: true
+  cost_estimate: 2
+  args:
+    time: NumberId
+    result: NumberId
+
+- name: NewDateObjectResult
+  shared: true
+  transpile: true
+  cost_estimate: 5
+  args:
+    templateObject: ObjectField
+    utcTime: NumberId
 
 - name: ArrayFromArgumentsObjectResult
   shared: true

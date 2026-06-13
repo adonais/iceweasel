@@ -2,7 +2,7 @@
 
 Let's look at a trivial but practical example and add a simple test to measure the performance of a click in the inspector.
 
-First we create a file under [tests/inspector](https://searchfox.org/mozilla-central/source/testing/talos/talos/tests/devtools/addon/content/tests/inspector) since we are writing an inspector test. We call the file `click.js`.
+First we create a file under [tests/inspector](https://searchfox.org/firefox-main/source/testing/talos/talos/tests/devtools/addon/content/tests/inspector) since we are writing an inspector test. We call the file `click.js`.
 
 We will use a dummy test document here: `data:text/html,click test document`.
 
@@ -50,7 +50,7 @@ module.exports = async function() {
 }
 ```
 
-Finally we add an entry in [damp-tests.js](https://searchfox.org/mozilla-central/source/testing/talos/talos/tests/devtools/addon/content/damp-tests.js):
+Finally we add an entry in [damp-tests.js](https://searchfox.org/firefox-main/source/testing/talos/talos/tests/devtools/addon/content/damp-tests.js):
 ```
   {
     name: "inspector.click",

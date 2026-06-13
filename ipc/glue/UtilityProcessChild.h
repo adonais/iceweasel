@@ -40,7 +40,7 @@ class UtilityProcessChild final : public PUtilityProcessChild {
   SandboxingKind mSandbox{};
 
   bool Init(mozilla::ipc::UntypedEndpoint&& aEndpoint,
-            const nsCString& aParentBuildID, uint64_t aSandboxingKind);
+            const nsCString& aParentBuildID, SandboxingKind aSandboxingKind);
 
   mozilla::ipc::IPCResult RecvInit(const Maybe<ipc::FileDescriptor>& aBrokerFd,
                                    const bool& aCanRecordReleaseTelemetry,

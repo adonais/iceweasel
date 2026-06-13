@@ -60,6 +60,56 @@ add_task(async function test_argument_global_is_window() {
   );
 });
 
+// Bug 2031280 - When recordEvent is called for an already-destroyed inner
+// window ID, the event should not be cached: its arguments could keep the
+// destroyed window's global alive.
+add_task(async function test_late_event_for_destroyed_window() {
+  let storage = Cc["@mozilla.org/consoleAPI-storage;1"].getService(
+    Ci.nsIConsoleAPIStorage
+  );
+
+  let win = await BrowserTestUtils.openNewBrowserWindow();
+  let winId = String(win.windowGlobalChild.innerWindowId);
+
+  let obj = new win.Object();
+  obj.toString = () => "leak test object";
+
+  // Sanity check: while the window is alive, recordEvent caches the event.
+  storage.recordEvent(winId, {
+    level: "warn",
+    arguments: ["early event"],
+    timeStamp: Date.now(),
+    wrappedJSObject: null,
+  });
+  is(
+    storage.getEvents(winId).length,
+    1,
+    "Event recorded while window is alive is cached"
+  );
+
+  await BrowserTestUtils.closeWindow(win);
+
+  is(
+    storage.getEvents(winId).length,
+    0,
+    "Cached events cleared on window destruction"
+  );
+
+  // Simulate a late console message arriving after inner-window-destroyed.
+  storage.recordEvent(winId, {
+    level: "warn",
+    arguments: [obj],
+    timeStamp: Date.now(),
+    wrappedJSObject: null,
+  });
+
+  is(
+    storage.getEvents(winId).length,
+    0,
+    "Late event for destroyed window was not cached"
+  );
+});
+
 // When a system module logs an error created inside a Sandbox whose
 // prototype is a window, the message should still be keyed by that
 // window's ID.

@@ -146,6 +146,9 @@ class RootActor extends Actor {
       // updated (https://github.com/firefox-devtools/vscode-firefox-debug/issues/391).
       // Contact Holger Benl (hbenl) for topics related to the extension.
       supportsEnableWindowGlobalThreadActors: true,
+      // @backward-compat { version 152 } Once 152 hits release, we can remove this boolean
+      // and always consider it true (i.e. remove everything related to the "show comments" option in the toolbox).
+      supportsCommentNodesDisplayControl: true,
     };
   }
 

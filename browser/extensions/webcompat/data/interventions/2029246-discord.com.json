@@ -6,6 +6,9 @@
       "matches": ["*://discord.com/*"]
     }
   },
+  "css": {
+    "fix_scrollbars": "::-webkit-scrollbar { width: auto !important; height: auto !important; }"
+  },
   "interventions": [
     {
       "platforms": ["desktop"],
@@ -13,9 +16,7 @@
       "pref_check": {
         "layout.css.fake-webkit-scrollbar.enabled": true
       },
-      "content_scripts": {
-        "css": ["bug2029246-discord.com-scrollbar-fix.css"]
-      }
+      "css": ["fix_scrollbars"]
     }
   ]
 }

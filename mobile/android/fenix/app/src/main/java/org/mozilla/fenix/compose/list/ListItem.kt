@@ -47,7 +47,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
@@ -68,12 +67,11 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.badge.BADGE_SIZE_SMALL
 import mozilla.components.compose.base.badge.BadgedIcon
+import mozilla.components.compose.base.button.RadioButton
 import mozilla.components.compose.base.modifier.thenConditional
 import mozilla.components.compose.base.theme.information
 import org.mozilla.fenix.compose.Favicon
-import org.mozilla.fenix.compose.button.RadioButton
 import org.mozilla.fenix.theme.FirefoxTheme
-import java.util.Locale
 import mozilla.components.ui.icons.R as iconsR
 
 private val LIST_ITEM_HEIGHT = 56.dp
@@ -90,7 +88,6 @@ private val EmptyListItemSlot: @Composable RowScope.() -> Unit = {}
  * @param label The label in the list item.
  * @param modifier [Modifier] to be applied to the layout.
  * @param maxLabelLines An optional maximum number of lines for the label text to span.
- * @param overline An optional text shown above the label.
  * @param description An optional description text below the label.
  * @param maxDescriptionLines An optional maximum number of lines for the description text to span.
  * @param enabled Controls the enabled state of the list item. When `false`, the list item will not
@@ -109,7 +106,6 @@ fun TextListItem(
     label: String,
     modifier: Modifier = Modifier,
     maxLabelLines: Int = 1,
-    overline: String? = null,
     description: String? = null,
     maxDescriptionLines: Int = 1,
     enabled: Boolean = true,
@@ -125,7 +121,6 @@ fun TextListItem(
         label = label,
         maxLabelLines = maxLabelLines,
         modifier = modifier,
-        overline = overline,
         description = description,
         maxDescriptionLines = maxDescriptionLines,
         enabled = enabled,
@@ -169,7 +164,6 @@ fun TextListItem(
  * @param modifier [Modifier] to be applied to the layout.
  * @param faviconShape The shape used to clip the favicon. Defaults to a slightly rounded rectangle.
  * @param labelModifier [Modifier] to be applied to the label.
- * @param overline An optional text shown above the label.
  * @param description An optional description text below the label.
  * @param maxDescriptionLines An optional maximum number of lines for the description text to span.
  * @param faviconPainter Optional painter to use when fetching a new favicon is unnecessary.
@@ -189,7 +183,6 @@ fun FaviconListItem(
     modifier: Modifier = Modifier,
     faviconShape: Shape = RoundedCornerShape(2.dp),
     labelModifier: Modifier = Modifier,
-    overline: String? = null,
     description: String? = null,
     maxDescriptionLines: Int = 1,
     faviconPainter: Painter? = null,
@@ -205,7 +198,6 @@ fun FaviconListItem(
         label = label,
         modifier = modifier,
         labelModifier = labelModifier,
-        overline = overline,
         description = description,
         maxDescriptionLines = maxDescriptionLines,
         onClick = onClick,
@@ -258,7 +250,6 @@ fun FaviconListItem(
  * @param modifier [Modifier] to be applied to the layout.
  * @param labelModifier [Modifier] to be applied to the label.
  * @param colors [ListItemColors] to be applied to the list item.
- * @param overline An optional text shown above the label.
  * @param maxLabelLines An optional maximum number of lines for the label text to span.
  * @param description An optional description text below the label.
  * @param maxDescriptionLines An optional maximum number of lines for the description text to span.
@@ -291,7 +282,6 @@ fun IconListItem(
     modifier: Modifier = Modifier,
     labelModifier: Modifier = Modifier,
     colors: ListItemColors = ListItemDefaults.colors(),
-    overline: String? = null,
     maxLabelLines: Int = 1,
     description: String? = null,
     maxDescriptionLines: Int = 1,
@@ -319,7 +309,6 @@ fun IconListItem(
         modifier = modifier,
         labelModifier = labelModifier,
         colors = colors,
-        overline = overline,
         maxLabelLines = maxLabelLines,
         description = description,
         maxDescriptionLines = maxDescriptionLines,
@@ -423,7 +412,6 @@ private fun IconListItemAfterIcon(
  * @param label The label in the list item.
  * @param selected [Boolean] That indicates whether the [RadioButton] is currently selected.
  * @param modifier [Modifier] to be applied to the layout.
- * @param overline An optional text shown above the label.
  * @param maxLabelLines An optional maximum number of lines for the label text to span.
  * @param description An optional description text below the label.
  * @param maxDescriptionLines An optional maximum number of lines for the description text to span.
@@ -437,7 +425,6 @@ fun RadioButtonListItem(
     label: String,
     selected: Boolean,
     modifier: Modifier = Modifier,
-    overline: String? = null,
     maxLabelLines: Int = 1,
     description: String? = null,
     maxDescriptionLines: Int = 1,
@@ -467,7 +454,6 @@ fun RadioButtonListItem(
                 role = Role.RadioButton
             },
         maxLabelLines = maxLabelLines,
-        overline = overline,
         description = description,
         maxDescriptionLines = maxDescriptionLines,
         enabled = enabled,
@@ -484,13 +470,13 @@ fun RadioButtonListItem(
  * @param label The label in the list item.
  * @param checked [Boolean] That indicates whether the [Switch] is currently checked.
  * @param modifier [Modifier] to be applied to the layout.
- * @param overline An optional text shown above the label.
  * @param maxLabelLines An optional maximum number of lines for the label text to span.
  * @param description An optional description text below the label.
  * @param maxDescriptionLines An optional maximum number of lines for the description text to span.
  * @param enabled Controls the enabled state of the list item. When `false`, the list item will not
  * be clickable.
- * @param showSwitchAfter [Boolean] That indicates whether the [RadioButton] is after the [ListItem].
+ * @param showSwitchAfter [Boolean] That indicates whether the [Switch] is after the [ListItem].
+ * @param belowListItemContent Optional composable rendered below the description text.
  * @param onClick Called when the user clicks the [Switch].
  */
 @Composable
@@ -498,12 +484,12 @@ fun SwitchListItem(
     label: String,
     checked: Boolean,
     modifier: Modifier = Modifier,
-    overline: String? = null,
     maxLabelLines: Int = 1,
     description: String? = null,
     maxDescriptionLines: Int = 1,
     enabled: Boolean = true,
     showSwitchAfter: Boolean = false,
+    belowListItemContent: @Composable ColumnScope.() -> Unit = {},
     onClick: (Boolean) -> Unit,
 ) {
     val switch: @Composable RowScope.() -> Unit = {
@@ -524,11 +510,11 @@ fun SwitchListItem(
             role = Role.Switch
         },
         maxLabelLines = maxLabelLines,
-        overline = overline,
         description = description,
         maxDescriptionLines = maxDescriptionLines,
         enabled = enabled,
         onClick = { onClick(!checked) },
+        belowListItemContent = belowListItemContent,
         beforeListItemAction = if (showSwitchAfter) EmptyListItemSlot else switch,
         afterListItemAction = if (showSwitchAfter) switch else EmptyListItemSlot,
     )
@@ -542,7 +528,6 @@ fun SwitchListItem(
  * @param url Website [url] for which the favicon will be shown.
  * @param isSelected The selected state of the item.
  * @param modifier [Modifier] to be applied to the layout.
- * @param overline An optional text shown above the label.
  * @param description An optional description text below the label.
  * @param faviconPainter Optional painter to use when fetching a new favicon is unnecessary.
  * @param onClick Called when the user clicks on the item.
@@ -560,7 +545,6 @@ fun SelectableFaviconListItem(
     url: String,
     isSelected: Boolean,
     modifier: Modifier = Modifier,
-    overline: String? = null,
     description: String? = null,
     faviconPainter: Painter? = null,
     onClick: (() -> Unit)? = null,
@@ -574,7 +558,6 @@ fun SelectableFaviconListItem(
     ListItem(
         label = label,
         modifier = modifier,
-        overline = overline,
         description = description,
         onClick = onClick,
         onLongClick = onLongClick,
@@ -631,7 +614,6 @@ fun SelectableFaviconListItem(
  * @param modifier [Modifier] to be applied to the layout.
  * @param labelModifier [Modifier] to be applied to the label layout.
  * @param colors [ListItemColors] to be applied to the list item.
- * @param overline An optional text shown above the label.
  * @param maxLabelLines An optional maximum number of lines for the label text to span.
  * @param description An optional description text below the label.
  * @param enabled Controls the enabled state of the list item. When `false`, the list item will not
@@ -664,7 +646,6 @@ fun SelectableIconListItem(
     modifier: Modifier = Modifier,
     labelModifier: Modifier = modifier,
     colors: ListItemColors = ListItemDefaults.colors(),
-    overline: String? = null,
     maxLabelLines: Int = 1,
     description: String? = null,
     enabled: Boolean = true,
@@ -686,7 +667,6 @@ fun SelectableIconListItem(
         modifier = modifier,
         labelModifier = labelModifier,
         colors = colors,
-        overline = overline,
         maxLabelLines = maxLabelLines,
         description = description,
         enabled = enabled,
@@ -753,7 +733,6 @@ fun SelectableIconListItem(
  * @param icon The icon resource to be displayed at the beginning of the list item.
  * @param isSelected The selected state of the item.
  * @param modifier [Modifier] to be applied to the composable.
- * @param overline An optional text shown above the label.
  * @param descriptionTextColor [Color] to be applied to the description.
  * @param iconTint Tint to be applied to [icon].
  * @param labelOverflow How visual overflow should be handled for the label.
@@ -768,7 +747,6 @@ fun SelectableListItem(
     @DrawableRes icon: Int,
     isSelected: Boolean,
     modifier: Modifier = Modifier,
-    overline: String? = null,
     descriptionTextColor: Color = ListItemDefaults.colors().supportingTextColor,
     iconTint: Color = ListItemDefaults.colors().leadingIconColor,
     labelOverflow: TextOverflow = TextOverflow.Ellipsis,
@@ -792,7 +770,6 @@ fun SelectableListItem(
         label = label,
         description = description,
         modifier = modifier,
-        overline = overline,
         colors = ListItemDefaults.colors(supportingColor = descriptionTextColor),
         belowListItemContent = belowListItemContent,
         labelOverflow = labelOverflow,
@@ -838,7 +815,6 @@ private fun SelectableItemIcon(
  *
  * @param label The label in the list item.
  * @param modifier [Modifier] to be applied to the layout.
- * @param overline An optional text shown above the label.
  * @param colors [ListItemColors] to be applied ot the list item.
  * @param labelModifier [Modifier] to be applied to the label.
  * @param labelOverflow How visual overflow should be handled for the label.
@@ -859,7 +835,6 @@ private fun SelectableItemIcon(
 private fun ListItem(
     label: String,
     modifier: Modifier = Modifier,
-    overline: String? = null,
     colors: ListItemColors = ListItemDefaults.colors(),
     labelModifier: Modifier = Modifier,
     labelOverflow: TextOverflow = TextOverflow.Ellipsis,
@@ -913,7 +888,6 @@ private fun ListItem(
                 modifier = Modifier.weight(1f),
                 labelModifier = labelModifier,
                 colors = colors,
-                overline = overline,
                 labelOverflow = labelOverflow,
                 maxLabelLines = maxLabelLines,
                 description = description,
@@ -933,7 +907,6 @@ private fun ListItemContent(
     modifier: Modifier = Modifier,
     labelModifier: Modifier = Modifier,
     colors: ListItemColors = ListItemDefaults.colors(),
-    overline: String? = null,
     labelOverflow: TextOverflow = TextOverflow.Ellipsis,
     maxLabelLines: Int = 1,
     description: String? = null,
@@ -941,21 +914,9 @@ private fun ListItemContent(
     enabled: Boolean = true,
     belowListItemContent: @Composable ColumnScope.() -> Unit = {},
 ) {
-    val locale = remember(LocalConfiguration.current) { Locale.getDefault() }
-
     Column(
         modifier = modifier,
     ) {
-        overline?.let {
-            Text(
-                text = it.uppercase(locale),
-                color = colors.overlineColor,
-                style = FirefoxTheme.typography.overline.copy(hyphens = Hyphens.Auto),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
-
         Text(
             text = label,
             modifier = labelModifier,
@@ -1016,20 +977,6 @@ private fun TextListItemWithDescriptionPreview() {
 }
 
 @Composable
-@Preview(name = "TextListItem with overline and a description", uiMode = Configuration.UI_MODE_NIGHT_YES)
-private fun TextListItemWithOverLineDescriptionPreview() {
-    FirefoxTheme {
-        Box(Modifier.background(MaterialTheme.colorScheme.surface)) {
-            TextListItem(
-                label = "Label + description",
-                overline = "Overline",
-                description = "Description text",
-            )
-        }
-    }
-}
-
-@Composable
 @Preview(name = "TextListItem with a right icon", uiMode = Configuration.UI_MODE_NIGHT_YES)
 private fun TextListItemWithIconPreview() {
     FirefoxTheme {
@@ -1052,7 +999,6 @@ private fun TextListItemWithIconPreview() {
 
             TextListItem(
                 label = "Label + right icon",
-                overline = "Overline",
                 onClick = {},
                 iconPainter = painterResource(iconsR.drawable.mozac_ic_folder_24),
                 iconDescription = "click me",
@@ -1143,7 +1089,6 @@ private fun IconListItemPreview() {
 
             IconListItem(
                 label = "Left icon list item + right icon (disabled)",
-                overline = "Overline",
                 enabled = false,
                 onClick = {},
                 beforeIconPainter = painterResource(iconsR.drawable.mozac_ic_folder_24),
@@ -1165,7 +1110,6 @@ private fun IconListItemPreview() {
 
             IconListItem(
                 label = "Left icon list item highlighted + right icon (disabled)",
-                overline = "Overline",
                 enabled = false,
                 onClick = {},
                 beforeIconPainter = painterResource(iconsR.drawable.mozac_ic_folder_24),
@@ -1228,7 +1172,6 @@ private fun FaviconListItemPreview() {
 
             FaviconListItem(
                 label = "Favicon + painter",
-                overline = "Overline",
                 url = "",
                 description = "Description text",
                 faviconPainter = painterResource(id = iconsR.drawable.mozac_ic_collection_24),
@@ -1249,7 +1192,6 @@ private fun RadioButtonListItemPreview() {
             radioOptions.forEach { text ->
                 RadioButtonListItem(
                     label = text,
-                    overline = "Overline",
                     description = "$text description",
                     onClick = { onOptionSelected(text) },
                     selected = (text == selectedOption),
@@ -1259,7 +1201,6 @@ private fun RadioButtonListItemPreview() {
                 RadioButtonListItem(
                     label = text,
                     selected = (text == selectedOption),
-                    overline = "Overline",
                     description = "$text description",
                     enabled = false,
                     showButtonAfter = true,
@@ -1277,14 +1218,12 @@ private fun SwitchListItemPreview() {
         Column(Modifier.background(MaterialTheme.colorScheme.surface)) {
             SwitchListItem(
                 label = "Switch item",
-                overline = "Overline",
                 description = "Switch item description",
                 checked = true,
                 onClick = { },
             )
             SwitchListItem(
                 label = "Switch item",
-                overline = "Overline",
                 description = "Switch item description",
                 checked = true,
                 enabled = false,
@@ -1299,7 +1238,6 @@ private data class SelectableFaviconListItemPreviewState(
     val label: String,
     val url: String = "",
     val isSelected: Boolean = false,
-    val overline: String? = null,
     val description: String? = "Description text",
     val faviconRes: Int? = null,
     val onClick: (() -> Unit)? = { },
@@ -1320,7 +1258,6 @@ private class SelectableFaviconListItemParameterProvider :
             ),
             SelectableFaviconListItemPreviewState(
                 label = "Favicon + right icon + overline",
-                overline = "Overline",
                 faviconRes = iconsR.drawable.mozac_ic_collection_24,
                 iconRes = iconsR.drawable.mozac_ic_ellipsis_vertical_24,
             ),
@@ -1356,7 +1293,6 @@ private fun SelectableFaviconListItemPreview(
                 label = state.label,
                 url = state.url,
                 isSelected = state.isSelected,
-                overline = state.overline,
                 description = state.description,
                 faviconPainter = faviconPainter,
                 onClick = state.onClick,
@@ -1454,7 +1390,6 @@ private fun SelectableIconListItemPreview() {
             SelectableIconListItem(
                 label = "Selected left icon list item + right icon (disabled)",
                 isSelected = true,
-                overline = "Overline",
                 enabled = false,
                 onClick = {},
                 beforeIconPainter = painterResource(iconsR.drawable.mozac_ic_folder_24),
@@ -1510,7 +1445,6 @@ private fun SelectableListItemPreview() {
                 description = "with after action",
                 icon = iconsR.drawable.mozac_ic_folder_24,
                 isSelected = false,
-                overline = "Overline",
                 afterListItemAction = {
                     IconButton(
                         onClick = {},

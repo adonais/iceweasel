@@ -38,6 +38,11 @@
             "url": "https://bookmark6.example.com/"
           }
         ]
+      },
+      {
+        "name": "Bookmark 7",
+        "url": "https://bookmark7.example.com/",
+        "favicon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVQI12NgAAIABQAABjE+ibYAAAAASUVORK5CYII="
       }
     ]
   }

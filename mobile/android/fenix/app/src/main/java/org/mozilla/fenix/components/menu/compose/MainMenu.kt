@@ -264,7 +264,7 @@ fun MainMenu(
             )
         }
 
-        if (showIPProtection && accessPoint == MenuAccessPoint.Home) {
+        if (showIPProtection) {
             MenuGroup {
                 IPProtectionMenuItem(
                     state = ipProtectionMenuState,

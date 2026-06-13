@@ -135,6 +135,7 @@ void TrialInliner::cloneSharedPrefix(ICCacheIRStub* stub,
 bool TrialInliner::replaceICStub(ICEntry& entry, ICFallbackStub* fallback,
                                  CacheIRWriter& writer, CacheKind kind) {
   MOZ_ASSERT(fallback->trialInliningState() == TrialInliningState::Candidate);
+  writer.setTrialInliningState(TrialInliningState::Inlined);
 
   fallback->discardStubs(cx()->zone(), &entry);
 

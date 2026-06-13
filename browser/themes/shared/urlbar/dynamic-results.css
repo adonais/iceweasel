@@ -37,7 +37,7 @@
     }
 
     > .urlbarView-button {
-      margin-bottom: var(--urlbarView-item-block-padding);
+      margin-bottom: var(--urlbarView-row-padding-block);
     }
   }
 }

@@ -26,9 +26,9 @@ class gfxFontMissingGlyphs final {
   typedef mozilla::gfx::Pattern Pattern;
   typedef mozilla::gfx::Rect Rect;
 
+ public:
   gfxFontMissingGlyphs() = delete;  // prevent instantiation
 
- public:
   /**
    * Draw hexboxes for a missing glyph.
    * @param aChar the UTF16 codepoint for the character

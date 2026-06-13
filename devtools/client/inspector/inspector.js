@@ -768,7 +768,7 @@ class Inspector extends EventEmitter {
   };
 
   #isFromInspectorWindow = event => {
-    const win = event.originalTarget.ownerGlobal;
+    const win = event.originalTarget.documentGlobal;
     return win === this.panelWin || win.parent === this.panelWin;
   };
 
@@ -1791,7 +1791,7 @@ class Inspector extends EventEmitter {
     this.sidebar.off("destroy", this.onSidebarHidden);
 
     for (const [, panel] of this.#panels) {
-      panel.destroy();
+      panel.destroy({ fromInspectorDestroy: true });
     }
     this.#panels.clear();
 
@@ -2122,6 +2122,15 @@ class Inspector extends EventEmitter {
       return true;
     }
     return false;
+  }
+
+  /**
+   * Check if this inspector instance already started being destroyed.
+   *
+   * @returns {boolean} true if the inspector destroy() was already called.
+   */
+  isDestroyed() {
+    return !!this.#destroyed;
   }
 }
 

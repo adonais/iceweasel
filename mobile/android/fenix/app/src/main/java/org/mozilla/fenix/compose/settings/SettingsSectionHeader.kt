@@ -9,6 +9,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
@@ -22,13 +23,18 @@ import org.mozilla.fenix.theme.Theme
  *
  * @param text The header string.
  * @param modifier [Modifier] to be applied to the layout.
+ * @param color [Color] to be applied to the layout, default onSurfaceVariant
  */
 @Composable
-fun SettingsSectionHeader(text: String, modifier: Modifier = Modifier) {
+fun SettingsSectionHeader(
+    text: String,
+    modifier: Modifier = Modifier,
+    color: Color = MaterialTheme.colorScheme.onSurfaceVariant,
+) {
     Text(
         text = text,
         style = FirefoxTheme.typography.headline8,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        color = color,
         modifier = modifier.semantics { heading() },
     )
 }

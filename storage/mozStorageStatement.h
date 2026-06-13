@@ -114,7 +114,7 @@ class Statement final : public mozIStorageStatement,
    * @param aDestructing
    *        Is the destructor calling?
    */
-  nsresult internalFinalize(bool aDestructing);
+  void internalFinalize(bool aDestructing);
 
   friend class StatementJSHelper;
 };

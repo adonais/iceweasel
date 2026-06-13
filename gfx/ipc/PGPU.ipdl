@@ -44,6 +44,7 @@ using mozilla::layers::VideoBridgeSource from "mozilla/layers/VideoBridgeUtils.h
 using mozilla::hal::BatteryInformation from "mozilla/hal_sandbox/PHal.h";
 using mozilla::gfx::DeviceResetReason from "mozilla/gfx/Types.h";
 using mozilla::gfx::DeviceResetDetectPlace from "mozilla/gfx/Types.h";
+using std::string from "string";
 
 namespace mozilla {
 namespace gfx {
@@ -69,9 +70,9 @@ parent:
 
   async InitCompositorManager(Endpoint<PCompositorManagerParent> endpoint, uint32_t aNamespace);
   async InitVsyncBridge(Endpoint<PVsyncBridgeParent> endpoint);
-  async InitImageBridge(Endpoint<PImageBridgeParent> endpoint);
+  async InitImageBridge(Endpoint<PImageBridgeParent> endpoint, uint32_t aNamespace);
   async InitVideoBridge(Endpoint<PVideoBridgeParent> endpoint, VideoBridgeSource aSource);
-  async InitVRManager(Endpoint<PVRManagerParent> endpoint);
+  async InitVRManager(Endpoint<PVRManagerParent> endpoint, uint32_t aNamespace);
   async InitUiCompositorController(LayersId rootLayerTreeId, Endpoint<PUiCompositorControllerParent> endpoint);
   async InitAPZInputBridge(LayersId layersId,
                            Endpoint<PAPZInputBridgeParent> endpoint);
@@ -87,8 +88,8 @@ parent:
 
   // Create a new content-process compositor bridge.
   async NewContentCompositorManager(Endpoint<PCompositorManagerParent> endpoint, ContentParentId childId, uint32_t aNamespace);
-  async NewContentImageBridge(Endpoint<PImageBridgeParent> endpoint, ContentParentId childId);
-  async NewContentVRManager(Endpoint<PVRManagerParent> endpoint, ContentParentId childId);
+  async NewContentImageBridge(Endpoint<PImageBridgeParent> endpoint, ContentParentId childId, uint32_t aNamespace);
+  async NewContentVRManager(Endpoint<PVRManagerParent> endpoint, ContentParentId childId, uint32_t aNamespace);
   async NewContentRemoteMediaManager(Endpoint<PRemoteMediaManagerParent> endpoint, ContentParentId childId);
 
   // Called to notify the GPU process of who owns a layersId.
@@ -115,7 +116,7 @@ parent:
 
   // Functions supporting PerfStats data collection.
   async UpdatePerfStatsCollectionMask(uint64_t aMask);
-  async CollectPerfStatsJSON() returns (nsCString aStats);
+  async CollectPerfStatsJSON() returns (string aStats);
 
 #if defined(MOZ_SANDBOX) && defined(MOZ_DEBUG) && defined(ENABLE_TESTS)
   async InitSandboxTesting(Endpoint<PSandboxTestingChild> aEndpoint);

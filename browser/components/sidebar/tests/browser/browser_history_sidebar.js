@@ -21,6 +21,12 @@ ChromeUtils.defineESModuleGetters(lazy, {
 let URLs, dates, today;
 
 add_setup(async () => {
+  // test_history_context_menu opens the legacy bookmarks sidebar panel and
+  // inspects its tree view, so opt out of the updated bookmarks panel here.
+  // TODO(Bug 2039395): adapt this test to the new bookmarks sidebar panel and remove this sidebar.updateBookmarks.enabled pushPrefEnv)
+  await SpecialPowers.pushPrefEnv({
+    set: [["sidebar.updatedBookmarks.enabled", false]],
+  });
   const historyInfo = await populateHistory();
   URLs = historyInfo.URLs;
   dates = historyInfo.dates;
@@ -596,20 +602,21 @@ add_task(async function test_history_context_menu() {
   );
 
   info("Open link in new tab.");
-  const promiseTabOpen = BrowserTestUtils.waitForEvent(
-    window.gBrowser.tabContainer,
-    "TabOpen"
+  const newTabPromise = BrowserTestUtils.waitForNewTab(
+    window.gBrowser,
+    url,
+    true
   );
   await openAndWaitForContextMenu(contextMenu, rows[0].mainEl, () =>
     contextMenu.activateItem(getItem("open-in-tab"))
   );
-  await promiseTabOpen;
-  await BrowserTestUtils.browserLoaded(
-    window.gBrowser,
-    false,
-    rows[0].mainEl.href
+  const newTab = await newTabPromise;
+  is(
+    window.gBrowser.tabs[window.gBrowser.tabs.length - 1],
+    newTab,
+    "New tab opened in background"
   );
-  is(window.gBrowser.currentURI.spec, rows[0].mainEl.href, "New tab opened");
+  BrowserTestUtils.removeTab(newTab);
 
   info("Clear all data from website");
   let dialogOpened = BrowserTestUtils.promiseAlertDialogOpen(

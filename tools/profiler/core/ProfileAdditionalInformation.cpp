@@ -392,4 +392,23 @@ bool IPC::ParamTraits<mozilla::ProfileGenerationAdditionalInformation>::Read(
   return true;
 }
 
+void IPC::ParamTraits<mozilla::ProfileAndAdditionalInformation>::Write(
+    MessageWriter* aWriter, const paramType& aParam) {
+  WriteParam(aWriter, aParam.mProfile);
+  WriteParam(aWriter, aParam.mAdditionalInformation);
+}
+
+bool IPC::ParamTraits<mozilla::ProfileAndAdditionalInformation>::Read(
+    MessageReader* aReader, paramType* aResult) {
+  if (!ReadParam(aReader, &aResult->mProfile)) {
+    return false;
+  }
+
+  if (!ReadParam(aReader, &aResult->mAdditionalInformation)) {
+    return false;
+  }
+
+  return true;
+}
+
 }  // namespace IPC

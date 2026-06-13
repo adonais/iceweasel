@@ -1507,11 +1507,11 @@ static void TraceWasmSuspendedContStacks(JSContext* cx, JSTracer* trc) {
     return;
   }
 
-  for (wasm::ContStack* stack : cx->wasm().stacks()) {
+  cx->wasm().contStacks().forEachAllocatedStack([trc](wasm::ContStack* stack) {
     if (stack->canResume()) {
       stack->traceSuspended(trc);
     }
-  }
+  });
 }
 #endif
 
@@ -1561,11 +1561,12 @@ void UpdateJitActivationsForMinorGC(JSRuntime* rt) {
     }
   }
 #ifdef ENABLE_WASM_JSPI
-  for (wasm::ContStack* stack : cx->wasm().stacks()) {
-    if (stack->canResume()) {
-      stack->updateSuspendedForMovingGC(nursery);
-    }
-  }
+  cx->wasm().contStacks().forEachAllocatedStack(
+      [&nursery](wasm::ContStack* stack) {
+        if (stack->canResume()) {
+          stack->updateSuspendedForMovingGC(nursery);
+        }
+      });
 #endif
 }
 
@@ -1584,11 +1585,12 @@ void UpdateJitActivationsForCompactingGC(JSRuntime* rt) {
     }
   }
 #ifdef ENABLE_WASM_JSPI
-  for (wasm::ContStack* stack : cx->wasm().stacks()) {
-    if (stack->canResume()) {
-      stack->updateSuspendedForMovingGC(nursery);
-    }
-  }
+  cx->wasm().contStacks().forEachAllocatedStack(
+      [&nursery](wasm::ContStack* stack) {
+        if (stack->canResume()) {
+          stack->updateSuspendedForMovingGC(nursery);
+        }
+      });
 #endif
 }
 
@@ -1739,10 +1741,15 @@ bool SnapshotIterator::allocationReadable(const RValueAllocation& alloc,
 
   switch (alloc.mode()) {
     case RValueAllocation::DOUBLE_REG:
+    case RValueAllocation::FLOAT32_REG:
       return hasRegister(alloc.fpuReg());
+    case RValueAllocation::FLOAT32_STACK:
+      return hasStack(alloc.stackOffset());
 
     case RValueAllocation::TYPED_REG:
       return hasRegister(alloc.reg2());
+    case RValueAllocation::TYPED_STACK:
+      return hasStack(alloc.stackOffset2());
 
 #if defined(JS_NUNBOX32)
     case RValueAllocation::UNTYPED_REG_REG:
@@ -1789,8 +1796,15 @@ bool SnapshotIterator::allocationReadable(const RValueAllocation& alloc,
       return hasStack(alloc.stackOffset());
 #endif
 
-    default:
+    case RValueAllocation::CONSTANT:
+    case RValueAllocation::CST_UNDEFINED:
+    case RValueAllocation::CST_NULL:
+    case RValueAllocation::INTPTR_CST:
+    case RValueAllocation::INT64_CST:
       return true;
+
+    default:
+      MOZ_CRASH("Unexpected mode");
   }
 }
 
@@ -2564,6 +2578,10 @@ char* MachineState::SafepointState::addressOfRegister(FloatRegister reg) const {
   char* ptr = floatSpillBase;
   for (FloatRegisterBackwardIterator iter(floatRegs); iter.more(); ++iter) {
     ptr -= (*iter).size();
+    if ((*iter).size() < reg.size()) {
+      // The spilled slot is too small to hold |reg|.
+      continue;
+    }
     for (uint32_t a = 0; a < (*iter).numAlignedAliased(); a++) {
       // Only say that registers that actually start here start here.
       // e.g. d0 should not start at s1, only at s0.
@@ -2574,6 +2592,24 @@ char* MachineState::SafepointState::addressOfRegister(FloatRegister reg) const {
     }
   }
   MOZ_CRASH("Invalid register");
+}
+
+bool MachineState::has(FloatRegister reg) const {
+  if (state_.is<BailoutState>()) {
+    return true;
+  }
+  // ReduceSetForPush may represent a register using a wider alias in the
+  // spill set (for example, on arm64 a float32 register is spilled using its
+  // double-precision alias). Look for any aligned alias of |reg| that's at
+  // least as wide as |reg|. This must match addressOfRegister above.
+  const auto& s = state_.as<SafepointState>();
+  for (uint32_t a = 0; a < reg.numAlignedAliased(); a++) {
+    FloatRegister alias = reg.alignedAliased(a);
+    if (alias.size() >= reg.size() && s.floatRegs.hasRegisterIndex(alias)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 uintptr_t MachineState::read(Register reg) const {
@@ -2767,10 +2803,14 @@ void AssertJitStackInvariants(JSContext* cx) {
               frameSize % JitStackAlignment == 0,
               "The blinterp entry frame should keep the alignment");
 
+          size_t numArgs = frames.numActualArgs();
+          if (frames.isFunctionFrame()) {
+            // The caller pushes `undefined` for missing formals.
+            numArgs = std::max(numArgs, frames.callee()->nargs());
+          }
           size_t expectedFrameSize =
-              sizeof(Value) *
-                  (frames.callee()->nargs() + 1 /* |this| argument */ +
-                   frames.isConstructing() /* new.target */) +
+              sizeof(Value) * (numArgs + 1 /* |this| argument */ +
+                               frames.isConstructing() /* new.target */) +
               sizeof(JitFrameLayout);
           MOZ_RELEASE_ASSERT(frameSize >= expectedFrameSize,
                              "The frame is large enough to hold all arguments");

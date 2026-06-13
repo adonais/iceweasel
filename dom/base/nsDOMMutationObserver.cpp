@@ -12,6 +12,7 @@
 #include "mozilla/OwningNonNull.h"
 #include "mozilla/dom/Animation.h"
 #include "mozilla/dom/CharacterDataBuffer.h"
+#include "mozilla/dom/ContentList.h"
 #include "mozilla/dom/DocGroup.h"
 #include "mozilla/dom/KeyframeEffect.h"
 #include "nsContentUtils.h"
@@ -41,16 +42,16 @@ nsDOMMutationRecord::nsDOMMutationRecord(nsAtom* aType, nsISupports* aOwner)
 
 nsDOMMutationRecord::~nsDOMMutationRecord() = default;
 
-nsINodeList* nsDOMMutationRecord::AddedNodes() {
+NodeList* nsDOMMutationRecord::AddedNodes() {
   if (!mAddedNodes) {
-    mAddedNodes = new nsSimpleContentList(mTarget);
+    mAddedNodes = new SimpleContentList(mTarget);
   }
   return mAddedNodes;
 }
 
-nsINodeList* nsDOMMutationRecord::RemovedNodes() {
+NodeList* nsDOMMutationRecord::RemovedNodes() {
   if (!mRemovedNodes) {
-    mRemovedNodes = new nsSimpleContentList(mTarget);
+    mRemovedNodes = new SimpleContentList(mTarget);
   }
   return mRemovedNodes;
 }
@@ -218,7 +219,7 @@ void nsMutationReceiver::ContentAppended(nsIContent* aFirstNewContent,
     return;
   }
   m->mTarget = parent;
-  m->mAddedNodes = new nsSimpleContentList(parent);
+  m->mAddedNodes = new SimpleContentList(parent);
 
   nsINode* n = aFirstNewContent;
   while (n) {
@@ -252,7 +253,7 @@ void nsMutationReceiver::ContentInserted(nsIContent* aChild,
     return;
   }
   m->mTarget = parent;
-  m->mAddedNodes = new nsSimpleContentList(parent);
+  m->mAddedNodes = new SimpleContentList(parent);
   m->mAddedNodes->AppendElement(aChild);
   m->mPreviousSibling = aChild->GetPreviousSibling();
   m->mNextSibling = aChild->GetNextSibling();
@@ -335,7 +336,7 @@ void nsMutationReceiver::ContentWillBeRemoved(nsIContent* aChild,
     MOZ_ASSERT(parent);
 
     m->mTarget = parent;
-    m->mRemovedNodes = new nsSimpleContentList(parent);
+    m->mRemovedNodes = new SimpleContentList(parent);
     m->mRemovedNodes->AppendElement(aChild);
     m->mPreviousSibling = aChild->GetPreviousSibling();
     m->mNextSibling = aChild->GetNextSibling();
@@ -1000,9 +1001,9 @@ void nsAutoMutationBatch::Done() {
     nsDOMMutationObserver* ob = mObservers[i].mObserver;
     bool wantsChildList = mObservers[i].mWantsChildList;
 
-    RefPtr<nsSimpleContentList> removedList;
+    RefPtr<SimpleContentList> removedList;
     if (wantsChildList) {
-      removedList = new nsSimpleContentList(mBatchTarget);
+      removedList = new SimpleContentList(mBatchTarget);
     }
 
     nsTArray<nsMutationReceiver*> allObservers;
@@ -1037,8 +1038,7 @@ void nsAutoMutationBatch::Done() {
       }
     }
     if (wantsChildList && (mRemovedNodes.Length() || mAddedNodes.Length())) {
-      RefPtr<nsSimpleContentList> addedList =
-          new nsSimpleContentList(mBatchTarget);
+      RefPtr<SimpleContentList> addedList = new SimpleContentList(mBatchTarget);
       for (uint32_t i = 0; i < mAddedNodes.Length(); ++i) {
         addedList->AppendElement(mAddedNodes[i]);
       }

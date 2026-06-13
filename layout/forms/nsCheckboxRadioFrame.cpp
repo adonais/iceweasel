@@ -6,6 +6,7 @@
 
 #include "LayoutConstants.h"
 #include "mozilla/PresShell.h"
+#include "mozilla/ReflowInput.h"
 #include "nsIContent.h"
 #include "nsLayoutUtils.h"
 

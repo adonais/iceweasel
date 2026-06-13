@@ -118,7 +118,8 @@ browsertime-tp6m:
             - dailymail
             - [ebay-kleinanzeigen, ebay-k]
             - [ebay-kleinanzeigen-search, ebay-k-s]
-            - [facebook-cristiano, fb-cris]
+            # Bug 1682027 - Disabled due to high failure rate
+            # - [facebook-cristiano, fb-cris]
             - [google-maps, gmaps]
             - [google-search-restaurants, gsearch-r]
             - instagram

@@ -42,13 +42,13 @@ class BitSet {
 
   inline unsigned int numWords() const { return RawLengthForBits(numBits_); }
 
-  BitSet(const BitSet&) = delete;
-  void operator=(const BitSet&) = delete;
-
  public:
   class Iterator;
 
   explicit BitSet(unsigned int numBits) : bits_(nullptr), numBits_(numBits) {}
+
+  BitSet(const BitSet&) = delete;
+  void operator=(const BitSet&) = delete;
 
   [[nodiscard]] bool init(TempAllocator& alloc);
 

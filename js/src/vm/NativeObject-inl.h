@@ -588,6 +588,21 @@ MOZ_ALWAYS_INLINE bool NativeObject::setShapeAndAddNewSlots(
   return true;
 }
 
+MOZ_ALWAYS_INLINE bool NativeObject::canDoSetPropertyFastpath() const {
+  if (is<TypedArrayObject>()) {
+    return false;
+  }
+
+  const JSClass* clasp = getClass();
+  if (clasp->getAddProperty() || clasp->getResolve() ||
+      clasp->getOpsDefineProperty() || clasp->getOpsLookupProperty() ||
+      clasp->getOpsSetProperty() || hasUnpreservedWrapper()) {
+    return false;
+  }
+
+  return true;
+}
+
 MOZ_ALWAYS_INLINE bool NativeObject::setShapeAndAddNewSlot(
     JSContext* cx, SharedShape* newShape, uint32_t slot) {
   MOZ_ASSERT(!inDictionaryMode());
@@ -886,10 +901,10 @@ inline bool IsPackedArray(JSObject* obj) {
   return true;
 }
 
-// Like AddDataProperty but optimized for plain objects. Plain objects don't
-// have an addProperty hook.
-MOZ_ALWAYS_INLINE bool AddDataPropertyToPlainObject(
-    JSContext* cx, Handle<PlainObject*> obj, HandleId id, HandleValue v,
+// Like AddDataProperty but eliding checks for add property hooks and
+// wrapper preservation.
+MOZ_ALWAYS_INLINE bool AddDataPropertyToNativeObjectNoHooks(
+    JSContext* cx, Handle<NativeObject*> obj, HandleId id, HandleValue v,
     uint32_t* resultSlot = nullptr) {
   MOZ_ASSERT(!id.isInt());
 
@@ -904,8 +919,7 @@ MOZ_ALWAYS_INLINE bool AddDataPropertyToPlainObject(
 
   obj->initSlot(*resultSlot, v);
 
-  MOZ_ASSERT(!obj->getClass()->getAddProperty());
-  MOZ_ASSERT(!obj->getClass()->preservesWrapper());
+  MOZ_ASSERT(obj->canDoSetPropertyFastpath());
   return true;
 }
 

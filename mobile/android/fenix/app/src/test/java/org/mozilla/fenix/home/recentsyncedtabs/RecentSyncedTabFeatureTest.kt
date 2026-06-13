@@ -35,7 +35,6 @@ import mozilla.components.service.fxa.sync.SyncReason
 import mozilla.components.support.test.robolectric.testContext
 import mozilla.telemetry.glean.testing.ErrorType
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Rule
@@ -45,6 +44,7 @@ import org.mozilla.fenix.GleanMetrics.RecentSyncedTabs
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.helpers.FenixGleanTestRule
+import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class RecentSyncedTabFeatureTest {

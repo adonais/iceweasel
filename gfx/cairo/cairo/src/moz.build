@@ -44,6 +44,7 @@ if CONFIG['MOZ_WIDGET_TOOLKIT'] == 'windows':
         'win32/cairo-win32-font.c',
         'win32/cairo-win32-gdi-compositor.c',
         'win32/cairo-win32-surface.c',
+        'win32/cairo-win32-system.c',
     ]
     DEFINES['DISABLE_SOME_FLOATING_POINT'] = True
     DEFINES['CAIRO_WIN32_STATIC_BUILD'] = True

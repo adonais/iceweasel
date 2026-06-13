@@ -10,7 +10,7 @@
     {
       "platforms": ["all"],
       "content_scripts": {
-        "js": ["bug2007641-www.papajohns.com-DateTimeFormat-CST-fix.js"]
+        "js": ["support_nonstandard_timezones.js"]
       }
     }
   ]

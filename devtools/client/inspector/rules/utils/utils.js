@@ -152,7 +152,7 @@ function getNodeInfo(node, elementStyle) {
   } else if (node.classList.contains("ruleview-selector-warnings")) {
     type = VIEW_NODE_CSS_SELECTOR_WARNINGS;
     value = node.getAttribute("data-selector-warning-kind").split(",");
-  } else if (node.classList.contains("inspector-attribute")) {
+  } else if (node.classList.contains("inspector-attr-name")) {
     type = VIEW_NODE_ATTR_TYPE;
     value = {
       attribute: node.getAttribute("data-attribute"),

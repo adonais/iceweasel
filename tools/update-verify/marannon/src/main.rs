@@ -153,7 +153,6 @@ fn main() -> Result<()> {
         &args.to_installer,
         &args.channel,
         &args.appname,
-        args.cert_replace_script.as_deref(),
         args.cert_dir.as_deref(),
         &args.cert_override,
         tests,

@@ -8,6 +8,7 @@ using mozilla::layers::RemoteTextureOwnerId from "mozilla/layers/LayersTypes.h";
 using mozilla::layers::RemoteTextureTxnType from "mozilla/layers/LayersTypes.h";
 using mozilla::layers::RemoteTextureTxnId from "mozilla/layers/LayersTypes.h";
 using mozilla::webgpu::RawId from "mozilla/webgpu/WebGPUTypes.h";
+using mozilla::dom::GPUDeviceLostReason from "mozilla/dom/WebGPUBinding.h";
 using mozilla::dom::GPUErrorFilter from "mozilla/dom/WebGPUBinding.h";
 using mozilla::dom::GPURequestAdapterOptions from "mozilla/dom/WebGPUBinding.h";
 using mozilla::dom::GPUCommandBufferDescriptor from "mozilla/dom/WebGPUBinding.h";
@@ -54,7 +55,7 @@ child:
   async ServerMessage(ByteBuf buf);
 
   async UncapturedError(RawId aDeviceId, GPUErrorFilter type, nsCString message);
-  async DeviceLost(RawId aDeviceId, uint8_t reason, nsCString message);
+  async DeviceLost(RawId aDeviceId, GPUDeviceLostReason reason, nsCString message);
   async __delete__();
 };
 

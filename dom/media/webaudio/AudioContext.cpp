@@ -757,7 +757,7 @@ double AudioContext::CurrentTime() {
 }
 
 nsISerialEventTarget* AudioContext::GetMainThread() const {
-  if (nsIGlobalObject* global = GetOwnerGlobal()) {
+  if (nsIGlobalObject* global = GetRelevantGlobal()) {
     return global->SerialEventTarget();
   }
   return GetCurrentSerialEventTarget();
@@ -999,6 +999,18 @@ void AudioContext::SuspendFromChrome() {
   SuspendInternal(nullptr, Preferences::GetBool("dom.audiocontext.testing")
                                ? AudioContextOperationFlags::SendStateChange
                                : AudioContextOperationFlags::None);
+}
+
+void AudioContext::SuspendByMediaControl() {
+  // Offline contexts never register a media-control listener, so this should
+  // not be reachable for them.
+  MOZ_DIAGNOSTIC_ASSERT(!mIsOffline);
+  if (mIsShutDown || mCloseCalled) {
+    return;
+  }
+  // Tag the suspend as "by content" so that the page can resume.
+  mSuspendedByContent = true;
+  SuspendInternal(nullptr, AudioContextOperationFlags::SendStateChange);
 }
 
 void AudioContext::SuspendInternal(void* aPromise,

@@ -618,6 +618,11 @@ void nsPNGDecoder::info_callback(png_structp png_ptr, png_infop info_ptr) {
     png_error(decoder->mPNG, "Image is too wide");
   }
 
+  auto imageSize = CheckedInt<int32_t>(width) * height * 4;
+  if (!imageSize.isValid()) {
+    png_error(decoder->mPNG, "Image is too big");
+  }
+
   if (decoder->HasError()) {
     // Setting the size led to an error.
     png_error(decoder->mPNG, "Sizing error");
@@ -808,16 +813,12 @@ void nsPNGDecoder::info_callback(png_structp png_ptr, png_infop info_ptr) {
   }
 
   if (isInterlaced) {
-    if (frameRect.Height() <
-        INT32_MAX / (frameRect.Width() * int32_t(channels))) {
-      const size_t bufferSize =
-          channels * frameRect.Width() * frameRect.Height();
-
-      if (bufferSize > SurfaceCache::MaximumCapacity()) {
-        png_error(decoder->mPNG, "Insufficient memory to deinterlace image");
-      }
-
-      decoder->interlacebuf = static_cast<uint8_t*>(malloc(bufferSize));
+    auto bufferSize =
+        CheckedInt<int32_t>(frameRect.Width()) * frameRect.Height() * channels;
+    if (bufferSize.isValid() && bufferSize.value() > 0 &&
+        static_cast<size_t>(bufferSize.value()) <=
+            SurfaceCache::MaximumCapacity()) {
+      decoder->interlacebuf = static_cast<uint8_t*>(malloc(bufferSize.value()));
     }
     if (!decoder->interlacebuf) {
       png_error(decoder->mPNG, "malloc of interlacebuf failed");

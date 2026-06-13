@@ -8,9 +8,9 @@
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/StaticPrefs_dom.h"
+#include "mozilla/dom/ContentList.h"
 #include "mozilla/dom/CustomElementRegistry.h"
 #include "mozilla/dom/HTMLFieldSetElementBinding.h"
-#include "nsContentList.h"
 #include "nsQueryObject.h"
 
 NS_IMPL_NS_NEW_HTML_ELEMENT(FieldSet)
@@ -91,10 +91,10 @@ bool HTMLFieldSetElement::MatchListedElements(Element* aElement,
   return nsIFormControl::FromNodeOrNull(aElement) != nullptr;
 }
 
-nsIHTMLCollection* HTMLFieldSetElement::Elements() {
+HTMLCollection* HTMLFieldSetElement::Elements() {
   if (!mElements) {
     mElements =
-        new nsContentList(this, MatchListedElements, nullptr, nullptr, true);
+        new ContentList(this, MatchListedElements, nullptr, nullptr, true);
   }
 
   return mElements;
@@ -272,7 +272,7 @@ void HTMLFieldSetElement::NotifyElementsForFirstLegendChange(bool aNotify) {
    */
   if (!mElements) {
     mElements =
-        new nsContentList(this, MatchListedElements, nullptr, nullptr, true);
+        new ContentList(this, MatchListedElements, nullptr, nullptr, true);
   }
 
   uint32_t length = mElements->Length(true);

@@ -118,17 +118,14 @@ add_task(async function test_single_email_field_now_shows_address_autofill() {
   await removeAllRecords();
   await setStorage(TEST_ADDRESS_1);
 
-  await BrowserTestUtils.withNewTab(
-    { gBrowser, url: PAGE_URL },
-    async function (browser) {
-      // To confirm that address autofill is working for a single email field, we need to remove the password fields from the fixture.
-      await SpecialPowers.spawn(browser, [], () => {
-        content.document.getElementById("new-password").remove();
-        content.document.getElementById("new-password-repeat").remove();
-      });
+  // To confirm that address autofill is working for a single email field, we use this fixture.
+  const SINGLE_EMAIL_PAGE_URL =
+    "https://example.org/browser/browser/extensions/formautofill/test/fixtures/autocomplete_single_email.html";
 
+  await BrowserTestUtils.withNewTab(
+    { gBrowser, url: SINGLE_EMAIL_PAGE_URL },
+    async function (browser) {
       const focusInput = "#email";
-      await focusAndWaitForFieldsIdentified(browser, "#given-name");
       await openPopupOn(browser, focusInput);
 
       const items = getDisplayedPopupItems(browser);

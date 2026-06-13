@@ -24,8 +24,7 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/StateMirroring.h"
-#include "nsIGfxInfo.h"
-#include "nsServiceManagerUtils.h"
+#include "mozilla/gfx/gfxVars.h"
 #include "nsThreadUtils.h"
 #include "transport/SrtpFlow.h"  // For SRTP_MAX_EXPANSION
 
@@ -802,7 +801,7 @@ void WebrtcVideoConduit::OnControlConfigChange() {
 
           // Set each layer's max-bitrate explicitly or libwebrtc may ignore all
           // stream-specific max-bitrate settings later on, as provided by the
-          // VideoStreamFactory. Default to our max of 10Mbps, overriden by
+          // VideoStreamFactory. Default to our max of 10Mbps, overridden by
           // SDP/JS.
           int maxBps = KBPS(10000);
           maxBps = MinIgnoreZero(maxBps, mPrefMaxBitrate);
@@ -1146,7 +1145,7 @@ void WebrtcVideoConduit::SetRemoteSSRCConfig(uint32_t aSsrc,
   }
 
   mRecvSSRC = mRecvStreamConfig.rtp.remote_ssrc = aSsrc;
-  // If we have no associated PT then ensure we dont have an rtx_ssrc set.
+  // If we have no associated PT then ensure we don't have an rtx_ssrc set.
   mRecvStreamConfig.rtp.rtx_ssrc =
       mRecvStreamConfig.rtp.rtx_associated_payload_types.empty() ? 0 : aRtxSsrc;
 }
@@ -1530,9 +1529,13 @@ void WebrtcVideoConduit::OnSendFrame(const webrtc::VideoFrame& aFrame) {
 
   const gfx::IntSize size{aFrame.width(), aFrame.height()};
 
-  CSFLogVerbose(LOGTAG, "WebrtcVideoConduit %p %s (send SSRC %u (0x%x))", this,
-                __FUNCTION__, mSendStreamConfig.rtp.ssrcs.front(),
-                mSendStreamConfig.rtp.ssrcs.front());
+  {
+    const auto ssrc = mSendStreamConfig.rtp.ssrcs.empty()
+                          ? 0u
+                          : mSendStreamConfig.rtp.ssrcs.front();
+    CSFLogVerbose(LOGTAG, "WebrtcVideoConduit %p %s (send SSRC %u (0x%x))",
+                  this, __FUNCTION__, ssrc, ssrc);
+  }
 
   if (Some(size) != mLastSize) {
     MOZ_ASSERT(size != gfx::IntSize(0, 0));
@@ -2112,16 +2115,7 @@ bool WebrtcVideoConduit::HasCodecPluginID(uint64_t aPluginID) const {
 }
 
 bool WebrtcVideoConduit::HasH264Hardware() {
-  nsCOMPtr<nsIGfxInfo> gfxInfo = do_GetService("@mozilla.org/gfx/info;1");
-  if (!gfxInfo) {
-    return false;
-  }
-  int32_t status;
-  nsCString discardFailureId;
-  return NS_SUCCEEDED(gfxInfo->GetFeatureStatus(
-             nsIGfxInfo::FEATURE_WEBRTC_HW_ACCELERATION_H264, discardFailureId,
-             &status)) &&
-         status == nsIGfxInfo::FEATURE_STATUS_OK;
+  return gfx::gfxVars::IsInitialized() && gfx::gfxVars::HasWebrtcH264Hw();
 }
 
 bool WebrtcVideoConduit::HasAv1() { return true; }

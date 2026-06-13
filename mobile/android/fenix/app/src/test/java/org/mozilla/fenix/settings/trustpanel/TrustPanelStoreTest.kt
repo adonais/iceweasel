@@ -16,6 +16,8 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mozilla.fenix.components.menu.store.IPProtectionMenuState
+import org.mozilla.fenix.components.menu.store.IPProtectionMenuStatus
 import org.mozilla.fenix.settings.PhoneFeature
 import org.mozilla.fenix.settings.sitepermissions.AUTOPLAY_ALLOW_ALL
 import org.mozilla.fenix.settings.trustpanel.store.AutoplayValue
@@ -255,6 +257,19 @@ class TrustPanelStoreTest {
                 deviceFeature = PhoneFeature.AUTOPLAY,
             ),
         )
+    }
+
+    @Test
+    fun `WHEN update IP protection menu state action is dispatched THEN IP protection menu state is updated`() = runTest {
+        val store = TrustPanelStore(initialState = TrustPanelState())
+        val newState = IPProtectionMenuState(
+            status = IPProtectionMenuStatus.Enabled,
+            dataLimitGb = 5,
+        )
+
+        store.dispatch(TrustPanelAction.UpdateIPProtectionMenuState(newState))
+
+        assertEquals(newState, store.state.ipProtectionMenuState)
     }
 
     @Test

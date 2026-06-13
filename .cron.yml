@@ -526,3 +526,16 @@ jobs:
           - {hour: 15, minute: 15}
           - {hour: 18, minute: 15}
           - {hour: 21, minute: 15}
+
+    - name: android-macrobenchmark-daily
+      job:
+          type: decision-task
+          treeherder-symbol: mbench
+          target-tasks-method: android-macrobenchmark_daily
+          include-push-tasks: true
+      run-on-projects:
+          - mozilla-central
+          - mozilla-beta
+          - mozilla-release
+      when:
+          - {hour: 2, minute: 0}

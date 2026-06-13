@@ -128,15 +128,6 @@ dom::DocumentOrShadowRoot* StyleSheet::GetAssociatedDocumentOrShadowRoot()
   return nullptr;
 }
 
-void StyleSheet::UpdateRelevantGlobal() {
-  if (mRelevantGlobal || !IsComplete()) {
-    return;
-  }
-  if (Document* doc = GetAssociatedDocument()) {
-    mRelevantGlobal = doc->GetScopeObject();
-  }
-}
-
 Document* StyleSheet::GetKeptAliveByDocument() const {
   const StyleSheet& outer = OutermostSheet();
   if (outer.mDocumentOrShadowRoot) {
@@ -220,7 +211,6 @@ NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(StyleSheet)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(StyleSheet)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mMedia)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mRuleList)
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mRelevantGlobal)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mConstructorDocument)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mReplacePromise)
   tmp->TraverseInner(cb);
@@ -230,7 +220,6 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(StyleSheet)
   tmp->DropMedia();
   tmp->UnlinkInner();
   tmp->DropRuleList();
-  NS_IMPL_CYCLE_COLLECTION_UNLINK(mRelevantGlobal)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mConstructorDocument)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mReplacePromise)
   NS_IMPL_CYCLE_COLLECTION_UNLINK_PRESERVED_WRAPPER
@@ -260,8 +249,6 @@ void StyleSheet::SetComplete() {
              "Can't complete a sheet that's already been forced unique.");
   MOZ_ASSERT(!IsComplete(), "Already complete?");
   mState |= State::Complete;
-
-  UpdateRelevantGlobal();
 
   if (!Disabled()) {
     ApplicableStateChanged(true);
@@ -328,11 +315,6 @@ void StyleSheet::SetDisabled(bool aDisabled) {
   if (IsComplete()) {
     ApplicableStateChanged(!aDisabled);
   }
-}
-
-nsISupports* StyleSheet::GetRelevantGlobal() const {
-  const StyleSheet& outer = OutermostSheet();
-  return outer.mRelevantGlobal;
 }
 
 StyleSheetInfo::StyleSheetInfo(CORSMode aCORSMode,
@@ -634,35 +616,28 @@ void StyleSheet::MaybeRejectReplacePromise() {
 // https://drafts.csswg.org/cssom/#dom-cssstylesheet-replace
 already_AddRefed<dom::Promise> StyleSheet::Replace(const nsACString& aText,
                                                    ErrorResult& aRv) {
-  nsIGlobalObject* globalObject = nullptr;
-  const StyleSheet& outer = OutermostSheet();
-  if (outer.mRelevantGlobal) {
-    globalObject = outer.mRelevantGlobal;
-  } else if (Document* doc = outer.GetAssociatedDocument()) {
-    globalObject = doc->GetScopeObject();
-  }
-
-  RefPtr<dom::Promise> promise = dom::Promise::Create(globalObject, aRv);
-  if (!promise) {
-    return nullptr;
-  }
-
   // Step 1 and 4 are variable declarations
 
   // 2.1 Check if sheet is constructed, else reject promise.
   if (!IsConstructed()) {
-    promise->MaybeRejectWithNotAllowedError(
+    aRv.ThrowNotAllowedError(
         "This method can only be called on "
         "constructed style sheets");
-    return promise.forget();
+    return nullptr;
   }
 
   // 2.2 Check if sheet is modifiable, else throw.
   if (ModificationDisallowed()) {
-    promise->MaybeRejectWithNotAllowedError(
+    aRv.ThrowNotAllowedError(
         "This method can only be called on "
         "modifiable style sheets");
-    return promise.forget();
+    return nullptr;
+  }
+
+  RefPtr promise =
+      dom::Promise::Create(mConstructorDocument->GetScopeObject(), aRv);
+  if (!promise) {
+    return nullptr;
   }
 
   // 3. Disallow modifications until finished.
@@ -936,10 +911,8 @@ void StyleSheet::SetAssociatedDocumentOrShadowRoot(
   MOZ_ASSERT(!IsConstructed());
   MOZ_ASSERT(!mParentSheet || !aDocOrShadowRoot,
              "Shouldn't be set on child sheets");
-
   // not ref counted
   mDocumentOrShadowRoot = aDocOrShadowRoot;
-  UpdateRelevantGlobal();
 }
 
 void StyleSheet::AppendStyleSheet(StyleSheet& aSheet) {
@@ -1415,11 +1388,10 @@ already_AddRefed<StyleSheet> StyleSheet::CloneAdoptedSheet(
              "Cannot create a constructed sheet from a non-constructed sheet");
   MOZ_ASSERT(aConstructorDocument.IsStaticDocument(),
              "Should never clone adopted sheets for a non-static document");
-  RefPtr<StyleSheet> clone = new StyleSheet(*this,
-                                            /* aParentSheetToUse */ nullptr,
-                                            /* aDocOrShadowRootToUse */ nullptr,
-                                            &aConstructorDocument);
-  return clone.forget();
+  return do_AddRef(new StyleSheet(*this,
+                                  /* aParentSheetToUse */ nullptr,
+                                  /* aDocOrShadowRootToUse */ nullptr,
+                                  &aConstructorDocument));
 }
 
 ServoCSSRuleList* StyleSheet::GetCssRulesInternal() {

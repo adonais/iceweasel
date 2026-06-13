@@ -37,6 +37,10 @@ async function waitForToolbarNode(guid, win = window) {
     { childList: true },
     () => (node = getToolbarNodeForItemGuid(guid, win))
   );
+  await TestUtils.waitForCondition(
+    () => BrowserTestUtils.isVisible(node),
+    "Waiting for toolbar node to be visible"
+  );
   return node;
 }
 
@@ -202,9 +206,9 @@ let checkContextMenu = async (cbfunc, optionItems, doc = document) => {
     }
 
     await hidePopupAndWait(contextMenu);
+    await SpecialPowers.popPrefEnv();
   }
 
-  await SpecialPowers.popPrefEnv();
   await PlacesUtils.bookmarks.eraseEverything();
 };
 
@@ -247,7 +251,7 @@ add_task(async function test_bookmark_contextmenu_contents() {
         EventUtils.synthesizeMouseAtCenter(
           toolbarNode,
           { button: 2, type: "contextmenu" },
-          toolbarNode.ownerGlobal
+          toolbarNode.documentGlobal
         );
       }
     );
@@ -425,9 +429,11 @@ add_task(async function test_sidebar_folder_contextmenu_contents() {
           SidebarController.browser.contentDocument.getElementById(
             "placesContext"
           );
-        return openContextMenuWithRetry(contextMenu, () => {
+        return openContextMenuWithRetry(contextMenu, async () => {
           tree.selectItems([folder.guid]);
-          synthesizeClickOnSelectedTreeCell(tree, { type: "contextmenu" });
+          await synthesizeClickOnSelectedTreeCell(tree, {
+            type: "contextmenu",
+          });
         });
       },
       optionItems,
@@ -467,9 +473,11 @@ add_task(async function test_sidebar_multiple_folders_contextmenu_contents() {
           SidebarController.browser.contentDocument.getElementById(
             "placesContext"
           );
-        return openContextMenuWithRetry(contextMenu, () => {
+        return openContextMenuWithRetry(contextMenu, async () => {
           tree.selectItems([folder1.guid, folder2.guid]);
-          synthesizeClickOnSelectedTreeCell(tree, { type: "contextmenu" });
+          await synthesizeClickOnSelectedTreeCell(tree, {
+            type: "contextmenu",
+          });
         });
       },
       optionItems,
@@ -507,9 +515,11 @@ add_task(async function test_sidebar_bookmark_contextmenu_contents() {
           SidebarController.browser.contentDocument.getElementById(
             "placesContext"
           );
-        return openContextMenuWithRetry(contextMenu, () => {
+        return openContextMenuWithRetry(contextMenu, async () => {
           tree.selectItems([bookmark.guid]);
-          synthesizeClickOnSelectedTreeCell(tree, { type: "contextmenu" });
+          await synthesizeClickOnSelectedTreeCell(tree, {
+            type: "contextmenu",
+          });
         });
       },
       optionItems,
@@ -552,9 +562,11 @@ add_task(async function test_sidebar_bookmark_search_contextmenu_contents() {
           SidebarController.browser.contentDocument.getElementById(
             "placesContext"
           );
-        return openContextMenuWithRetry(contextMenu, () => {
+        return openContextMenuWithRetry(contextMenu, async () => {
           tree.selectItems([bookmark.guid]);
-          synthesizeClickOnSelectedTreeCell(tree, { type: "contextmenu" });
+          await synthesizeClickOnSelectedTreeCell(tree, {
+            type: "contextmenu",
+          });
         });
       },
       optionItems,
@@ -589,9 +601,11 @@ add_task(async function test_library_bookmark_contextmenu_contents() {
     await checkContextMenu(
       async bookmark => {
         let contextMenu = right.ownerDocument.getElementById("placesContext");
-        return openContextMenuWithRetry(contextMenu, () => {
+        return openContextMenuWithRetry(contextMenu, async () => {
           right.selectItems([bookmark.guid]);
-          synthesizeClickOnSelectedTreeCell(right, { type: "contextmenu" });
+          await synthesizeClickOnSelectedTreeCell(right, {
+            type: "contextmenu",
+          });
         });
       },
       optionItems,
@@ -628,9 +642,11 @@ add_task(async function test_library_bookmark_search_contextmenu_contents() {
         await setSearch(searchBox, SECOND_BOOKMARK_TITLE);
 
         let contextMenu = right.ownerDocument.getElementById("placesContext");
-        return openContextMenuWithRetry(contextMenu, () => {
+        return openContextMenuWithRetry(contextMenu, async () => {
           right.selectItems([bookmark.guid]);
-          synthesizeClickOnSelectedTreeCell(right, { type: "contextmenu" });
+          await synthesizeClickOnSelectedTreeCell(right, {
+            type: "contextmenu",
+          });
         });
       },
       optionItems,
@@ -663,9 +679,11 @@ add_task(async function test_sidebar_mixedselection_contextmenu_contents() {
           SidebarController.browser.contentDocument.getElementById(
             "placesContext"
           );
-        return openContextMenuWithRetry(contextMenu, () => {
+        return openContextMenuWithRetry(contextMenu, async () => {
           tree.selectItems([bookmark.guid, folder.guid]);
-          synthesizeClickOnSelectedTreeCell(tree, { type: "contextmenu" });
+          await synthesizeClickOnSelectedTreeCell(tree, {
+            type: "contextmenu",
+          });
         });
       },
       optionItems,
@@ -699,9 +717,11 @@ add_task(async function test_sidebar_multiple_bookmarks_contextmenu_contents() {
           SidebarController.browser.contentDocument.getElementById(
             "placesContext"
           );
-        return openContextMenuWithRetry(contextMenu, () => {
+        return openContextMenuWithRetry(contextMenu, async () => {
           tree.selectItems([bookmark.guid, bookmark2.guid]);
-          synthesizeClickOnSelectedTreeCell(tree, { type: "contextmenu" });
+          await synthesizeClickOnSelectedTreeCell(tree, {
+            type: "contextmenu",
+          });
         });
       },
       optionItems,
@@ -734,8 +754,10 @@ add_task(async function test_sidebar_multiple_links_contextmenu_contents() {
             SidebarController.browser.contentDocument.getElementById(
               "placesContext"
             );
-          return openContextMenuWithRetry(contextMenu, () => {
-            synthesizeClickOnSelectedTreeCell(tree, { type: "contextmenu" });
+          return openContextMenuWithRetry(contextMenu, async () => {
+            await synthesizeClickOnSelectedTreeCell(tree, {
+              type: "contextmenu",
+            });
           });
         },
         optionItems,
@@ -769,9 +791,11 @@ add_task(async function test_sidebar_mixed_bookmarks_contextmenu_contents() {
             SidebarController.browser.contentDocument.getElementById(
               "placesContext"
             );
-          return openContextMenuWithRetry(contextMenu, () => {
+          return openContextMenuWithRetry(contextMenu, async () => {
             tree.selectItems([bookmark.guid, folder.guid]);
-            synthesizeClickOnSelectedTreeCell(tree, { type: "contextmenu" });
+            await synthesizeClickOnSelectedTreeCell(tree, {
+              type: "contextmenu",
+            });
           });
         },
         optionItems,
@@ -794,12 +818,12 @@ add_task(async function test_library_noselection_contextmenu_contents() {
     await checkContextMenu(
       async () => {
         let contextMenu = right.ownerDocument.getElementById("placesContext");
-        return openContextMenuWithRetry(contextMenu, () => {
+        return openContextMenuWithRetry(contextMenu, async () => {
           right.selectItems([]);
           EventUtils.synthesizeMouseAtCenter(
             right.body,
             { type: "contextmenu" },
-            right.ownerGlobal
+            right.documentGlobal
           );
         });
       },
@@ -846,7 +870,7 @@ add_task(async function test_private_browsing_window() {
         EventUtils.synthesizeMouseAtCenter(
           toolbarNode,
           { button: 2, type: "contextmenu" },
-          toolbarNode.ownerGlobal
+          toolbarNode.documentGlobal
         );
       });
     },
@@ -869,9 +893,11 @@ add_task(async function test_private_browsing_window() {
             win.SidebarController.browser.contentDocument.getElementById(
               "placesContext"
             );
-          return openContextMenuWithRetry(contextMenu, () => {
+          return openContextMenuWithRetry(contextMenu, async () => {
             tree.selectItems([bookmark.guid]);
-            synthesizeClickOnSelectedTreeCell(tree, { type: "contextmenu" });
+            await synthesizeClickOnSelectedTreeCell(tree, {
+              type: "contextmenu",
+            });
           });
         },
         optionItems,
@@ -894,9 +920,11 @@ add_task(async function test_private_browsing_window() {
       await checkContextMenu(
         async bookmark => {
           let contextMenu = right.ownerDocument.getElementById("placesContext");
-          return openContextMenuWithRetry(contextMenu, () => {
+          return openContextMenuWithRetry(contextMenu, async () => {
             right.selectItems([bookmark.guid]);
-            synthesizeClickOnSelectedTreeCell(right, { type: "contextmenu" });
+            await synthesizeClickOnSelectedTreeCell(right, {
+              type: "contextmenu",
+            });
           });
         },
         optionItems,

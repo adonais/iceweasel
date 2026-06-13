@@ -233,16 +233,10 @@ add_task(async function tabNoSearchStringSearchMode() {
     value: "",
   });
 
-  let unifiedSearchButtonPopup =
-    await UrlbarTestUtils.openSearchModeSwitcher(window);
-  let unifiedSearchButtonPopupHidden =
-    UrlbarTestUtils.searchModeSwitcherPopupClosed(window);
-
-  let historyItem = unifiedSearchButtonPopup.querySelector(
+  await UrlbarTestUtils.activateSearchModeSwitcherItem(
+    window,
     'panel-item[data-restrict="^"]'
   );
-  historyItem.button.click();
-  await unifiedSearchButtonPopupHidden;
 
   await UrlbarTestUtils.assertSearchMode(window, {
     source: UrlbarUtils.RESULT_SOURCE.HISTORY,

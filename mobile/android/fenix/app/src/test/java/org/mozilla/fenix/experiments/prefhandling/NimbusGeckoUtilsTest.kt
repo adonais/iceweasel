@@ -8,8 +8,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import mozilla.components.concept.engine.preferences.Branch
 import mozilla.components.concept.engine.preferences.BrowserPrefType
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -18,6 +16,8 @@ import org.mozilla.experiments.nimbus.internal.GeckoPrefState
 import org.mozilla.experiments.nimbus.internal.OriginalGeckoPref
 import org.mozilla.experiments.nimbus.internal.PrefBranch
 import org.mozilla.experiments.nimbus.internal.PrefEnrollmentData
+import kotlin.test.assertIs
+import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class NimbusGeckoUtilsTest {
@@ -65,7 +65,7 @@ class NimbusGeckoUtilsTest {
             createPrefSetter(originalGeckoPref = intPref, setType = BrowserPrefType.INT)
             fail("Expected a Throwable to be thrown")
         } catch (e: Throwable) {
-            assertTrue(e is NumberFormatException)
+            assertIs<NumberFormatException>(e)
         }
 
         val boolPref = OriginalGeckoPref(pref = "bool.pref", branch = PrefBranch.USER, value = "some-value")
@@ -73,7 +73,7 @@ class NimbusGeckoUtilsTest {
             createPrefSetter(originalGeckoPref = boolPref, setType = BrowserPrefType.BOOL)
             fail("Expected a Throwable to be thrown")
         } catch (e: Throwable) {
-            assertTrue(e is IllegalArgumentException)
+            assertIs<IllegalArgumentException>(e)
         }
     }
 
@@ -85,7 +85,7 @@ class NimbusGeckoUtilsTest {
             createPrefSetter(originalGeckoPref = pref, setType = BrowserPrefType.STRING)
             fail("Expected a Throwable to be thrown")
         } catch (e: Throwable) {
-            assertTrue(e is NullPointerException)
+            assertIs<NullPointerException>(e)
         }
     }
 
@@ -96,7 +96,7 @@ class NimbusGeckoUtilsTest {
             createPrefSetter(originalGeckoPref = pref, setType = null)
             fail("Expected a Throwable to be thrown")
         } catch (e: Throwable) {
-            assertTrue(e is IllegalStateException)
+            assertIs<IllegalStateException>(e)
         }
     }
 
@@ -106,7 +106,7 @@ class NimbusGeckoUtilsTest {
         val stringResult =
             createPrefSetter(geckoPrefState = stringPref, setType = BrowserPrefType.STRING)
         assertNotNull(stringResult)
-        assertEquals("string.pref", stringResult!!.pref)
+        assertEquals("string.pref", stringResult.pref)
         assertEquals("some-value", stringResult.value)
         assertEquals(Branch.USER, stringResult.branch)
 
@@ -120,7 +120,7 @@ class NimbusGeckoUtilsTest {
         val boolPref = GeckoPrefState(GeckoPref(pref = "bool.pref", branch = PrefBranch.DEFAULT), geckoValue = null, enrollmentValue = PrefEnrollmentData(experimentSlug = "123", prefValue = "true", featureId = "123", variable = "abc"), isUserSet = false)
         val boolResult = createPrefSetter(geckoPrefState = boolPref, setType = BrowserPrefType.BOOL)
         assertNotNull(boolResult)
-        assertEquals("bool.pref", boolResult!!.pref)
+        assertEquals("bool.pref", boolResult.pref)
         assertEquals(true, boolResult.value)
         assertEquals(Branch.DEFAULT, boolResult.branch)
     }
@@ -132,7 +132,7 @@ class NimbusGeckoUtilsTest {
             createPrefSetter(geckoPrefState = intPref, setType = BrowserPrefType.INT)
             fail("Expected a Throwable to be thrown")
         } catch (e: Throwable) {
-            assertTrue(e is NumberFormatException)
+            assertIs<NumberFormatException>(e)
         }
 
         val boolPref = GeckoPrefState(GeckoPref(pref = "bool.pref", branch = PrefBranch.USER), geckoValue = null, enrollmentValue = PrefEnrollmentData(experimentSlug = "123", prefValue = "some-value", featureId = "123", variable = "abc"), isUserSet = false)
@@ -140,7 +140,7 @@ class NimbusGeckoUtilsTest {
             createPrefSetter(geckoPrefState = boolPref, setType = BrowserPrefType.BOOL)
             fail("Expected a Throwable to be thrown")
         } catch (e: Throwable) {
-            assertTrue(e is IllegalArgumentException)
+            assertIs<IllegalArgumentException>(e)
         }
     }
 
@@ -151,7 +151,7 @@ class NimbusGeckoUtilsTest {
             createPrefSetter(state, BrowserPrefType.STRING)
             fail("Expected a Throwable to be thrown")
         } catch (e: Throwable) {
-            assertTrue(e is NullPointerException)
+            assertIs<NullPointerException>(e)
         }
     }
 
@@ -162,7 +162,7 @@ class NimbusGeckoUtilsTest {
             createPrefSetter(pref, null)
             fail("Expected a Throwable to be thrown")
         } catch (e: Throwable) {
-            assertTrue(e is IllegalStateException)
+            assertIs<IllegalStateException>(e)
         }
     }
 

@@ -46,13 +46,19 @@ async function test_autocomplete(data) {
 
 add_task(async function () {
   registerCleanupFunction(async function () {
-    Services.prefs.clearUserPref("browser.urlbar.autoFill");
-    Services.prefs.clearUserPref("browser.urlbar.suggest.quickactions");
     gURLBar.handleRevert();
     await PlacesUtils.history.clear();
+    await SpecialPowers.popPrefEnv();
   });
-  Services.prefs.setBoolPref("browser.urlbar.autoFill", true);
-  Services.prefs.setBoolPref("browser.urlbar.suggest.quickactions", false);
+  // The test relies on a bookmark to keep the autofill candidate above the
+  // frecency threshold; that path is gated on the adaptive autofill pref.
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.urlbar.autoFill", true],
+      ["browser.urlbar.suggest.quickactions", false],
+      ["browser.urlbar.autoFill.adaptiveHistory.enabled", false],
+    ],
+  });
 
   await PlacesTestUtils.addVisits([
     "http://example.com/",

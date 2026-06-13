@@ -38,7 +38,7 @@ export let WebAuthnPromptHelper = {
         // Prevent the navigation toolbox from being hidden while a WebAuthn
         // prompt is visible.
         if (aData == "hidden" && this._tid != 0) {
-          aSubject.ownerGlobal.FullScreen.showNavToolbox();
+          aSubject.documentGlobal.FullScreen.showNavToolbox();
         }
         return;
       case "fullscreen-painted":

@@ -321,10 +321,10 @@ class CsrcAudioLevel {
   static constexpr const char* kUri =
       "urn:ietf:params:rtp-hdrext:csrc-audio-level";
 
-  static bool Parse(webrtc::ArrayView<const uint8_t> data,
+  static bool Parse(std::span<const uint8_t> data,
                     CsrcAudioLevelList* csrcAudioLevels);
   static size_t ValueSize(const CsrcAudioLevelList& csrcAudioLevels);
-  static bool Write(webrtc::ArrayView<uint8_t> data,
+  static bool Write(std::span<uint8_t> data,
                     const CsrcAudioLevelList& csrcAudioLevels);
 };
 #endif

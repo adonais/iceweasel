@@ -8,10 +8,13 @@
       "type": "stdio",
       "command": "./mach",
       "args": [
+        "--quiet",
         "npx",
-        "@padenot/firefox-devtools-mcp",
+        "@mozilla/firefox-devtools-mcp-moz",
         "--pref",
-        "browser.ml.enable=true"
+        "browser.ml.enable=true",
+        "--enable-scripting",
+        "--enable-privileged-context"
       ]
     }
   }

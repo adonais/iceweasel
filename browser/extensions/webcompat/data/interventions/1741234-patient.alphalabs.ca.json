@@ -6,12 +6,13 @@
       "matches": ["*://patient.alphalabs.ca/*"]
     }
   },
+  "css": {
+    "unhide_continue_button": "body { height: 100%; }"
+  },
   "interventions": [
     {
       "platforms": ["all"],
-      "content_scripts": {
-        "css": ["bug1741234-patient.alphalabs.ca-height-fix.css"]
-      }
+      "css": ["unhide_continue_button"]
     }
   ]
 }

@@ -22,7 +22,6 @@ import mozilla.components.support.test.mock
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
@@ -37,6 +36,7 @@ import java.io.IOException
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class MozillaLocationServiceTest {
@@ -63,7 +63,7 @@ class MozillaLocationServiceTest {
 
             val region = service.fetchRegion()
 
-            assertNotNull(region!!)
+            assertNotNull(region)
 
             assertEquals("DE", region.countryCode)
             assertEquals("Germany", region.countryName)
@@ -101,7 +101,7 @@ class MozillaLocationServiceTest {
         val service = MozillaLocationService(testContext, client, apiKey = "test")
         val region = service.fetchRegion()
 
-        assertNotNull(region!!)
+        assertNotNull(region)
 
         assertEquals("FR", region.countryCode)
         assertEquals("France", region.countryName)
@@ -213,7 +213,7 @@ class MozillaLocationServiceTest {
             val service = MozillaLocationService(testContext, client, apiKey = "test")
             val region = service.fetchRegion()
 
-            assertNotNull(region!!)
+            assertNotNull(region)
 
             assertEquals("NP", region.countryCode)
             assertEquals("Nepal", region.countryName)
@@ -227,7 +227,7 @@ class MozillaLocationServiceTest {
             val service = MozillaLocationService(testContext, client, apiKey = "test")
             val region = service.fetchRegion()
 
-            assertNotNull(region!!)
+            assertNotNull(region)
 
             assertEquals("NP", region.countryCode)
             assertEquals("Nepal", region.countryName)
@@ -251,7 +251,7 @@ class MozillaLocationServiceTest {
             val service = MozillaLocationService(testContext, client, apiKey = "test")
             val region = service.fetchRegion()
 
-            assertNotNull(region!!)
+            assertNotNull(region)
 
             assertEquals("NP", region.countryCode)
             assertEquals("Nepal", region.countryName)
@@ -272,7 +272,7 @@ class MozillaLocationServiceTest {
             val service = MozillaLocationService(testContext, client, apiKey = "test")
             val region = service.fetchRegion(readFromCache = false)
 
-            assertNotNull(region!!)
+            assertNotNull(region)
 
             assertEquals("LR", region.countryCode)
             assertEquals("Liberia", region.countryName)
@@ -303,7 +303,7 @@ class MozillaLocationServiceTest {
             )
             val region = service.fetchRegion(readFromCache = true)
 
-            assertNotNull(region!!)
+            assertNotNull(region)
 
             assertEquals("NP", region.countryCode)
             assertEquals("Nepal", region.countryName)
@@ -332,7 +332,7 @@ class MozillaLocationServiceTest {
             )
             val region = service.fetchRegion(readFromCache = true)
 
-            assertNotNull(region!!)
+            assertNotNull(region)
 
             assertEquals("NP", region.countryCode)
             assertEquals("Nepal", region.countryName)
@@ -363,7 +363,7 @@ class MozillaLocationServiceTest {
             )
             val region = service.fetchRegion(readFromCache = true)
 
-            assertNotNull(region!!)
+            assertNotNull(region)
 
             assertEquals("NP", region.countryCode)
             assertEquals("Nepal", region.countryName)
@@ -392,7 +392,7 @@ class MozillaLocationServiceTest {
             )
             val region = service.fetchRegion(readFromCache = true)
 
-            assertNotNull(region!!)
+            assertNotNull(region)
 
             assertEquals("LR", region.countryCode)
             assertEquals("Liberia", region.countryName)
@@ -428,7 +428,7 @@ class MozillaLocationServiceTest {
         assertEquals(3, results.size)
         results.forEach { region ->
             assertNotNull(region)
-            assertEquals("CA", region!!.countryCode)
+            assertEquals("CA", region.countryCode)
             assertEquals("Canada", region.countryName)
         }
 
@@ -497,7 +497,7 @@ class MozillaLocationServiceTest {
 
         val cached = service.cachedRegionIfValid(readFromCache = true)
         assertNotNull(cached)
-        assertEquals("DE", cached!!.countryCode)
+        assertEquals("DE", cached.countryCode)
         assertEquals("Germany", cached.countryName)
     }
 }

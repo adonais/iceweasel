@@ -16,7 +16,11 @@
 #include "js/RootingAPI.h"
 #include "js/TypeDecls.h"
 
+class JSLinearString;
+
 namespace js {
+
+class JSOffThreadAtom;
 
 /*
  * These functions provide a C interface to the date/time object
@@ -33,6 +37,38 @@ extern JSObject* NewDateObjectMsec(JSContext* cx, JS::ClippedTime t,
  * Returns the current time in milliseconds since the epoch.
  */
 JS::ClippedTime DateNow(JSContext* cx);
+
+/**
+ * Returns the result of calling |Date.parse|.
+ */
+JS::ClippedTime DateParse(JSContext* cx, const JSLinearString* str);
+
+struct ParsedDate final {
+  /**
+   * Parsed date in milliseconds since the epoch.
+   */
+  int64_t date;
+
+  /**
+   * `true` if |date| is a local time. Otherwise `false` for UTC time.
+   */
+  bool isLocalTime;
+};
+
+/**
+ * Returns the result of calling |Date.parse|.
+ */
+bool DateParse(const JSOffThreadAtom* str, ParsedDate* result);
+
+/**
+ * Convert from local time to UTC time.
+ */
+JS::ClippedTime LocalTimeToUTC(JSContext* cx, int64_t localTime);
+
+/**
+ * Convert from UTC time to local time.
+ */
+int64_t UTCToLocalTime(JSContext* cx, int64_t utcTime);
 
 bool date_valueOf(JSContext* cx, unsigned argc, JS::Value* vp);
 

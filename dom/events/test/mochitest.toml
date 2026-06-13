@@ -46,6 +46,9 @@ tags = "os_integration"
 
 ["test_auxclick_autoscroll_off.html"]
 tags = "os_integration"
+skip-if = [
+  "os == 'android' && xorigin", # Time out due to nothing run
+]
 
 ["test_bug226361.xhtml"]
 
@@ -444,6 +447,17 @@ support-files = [
   "file_coalesce_touchmove_browserchild2.html",
 ]
 tags = "os_integration"
+skip-if = [
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 2034604
+  "os == 'android'", # Bug 2017993
+  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'", # Bug 2017993
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # Bug 2017993
+  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'", # Bug 2017993
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 2017993
+  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'", # Bug 2017993
+  "os == 'win' && os_version == '11.26200' && arch == 'x86_64'", # Bug 2017993
+  "os == 'win' && os_version == '10.2009' && arch == 'x86_64'", # Bug 2017993
+]
 
 ["test_continuous_wheel_events.html"]
 skip-if = [
@@ -617,6 +631,9 @@ skip-if = [
 support-files = ["window_empty_document.html"]
 
 ["test_moz_mouse_pixel_scroll_event.html"]
+skip-if = [
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && debug", # Bug 2034604
+]
 
 ["test_offsetxy.html"]
 
@@ -677,4 +694,5 @@ run-if = [
 ]
 skip-if = [
   "verify-standalone",
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && debug", # Bug 2034604
 ]

@@ -7,6 +7,7 @@ include("js-cxxflags.mozbuild")
 
 # Directory metadata
 component_engine = ("Core", "JavaScript Engine")
+component_debugger = ("Core", "JavaScript: Debugger API")
 component_gc = ("Core", "JavaScript: GC")
 component_intl = ("Core", "JavaScript: Internationalization API")
 component_jit = ("Core", "JavaScript Engine: JIT")
@@ -28,6 +29,8 @@ with Files("builtin/**"):
     BUG_COMPONENT = component_stl
 with Files("ctypes/**"):
     BUG_COMPONENT = ("Core", "js-ctypes")
+with Files("debugger/**"):
+    BUG_COMPONENT = component_debugger
 with Files("gc/**"):
     BUG_COMPONENT = component_gc
 with Files("jit/**"):
@@ -40,6 +43,9 @@ for gcfile in ["devtools/rootAnalysis", "devtools/gc-ubench", "devtools/gctrace"
 
 with Files("builtin/intl/*"):
     BUG_COMPONENT = component_intl
+
+with Files("doc/Debugger/**"):
+    BUG_COMPONENT = component_debugger
 
 if not CONFIG["JS_DISABLE_SHELL"]:
     DIRS += [
@@ -333,6 +339,7 @@ if CONFIG["JS_HAS_INTL_API"]:
         "builtin/intl",
         "builtin/temporal",
         "builtin/intl/collator_glue",
+        "builtin/intl/locale_glue",
         "irregexp/properties_glue",
     ]
 

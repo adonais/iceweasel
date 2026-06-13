@@ -23,6 +23,11 @@ sealed interface TabGroupAction : TabsTrayAction {
     data object AddToNewTabGroup : TabGroupAction
 
     /**
+     * Fired when the user drags a tab onto another to create a new tab group.
+     */
+    data class DragAndDropTwoTabs(val sourceTabId: String, val destinationTabId: String) : TabGroupAction
+
+    /**
      * Fired when the user changes the tab group name.
      *
      * @property name The name of the tab group the user has typed in.
@@ -33,11 +38,6 @@ sealed interface TabGroupAction : TabsTrayAction {
      * Confirms the save of a tab group.
      */
     data object SaveClicked : TabGroupAction, TabsStorageAction
-
-    /**
-     * Invoked when the user dismisses the tab group form.
-     */
-    data object FormDismissed : TabGroupAction
 
     /**
      * Fired when the user clicks on a Tab Group.
@@ -73,7 +73,7 @@ sealed interface TabGroupAction : TabsTrayAction {
      *
      * @property groupId The ID of the group the tabs are being added into.
      */
-    data class TabsAddedToGroup(val groupId: String) : TabGroupAction, TabsStorageAction
+    data class SelectedTabsAddedToGroup(val groupId: String) : TabGroupAction, TabsStorageAction
 
     /**
      * Fired when the user performs an action to add a single item to an existing Tab Group, such as a drag and drop.
@@ -89,4 +89,44 @@ sealed interface TabGroupAction : TabsTrayAction {
      * @property group The [TabsTrayItem.TabGroup] to be edited.
      */
     data class EditTabGroupClicked(val group: TabsTrayItem.TabGroup) : TabGroupAction
+
+    /**
+     * Invoked when the user clicks to open a tab group from tab groups page.
+     *
+     * @property group The [TabsTrayItem.TabGroup] to be opened.
+     */
+    data class OpenTabGroupClicked(val group: TabsTrayItem.TabGroup) : TabGroupAction, TabsStorageAction
+
+    /**
+     * Invoked when the user clicks to close a tab group.
+     *
+     * @property group The [TabsTrayItem.TabGroup] to be closed.
+     */
+    data class CloseTabGroupClicked(val group: TabsTrayItem.TabGroup) : TabGroupAction, TabsStorageAction
+
+    /**
+     * [TabGroupAction] fired when one [TabsTrayItem] is dropped onto another.
+     *
+     * @property sourceId The id of the source item
+     * @property destinationId The id of the destination item
+     */
+    data class DragAndDropCompleted(val sourceId: String, val destinationId: String) : TabGroupAction, TabsStorageAction
+
+    /**
+     * Fired when the user confirms they want to close the last tab and delete the Tab Group.
+     *
+     * @property group The [TabsTrayItem.TabGroup] to be deleted.
+     */
+    data class CloseTabAndDeleteGroupConfirmed(val group: TabsTrayItem.TabGroup) : TabGroupAction, TabsStorageAction
+
+    /**
+     * Fired when a user clicks to close a specific tab within an expanded tab group.
+     *
+     * @property tab The [TabsTrayItem.Tab] that is being closed.
+     * @property group The [TabsTrayItem.TabGroup] that contains the tab.
+     */
+    data class TabClosed(
+        val tab: TabsTrayItem.Tab,
+        val group: TabsTrayItem.TabGroup,
+    ) : TabGroupAction, TabsStorageAction
 }

@@ -48,6 +48,10 @@ Main components
    The arena structure and many of its sub-structures such as runs and
    arena chunks.
 
+ * ArenaAvailRuns.h
+
+   A data structure for run allocation.
+
  * BaseAlloc.h, BaseAlloc.cpp and BaseAllocInternals.h
 
    The base allocator and some template classes to spacialise it.  Some of

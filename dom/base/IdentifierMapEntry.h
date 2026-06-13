@@ -16,8 +16,6 @@
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/TreeOrderedArray.h"
 #include "nsAtom.h"
-#include "nsCOMPtr.h"
-#include "nsContentList.h"
 #include "nsHashKeys.h"
 #include "nsTArray.h"
 #include "nsTHashtable.h"
@@ -29,6 +27,7 @@ namespace mozilla {
 namespace dom {
 class Document;
 class Element;
+class SimpleHTMLCollection;
 }  // namespace dom
 
 /**
@@ -110,14 +109,14 @@ class IdentifierMapEntry : public PLDHashEntryHdr {
 
   void AddNameElement(nsINode* aDocument, Element* aElement);
   void RemoveNameElement(Element* aElement);
-  nsBaseContentList* GetNameContentList() { return mNameContentList; }
+  dom::SimpleHTMLCollection* GetNameContentList() { return mNameContentList; }
   bool HasNameElement() const;
 
   void AddDocumentNameElement(Document* aDocument,
                               nsGenericHTMLElement* aElement);
   void RemoveDocumentNameElement(nsGenericHTMLElement* aElement);
   bool HasDocumentNameElement() const;
-  nsBaseContentList* GetDocumentNameContentList() {
+  dom::SimpleHTMLCollection* GetDocumentNameContentList() {
     return mDocumentNameContentList;
   }
 
@@ -230,9 +229,9 @@ class IdentifierMapEntry : public PLDHashEntryHdr {
 
   OwningAtomOrString mKey;
   dom::TreeOrderedArray<Element*> mIdContentList;
-  RefPtr<nsBaseContentList> mNameContentList;
+  RefPtr<dom::SimpleHTMLCollection> mNameContentList;
   // The content list for the document named getter.
-  RefPtr<nsBaseContentList> mDocumentNameContentList;
+  RefPtr<dom::SimpleHTMLCollection> mDocumentNameContentList;
   UniquePtr<nsTHashtable<ChangeCallbackEntry> > mChangeCallbacks;
   RefPtr<Element> mImageElement;
 };

@@ -31,3 +31,6 @@ extern crate unicode_bidi_ffi;
 
 #[cfg(feature = "icu4x")]
 extern crate collator_glue;
+
+#[cfg(feature = "icu4x")]
+extern crate locale_glue;

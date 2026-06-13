@@ -5,7 +5,8 @@
 #ifndef mozilla_fuzzing_FuzzingMutate_h
 #define mozilla_fuzzing_FuzzingMutate_h
 
-#include <random>
+#include <cstddef>
+#include <cstdint>
 
 namespace mozilla {
 namespace fuzzing {

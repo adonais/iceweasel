@@ -6,9 +6,7 @@ package org.mozilla.fenix.home.intent
 
 import android.content.Intent
 import androidx.navigation.NavController
-import androidx.navigation.navOptions
 import org.mozilla.fenix.NavGraphDirections
-import org.mozilla.fenix.R
 import org.mozilla.fenix.components.metrics.MetricsUtils
 import org.mozilla.fenix.ext.nav
 import org.mozilla.fenix.utils.Settings
@@ -22,27 +20,14 @@ class AssistIntentProcessor : HomeIntentProcessor {
             return false
         }
 
-        if (settings.shouldUseComposableToolbar) {
-            navController.nav(
-                id = null,
-                directions = NavGraphDirections.actionGlobalHome(
-                    searchAccessPoint = MetricsUtils.Source.DIGITAL_ASSISTANT,
-                    focusOnAddressBar = true,
-                    startVoiceSearch = settings.shouldShowVoiceSearch,
-                ),
-            )
-        } else {
-            val directions = NavGraphDirections.actionGlobalSearchDialog(
-                sessionId = null,
+        navController.nav(
+            id = null,
+            directions = NavGraphDirections.actionGlobalHome(
                 searchAccessPoint = MetricsUtils.Source.DIGITAL_ASSISTANT,
-            )
-
-            val options = navOptions {
-                popUpTo(R.id.homeFragment)
-            }
-
-            navController.nav(null, directions, options)
-        }
+                focusOnAddressBar = true,
+                startVoiceSearch = settings.shouldShowVoiceSearch,
+            ),
+        )
 
         return true
     }

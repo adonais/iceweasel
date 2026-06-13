@@ -63,7 +63,7 @@ function initClearAllData() {
   });
 }
 
-// Based on https://searchfox.org/mozilla-central/source/browser/components/preferences/privacy.js
+// Based on https://searchfox.org/firefox-main/source/browser/components/preferences/privacy.js
 function initSubmitHealthReport() {
   let checkbox = document.getElementById("eCrashConfig");
 

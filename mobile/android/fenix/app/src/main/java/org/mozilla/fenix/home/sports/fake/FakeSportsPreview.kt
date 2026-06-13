@@ -82,6 +82,70 @@ internal enum class FakeMatchCardScenario(val label: String) {
         )
     },
 
+    Extra("Extra") {
+        override fun build() = listOf(
+            MatchCard(
+                matches = listOf(
+                    FakeSportsPreview.match(
+                        homeScore = 1,
+                        awayScore = 2,
+                        matchStatus = MatchStatus.Live(period = "Extra", clock = "100"),
+                    ),
+                ),
+                round = TournamentRound.GROUP_STAGE,
+                relatedMatches = FakeSportsPreview.relatedMatches(),
+            ),
+        )
+    },
+
+    EmptyClock("Empty Clock") {
+        override fun build() = listOf(
+            MatchCard(
+                matches = listOf(
+                    FakeSportsPreview.match(
+                        homeScore = 1,
+                        awayScore = 2,
+                        matchStatus = MatchStatus.Live(period = "", clock = null),
+                    ),
+                ),
+                round = TournamentRound.GROUP_STAGE,
+                relatedMatches = FakeSportsPreview.relatedMatches(),
+            ),
+        )
+    },
+
+    HalfTimeClock("Half time with clock") {
+        override fun build() = listOf(
+            MatchCard(
+                matches = listOf(
+                    FakeSportsPreview.match(
+                        homeScore = 1,
+                        awayScore = 2,
+                        matchStatus = MatchStatus.Live(period = "", clock = "45", isHalftime = true),
+                    ),
+                ),
+                round = TournamentRound.GROUP_STAGE,
+                relatedMatches = FakeSportsPreview.relatedMatches(),
+            ),
+        )
+    },
+
+    HalfTimeNullClock("Half time with null clock") {
+        override fun build() = listOf(
+            MatchCard(
+                matches = listOf(
+                    FakeSportsPreview.match(
+                        homeScore = 1,
+                        awayScore = 2,
+                        matchStatus = MatchStatus.Live(period = "", clock = null, isHalftime = true),
+                    ),
+                ),
+                round = TournamentRound.GROUP_STAGE,
+                relatedMatches = FakeSportsPreview.relatedMatches(),
+            ),
+        )
+    },
+
     Scheduled("Scheduled") {
         override fun build() = listOf(
             MatchCard(

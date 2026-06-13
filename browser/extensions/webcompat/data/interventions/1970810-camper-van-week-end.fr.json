@@ -10,7 +10,7 @@
     {
       "platforms": ["linux"],
       "content_scripts": {
-        "js": ["bug1970810-www.camper-van-week-end.fr-appVersion-linux-fix.js"]
+        "js": ["use_linux_appVersion.js"]
       }
     }
   ]

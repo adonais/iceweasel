@@ -5,8 +5,6 @@
 #ifndef CTTestUtils_h
 #define CTTestUtils_h
 
-#include <iostream>
-
 #include "mozpkix/Input.h"
 #include "mozpkix/Time.h"
 #include "seccomon.h"

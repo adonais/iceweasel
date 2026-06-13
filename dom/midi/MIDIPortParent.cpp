@@ -89,9 +89,7 @@ bool MIDIPortParent::SendUpdateStatus(
     }
     mMessageQueue.Clear();
   }
-  return PMIDIPortParent::SendUpdateStatus(
-      static_cast<uint32_t>(mDeviceState),
-      static_cast<uint32_t>(mConnectionState));
+  return PMIDIPortParent::SendUpdateStatus(mDeviceState, mConnectionState);
 }
 
 MIDIPortParent::MIDIPortParent(const MIDIPortInfo& aPortInfo,

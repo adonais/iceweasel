@@ -101,7 +101,8 @@ fun EditAddressScreen(store: AddressStore) {
                     horizontal = FirefoxTheme.layout.space.static200,
                     vertical = FirefoxTheme.layout.space.static100,
                 )
-                .windowInsetsPadding(WindowInsets.ime),
+                .windowInsetsPadding(WindowInsets.ime)
+                .testTag(EditAddressTestTag.FORM),
         ) {
             val firstTextField = structureState.structure.fields.firstOrNull {
                 it is AddressStructure.Field.TextField

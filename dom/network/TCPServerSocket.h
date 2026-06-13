@@ -30,7 +30,7 @@ class TCPServerSocket final : public DOMEventTargetHelper,
                                                          DOMEventTargetHelper)
   NS_DECL_NSISERVERSOCKETLISTENER
 
-  nsIGlobalObject* GetParentObject() const { return GetOwnerGlobal(); }
+  nsIGlobalObject* GetParentObject() const { return GetRelevantGlobal(); }
   JSObject* WrapObject(JSContext*, JS::Handle<JSObject*> aGivenProto) override;
 
   nsresult Init();

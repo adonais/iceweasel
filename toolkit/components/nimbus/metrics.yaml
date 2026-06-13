@@ -1051,7 +1051,7 @@ nimbus_events:
         description: If the enrollment resulted in an error, the associated error string
       conflict_slug:
         type: string
-        description: If the enrollment hit a feature conflict, the slug of the conflicting experiment/rollout
+        description: If the enrollment hit a feature conflict, the slug of the conflicting experiments/rollouts
       migration:
         type: string
         description: If the unenrollment was caused by a migration, the name of the migration.
@@ -1060,15 +1060,17 @@ nimbus_events:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1955169
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1997467
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2006752
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2036433
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1817481
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1955169
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1997467
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2006752
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2036433
     data_sensitivity:
       - technical
     notification_emails:
-      - chumphreys@mozilla.com
+      - beth@mozilla.com
       - project-nimbus@mozilla.com
     expires: never
     send_in_pings: *targeting_context_pings

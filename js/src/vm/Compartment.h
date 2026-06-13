@@ -38,9 +38,6 @@ class ObjectWrapperMap {
 
  public:
   class ModIterator {
-    ModIterator(const ModIterator&) = delete;
-    void operator=(const ModIterator&) = delete;
-
     void goToNext() {
       if (outer.isNothing()) {
         return;
@@ -87,6 +84,9 @@ class ObjectWrapperMap {
         inner.emplace(p->value().modIter());
       }
     }
+
+    ModIterator(const ModIterator&) = delete;
+    void operator=(const ModIterator&) = delete;
 
     bool done() const {
       return (outer.isNothing() || outer->done()) &&

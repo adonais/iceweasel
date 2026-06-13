@@ -131,7 +131,7 @@ class WeakMapBase : public SlimLinkedListElement<WeakMapBase> {
   using CellColor = js::gc::CellColor;
 
   WeakMapBase(JSObject* memOf, JS::Zone* zone);
-  virtual ~WeakMapBase() {}
+  virtual ~WeakMapBase() = default;
 
   JS::Zone* zone() const { return zone_; }
 
@@ -329,7 +329,7 @@ struct WeakMapKeyHasher<PreBarriered<JS::Value>> {
   static bool match(const Key& k, const Lookup& l) {
     return WeakMapKeyHasher<JS::Value>::match(k, l);
   }
-  static void rekey(Key& k, const Key& newKey) { k.unbarrieredSet(newKey); }
+  static void rekey(Key& k, const Lookup& newKey) { k.unbarrieredSet(newKey); }
 };
 
 template <class Key, class Value, class AllocPolicy>

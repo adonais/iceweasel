@@ -4,7 +4,6 @@
 
 #include <errno.h>
 #include <jni.h>
-#include <stdio.h>
 #include <string.h>
 #include <sys/mman.h>
 

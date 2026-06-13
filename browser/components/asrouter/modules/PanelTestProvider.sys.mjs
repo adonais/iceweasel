@@ -20,6 +20,86 @@ const isMSIX =
 
 const MESSAGES = () => [
   {
+    weight: 100,
+    id: "FEATURE_CALLOUT_EMBEDDED_LINKS_TEST",
+    template: "feature_callout",
+    description: "Test embedded links in above_button_content paragraphs",
+    content: {
+      id: "FEATURE_CALLOUT_EMBEDDED_LINKS_TEST",
+      template: "multistage",
+      backdrop: "transparent",
+      transitions: false,
+      disableHistoryUpdates: true,
+      metrics: "block",
+      screens: [
+        {
+          id: "FEATURE_CALLOUT_EMBEDDED_LINKS_TEST",
+          anchors: [
+            {
+              selector: "#PanelUI-menu-button",
+              panel_position: {
+                anchor_attachment: "bottomcenter",
+                callout_attachment: "topright",
+              },
+            },
+          ],
+          content: {
+            position: "callout",
+            title: {
+              raw: "I'm an example of embedded links",
+              marginInline: "0 42px",
+            },
+            above_button_content: [
+              {
+                type: "text",
+                text: [
+                  "Read the release notes ",
+                  {
+                    raw: {
+                      $l10n: {
+                        id: "id",
+                        text: "here",
+                        comment: "text",
+                      },
+                    },
+                    href: "https://www.mozilla.org/en-US/firefox/releases/",
+                    where: "tabshifted",
+                  },
+                  ", or open ",
+                  {
+                    raw: "settings",
+                    link_key: "settings",
+                  },
+                  ".",
+                ],
+                textAlign: "start",
+                fontSize: "0.8125em",
+                marginBlock: "0",
+              },
+            ],
+            settings: {
+              action: {
+                type: "OPEN_ABOUT_PAGE",
+                data: {
+                  args: "preferences",
+                  where: "tab",
+                },
+              },
+            },
+            dismiss_button: {
+              action: {
+                dismiss: true,
+              },
+            },
+          },
+        },
+      ],
+    },
+    targeting: 'providerCohorts.panel_local_testing == "SHOW_TEST"',
+    groups: [],
+    provider: "panel_local_testing",
+  },
+  {
     id: "WRITE_IN_MICROSURVEY_TEST",
     template: "feature_callout",
     groups: [],
@@ -2185,6 +2265,50 @@ const MESSAGES = () => [
     frequency: { lifetime: 3 },
   },
   {
+    id: "TEST_TOAST_NOTIFICATION_DYNAMIC_IMAGE",
+    weight: 100,
+    template: "toast_notification",
+    content: {
+      title: "Dynamic image toast",
+      body: "This notification shows different images based on dark mode and reduced motion settings.",
+      image_url:
+        "chrome://browser/content/asrouter/assets/tabgroups/hort-animated-light.svg",
+      dark_mode_image_url:
+        "chrome://browser/content/asrouter/assets/tabgroups/hort-animated-dark.svg",
+      reduced_motion_image_url:
+        "chrome://browser/content/asrouter/assets/tabgroups/hort-static-light.svg",
+      dark_mode_reduced_motion_image_url:
+        "chrome://browser/content/asrouter/assets/tabgroups/hort-static-dark.svg",
+      tag: "test_toast_notification_dynamic_image",
+    },
+    groups: ["panel-test-provider"],
+    targeting: "!hasActiveEnterprisePolicies",
+    trigger: { id: "backgroundTaskMessage" },
+    frequency: { lifetime: 3 },
+  },
+  {
+    id: "TEST_TOAST_NOTIFICATION_DYNAMIC_IMAGE_GIF",
+    weight: 100,
+    template: "toast_notification",
+    content: {
+      title: "Dynamic image toast (animated GIF)",
+      body: "Each variant (dark mode, reduced motion) shows a different animated GIF.",
+      image_url:
+        "chrome://activity-stream/content/data/content/assets/fox-doodle-waving.gif",
+      dark_mode_image_url:
+        "https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/ms-images/de2349f0-3853-454e-a7c6-100679604cab.gif",
+      reduced_motion_image_url:
+        "https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/ms-images/8dc86aae-17d1-4803-b7cc-5369210a9cf8.gif",
+      dark_mode_reduced_motion_image_url:
+        "https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/ms-images/94615589-5b64-4028-99d0-5b34f20331c4.gif",
+      tag: "test_toast_notification_dynamic_image_gif",
+    },
+    groups: ["panel-test-provider"],
+    targeting: "!hasActiveEnterprisePolicies",
+    trigger: { id: "backgroundTaskMessage" },
+    frequency: { lifetime: 3 },
+  },
+  {
     id: "MR2022_BACKGROUND_UPDATE_TOAST_NOTIFICATION",
     weight: 100,
     template: "toast_notification",
@@ -2892,6 +3016,734 @@ const MESSAGES = () => [
     groups: ["cfr"],
   },
   {
+    id: "TEST_ASROUTER_MULTISTAGE_MESSAGE",
+    template: "newtab_message",
+    groups: ["cfr"],
+    content: {
+      messageType: "ASRouterMultistageMessage",
+      id: "TEST_ASROUTER_MULTISTAGE_MESSAGE",
+      transitions: false,
+      backdrop: "transparent",
+      screens: [
+        {
+          id: "SCREEN_1",
+          force_hide_steps_indicator: true,
+          content: {
+            position: "center",
+            screen_style: {
+              width: "650px",
+              height: "500px",
+            },
+            split_content_padding_block: "32px",
+            title: {
+              string_id: "create-backup-screen-1-title",
+              letterSpacing: "revert",
+              whiteSpace: "preserve-breaks",
+              lineHeight: "28px",
+              marginBlock: "0",
+            },
+            subtitle: {
+              string_id: "create-backup-screen-1-subtitle",
+              fontSize: "0.8125em",
+              letterSpacing: "revert",
+              marginBlock: "12px 0",
+            },
+            cta_paragraph: {
+              text: {
+                string_id: "create-backup-learn-more-link",
+                string_name: "learn-more-label",
+                fontSize: "0.8125em",
+              },
+              style: {
+                marginBlock: "0",
+                lineHeight: "100%",
+                letterSpacing: "revert",
+              },
+              action: {
+                type: "OPEN_URL",
+                data: {
+                  args: "https://support.mozilla.org/1/firefox/%VERSION%/%OS%/%LOCALE%/firefox-backup?utm_medium=firefox-desktop&utm_source=spotlight&utm_campaign=fx-backup-onboarding&utm_content=backup-turn-on-scheduled-learn-more-link&utm_term=fx-backup-onboarding-spotlight-1",
+                  where: "tabshifted",
+                },
+              },
+            },
+            tiles: {
+              type: "single-select",
+              autoTrigger: false,
+              selected: "sync",
+              action: {
+                picker: "<event>",
+              },
+              data: [
+                {
+                  inert: true,
+                  type: "backup",
+                  icon: {
+                    background:
+                      "center / contain no-repeat url('chrome://browser/content/asrouter/assets/fox-with-box-on-cloud.svg')",
+                    width: "133.9601px",
+                    height: "90.1186px",
+                    marginBlockStart: "8px",
+                    borderRadius: "5px",
+                  },
+                  id: "sync",
+                  flair: {
+                    centered: true,
+                    text: {
+                      string_id: "create-backup-screen-1-flair",
+                      fontSize: "0.625em",
+                      fontWeight: "600",
+                      top: "revert",
+                      lineHeight: "normal",
+                    },
+                  },
+                  label: {
+                    string_id: "create-backup-screen-1-sync-label",
+                    fontSize: 17,
+                    fontWeight: 600,
+                  },
+                  body: {
+                    string_id: "create-backup-screen-1-sync-body",
+                    fontSize: "0.625em",
+                    fontWeight: "400",
+                    marginBlock: "-6px 16px",
+                    color: "var(--text-color-deemphasized)",
+                  },
+                  tilebutton: {
+                    label: {
+                      string_id: "create-backup-select-tile-button-label",
+                      minHeight: "24px",
+                      minWidth: "revert",
+                      lineHeight: "100%",
+                      paddingBlock: "4px",
+                      paddingInline: "16px",
+                      marginBlock: "0 16px",
+                    },
+                    style: "primary",
+                    action: {
+                      type: "FXA_SIGNIN_FLOW",
+                      dismiss: "actionResult",
+                      needsAwait: true,
+                      data: {
+                        autoClose: false,
+                        entrypoint: "spotlight-create-backup",
+                        extraParams: {
+                          service: "sync",
+                          entrypoint_experiment: "fx-backup-onboarding",
+                          entrypoint_variation: "1",
+                          utm_medium: "firefox-desktop",
+                          utm_source: "spotlight",
+                          utm_campaign: "fx-backup-onboarding",
+                          utm_term: "fx-backup-onboarding-spotlight-1",
+                        },
+                      },
+                    },
+                  },
+                },
+                {
+                  inert: true,
+                  type: "backup",
+                  icon: {
+                    background:
+                      "center / contain no-repeat url('chrome://browser/content/asrouter/assets/fox-with-devices.svg')",
+                    width: "114.475px",
+                    height: "90.1186px",
+                    marginBlockStart: "8px",
+                    borderRadius: "5px",
+                  },
+                  id: "backup",
+                  flair: {
+                    centered: true,
+                    spacer: true,
+                  },
+                  label: {
+                    string_id: "create-backup-screen-1-backup-label",
+                    fontSize: 17,
+                    fontWeight: 600,
+                  },
+                  body: {
+                    string_id: "create-backup-screen-1-backup-body",
+                    fontSize: "0.625em",
+                    fontWeight: "400",
+                    marginBlock: "-6px 16px",
+                    color: "var(--text-color-deemphasized)",
+                  },
+                  tilebutton: {
+                    label: {
+                      string_id: "create-backup-select-tile-button-label",
+                      minHeight: "24px",
+                      minWidth: "revert",
+                      lineHeight: "100%",
+                      paddingBlock: "4px",
+                      paddingInline: "16px",
+                      marginBlock: "0 16px",
+                    },
+                    style: "secondary",
+                    action: {
+                      navigate: true,
+                    },
+                  },
+                },
+              ],
+            },
+          },
+        },
+        {
+          id: "SCREEN_2",
+          force_hide_steps_indicator: true,
+          content: {
+            position: "center",
+            screen_style: {
+              width: "650px",
+              height: "560px",
+            },
+            split_content_padding_block: "32px",
+            title: {
+              string_id: "create-backup-screen-2-title",
+              letterSpacing: "revert",
+              lineHeight: "28px",
+              marginBlock: "0",
+            },
+            subtitle: {
+              string_id: "create-backup-screen-2-subtitle",
+              fontSize: "0.8125em",
+              letterSpacing: "revert",
+              marginBlock: "8px 0",
+            },
+            tiles: {
+              type: "single-select",
+              selected: "all",
+              action: {
+                picker: "<event>",
+              },
+              data: [
+                {
+                  inert: true,
+                  type: "backup",
+                  icon: {
+                    background:
+                      "center / contain no-repeat url('chrome://browser/content/asrouter/assets/shield-checkmark-16.svg')",
+                    width: "54px",
+                    height: "54px",
+                    marginBlockStart: "22px",
+                    borderRadius: "5px",
+                  },
+                  id: "easy",
+                  label: {
+                    string_id: "create-backup-screen-2-easy-label",
+                    fontSize: 17,
+                    fontWeight: 600,
+                    marginBlock: "3px 10px",
+                  },
+                  body: {
+                    items: [
+                      {
+                        icon: {
+                          background:
+                            "center / contain no-repeat url('chrome://browser/content/asrouter/assets/checkmark-16.svg')",
+                          height: "18px",
+                          width: "18px",
+                        },
+                        text: {
+                          string_id: "create-backup-screen-2-easy-list-1",
+                          marginBlock: "4px",
+                          fontSize: "13px",
+                        },
+                      },
+                      {
+                        icon: {
+                          background:
+                            "center / contain no-repeat url('chrome://browser/content/asrouter/assets/close-16.svg')",
+                          height: "18px",
+                          width: "18px",
+                        },
+                        text: {
+                          string_id: "create-backup-screen-2-easy-list-2",
+                          marginBlock: "4px",
+                          fontSize: "13px",
+                        },
+                      },
+                      {
+                        icon: {
+                          background:
+                            "center / contain no-repeat url('chrome://browser/content/asrouter/assets/close-16.svg')",
+                          height: "18px",
+                          width: "18px",
+                        },
+                        text: {
+                          string_id: "create-backup-screen-2-easy-list-3",
+                          marginBlock: "4px",
+                          fontSize: "13px",
+                          fontWeight: "600",
+                        },
+                      },
+                    ],
+                  },
+                  tilebutton: {
+                    label: {
+                      string_id: "create-backup-select-tile-button-label",
+                      minHeight: "24px",
+                      minWidth: "revert",
+                      lineHeight: "100%",
+                      paddingBlock: "4px",
+                      paddingInline: "16px",
+                      marginBlock: "0 16px",
+                    },
+                    style: "primary",
+                    action: {
+                      type: "SET_PREF",
+                      navigate: true,
+                      data: {
+                        pref: {
+                          name: "messaging-system-action.backupChooser",
+                          value: "easy",
+                        },
+                      },
+                    },
+                  },
+                },
+                {
+                  inert: true,
+                  type: "backup",
+                  icon: {
+                    background:
+                      "center / contain no-repeat url('chrome://browser/content/asrouter/assets/shield-checkmark-16.svg')",
+                    width: "54px",
+                    height: "54px",
+                    marginBlockStart: "22px",
+                    borderRadius: "5px",
+                  },
+                  id: "all",
+                  label: {
+                    string_id: "create-backup-screen-2-all-label",
+                    fontSize: 17,
+                    fontWeight: 600,
+                    marginBlock: "3px 10px",
+                  },
+                  body: {
+                    items: [
+                      {
+                        icon: {
+                          background:
+                            "center / contain no-repeat url('chrome://browser/content/asrouter/assets/checkmark-16.svg')",
+                          height: "18px",
+                          width: "18px",
+                        },
+                        text: {
+                          string_id: "create-backup-screen-2-easy-list-1",
+                          marginBlock: "4px",
+                          fontSize: "13px",
+                        },
+                      },
+                      {
+                        icon: {
+                          background:
+                            "center / contain no-repeat url('chrome://browser/content/asrouter/assets/checkmark-16.svg')",
+                          height: "18px",
+                          width: "18px",
+                        },
+                        text: {
+                          string_id: "create-backup-screen-2-all-list-2",
+                          marginBlock: "4px",
+                          fontSize: "13px",
+                        },
+                      },
+                      {
+                        icon: {
+                          background:
+                            "center / contain no-repeat url('chrome://browser/content/asrouter/assets/shield-checkmark-16.svg')",
+                          height: "18px",
+                          width: "18px",
+                        },
+                        text: {
+                          string_id: "create-backup-screen-2-all-list-3",
+                          marginBlock: "4px",
+                          fontSize: "13px",
+                          fontWeight: 500,
+                        },
+                      },
+                    ],
+                  },
+                  tilebutton: {
+                    label: {
+                      string_id: "create-backup-select-tile-button-label",
+                      minHeight: "24px",
+                      minWidth: "revert",
+                      lineHeight: "100%",
+                      paddingBlock: "4px",
+                      paddingInline: "16px",
+                      marginBlock: "0 16px",
+                    },
+                    marginBlock: "0 16px",
+                    style: "primary",
+                    action: {
+                      type: "SET_PREF",
+                      navigate: true,
+                      data: {
+                        pref: {
+                          name: "messaging-system-action.backupChooser",
+                          value: "full",
+                        },
+                      },
+                    },
+                  },
+                },
+              ],
+            },
+            additional_button: {
+              style: "secondary",
+              label: {
+                string_id: "create-backup-back-button-label",
+                fontSize: "0.75em",
+                minHeight: "24px",
+                minWidth: "revert",
+                lineHeight: "100%",
+                paddingBlock: "4px",
+                paddingInline: "12px",
+              },
+              action: {
+                navigate: true,
+                goBack: true,
+              },
+            },
+          },
+        },
+        {
+          id: "SCREEN_3A",
+          force_hide_steps_indicator: true,
+          targeting: "!isEncryptedBackup",
+          content: {
+            logo: {
+              imageURL:
+                "chrome://browser/content/asrouter/assets/fox-with-locked-box.svg",
+              height: "110px",
+            },
+            title: {
+              raw: "Where do you want your backup saved?",
+              paddingBlock: "8px",
+              fontSize: "24px",
+              fontWeight: 600,
+            },
+            isEncryptedBackup: false,
+            screen_style: {
+              width: "650px",
+              height: "560px",
+            },
+            tiles: {
+              type: "fx_backup_file_path",
+              options: {
+                hide_password_input: true,
+                file_path_label: "fx-backup-opt-in-filepath-label",
+                turn_on_backup_header: "fx-backup-opt-in-header",
+                turn_on_backup_confirm_btn_label:
+                  "fx-backup-opt-in-confirm-btn-label",
+              },
+            },
+            additional_button: {
+              style: "secondary",
+              label: {
+                raw: "Back",
+                fontSize: "0.75em",
+                minHeight: "24px",
+                minWidth: "revert",
+                lineHeight: "100%",
+                paddingBlock: "4px",
+                paddingInline: "12px",
+              },
+              action: {
+                navigate: true,
+                goBack: true,
+              },
+            },
+          },
+        },
+        {
+          id: "SCREEN_3B",
+          force_hide_steps_indicator: true,
+          targeting: "isEncryptedBackup",
+          content: {
+            isEncryptedBackup: true,
+            logo: {
+              imageURL:
+                "chrome://browser/content/asrouter/assets/fox-with-locked-box.svg",
+              height: "110px",
+            },
+            title: {
+              raw: "Where do you want your backup saved?",
+            },
+            screen_style: {
+              width: "650px",
+              height: "560px",
+            },
+            tiles: {
+              type: "fx_backup_file_path",
+              options: {
+                hide_password_input: true,
+                hide_secondary_button: true,
+                file_path_label: "fx-backup-opt-in-filepath-label",
+                turn_on_backup_header: "fx-backup-opt-in-header",
+                turn_on_backup_confirm_btn_label:
+                  "fx-backup-opt-in-confirm-btn-label",
+              },
+            },
+            additional_button: {
+              style: "secondary",
+              flow: "row",
+              label: {
+                raw: "Back",
+                fontSize: "0.75em",
+                minHeight: "24px",
+                minWidth: "revert",
+                lineHeight: "100%",
+                paddingBlock: "4px",
+                paddingInline: "12px",
+              },
+              action: {
+                navigate: true,
+                goBack: true,
+              },
+            },
+          },
+        },
+        {
+          id: "FX_BACKUP_ENCRYPTION",
+          force_hide_steps_indicator: true,
+          targeting: "isEncryptedBackup",
+          content: {
+            isEncryptedBackup: true,
+            title: {
+              raw: "Create a backup file password",
+            },
+            subtitle: {
+              raw: "Required to encrypt your data. Store it in a place you’ll remember.",
+              fontSize: "13px",
+            },
+            screen_style: {
+              width: "664px",
+              height: "620px",
+            },
+            logo: {
+              imageURL:
+                "chrome://browser/content/asrouter/assets/fox-with-locked-box.svg",
+              height: "130px",
+            },
+            tiles: {
+              type: "fx_backup_password",
+              options: {
+                hide_secondary_button: true,
+                create_password_label: "fx-backup-opt-in-create-password-label",
+                turn_on_backup_confirm_btn_label:
+                  "fx-backup-opt-in-confirm-btn-label",
+              },
+            },
+            additional_button: {
+              style: "secondary",
+              label: {
+                raw: "Back",
+                fontSize: "0.75em",
+                minHeight: "24px",
+                minWidth: "revert",
+                lineHeight: "100%",
+                paddingBlock: "4px",
+                paddingInline: "12px",
+              },
+              action: {
+                navigate: true,
+                goBack: true,
+              },
+            },
+          },
+        },
+        {
+          id: "BACKUP_CONFIRMATION_SCREEN_EASY",
+          force_hide_steps_indicator: true,
+          targeting: "!isEncryptedBackup",
+          content: {
+            screen_style: {
+              width: "664px",
+              height: "620px",
+            },
+            logo: {
+              imageURL:
+                "chrome://browser/content/asrouter/assets/fox-with-checkmark.svg",
+              height: "96px",
+            },
+            title: {
+              string_id: "fx-backup-confirmation-screen-title",
+            },
+            tiles: {
+              type: "confirmation-checklist",
+              data: {
+                inert: true,
+                style: { width: "500px" },
+                items: [
+                  {
+                    icon: {
+                      background:
+                        "center / contain no-repeat url('chrome://browser/content/asrouter/assets/checkmark-16.svg')",
+                      height: "18px",
+                      width: "18px",
+                    },
+                    text: {
+                      string_id:
+                        "fx-backup-confirmation-screen-easy-setup-item-text-1",
+                    },
+                    subtext: {
+                      string_id: "fx-backup-confirmation-screen-item-subtext-1",
+                    },
+                    link_keys: ["settings"],
+                  },
+                  {
+                    icon: {
+                      background:
+                        "center / contain no-repeat url('chrome://browser/content/asrouter/assets/checkmark-16.svg')",
+                      height: "18px",
+                      width: "18px",
+                    },
+                    text: {
+                      string_id:
+                        "fx-backup-confirmation-screen-easy-setup-item-text-2",
+                    },
+                    subtext: {
+                      string_id: "fx-backup-confirmation-screen-item-subtext-2",
+                    },
+                  },
+                  {
+                    icon: {
+                      background:
+                        "center / contain no-repeat url('chrome://browser/content/asrouter/assets/subtract-16.svg')",
+                      height: "18px",
+                      width: "18px",
+                    },
+                    text: {
+                      string_id:
+                        "fx-backup-confirmation-screen-easy-setup-item-text-3",
+                    },
+                    subtext: {
+                      string_id:
+                        "fx-backup-confirmation-screen-easy-setup-item-subtext-3",
+                    },
+                    link_keys: ["settings"],
+                  },
+                ],
+              },
+            },
+            settings: {
+              action: {
+                type: "OPEN_ABOUT_PAGE",
+                data: {
+                  args: "preferences#sync-backup",
+                  where: "tab",
+                },
+              },
+            },
+            additional_button: {
+              label: {
+                string_id: "fx-backup-confirmation-screen-close-button",
+              },
+              style: "secondary",
+              action: { dismiss: true },
+            },
+          },
+        },
+        {
+          id: "BACKUP_CONFIRMATION_SCREEN_ENCRYPTED",
+          force_hide_steps_indicator: true,
+          targeting: "isEncryptedBackup",
+          content: {
+            isEncryptedBackup: true,
+            screen_style: {
+              width: "664px",
+              height: "620px",
+            },
+            logo: {
+              imageURL:
+                "chrome://browser/content/asrouter/assets/fox-with-checkmark.svg",
+              height: "96px",
+            },
+            title: {
+              string_id: "fx-backup-confirmation-screen-title",
+            },
+            tiles: {
+              type: "confirmation-checklist",
+              data: {
+                inert: true,
+                style: { width: "500px" },
+                items: [
+                  {
+                    icon: {
+                      background:
+                        "center / contain no-repeat url('chrome://browser/content/asrouter/assets/checkmark-16.svg')",
+                      height: "18px",
+                      width: "18px",
+                    },
+                    text: {
+                      string_id:
+                        "fx-backup-confirmation-screen-all-data-item-text-1",
+                    },
+                    subtext: {
+                      string_id: "fx-backup-confirmation-screen-item-subtext-1",
+                    },
+                    link_keys: ["settings"],
+                  },
+                  {
+                    icon: {
+                      background:
+                        "center / contain no-repeat url('chrome://browser/content/asrouter/assets/checkmark-16.svg')",
+                      height: "18px",
+                      width: "18px",
+                    },
+                    text: {
+                      string_id:
+                        "fx-backup-confirmation-screen-all-data-item-text-2",
+                    },
+                    subtext: {
+                      string_id: "fx-backup-confirmation-screen-item-subtext-2",
+                    },
+                  },
+                  {
+                    icon: {
+                      background:
+                        "center / contain no-repeat url('chrome://browser/content/asrouter/assets/checkmark-16.svg')",
+                      height: "18px",
+                      width: "18px",
+                    },
+                    text: {
+                      string_id:
+                        "fx-backup-confirmation-screen-all-data-item-text-3",
+                    },
+                  },
+                ],
+              },
+            },
+            settings: {
+              action: {
+                type: "OPEN_ABOUT_PAGE",
+                data: {
+                  args: "preferences#sync-backup",
+                  where: "tab",
+                },
+              },
+            },
+            additional_button: {
+              label: {
+                string_id: "fx-backup-confirmation-screen-close-button",
+              },
+              style: "secondary",
+              action: { dismiss: true },
+            },
+          },
+        },
+      ],
+    },
+    frequency: {
+      lifetime: 3,
+    },
+    trigger: {
+      id: "newtabMessageCheck",
+    },
+  },
+  {
     id: "UNIVERSAL_INFOBAR_WITH_EMBEDDED_LINKS",
     content: {
       text: [
@@ -3338,6 +4190,108 @@ const MESSAGES = () => [
       id: "smartWindowNewTab",
     },
     targeting: "isAIWindow",
+  },
+  {
+    id: "WORLD_CUP_TASKBAR_TABS_SPOTLIGHT",
+    groups: ["panel-test-provider"],
+    template: "spotlight",
+    content: {
+      id: "WORLD_CUP_TASKBAR_TABS_SPOTLIGHT",
+      template: "multistage",
+      modal: "tab",
+      transitions: false,
+      screens: [
+        {
+          id: "SCREEN_1",
+          force_hide_steps_indicator: true,
+          content: {
+            position: "split",
+            main_content_style: {
+              paddingBlockStart: "40px",
+            },
+            main_content_style_narrow: {
+              paddingInline: "40px",
+            },
+            background:
+              "center / contain no-repeat light-dark(url('https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/ms-images/20260602011346--visuals-worldcup-light--12288900-f5e6-4193-8b66-da63b6cfe806.svg'), url('https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/ms-images/20260602011258--visuals-worldcup-dark--a975f19d-f186-40bb-8d86-98f450ad5462.svg'))",
+            hero_text: {
+              title: {
+                raw: "Follow the World Cup in Firefox",
+              },
+              subtitle: {
+                raw: "One click launches your most used sites in a streamlined window with all of Firefox’s protections.",
+                textAlign: "initial",
+                marginInline: "40px",
+                marginInlineEnd: "6px",
+                fontSize: "13px",
+              },
+            },
+            tiles: {
+              type: "pinnable_sites",
+              title: {
+                raw: "Select to add to your taskbar",
+              },
+              pinButtonLabel: { raw: "Add" },
+              data: [
+                {
+                  id: "fifa-plus",
+                  name: "FIFA+",
+                  description: "plus.fifa.com",
+                  iconUrl:
+                    "https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/ms-images/20260602010406--fifa-plus-icon--a3fb720e-4604-43c9-9c7a-aabca6ba5bbb.png",
+                  url: "https://plus.fifa.com",
+                },
+                {
+                  id: "fox-sports",
+                  name: "Fox Sports",
+                  description: "foxsports.com",
+                  iconUrl:
+                    "https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/ms-images/20260602010635--fox-sports-icon--f0dd8f03-f5c7-4930-94db-f002eca5c3e5.png",
+                  url: "https://www.foxsports.com/",
+                },
+                {
+                  id: "telemundo-deportes",
+                  name: "Telemundo Deportes",
+                  description: "telemundodeportes.com",
+                  iconUrl:
+                    "https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/ms-images/20260602010447--telemundo-deportes-icon--710f3661-b2f2-4e2b-9fa4-c791b9cdb303.png",
+                  url: "https://telemundodeportes.com/",
+                },
+                {
+                  id: "r-soccer-reddit",
+                  name: "r/soccer Reddit",
+                  description: "reddit.com/r/soccer",
+                  iconUrl:
+                    "https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/ms-images/20260602010522--reddit-soccer-icon--63d9ec11-d281-42ff-8382-b635cce58864.png",
+                  url: "http://reddit.com/r/soccer",
+                },
+                {
+                  id: "fubo-tv",
+                  name: "FuboTV",
+                  description: "fubo.tv",
+                  iconUrl:
+                    "https://firefox-settings-attachments.cdn.mozilla.net/main-workspace/ms-images/20260602010600--fubo-tv-icon--2f47927e-d29c-4000-bb39-9f4a03e1c2e6.png",
+                  url: "http://fubo.tv/",
+                },
+              ],
+            },
+            primary_button: {
+              label: { raw: "Done" },
+              action: { dismiss: true },
+            },
+            dismiss_button: {
+              action: {
+                dismiss: true,
+              },
+            },
+          },
+        },
+      ],
+    },
+    frequency: {
+      lifetime: 100,
+    },
+    targeting: "true",
   },
 ];
 

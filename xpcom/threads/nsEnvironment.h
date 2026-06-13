@@ -23,7 +23,7 @@ class nsEnvironment final : public nsIEnvironment {
   static nsresult Create(REFNSIID aIID, void** aResult);
 
  private:
-  nsEnvironment() {}
+  nsEnvironment() = default;
   ~nsEnvironment() = default;
 };
 

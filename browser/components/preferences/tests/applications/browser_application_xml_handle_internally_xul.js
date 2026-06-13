@@ -9,9 +9,6 @@ const MIMEService = Cc["@mozilla.org/mime;1"].getService(Ci.nsIMIMEService);
 
 // This test checks that application/xml has the handle internally option.
 add_task(async function applicationXmlHandleInternally() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.settings-redesign.enabled", false]],
-  });
   const mimeInfo = MIMEService.getFromTypeAndExtension(
     "application/xml",
     "xml"

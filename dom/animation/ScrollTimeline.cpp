@@ -15,6 +15,7 @@
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/ElementInlines.h"
+#include "mozilla/dom/ScrollTimelineBinding.h"
 #include "nsIFrame.h"
 #include "nsLayoutUtils.h"
 #include "nsRefreshDriver.h"
@@ -40,6 +41,70 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED_0(ScrollTimeline,
                                                AnimationTimeline)
+
+JSObject* ScrollTimeline::WrapObject(JSContext* aCx,
+                                     JS::Handle<JSObject*> aGivenProto) {
+  return ScrollTimeline_Binding::Wrap(aCx, this, aGivenProto);
+}
+
+/* static */
+already_AddRefed<ScrollTimeline> ScrollTimeline::Constructor(
+    const GlobalObject& aGlobal, const ScrollTimelineOptions& aOptions,
+    ErrorResult& aRv) {
+  RefPtr<Document> doc =
+      AnimationUtils::GetCurrentRealmDocument(aGlobal.Context());
+  if (!doc) {
+    aRv.Throw(NS_ERROR_FAILURE);
+    return nullptr;
+  }
+
+  // Implements
+  // <https://drafts.csswg.org/scroll-animations-1/#dom-scrolltimeline-scrolltimeline>
+
+  // Step 2 -- get the source for the timeline.
+  Element* source = aOptions.mSource.WasPassed()
+                        ? aOptions.mSource.Value().get()
+                        : doc->GetScrollingElement();
+  ScrollerInfo scroller = ScrollerInfo::Anonymous(
+      ScrollerInfo::Type::Provided, source, PseudoStyleRequest::NotPseudo());
+
+  // Step 3 -- set the axis for the timeline.
+  StyleScrollAxis axis;
+  switch (aOptions.mAxis) {
+    case dom::ScrollAxis::Block:
+      axis = StyleScrollAxis::Block;
+      break;
+    case dom::ScrollAxis::Inline:
+      axis = StyleScrollAxis::Inline;
+      break;
+    case dom::ScrollAxis::X:
+      axis = StyleScrollAxis::X;
+      break;
+    case dom::ScrollAxis::Y:
+      axis = StyleScrollAxis::Y;
+      break;
+  }
+
+  // Step 1 -- create the new ScrollTimeline object.
+  return MakeAndAddRef<ScrollTimeline>(doc, scroller, axis);
+}
+
+Element* ScrollTimeline::GetSource() const { return SourceElement(); }
+
+dom::ScrollAxis ScrollTimeline::GetScrollAxis() const {
+  switch (mAxis) {
+    case StyleScrollAxis::Block:
+      return dom::ScrollAxis::Block;
+    case StyleScrollAxis::Inline:
+      return dom::ScrollAxis::Inline;
+    case StyleScrollAxis::X:
+      return dom::ScrollAxis::X;
+    case StyleScrollAxis::Y:
+      return dom::ScrollAxis::Y;
+  }
+  MOZ_ASSERT_UNREACHABLE("Unknown scroll axis");
+  return dom::ScrollAxis::Block;
+}
 
 ScrollTimeline::ScrollTimeline(Document* aDocument,
                                const ScrollerInfo& aScrollerInfo,
@@ -145,6 +210,28 @@ void ScrollTimeline::WillRefresh() {
   Tick(dummyState);
 }
 
+bool ScrollTimeline::UpdateIfStale() {
+  // The scroll timeline may be stale if there are any updates in
+  // RenderingPhase::AnimationFrameCallbacks and RenderingPhase::Layout.
+  // We have to check if the ranges are still valid.
+  // https://drafts.csswg.org/scroll-animations-1/#event-loop
+  if (MOZ_LIKELY(!UpdateCachedCurrentTime())) {
+    return false;
+  }
+
+  if (mAnimations.IsEmpty()) {
+    return false;
+  }
+
+  // Check all animations and request restyle.
+  // NOTE: Even if the animation doesn't have the target, it would be okay to
+  // post update. We can optimize the case later.
+  for (const auto& animation : mAnimations) {
+    animation->PostUpdate();
+  }
+  return true;
+}
+
 bool ScrollTimeline::SourceMatches(
     const Element* aElement, const PseudoStyleRequest& aPseudoRequest) const {
   if (mScrollerInfo.IsAnonymous()) {
@@ -222,14 +309,15 @@ void ScrollTimeline::ReplacePropertiesWith(
   for (auto* anim = mAnimationOrder.getFirst(); anim;
        anim = static_cast<LinkedListElement<Animation>*>(anim)->getNext()) {
     MOZ_ASSERT(anim->GetTimeline() == this);
+    MOZ_ASSERT(anim->GetTimelineName() == aNew.GetName());
     // Set this so we just PostUpdate() for this animation.
-    anim->SetTimeline(this);
+    anim->SetTimeline(this, aNew.GetName());
   }
 }
 
 ScrollTimeline::~ScrollTimeline() { Teardown(); }
 
-void ScrollTimeline::UpdateCachedCurrentTime() {
+bool ScrollTimeline::UpdateCachedCurrentTime() {
   const auto prevCachedCurrentTime = std::move(mCachedCurrentTime);
 
   mCachedCurrentTime.reset();
@@ -237,14 +325,14 @@ void ScrollTimeline::UpdateCachedCurrentTime() {
   const auto state = GetState();
   // If no layout box, this timeline is inactive.
   if (const auto* e = state.mSource.mElement; !e || !e->GetPrimaryFrame()) {
-    return;
+    return prevCachedCurrentTime.isSome();
   }
 
   // if this is not a scroller container, this timeline is inactive.
   const ScrollContainerFrame* scrollContainerFrame =
       state.GetScrollContainerFrame();
   if (!scrollContainerFrame) {
-    return;
+    return prevCachedCurrentTime.isSome();
   }
 
   const auto orientation = state.Axis();
@@ -253,7 +341,7 @@ void ScrollTimeline::UpdateCachedCurrentTime() {
   // https://drafts.csswg.org/scroll-animations-1/#scrolltimeline-interface
   if (!scrollContainerFrame->GetAvailableScrollingDirections().contains(
           orientation)) {
-    return;
+    return prevCachedCurrentTime.isSome();
   }
 
   const nsPoint& scrollPosition = scrollContainerFrame->GetScrollPosition();
@@ -270,12 +358,14 @@ void ScrollTimeline::UpdateCachedCurrentTime() {
                                     prevCachedCurrentTime->mMaxScrollOffset) {
     TimelineDataDidChange();
   }
+  return mCachedCurrentTime != prevCachedCurrentTime;
 }
 
 void ScrollTimeline::TimelineDataDidChange() {
   for (auto* anim = mAnimationOrder.getFirst(); anim;
        anim = static_cast<LinkedListElement<Animation>*>(anim)->getNext()) {
     anim->UpdateNormalizedTimingForTimelineDataChange();
+    anim->MaybeUpdateKeyframeComputedOffsets();
   }
 }
 
@@ -348,14 +438,15 @@ void ScrollTimeline::NotifyAnimationContentVisibilityChanged(
 NonOwningAnimationTarget ScrollTimeline::ScrollerInfo::Source() const {
   switch (mType) {
     case Type::Name:
-      return NonOwningAnimationTarget{mTarget};
+      return NonOwningAnimationTarget{mSourceOrTarget};
     case Type::Nearest: {
-      auto [element, pseudo] =
-          FindNearestScroller(mTarget.mElement, mTarget.mPseudoRequest);
+      auto [element, pseudo] = FindNearestScroller(
+          mSourceOrTarget.mElement, mSourceOrTarget.mPseudoRequest);
       return {const_cast<Element*>(element), pseudo};
     }
+    case Type::Provided:
     case Type::Self:
-      return NonOwningAnimationTarget{mTarget};
+      return NonOwningAnimationTarget{mSourceOrTarget};
     case Type::Root:
       break;
     default:
@@ -366,7 +457,7 @@ NonOwningAnimationTarget ScrollTimeline::ScrollerInfo::Source() const {
   // We use the owner doc of the animation target. This may be different
   // from |mDocument| after we implement ScrollTimeline interface for
   // script.
-  return {mTarget.mElement->OwnerDoc()->GetDocumentElement(),
+  return {mSourceOrTarget.mElement->OwnerDoc()->GetDocumentElement(),
           PseudoStyleRequest{}};
 }
 

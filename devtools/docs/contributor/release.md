@@ -4,7 +4,7 @@ There are a few things we should do on each Nightly cycle to keep our code clean
 
 ## Update MDN data for the Compatibility panel
 
-Follow instructions from [devtools/client/inspector/compatibility/README.md](https://searchfox.org/mozilla-central/source/devtools/client/inspector/compatibility/README.md).
+Follow instructions from [devtools/client/inspector/compatibility/README.md](https://searchfox.org/firefox-main/source/devtools/client/inspector/compatibility/README.md).
 
 ## Generate webidl-pure-allowlist.js and webidl-deprecated-list.js
 
@@ -15,7 +15,7 @@ or if methods are tagged as pure (or untagged).
 The `webidl-deprecated-list.js` file will be used to avoid calling deprecated getters from devtools code.
 
 1. Generating those files requires a non-artifact build. If you're mostly working with artifact builds, you might want to run `./mach bootstrap` in order to have a proper build environment.
-2. Once the build is over, you should be able to follow instructions at the top of [GenerateDataFromWebIdls.py](https://searchfox.org/mozilla-central/source/devtools/shared/webconsole/GenerateDataFromWebIdls.py), which should be:
+2. Once the build is over, you should be able to follow instructions at the top of [GenerateDataFromWebIdls.py](https://searchfox.org/firefox-main/source/devtools/shared/webconsole/GenerateDataFromWebIdls.py), which should be:
    2.1. Run the script with `./mach python devtools/shared/webconsole/GenerateDataFromWebIdls.py`
 
 ## Remove backwards compatibility code
@@ -103,29 +103,29 @@ This is not a mandatory task to do on each cycle, but having up-to-date librarie
 
 These modules are used by the debugger to be able to parse and debug WASM sources.
 
-Follow the [upgrade documentation](https://searchfox.org/mozilla-central/source/devtools/client/shared/vendor/WASMPARSER_UPGRADING)
+Follow the [upgrade documentation](https://searchfox.org/firefox-main/source/devtools/client/shared/vendor/WASMPARSER_UPGRADING)
 
 ### jsbeautify
 
 This module is used by the inspector and the webconsole to pretty print user input.
 
-Follow the [upgrade documentation](https://searchfox.org/mozilla-central/source/devtools/shared/jsbeautify/UPGRADING.md)
+Follow the [upgrade documentation](https://searchfox.org/firefox-main/source/devtools/shared/jsbeautify/UPGRADING.md)
 
 ### CodeMirror should be updated
 
 CodeMirror is used by our source editor component, which is used all over DevTools.
 
-Follow the [upgrade section in the documentation](https://searchfox.org/mozilla-central/source/devtools/client/shared/sourceeditor/README)
+Follow the [upgrade section in the documentation](https://searchfox.org/firefox-main/source/devtools/client/shared/sourceeditor/README)
 
 ### fluent-react
 
 This module is used in several panels to manage localization in React applications.
 
-Follow the [upgrade documentation](https://searchfox.org/mozilla-central/source/devtools/client/shared/vendor/FLUENT_REACT_UPGRADING)
+Follow the [upgrade documentation](https://searchfox.org/firefox-main/source/devtools/client/shared/vendor/FLUENT_REACT_UPGRADING)
 
 ### reselect
 
-Follow the [upgrade documentation](https://searchfox.org/mozilla-central/source/devtools/client/shared/vendor/RESELECT_UPGRADING)
+Follow the [upgrade documentation](https://searchfox.org/firefox-main/source/devtools/client/shared/vendor/RESELECT_UPGRADING)
 
 ### pretty-fast
 

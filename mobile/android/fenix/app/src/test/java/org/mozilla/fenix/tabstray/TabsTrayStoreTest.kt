@@ -14,6 +14,7 @@ import org.mozilla.fenix.tabstray.redux.action.TabsTrayAction
 import org.mozilla.fenix.tabstray.redux.state.Page
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
 import org.mozilla.fenix.tabstray.redux.store.TabsTrayStore
+import kotlin.test.assertIs
 
 class TabsTrayStoreTest {
 
@@ -24,7 +25,7 @@ class TabsTrayStoreTest {
         store.dispatch(TabsTrayAction.EnterSelectMode)
 
         assertTrue(store.state.mode.selectedTabs.isEmpty())
-        assertTrue(store.state.mode is TabsTrayState.Mode.Select)
+        assertIs<TabsTrayState.Mode.Select>(store.state.mode)
 
         store.dispatch(TabsTrayAction.AddSelectTab(TabsTrayItem.Tab(tab = createTab(url = "url"))))
 
@@ -32,7 +33,7 @@ class TabsTrayStoreTest {
         store.dispatch(TabsTrayAction.EnterSelectMode)
 
         assertTrue(store.state.mode.selectedTabs.isEmpty())
-        assertTrue(store.state.mode is TabsTrayState.Mode.Select)
+        assertIs<TabsTrayState.Mode.Select>(store.state.mode)
     }
 
     @Test
@@ -41,11 +42,11 @@ class TabsTrayStoreTest {
 
         store.dispatch(TabsTrayAction.EnterSelectMode)
 
-        assertTrue(store.state.mode is TabsTrayState.Mode.Select)
+        assertIs<TabsTrayState.Mode.Select>(store.state.mode)
 
         store.dispatch(TabsTrayAction.ExitSelectMode)
 
-        assertTrue(store.state.mode is TabsTrayState.Mode.Normal)
+        assertIs<TabsTrayState.Mode.Normal>(store.state.mode)
     }
 
     @Test

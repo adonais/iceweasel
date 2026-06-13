@@ -6,12 +6,13 @@
       "matches": ["*://vivaldi.com/*"]
     }
   },
+  "css": {
+    "unhide-text-selections": "::selection { color: HighlightText; background-color: Highlight; }"
+  },
   "interventions": [
     {
       "platforms": ["all"],
-      "content_scripts": {
-        "css": ["bug1896349-vivaldi.com-selected-text-fix.css"]
-      }
+      "css": ["unhide-text-selections"]
     }
   ]
 }

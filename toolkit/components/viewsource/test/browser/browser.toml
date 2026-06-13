@@ -21,6 +21,8 @@ skip-if = [
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && opt", # Bug 1713913 - new Fission platform triage
 ]
 
+["browser_contextmenu_error_pages.js"]
+
 ["browser_gotoline.js"]
 
 ["browser_open_docgroup.js"]

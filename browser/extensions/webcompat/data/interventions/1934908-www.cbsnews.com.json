@@ -11,7 +11,7 @@
       "platforms": ["android"],
       "content_scripts": {
         "all_frames": true,
-        "js": ["bug1934908-www.cbsnews.com-ua-override.js"]
+        "js": ["use_chrome_useragent.js", "use_chrome_vendor.js"]
       }
     }
   ]

@@ -8,7 +8,7 @@
 
 #include "nsComponentManagerUtils.h"
 #include "nsNSSCertHelper.h"
-#include "nsPK11TokenDB.h"
+#include "PKCS11Token.h"
 
 using namespace mozilla::psm;
 
@@ -133,9 +133,9 @@ PKCS11Slot::GetFWVersion(/*out*/ nsACString& fwVersion) {
 }
 
 NS_IMETHODIMP
-PKCS11Slot::GetToken(nsIPK11Token** _retval) {
+PKCS11Slot::GetToken(nsIPKCS11Token** _retval) {
   NS_ENSURE_ARG_POINTER(_retval);
-  nsCOMPtr<nsIPK11Token> token = new nsPK11Token(mSlot.get());
+  nsCOMPtr<nsIPKCS11Token> token = new PKCS11Token(mSlot.get());
   token.forget(_retval);
   return NS_OK;
 }
@@ -257,7 +257,7 @@ RemotePKCS11Slot::GetFWVersion(/*out*/ nsACString& fwVersion) {
 }
 
 NS_IMETHODIMP
-RemotePKCS11Slot::GetToken(nsIPK11Token** _retval) {
+RemotePKCS11Slot::GetToken(nsIPKCS11Token** _retval) {
   return NS_ERROR_NOT_AVAILABLE;
 }
 

@@ -307,11 +307,18 @@ export class EmbeddingsGenerator {
     if (this.#promiseEngine) {
       return this.#promiseEngine;
     }
-    let { promise, resolve } = Promise.withResolvers();
+    let { promise, resolve, reject } = Promise.withResolvers();
+    // Suppress unhandled rejection when there are no concurrent callers awaiting this promise.
+    promise.catch(() => {});
     this.#promiseEngine = promise;
-    // Unset undefined synchronously so caller can use null check to skip.
-    await this.createEngineIfNotPresent();
-    resolve();
+    try {
+      await this.createEngineIfNotPresent();
+      resolve(this.#engine);
+    } catch (e) {
+      this.#promiseEngine = null;
+      reject(e);
+      throw e;
+    }
     return this.#engine;
   }
 

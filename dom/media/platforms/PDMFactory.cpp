@@ -252,27 +252,28 @@ class SupportChecker {
       auto mimeType = aTrackConfig.GetAsVideoInfo()->mMimeType;
       RefPtr<MediaByteBuffer> extraData =
           aTrackConfig.GetAsVideoInfo()->mExtraData;
-      AddToCheckList([mimeType, extraData]() {
+      AddToCheckList(
+          [mimeType = std::move(mimeType), extraData = std::move(extraData)]() {
 #if defined(XP_WIN) || defined(XP_DARWIN)
-        if (MP4Decoder::IsH264(mimeType)) {
-          SPSData spsdata;
-          // WMF H.264 Video Decoder and Apple ATDecoder
-          // do not support YUV444 format.
-          if (H264::DecodeSPSFromExtraData(extraData, spsdata) &&
-              (spsdata.profile_idc == 244 /* Hi444PP */ ||
-               spsdata.chroma_format_idc == PDMFactory::kYUV444)) {
-            return CheckResult(
-                SupportChecker::Reason::kVideoFormatNotSupported,
-                MediaResult(
-                    NS_ERROR_DOM_MEDIA_FATAL_ERR,
-                    RESULT_DETAIL("Decoder may not have the capability "
-                                  "to handle the requested video format "
-                                  "with YUV444 chroma subsampling.")));
-          }
-        }
+            if (MP4Decoder::IsH264(mimeType)) {
+              SPSData spsdata;
+              // WMF H.264 Video Decoder and Apple ATDecoder
+              // do not support YUV444 format.
+              if (H264::DecodeSPSFromExtraData(extraData, spsdata) &&
+                  (spsdata.profile_idc == 244 /* Hi444PP */ ||
+                   spsdata.chroma_format_idc == PDMFactory::kYUV444)) {
+                return CheckResult(
+                    SupportChecker::Reason::kVideoFormatNotSupported,
+                    MediaResult(
+                        NS_ERROR_DOM_MEDIA_FATAL_ERR,
+                        RESULT_DETAIL("Decoder may not have the capability "
+                                      "to handle the requested video format "
+                                      "with YUV444 chroma subsampling.")));
+              }
+            }
 #endif
-        return CheckResult(SupportChecker::Reason::kSupported);
-      });
+            return CheckResult(SupportChecker::Reason::kSupported);
+          });
     }
   }
 
@@ -563,7 +564,19 @@ void PDMFactory::CreateRddPDMs() {
 #ifdef MOZ_FFMPEG
   if (StaticPrefs::media_ffmpeg_enabled() &&
       StaticPrefs::media_rdd_ffmpeg_enabled() &&
-      !StartupPDM(FFmpegRuntimeLinker::CreateDecoder())) {
+      !StartupPDM(
+          FFmpegRuntimeLinker::CreateDecoder(),
+  // When Vulkan video decoding is enabled, insert the full FFmpeg
+  // decoder before ffvpx so that Vulkan hardware decoding is
+  // preferred. ffvpx does not support Vulkan decode and would
+  // otherwise be selected first and fall back to software.
+  // TODO (bug 2034236): remove once ffvpx gains Vulkan decode support.
+#  ifdef MOZ_WIDGET_GTK
+          StaticPrefs::media_hardware_video_decoding_vulkan_enabled_AtStartup()
+#  else
+          false
+#  endif
+              )) {
     mFailureFlags += GetFailureFlagBasedOnFFmpegStatus(
         FFmpegRuntimeLinker::LinkStatusCode());
   }

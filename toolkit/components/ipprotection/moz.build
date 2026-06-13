@@ -1,5 +1,3 @@
-# -*- Mode: python; indent-tabs-mode: nil; tab-width: 40 -*-
-# vim: set filetype=python:
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -9,16 +7,22 @@ with Files("**"):
 
 if CONFIG["MOZ_WIDGET_TOOLKIT"] == "android":
     MOZ_SRC_FILES += [
-        "android/IPPAndroidAuthProvider.sys.mjs",
-        "android/IPPAndroidEnroll.sys.mjs",
-        "android/IPPAndroidSignInWatcher.sys.mjs",
+        "fxa/IPPAndroidAuthProvider.sys.mjs",
+        "fxa/IPPAndroidSignInWatcher.sys.mjs",
+        "gpi/IPPGpiAuthProvider.sys.mjs",
     ]
 
+TESTING_JS_MODULES.ipprotection += [
+    "gpi/IPPGpiAuthProvider.sys.mjs",
+]
+
 MOZ_SRC_FILES += [
-    "fxa/IPPEnrollAndEntitleManager.sys.mjs",
+    "fxa/GuardianClient.sys.mjs",
+    "fxa/IPPFxaActivateAuthProvider.sys.mjs",
     "fxa/IPPFxaAuthProvider.sys.mjs",
+    "fxa/IPPFxaBaseAuthProvider.sys.mjs",
     "fxa/IPPSignInWatcher.sys.mjs",
-    "GuardianClient.sys.mjs",
+    "GuardianTypes.sys.mjs",
     "IPPAuthProvider.sys.mjs",
     "IPPAutoRestore.sys.mjs",
     "IPPAutoStart.sys.mjs",

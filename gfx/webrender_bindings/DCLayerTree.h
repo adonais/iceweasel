@@ -547,6 +547,7 @@ class DCSurfaceDCompositionTextureOverlay : public DCSurface {
 
   RefPtr<RenderTextureHost> mRenderTextureHost;
   RefPtr<RenderTextureHost> mPrevRenderTextureHost;
+  int mSlowGetCount = 0;
 };
 
 class DCSurfaceVideo : public DCSurface {

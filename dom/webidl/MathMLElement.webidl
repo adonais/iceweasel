@@ -10,9 +10,11 @@
  */
 
 [Exposed=Window]
-interface MathMLElement : Element { };
+interface MathMLElement : Element {
+  attribute DOMString nonce;
+};
 MathMLElement includes GlobalEventHandlers;
-MathMLElement includes HTMLOrForeignElement;
+MathMLElement includes HTMLOrSVGOrMathMLElement;
 MathMLElement includes ElementCSSInlineStyle;
 MathMLElement includes TouchEventHandlers;
 MathMLElement includes OnErrorEventHandlerForNodes;

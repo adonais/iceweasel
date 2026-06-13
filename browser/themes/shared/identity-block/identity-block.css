@@ -51,14 +51,14 @@
   &:hover:not([open="true"]) {
     background-color: var(--urlbar-box-background-color-hover);
     color: var(--urlbar-box-text-color-hover);
-    outline-color: var(--toolbarbutton-hover-outline-color);
+    outline-color: var(--toolbarbutton-outline-color-hover);
   }
 
   &:hover:active,
   &[open="true"] {
     background-color: var(--urlbar-box-background-color-active);
     color: var(--urlbar-box-text-color-hover);
-    outline-color: var(--toolbarbutton-active-outline-color);
+    outline-color: var(--toolbarbutton-outline-color-active);
   }
 
   &:focus-visible {
@@ -339,6 +339,75 @@
       list-style-image: url(chrome://browser/skin/trust-icon-active.svg);
     }
 
+    &.breached {
+      /* position: relative is set on the container so that the absolutely-positioned
+        ::before and ::after pseudo-elements are anchored to it */
+      position: relative;
+      color: var(--icon-color-warning);
+      list-style-image: url(chrome://browser/skin/tracking-protection.svg);
+
+      &::before {
+        content: "";
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 22px;
+        height: 22px;
+        transform: translate(-50%, -50%) scale(1);
+        background: var(--background-color-warning);
+        border-radius: 100%;
+        z-index: 0;
+        pointer-events: none;
+        transform-origin: center;
+        opacity: 0;
+      }
+
+      &::after {
+        content: "";
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 16px;
+        height: 16px;
+        transform: translate(-50%, -50%);
+        background-image: url(chrome://browser/skin/trust-icon-warning.svg);
+        background-size: contain;
+        background-repeat: no-repeat;
+        background-position: center;
+        z-index: 2;
+        pointer-events: none;
+        opacity: 1;
+        /* Remove background after pulse */
+        background-color: transparent;
+      }
+
+      > #trust-icon {
+        /* position: relative is required for z-index to take effect on this element. */
+        position: relative;
+        z-index: 1;
+        border-radius: 50%;
+        opacity: 0;
+      }
+    }
+
+    &.breach-animating {
+      &::before {
+        animation: trust-icon-breach-pulse 1200ms ease-in-out 0s 1 forwards;
+      }
+
+      &::after {
+        opacity: 0;
+        animation:
+          trust-icon-breach-icon-appear 1200ms linear 0s 1 forwards,
+          trust-icon-breach-icon-pulse 1200ms ease-in-out 0s 1 forwards;
+      }
+
+      > #trust-icon {
+        opacity: 1;
+        animation: trust-icon-breach-image-hide 1200ms linear 0s 1 forwards;
+      }
+    }
+
     &.inactive:not(.insecure) {
       list-style-image: url(chrome://browser/skin/trust-icon-disabled.svg);
     }
@@ -358,5 +427,69 @@
 
   #trust-icon-container:not(.insecure) > #trust-label {
     display: none;
+  }
+}
+
+/*
+ * Breach animation choreography (all animations run simultaneously for 1200ms):
+ *
+ * ::before  — warning circle background: pulses outward then fades away
+ * ::after   — warning icon: fades in and pulses in place (stays visible)
+ * #trust-icon — original icon: fades out to reveal the warning icon above it
+ *
+ * z-index layering: ::before (0) < #trust-icon (1) < ::after (2)
+ */
+
+/* The warning circle background: starts visible, scales outward, then fades out. */
+@keyframes trust-icon-breach-pulse {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.12);
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0;
+  }
+}
+
+/* The warning icon: fades in over the full duration. */
+@keyframes trust-icon-breach-icon-appear {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+/* The warning icon: pulses slightly in scale while remaining visible. */
+@keyframes trust-icon-breach-icon-pulse {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.1);
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+/* The original icon: fades out so the warning icon (::after) becomes visible. */
+@keyframes trust-icon-breach-image-hide {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
   }
 }

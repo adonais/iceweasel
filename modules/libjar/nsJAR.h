@@ -102,7 +102,7 @@ class nsJARItem : public nsIZipEntry {
   explicit nsJARItem(nsZipItem* aZipItem);
 
  private:
-  virtual ~nsJARItem() {}
+  virtual ~nsJARItem() = default;
 
   const uint32_t mSize;     /* size in original file */
   const uint32_t mRealsize; /* inflated size */

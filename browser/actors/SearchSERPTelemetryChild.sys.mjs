@@ -1756,6 +1756,11 @@ export class SearchSERPTelemetryChild extends JSWindowActorChild {
   #urlIsSERP() {
     let provider = this._getProviderInfoForUrl(this.document.documentURI);
     if (provider) {
+      // Providers that use POST-based searches have no query params in the URL.
+      // They set alwaysMatchSERP to indicate the URL match alone is sufficient.
+      if (provider.alwaysMatchSERP?.child) {
+        return true;
+      }
       // Some URLs can match provider info but also be the provider's homepage
       // instead of a SERP.
       // e.g. https://example.com/ vs. https://example.com/?foo=bar

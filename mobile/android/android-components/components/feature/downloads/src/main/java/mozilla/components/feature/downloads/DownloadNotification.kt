@@ -175,6 +175,7 @@ internal object DownloadNotification {
             .setColor(ContextCompat.getColor(context, notificationAccentColor))
             .setContentIntent(contentIntent)
             .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setAutoCancel(true)
             .setDeleteIntent(createDismissPendingIntent(context, downloadState.id))
             .setCompatGroup(NOTIFICATION_GROUP_KEY)
             .build()

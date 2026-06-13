@@ -17,7 +17,6 @@ import mozilla.components.concept.storage.CreditCard
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -29,6 +28,7 @@ import org.mozilla.fenix.ext.getPreferenceKey
 import org.mozilla.fenix.settings.requirePreference
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
+import kotlin.test.assertNotNull
 
 @RunWith(RobolectricTestRunner::class)
 class AutofillSettingFragmentTest {
@@ -98,9 +98,9 @@ class AutofillSettingFragmentTest {
         )
 
         assertNotNull(manageCardsPreference?.icon)
-        assertEquals(preferenceTitle, manageCardsPreference?.title)
+        assertEquals(preferenceTitle, manageCardsPreference.title)
 
-        manageCardsPreference?.performClick()
+        manageCardsPreference.performClick()
 
         verify { navController.navigate(directions) }
     }
@@ -153,9 +153,9 @@ class AutofillSettingFragmentTest {
         )
 
         assertNotNull(manageAddressesPreference?.icon)
-        assertEquals(preferenceTitle, manageAddressesPreference?.title)
+        assertEquals(preferenceTitle, manageAddressesPreference.title)
 
-        manageAddressesPreference?.performClick()
+        manageAddressesPreference.performClick()
 
         verify {
             navController.navigate(
@@ -176,7 +176,7 @@ class AutofillSettingFragmentTest {
         autofillSettingFragment.updateSaveAndAutofillAddressesSwitch()
 
         assertNotNull(autofillAddressesPreference)
-        assertTrue(autofillAddressesPreference?.isChecked!!)
+        assertTrue(autofillAddressesPreference.isChecked)
     }
 
     @Test
@@ -226,7 +226,7 @@ class AutofillSettingFragmentTest {
         autofillSettingFragment.updateSaveAndAutofillAddressesSwitch()
 
         assertNotNull(autofillAddressesPreference)
-        assertFalse(autofillAddressesPreference?.isChecked!!)
+        assertFalse(autofillAddressesPreference.isChecked)
     }
 
     @Test
@@ -240,7 +240,7 @@ class AutofillSettingFragmentTest {
         autofillSettingFragment.updateSaveAndAutofillCardsSwitch()
 
         assertNotNull(autofillCardsPreference)
-        assertTrue(autofillCardsPreference?.isChecked!!)
+        assertTrue(autofillCardsPreference.isChecked)
     }
 
     @Test
@@ -254,6 +254,6 @@ class AutofillSettingFragmentTest {
         autofillSettingFragment.updateSaveAndAutofillCardsSwitch()
 
         assertNotNull(autofillCardsPreference)
-        assertFalse(autofillCardsPreference?.isChecked!!)
+        assertFalse(autofillCardsPreference.isChecked)
     }
 }

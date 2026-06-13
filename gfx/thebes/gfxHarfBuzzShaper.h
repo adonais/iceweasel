@@ -9,7 +9,6 @@
 
 #include "harfbuzz/hb.h"
 #include "nsUnicodeProperties.h"
-#include "mozilla/gfx/2D.h"
 #include "mozilla/MruCache.h"
 #include "mozilla/RecursiveMutex.h"
 
@@ -61,10 +60,9 @@ class gfxHarfBuzzShaper : public gfxFontShaper {
   // Returns whether the shaper has been successfully initialized.
   bool IsInitialized() const { return mHBFont != nullptr; }
 
-  bool ShapeText(DrawTarget* aDrawTarget, const char16_t* aText,
-                 uint32_t aOffset, uint32_t aLength, Script aScript,
-                 nsAtom* aLanguage, bool aVertical, RoundingFlags aRounding,
-                 gfxShapedText* aShapedText) override;
+  bool ShapeText(const char16_t* aText, uint32_t aOffset, uint32_t aLength,
+                 Script aScript, nsAtom* aLanguage, bool aVertical,
+                 RoundingFlags aRounding, gfxShapedText* aShapedText) override;
 
   // map unicode character to glyph ID
   hb_codepoint_t GetNominalGlyph(hb_codepoint_t unicode) const;

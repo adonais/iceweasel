@@ -8,8 +8,7 @@
   border-radius: var(--border-radius-small);
   padding: 0;
   width: 400px;
-  // @backward-compat { version 150 } D281466/D283723 renamed design tokens; remove once Firefox 150 is on Release.
-  box-shadow: var(--popup-box-shadow, var(--box-shadow-popup));
+  box-shadow: var(--popup-box-shadow);
   background: var(--newtab-background-color-secondary);
 
   &::backdrop {

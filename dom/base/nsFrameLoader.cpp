@@ -2089,20 +2089,11 @@ void nsFrameLoader::SetOwnerContent(Element* aContent) {
     // SetEmbedderElement above.
     mSessionStoreChild->UpdateEventTargets();
   }
-
-  AutoJSAPI jsapi;
-  jsapi.Init();
-
-  JS::Rooted<JSObject*> wrapper(jsapi.cx(), GetWrapper());
-  if (wrapper) {
-    JSAutoRealm ar(jsapi.cx(), wrapper);
-    IgnoredErrorResult rv;
-    UpdateReflectorGlobal(jsapi.cx(), wrapper, rv);
-    (void)NS_WARN_IF(rv.Failed());
-  }
 }
 
-nsIContent* nsFrameLoader::GetParentObject() const { return mOwnerContent; }
+nsISupports* nsFrameLoader::GetParentObject() const {
+  return xpc::NativeGlobal(xpc::PrivilegedJunkScope());
+}
 
 void nsFrameLoader::AssertSafeToInit() {
   MOZ_DIAGNOSTIC_ASSERT(nsContentUtils::IsSafeToRunScript() ||
@@ -3170,7 +3161,7 @@ already_AddRefed<Promise> nsFrameLoader::RequestTabStateFlush(
     return nullptr;
   }
 
-  RefPtr<Promise> promise = Promise::Create(ownerDoc->GetOwnerGlobal(), aRv);
+  RefPtr<Promise> promise = Promise::Create(ownerDoc->GetRelevantGlobal(), aRv);
   if (aRv.Failed()) {
     return nullptr;
   }
@@ -3252,7 +3243,7 @@ already_AddRefed<Promise> nsFrameLoader::PrintPreview(
     aRv.ThrowNotSupportedError("No owner document");
     return nullptr;
   }
-  RefPtr<Promise> promise = Promise::Create(ownerDoc->GetOwnerGlobal(), aRv);
+  RefPtr<Promise> promise = Promise::Create(ownerDoc->GetRelevantGlobal(), aRv);
   if (!promise) {
     return nullptr;
   }
@@ -3574,7 +3565,7 @@ nsresult nsFrameLoader::PopulateOriginContextIdsFromAttributes(
                              attributeValue) &&
       !attributeValue.IsEmpty()) {
     // XXX: Should we check the format from `GeckoViewNavigation.sys.mjs` here?
-    aAttr.mGeckoViewSessionContextId = attributeValue;
+    aAttr.mGeckoViewSessionContextId = std::move(attributeValue);
   }
 
   return NS_OK;

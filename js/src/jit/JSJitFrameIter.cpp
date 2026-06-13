@@ -43,8 +43,6 @@ JSJitFrameIter::JSJitFrameIter(const JitActivation* activation, uint8_t* fp,
   // frames in the same JitActivation so ignore activation_->bailoutData().
   if (unwinding) {
     MOZ_ASSERT(fp == activation->jsExitFP());
-  } else {
-    MOZ_ASSERT(fp > activation->jsOrWasmExitFP());
   }
   MOZ_ASSERT(!TlsContext.get()->inUnsafeCallWithABI);
 }
@@ -547,15 +545,13 @@ bool JSJitProfilingFrameIterator::tryInitWithTable(JitcodeGlobalTable* table,
 
   // For IonICEntry, use the corresponding IonEntry.
   if (entry->isIonIC()) {
-    entry = table->lookup(entry->asIonIC().rejoinAddr());
-    MOZ_ASSERT(entry);
-    MOZ_RELEASE_ASSERT(entry->isIon());
+    entry = &entry->asIonIC().ionEntry();
   }
 
   if (entry->isIon()) {
     // If looked-up callee doesn't match frame callee, don't accept
     // lastProfilingCallSite
-    if (!entry->asIon().getScriptSource(0).matches(callee)) {
+    if (!entry->asIon().getScriptKey(0).matches(callee)) {
       return false;
     }
 
@@ -567,8 +563,7 @@ bool JSJitProfilingFrameIterator::tryInitWithTable(JitcodeGlobalTable* table,
   if (entry->isBaseline()) {
     // If looked-up callee doesn't match frame callee, don't accept
     // lastProfilingCallSite
-    if (forLastCallSite &&
-        !entry->asBaseline().scriptSource().matches(callee)) {
+    if (forLastCallSite && !entry->asBaseline().scriptKey().matches(callee)) {
       return false;
     }
 

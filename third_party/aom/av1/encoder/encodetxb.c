@@ -479,7 +479,9 @@ uint8_t av1_get_txb_entropy_context(const tran_low_t *qcoeff,
 
   if (eob == 0) return 0;
   for (c = 0; c < eob; ++c) {
-    cul_level += abs(qcoeff[scan[c]]);
+    const int32_t v = qcoeff[scan[c]];
+    if (!v) continue;
+    cul_level += abs(v);
     if (cul_level > COEFF_CONTEXT_MASK) break;
   }
 

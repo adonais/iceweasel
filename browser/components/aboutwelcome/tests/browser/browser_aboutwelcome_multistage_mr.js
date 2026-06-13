@@ -7,8 +7,8 @@ const { AboutWelcomeParent } = ChromeUtils.importESModule(
 const { AboutWelcomeTelemetry } = ChromeUtils.importESModule(
   "resource:///modules/aboutwelcome/AboutWelcomeTelemetry.sys.mjs"
 );
-const { AWScreenUtils } = ChromeUtils.importESModule(
-  "resource:///modules/aboutwelcome/AWScreenUtils.sys.mjs"
+const { ASRouterScreenUtils } = ChromeUtils.importESModule(
+  "resource:///modules/asrouter/ASRouterScreenUtils.sys.mjs"
 );
 const { InternalTestingProfileMigrator } = ChromeUtils.importESModule(
   "resource:///modules/InternalTestingProfileMigrator.sys.mjs"
@@ -91,7 +91,7 @@ add_task(async function test_aboutwelcome_mr_template_telemetry() {
 add_task(async function test_aboutwelcome_easy_setup_screen_impression() {
   const sandbox = sinon.createSandbox();
   sandbox
-    .stub(AWScreenUtils, "evaluateScreenTargeting")
+    .stub(ASRouterScreenUtils, "evaluateScreenTargeting")
     .resolves(false)
     .withArgs(
       "doesAppNeedPin && (unhandledCampaignAction != 'SET_DEFAULT_BROWSER') && (unhandledCampaignAction != 'PIN_FIREFOX_TO_TASKBAR') && (unhandledCampaignAction != 'PIN_AND_DEFAULT') && 'browser.shell.checkDefaultBrowser'|preferenceValue && !isDefaultBrowser"
@@ -376,7 +376,7 @@ add_task(async function test_aboutwelcome_embedded_migration() {
         await ContentTaskUtils.waitForEvent(selector, "focus");
       }
 
-      EventUtils.synthesizeMouseAtCenter(selector, {}, wizard.ownerGlobal);
+      EventUtils.synthesizeMouseAtCenter(selector, {}, wizard.documentGlobal);
       await shown;
 
       let panelRect = panelList.getBoundingClientRect();
@@ -664,7 +664,7 @@ add_task(async function test_aboutwelcome_multiselect() {
   ];
 
   const sandbox = sinon.createSandbox();
-  sandbox.stub(AWScreenUtils, "addScreenImpression").resolves();
+  sandbox.stub(ASRouterScreenUtils, "addScreenImpression").resolves();
 
   await setAboutWelcomeMultiStage(JSON.stringify(TEST_SCREENS));
   let { cleanup, browser } = await openMRAboutWelcome();
@@ -901,7 +901,7 @@ add_task(async function test_aboutwelcome_gratitude() {
 add_task(async function test_aboutwelcome_backup_found() {
   const sandbox = sinon.createSandbox();
   sandbox
-    .stub(AWScreenUtils, "evaluateScreenTargeting")
+    .stub(ASRouterScreenUtils, "evaluateScreenTargeting")
     .resolves(false)
     .withArgs(
       "backupRestoreEnabled && !hasSelectableProfiles && (backupsInfo.found && !backupsInfo.multipleBackupsFound)"
@@ -934,7 +934,7 @@ add_task(async function test_aboutwelcome_backup_found() {
 add_task(async function test_aboutwelcome_multiple_backups_found() {
   const sandbox = sinon.createSandbox();
   sandbox
-    .stub(AWScreenUtils, "evaluateScreenTargeting")
+    .stub(ASRouterScreenUtils, "evaluateScreenTargeting")
     .resolves(false)
     .withArgs(
       "backupRestoreEnabled && !hasSelectableProfiles && backupsInfo.multipleBackupsFound"
@@ -969,7 +969,7 @@ add_task(async function test_aboutwelcome_no_backups() {
   const sandbox = sinon.createSandbox();
 
   sandbox
-    .stub(AWScreenUtils, "evaluateScreenTargeting")
+    .stub(ASRouterScreenUtils, "evaluateScreenTargeting")
     .resolves(false)
     .withArgs(
       "backupRestoreEnabled && (backupsInfo.found || backupsInfo.multipleBackupsFound)"
@@ -1025,7 +1025,7 @@ add_task(async function test_aboutwelcome_secondary_top_signin_only() {
   const sandbox = sinon.createSandbox();
 
   sandbox
-    .stub(AWScreenUtils, "evaluateScreenTargeting")
+    .stub(ASRouterScreenUtils, "evaluateScreenTargeting")
     .resolves(false)
     // Mock Easy Setup for secondary button top testing
     .withArgs(
@@ -1074,7 +1074,7 @@ add_task(async function test_aboutwelcome_secondary_top_backup_restore_only() {
   const sandbox = sinon.createSandbox();
 
   sandbox
-    .stub(AWScreenUtils, "evaluateScreenTargeting")
+    .stub(ASRouterScreenUtils, "evaluateScreenTargeting")
     .resolves(false)
     // Mock Easy Setup for secondary button top testing
     .withArgs(
@@ -1123,7 +1123,7 @@ add_task(async function test_aboutwelcome_both_secondary_top_buttons() {
   const sandbox = sinon.createSandbox();
 
   sandbox
-    .stub(AWScreenUtils, "evaluateScreenTargeting")
+    .stub(ASRouterScreenUtils, "evaluateScreenTargeting")
     // Mock Easy Setup for secondary button top testing
     .withArgs(
       "doesAppNeedPin && (unhandledCampaignAction != 'SET_DEFAULT_BROWSER') && (unhandledCampaignAction != 'PIN_FIREFOX_TO_TASKBAR') && (unhandledCampaignAction != 'PIN_AND_DEFAULT') && 'browser.shell.checkDefaultBrowser'|preferenceValue && !isDefaultBrowser"

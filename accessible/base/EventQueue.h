@@ -42,9 +42,6 @@ class EventQueue {
   void ProcessEventQueue();
 
  private:
-  EventQueue(const EventQueue&) = delete;
-  EventQueue& operator=(const EventQueue&) = delete;
-
   // Event queue processing
   /**
    * Coalesce redundant events from the queue.
@@ -62,6 +59,10 @@ class EventQueue {
   void CoalesceSelChangeEvents(AccSelChangeEvent* aTailEvent,
                                AccSelChangeEvent* aThisEvent,
                                uint32_t aThisIndex);
+
+ public:
+  EventQueue(const EventQueue&) = delete;
+  EventQueue& operator=(const EventQueue&) = delete;
 
  protected:
   /**

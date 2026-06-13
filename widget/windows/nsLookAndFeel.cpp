@@ -433,6 +433,7 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID aID, ColorScheme aScheme,
       idx = COLOR_3DSHADOW;
       break;
     case ColorID::Window:
+    case ColorID::MozDialog:
       idx = COLOR_WINDOW;
       break;
     case ColorID::Windowframe:
@@ -459,7 +460,6 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID aID, ColorScheme aScheme,
       break;
     case ColorID::MozHeaderbar:
     case ColorID::MozHeaderbarinactive:
-    case ColorID::MozDialog:
       idx = COLOR_3DFACE;
       break;
     case ColorID::Accentcolor:

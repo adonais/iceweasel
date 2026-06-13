@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import mozilla.components.concept.llm.CloudLlmProvider
 import mozilla.components.feature.summarize.LlmProviderAction
+import mozilla.components.feature.summarize.SummarizationFailed
 import mozilla.components.feature.summarize.SummarizationRequested
 
 internal val CloudLlmProvider.fetchLlm get() = flow {
@@ -18,6 +19,6 @@ internal val CloudLlmProvider.fetchLlm get() = flow {
 
 internal val CloudLlmProvider.State.action get() = when (this) {
     CloudLlmProvider.State.Available -> LlmProviderAction.ProviderAvailable
-    is CloudLlmProvider.State.Unavailable -> LlmProviderAction.ProviderFailed(exception)
     is CloudLlmProvider.State.Ready -> LlmProviderAction.ProviderInitialized(llm)
+    is CloudLlmProvider.State.Unavailable -> SummarizationFailed(exception)
 }

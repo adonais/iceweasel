@@ -15,11 +15,7 @@ add_task(async function test_fill_creditCard_with_failed_decryption() {
     return;
   }
 
-  // This was copied from another test but according to data folks
-  // it is optional.
-  // await Services.fog.testFlushAllChildren();
   Services.fog.testResetFOG();
-  Services.telemetry.clearEvents();
 
   await setStorage(TEST_CREDIT_CARD_2);
 

@@ -8,11 +8,6 @@ Services.scriptloader.loadSubScript(
   this
 );
 
-const lazy = XPCOMUtils.declareLazy({
-  MODELS:
-    "moz-src:///browser/components/aiwindow/ui/modules/AIWindowConstants.sys.mjs",
-});
-
 const { SmartWindowTelemetry } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/ui/modules/SmartWindowTelemetry.sys.mjs"
 );
@@ -42,6 +37,7 @@ describe("Smart Window telemetry", () => {
   });
 
   it("sends telemetry when no model was chosen during onboarding but is chosen via settings", async () => {
+    const expectedModel = await modelFor("1");
     let { doc } = await openSmartWindowPanel();
 
     const modelSelection = doc.getElementById("modelSelection");
@@ -76,24 +72,21 @@ describe("Smart Window telemetry", () => {
 
     Assert.equal(
       settingsModelEvent[0].extra.new_model,
-      lazy.MODELS["1"].modelName,
+      expectedModel,
       "New model was set properly"
     );
 
     await TestUtils.waitForCondition(
-      () =>
-        Glean.smartWindow.model.testGetValue() === lazy.MODELS["1"].modelName,
+      () => Glean.smartWindow.model.testGetValue() === expectedModel,
       "Model metric should be updated asynchronously"
     );
     const modelMetric = Glean.smartWindow.model.testGetValue();
-    Assert.equal(
-      modelMetric,
-      lazy.MODELS["1"].modelName,
-      "Model metric was set properly"
-    );
+    Assert.equal(modelMetric, expectedModel, "Model metric was set properly");
   });
 
   it("sends telemetry when new model is chosen via settings", async () => {
+    const previousModel = await modelFor("2");
+    const newModel = await modelFor("1");
     await SpecialPowers.pushPrefEnv({
       set: [["browser.smartwindow.firstrun.modelChoice", "2"]],
     });
@@ -122,30 +115,26 @@ describe("Smart Window telemetry", () => {
 
     Assert.equal(
       settingsModelEvent[0].extra.previous_model,
-      lazy.MODELS["2"].modelName,
+      previousModel,
       "Model 2 is previous model"
     );
 
     Assert.equal(
       settingsModelEvent[0].extra.new_model,
-      lazy.MODELS["1"].modelName,
+      newModel,
       "Model 1 is new model"
     );
 
     await TestUtils.waitForCondition(
-      () =>
-        Glean.smartWindow.model.testGetValue() === lazy.MODELS["1"].modelName,
+      () => Glean.smartWindow.model.testGetValue() === newModel,
       "Model metric should be updated asynchronously"
     );
     const modelMetric = Glean.smartWindow.model.testGetValue();
-    Assert.equal(
-      modelMetric,
-      lazy.MODELS["1"].modelName,
-      "Model metric was set properly"
-    );
+    Assert.equal(modelMetric, newModel, "Model metric was set properly");
   });
 
   it("sends telemetry when custom model is chosen via settings", async () => {
+    const previousModel = await modelFor("2");
     await SpecialPowers.pushPrefEnv({
       set: [["browser.smartwindow.firstrun.modelChoice", "2"]],
     });
@@ -192,27 +181,22 @@ describe("Smart Window telemetry", () => {
 
     Assert.equal(
       settingsModelEvent[0].extra.previous_model,
-      lazy.MODELS["2"].modelName,
+      previousModel,
       "Model 2 is previous model"
     );
 
     Assert.equal(
       settingsModelEvent[0].extra.new_model,
-      lazy.MODELS["0"].modelName,
+      "custom-model",
       "Custom model is new model"
     );
 
     await TestUtils.waitForCondition(
-      () =>
-        Glean.smartWindow.model.testGetValue() === lazy.MODELS["0"].modelName,
+      () => Glean.smartWindow.model.testGetValue() === "custom-model",
       "Model metric should be updated asynchronously"
     );
     const modelMetric = Glean.smartWindow.model.testGetValue();
-    Assert.equal(
-      modelMetric,
-      lazy.MODELS["0"].modelName,
-      "Model metric was set properly"
-    );
+    Assert.equal(modelMetric, "custom-model", "Model metric was set properly");
   });
 
   it("sends telemetry when custom model is updated", async () => {
@@ -263,21 +247,16 @@ describe("Smart Window telemetry", () => {
 
     Assert.equal(
       settingsModelEvent[0].extra.new_model,
-      lazy.MODELS["0"].modelName,
+      "custom-model",
       "Custom model is new model"
     );
 
     await TestUtils.waitForCondition(
-      () =>
-        Glean.smartWindow.model.testGetValue() === lazy.MODELS["0"].modelName,
+      () => Glean.smartWindow.model.testGetValue() === "custom-model",
       "Model metric should be updated asynchronously"
     );
     const modelMetric = Glean.smartWindow.model.testGetValue();
-    Assert.equal(
-      modelMetric,
-      lazy.MODELS["0"].modelName,
-      "Model metric was set properly"
-    );
+    Assert.equal(modelMetric, "custom-model", "Model metric was set properly");
   });
 
   it("sends telemetry when memories chat checkbox is updated", async () => {

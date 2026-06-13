@@ -5,25 +5,24 @@
 package org.mozilla.fenix.ui
 
 import android.util.Log
-import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import androidx.test.espresso.IdlingResourceTimeoutException
 import androidx.test.espresso.NoMatchingViewException
 import androidx.test.filters.LargeTest
 import androidx.test.uiautomator.UiObjectNotFoundException
 import junit.framework.AssertionFailedError
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
-import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.helpers.FenixTestRule
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
-import org.mozilla.fenix.helpers.HomeActivityTestRule
 import org.mozilla.fenix.helpers.RetryTestRule
 import org.mozilla.fenix.helpers.RetryableComposeTestRule
 import org.mozilla.fenix.helpers.ThrowableCase
 import java.util.concurrent.atomic.AtomicInteger
+import androidx.compose.ui.test.junit4.v2.AndroidComposeTestRule as AndroidComposeTestRuleV2
 
 @RunWith(Parameterized::class)
 @LargeTest
@@ -31,19 +30,20 @@ class RetryRuleRetryableExceptionsTest(
     private val case: ThrowableCase,
 ) {
     @get:Rule(order = 0)
-    val retryTestRule = RetryTestRule(3)
-
-    @get:Rule(order = 1)
     val fenixTestRule: FenixTestRule = FenixTestRule()
 
+    @get:Rule(order = 1)
+    val retryTestRule = RetryTestRule(3)
+
     @get:Rule(order = 2)
-    val retryableComposeTestRule = RetryableComposeTestRule<HomeActivity, HomeActivityTestRule> {
-        AndroidComposeTestRule(
+    val retryableComposeTestRule = RetryableComposeTestRule {
+        AndroidComposeTestRuleV2(
             HomeActivityIntentTestRule(),
         ) { it.activity }
     }
 
     private val attempts = AtomicInteger(0)
+    private val seenInnerRules = mutableSetOf<Int>()
 
 companion object {
     @JvmStatic
@@ -108,9 +108,15 @@ companion object {
     @Test
     fun testRetryableExceptionsAreRetried() {
         Log.i("RetryTest", "Running test with ${case.name}")
-        if (attempts.incrementAndGet() < 2) {
+        seenInnerRules.add(System.identityHashCode(retryableComposeTestRule.current))
+        val attemptNum = attempts.incrementAndGet()
+        // Each retry must see a freshly-constructed inner rule (the wrapper's headline
+        // contract). If the wrapper stopped recreating it per attempt, this set would
+        // stay size 1 while attemptNum grew.
+        assertEquals(attemptNum, seenInnerRules.size)
+        if (attemptNum < 2) {
             throw case.supplier.invoke()
         }
-        assertTrue("Test retried and passed on attempt=${attempts.get()}", true)
+        assertTrue("Test retried and passed on attempt=$attemptNum", true)
     }
 }

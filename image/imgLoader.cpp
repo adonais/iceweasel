@@ -672,9 +672,9 @@ nsProgressNotificationProxy::GetInterface(const nsIID& iid, void** result) {
 static void NewRequestAndEntry(bool aForcePrincipalCheckForCacheEntry,
                                imgLoader* aLoader, const ImageCacheKey& aKey,
                                imgRequest** aRequest, imgCacheEntry** aEntry) {
-  RefPtr<imgRequest> request = new imgRequest(aLoader, aKey);
-  RefPtr<imgCacheEntry> entry =
-      new imgCacheEntry(aLoader, request, aForcePrincipalCheckForCacheEntry);
+  auto request = MakeRefPtr<imgRequest>(aLoader, aKey);
+  auto entry = MakeRefPtr<imgCacheEntry>(aLoader, request,
+                                         aForcePrincipalCheckForCacheEntry);
   aLoader->AddToUncachedImages(request);
   request.forget(aRequest);
   entry.forget(aEntry);
@@ -1182,7 +1182,7 @@ nsresult imgLoader::CreateNewProxyForRequest(
      proxy calls to |aObserver|.
    */
 
-  RefPtr<imgRequestProxy> proxyRequest = new imgRequestProxy();
+  auto proxyRequest = MakeRefPtr<imgRequestProxy>();
 
   /* It is important to call |SetLoadFlags()| before calling |Init()| because
      |Init()| adds the request to the loadgroup.
@@ -1257,7 +1257,7 @@ already_AddRefed<imgLoader> imgLoader::CreateImageLoader() {
   // we hand out imgLoader instances and code starts using them.
   mozilla::image::EnsureModuleInitialized();
 
-  RefPtr<imgLoader> loader = new imgLoader();
+  auto loader = MakeRefPtr<imgLoader>();
   loader->Init();
 
   return loader.forget();
@@ -1323,7 +1323,7 @@ void imgLoader::GlobalInit() {
   sCacheMaxSize = cachesize > 0 ? cachesize : 0;
 
   sMemReporter = new imgMemoryReporter();
-  RegisterStrongAsyncMemoryReporter(sMemReporter);
+  RegisterStrongAsyncMemoryReporter(do_AddRef(sMemReporter));
   RegisterImagesContentUsedUncompressedDistinguishedAmount(
       imgMemoryReporter::ImagesContentUsedUncompressedDistinguishedAmount);
 }
@@ -1860,15 +1860,10 @@ bool imgLoader::ValidateRequestWithNewChannel(
   }
 
   // Make sure that OnStatus/OnProgress calls have the right request set...
-  RefPtr<nsProgressNotificationProxy> progressproxy =
-      new nsProgressNotificationProxy(newChannel, req);
-  if (!progressproxy) {
-    return false;
-  }
-
-  RefPtr<imgCacheValidator> hvc =
-      new imgCacheValidator(progressproxy, this, request, aLoadingDocument,
-                            aInnerWindowId, forcePrincipalCheck);
+  auto progressproxy = MakeRefPtr<nsProgressNotificationProxy>(newChannel, req);
+  auto hvc = MakeRefPtr<imgCacheValidator>(progressproxy, this, request,
+                                           aLoadingDocument, aInnerWindowId,
+                                           forcePrincipalCheck);
 
   // Casting needed here to get past multiple inheritance.
   nsCOMPtr<nsIStreamListener> listener =
@@ -2835,12 +2830,12 @@ nsresult imgLoader::LoadImageWithChannel(nsIChannel* channel,
     NS_ENSURE_SUCCESS(rv, rv);
 
 #ifdef NIGHTLY_BUILD
-    RefPtr<ProxyListener> pl =
-        new ProxyListener(static_cast<nsIStreamListener*>(request.get()),
-                          ShouldEnableWAICT(aLoadingDocument));
+    auto pl = MakeRefPtr<ProxyListener>(
+        static_cast<nsIStreamListener*>(request.get()),
+        ShouldEnableWAICT(aLoadingDocument));
 #else
-    RefPtr<ProxyListener> pl =
-        new ProxyListener(static_cast<nsIStreamListener*>(request.get()));
+    auto pl = MakeRefPtr<ProxyListener>(
+        static_cast<nsIStreamListener*>(request.get()));
 #endif
     pl.forget(listener);
 
@@ -3079,7 +3074,7 @@ static bool MaybeCheckWAICTIntegrity(nsIStreamListener* aListener,
   promise->Then(
       GetCurrentSerialEventTarget(), __func__,
       [listener = nsCOMPtr{aListener}, channel, request = nsCOMPtr{aRequest},
-       status, policy = RefPtr{policy}, computedHash,
+       status, policy = RefPtr{policy}, computedHash = std::move(computedHash),
        bufferedImage = std::move(aBufferedImage)](bool) {
         nsCOMPtr<nsIURI> originalURI;
         channel->GetOriginalURI(getter_AddRefs(originalURI));
@@ -3171,7 +3166,8 @@ ProxyListener::OnStartRequest(nsIRequest* aRequest) {
     }
   }
 
-  return mDestListener->OnStartRequest(aRequest);
+  nsCOMPtr<nsIStreamListener> destListener = mDestListener;
+  return destListener->OnStartRequest(aRequest);
 }
 
 NS_IMETHODIMP
@@ -3196,7 +3192,8 @@ ProxyListener::OnStopRequest(nsIRequest* aRequest, nsresult status) {
   }
 #endif
 
-  return mDestListener->OnStopRequest(aRequest, status);
+  nsCOMPtr<nsIStreamListener> destListener = mDestListener;
+  return destListener->OnStopRequest(aRequest, status);
 }
 
 /** nsIStreamListener methods **/
@@ -3228,7 +3225,8 @@ ProxyListener::OnDataAvailable(nsIRequest* aRequest, nsIInputStream* inStr,
   }
 #endif
 
-  return mDestListener->OnDataAvailable(aRequest, inStr, sourceOffset, count);
+  nsCOMPtr<nsIStreamListener> destListener = mDestListener;
+  return destListener->OnDataAvailable(aRequest, inStr, sourceOffset, count);
 }
 
 NS_IMETHODIMP
@@ -3453,7 +3451,8 @@ imgCacheValidator::OnStartRequest(nsIRequest* aRequest) {
   // changes the caching behaviour for imgRequests.
   mImgLoader->PutIntoCache(mNewRequest->CacheKey(), mNewEntry);
   UpdateProxies(/* aCancelRequest */ false, /* aSyncNotify */ true);
-  return mDestListener->OnStartRequest(aRequest);
+  nsCOMPtr<nsIStreamListener> destListener = mDestListener;
+  return destListener->OnStartRequest(aRequest);
 }
 
 NS_IMETHODIMP
@@ -3465,7 +3464,8 @@ imgCacheValidator::OnStopRequest(nsIRequest* aRequest, nsresult status) {
     return NS_OK;
   }
 
-  return mDestListener->OnStopRequest(aRequest, status);
+  nsCOMPtr<nsIStreamListener> destListener = mDestListener;
+  return destListener->OnStopRequest(aRequest, status);
 }
 
 /** nsIStreamListener methods **/
@@ -3480,7 +3480,8 @@ imgCacheValidator::OnDataAvailable(nsIRequest* aRequest, nsIInputStream* inStr,
     return NS_OK;
   }
 
-  return mDestListener->OnDataAvailable(aRequest, inStr, sourceOffset, count);
+  nsCOMPtr<nsIStreamListener> destListener = mDestListener;
+  return destListener->OnDataAvailable(aRequest, inStr, sourceOffset, count);
 }
 
 NS_IMETHODIMP

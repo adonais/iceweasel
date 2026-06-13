@@ -60,6 +60,7 @@ user_pref("media.libavcodec.allow-obsolete", true);
 user_pref("media.navigator.enabled", true);
 user_pref("media.navigator.permission.disabled", true);
 user_pref("media.peerconnection.enabled", true);
+user_pref("network.captive-portal-service.enabled", true);
 // Set places maintenance far in the future (the maximum time possible in an
 // int32_t) to avoid it kicking in during tests. The maintenance can take a
 // relatively long time which may cause unnecessary intermittents and slow down

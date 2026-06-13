@@ -290,7 +290,7 @@ addons_manager:
           "install-from-file" or "url" as method), one of: "amWebAPI",
           "drag-and-drop", "installTrigger", "install-from-file",
           "link", "management-webext-api", "sideload", "onboarding",
-          "synthetic-install", "url", "product-updates".
+          "rtamo", "synthetic-install", "url", "product-updates".
         type: string
       num_strings:
         description: |
@@ -463,6 +463,9 @@ addons_manager:
     extra_keys:
       suspicious_site:
         description: The domain of the site that was reported.
+        type: string
+      permission_type:
+        description: The permission that the site was requesting.
         type: string
     expires: 154
 

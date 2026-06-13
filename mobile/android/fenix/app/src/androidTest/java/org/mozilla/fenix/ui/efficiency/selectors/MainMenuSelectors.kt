@@ -73,7 +73,7 @@ object MainMenuSelectors {
         strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
         value = getStringResource(R.string.browser_menu_bookmark_this_page_2),
         description = "Bookmark this page button",
-        groups = listOf("bookmarkActions"),
+        groups = listOf("bookmarkActions", "browserMenu"),
     )
 
     val EDIT_BOOKMARK_BUTTON = Selector(
@@ -87,7 +87,49 @@ object MainMenuSelectors {
         strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
         value = getStringResource(R.string.browser_menu_find_in_page),
         description = "Main menu Find in page button",
-        groups = listOf(),
+        groups = listOf("browserMenu"),
+    )
+
+    val BACK_BUTTON = Selector(
+        strategy = SelectorStrategy.COMPOSE_BY_TEXT,
+        value = "Back",
+        description = "Main menu Back button",
+        groups = listOf("browserMenu"),
+    )
+
+    val FORWARD_BUTTON = Selector(
+        strategy = SelectorStrategy.COMPOSE_BY_TEXT,
+        value = "Forward",
+        description = "Main menu Forward button",
+        groups = listOf("browserMenu"),
+    )
+
+    val REFRESH_BUTTON = Selector(
+        strategy = SelectorStrategy.COMPOSE_BY_TEXT,
+        value = "Refresh",
+        description = "Main menu Refresh button",
+        groups = listOf("browserMenu"),
+    )
+
+    val SHARE_BUTTON = Selector(
+        strategy = SelectorStrategy.COMPOSE_BY_TEXT,
+        value = "Share",
+        description = "Main menu Share button",
+        groups = listOf("browserMenu"),
+    )
+
+    val DESKTOP_SITE_BUTTON = Selector(
+        strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
+        value = getStringResource(R.string.browser_menu_desktop_site),
+        description = "Main menu Desktop site button",
+        groups = listOf("browserMenu"),
+    )
+
+    val MORE_BUTTON = Selector(
+        strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
+        value = "More Collapsed",
+        description = "Main menu More button",
+        groups = listOf("browserMenu"),
     )
 
     // TODO (M. Barone 3/20/2026): add getting 'appName' to our base helpers
@@ -127,5 +169,11 @@ object MainMenuSelectors {
         DEFAULT_BROWSER_BANNER_TITLE,
         DEFAULT_BROWSER_BANNER_SUBTITLE,
         DEFAULT_BROWSER_BANNER_DISMISS,
+        BACK_BUTTON,
+        FORWARD_BUTTON,
+        REFRESH_BUTTON,
+        SHARE_BUTTON,
+        DESKTOP_SITE_BUTTON,
+        MORE_BUTTON,
     )
 }

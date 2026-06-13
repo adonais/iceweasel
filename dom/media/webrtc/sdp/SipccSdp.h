@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef SIPCC_SDP_H_
-#define SIPCC_SDP_H_
+#ifndef DOM_MEDIA_WEBRTC_SDP_SIPCCSDP_H_
+#define DOM_MEDIA_WEBRTC_SDP_SIPCCSDP_H_
 
 #include <vector>
 
@@ -46,16 +46,16 @@ class SipccSdp final : public Sdp {
     return mAttributeList;
   }
 
-  virtual const SdpMediaSection& GetMediaSection(size_t level) const override;
+  virtual const SdpMediaSection& GetMediaSection(
+      const size_t level) const override;
 
-  virtual SdpMediaSection& GetMediaSection(size_t level) override;
+  virtual SdpMediaSection& GetMediaSection(const size_t level) override;
 
-  virtual SdpMediaSection& AddMediaSection(SdpMediaSection::MediaType media,
-                                           SdpDirectionAttribute::Direction dir,
-                                           uint16_t port,
-                                           SdpMediaSection::Protocol proto,
-                                           sdp::AddrType addrType,
-                                           const std::string& addr) override;
+  virtual SdpMediaSection& AddMediaSection(
+      const SdpMediaSection::MediaType media,
+      const SdpDirectionAttribute::Direction dir, const uint16_t port,
+      const SdpMediaSection::Protocol proto, const sdp::AddrType addrType,
+      const std::string& addr) override;
 
   virtual void Serialize(std::ostream&) const override;
 
@@ -75,4 +75,4 @@ class SipccSdp final : public Sdp {
 
 }  // namespace mozilla
 
-#endif  // SIPCC_SDP_H_
+#endif  // DOM_MEDIA_WEBRTC_SDP_SIPCCSDP_H_

@@ -16,6 +16,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
+#include <initializer_list>
 #include <memory>
 #include <tuple>
 
@@ -26,6 +27,7 @@
 #include "aom/aomcx.h"
 #include "aom/aom_encoder.h"
 #include "aom/aom_image.h"
+#include "aom_mem/aom_mem.h"
 
 #include "test/codec_factory.h"
 #include "test/encode_test_driver.h"
@@ -321,6 +323,83 @@ TEST(EncodeAPI, InvalidUVStrides) {
     }
   }
 }
+
+#if CONFIG_AV1_HIGHBITDEPTH
+TEST(EncodeAPI, InvalidInputRange) {
+  constexpr int kWidth = 64;
+  constexpr int kHeight = 64;
+  aom_codec_enc_cfg_t cfg;
+
+  ASSERT_EQ(aom_codec_enc_config_default(aom_codec_av1_cx(), &cfg,
+                                         /*usage=*/AOM_USAGE_REALTIME),
+            AOM_CODEC_OK);
+  cfg.g_w = kWidth;
+  cfg.g_h = kHeight;
+
+  std::unique_ptr<aom_image_t, decltype(&aom_img_free)> image(
+      aom_img_alloc(nullptr, AOM_IMG_FMT_I42016, cfg.g_w, cfg.g_h, 0),
+      &aom_img_free);
+  aom_image_t *img = image.get();
+  ASSERT_NE(img, nullptr);
+
+  for (const auto bitdepth : { AOM_BITS_8, AOM_BITS_10, AOM_BITS_12 }) {
+    cfg.g_profile = (bitdepth == AOM_BITS_12) ? 2 : 0;
+    cfg.g_bit_depth = bitdepth;
+
+    // A value that's slightly over the max is used to ensure when the range is
+    // not checked an encode won't produce any integer overflows. Values
+    // outside of the valid range are not supported, so overflows will be
+    // ignored in that case.
+    const int val = 1 << bitdepth;
+    for (const int plane : { AOM_PLANE_Y, AOM_PLANE_U, AOM_PLANE_V }) {
+      const int width = aom_img_plane_width(img, plane);
+      const int height = aom_img_plane_height(img, plane);
+      uint8_t *p = img->planes[plane];
+      for (int y = 0; y < height; ++y) {
+        aom_memset16(p, val, width);
+        p += img->stride[plane];
+      }
+    }
+
+    for (cfg.monochrome = 0; cfg.monochrome <= 1; ++cfg.monochrome) {
+      aom_codec_ctx_t enc;
+      ASSERT_EQ(aom_codec_enc_init(&enc, aom_codec_av1_cx(), &cfg,
+                                   AOM_CODEC_USE_HIGHBITDEPTH),
+                AOM_CODEC_OK);
+
+      for (int check_input_range = 0; check_input_range <= 1;
+           ++check_input_range) {
+        uint8_t *u = img->planes[AOM_PLANE_U];
+        uint8_t *v = img->planes[AOM_PLANE_V];
+        img->monochrome = cfg.monochrome;
+        if (img->monochrome) {
+          img->planes[AOM_PLANE_U] = img->planes[AOM_PLANE_V] = nullptr;
+        }
+
+        EXPECT_EQ(aom_codec_control(&enc, AOME_SET_VALIDATE_INPUT_HBD,
+                                    check_input_range),
+                  AOM_CODEC_OK);
+
+        EXPECT_EQ(aom_codec_encode(&enc, img, /*pts=*/0, /*duration=*/1,
+                                   /*flags=*/0),
+                  check_input_range ? AOM_CODEC_INVALID_PARAM : AOM_CODEC_OK)
+            << "Error: " << aom_codec_error_detail(&enc)
+            << ", bitdepth: " << bitdepth << ", monochrome: " << img->monochrome
+            << ", check_input_range: " << check_input_range;
+
+        img->planes[AOM_PLANE_U] = u;
+        img->planes[AOM_PLANE_V] = v;
+      }
+
+      EXPECT_EQ(
+          aom_codec_encode(&enc, /*img=*/nullptr, /*pts=*/0, /*duration=*/0,
+                           /*flags=*/0),
+          AOM_CODEC_OK);
+      EXPECT_EQ(aom_codec_destroy(&enc), AOM_CODEC_OK);
+    }
+  }
+}
+#endif  // CONFIG_AV1_HIGHBITDEPTH
 
 void EncodeSetSFrameOnFirstFrame(aom_img_fmt fmt, aom_codec_flags_t flag) {
   constexpr int kWidth = 2;
@@ -2237,6 +2316,113 @@ TEST(EncodeAPI, DynamicSvcAq3Issue499606109) {
   }
 
   aom_img_free(raw);
+  ASSERT_EQ(aom_codec_destroy(&codec), AOM_CODEC_OK);
+}
+
+TEST(EncodeAPI, DynamicSvcTemporalIssue502735235) {
+  aom_codec_iface_t *iface = aom_codec_av1_cx();
+  aom_codec_enc_cfg_t cfg;
+  ASSERT_EQ(aom_codec_enc_config_default(iface, &cfg, AOM_USAGE_REALTIME),
+            AOM_CODEC_OK);
+
+  // Init at 256x512.
+  cfg.g_w = 256;
+  cfg.g_h = 512;
+  cfg.g_timebase.num = 1;
+  cfg.g_timebase.den = 30;
+  cfg.rc_end_usage = AOM_CBR;
+  cfg.rc_target_bitrate = 1000;
+  cfg.g_lag_in_frames = 0;
+
+  aom_codec_ctx_t codec;
+  ASSERT_EQ(aom_codec_enc_init(&codec, iface, &cfg, 0), AOM_CODEC_OK);
+  ASSERT_EQ(aom_codec_control(&codec, AOME_SET_CPUUSED, 10), AOM_CODEC_OK);
+
+  // AV1E_SET_SVC_PARAMS
+  aom_svc_params_t svc_params = {};
+  svc_params.number_spatial_layers = 1;
+  svc_params.number_temporal_layers = 2;
+  svc_params.scaling_factor_num[0] = 1;
+  svc_params.scaling_factor_den[0] = 1;
+  svc_params.framerate_factor[0] = 2;
+  svc_params.framerate_factor[1] = 1;
+  svc_params.max_quantizers[0] = 56;
+  svc_params.min_quantizers[0] = 10;
+  svc_params.max_quantizers[1] = 56;
+  svc_params.min_quantizers[1] = 10;
+  svc_params.layer_target_bitrate[0] = cfg.rc_target_bitrate * 60 / 100;
+  svc_params.layer_target_bitrate[1] = cfg.rc_target_bitrate;
+  EXPECT_EQ(aom_codec_control(&codec, AV1E_SET_SVC_PARAMS, &svc_params),
+            AOM_CODEC_OK);
+
+  // Encode at 256x512. TL0.
+  aom_svc_layer_id_t layer_id = {};
+  layer_id.spatial_layer_id = 0;
+  layer_id.temporal_layer_id = 0;
+  ASSERT_EQ(aom_codec_control(&codec, AV1E_SET_SVC_LAYER_ID, &layer_id),
+            AOM_CODEC_OK);
+  aom_image_t *raw = aom_img_alloc(nullptr, AOM_IMG_FMT_I420, 256, 512, 1);
+  ASSERT_NE(raw, nullptr);
+  FillImage(raw, 128);
+  ASSERT_EQ(aom_codec_encode(&codec, raw, /*pts=*/0, /*duration=*/1,
+                             /*flags=*/0),
+            AOM_CODEC_OK);
+  aom_img_free(raw);
+
+  // Encode at 256x64 TL1, twice, set keyframe on first one, delta
+  // on second.
+  cfg.g_w = 256;
+  cfg.g_h = 64;
+  ASSERT_EQ(aom_codec_enc_config_set(&codec, &cfg), AOM_CODEC_OK);
+  layer_id.spatial_layer_id = 0;
+  layer_id.temporal_layer_id = 1;
+  ASSERT_EQ(aom_codec_control(&codec, AV1E_SET_SVC_LAYER_ID, &layer_id),
+            AOM_CODEC_OK);
+  raw = aom_img_alloc(nullptr, AOM_IMG_FMT_I420, 256, 64, 1);
+  ASSERT_NE(raw, nullptr);
+  FillImage(raw, 128);
+  ASSERT_EQ(aom_codec_encode(&codec, raw, /*pts=*/1, /*duration=*/1,
+                             /*flags=*/AOM_EFLAG_FORCE_KF),
+            AOM_CODEC_OK);
+  ASSERT_EQ(aom_codec_encode(&codec, raw, /*pts=*/2, /*duration=*/1,
+                             /*flags=*/0),
+            AOM_CODEC_OK);
+  aom_img_free(raw);
+
+  // Encode TL0 back at original resolution 256x512.
+  cfg.g_w = 256;
+  cfg.g_h = 512;
+  ASSERT_EQ(aom_codec_enc_config_set(&codec, &cfg), AOM_CODEC_OK);
+  layer_id.spatial_layer_id = 0;
+  layer_id.temporal_layer_id = 0;
+  ASSERT_EQ(aom_codec_control(&codec, AV1E_SET_SVC_LAYER_ID, &layer_id),
+            AOM_CODEC_OK);
+  raw = aom_img_alloc(nullptr, AOM_IMG_FMT_I420, 256, 512, 1);
+  ASSERT_NE(raw, nullptr);
+  FillImage(raw, 128);
+  ASSERT_EQ(aom_codec_encode(&codec, raw, /*pts=*/3, /*duration=*/1,
+                             /*flags=*/0),
+            AOM_CODEC_OK);
+  aom_img_free(raw);
+
+  ASSERT_EQ(aom_codec_destroy(&codec), AOM_CODEC_OK);
+}
+
+TEST(EncodeAPI, Buganizer503197490) {
+  aom_codec_iface_t *iface = aom_codec_av1_cx();
+  aom_codec_enc_cfg_t cfg;
+  ASSERT_EQ(aom_codec_enc_config_default(iface, &cfg, AOM_USAGE_REALTIME),
+            AOM_CODEC_OK);
+
+  cfg.g_w = 640;
+  cfg.g_h = 360;
+  cfg.g_timebase.num = 570;
+  cfg.g_timebase.den = 30;
+  cfg.rc_end_usage = AOM_CBR;
+  cfg.rc_target_bitrate = 1728882;  // 1728882000 bits/s
+
+  aom_codec_ctx_t codec;
+  ASSERT_EQ(aom_codec_enc_init(&codec, iface, &cfg, 0), AOM_CODEC_OK);
   ASSERT_EQ(aom_codec_destroy(&codec), AOM_CODEC_OK);
 }
 

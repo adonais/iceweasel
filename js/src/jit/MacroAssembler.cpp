@@ -14,6 +14,7 @@
 #include <limits>
 #include <utility>
 
+#include "builtin/Math.h"
 #include "jit/AtomicOp.h"
 #include "jit/AtomicOperations.h"
 #include "jit/Bailouts.h"
@@ -3752,6 +3753,95 @@ void MacroAssembler::dateSecondsFromSecondsIntoYear(
                               secondsFromSecondsIntoYear);
 }
 
+void MacroAssembler::timeClip(FloatRegister time, FloatRegister output) {
+  // Inline implementation of JS::TimeClip.
+
+  MOZ_ASSERT(Assembler::HasRoundInstruction(RoundingMode::TowardsZero),
+             "requires runtime call");
+
+  constexpr double MaxTimeMagnitude = js::EndOfTime;
+  static_assert(js::StartOfTime < 0 && -js::StartOfTime == js::EndOfTime);
+
+  absDouble(time, output);
+
+  ScratchDoubleScope fpscratch(*this);
+  loadConstantDouble(MaxTimeMagnitude, fpscratch);
+
+  Label trunc, done;
+  branchDouble(Assembler::DoubleLessThanOrEqual, output, fpscratch, &trunc);
+  {
+    loadConstantDouble(JS::GenericNaN(), output);
+    jump(&done);
+  }
+  bind(&trunc);
+  {
+    // JS::TimeClip has an extra branch when the input is 0.0, which is likely
+    // not needed when there's no call to std::trunc.
+
+    nearbyIntDouble(RoundingMode::TowardsZero, time, output);
+
+    // Add 0.0 to normalize -0.0 to 0.0.
+    loadConstantDouble(0.0, fpscratch);
+    addDouble(fpscratch, output);
+  }
+  bind(&done);
+}
+
+void MacroAssembler::timeClip(FloatRegister time, FloatRegister output,
+                              Register scratch,
+                              const LiveRegisterSet& liveRegs) {
+  // Inline implementation of JS::TimeClip.
+
+  MOZ_ASSERT(!Assembler::HasRoundInstruction(RoundingMode::TowardsZero),
+             "use rounding instructions instead of runtime call");
+
+  constexpr double MaxTimeMagnitude = js::EndOfTime;
+  static_assert(js::StartOfTime < 0 && -js::StartOfTime == js::EndOfTime);
+
+  absDouble(time, output);
+
+  ScratchDoubleScope fpscratch(*this);
+  loadConstantDouble(MaxTimeMagnitude, fpscratch);
+
+  Label trunc, done;
+  branchDouble(Assembler::DoubleLessThanOrEqual, output, fpscratch, &trunc);
+  {
+    loadConstantDouble(JS::GenericNaN(), output);
+    jump(&done);
+  }
+  bind(&trunc);
+  {
+    loadConstantDouble(0.0, fpscratch);
+
+    Label zero;
+    branchDouble(Assembler::DoubleEqualOrUnordered, output, fpscratch, &zero);
+    {
+      UnaryMathFunctionType funPtr =
+          GetUnaryMathFunctionPtr(UnaryMathFunction::Trunc);
+
+      PushRegsInMask(liveRegs);
+
+      setupUnalignedABICall(scratch);
+      passABIArg(time, ABIType::Float64);
+      callWithABI(DynamicFunction<UnaryMathFunctionType>(funPtr),
+                  ABIType::Float64);
+      storeCallFloatResult(output);
+
+      LiveRegisterSet ignore;
+      ignore.add(output);
+      PopRegsInMaskIgnore(liveRegs, ignore);
+
+      // Reload if clobbered by ABI call.
+      loadConstantDouble(0.0, fpscratch);
+    }
+
+    // Add 0.0 to normalize -0.0 to 0.0.
+    bind(&zero);
+    addDouble(fpscratch, output);
+  }
+  bind(&done);
+}
+
 void MacroAssembler::computeImplicitThis(Register env, ValueOperand output,
                                          Label* slowPath) {
   // Inline implementation of ComputeImplicitThis.
@@ -3790,11 +3880,7 @@ void MacroAssembler::loadDOMExpandoValueGuardGeneration(
     Register obj, ValueOperand output,
     JS::ExpandoAndGeneration* expandoAndGeneration, uint64_t generation,
     Label* fail) {
-  loadPtr(Address(obj, ProxyObject::offsetOfReservedSlots()),
-          output.scratchReg());
-  loadValue(Address(output.scratchReg(),
-                    js::detail::ProxyReservedSlots::offsetOfPrivateSlot()),
-            output);
+  loadValue(Address(obj, ProxyObject::offsetOfPrivateSlot()), output);
 
   // Guard the ExpandoAndGeneration* matches the proxy's ExpandoAndGeneration
   // privateSlot.
@@ -8267,9 +8353,11 @@ void MacroAssembler::emitPreBarrierFastPath(MIRType type, Register temp1,
   branchTestPtr(Assembler::NonZero, temp2, temp1, noBarrier);
 }
 
-void MacroAssembler::emitValueReadBarrierFastPath(
-    ValueOperand value, Register cell, Register temp1, Register temp2,
-    Register temp3, Register temp4, Label* barrier) {
+void MacroAssembler::emitWeapMapBarrierFastPath(ValueOperand value,
+                                                Register cell, Register temp1,
+                                                Register temp2, Register temp3,
+                                                Register temp4,
+                                                Label* barrier) {
   Label done;
 
   // No barrier needed for non-GC types
@@ -8285,6 +8373,10 @@ void MacroAssembler::emitValueReadBarrierFastPath(
   // If the GC thing is in the nursery, we don't need to barrier it.
   branchPtr(Assembler::NotEqual, Address(chunk, gc::ChunkStoreBufferOffset),
             ImmWord(0), &done);
+
+  // If the GC thing is a symbol then we always need to branch to the out of
+  // line barrier to do the atom marking bitmap part.
+  branchTestSymbol(Assembler::Equal, value, barrier);
 
   // Load the mark word and bit index for the black bit.
   Register markWord = temp2;
@@ -8319,9 +8411,14 @@ void MacroAssembler::emitValueReadBarrierFastPath(
   // If the gray bit is set, then we *do* need a barrier.
   branchTestPtr(Assembler::NonZero, markWord, mask, barrier);
 
-  // Otherwise, we don't need a barrier unless we're in the middle of
-  // an incremental GC.
-  branchTestNeedsMarkingBarrierAnyZone(Assembler::NonZero, barrier, temp1);
+  // Otherwise, the tenured cell needs a barrier only if its zone is being
+  // marked by an incremental GC. The zone is stored on the cell's arena.
+  Register zone = temp2;
+  andPtr(Imm32(int32_t(~gc::ArenaMask)), cell, zone);
+  loadPtr(Address(zone, gc::ArenaZoneOffset), zone);
+  branchTest32(Assembler::NonZero,
+               Address(zone, Zone::offsetOfNeedsMarkingBarrier()), Imm32(0x1),
+               barrier);
   bind(&done);
 }
 

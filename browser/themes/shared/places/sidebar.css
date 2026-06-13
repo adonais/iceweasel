@@ -83,13 +83,11 @@
 }
 
 #viewButton:hover {
-  /* Matches --toolbarbutton-hover-background: */
-  background-color: color-mix(in srgb, currentColor 17%, transparent);
+  background-color: var(--toolbarbutton-background-color-hover);
 }
 
 #viewButton[open] {
-  /* Matches --toolbarbutton-active-background: */
-  background-color: color-mix(in srgb, currentColor 30%, transparent);
+  background-color: var(--toolbarbutton-background-color-active);
 }
 
 #viewButton:focus-visible {

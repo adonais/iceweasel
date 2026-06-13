@@ -19,9 +19,6 @@ prefs = [
 ]
 
 ["browser_iframe_test.js"]
-skip-if = [
-  "opt",
-]
 
 ["browser_keyboard_shortcuts.js"]
 run-if = [

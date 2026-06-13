@@ -10,7 +10,7 @@
     {
       "platforms": ["desktop"],
       "content_scripts": {
-        "js": ["bug1898952-digits.t-mobile.com.js"]
+        "js": ["define_userAgentData.js"]
       }
     }
   ]

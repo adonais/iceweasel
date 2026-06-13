@@ -65,6 +65,7 @@ include PrefsTypes;
 include NeckoChannelParams;
 include PSMIPCTypes;
 include LookAndFeelTypes;
+include ProfilerTypes;
 
 #if defined(MOZ_SANDBOX) && defined(MOZ_DEBUG) && defined(ENABLE_TESTS)
 include protocol PSandboxTesting;
@@ -152,6 +153,7 @@ using FontVisibility from "gfxTypes.h";
 using mozilla::dom::MediaControlAction from "mozilla/dom/MediaControlKeySource.h";
 using mozilla::dom::MediaPlaybackState from "mozilla/dom/MediaPlaybackStatus.h";
 using mozilla::dom::MediaAudibleState from "mozilla/dom/MediaPlaybackStatus.h";
+using mozilla::dom::ControlType from "mozilla/dom/MediaPlaybackStatus.h";
 using mozilla::dom::MediaMetadataBase from "mozilla/dom/MediaMetadata.h";
 using mozilla::dom::MediaSessionAction from "mozilla/dom/MediaSessionBinding.h";
 using mozilla::dom::MediaSessionPlaybackState from "mozilla/dom/MediaSessionBinding.h";
@@ -301,7 +303,6 @@ union GetFilesResponseResult
 struct BlobURLRegistrationData
 {
   nsCString url;
-  IPCBlob blob;
   nsIPrincipal principal;
   nsCString partitionKey;
   bool revoked;
@@ -895,8 +896,9 @@ child:
 
     async GetFilesResponse(nsID aID, GetFilesResponseResult aResult);
 
-    async BlobURLRegistration(nsCString aURI, IPCBlob aBlob,
-                              nullable nsIPrincipal aPrincipal, nsCString aPartitionKey);
+    async BlobURLRegistration(nsCString aURI,
+                              nullable nsIPrincipal aPrincipal,
+                              nsCString aPartitionKey);
 
     async BlobURLUnregistration(nsCString[] aURIs);
 
@@ -1352,13 +1354,13 @@ parent:
 
     /**
      * If the profiler is running when the process shuts down, this sends the
-     * profile data collected so far.
+     * profile data collected so far, along with any additional information
+     * (shared libraries, JS source contents) gathered alongside it.
      *
-     * @param aProfile
-     *   This may contain an empty string (unknown issue), an error message
-     *   starting with '*', or a profile as a stringified JSON object.
+     * The profile string inside may be empty (unknown issue), an error message
+     * starting with '*', or a profile as a stringified JSON object.
      */
-    async ShutdownProfile(nsCString aProfile);
+    async ShutdownProfile(ProfileAndAdditionalInformation aProfileAndAdditionalInformation);
 
     /**
      * This sends any collected perf stats data on shutdown.
@@ -1641,10 +1643,10 @@ parent:
                                                   MaybeDiscardedBrowsingContext aParentContext,
                                                   nullable nsIPrincipal aTrackingPrincipal,
                                                   nsCString aTrackingOrigin,
-                                                  int aAllowMode,
+                                                  StorageAccessPromptChoices aAllowMode,
                                                   StorageAccessPermissionGrantedReason? aReason,
                                                   bool aFrameOnly)
-          returns (bool unused);
+          returns (bool granted);
 
     async CompleteAllowAccessFor(MaybeDiscardedBrowsingContext aParentContext,
                                  uint64_t aTopLevelWindowId,
@@ -1672,10 +1674,13 @@ parent:
 
    /**
     * When media became audible or inaudible in content process, we have to
-    * notify chrome process in order to which tab is audible.
+    * notify chrome process in order to which tab is audible. The aType
+    * parameter distinguishes controllable sources (full media-control
+    * lifecycle) from uncontrollable sources that only contribute audibility.
     */
     async NotifyMediaAudibleChanged(MaybeDiscardedBrowsingContext aContext,
-                                    MediaAudibleState aState);
+                                    MediaAudibleState aState,
+                                    ControlType aType);
 
    /**
     * When media enabled or disabled the Picture-in-Picture mode, we have to

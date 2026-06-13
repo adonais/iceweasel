@@ -8,8 +8,24 @@ XPIDL_SOURCES += [
 
 XPIDL_MODULE = "http-sfv"
 
-EXPORTS.mozilla.net += ["SFVService.h"]
+EXPORTS.mozilla.net += [
+    "SFV.h",
+    "SFVService.h",
+]
 
-SOURCES += ["SFVService.cpp"]
+SOURCES += [
+    "SFV.cpp",
+    "SFVService.cpp",
+]
+
+if CONFIG["COMPILE_ENVIRONMENT"]:
+    CbindgenHeader(
+        "http_sfv_ffi_generated.h",
+        inputs=["/netwerk/base/http-sfv"],
+    )
+
+    EXPORTS.mozilla.net += [
+        "!http_sfv_ffi_generated.h",
+    ]
 
 FINAL_LIBRARY = "xul"

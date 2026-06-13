@@ -1,7 +1,15 @@
 [DEFAULT]
+dupe-manifest = true
+prefs = [
+  "browser.settings-redesign.enabled=false",
+  # Push BackupService idle observer past test runtime; otherwise
+  # takeMeasurements -> PathUtils.join throws on empty
+  # DEFAULT_PARENT_DIR_PATH in headless test environments, surfacing
+  # an unhandled rejection in whatever test happens to be running.
+  "browser.backup.scheduled.idle-threshold-seconds=86400",
+]
 support-files = [
   "head.js",
-  "../head.js",
   "privacypane_tests_perwindow.js",
 ]
 tags = "os_integration"
@@ -46,17 +54,7 @@ skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt && a11y_checks",
 ]
 
-["browser_privacypane_2_srd.js"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt && a11y_checks",
-]
-
 ["browser_privacypane_3.js"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt && a11y_checks",
-]
-
-["browser_privacypane_3_srd.js"]
 skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt && a11y_checks",
 ]
@@ -64,5 +62,3 @@ skip-if = [
 ["browser_sanitizeOnShutdown_prefLocked.js"]
 
 ["browser_warning_permanent_private_browsing.js"]
-
-["browser_warning_permanent_private_browsing_srd.js"]

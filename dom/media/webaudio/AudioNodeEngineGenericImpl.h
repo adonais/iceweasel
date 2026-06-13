@@ -59,7 +59,15 @@ void Engine<Arch>::AudioBufferAddWithScale(const float* aInput, float aScale,
   for (unsigned i = 0; i < aVSize; i += xsimd::batch<float, Arch>::size) {
     auto vin1 = xsimd::batch<float, Arch>::load_aligned(&aInput[i]);
     auto vin2 = xsimd::batch<float, Arch>::load_aligned(&aOutput[i]);
-    auto vout = xsimd::fma(vin1, vgain, vin2);
+    // Avoid xsimd::fma here: it lowers to vfmadd*ps on x86 FMA3 builds and
+    // vfmaq_f32 on aarch64 NEON, an explicit single-rounded fused
+    // multiply-add that bypasses the project-wide -ffp-contract=off and
+    // produces sample values that differ from the SSE2/scalar fallback
+    // path. Use separate mul + add so the post-mixing samples are
+    // bit-identical across SIMD tiers, removing audio fingerprint
+    // entropy that splits clients by CPU SIMD class.
+    auto vmul = vin1 * vgain;
+    auto vout = vmul + vin2;
     vout.store_aligned(&aOutput[i]);
   }
 

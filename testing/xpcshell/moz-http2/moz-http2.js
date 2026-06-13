@@ -872,13 +872,21 @@ let httpServer = http.createServer((req, res) => {
 
 function forkH3Server(serverPath, dbPath) {
   const args = [dbPath];
-  let process = spawn(serverPath, args);
-  let id = forkProcessInternal(process);
+  const env = Object.assign({}, process.env, {
+    RUST_BACKTRACE: "full",
+  });
+  let child = spawn(serverPath, args, { env });
+  let id = forkProcessInternal(child);
   // Return a promise that resolves when we receive data from stdout
   return new Promise((resolve, _) => {
-    process.stdout.on("data", data => {
+    child.stdout.on("data", data => {
       console.log(data.toString());
       resolve({ id, output: data.toString().trim() });
+    });
+
+    child.stderr.on("data", chunk => {
+      const s = chunk.toString();
+      console.log(`[child stderr] ${s}`);
     });
   });
 }

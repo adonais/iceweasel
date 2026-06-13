@@ -516,7 +516,7 @@ AsyncExecuteStatements::Run() {
 
   if (statementsNeedTransaction()) {
     SQLiteMutexAutoLock lockedScope(mDBMutex);
-    if (!mConnection->transactionInProgress(lockedScope)) {
+    if (!mConnection->transactionInProgress(lockedScope, mNativeConnection)) {
       if (NS_SUCCEEDED(mConnection->beginTransactionInternal(
               lockedScope, mNativeConnection,
               mozIStorageConnection::TRANSACTION_IMMEDIATE))) {

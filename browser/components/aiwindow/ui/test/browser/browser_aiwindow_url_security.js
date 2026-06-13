@@ -347,7 +347,7 @@ add_task(async function test_aiwindow_component_trust_smoke() {
     });
 
     if (innerBC.currentURI.spec != "about:aichatcontent") {
-      await BrowserTestUtils.browserLoaded(innerBC, {
+      await BrowserTestUtils.browserLoaded(innerBC.embedderElement, {
         wantLoad: "about:aichatcontent",
       });
       innerBC = browser.browsingContext.children[0];

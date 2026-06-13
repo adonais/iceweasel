@@ -10,6 +10,7 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/dom/WAICTManifestBinding.h"
+#include "mozilla/net/SFV.h"
 #include "nsHashKeys.h"
 #include "nsIContentPolicy.h"
 #include "nsIIntegrityPolicy.h"
@@ -19,7 +20,6 @@
 
 #define NS_INTEGRITYPOLICY_CONTRACTID "@mozilla.org/integritypolicy;1"
 
-class nsISFVDictionary;
 class nsILoadInfo;
 
 namespace mozilla {
@@ -75,10 +75,10 @@ class IntegrityPolicy : public nsIIntegrityPolicy {
                      const IntegrityPolicy* aOtherPolicy);
 
   static Result<IntegrityPolicy::Destinations, nsresult> ParseDestinations(
-      nsISFVDictionary* aDict, bool aIsWAICT);
+      const net::SFV::DictResult& aDict, bool aIsWAICT);
 
   static Result<nsTArray<nsCString>, nsresult> ParseEndpoints(
-      nsISFVDictionary* aDict);
+      const net::SFV::DictResult& aDict);
 
  protected:
   virtual ~IntegrityPolicy() = default;

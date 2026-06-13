@@ -25,7 +25,7 @@ ChromiumCDMVideoDecoder::ChromiumCDMVideoDecoder(
 
 ChromiumCDMVideoDecoder::~ChromiumCDMVideoDecoder() = default;
 
-static uint32_t ToCDMH264Profile(uint8_t aProfile) {
+static cdm::VideoCodecProfile ToCDMH264Profile(uint8_t aProfile) {
   switch (aProfile) {
     case 66:
       return cdm::VideoCodecProfile::kH264ProfileBaseline;
@@ -45,7 +45,7 @@ static uint32_t ToCDMH264Profile(uint8_t aProfile) {
   return cdm::VideoCodecProfile::kUnknownVideoCodecProfile;
 }
 
-static uint32_t ToCDMAV1Profile(uint8_t aProfile) {
+static cdm::VideoCodecProfile ToCDMAV1Profile(uint8_t aProfile) {
   switch (aProfile) {
     case 0:
       return cdm::VideoCodecProfile::kAv1ProfileMain;
@@ -113,11 +113,14 @@ RefPtr<MediaDataDecoder::InitPromise> ChromiumCDMVideoDecoder::Init() {
   VideoInfo info = mConfig;
   RefPtr<layers::ImageContainer> imageContainer = mImageContainer;
   RefPtr<layers::KnowsCompositor> knowsCompositor = mKnowsCompositor;
-  return InvokeAsync(mGMPThread, __func__,
-                     [cdm, config, info, imageContainer, knowsCompositor]() {
-                       return cdm->InitializeVideoDecoder(
-                           config, info, imageContainer, knowsCompositor);
-                     });
+  return InvokeAsync(
+      mGMPThread, __func__,
+      [cdm = std::move(cdm), config = std::move(config), info = std::move(info),
+       imageContainer = std::move(imageContainer),
+       knowsCompositor = std::move(knowsCompositor)]() {
+        return cdm->InitializeVideoDecoder(config, info, imageContainer,
+                                           knowsCompositor);
+      });
 }
 
 nsCString ChromiumCDMVideoDecoder::GetDescriptionName() const {

@@ -143,30 +143,22 @@ bool VideoBridgeChild::DeallocShmem(ipc::Shmem& aShmem) {
   return result;
 }
 
-PTextureChild* VideoBridgeChild::AllocPTextureChild(
-    const SurfaceDescriptor&, ReadLockDescriptor&, const LayersBackend&,
-    const TextureFlags&, const dom::ContentParentId& aContentId,
-    const uint64_t& aSerial) {
-  MOZ_ASSERT(CanSend());
-  return TextureClient::CreateIPDLActor();
-}
-
-bool VideoBridgeChild::DeallocPTextureChild(PTextureChild* actor) {
-  return TextureClient::DestroyIPDLActor(actor);
-}
-
 void VideoBridgeChild::ActorDestroy(ActorDestroyReason aWhy) {
   mCanSend = false;
 }
 
-PTextureChild* VideoBridgeChild::CreateTexture(
+already_AddRefed<PTextureChild> VideoBridgeChild::CreateTexture(
     const SurfaceDescriptor& aSharedData, ReadLockDescriptor&& aReadLock,
     LayersBackend aLayersBackend, TextureFlags aFlags,
     const dom::ContentParentId& aContentId, uint64_t aSerial,
     wr::MaybeExternalImageId& aExternalImageId) {
   MOZ_ASSERT(CanSend());
-  return SendPTextureConstructor(aSharedData, std::move(aReadLock),
-                                 aLayersBackend, aFlags, aContentId, aSerial);
+  RefPtr actor = TextureClient::CreateIPDLActor();
+  if (!SendPTextureConstructor(actor, aSharedData, std::move(aReadLock),
+                               aLayersBackend, aFlags, aContentId, aSerial)) {
+    return nullptr;
+  }
+  return actor.forget();
 }
 
 bool VideoBridgeChild::IsSameProcess() const {

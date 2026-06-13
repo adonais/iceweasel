@@ -926,7 +926,7 @@ const IMPORT_TO_SQL_MIGRATION = NimbusMigrations.MIGRATIONS[
   NimbusMigrations.Phase.AFTER_STORE_INITIALIZED
 ].find(m => m.name === "import-enrollments-to-sql");
 
-async function testMigrateEnrollmentsToSql(primary = "jsonfile") {
+add_task(async function testMigrateEnrollmentsToSql() {
   const PREFFLIPS_EXPERIMENT_VALUE = {
     prefs: {
       "foo.bar.baz": {
@@ -1568,7 +1568,7 @@ async function testMigrateEnrollmentsToSql(primary = "jsonfile") {
         db_active_count: "7",
         store_active_count: "7",
         trigger: "migration",
-        primary,
+        primary: "database",
       },
     ]
   );
@@ -1604,15 +1604,6 @@ async function testMigrateEnrollmentsToSql(primary = "jsonfile") {
     "nimbus.qa.pref-2 restored"
   );
   Services.prefs.deleteBranch("foo.bar.baz");
-}
-
-add_task(testMigrateEnrollmentsToSql);
-add_task(async function testMigrateEnrollmentsToSqlDb() {
-  const resetNimbusEnrollmentPrefs = NimbusTestUtils.enableNimbusEnrollments({
-    read: true,
-  });
-  await testMigrateEnrollmentsToSql("database");
-  resetNimbusEnrollmentPrefs();
 });
 
 add_task(async function testGraduateFirefoxLabsAutoPip() {
@@ -1626,6 +1617,7 @@ add_task(async function testGraduateFirefoxLabsAutoPip() {
     },
     {
       isFirefoxLabsOptIn: true,
+      isRollout: true,
       firefoxLabsTitle: "experimental-features-auto-pip",
       firefoxLabsDescription: "experimental-features-auto-pip-description",
       firefoxLabsDescriptionLink: null,
@@ -1635,14 +1627,6 @@ add_task(async function testGraduateFirefoxLabsAutoPip() {
   );
 
   const ENABLED_PREF = getEnabledPrefForFeature("auto-pip");
-
-  Services.fog.applyServerKnobsConfig(
-    JSON.stringify({
-      metrics_enabled: {
-        "nimbus_events.enrollment_status": true,
-      },
-    })
-  );
 
   Services.prefs.setBoolPref(ENABLED_PREF, true);
 

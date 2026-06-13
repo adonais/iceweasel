@@ -10,6 +10,7 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
   ASRouter: "resource:///modules/asrouter/ASRouter.sys.mjs",
+  ScheduledTask: "resource://gre/modules/ScheduledTask.sys.mjs",
   Subprocess: "resource://gre/modules/Subprocess.sys.mjs",
   WindowsVersionInfo:
     "resource://gre/modules/components-utils/WindowsVersionInfo.sys.mjs",
@@ -423,10 +424,16 @@ let ShellServiceInternal = {
       return;
     }
 
+    // Tracks the last method attempted and whether its API call succeeded.
+    // These feed into the consolidated set_default_pdf_handler_attempt event
+    // recorded at the bottom of this function.
+    let method = "user_choice";
+    let success = false;
+
     try {
       await this.setAsDefaultPDFHandlerUserChoice();
       Glean.browser.setDefaultPdfHandlerUserChoiceResult.Success.add(1);
-      return;
+      success = true;
     } catch (e) {
       const telemetryResult =
         e instanceof WDBAError ? e.telemetryResult : "ErrOther";
@@ -443,23 +450,39 @@ let ShellServiceInternal = {
       Ci.nsIWindowsShellService
     );
 
-    try {
-      winShell.launchOpenWithDefaultPickerForFileType(".pdf");
-      Glean.browser.setDefaultPdfHandlerOpenWithResult.Success.add(1);
-      return;
-    } catch (e) {
-      Glean.browser.setDefaultPdfHandlerOpenWithResult.Failure.add(1);
-      lazy.log.debug(
-        "Setting default by open with launcher failed, possibly falling through to modern settings",
-        e
-      );
+    // Optional second attempt via the undocumented IOpenWithLauncher API,
+    // which surfaces the OS "Open with" picker so the user can pick Firefox
+    // themselves. Gated by a pref so it can be remotely disabled if it
+    // regresses.
+    if (
+      !success &&
+      Services.prefs.getBoolPref(
+        "browser.shell.setDefaultPDFHandler.useOpenWith",
+        false
+      )
+    ) {
+      method = "open_with";
+      try {
+        winShell.launchOpenWithDefaultPickerForFileType(".pdf");
+        success = true;
+      } catch (e) {
+        // The picker API itself failed (e.g. COM error). Fall through to the
+        // modern settings dialog rather than leaving the user without any
+        // default-handler UI.
+        lazy.log.debug(
+          "Setting default by open with launcher failed, possibly falling through to modern settings",
+          e
+        );
+      }
     }
 
     // PDF default app settings are only available in Windows 11 (build 22000+).
-    if (this._isWindows11()) {
+    if (!success && this._isWindows11()) {
+      method = "settings";
       try {
         winShell.launchModernSettingsDialogDefaultApps();
         Glean.browser.setDefaultPdfHandlerModernSettingsResult.Success.add(1);
+        success = true;
       } catch (e) {
         Glean.browser.setDefaultPdfHandlerModernSettingsResult.Failure.add(1);
         lazy.log.debug(
@@ -468,6 +491,22 @@ let ShellServiceInternal = {
         );
       }
     }
+
+    // Record the consolidated attempt event after a delay. For open_with and
+    // settings the user is interacting with a launched dialog out-of-process,
+    // so we wait before sampling isDefaultHandlerFor to give that interaction
+    // time to complete. For user_choice the wait is unnecessary but harmless.
+    const waitTimeMs = Services.prefs.getIntPref(
+      "browser.shell.setDefaultPDFHandler.attemptWaitTimeMs",
+      30000
+    );
+    new lazy.ScheduledTask(() => {
+      Glean.browser.setDefaultPdfHandlerAttempt.record({
+        method,
+        success,
+        result_is_default: this.isDefaultHandlerFor(".pdf"),
+      });
+    }, Date.now() + waitTimeMs).arm();
   },
 
   /**

@@ -7,3 +7,4 @@ browser.jar:
         content/browser/urlbar/SmartbarInputController.mjs (content/SmartbarInputController.mjs)
         content/browser/urlbar/SmartbarInputUtils.mjs      (content/SmartbarInputUtils.mjs)
         content/browser/urlbar/UrlbarInput.mjs             (content/UrlbarInput.mjs)
+        content/browser/urlbar/SearchModeSwitcher.mjs      (content/SearchModeSwitcher.mjs)

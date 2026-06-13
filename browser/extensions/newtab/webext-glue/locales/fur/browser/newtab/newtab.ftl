@@ -8,9 +8,13 @@
 newtab-page-title = Gnove schede
 newtab-settings-button =
     .title = Personalize la pagjine de tô gnove schede
+#  (developer note): @nova-cleanup(remove-string): Remove newtab-customize-panel-icon-button once Nova lands, will be using newtab-customize-panel-label instead
 newtab-customize-panel-icon-button =
     .title = Personalize cheste pagjine
+#  (developer note): @nova-cleanup(remove-string): Remove newtab-customize-panel-icon-button-label once Nova lands, will be using newtab-customize-panel-label instead
 newtab-customize-panel-icon-button-label = Personalize
+newtab-customize-panel-label =
+    .label = Personalize
 newtab-personalize-settings-icon-label =
     .title = Personalize Gnove schede
     .aria-label = Impostazions
@@ -660,10 +664,16 @@ newtab-widget-lists-label-beta =
 newtab-widget-lists-completed-list = Completadis ({ $number })
 newtab-widget-task-list-menu-copy = Copie
 newtab-widget-lists-menu-edit = Modifiche non liste
+newtab-widget-lists-menu-edit2 =
+    .aria-label = Modifiche non liste
 newtab-widget-lists-menu-create = Cree gnove liste
 newtab-widget-lists-menu-delete = Elimine cheste liste
 newtab-widget-lists-menu-copy = Copie liste intes notis
 newtab-widget-lists-menu-learn-more = Plui informazions
+newtab-widget-lists-button-add-item = Zonte un element
+newtab-widget-lists-input-add-an-item2 =
+    .placeholder = Zonte un element
+    .aria-label = Zonte un element
 newtab-widget-lists-input-add-an-item =
     .placeholder = Zonte un element
 newtab-widget-lists-input-error = Inclût test par zontâ un element.
@@ -680,6 +690,10 @@ newtab-widget-lists-name-label-default =
 newtab-widget-lists-name-placeholder-default =
     .placeholder = Liste di ativitâts
 # The placeholder value of the name field for a newly created list
+newtab-widget-lists-name-placeholder-new2 =
+    .placeholder = Gnove liste
+    .aria-label = Modifiche non liste
+# The placeholder value of the name field for a newly created list
 newtab-widget-lists-name-placeholder-new =
     .placeholder = Gnove liste
 newtab-widget-section-title = Widgets
@@ -694,8 +708,7 @@ newtab-widget-section-minimize =
     .title = Minimize widgets
     .aria-label = Strenç ducj i widgets ae dimension compate
 
-## Strings for timer productivity widget
-## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown
+## Strings introduced by the Nova redesign of the Timer widget
 
 newtab-widget-timer-notification-title = Temporizadôr
 newtab-widget-timer-notification-focus = Il timp par concentrâti al è finît. Ben fate. Ti coventie une pause?

@@ -314,7 +314,7 @@ export class GeckoViewContent extends GeckoViewModule {
         break;
       case "MozDOMFullscreen:Entered":
         if (this.browser == aEvent.target) {
-          const chromeWindow = this.browser.ownerGlobal;
+          const chromeWindow = this.browser.documentGlobal;
           const requestOrigin =
             chromeWindow.browsingContext?.fullscreenRequestOrigin?.get();
           if (!requestOrigin) {

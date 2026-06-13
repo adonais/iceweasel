@@ -13,7 +13,7 @@ import org.mozilla.gecko.annotation.WrapForJNI;
  * how it is used please see the <a href="https://github.com/MozillaReality/FirefoxReality"
  * target="_blank">Firefox Reality browser</a>.
  *
- * @see <a href="https://searchfox.org/mozilla-central/source/gfx/vr/external_api/moz_external_vr.h"
+ * @see <a href="https://searchfox.org/firefox-main/source/gfx/vr/external_api/moz_external_vr.h"
  *     target="_blank">External VR Context</a>
  */
 public class GeckoVRManager {
@@ -28,7 +28,7 @@ public class GeckoVRManager {
 
   /**
    * Sets the external VR context. The external VR context is defined <a
-   * href="https://searchfox.org/mozilla-central/source/gfx/vr/external_api/moz_external_vr.h"
+   * href="https://searchfox.org/firefox-main/source/gfx/vr/external_api/moz_external_vr.h"
    * target="_blank">here</a>.
    *
    * @param externalContext A pointer to the external VR context.

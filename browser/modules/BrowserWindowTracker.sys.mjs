@@ -51,7 +51,7 @@ function _updateCurrentBrowserId(browser) {
   if (
     !browser.browserId ||
     browser.browserId === _lastCurrentBrowserId ||
-    browser.ownerGlobal != _trackedWindows[0]
+    browser.documentGlobal != _trackedWindows[0]
   ) {
     return;
   }
@@ -76,7 +76,7 @@ function _handleEvent(event) {
   switch (event.type) {
     case "TabBrowserInserted":
       if (
-        event.target.ownerGlobal.gBrowser.selectedBrowser ===
+        event.target.documentGlobal.gBrowser.selectedBrowser ===
         event.target.linkedBrowser
       ) {
         _updateCurrentBrowserId(event.target.linkedBrowser);

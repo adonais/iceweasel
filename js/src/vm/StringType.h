@@ -785,7 +785,6 @@ class JSString : public js::gc::CellWithLengthAndFlags {
     buffer->unputCell(reinterpret_cast<JSString**>(cellp));
   }
 
- private:
   JSString(const JSString& other) = delete;
   void operator=(const JSString& other) = delete;
 
@@ -926,20 +925,12 @@ class JSLinearString : public JSString {
   friend class js::gc::CellAllocator;
   friend class JSDependentString;  // To allow access when used as base.
 
-  /* Vacuous and therefore unimplemented. */
-  JSLinearString* ensureLinear(JSContext* cx) = delete;
-  bool isLinear() const = delete;
-  JSLinearString& asLinear() const = delete;
-
   JSLinearString(const char16_t* chars, size_t length, bool hasBuffer);
   JSLinearString(const JS::Latin1Char* chars, size_t length, bool hasBuffer);
   template <typename CharT>
   explicit inline JSLinearString(JS::MutableHandle<OwnedChars<CharT>> chars);
 
  protected:
-  // Used to construct subclasses that do a full initialization themselves.
-  JSLinearString() = default;
-
   /* Returns void pointer to latin1/twoByte chars, for finalizers. */
   MOZ_ALWAYS_INLINE
   void* nonInlineCharsRaw() const {
@@ -955,6 +946,13 @@ class JSLinearString : public JSString {
   MOZ_ALWAYS_INLINE const char16_t* rawTwoByteChars() const;
 
  public:
+  // Used to construct subclasses that do a full initialization themselves.
+  JSLinearString() = default;
+
+  JSLinearString* ensureLinear(JSContext* cx) = delete;
+  bool isLinear() const = delete;
+  JSLinearString& asLinear() const = delete;
+
   template <js::AllowGC allowGC, typename CharT>
   static inline JSLinearString* new_(JSContext* cx,
                                      JS::MutableHandle<OwnedChars<CharT>> chars,
@@ -1141,10 +1139,6 @@ class JSDependentString : public JSLinearString {
   // For JIT string allocation.
   JSDependentString() = default;
 
-  /* Vacuous and therefore unimplemented. */
-  bool isDependent() const = delete;
-  JSDependentString& asDependent() const = delete;
-
   /* The offset of this string's chars in base->chars(). */
   MOZ_ALWAYS_INLINE size_t baseOffset() const {
     MOZ_ASSERT(JSString::isDependent());
@@ -1206,6 +1200,9 @@ class JSDependentString : public JSLinearString {
   void dumpOwnRepresentationFields(js::JSONPrinter& json) const;
 #endif
 
+  bool isDependent() const = delete;
+  JSDependentString& asDependent() const = delete;
+
  private:
   // To help avoid writing Spectre-unsafe code, we only allow MacroAssembler
   // to call the method below.
@@ -1234,10 +1231,6 @@ static_assert(sizeof(JSAtomRefString) == sizeof(JSString),
               "string subclasses must be binary-compatible with JSString");
 
 class JSExtensibleString : public JSLinearString {
-  /* Vacuous and therefore unimplemented. */
-  bool isExtensible() const = delete;
-  JSExtensibleString& asExtensible() const = delete;
-
  public:
   MOZ_ALWAYS_INLINE
   size_t capacity() const {
@@ -1248,6 +1241,9 @@ class JSExtensibleString : public JSLinearString {
 #if defined(DEBUG) || defined(JS_JITSPEW) || defined(JS_CACHEIR_SPEW)
   void dumpOwnRepresentationFields(js::JSONPrinter& json) const;
 #endif
+
+  bool isExtensible() const = delete;
+  JSExtensibleString& asExtensible() const = delete;
 };
 
 static_assert(sizeof(JSExtensibleString) == sizeof(JSString),
@@ -1386,10 +1382,6 @@ class JSExternalString : public JSLinearString {
   JSExternalString(const char16_t* chars, size_t length,
                    const JSExternalStringCallbacks* callbacks);
 
-  /* Vacuous and therefore unimplemented. */
-  bool isExternal() const = delete;
-  JSExternalString& asExternal() const = delete;
-
   template <typename CharT>
   static inline JSExternalString* newImpl(
       JSContext* cx, const CharT* chars, size_t length,
@@ -1420,16 +1412,15 @@ class JSExternalString : public JSLinearString {
 #if defined(DEBUG) || defined(JS_JITSPEW) || defined(JS_CACHEIR_SPEW)
   void dumpOwnRepresentationFields(js::JSONPrinter& json) const;
 #endif
+
+  bool isExternal() const = delete;
+  JSExternalString& asExternal() const = delete;
 };
 
 static_assert(sizeof(JSExternalString) == sizeof(JSString),
               "string subclasses must be binary-compatible with JSString");
 
 class JSAtom : public JSLinearString {
-  /* Vacuous and therefore unimplemented. */
-  bool isAtom() const = delete;
-  JSAtom& asAtom() const = delete;
-
  public:
   template <typename CharT>
   static inline JSAtom* newValidLength(JSContext* cx, OwnedChars<CharT>& chars,
@@ -1488,6 +1479,8 @@ class JSAtom : public JSLinearString {
   void dump(js::GenericPrinter& out);
   void dump();
 #endif
+  bool isAtom() const = delete;
+  JSAtom& asAtom() const = delete;
 };
 
 namespace js {
@@ -1537,13 +1530,14 @@ class ThinInlineAtom : public NormalAtom {
   static constexpr bool EverInstantiated = true;
 #endif
 
- protected:
   // Mimicking JSThinInlineString constructors.
 #ifdef JS_64BIT
+ public:
   ThinInlineAtom(size_t length, JS::Latin1Char** chars,
                  js::HashNumber hash) = delete;
   ThinInlineAtom(size_t length, char16_t** chars, js::HashNumber hash) = delete;
 #else
+ protected:
   ThinInlineAtom(size_t length, JS::Latin1Char** chars, js::HashNumber hash);
   ThinInlineAtom(size_t length, char16_t** chars, js::HashNumber hash);
 #endif
@@ -1761,8 +1755,7 @@ namespace js {
  *   - JS::PropertyKey::isVoid.
  */
 class PropertyName : public JSAtom {
- private:
-  /* Vacuous and therefore unimplemented. */
+ public:
   PropertyName* asPropertyName() = delete;
 };
 

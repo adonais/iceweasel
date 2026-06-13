@@ -10,7 +10,7 @@
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/WebIdentityHandler.h"
-#include "mozilla/net/SFVService.h"
+#include "mozilla/net/SFV.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsIGlobalObject.h"
 #include "nsIPermissionManager.h"
@@ -111,26 +111,8 @@ nsresult NavigatorLogin::SetLoginStatus(nsIPrincipal* aPrincipal,
 // static
 nsresult NavigatorLogin::ParseLoginStatusHeader(const nsACString& aStatus,
                                                 LoginStatus& aResult) {
-  nsCOMPtr<nsISFVService> sfv = net::GetSFVService();
-  nsCOMPtr<nsISFVItem> item;
-  nsresult rv = sfv->ParseItem(aStatus, getter_AddRefs(item));
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
-  nsCOMPtr<nsISFVBareItem> value;
-  rv = item->GetValue(getter_AddRefs(value));
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
-  nsCOMPtr<nsISFVToken> token = do_QueryInterface(value);
-  if (!token) {
-    return NS_ERROR_UNEXPECTED;
-  }
-
   nsAutoCString parsedStatus;
-  rv = token->GetValue(parsedStatus);
+  nsresult rv = net::SFV::ParseItem<net::SFV::Token>(aStatus, parsedStatus);
   if (NS_FAILED(rv)) {
     return rv;
   }

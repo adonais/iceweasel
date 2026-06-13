@@ -35,6 +35,7 @@ EXPORTS += [
 
 EXPORTS.mozilla += [
     "RustRegex.h",
+    "SourcePathLiteral.h",
 ]
 
 UNIFIED_SOURCES += [

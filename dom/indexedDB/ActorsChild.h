@@ -418,6 +418,8 @@ class BackgroundRequestChild final : public BackgroundRequestChildBase,
   bool mGetAll;
 
  private:
+  struct UndefinedJSHandleValue {};
+
   // Only created by IDBTransaction.
   explicit BackgroundRequestChild(MovingNotNull<RefPtr<IDBRequest>> aRequest);
 
@@ -434,19 +436,28 @@ class BackgroundRequestChild final : public BackgroundRequestChildBase,
 
   UniquePtr<JSStructuredCloneData> GetNextCloneData();
 
-  void HandleResponse(nsresult aResponse);
+  nsCOMPtr<nsIRunnable> HandleResponse(nsresult aResponse);
 
-  void HandleResponse(const Key& aResponse);
+  nsCOMPtr<nsIRunnable> HandleResponse(Key&& aResponse);
 
-  void HandleResponse(const nsTArray<Key>& aResponse);
+  nsCOMPtr<nsIRunnable> HandleResponse(nsTArray<Key>&& aResponse);
 
-  void HandleResponse(SerializedStructuredCloneReadInfo&& aResponse);
+  nsCOMPtr<nsIRunnable> HandleResponse(
+      SerializedStructuredCloneReadInfo&& aResponse);
 
-  void HandleResponse(nsTArray<SerializedStructuredCloneReadInfo>&& aResponse);
+  nsCOMPtr<nsIRunnable> HandleResponse(
+      nsTArray<SerializedStructuredCloneReadInfo>&& aResponse);
 
-  void HandleResponse(JS::Handle<JS::Value> aResponse);
+  nsCOMPtr<nsIRunnable> HandleResponse(
+      UndefinedJSHandleValue /* overload selector */);
 
-  void HandleResponse(uint64_t aResponse);
+  nsCOMPtr<nsIRunnable> HandleResponse(uint64_t aResponse);
+
+  // Wraps |aAction(request, transaction)| in a runnable that first handles
+  // transaction abort and owner-global loss; only instantiated in
+  // ActorsChild.cpp.
+  template <typename SuccessAction>
+  nsCOMPtr<nsIRunnable> MakeDeferredResultRunnable(SuccessAction&& aAction);
 
   nsresult HandlePreprocess(const PreprocessInfo& aPreprocessInfo);
 

@@ -355,7 +355,7 @@ void Navigation::InitializeHistoryEntries(
 
   for (auto i = 0ul; i < aNewSHInfos.Length(); i++) {
     mEntries.AppendElement(MakeRefPtr<NavigationHistoryEntry>(
-        GetOwnerGlobal(), &aNewSHInfos[i], i));
+        GetRelevantGlobal(), &aNewSHInfos[i], i));
     if (aNewSHInfos[i].NavigationKey() == aInitialSHInfo->NavigationKey()) {
       mCurrentEntryIndex = Some(i);
     }
@@ -400,7 +400,7 @@ void Navigation::UpdateEntriesForSameDocumentNavigation(
       mEntries.RemoveElementsAt(*mCurrentEntryIndex,
                                 mEntries.Length() - *mCurrentEntryIndex);
       mEntries.AppendElement(MakeRefPtr<NavigationHistoryEntry>(
-          GetOwnerGlobal(), aDestinationSHE, *mCurrentEntryIndex));
+          GetRelevantGlobal(), aDestinationSHE, *mCurrentEntryIndex));
       break;
 
     case NavigationType::Replace:
@@ -415,7 +415,7 @@ void Navigation::UpdateEntriesForSameDocumentNavigation(
           aDestinationSHE->NavigationKey() ==
           oldCurrentEntry->SessionHistoryInfo()->NavigationKey());
       mEntries[*mCurrentEntryIndex] = MakeRefPtr<NavigationHistoryEntry>(
-          GetOwnerGlobal(), aDestinationSHE, *mCurrentEntryIndex);
+          GetRelevantGlobal(), aDestinationSHE, *mCurrentEntryIndex);
       break;
 
     case NavigationType::Reload:
@@ -440,7 +440,7 @@ void Navigation::UpdateEntriesForSameDocumentNavigation(
   {
     // Steps 9-12.
     nsAutoMicroTask mt;
-    AutoEntryScript aes(GetOwnerGlobal(),
+    AutoEntryScript aes(GetRelevantGlobal(),
                         "UpdateEntriesForSameDocumentNavigation");
 
     NavigationCurrentEntryChangeEventInit init;
@@ -789,7 +789,7 @@ void Navigation::RunNavigateEventHandlerSteps(
   // 10.3 If promisesList's size is 0, then set promisesList to « a promise
   //      resolved with undefined ».
   //
-  nsCOMPtr globalObject = GetOwnerGlobal();
+  nsCOMPtr globalObject = GetRelevantGlobal();
   if (promiseList.IsEmpty()) {
     RefPtr promise = Promise::CreateResolvedWithUndefined(globalObject,
                                                           IgnoredErrorResult());
@@ -884,7 +884,7 @@ void Navigation::UpdateForReactivation(
       oldNHEs.RemoveElementAt(matchingOldNHE);
     } else {
       // Step 4.3.1 and 4.3.2
-      newNHE = MakeRefPtr<NavigationHistoryEntry>(GetOwnerGlobal(), &newSHE,
+      newNHE = MakeRefPtr<NavigationHistoryEntry>(GetRelevantGlobal(), &newSHE,
                                                   newNHEs.Length());
     }
     // Step 4.4
@@ -976,7 +976,7 @@ already_AddRefed<nsIStructuredCloneContainer>
 Navigation::CreateSerializedStateAndMaybeSetEarlyErrorResult(
     JSContext* aCx, const JS::Value& aState, NavigationResult& aResult) const {
   JS::Rooted<JS::Value> state(aCx, aState);
-  RefPtr global = GetOwnerGlobal();
+  RefPtr global = GetRelevantGlobal();
   MOZ_DIAGNOSTIC_ASSERT(global);
 
   RefPtr<nsIStructuredCloneContainer> serializedState =
@@ -1127,7 +1127,7 @@ void Navigation::PerformNavigationTraversal(JSContext* aCx, const nsID& aKey,
   // 5. If key equals current's session history entry's navigation API key, then
   //    return «[ "committed" → a promise resolved with current, "finished" → a
   //    promise resolved with current ]».
-  RefPtr global = GetOwnerGlobal();
+  RefPtr global = GetRelevantGlobal();
   if (!global) {
     return;
   }
@@ -1449,7 +1449,7 @@ bool Navigation::FireTraverseNavigateEvent(
   // Step 3, step 4, step 6.1, and step 7.1.
   RefPtr<NavigationDestination> destination =
       MakeAndAddRef<NavigationDestination>(
-          GetOwnerGlobal(), aDestinationSessionHistoryInfo.GetURI(),
+          GetRelevantGlobal(), aDestinationSessionHistoryInfo.GetURI(),
           destinationNHE, state, isSameDocument);
 
   // Step 9
@@ -1497,7 +1497,7 @@ bool Navigation::FirePushReplaceReloadNavigateEvent(
 
   // Step 7 to step 11
   RefPtr<NavigationDestination> destination =
-      MakeAndAddRef<NavigationDestination>(GetOwnerGlobal(), aDestinationURL,
+      MakeAndAddRef<NavigationDestination>(GetRelevantGlobal(), aDestinationURL,
                                            /* aEntry */ nullptr,
                                            /* aState */ aNavigationAPIState,
                                            aIsSameDocument);
@@ -1525,7 +1525,7 @@ bool Navigation::FireDownloadRequestNavigateEvent(
 
   // Step 3 to step 7
   RefPtr<NavigationDestination> destination =
-      MakeAndAddRef<NavigationDestination>(GetOwnerGlobal(), aDestinationURL,
+      MakeAndAddRef<NavigationDestination>(GetRelevantGlobal(), aDestinationURL,
                                            /* aEntry */ nullptr,
                                            /* aState */ nullptr,
                                            /* aIsSameDocument */ false);
@@ -1647,7 +1647,7 @@ bool Navigation::InnerFireNavigateEvent(
     nsIStructuredCloneContainer* aClassicHistoryAPIState,
     const nsAString& aDownloadRequestFilename,
     NavigationAPIMethodTracker* aNavigationAPIMethodTracker) {
-  nsCOMPtr<nsIGlobalObject> globalObject = GetOwnerGlobal();
+  nsCOMPtr<nsIGlobalObject> globalObject = GetRelevantGlobal();
   RefPtr apiMethodTracker = aNavigationAPIMethodTracker;
 
   // Step 1
@@ -2123,8 +2123,8 @@ Navigation::SetUpNavigateReloadAPIMethodTracker(
   // serializedState:
   // 1. Let committedPromise and finishedPromise be new promises created in
   //    navigation's relevant realm.
-  RefPtr committedPromise = Promise::CreateInfallible(GetOwnerGlobal());
-  RefPtr finishedPromise = Promise::CreateInfallible(GetOwnerGlobal());
+  RefPtr committedPromise = Promise::CreateInfallible(GetRelevantGlobal());
+  RefPtr finishedPromise = Promise::CreateInfallible(GetRelevantGlobal());
   // 2. Mark as handled finishedPromise.
   MOZ_ALWAYS_TRUE(finishedPromise->SetAnyPromiseIsHandled());
 
@@ -2146,8 +2146,8 @@ Navigation::AddUpcomingTraverseAPIMethodTracker(const nsID& aKey,
   // navigation, a string destinationKey, and a JavaScript value info:
   // 1. Let committedPromise and finishedPromise be new promises created in
   //    navigation's relevant realm.
-  RefPtr committedPromise = Promise::CreateInfallible(GetOwnerGlobal());
-  RefPtr finishedPromise = Promise::CreateInfallible(GetOwnerGlobal());
+  RefPtr committedPromise = Promise::CreateInfallible(GetRelevantGlobal());
+  RefPtr finishedPromise = Promise::CreateInfallible(GetRelevantGlobal());
 
   // 2. Mark as handled finishedPromise.
   MOZ_ALWAYS_TRUE(finishedPromise->SetAnyPromiseIsHandled());
@@ -2211,7 +2211,7 @@ void Navigation::CreateNavigationActivationFrom(
     } else if (navigationType == NavigationType::Replace &&
                !previousEntryForActivation->IsTransient()) {
       oldEntry = MakeRefPtr<NavigationHistoryEntry>(
-          GetOwnerGlobal(), previousEntryForActivation, -1);
+          GetRelevantGlobal(), previousEntryForActivation, -1);
       MOZ_LOG_FMT(gNavigationAPILog, LogLevel::Debug,
                   "Created a new entry at {}", fmt::ptr(oldEntry.get()));
 
@@ -2228,7 +2228,7 @@ void Navigation::CreateNavigationActivationFrom(
   RefPtr<NavigationHistoryEntry> currentEntry = GetCurrentEntry();
   if (!mActivation) {
     mActivation = MakeRefPtr<NavigationActivation>(
-        GetOwnerGlobal(), currentEntry, oldEntry, navigationType);
+        GetRelevantGlobal(), currentEntry, oldEntry, navigationType);
   } else {
     mActivation->SetNewEntry(currentEntry);
     mActivation->SetNavigationType(navigationType);

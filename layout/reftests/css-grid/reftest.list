@@ -187,6 +187,7 @@ pref(layout.abspos.fragmentainer-aware-positioning.enabled,true) == grid-fragmen
 == grid-fragmentation-004.html grid-fragmentation-004-ref.html
 == grid-fragmentation-005.html grid-fragmentation-005-ref.html
 == grid-fragmentation-006.html grid-fragmentation-006-ref.html
+fails == grid-fragmentation-006-avoid-break.html grid-fragmentation-006-avoid-break-ref.html
 == grid-fragmentation-007.html grid-fragmentation-007-ref.html
 == grid-fragmentation-008.html grid-fragmentation-008-ref.html
 == grid-fragmentation-009.html grid-fragmentation-009-ref.html
@@ -212,6 +213,10 @@ fuzzy-if(winWidget,0-1,0-5) == grid-fragmentation-027.html grid-fragmentation-02
 == grid-fragmentation-029.html grid-fragmentation-029-ref.html
 == grid-fragmentation-030.html grid-fragmentation-030-ref.html
 == grid-fragmentation-031.html grid-fragmentation-031-ref.html
+== grid-fragmentation-break-before.html grid-fragmentation-break-before-ref.html
+fails == grid-fragmentation-032.html grid-fragmentation-032-ref.html
+fails == grid-fragmentation-033.html grid-fragmentation-033-ref.html
+fails == grid-fragmentation-034.html grid-fragmentation-034-ref.html
 
 # Fragmentation tests that does dynamic content removal/insertions.
 # They should give the same result as the corresponding static test.
@@ -273,6 +278,8 @@ pref(layout.abspos.fragmentainer-aware-positioning.enabled,true) == grid-fragmen
 == grid-fragmentation-dyn2-029.html grid-fragmentation-029-ref.html
 == grid-fragmentation-dyn2-030.html grid-fragmentation-030-ref.html
 == grid-fragmentation-dyn2-031.html grid-fragmentation-031-ref.html
+== grid-fragmentation-dyn1-break-before.html grid-fragmentation-break-before-ref.html
+== grid-fragmentation-dyn2-break-before.html grid-fragmentation-break-before-ref.html
 
 == bug1306106.html bug1306106-ref.html
 == bug1349571.html bug1349571-ref.html

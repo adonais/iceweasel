@@ -25,7 +25,7 @@ registerCleanupFunction(function () {
 // only use one tab (instead of opening/closing for each test) for all
 // to help improve test times on debug builds.
 add_setup(async function () {
-  await openPreferencesViaOpenPreferencesAPI("privacy", { leaveOpen: true });
+  await openSecurityPrefs();
   registerCleanupFunction(async function () {
     BrowserTestUtils.removeTab(gBrowser.selectedTab);
   });

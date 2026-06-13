@@ -26,11 +26,9 @@ namespace mozilla {
  * (finger scrolling) or drag the target element.
  ******************************************************************************/
 
-class WidgetGestureNotifyEvent : public WidgetGUIEvent {
+class WidgetGestureNotifyEvent final : public WidgetGUIEvent {
  public:
-  virtual WidgetGestureNotifyEvent* AsGestureNotifyEvent() override {
-    return this;
-  }
+  NS_DEFINE_AS_EVENT_OVERRIDE(Widget, GestureNotifyEvent);
 
   WidgetGestureNotifyEvent(bool aIsTrusted, EventMessage aMessage,
                            nsIWidget* aWidget,
@@ -39,6 +37,10 @@ class WidgetGestureNotifyEvent : public WidgetGUIEvent {
                        aTime),
         mPanDirection(ePanNone),
         mDisplayPanFeedback(false) {}
+
+  NS_DEFINE_VIRTUAL_DESTRUCTOR_CHECKING_CLASS_VALUE(WidgetGestureNotifyEvent,
+                                                    eGestureNotifyEventClass,
+                                                    eGUIEventClass)
 
   virtual WidgetEvent* Duplicate() const override {
     // XXX Looks like this event is handled only in PostHandleEvent() of
@@ -80,11 +82,9 @@ class WidgetGestureNotifyEvent : public WidgetGUIEvent {
  * mozilla::WidgetSimpleGestureEvent
  ******************************************************************************/
 
-class WidgetSimpleGestureEvent : public WidgetMouseEventBase {
+class WidgetSimpleGestureEvent final : public WidgetMouseEventBase {
  public:
-  virtual WidgetSimpleGestureEvent* AsSimpleGestureEvent() override {
-    return this;
-  }
+  NS_DEFINE_AS_EVENT_OVERRIDE(Widget, SimpleGestureEvent);
 
   WidgetSimpleGestureEvent(bool aIsTrusted, EventMessage aMessage,
                            nsIWidget* aWidget,
@@ -103,6 +103,10 @@ class WidgetSimpleGestureEvent : public WidgetMouseEventBase {
         mDirection(aOther.mDirection),
         mClickCount(0),
         mDelta(aOther.mDelta) {}
+
+  NS_DEFINE_VIRTUAL_DESTRUCTOR_CHECKING_CLASS_VALUE(WidgetSimpleGestureEvent,
+                                                    eSimpleGestureEventClass,
+                                                    eMouseEventBaseClass)
 
   virtual WidgetEvent* Duplicate() const override {
     MOZ_ASSERT(mClass == eSimpleGestureEventClass,
@@ -146,7 +150,7 @@ class WidgetTouchEvent final : public WidgetInputEvent {
   typedef AutoTArray<RefPtr<mozilla::dom::Touch>, 10> AutoTouchArray;
   typedef AutoTouchArray::base_type TouchArrayBase;
 
-  WidgetTouchEvent* AsTouchEvent() override { return this; }
+  NS_DEFINE_AS_EVENT_OVERRIDE(Widget, TouchEvent);
 
   MOZ_COUNTED_DEFAULT_CTOR(WidgetTouchEvent)
 
@@ -196,7 +200,12 @@ class WidgetTouchEvent final : public WidgetInputEvent {
     mFlags.mCancelable = mMessage != eTouchCancel;
   }
 
-  MOZ_COUNTED_DTOR_OVERRIDE(WidgetTouchEvent)
+#if defined(NS_BUILD_REFCNT_LOGGING) || defined(DEBUG)
+  virtual ~WidgetTouchEvent() {
+    MOZ_COUNT_DTOR(WidgetTouchEvent);
+    NS_ASSERT_EVENT_CLASS_ID(eTouchEventClass, eInputEventClass);
+  }
+#endif
 
   WidgetEvent* Duplicate() const override {
     MOZ_ASSERT(mClass == eTouchEventClass,

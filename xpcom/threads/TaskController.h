@@ -94,7 +94,7 @@ class TaskManager {
   uint32_t PendingTaskCount() { return mTaskCount; }
 
  protected:
-  virtual ~TaskManager() {}
+  virtual ~TaskManager() = default;
 
  private:
   friend class TaskController;
@@ -201,7 +201,7 @@ class Task {
         mSeqNo(sCurrentTaskSeqNo++),
         mPriority(static_cast<uint32_t>(aPriority)) {}
 
-  virtual ~Task() {}
+  virtual ~Task() = default;
 
   friend class TaskController;
 

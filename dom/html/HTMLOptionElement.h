@@ -120,10 +120,6 @@ class HTMLOptionElement final : public nsGenericHTMLElement {
   JSObject* WrapNode(JSContext*, JS::Handle<JSObject*> aGivenProto) override;
 
   bool mSelectedChanged = false;
-
-  // True only while we're under the SetOptionsSelectedByIndex call when our
-  // "selected" attribute is changing and mSelectedChanged is false.
-  bool mIsInSetDefaultSelected = false;
 };
 
 }  // namespace mozilla::dom

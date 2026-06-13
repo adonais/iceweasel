@@ -6,11 +6,10 @@
 #define _nsSound_h_
 
 #include "nsISound.h"
-#include "nsIStreamLoader.h"
 
 #include <gtk/gtk.h>
 
-class nsSound : public nsISound, public nsIStreamLoaderObserver {
+class nsSound : public nsISound {
  public:
   nsSound();
 
@@ -19,7 +18,6 @@ class nsSound : public nsISound, public nsIStreamLoaderObserver {
 
   NS_DECL_ISUPPORTS
   NS_DECL_NSISOUND
-  NS_DECL_NSISTREAMLOADEROBSERVER
 
  private:
   virtual ~nsSound();

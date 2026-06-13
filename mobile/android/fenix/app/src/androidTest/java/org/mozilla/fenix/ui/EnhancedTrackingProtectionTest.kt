@@ -4,7 +4,6 @@
 
 package org.mozilla.fenix.ui
 
-import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import androidx.core.net.toUri
 import androidx.test.espresso.Espresso.pressBack
 import mozilla.components.concept.engine.utils.EngineReleaseChannel
@@ -27,6 +26,7 @@ import org.mozilla.fenix.helpers.perf.DetectMemoryLeaksRule
 import org.mozilla.fenix.ui.robots.browserScreen
 import org.mozilla.fenix.ui.robots.homeScreen
 import org.mozilla.fenix.ui.robots.navigationToolbar
+import androidx.compose.ui.test.junit4.v2.AndroidComposeTestRule as AndroidComposeTestRuleV2
 
 /**
  *  Tests for verifying basic UI functionality of Enhanced Tracking Protection
@@ -47,14 +47,14 @@ class EnhancedTrackingProtectionTest {
 
     private val mockWebServer get() = fenixTestRule.mockWebServer
 
-    @get:Rule
+    @get:Rule(order = 1)
     val composeTestRule =
-        AndroidComposeTestRule(
+        AndroidComposeTestRuleV2(
             HomeActivityIntentTestRule.withDefaultSettingsOverrides(),
         ) { it.activity }
 
-    @get:Rule
-    val memoryLeaksRule = DetectMemoryLeaksRule()
+    @get:Rule(order = 2)
+    val memoryLeaksRule = DetectMemoryLeaksRule(composeTestRule = { composeTestRule })
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/416046
     @Test
@@ -542,6 +542,28 @@ class EnhancedTrackingProtectionTest {
             verifyCrossOriginCookiesPermissionPrompt(originHost, currentHost)
         }.clickPagePermissionButton(allow = true) {
             verifyPageContent("access granted")
+        }
+    }
+
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/4024999
+    @Test
+    fun verifyTheCookiesStoragePermissionLearnMoreLinkTest() {
+        val genericWebPage = mockWebServer.getGenericAsset(1)
+        val testPage = mockWebServer.url("pages/cross-site-cookies.html").toString().toUri()
+        val originHost = "mozilla-mobile.github.io"
+        val currentHost = "localhost"
+
+        navigationToolbar(composeTestRule) {
+        }.enterURLAndEnterToBrowser(genericWebPage.url) {
+            waitForPageToLoad()
+        }
+        navigationToolbar(composeTestRule) {
+        }.enterURLAndEnterToBrowser(testPage) {
+            waitForPageToLoad()
+        }.clickRequestStorageAccessButton {
+            verifyCrossOriginCookiesPermissionPrompt(originHost, currentHost)
+        }.clickLearnMore {
+            verifyCrossOriginStorageLearnMoreURL()
         }
     }
 }

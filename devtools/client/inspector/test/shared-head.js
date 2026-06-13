@@ -555,7 +555,7 @@ var focusEditableField = async function (
       xOffset,
       yOffset,
       options,
-      editable.ownerGlobal
+      editable.documentGlobal
     );
     options.type = "mouseup";
     EventUtils.synthesizeMouse(
@@ -563,7 +563,7 @@ var focusEditableField = async function (
       xOffset,
       yOffset,
       options,
-      editable.ownerGlobal
+      editable.documentGlobal
     );
   } else {
     EventUtils.synthesizeMouse(
@@ -571,7 +571,7 @@ var focusEditableField = async function (
       xOffset,
       yOffset,
       options,
-      editable.ownerGlobal
+      editable.documentGlobal
     );
   }
   await onFocus;

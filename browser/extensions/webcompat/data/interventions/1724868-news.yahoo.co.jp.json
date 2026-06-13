@@ -8,10 +8,21 @@
   },
   "interventions": [
     {
-      "platforms": ["linux", "android"],
+      "platforms": ["android"],
       "content_scripts": {
         "all_frames": true,
-        "js": ["bug1724868-news.yahoo.co.jp-ua-override.js"]
+        "js": ["use_chrome_useragent.js", "define_userAgentData.js"]
+      }
+    },
+    {
+      "platforms": ["linux"],
+      "content_scripts": {
+        "all_frames": true,
+        "js": [
+          "spoof_as_windows.js",
+          "use_chrome_useragent.js",
+          "define_userAgentData.js"
+        ]
       }
     }
   ]

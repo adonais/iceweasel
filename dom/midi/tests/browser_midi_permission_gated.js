@@ -420,7 +420,7 @@ add_task(async function testRequestMIDIAccess() {
   );
 
   Assert.deepEqual(
-    [{ suspicious_site: "example.com" }],
+    [{ suspicious_site: "example.com", permission_type: "midi-sysex" }],
     AddonTestUtils.getAMGleanEvents("reportSuspiciousSite"),
     "Expected Glean event recorded."
   );

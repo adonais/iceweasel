@@ -4,8 +4,6 @@
 
 package org.mozilla.fenix.settings.labs.middleware
 
-import io.mockk.mockk
-import io.mockk.verify
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -33,7 +31,8 @@ import org.robolectric.RobolectricTestRunner
 class LabsMiddlewareTest {
 
     private lateinit var settings: Settings
-    private val onRestart: () -> Unit = mockk(relaxed = true)
+    private var onRestartCount = 0
+    private val onRestart: () -> Unit = { onRestartCount++ }
 
     @Before
     fun setup() {
@@ -65,7 +64,7 @@ class LabsMiddlewareTest {
 
         store.dispatch(LabsAction.RestartApplication)
 
-        verify { onRestart.invoke() }
+        assertEquals(1, onRestartCount)
     }
 
     @Test

@@ -10,10 +10,9 @@
     {
       "platforms": ["all"],
       "content_scripts": {
-        "js": ["bug2020285-eurocontrol-ua-override.js"],
         "all_frames": true,
         "match_origin_as_fallback": true,
-        "run_at": "document_start"
+        "js": ["spoof_as_windows.js", "use_chrome_useragent.js"]
       }
     }
   ]

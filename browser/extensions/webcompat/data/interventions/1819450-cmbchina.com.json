@@ -10,7 +10,7 @@
     {
       "platforms": ["android"],
       "content_scripts": {
-        "js": ["bug1819450-cmbchina.com-ua-change.js"]
+        "js": ["add_samsung_to_useragent.js"]
       }
     }
   ]

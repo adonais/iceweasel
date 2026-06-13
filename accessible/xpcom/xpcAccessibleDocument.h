@@ -31,6 +31,9 @@ class xpcAccessibleDocument : public xpcAccessibleHyperText,
     MOZ_ASSERT(aIntl->IsDoc());
   }
 
+  xpcAccessibleDocument(const xpcAccessibleDocument&) = delete;
+  xpcAccessibleDocument& operator=(const xpcAccessibleDocument&) = delete;
+
   NS_DECL_ISUPPORTS_INHERITED
 
   // nsIAccessibleDocument
@@ -54,7 +57,7 @@ class xpcAccessibleDocument : public xpcAccessibleHyperText,
   virtual void Shutdown() override;
 
  protected:
-  virtual ~xpcAccessibleDocument() {}
+  virtual ~xpcAccessibleDocument() = default;
 
  private:
   DocAccessible* Intl() {
@@ -86,9 +89,6 @@ class xpcAccessibleDocument : public xpcAccessibleHyperText,
   friend class DocAccessible;
   friend class RemoteAccessible;
   friend class xpcAccessibleGeneric;
-
-  xpcAccessibleDocument(const xpcAccessibleDocument&) = delete;
-  xpcAccessibleDocument& operator=(const xpcAccessibleDocument&) = delete;
 
   nsTHashMap<nsPtrHashKey<const void>, xpcAccessibleGeneric*> mCache;
   bool mRemote;

@@ -275,10 +275,11 @@ static int get_tx_type_cost(const MACROBLOCK *x, const MACROBLOCKD *xd,
 
   const MB_MODE_INFO *mbmi = xd->mi[0];
   const int is_inter = is_inter_block(mbmi);
-  if (get_ext_tx_types(tx_size, is_inter, reduced_tx_set_used) > 1 &&
+  const TxSetType set_type =
+      av1_get_ext_tx_set_type(tx_size, is_inter, reduced_tx_set_used);
+  if (av1_num_ext_tx_set[set_type] > 1 &&
       !xd->lossless[xd->mi[0]->segment_id]) {
-    const int ext_tx_set =
-        get_ext_tx_set(tx_size, is_inter, reduced_tx_set_used);
+    const int ext_tx_set = ext_tx_set_index[is_inter][set_type];
     if (is_inter) {
       if (ext_tx_set > 0)
         return x->mode_costs
@@ -511,7 +512,7 @@ static AOM_FORCE_INLINE int warehouse_efficients_txb(
       &x->coeff_costs.eob_costs[eob_multi_size][plane_type];
   int cost = coeff_costs->txb_skip_cost[txb_skip_ctx][0];
 
-  av1_txb_init_levels(qcoeff, width, height, levels);
+  if (eob > 1) av1_txb_init_levels(qcoeff, width, height, levels);
 
   cost += get_tx_type_cost(x, xd, plane, tx_size, tx_type, reduced_tx_set_used);
 
@@ -525,12 +526,12 @@ static AOM_FORCE_INLINE int warehouse_efficients_txb(
   {
     const int pos = scan[c];
     const tran_low_t v = qcoeff[pos];
-    const int sign = AOMSIGN(v);
-    const int level = (v ^ sign) - sign;
-    const int coeff_ctx = coeff_contexts[pos];
-    cost += coeff_costs->base_eob_cost[coeff_ctx][AOMMIN(level, 3) - 1];
 
     if (v) {
+      const int sign = AOMSIGN(v);
+      const int level = (v ^ sign) - sign;
+      const int coeff_ctx = coeff_contexts[pos];
+      cost += coeff_costs->base_eob_cost[coeff_ctx][AOMMIN(level, 3) - 1];
       // sign bit cost
       if (level > NUM_BASE_LEVELS) {
         const int ctx = get_br_ctx_eob(pos, bhl, tx_class);
@@ -551,15 +552,17 @@ static AOM_FORCE_INLINE int warehouse_efficients_txb(
     const int pos = scan[c];
     const int coeff_ctx = coeff_contexts[pos];
     const tran_low_t v = qcoeff[pos];
+    if (!v) {
+      cost += base_cost[coeff_ctx][0];
+      continue;
+    }
     const int level = abs(v);
     cost += base_cost[coeff_ctx][AOMMIN(level, 3)];
-    if (v) {
-      // sign bit cost
-      cost += av1_cost_literal(1);
-      if (level > NUM_BASE_LEVELS) {
-        const int ctx = get_br_ctx(levels, pos, bhl, tx_class);
-        cost += get_br_cost(level, lps_cost[ctx]);
-      }
+    // sign bit cost
+    cost += av1_cost_literal(1);
+    if (level > NUM_BASE_LEVELS) {
+      const int ctx = get_br_ctx(levels, pos, bhl, tx_class);
+      cost += get_br_cost(level, lps_cost[ctx]);
     }
   }
   // c == 0 after previous loop
@@ -567,11 +570,12 @@ static AOM_FORCE_INLINE int warehouse_efficients_txb(
     const int pos = scan[c];
     const tran_low_t v = qcoeff[pos];
     const int coeff_ctx = coeff_contexts[pos];
-    const int sign = AOMSIGN(v);
-    const int level = (v ^ sign) - sign;
-    cost += base_cost[coeff_ctx][AOMMIN(level, 3)];
-
-    if (v) {
+    if (!v) {
+      cost += base_cost[coeff_ctx][0];
+    } else {
+      const int sign = AOMSIGN(v);
+      const int level = (v ^ sign) - sign;
+      cost += base_cost[coeff_ctx][AOMMIN(level, 3)];
       // sign bit cost
       const int sign01 = (sign ^ sign) - sign;
       const int dc_sign_ctx = txb_ctx->dc_sign_ctx;
@@ -688,9 +692,24 @@ int av1_cost_coeffs_txb(const MACROBLOCK *x, const int plane, const int block,
   const MACROBLOCKD *const xd = &x->e_mbd;
   const TX_CLASS tx_class = tx_type_to_class[tx_type];
 
-  return warehouse_efficients_txb(x, plane, block, tx_size, txb_ctx, p, eob,
-                                  plane_type, coeff_costs, xd, tx_type,
-                                  tx_class, reduced_tx_set_used);
+  switch (tx_class) {
+    case TX_CLASS_2D:
+      return warehouse_efficients_txb(x, plane, block, tx_size, txb_ctx, p, eob,
+                                      plane_type, coeff_costs, xd, tx_type,
+                                      TX_CLASS_2D, reduced_tx_set_used);
+
+    case TX_CLASS_VERT:
+      return warehouse_efficients_txb(x, plane, block, tx_size, txb_ctx, p, eob,
+                                      plane_type, coeff_costs, xd, tx_type,
+                                      TX_CLASS_VERT, reduced_tx_set_used);
+
+    case TX_CLASS_HORIZ:
+      return warehouse_efficients_txb(x, plane, block, tx_size, txb_ctx, p, eob,
+                                      plane_type, coeff_costs, xd, tx_type,
+                                      TX_CLASS_HORIZ, reduced_tx_set_used);
+
+    default: assert(0 && "Invalid TX_CLASS"); return 0;
+  }
 }
 
 int av1_cost_coeffs_txb_laplacian(const MACROBLOCK *x, const int plane,

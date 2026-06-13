@@ -19,7 +19,6 @@ JAR_MANIFESTS += ["jar.mn"]
 EXTRA_JS_MODULES.aboutwelcome += [
     "modules/AboutWelcomeDefaults.sys.mjs",
     "modules/AboutWelcomeTelemetry.sys.mjs",
-    "modules/AWScreenUtils.sys.mjs",
     "modules/AWToolbarUtils.sys.mjs",
 ]
 

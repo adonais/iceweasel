@@ -241,8 +241,7 @@ module.exports = function (config) {
                 branches: 0,
               },
             /**
-             * SectionFollowButton.jsx manages hover/focus state for the follow button UI.
-             * The follow/unfollow callbacks it invokes are covered by CardSections.test.jsx.
+             * SectionFollowButton.jsx is covered by Jest tests
              */
             "content-src/components/DiscoveryStreamComponents/SectionFollowButton/SectionFollowButton.jsx":
               {
@@ -319,8 +318,71 @@ module.exports = function (config) {
                 functions: 0,
                 branches: 0,
               },
+            // Coverage for this component lives in Jest (test/jest/content-src/components/DiscoveryStreamComponents/InterestPicker.test.jsx)
+            "content-src/components/Nova/InterestPicker/InterestPicker.jsx": {
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
+            },
             // Coverage for this component lives in Jest (test/jest/content-src/components/Widgets/Weather.test.jsx)
             "content-src/components/Widgets/Weather/Weather.jsx": {
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
+            },
+            // Coverage for this component lives in Jest (test/jest/content-src/components/Widgets/WidgetsSidebar.test.jsx)
+            "content-src/components/Widgets/WidgetsSidebar.jsx": {
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
+            },
+            // Coverage for this module lives in Jest (test/jest/content-src/components/Widgets/WidgetsRegistry.test.jsx)
+            "common/WidgetsRegistry.mjs": {
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
+            },
+            // Coverage for this component lives in Jest
+            "content-src/components/Widgets/WidgetsComponentRegistry.jsx": {
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
+            },
+            // Coverage for this component lives in Jest (test/jest/content-src/components/Widgets/Clocks.test.jsx)
+            "content-src/components/Widgets/Clocks/Clocks.jsx": {
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
+            },
+            // Coverage for this component lives in Jest (test/jest/content-src/components/Widgets/AddClockForm.test.jsx)
+            "content-src/components/Widgets/Clocks/AddClockForm.jsx": {
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
+            },
+            // Coverage for this component lives in Jest (test/jest/content-src/components/Widgets/EditClocksPanel.test.jsx)
+            "content-src/components/Widgets/Clocks/EditClocksPanel.jsx": {
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
+            },
+            // Coverage for this component lives in Jest (test/jest/content-src/components/Widgets/ClocksRow.test.jsx)
+            "content-src/components/Widgets/Clocks/ClocksRow.jsx": {
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
+            },
+            // Coverage for this module lives in Jest (test/jest/content-src/components/Widgets/ClocksHelpers.test.jsx)
+            "content-src/components/Widgets/Clocks/ClocksHelpers.mjs": {
               statements: 0,
               lines: 0,
               functions: 0,
@@ -385,6 +447,12 @@ module.exports = function (config) {
               lines: 39,
               functions: 28,
               branches: 25,
+            },
+            "content-src/components/Widgets/SportsWidget/SportsWidget.jsx": {
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
             },
             "content-src/components/**/*.jsx": {
               statements: 51.1,

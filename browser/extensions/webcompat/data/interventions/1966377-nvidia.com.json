@@ -6,12 +6,13 @@
       "matches": ["*://*.nvidia.com/*"]
     }
   },
+  "css": {
+    "fix_overflowing_layout": ".nv-carousel-home .cmp-carousel[data-cmp-scroll-width] .cmp-carousel__content:after { max-width: 100%; }"
+  },
   "interventions": [
     {
       "platforms": ["android"],
-      "content_scripts": {
-        "css": ["bug1966377-nvidia.com-fix-overflowing-layout.css"]
-      }
+      "css": ["fix_overflowing_layout"]
     }
   ]
 }

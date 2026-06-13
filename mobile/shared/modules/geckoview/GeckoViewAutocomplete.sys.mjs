@@ -452,7 +452,7 @@ export const GeckoViewAutocomplete = {
         return;
       }
 
-      const prompt = new lazy.GeckoViewPrompter(aBrowser.ownerGlobal);
+      const prompt = new lazy.GeckoViewPrompter(aBrowser.documentGlobal);
       prompt.asyncShowPrompt(
         {
           type: "Autocomplete:Select:Login",
@@ -493,7 +493,7 @@ export const GeckoViewAutocomplete = {
         return;
       }
 
-      const prompt = new lazy.GeckoViewPrompter(aBrowser.ownerGlobal);
+      const prompt = new lazy.GeckoViewPrompter(aBrowser.documentGlobal);
       prompt.asyncShowPrompt(
         {
           type: "Autocomplete:Select:CreditCard",
@@ -534,7 +534,7 @@ export const GeckoViewAutocomplete = {
         return;
       }
 
-      const prompt = new lazy.GeckoViewPrompter(aBrowser.ownerGlobal);
+      const prompt = new lazy.GeckoViewPrompter(aBrowser.documentGlobal);
       prompt.asyncShowPrompt(
         {
           type: "Autocomplete:Select:Address",

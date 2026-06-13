@@ -15,16 +15,18 @@ namespace layers {
 class APZInputBridgeChild;
 class RemoteCompositorSession;
 
-class APZCTreeManagerChild : public IAPZCTreeManager,
-                             public PAPZCTreeManagerChild {
+class APZCTreeManagerChild final : public IAPZCTreeManager,
+                                   public PAPZCTreeManagerChild {
   friend class PAPZCTreeManagerChild;
   using TapType = GeckoContentController_TapType;
 
  public:
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(APZCTreeManagerChild, final);
+
   APZCTreeManagerChild();
 
   void SetCompositorSession(RemoteCompositorSession* aSession);
-  void SetInputBridge(APZInputBridgeChild* aInputBridge);
+  void SetInputBridge(RefPtr<APZInputBridgeChild>&& aInputBridge);
   void Destroy();
 
   void SetKeyboardMap(const KeyboardMap& aKeyboardMap) override;
@@ -64,10 +66,6 @@ class APZCTreeManagerChild : public IAPZCTreeManager,
 
   APZInputBridge* InputBridge() override;
 
-  void AddIPDLReference();
-  void ReleaseIPDLReference();
-  void ActorDestroy(ActorDestroyReason aWhy) override;
-
  protected:
   mozilla::ipc::IPCResult RecvNotifyPinchGesture(
       const PinchGestureType& aType, const ScrollableLayerGuid& aGuid,
@@ -85,7 +83,6 @@ class APZCTreeManagerChild : public IAPZCTreeManager,
  private:
   MOZ_NON_OWNING_REF RemoteCompositorSession* mCompositorSession;
   RefPtr<APZInputBridgeChild> mInputBridge;
-  bool mIPCOpen;
 };
 
 }  // namespace layers

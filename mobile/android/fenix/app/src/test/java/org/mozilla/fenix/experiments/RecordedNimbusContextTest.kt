@@ -15,7 +15,6 @@ import kotlinx.serialization.json.putJsonArray
 import kotlinx.serialization.json.putJsonObject
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -24,6 +23,7 @@ import org.mozilla.experiments.nimbus.internal.validateEventQueries
 import org.mozilla.fenix.helpers.FenixGleanTestRule
 import org.mozilla.fenix.utils.Settings
 import org.robolectric.RobolectricTestRunner
+import kotlin.test.assertNotNull
 import org.mozilla.fenix.GleanMetrics.NimbusSystem as GleanNimbus
 
 @RunWith(RobolectricTestRunner::class)

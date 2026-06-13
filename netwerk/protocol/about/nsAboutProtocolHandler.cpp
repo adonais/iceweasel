@@ -27,28 +27,6 @@ namespace net {
 
 static NS_DEFINE_CID(kNestedAboutURICID, NS_NESTEDABOUTURI_CID);
 
-static bool IsSafeToLinkForUntrustedContent(nsIURI* aURI) {
-  nsAutoCString path;
-  aURI->GetPathQueryRef(path);
-
-  int32_t f = path.FindChar('#');
-  if (f >= 0) {
-    path.SetLength(f);
-  }
-
-  f = path.FindChar('?');
-  if (f >= 0) {
-    path.SetLength(f);
-  }
-
-  ToLowerCase(path);
-
-  // The about modules for these URL types have the
-  // URI_SAFE_FOR_UNTRUSTED_CONTENT and MAKE_LINKABLE flags set.
-  return path.EqualsLiteral("blank") || path.EqualsLiteral("logo") ||
-         path.EqualsLiteral("srcdoc");
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 
 NS_IMPL_ISUPPORTS(nsAboutProtocolHandler, nsIProtocolHandler,
@@ -102,36 +80,34 @@ nsresult nsAboutProtocolHandler::CreateNewURI(const nsACString& aSpec,
                                               nsIURI* aBaseURI,
                                               nsIURI** aResult) {
   *aResult = nullptr;
-  nsresult rv;
 
   // Use a simple URI to parse out some stuff first
   nsCOMPtr<nsIURI> url;
-  rv = NS_MutateURI(new nsSimpleURI::Mutator()).SetSpec(aSpec).Finalize(url);
+  MOZ_TRY(
+      NS_MutateURI(new nsSimpleURI::Mutator()).SetSpec(aSpec).Finalize(url));
 
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
+  nsAutoCString name;
+  MOZ_TRY(NS_GetAboutModuleName(url, name));
 
-  if (IsSafeToLinkForUntrustedContent(url)) {
+  // The about modules for these URL types have the
+  // URI_SAFE_FOR_UNTRUSTED_CONTENT and MAKE_LINKABLE flags set.
+  if (name.EqualsLiteral("blank") || name.EqualsLiteral("srcdoc")) {
     // We need to indicate that this baby is safe.  Use an inner URI that
     // no one but the security manager will see.  Make sure to preserve our
     // path, in case someone decides to hardcode checks for particular
     // about: URIs somewhere.
     nsAutoCString spec;
-    rv = url->GetPathQueryRef(spec);
-    NS_ENSURE_SUCCESS(rv, rv);
+    MOZ_TRY(url->GetPathQueryRef(spec));
 
     spec.InsertLiteral("moz-safe-about:", 0);
 
     nsCOMPtr<nsIURI> inner;
-    rv = NS_NewURI(getter_AddRefs(inner), spec);
-    NS_ENSURE_SUCCESS(rv, rv);
+    MOZ_TRY(NS_NewURI(getter_AddRefs(inner), spec));
 
-    rv = NS_MutateURI(new nsNestedAboutURI::Mutator())
-             .Apply(&nsINestedAboutURIMutator::InitWithBase, inner, aBaseURI)
-             .SetSpec(aSpec)
-             .Finalize(url);
-    NS_ENSURE_SUCCESS(rv, rv);
+    MOZ_TRY(NS_MutateURI(new nsNestedAboutURI::Mutator())
+                .Apply(&nsINestedAboutURIMutator::InitWithBase, inner, aBaseURI)
+                .SetSpec(aSpec)
+                .Finalize(url));
   }
 
   url.swap(*aResult);
@@ -341,8 +317,7 @@ nsNestedAboutURI::Write(nsIObjectOutputStream* aStream) {
   return NS_OK;
 }
 
-NS_IMETHODIMP_(void)
-nsNestedAboutURI::Serialize(mozilla::ipc::URIParams& aParams) {
+void nsNestedAboutURI::Serialize(mozilla::ipc::URIParams& aParams) {
   using namespace mozilla::ipc;
 
   NestedAboutURIParams params;

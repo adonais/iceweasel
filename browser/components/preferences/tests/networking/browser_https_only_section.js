@@ -20,7 +20,9 @@ add_task(async function httpsOnlyRadioGroupIsWorking() {
   await SpecialPowers.setBoolPref("dom.security.https_only_mode", false);
   await SpecialPowers.setBoolPref("dom.security.https_only_mode_pbm", true);
 
-  await openPreferencesViaOpenPreferencesAPI("privacy", { leaveOpen: true });
+  await openPreferencesViaOpenPreferencesAPI(CONNECTION_SECURITY_PREF_PANE, {
+    leaveOpen: true,
+  });
 
   const doc = gBrowser.selectedBrowser.contentDocument;
   const radioGroup = doc.getElementById("httpsOnlyRadioGroup");
@@ -111,7 +113,9 @@ add_task(async function httpsOnlyCorrectLabels() {
   // Load the page with HTTPS-First disabled and then enable it while on the
   // page
   await SpecialPowers.setBoolPref("dom.security.https_first", false);
-  await openPreferencesViaOpenPreferencesAPI("privacy", { leaveOpen: true });
+  await openPreferencesViaOpenPreferencesAPI(CONNECTION_SECURITY_PREF_PANE, {
+    leaveOpen: true,
+  });
   await ensureL10nIds(false);
   await SpecialPowers.setBoolPref("dom.security.https_first", true);
   await ensureL10nIds(true);
@@ -120,7 +124,9 @@ add_task(async function httpsOnlyCorrectLabels() {
   // Load the page with HTTPS-First enabled and then disable it while on the
   // page
   await SpecialPowers.setBoolPref("dom.security.https_first", true);
-  await openPreferencesViaOpenPreferencesAPI("privacy", { leaveOpen: true });
+  await openPreferencesViaOpenPreferencesAPI(CONNECTION_SECURITY_PREF_PANE, {
+    leaveOpen: true,
+  });
   await ensureL10nIds(true);
   await SpecialPowers.setBoolPref("dom.security.https_first", false);
   await ensureL10nIds(false);

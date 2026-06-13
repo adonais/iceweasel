@@ -40,6 +40,8 @@ class PersistenceScope {
  public:
   PersistenceScope() : mData(Null()) {}
 
+  bool operator==(const PersistenceScope& aOther) = delete;
+
   // XXX Consider renaming these static methods to Create
   static PersistenceScope CreateFromValue(PersistenceType aValue) {
     return PersistenceScope(std::move(Value(aValue)));
@@ -157,8 +159,6 @@ class PersistenceScope {
 
     return mData.match(SetMatcher(aOther));
   }
-
-  bool operator==(const PersistenceScope& aOther) = delete;
 };
 
 bool MatchesPersistentPersistenceScope(

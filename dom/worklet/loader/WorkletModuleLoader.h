@@ -83,6 +83,10 @@ class WorkletModuleLoader : public JS::loader::ModuleLoaderBase {
                              ModuleLoadRequest* aRequest,
                              JS::MutableHandle<JSObject*> aModuleScript);
 
+  nsresult CreateTextModule(JSContext* aCx, JS::CompileOptions& aOptions,
+                            ModuleLoadRequest* aRequest,
+                            JS::MutableHandle<JSObject*> aModuleScript);
+
   void OnModuleLoadComplete(JS::loader::ModuleLoadRequest* aRequest) override;
 
   nsresult GetResolveFailureMessage(JS::loader::ResolveError aError,
@@ -94,7 +98,8 @@ class WorkletModuleLoader : public JS::loader::ModuleLoaderBase {
     // If moduleType is "css" and the CSSStyleSheet interface is not exposed in
     // settings's realm, then return false.
     return aModuleType == JS::ModuleType::JavaScript ||
-           aModuleType == JS::ModuleType::JSON;
+           aModuleType == JS::ModuleType::JSON ||
+           aModuleType == JS::ModuleType::Text;
   }
 
   // A hashtable to map a nsIURI(from main thread) to a ModuleLoadRequest(in

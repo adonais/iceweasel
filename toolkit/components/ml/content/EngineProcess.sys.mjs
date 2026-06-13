@@ -165,13 +165,18 @@ export const FEATURES = {
     engineId: "smart-tab-topic-engine",
     fluentId: "mlmodel-smart-tab-topic-engine",
   },
+  // see toolkit/components/formautofill/shared/FormAutofillML.sys.mjs
+  "formfill-classification": {
+    engineId: "formfill-classification-engine",
+    fluentId: "mlmodel-formfill-engine",
+  },
   // see toolkit/components/ml/content/nlp/EmbeddingsGenerator.sys.mjs
   "simple-text-embedder": {
     engineId: "simple-text-embedder-engine",
   },
   // see browser/components/genai/LinkPreviewModel.sys.mjs
   "link-preview": {
-    engineId: "wllamapreview",
+    engineId: "link-preview",
     fluentId: "mlmodel-link-preview",
   },
   // see browser/components/aiwindow/models/IntentClassifier.sys.mjs
@@ -1022,7 +1027,22 @@ export class PipelineOptions {
   }
 
   /**
-   * Checks if this PipelineOptions instance is equal to another.
+   * Per-request metadata fields that must not influence engine reuse.
+   * Callers differing only in these values should share one engine.
+   */
+  static #nonIdentityKeys = new Set([
+    "engineId",
+    "featureId",
+    "flowId",
+    "logLevel",
+    "timeoutMS",
+    "serviceType",
+    "purpose",
+  ]);
+
+  /**
+   * Checks if this PipelineOptions is equivalent to another for engine-reuse
+   * purposes. Fields in #nonIdentityKeys are intentionally ignored.
    *
    * @param {PipelineOptions} other - The other PipelineOptions instance to compare with.
    * @returns {boolean} True if the instances are equal, false otherwise.
@@ -1033,6 +1053,7 @@ export class PipelineOptions {
     }
     const options = this.getOptions();
     const otherOptions = other.getOptions();
+    const skip = PipelineOptions.#nonIdentityKeys;
 
     const isEqual = (val1, val2) => {
       if (val1 === val2) {
@@ -1052,8 +1073,8 @@ export class PipelineOptions {
       return keys1.every(key => isEqual(val1[key], val2[key]));
     };
 
-    return Object.keys(options).every(key =>
-      isEqual(options[key], otherOptions[key])
+    return Object.keys(options).every(
+      key => skip.has(key) || isEqual(options[key], otherOptions[key])
     );
   }
 }

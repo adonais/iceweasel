@@ -85,7 +85,7 @@ class CacheMaybe : public AbstractCache {
 
   template <typename U>
   CacheMaybe& operator=(U&& rhs) {
-    mVal.emplace(std::move(rhs));
+    mVal.emplace(std::forward<U>(rhs));
     return *this;
   }
 

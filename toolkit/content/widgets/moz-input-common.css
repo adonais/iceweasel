@@ -93,7 +93,7 @@
   }
 
   /* Undocumented hack for AI controls, do not use, it WILL be removed. (bug 2012250) */
-  h2.text {
+  h3.text {
     display: inline-block;
     margin: 0;
   }

@@ -43,12 +43,15 @@ import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.TabCollectionStorage
 import org.mozilla.fenix.components.accounts.FenixFxAEntryPoint
 import org.mozilla.fenix.components.appstate.AppAction
+import org.mozilla.fenix.components.share.ShareSource
 import org.mozilla.fenix.components.usecases.FenixBrowserUseCases
+import org.mozilla.fenix.components.usecases.ShareUseCases
 import org.mozilla.fenix.ext.DEFAULT_ACTIVE_DAYS
 import org.mozilla.fenix.ext.openToBrowser
 import org.mozilla.fenix.ext.potentialInactiveTabs
 import org.mozilla.fenix.home.HomeScreenViewModel.Companion.ALL_NORMAL_TABS
 import org.mozilla.fenix.home.HomeScreenViewModel.Companion.ALL_PRIVATE_TABS
+import org.mozilla.fenix.share.ShareFragment
 import org.mozilla.fenix.tabstray.SyncedTabsController
 import org.mozilla.fenix.tabstray.browser.InactiveTabsController
 import org.mozilla.fenix.tabstray.browser.TabsTrayFabController
@@ -69,7 +72,10 @@ internal const val INACTIVE_TABS_FEATURE_NAME = "Inactive tabs"
 /**
  * Controller for handling any actions in the tab manager.
  */
-interface TabManagerController : SyncedTabsController, InactiveTabsController, TabsTrayFabController {
+interface TabManagerController :
+    SyncedTabsController,
+    InactiveTabsController,
+    TabsTrayFabController {
 
     /**
      * Set the current visible tab page to the provided [page].
@@ -125,15 +131,6 @@ interface TabManagerController : SyncedTabsController, InactiveTabsController, T
      * Shares the current set of selected tabs.
      */
     fun handleShareSelectedTabsClicked()
-
-    /**
-     * Moves [tabId] next to before/after [targetId]
-     *
-     * @param tabId The tab to be moved.
-     * @param targetId The id of the tab that the moved tab will be placed next to.
-     * @param placeAfter [Boolean] indicating whether to place the tab before or after the target.
-     */
-    fun handleTabsMove(tabId: String, targetId: String?, placeAfter: Boolean)
 
     /**
      * Navigate from the Tab Manager to Recently Closed section in the History fragment.
@@ -226,8 +223,9 @@ interface TabManagerController : SyncedTabsController, InactiveTabsController, T
  * @param profiler [Profiler] used to add profiler markers.
  * @param tabsUseCases Use case wrapper for interacting with tabs.
  * @param fenixBrowserUseCases [FenixBrowserUseCases] used for adding new homepage tabs.
- * @param bookmarksStorage Storage layer for retrieving and saving bookmarks.
+ * @param shareUseCases [ShareUseCases] for sharing content via the system share sheet or the in-app [ShareFragment].
  * @param closeSyncedTabsUseCases Use cases for closing synced tabs.
+ * @param bookmarksStorage Storage layer for retrieving and saving bookmarks.
  * @param ioDispatcher [CoroutineContext] used for storage operations.
  * @param mainDispatcher [CoroutineContext] used for UI operations.
  * @param collectionStorage Storage layer for interacting with collections.
@@ -253,8 +251,9 @@ class DefaultTabManagerController(
     private val profiler: Profiler?,
     private val tabsUseCases: TabsUseCases,
     private val fenixBrowserUseCases: FenixBrowserUseCases,
-    private val bookmarksStorage: BookmarksStorage,
+    private val shareUseCases: ShareUseCases,
     private val closeSyncedTabsUseCases: CloseTabsUseCases,
+    private val bookmarksStorage: BookmarksStorage,
     private val ioDispatcher: CoroutineContext = Dispatchers.IO,
     private val mainDispatcher: CoroutineContext = Dispatchers.Main,
     private val collectionStorage: TabCollectionStorage,
@@ -399,16 +398,6 @@ class DefaultTabManagerController(
         showUndoSnackbarForTab(isPrivate)
     }
 
-    override fun handleTabsMove(
-        tabId: String,
-        targetId: String?,
-        placeAfter: Boolean,
-    ) {
-        if (targetId != null && tabId != targetId) {
-            tabsUseCases.moveTabs(listOf(tabId), targetId, placeAfter)
-        }
-    }
-
     override fun handleNavigateToRecentlyClosed() {
         navController.navigate(R.id.recentlyClosedFragment)
     }
@@ -520,10 +509,17 @@ class DefaultTabManagerController(
         val data = tabs.map {
             ShareData(url = it.url, title = it.title)
         }
-        val directions = TabManagementFragmentDirections.actionGlobalShareFragment(
-            data = data.toTypedArray(),
+
+        shareUseCases.shareItems(
+            items = data,
+            source = ShareSource.TABS_TRAY,
+            isPrivate = tabs.any { it.private },
+            navigateToShareFragment = {
+                navController.navigate(
+                    TabManagementFragmentDirections.actionGlobalShareFragment(data = data.toTypedArray()),
+                )
+            },
         )
-        navController.navigate(directions)
     }
 
     @VisibleForTesting
@@ -565,6 +561,7 @@ class DefaultTabManagerController(
             !tab.private && tabsTrayStore.state.mode.selectedTabs.isEmpty()
         ) {
             Collections.longPress.record(NoExtras())
+            TabsTray.tabLongPress.record(NoExtras())
             tabsTrayStore.dispatch(TabsTrayAction.AddSelectTab(tab))
             true
         } else {
@@ -594,7 +591,7 @@ class DefaultTabManagerController(
         }
     }
 
-     private fun selectedTabisHome(): Boolean {
+    private fun selectedTabisHome(): Boolean {
         return browserStore.state.selectedTab?.content?.url == ABOUT_HOME_URL
     }
 

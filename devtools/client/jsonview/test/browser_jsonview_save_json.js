@@ -8,7 +8,7 @@ const saveButton = "button.save";
 const prettifyButton = "button.prettyprint";
 
 const { MockFilePicker } = SpecialPowers;
-MockFilePicker.init(window.browsingContext);
+MockFilePicker.init();
 MockFilePicker.returnValue = MockFilePicker.returnOK;
 
 Services.scriptloader.loadSubScript(

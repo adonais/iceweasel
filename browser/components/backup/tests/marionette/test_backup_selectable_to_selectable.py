@@ -142,6 +142,7 @@ class BackupSelectableToSelectableTest(BackupTestBase):
         self.logger.info("Post-recovery complete")
 
         self.init_selectable_profile_service()
+        self.assert_profile_source("backup")
 
         recovered_store_id = self.get_store_id()
         self.logger.info(f"Recovered profile storeID: {recovered_store_id}")

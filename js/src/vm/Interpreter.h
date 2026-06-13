@@ -253,7 +253,6 @@ class MOZ_RAII RunState {
   InterpreterFrame* pushInterpreterFrame(JSContext* cx);
   inline void setReturnValue(const Value& v);
 
- private:
   RunState(const RunState& other) = delete;
   RunState(const ExecuteState& other) = delete;
   RunState(const InvokeState& other) = delete;

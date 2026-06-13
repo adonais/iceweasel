@@ -67,12 +67,12 @@ export class AIChatContentParent extends JSWindowActorParent {
     this.sendAsyncMessage("AIChatContent:SeenUrls", payload);
   }
 
+  setGeneratingOnChatContent(isGenerating) {
+    this.sendAsyncMessage("AIChatContent:SetGenerating", { isGenerating });
+  }
+
   receiveMessage({ data, name }) {
     switch (name) {
-      case "aiChatContentActor:search":
-        this.#handleSearchFromChild(data);
-        break;
-
       case "aiChatContentActor:followUp":
         this.#handleFollowUpFromChild(data);
         break;
@@ -97,6 +97,10 @@ export class AIChatContentParent extends JSWindowActorParent {
         this.#handleAccountSignIn();
         break;
 
+      case "AIChatContent:ToolUIUpdate":
+        this.#handleToolUIUpdate(data);
+        break;
+
       default:
         console.warn(`AIChatContentParent received unknown message: ${name}`);
         break;
@@ -107,15 +111,6 @@ export class AIChatContentParent extends JSWindowActorParent {
   #notifyContentReady() {
     const aiWindow = this.#getAIWindowElement();
     aiWindow?.onContentReady();
-  }
-
-  #handleSearchFromChild(data) {
-    try {
-      const { topChromeWindow } = this.browsingContext;
-      lazy.AIWindow.performSearch(data, topChromeWindow);
-    } catch (e) {
-      console.warn("Could not perform search from AI Window chat", e);
-    }
   }
 
   #handleFooterActionFromChild(data) {
@@ -236,6 +231,15 @@ export class AIChatContentParent extends JSWindowActorParent {
       aiWindow.onQuickPromptClicked(data.text, false);
     } catch (e) {
       console.warn("Could not submit follow-up from AI Window chat", e);
+    }
+  }
+
+  #handleToolUIUpdate(data) {
+    try {
+      const aiWindow = this.#getAIWindowElement();
+      aiWindow.handleToolUIUpdate(data);
+    } catch (e) {
+      console.warn("Could not handle tool UI update from AI Window chat", e);
     }
   }
 }

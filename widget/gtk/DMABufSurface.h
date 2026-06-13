@@ -170,9 +170,15 @@ class DMABufSurface {
 
   void FenceSet();
   void FenceWait();
+  static void FenceWait(RefPtr<mozilla::gl::GLContext> aGL,
+                        RefPtr<mozilla::gfx::FileHandleWrapper> aSyncFd);
   void FenceDelete();
+  static void FenceDelete(RefPtr<mozilla::gl::GLContext> aGL, EGLSyncKHR aSync);
+  void FenceDeleteLocked(const mozilla::MutexAutoLock& aProofOfLock)
+      MOZ_REQUIRES(mSurfaceLock);
 
   void MaybeSemaphoreWait(GLuint aGlTexture);
+  void SetSemaphoreFd(int aDuppedRawFd, bool aIsSyncFd = false);
 
   // Set and get a global surface UID. The UID is shared across process
   // and it's used to track surface lifetime in various parts of rendering
@@ -304,6 +310,7 @@ class DMABufSurface {
   RefPtr<mozilla::gfx::FileHandleWrapper> mSyncFd;
   EGLSyncKHR mSync;
   RefPtr<mozilla::gfx::FileHandleWrapper> mSemaphoreFd;
+  bool mSemaphoreFdIsSyncFd = false;
   // mGL is tied to textures/eglimages created over dmabuf and it's null for
   // dmabuf without textures/eglimages.
   RefPtr<mozilla::gl::GLContext> mGL;
@@ -394,10 +401,10 @@ class DMABufSurfaceRGBA final : public DMABufSurface {
 #endif
 
   DMABufSurfaceRGBA();
-
- private:
   DMABufSurfaceRGBA(const DMABufSurfaceRGBA&) = delete;
   DMABufSurfaceRGBA& operator=(const DMABufSurfaceRGBA&) = delete;
+
+ private:
   ~DMABufSurfaceRGBA();
 
   bool Create(mozilla::gl::GLContext* aGLContext, int aWidth, int aHeight,
@@ -430,6 +437,9 @@ class DMABufSurfaceRGBA final : public DMABufSurface {
 
 class DMABufSurfaceYUV final : public DMABufSurface {
  public:
+  DMABufSurfaceYUV(const DMABufSurfaceYUV&) = delete;
+  DMABufSurfaceYUV& operator=(const DMABufSurfaceYUV&) = delete;
+
   static already_AddRefed<DMABufSurfaceYUV> CreateYUVSurface(
       const VADRMPRIMESurfaceDescriptor& aDesc, int aWidth, int aHeight);
   static already_AddRefed<DMABufSurfaceYUV> CopyYUVSurface(
@@ -458,6 +468,10 @@ class DMABufSurfaceYUV final : public DMABufSurface {
 
   bool CreateTexture(mozilla::gl::GLContext* aGLContext,
                      int aPlane = 0) override;
+  bool CreateTextureViaCopyYUV(mozilla::gl::GLContext* aGLContext,
+                               int aPlane = 0);
+  bool CreateTextureViaCopyP010(mozilla::gl::GLContext* aGLContext,
+                                int aPlane = 0);
   void ReleaseTextures() override;
 
   void ReleaseSurface() override;
@@ -488,8 +502,6 @@ class DMABufSurfaceYUV final : public DMABufSurface {
 #endif
 
  private:
-  DMABufSurfaceYUV(const DMABufSurfaceYUV&) = delete;
-  DMABufSurfaceYUV& operator=(const DMABufSurfaceYUV&) = delete;
   ~DMABufSurfaceYUV();
 
   bool Create(const mozilla::layers::SurfaceDescriptor& aDesc) override;

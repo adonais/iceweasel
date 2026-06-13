@@ -43,7 +43,8 @@ static SurfaceDescriptor MakeRGBADescriptor(RefPtr<FileHandleWrapper> fd) {
       DMABufSurface::SURFACE_RGBA, 0, modifiers, 0, fds, width, height, width,
       height, format, strides, offsets, gfx::YUVColorSpace::BT601,
       gfx::ColorRange::LIMITED, gfx::ColorSpace2::UNKNOWN,
-      gfx::TransferFunction::Default, 0, fence, 1, 0, refCount, nullptr));
+      gfx::TransferFunction::Default, 0, fence, 1, 0, refCount, nullptr,
+      false));
 }
 
 // Matches what DMABufSurfaceYUV::Serialize() produces for a two-plane 128×128
@@ -66,7 +67,7 @@ static SurfaceDescriptor MakeYUVDescriptor(RefPtr<FileHandleWrapper> fd0,
       height, widthAligned, heightAligned, format, strides, offsets,
       gfx::YUVColorSpace::BT601, gfx::ColorRange::LIMITED,
       gfx::ColorSpace2::UNKNOWN, gfx::TransferFunction::Default, 0, fence, 1, 0,
-      refCount, nullptr));
+      refCount, nullptr, false));
 }
 
 // Run 3 serialize → import cycles for a single-plane RGBA surface.

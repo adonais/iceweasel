@@ -51,7 +51,7 @@ inline void DocAccessible::FireDelayedEvent(AccEvent* aEvent) {
 
 inline void DocAccessible::FireDelayedEvent(uint32_t aEventType,
                                             LocalAccessible* aTarget) {
-  RefPtr<AccEvent> event = new AccEvent(aEventType, aTarget);
+  auto event = MakeRefPtr<AccEvent>(aEventType, aTarget);
   FireDelayedEvent(event);
 }
 
@@ -82,8 +82,8 @@ inline void DocAccessible::NotifyOfLoad(uint32_t aLoadEventType) {
   // If the document is loaded completely then network activity was presumingly
   // caused by file loading. Fire busy state change event.
   if (HasLoadState(eCompletelyLoaded) && IsLoadEventTarget()) {
-    RefPtr<AccEvent> stateEvent =
-        new AccStateChangeEvent(this, states::BUSY, false);
+    auto stateEvent =
+        MakeRefPtr<AccStateChangeEvent>(this, states::BUSY, false);
     FireDelayedEvent(stateEvent);
   }
 }

@@ -634,7 +634,7 @@ void nsAttrValue::ToString(nsAString& aResult) const {
     case eInteger: {
       nsAutoString intStr;
       intStr.AppendInt(GetIntegerValue());
-      aResult = intStr;
+      aResult = std::move(intStr);
 
       break;
     }

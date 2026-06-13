@@ -101,6 +101,10 @@ tasks:
         description: "Crashtest run"
         schedules-component: crashtest
         treeherder-symbol: R(C)
+        worker-type:
+            by-test-platform:
+                .*windows.*: win11-64-25h2
+                default: default
         test-manifest-loader:
             by-test-platform:
                 linux.*64-tsan(-qr)?/opt: default
@@ -177,6 +181,10 @@ tasks:
         description: "Crashtest Webrender run"
         schedules-component: crashtest
         treeherder-symbol: R(C)
+        worker-type:
+            by-test-platform:
+                .*windows.*: win11-64-25h2
+                default: default
         test-manifest-loader: null  # don't load tests in the taskgraph
         chunks: 1
         variants:
@@ -193,6 +201,10 @@ tasks:
         description: "JS Reftest run"
         schedules-component: jsreftest
         treeherder-symbol: R(J)
+        worker-type:
+            by-test-platform:
+                .*windows.*: win11-64-25h2
+                default: default
         instance-size:
             by-test-platform:
                 windows.*-asan.*: large
@@ -204,6 +216,7 @@ tasks:
                 android-hw.*/opt: 6
                 windows.*-asan.*/opt: 6
                 windows.*-ccov.*/opt: 5
+                windows.*/debug: 4
                 windows.*/opt: 2
                 linux.*64-ccov.*/.*: 5
                 linux2404-64/opt: 4
@@ -232,6 +245,11 @@ tasks:
                 default:
                     by-test-platform:
                         android.*/.*: []
+                        # Compositor shutdown crash in DisconnectApzcTreeManager
+                        # on headless macOS aarch64 VM workers (Bug 2038639 family).
+                        # opt builds finish before the crash window; debug consistently
+                        # hits it after every test in the chunk has passed.
+                        macosx1500-aarch64-vms/debug: []
                         default: built-projects
         virtualization: virtual
         tier:
@@ -246,6 +264,10 @@ tasks:
         description: "Reftest run"
         treeherder-symbol: R(R)
         virtualization: virtual-with-gpu
+        worker-type:
+            by-test-platform:
+                .*windows.*: win11-64-25h2-gpu
+                default: default
         chunks: dynamic
         default-chunks:
             by-test-platform:
@@ -347,6 +369,10 @@ tasks:
     reftest-qr:
         description: "Reftest webrender run"
         treeherder-symbol: R(R)
+        worker-type:
+            by-test-platform:
+                .*windows.*: win11-64-25h2
+                default: default
         chunks: 2
         test-manifest-loader: null  # don't load tests in the taskgraph
         variants:

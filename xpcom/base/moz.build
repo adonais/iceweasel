@@ -65,6 +65,7 @@ XPCOM_MANIFESTS += [
 EXPORTS += [
     "!ErrorList.h",
     "!ErrorNamesInternal.h",
+    "!extra_xpc_msg.h",
     "CodeAddressService.h",
     "nsAlgorithm.h",
     "nsAutoRef.h",
@@ -264,6 +265,12 @@ GeneratedFile(
     "error_list.json",
     script="ErrorList.py",
     entry_point="error_list_json",
+    inputs=extra_errors,
+)
+GeneratedFile(
+    "extra_xpc_msg.h",
+    script="ErrorList.py",
+    entry_point="extra_xpc_msg",
     inputs=extra_errors,
 )
 

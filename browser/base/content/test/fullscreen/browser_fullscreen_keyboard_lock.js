@@ -4,7 +4,10 @@ add_setup(async () => {
   await SpecialPowers.pushPrefEnv({
     set: [
       ["dom.fullscreen.keyboard_lock.enabled", true],
-      ["dom.fullscreen.keyboard_lock.long_press_interval", 0],
+      [
+        "dom.fullscreen.keyboard_lock.long_press_interval",
+        KEYBOARD_LOCK_LONGPRESS_TIME,
+      ],
     ],
   });
 });
@@ -25,7 +28,7 @@ add_task(async function test_escape_doesnt_exit_keyboardlock() {
       });
     });
 
-    EventUtils.synthesizeKey("KEY_Escape", {}, browser.ownerGlobal);
+    EventUtils.synthesizeKey("KEY_Escape", {}, browser.documentGlobal);
     await SpecialPowers.spawn(browser, [], async () => {
       await content.window.escapePressed;
     });
@@ -40,9 +43,8 @@ add_task(async function test_escape_doesnt_exit_keyboardlock() {
       false,
       () => !document.fullscreenElement
     );
-    // Synthesize a long-press of the Escape key by repeating 2 keydown events.
-    // This works as the long_press_interval is set to 0 on setup.
-    EventUtils.synthesizeKey("KEY_Escape", { repeat: 2 }, browser.ownerGlobal);
+    await synthesizeLongPressEsc(browser);
+
     await fullScreenExited;
     isStillFullscreen = await SpecialPowers.spawn(browser, [], async () => {
       return content.document.fullscreenElement != null;
@@ -72,7 +74,7 @@ add_task(async function test_inner_iframe_with_keyboardlock() {
       });
     });
 
-    EventUtils.synthesizeKey("KEY_Escape", {}, browser.ownerGlobal);
+    EventUtils.synthesizeKey("KEY_Escape", {}, browser.documentGlobal);
     let isStillFullscreen = await SpecialPowers.spawn(browser, [], async () => {
       return content.document.fullscreenElement != null;
     });
@@ -99,7 +101,7 @@ add_task(async function test_inner_iframe_with_keyboardlock() {
       false,
       () => !document.fullscreenElement
     );
-    EventUtils.synthesizeKey("KEY_Escape", {}, browser.ownerGlobal);
+    EventUtils.synthesizeKey("KEY_Escape", {}, browser.documentGlobal);
     await fullScreenExited;
     isStillFullscreen = await SpecialPowers.spawn(browser, [], async () => {
       return content.document.fullscreenElement != null;
@@ -130,7 +132,7 @@ add_task(async function test_inner_iframe_without_keyboardlock() {
       false,
       () => !document.fullscreenElement
     );
-    EventUtils.synthesizeKey("KEY_Escape", {}, browser.ownerGlobal);
+    EventUtils.synthesizeKey("KEY_Escape", {}, browser.documentGlobal);
     await fullScreenExited;
     let isStillFullscreen = await SpecialPowers.spawn(browser, [], async () => {
       return content.document.fullscreenElement != null;
@@ -148,7 +150,7 @@ add_task(async function test_inner_iframe_without_keyboardlock() {
       });
     });
 
-    EventUtils.synthesizeKey("KEY_Escape", {}, browser.ownerGlobal);
+    EventUtils.synthesizeKey("KEY_Escape", {}, browser.documentGlobal);
     isStillFullscreen = await SpecialPowers.spawn(browser, [], async () => {
       return content.document.fullscreenElement != null;
     });
@@ -184,7 +186,7 @@ add_task(async function test_enter_keyboardlock_while_already_fullscreen() {
     });
     ok(isFullscreen, "Multiple requestFullscreen shouldn't exit fullscreen");
 
-    EventUtils.synthesizeKey("KEY_Escape", {}, browser.ownerGlobal);
+    EventUtils.synthesizeKey("KEY_Escape", {}, browser.documentGlobal);
     await SpecialPowers.spawn(browser, [], async () => {
       await content.window.escapePressed;
     });
@@ -233,7 +235,7 @@ add_task(async function test_leave_keyboardlock_while_already_fullscreen() {
         });
       });
     });
-    EventUtils.synthesizeKey("KEY_Escape", {}, browser.ownerGlobal);
+    EventUtils.synthesizeKey("KEY_Escape", {}, browser.documentGlobal);
     await SpecialPowers.spawn(browser, [], async () => {
       await content.window.fullscreenChanged;
     });
@@ -285,7 +287,7 @@ add_task(async function test_restore_keyboardlock_nested_elements() {
 
     info("entered nested fullscreen");
 
-    EventUtils.synthesizeKey("KEY_Escape", {}, browser.ownerGlobal);
+    EventUtils.synthesizeKey("KEY_Escape", {}, browser.documentGlobal);
     await SpecialPowers.spawn(browser, [], async () => {
       await content.window.escapePressed;
     });
@@ -319,7 +321,7 @@ add_task(async function test_restore_keyboardlock_nested_elements() {
       false,
       () => !document.fullscreenElement
     );
-    EventUtils.synthesizeKey("KEY_Escape", {}, browser.ownerGlobal);
+    EventUtils.synthesizeKey("KEY_Escape", {}, browser.documentGlobal);
     await fullscreenExited;
     isStillFullscreen = await SpecialPowers.spawn(browser, [], async () => {
       return content.document.fullscreenElement != null;

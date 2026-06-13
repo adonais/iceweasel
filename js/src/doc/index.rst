@@ -24,8 +24,7 @@ Specific documentation on a few topics is available at:
    feature_checklist
    bytecode_checklist
    use_counter
-
-For Debugger API documentation, see :doc:`DevTools Debugger API </devtools-user/debugger-api/index>`.
+   Debugger API </devtools-user/debugger-api/index>
 
 
 Components of SpiderMonkey

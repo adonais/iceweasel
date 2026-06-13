@@ -1220,7 +1220,8 @@ class FunctionCompiler {
   }
 
   [[nodiscard]] bool brOnNull(uint32_t relativeDepth, const DefVector& values,
-                              const ResultType& type, MDefinition* condition) {
+                              const ResultType& type, MDefinition* condition,
+                              BranchHint branchHint) {
     if (inDeadCode()) {
       return true;
     }
@@ -1235,8 +1236,8 @@ class FunctionCompiler {
       return false;
     }
     MTest* test = MTest::New(alloc(), check, nullptr, fallthroughBlock);
-    if (!test ||
-        !addControlFlowPatch(test, relativeDepth, MTest::TrueBranchIndex)) {
+    if (!test || !addControlFlowPatch(test, relativeDepth,
+                                      MTest::TrueBranchIndex, branchHint)) {
       return false;
     }
 
@@ -1251,8 +1252,8 @@ class FunctionCompiler {
 
   [[nodiscard]] bool brOnNonNull(uint32_t relativeDepth,
                                  const DefVector& values,
-                                 const ResultType& type,
-                                 MDefinition* condition) {
+                                 const ResultType& type, MDefinition* condition,
+                                 BranchHint branchHint) {
     if (inDeadCode()) {
       return true;
     }
@@ -1267,8 +1268,8 @@ class FunctionCompiler {
       return false;
     }
     MTest* test = MTest::New(alloc(), check, nullptr, fallthroughBlock);
-    if (!test ||
-        !addControlFlowPatch(test, relativeDepth, MTest::TrueBranchIndex)) {
+    if (!test || !addControlFlowPatch(test, relativeDepth,
+                                      MTest::TrueBranchIndex, branchHint)) {
       return false;
     }
 
@@ -5673,7 +5674,8 @@ class FunctionCompiler {
   [[nodiscard]] bool brOnCastCommon(bool onSuccess, uint32_t labelRelativeDepth,
                                     RefType sourceType, RefType destType,
                                     const ResultType& labelType,
-                                    const DefVector& values) {
+                                    const DefVector& values,
+                                    BranchHint branchHint) {
     if (inDeadCode()) {
       return true;
     }
@@ -5704,13 +5706,13 @@ class FunctionCompiler {
     if (onSuccess) {
       test = MTest::New(alloc(), success, nullptr, fallthroughBlock);
       if (!test || !addControlFlowPatch(test, labelRelativeDepth,
-                                        MTest::TrueBranchIndex)) {
+                                        MTest::TrueBranchIndex, branchHint)) {
         return false;
       }
     } else {
       test = MTest::New(alloc(), success, fallthroughBlock, nullptr);
       if (!test || !addControlFlowPatch(test, labelRelativeDepth,
-                                        MTest::FalseBranchIndex)) {
+                                        MTest::FalseBranchIndex, branchHint)) {
         return false;
       }
     }
@@ -8677,11 +8679,18 @@ bool FunctionCompiler::emitBrOnNull() {
   ResultType type;
   DefVector values;
   MDefinition* condition;
+
+  BranchHint branchHint =
+      iter().getBranchHint(funcIndex(), relativeBytecodeOffset());
+  if (branchHint == BranchHint::Invalid) {
+    branchHint = BranchHint::Unlikely;
+  }
+
   if (!iter().readBrOnNull(&relativeDepth, &type, &values, &condition)) {
     return false;
   }
 
-  return brOnNull(relativeDepth, values, type, condition);
+  return brOnNull(relativeDepth, values, type, condition, branchHint);
 }
 
 bool FunctionCompiler::emitBrOnNonNull() {
@@ -8689,11 +8698,18 @@ bool FunctionCompiler::emitBrOnNonNull() {
   ResultType type;
   DefVector values;
   MDefinition* condition;
+
+  BranchHint branchHint =
+      iter().getBranchHint(funcIndex(), relativeBytecodeOffset());
+  if (branchHint == BranchHint::Invalid) {
+    branchHint = BranchHint::Likely;
+  }
+
   if (!iter().readBrOnNonNull(&relativeDepth, &type, &values, &condition)) {
     return false;
   }
 
-  return brOnNonNull(relativeDepth, values, type, condition);
+  return brOnNonNull(relativeDepth, values, type, condition, branchHint);
 }
 
 // Speculatively inline a call_refs that are likely to target the expected
@@ -9508,13 +9524,20 @@ bool FunctionCompiler::emitBrOnCast(bool onSuccess) {
   RefType destType;
   ResultType labelType;
   DefVector values;
+
+  BranchHint branchHint =
+      iter().getBranchHint(funcIndex(), relativeBytecodeOffset());
+  if (branchHint == BranchHint::Invalid) {
+    branchHint = onSuccess ? BranchHint::Likely : BranchHint::Unlikely;
+  }
+
   if (!iter().readBrOnCast(onSuccess, &labelRelativeDepth, &sourceType,
                            &destType, &labelType, &values)) {
     return false;
   }
 
   return brOnCastCommon(onSuccess, labelRelativeDepth, sourceType, destType,
-                        labelType, values);
+                        labelType, values, branchHint);
 }
 
 bool FunctionCompiler::emitAnyConvertExtern() {

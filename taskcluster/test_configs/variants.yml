@@ -271,7 +271,6 @@ xorigin:
         mozharness:
             extra-options:
                 - "--enable-xorigin-tests"
-                - "--setpref=privacy.partition.always_partition_third_party_non_cookie_storage=false"
 
 conditioned_profile:
     description: "{description} with conditioned profile"
@@ -454,7 +453,12 @@ media-gpu:
                         "windows" in task["test-platform"]
                         && "hw" in task["test-platform"]
                     )
-                    || "macosx" in task["test-platform"] ||
+                    ||
+                    (
+                        "macosx" in task["test-platform"]
+                        && !("vms" in task["test-platform"])
+                    )
+                    ||
                     (
                         "android" in task["test-platform"]
                         && "hw" in task["test-platform"]
@@ -616,7 +620,7 @@ vertical-tabs:
 inc-origin-init:
     description: "{description} limited to tests identified as being applicable to also run with incremental origin initialization enabled"
     component: "Core::Storage: Quota Manager"
-    expiration: "2026-05-01"
+    expiration: "2026-12-31"
     suffix: "ioi"
     mozinfo: "inc_origin_init"
     replace:
@@ -646,7 +650,7 @@ privatebrowsing:
 privatebrowsing-inc-origin-init:
     description: "{description} limited to tests identified as being applicable to also run in private browsing mode and with incremental origin initialization enabled"
     component: "Core::Storage: Quota Manager"
-    expiration: "2026-05-01"
+    expiration: "2026-12-31"
     suffix: "pb-ioi"
     replace:
         tier: 3

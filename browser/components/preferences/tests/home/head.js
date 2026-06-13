@@ -48,26 +48,6 @@ async function openCustomHomepageSubpage() {
 }
 
 /**
- * Waits for a setting control to render and complete any async updates.
- *
- * @param {string} settingId - The setting identifier.
- * @param {Window} [win] - Optional window, defaults to current browser window.
- * @returns {Promise<Element>} The rendered setting control element.
- */
-
-async function settingControlRenders(settingId, win) {
-  await BrowserTestUtils.waitForCondition(
-    () => getSettingControl(settingId, win),
-    `Wait for ${settingId} control to render`
-  );
-  let control = getSettingControl(settingId, win);
-  if (control?.updateComplete) {
-    await control.updateComplete;
-  }
-  return control;
-}
-
-/**
  * Waits for a boolean preference to change to the expected value.
  *
  * @param {string} prefName - The preference name.

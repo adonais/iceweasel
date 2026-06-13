@@ -37,6 +37,14 @@ MOZ_DEFINE_ENUM_CLASS_WITH_BASE_AND_TOSTRING(MediaAudibleState, bool,
                                              (eInaudible, eAudible));
 
 /**
+ * This enum distinguishes media sources that fully participate in the media
+ * control lifecycle (controllable, e.g. HTMLMediaElement) from sources that
+ * only contribute audibility and accept volume/mute (uncontrollable).
+ */
+MOZ_DEFINE_ENUM_CLASS_WITH_BASE_AND_TOSTRING(ControlType, bool,
+                                             (eControllable, eUncontrollable));
+
+/**
  * MediaPlaybackStatus is an internal module for the media controller, it
  * represents a tab's media related status, such like "does the tab contain any
  * controlled media? is the tab playing? is the tab audible?".

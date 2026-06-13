@@ -572,7 +572,7 @@ already_AddRefed<nsIVariant> DataTransferItem::Data(nsIPrincipal* aPrincipal,
   if (NS_SUCCEEDED(rv) && data) {
     nsCOMPtr<EventTarget> pt = do_QueryInterface(data);
     if (pt) {
-      nsIGlobalObject* go = pt->GetOwnerGlobal();
+      nsIGlobalObject* go = pt->GetRelevantGlobal();
       if (NS_WARN_IF(!go)) {
         return nullptr;
       }

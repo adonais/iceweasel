@@ -498,7 +498,7 @@ struct GCChunkHasher {
 class js::gc::MarkingValidator {
  public:
   explicit MarkingValidator(GCRuntime* gc);
-  void nonIncrementalMark(AutoGCSession& session);
+  bool nonIncrementalMark(AutoGCSession& session);
   void validate();
 
  private:
@@ -513,28 +513,21 @@ class js::gc::MarkingValidator {
 js::gc::MarkingValidator::MarkingValidator(GCRuntime* gc)
     : gc(gc), initialized(false) {}
 
-void js::gc::MarkingValidator::nonIncrementalMark(AutoGCSession& session) {
+bool js::gc::MarkingValidator::nonIncrementalMark(AutoGCSession& session) {
   /*
    * Perform a non-incremental mark for all collecting zones and record
    * the results for later comparison.
    */
 
   GCMarker* gcmarker = &gc->marker();
-
   MOZ_ASSERT(!gcmarker->isWeakMarking());
 
-#  ifdef DEBUG
-  // The test mark queue can cause spurious differences if the non-incremental
-  // marking for validation happens before the full queue has been processed,
-  // since the later part of the queue may mark things during sweeping. Disable
-  // validation if there is anything left in the queue at this point.
-  if (gc->testMarkQueueRemaining() > 0) {
-    return;
-  }
-#  endif
+  MOZ_ASSERT(gc->testMarkQueueRemaining() == 0);
 
   /* We require that the nursery is empty at the start of collection. */
   MOZ_ASSERT(gc->nursery().isEmpty());
+
+  MOZ_ASSERT(map.empty());
 
   /* Wait for off-thread parsing which can allocate. */
   WaitForAllHelperThreads();
@@ -551,12 +544,12 @@ void js::gc::MarkingValidator::nonIncrementalMark(AutoGCSession& session) {
       // restriction which we currently can't support.
       void* buffer = js_malloc(sizeof(ChunkMarkBitmap));
       if (!buffer) {
-        return;
+        return false;
       }
       UniquePtr<ChunkMarkBitmap> entry(new (buffer) ChunkMarkBitmap);
       entry->copyFrom(chunk->markBits);
       if (!map.putNew(chunk, std::move(entry))) {
-        return;
+        return false;
       }
     }
   }
@@ -576,10 +569,9 @@ void js::gc::MarkingValidator::nonIncrementalMark(AutoGCSession& session) {
 
   for (GCZonesIter zone(gc); !zone.done(); zone.next()) {
     if (!WeakMapBase::saveZoneMarkedWeakMaps(zone, markedWeakMaps)) {
-      return;
+      return false;
     }
 
-    AutoEnterOOMUnsafeRegion oomUnsafe;
     for (auto iter = zone->gcEphemeronEdges().iter(); !iter.done();
          iter.next()) {
       MOZ_ASSERT(iter.get().key()->zone() == zone);
@@ -587,7 +579,7 @@ void js::gc::MarkingValidator::nonIncrementalMark(AutoGCSession& session) {
                                       std::move(iter.get().value()))) {
         // Notice the std::move -- this could consume the moved-from value even
         // on failure, so it's unsafe to continue if putNew fails.
-        oomUnsafe.crash("saving weak keys table for validator");
+        return false;
       }
     }
 
@@ -683,11 +675,10 @@ void js::gc::MarkingValidator::nonIncrementalMark(AutoGCSession& session) {
   WeakMapBase::restoreMarkedWeakMaps(markedWeakMaps);
 
   for (auto iter = savedEphemeronEdges.iter(); !iter.done(); iter.next()) {
-    AutoEnterOOMUnsafeRegion oomUnsafe;
     Zone* zone = iter.get().key()->asTenured().zone();
     if (!zone->gcEphemeronEdges().putNew(iter.get().key(),
                                          std::move(iter.get().value()))) {
-      oomUnsafe.crash("restoring weak keys table for validator");
+      return false;
     }
   }
 
@@ -697,6 +688,8 @@ void js::gc::MarkingValidator::nonIncrementalMark(AutoGCSession& session) {
 #  endif
 
   gc->incrementalState = state;
+
+  return true;
 }
 
 void js::gc::MarkingValidator::validate() {
@@ -803,12 +796,29 @@ void js::gc::MarkingValidator::validate() {
 
 void GCRuntime::computeNonIncrementalMarkingForValidation(
     AutoGCSession& session) {
-  MOZ_ASSERT(!markingValidator);
-  if (isIncremental && hasZealMode(ZealMode::IncrementalMarkingValidator)) {
-    markingValidator = js_new<MarkingValidator>(this);
+  MOZ_ASSERT(isIncremental);
+  MOZ_ASSERT(!markingValidator.ref());
+
+#  ifdef DEBUG
+  // The test mark queue can cause spurious differences if the non-incremental
+  // marking for validation happens before the full queue has been processed,
+  // since the later part of the queue may mark things during sweeping. Disable
+  // validation if there is anything left in the queue at this point.
+  if (testMarkQueueRemaining() > 0) {
+    return;
   }
-  if (markingValidator) {
-    markingValidator->nonIncrementalMark(session);
+#  endif
+
+  markingValidator = js_new<MarkingValidator>(this);
+  if (!markingValidator) {
+    return;
+  }
+
+  AutoEnterOOMUnsafeRegion oomUnsafe;
+  if (!markingValidator->nonIncrementalMark(session)) {
+    // This may have failed to restore the original state, or may not have
+    // produced valid results to compare against.
+    oomUnsafe.crash("GCRuntime::computeNonIncrementalMarkingForValidation");
   }
 }
 
@@ -1193,17 +1203,15 @@ bool js::gc::CheckWeakMapEntryMarking(const WeakMapBase* map, Cell* key,
   }
 
   JSObject* delegate = MaybeGetDelegate(key);
-  if (!delegate) {
-    return ok;
-  }
-
-  CellColor delegateColor = effectiveColor(delegate);
-  if (keyColor < std::min(map->mapColor(), delegateColor)) {
-    fprintf(stderr, "WeakMap key is less marked than map or delegate\n");
-    fprintf(stderr, "(map %p is %s, delegate %p is %s, key %p is %s)\n", map,
-            CellColorName(map->mapColor()), delegate,
-            CellColorName(delegateColor), key, CellColorName(keyColor));
-    ok = false;
+  if (delegate) {
+    CellColor delegateColor = effectiveColor(delegate);
+    if (keyColor < std::min(map->mapColor(), delegateColor)) {
+      fprintf(stderr, "WeakMap key is less marked than map or delegate\n");
+      fprintf(stderr, "(map %p is %s, delegate %p is %s, key %p is %s)\n", map,
+              CellColorName(map->mapColor()), delegate,
+              CellColorName(delegateColor), key, CellColorName(keyColor));
+      ok = false;
+    }
   }
 
   // Symbols key must be marked in the atom marking bitmap for the zone.

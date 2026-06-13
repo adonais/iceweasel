@@ -13,7 +13,7 @@ namespace wr {
 
 class RenderTextureHostSWGL : public RenderTextureHost {
  public:
-  RenderTextureHostSWGL() {}
+  RenderTextureHostSWGL() = default;
 
   wr::WrExternalImage LockSWGL(uint8_t aChannelIndex, void* aContext,
                                RenderCompositor* aCompositor) override;

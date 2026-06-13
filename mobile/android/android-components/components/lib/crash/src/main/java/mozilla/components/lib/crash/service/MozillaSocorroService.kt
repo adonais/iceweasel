@@ -261,7 +261,7 @@ class MozillaSocorroService(
         isFatalCrash: Boolean,
         breadcrumbs: String,
         versionName: String,
-        crashId: String,
+        crashEventId: String,
     ) {
         val formDataWriter = createFormDataWriter(GZIPOutputStream(os), boundary, logger)
         formDataWriter.sendAnnotation(Annotation.ProductName, appName)
@@ -279,7 +279,7 @@ class MozillaSocorroService(
         formDataWriter.sendAnnotation(Annotation.DistributionID, distributionId)
 
         var additionalDumps: FormDataWriter.AdditionalMinidumps? = null
-        var hasCrashId = false
+        var hasCrashEventId = false
 
         extrasFilePath?.let {
             val regex = "$FILE_REGEX$EXTRAS_FILE_EXT".toRegex()
@@ -289,14 +289,14 @@ class MozillaSocorroService(
                 for (key in extrasMap.keys) {
                     formDataWriter.sendPart(key, extrasMap[key])
                 }
-                hasCrashId = extrasMap.containsKey(Annotation.CrashID.toString())
+                hasCrashEventId = extrasMap.containsKey(Annotation.CrashEventID.toString())
                 additionalDumps = formDataWriter.AdditionalMinidumps(extrasMap)
                 extrasFile.delete()
             }
         }
 
-        if (!hasCrashId) {
-            formDataWriter.sendAnnotation(Annotation.CrashID, crashId)
+        if (!hasCrashEventId) {
+            formDataWriter.sendAnnotation(Annotation.CrashEventID, crashEventId)
         }
 
         if (throwable?.stackTrace?.isEmpty() == false) {

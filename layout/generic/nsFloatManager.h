@@ -96,6 +96,9 @@ class nsFloatManager {
                           mozilla::WritingMode aWM);
   ~nsFloatManager();
 
+  nsFloatManager(const nsFloatManager&) = delete;
+  void operator=(const nsFloatManager&) = delete;
+
   void* operator new(size_t aSize) noexcept(true);
   void operator delete(void* aPtr, size_t aSize);
 
@@ -424,9 +427,6 @@ class nsFloatManager {
 
   static int32_t sCachedFloatManagerCount;
   static void* sCachedFloatManagers[NS_FLOAT_MANAGER_CACHE_SIZE];
-
-  nsFloatManager(const nsFloatManager&) = delete;
-  void operator=(const nsFloatManager&) = delete;
 };
 
 /**

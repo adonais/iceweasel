@@ -145,9 +145,7 @@
 #include "nsSandboxFlags.h"
 
 #if defined(MOZ_SANDBOX)
-#  include "mozilla/SandboxSettings.h"
 #  if defined(XP_WIN)
-#    include "mozilla/ProcInfo.h"
 #    include "mozilla/sandboxTarget.h"
 #  elif defined(XP_LINUX)
 #    include "CubebUtils.h"
@@ -158,6 +156,7 @@
 #    include <CoreGraphics/CGError.h>
 
 #    include "mozilla/Sandbox.h"
+#    include "mozilla/SandboxSettings.h"
 #  elif defined(__OpenBSD__)
 #    include <err.h>
 #    include <sys/stat.h>
@@ -167,6 +166,7 @@
 
 #    include "BinaryPath.h"
 #    include "SpecialSystemDirectory.h"
+#    include "mozilla/SandboxSettings.h"
 #    include "mozilla/ipc/UtilityProcessSandboxing.h"
 #    include "nsILineInputStream.h"
 #  endif
@@ -1166,11 +1166,12 @@ nsresult ContentChild::ProvideWindowCommon(
 
   // Now change the principal to what it should be according to aOpenWindowInfo.
   // This creates a new document and the timing is quite fragile.
-  NS_ENSURE_TRUE(browsingContext->GetDOMWindow(), NS_ERROR_ABORT);
-  NS_ENSURE_TRUE(browsingContext->GetDOMWindow()->GetExtantDoc(),
-                 NS_ERROR_ABORT);
-  browsingContext->GetDOMWindow()->SetInitialPrincipal(
-      aOpenWindowInfo->PrincipalToInheritForAboutBlank());
+  nsCOMPtr<nsPIDOMWindowOuter> outerWindow = browsingContext->GetDOMWindow();
+  NS_ENSURE_TRUE(outerWindow, NS_ERROR_ABORT);
+  NS_ENSURE_TRUE(outerWindow->GetExtantDoc(), NS_ERROR_ABORT);
+  nsCOMPtr<nsIPrincipal> principalToInherit =
+      aOpenWindowInfo->PrincipalToInheritForAboutBlank();
+  outerWindow->SetInitialPrincipal(principalToInherit);
 
   // Set to true when we're ready to return from this function.
   bool ready = false;
@@ -1647,7 +1648,11 @@ mozilla::ipc::IPCResult ContentChild::RecvInitRendering(
     Endpoint<PVRManagerChild>&& aVRBridge,
     Endpoint<PRemoteMediaManagerChild>&& aVideoManager,
     nsTArray<uint32_t>&& namespaces) {
-  MOZ_ASSERT(namespaces.Length() == 3);
+  MOZ_ASSERT(namespaces.Length() == 4);
+  const uint32_t compositorManagerNamespace = namespaces[0];
+  const uint32_t compositorBridgeNamespace = namespaces[1];
+  const uint32_t imageBridgeNamespace = namespaces[2];
+  const uint32_t vrManagerNamespace = namespaces[3];
 
   // Note that for all of the methods below, if it can fail, it should only
   // return false if the failure is an IPDL error. In such situations,
@@ -1656,17 +1661,20 @@ mozilla::ipc::IPCResult ContentChild::RecvInitRendering(
   // should crash itself (because we are actually talking to the UI process). If
   // there are localized failures (e.g. failed to spawn a thread), then it
   // should MOZ_RELEASE_ASSERT or MOZ_CRASH as necessary instead.
-  if (!CompositorManagerChild::Init(std::move(aCompositor), namespaces[0])) {
+  if (!CompositorManagerChild::Init(std::move(aCompositor),
+                                    compositorManagerNamespace)) {
     return GetResultForRenderingInitFailure(aCompositor.OtherChildID());
   }
-  if (!CompositorManagerChild::CreateContentCompositorBridge(namespaces[1])) {
+  if (!CompositorManagerChild::CreateContentCompositorBridge(
+          compositorBridgeNamespace)) {
     return GetResultForRenderingInitFailure(aCompositor.OtherChildID());
   }
   if (!ImageBridgeChild::InitForContent(std::move(aImageBridge),
-                                        namespaces[2])) {
+                                        imageBridgeNamespace)) {
     return GetResultForRenderingInitFailure(aImageBridge.OtherChildID());
   }
-  if (!gfx::VRManagerChild::InitForContent(std::move(aVRBridge))) {
+  if (!gfx::VRManagerChild::InitForContent(std::move(aVRBridge),
+                                           vrManagerNamespace)) {
     return GetResultForRenderingInitFailure(aVRBridge.OtherChildID());
   }
   RemoteMediaManagerChild::InitForGPUProcess(std::move(aVideoManager));
@@ -1689,21 +1697,29 @@ mozilla::ipc::IPCResult ContentChild::RecvReinitRendering(
     Endpoint<PVRManagerChild>&& aVRBridge,
     Endpoint<PRemoteMediaManagerChild>&& aVideoManager,
     nsTArray<uint32_t>&& namespaces) {
-  MOZ_ASSERT(namespaces.Length() == 3);
+  MOZ_ASSERT(namespaces.Length() == 4);
+  const uint32_t compositorManagerNamespace = namespaces[0];
+  const uint32_t compositorBridgeNamespace = namespaces[1];
+  const uint32_t imageBridgeNamespace = namespaces[2];
+  const uint32_t vrManagerNamespace = namespaces[3];
+
   nsTArray<RefPtr<BrowserChild>> tabs = BrowserChild::GetAll();
 
   // Re-establish singleton bridges to the compositor.
-  if (!CompositorManagerChild::Init(std::move(aCompositor), namespaces[0])) {
+  if (!CompositorManagerChild::Init(std::move(aCompositor),
+                                    compositorManagerNamespace)) {
     return GetResultForRenderingInitFailure(aCompositor.OtherChildID());
   }
-  if (!CompositorManagerChild::CreateContentCompositorBridge(namespaces[1])) {
+  if (!CompositorManagerChild::CreateContentCompositorBridge(
+          compositorBridgeNamespace)) {
     return GetResultForRenderingInitFailure(aCompositor.OtherChildID());
   }
   if (!ImageBridgeChild::ReinitForContent(std::move(aImageBridge),
-                                          namespaces[2])) {
+                                          imageBridgeNamespace)) {
     return GetResultForRenderingInitFailure(aImageBridge.OtherChildID());
   }
-  if (!gfx::VRManagerChild::InitForContent(std::move(aVRBridge))) {
+  if (!gfx::VRManagerChild::InitForContent(std::move(aVRBridge),
+                                           vrManagerNamespace)) {
     return GetResultForRenderingInitFailure(aVRBridge.OtherChildID());
   }
   gfxPlatform::GetPlatform()->CompositorUpdated();
@@ -1763,8 +1779,7 @@ static void DisconnectWindowServer(bool aIsSandboxEnabled) {
   // for some tests.
   if (aIsSandboxEnabled &&
       Preferences::GetBool(
-          "security.sandbox.content.mac.disconnect-windowserver") &&
-      Preferences::GetBool("webgl.out-of-process")) {
+          "security.sandbox.content.mac.disconnect-windowserver")) {
     CGError result = CGSSetDenyWindowServerConnections(true);
     MOZ_DIAGNOSTIC_ASSERT(result == kCGErrorSuccess);
 #  if !MOZ_DIAGNOSTIC_ASSERT_ENABLED
@@ -1796,14 +1811,7 @@ mozilla::ipc::IPCResult ContentChild::RecvSetProcessSandbox(
         ContentProcessSandboxParams::ForThisProcess(aBroker));
   }
 #  elif defined(XP_WIN)
-  if (GetEffectiveContentSandboxLevel() > 7) {
-    // Libraries required by Network Security Services (NSS).
-    ::LoadLibraryW(L"freebl3.dll");
-    ::LoadLibraryW(L"softokn3.dll");
-    // Cache value that is retrieved from a registry entry.
-    (void)GetCpuFrequencyMHz();
-  }
-  mozilla::SandboxTarget::Instance()->StartSandbox();
+  mozilla::SandboxTarget::Instance()->LowerContentSandbox();
 #  elif defined(XP_MACOSX)
   sandboxEnabled = (GetEffectiveContentSandboxLevel() >= 1);
   DisconnectWindowServer(sandboxEnabled);
@@ -2350,7 +2358,8 @@ mozilla::ipc::IPCResult ContentChild::RecvUpdatePerfStatsCollectionMask(
 
 mozilla::ipc::IPCResult ContentChild::RecvCollectPerfStatsJSON(
     CollectPerfStatsJSONResolver&& aResolver) {
-  aResolver(PerfStats::CollectLocalPerfStatsJSON());
+  auto s = PerfStats::CollectLocalPerfStatsJSON();
+  aResolver(nsCString(s.c_str(), s.length()));
   return IPC_OK();
 }
 
@@ -2840,12 +2849,9 @@ mozilla::ipc::IPCResult ContentChild::RecvInitBlobURLs(
     nsTArray<BlobURLRegistrationData>&& aRegistrations) {
   for (uint32_t i = 0; i < aRegistrations.Length(); ++i) {
     BlobURLRegistrationData& registration = aRegistrations[i];
-    RefPtr<BlobImpl> blobImpl = IPCBlobUtils::Deserialize(registration.blob());
-    MOZ_ASSERT(blobImpl);
-
-    BlobURLProtocolHandler::AddDataEntry(registration.url(),
-                                         registration.principal(),
-                                         registration.partitionKey(), blobImpl);
+    BlobURLProtocolHandler::AddDataEntryChild(registration.url(),
+                                              registration.principal(),
+                                              registration.partitionKey());
     // If we have received an already-revoked blobURL, we have to keep it alive
     // for a while (see BlobURLProtocolHandler) in order to support pending
     // operations such as navigation, download and so on.
@@ -3192,11 +3198,12 @@ void ContentChild::ShutdownInternal() {
           "*Profile from pid %u bigger (%zu) than IPC max (%zu)",
           unsigned(profiler_current_process_id().ToNumber()), len,
           size_t(IPC::Channel::kMaximumMessageSize));
+      shutdownProfileAndAdditionalInformation.mAdditionalInformation.reset();
     }
     // Send the shutdown profile to the parent process through our own
     // message channel, which we know will survive for long enough.
     bool sent =
-        SendShutdownProfile(shutdownProfileAndAdditionalInformation.mProfile);
+        SendShutdownProfile(std::move(shutdownProfileAndAdditionalInformation));
     CrashReporter::RecordAnnotationCString(
         CrashReporter::Annotation::ProfilerChildShutdownPhase,
         sent ? (isProfiling ? "Profiling - SendShutdownProfile (sent)"
@@ -3206,7 +3213,8 @@ void ContentChild::ShutdownInternal() {
   }
 
   if (PerfStats::GetCollectionMask() != 0) {
-    SendShutdownPerfStats(PerfStats::CollectLocalPerfStatsJSON());
+    auto s = PerfStats::CollectLocalPerfStatsJSON();
+    SendShutdownPerfStats(nsCString(s.c_str(), s.length()));
   }
 
   // Start a timer that will ensure we quickly exit after a reasonable period
@@ -3286,13 +3294,9 @@ mozilla::ipc::IPCResult ContentChild::RecvPWebBrowserPersistDocumentConstructor(
 }
 
 mozilla::ipc::IPCResult ContentChild::RecvBlobURLRegistration(
-    const nsCString& aURI, const IPCBlob& aBlob, nsIPrincipal* aPrincipal,
+    const nsCString& aURI, nsIPrincipal* aPrincipal,
     const nsCString& aPartitionKey) {
-  RefPtr<BlobImpl> blobImpl = IPCBlobUtils::Deserialize(aBlob);
-  MOZ_ASSERT(blobImpl);
-
-  BlobURLProtocolHandler::AddDataEntry(aURI, aPrincipal, aPartitionKey,
-                                       blobImpl);
+  BlobURLProtocolHandler::AddDataEntryChild(aURI, aPrincipal, aPartitionKey);
   return IPC_OK();
 }
 

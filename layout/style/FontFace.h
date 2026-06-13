@@ -43,7 +43,7 @@ class FontFace final : public GlobalTeardownObserver, public nsWrapperCache {
 
   void DisconnectFromOwner() final;
 
-  nsIGlobalObject* GetParentObject() const { return GetOwnerGlobal(); }
+  nsIGlobalObject* GetParentObject() const { return GetRelevantGlobal(); }
   JSObject* WrapObject(JSContext*, JS::Handle<JSObject*> aGivenProto) override;
 
   static already_AddRefed<FontFace> CreateForRule(

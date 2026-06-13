@@ -444,16 +444,7 @@ const JSClass BufferHolderObject::class_ = {"BufferHolderObject",
                                             &BufferHolderObject::classOps_};
 
 const JSClassOps BufferHolderObject::classOps_ = {
-    nullptr,                    // addProperty
-    nullptr,                    // delProperty
-    nullptr,                    // enumerate
-    nullptr,                    // newEnumerate
-    nullptr,                    // resolve
-    nullptr,                    // mayResolve
-    nullptr,                    // finalize
-    nullptr,                    // call
-    nullptr,                    // construct
-    BufferHolderObject::trace,  // trace
+    .trace = BufferHolderObject::trace,
 };
 
 /* static */
@@ -553,6 +544,7 @@ BEGIN_TEST(testBufferAllocator_API) {
 
       CHECK(!IsBufferAllocMarkedBlack(zone, alloc));
 
+      gc::WaitForBackgroundTasks(cx);
       CHECK(cx->runtime()->gc.isPointerWithinBufferAlloc(alloc));
       void* ptr = reinterpret_cast<void*>(uintptr_t(alloc) + 8);
       CHECK(cx->runtime()->gc.isPointerWithinBufferAlloc(ptr));
@@ -999,16 +991,7 @@ class VectorObject : public NativeObject {
   }
 
   static constexpr JSClassOps classOps_ = {
-      nullptr,  // addProperty
-      nullptr,  // delProperty
-      nullptr,  // enumerate
-      nullptr,  // newEnumerate
-      nullptr,  // resolve
-      nullptr,  // mayResolve
-      nullptr,  // finalize
-      nullptr,  // call
-      nullptr,  // construct
-      trace,    // trace
+      .trace = trace,
   };
 
   static constexpr JSClass class_ = {
@@ -1081,6 +1064,7 @@ bool testVector(bool allocInNursery, bool dieInNursery) {
   // Note internal pointers so we can check whether they get freed.
   void* oldVector = obj->getVector();
   void* oldBuffer = obj->getVector()->begin();
+  gc::WaitForBackgroundTasks(cx);
   CHECK(zone->bufferAllocator.isPointerWithinBuffer(oldVector));
   CHECK(zone->bufferAllocator.isPointerWithinBuffer(oldBuffer));
 
@@ -1152,16 +1136,7 @@ class HashSetObject : public NativeObject {
   }
 
   static constexpr JSClassOps classOps_ = {
-      nullptr,  // addProperty
-      nullptr,  // delProperty
-      nullptr,  // enumerate
-      nullptr,  // newEnumerate
-      nullptr,  // resolve
-      nullptr,  // mayResolve
-      nullptr,  // finalize
-      nullptr,  // call
-      nullptr,  // construct
-      trace,    // trace
+      .trace = trace,
   };
 
   static constexpr JSClass class_ = {
@@ -1240,6 +1215,7 @@ bool testSet(bool allocInNursery, bool dieInNursery) {
 
   // Note set pointer so we can check whether it gets freed.
   void* oldSet = obj->getSet();
+  gc::WaitForBackgroundTasks(cx);
   CHECK(zone->bufferAllocator.isPointerWithinBuffer(oldSet));
 
   obj = nullptr;

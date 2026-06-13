@@ -26,7 +26,8 @@ class D3D11RecycleAllocator final : public TextureClientRecycleAllocator {
 
   already_AddRefed<TextureClient> CreateOrRecycleClient(
       gfx::ColorSpace2 aColorSpace, gfx::ColorRange aColorRange,
-      gfx::TransferFunction aTransferFunction, const gfx::IntSize& aSize);
+      gfx::TransferFunction aTransferFunction,
+      const Maybe<gfx::HDRMetadata>& aHDRMetadata, const gfx::IntSize& aSize);
 
   void SetPreferredSurfaceFormat(gfx::SurfaceFormat aPreferredFormat);
   gfx::SurfaceFormat GetUsableSurfaceFormat() const {
@@ -69,6 +70,7 @@ class D3D11ShareHandleImage final : public Image {
                         gfx::ColorSpace2 aColorSpace,
                         gfx::ColorRange aColorRange,
                         gfx::TransferFunction aTransferFunction,
+                        const Maybe<gfx::HDRMetadata>& aHDRMetadata,
                         gfx::ColorDepth aColorDepth);
   virtual ~D3D11ShareHandleImage() = default;
 
@@ -91,6 +93,8 @@ class D3D11ShareHandleImage final : public Image {
     return mTransferFunction;
   }
 
+  const Maybe<gfx::HDRMetadata>& GetHDRMetadata() const { return mHDRMetadata; }
+
   gfx::ColorDepth GetColorDepth() const override { return mColorDepth; }
 
  private:
@@ -111,6 +115,7 @@ class D3D11ShareHandleImage final : public Image {
  private:
   gfx::ColorRange mColorRange;
   gfx::TransferFunction mTransferFunction;
+  Maybe<gfx::HDRMetadata> mHDRMetadata;
   gfx::ColorDepth mColorDepth;
   RefPtr<TextureClient> mTextureClient;
   RefPtr<ID3D11Texture2D> mTexture;

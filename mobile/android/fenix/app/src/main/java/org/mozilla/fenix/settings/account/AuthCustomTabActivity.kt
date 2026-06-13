@@ -7,6 +7,8 @@ package org.mozilla.fenix.settings.account
 import mozilla.components.concept.sync.AccountObserver
 import mozilla.components.concept.sync.AuthType
 import mozilla.components.concept.sync.OAuthAccount
+import mozilla.components.feature.ipprotection.IPProtectionFxaAuthFlow.Companion.INTENT_ON_COMPLETE
+import mozilla.components.feature.ipprotection.store.IPProtectionAction
 import org.mozilla.fenix.customtabs.ExternalAppBrowserActivity
 import org.mozilla.fenix.ext.components
 
@@ -20,6 +22,15 @@ class AuthCustomTabActivity : ExternalAppBrowserActivity() {
          * Navigate away from this activity when we have successful authentication
          */
         override fun onAuthenticated(account: OAuthAccount, authType: AuthType) {
+            // N.B: This is no where close to perfect because we need to know when authentication is complete for our
+            // specific scope, but we don't have this capability today.
+            // We've tried doing this in the `FxaAccountStoreSync` but because our AuthCustomTabActivity extends from
+            // `HomeActivity` those observes experience an "Authentication" event immediately that resets the state
+            // machine.
+            val notifyIpStore = intent.getBooleanExtra(INTENT_ON_COMPLETE, false)
+            if (notifyIpStore) {
+                components.ipProtection.store.dispatch(IPProtectionAction.AccountReady(true))
+            }
             finish()
         }
     }

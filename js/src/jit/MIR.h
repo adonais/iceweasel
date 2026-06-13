@@ -560,10 +560,6 @@ class MDefinition : public MNode {
   void removeFlags(uint32_t flags) { flags_ &= ~flags; }
   void setFlags(uint32_t flags) { flags_ |= flags; }
 
-  // Calling isDefinition or isResumePoint on MDefinition is unnecessary.
-  bool isDefinition() const = delete;
-  bool isResumePoint() const = delete;
-
  protected:
   void setInstructionBlock(MBasicBlock* block, const BytecodeSite* site) {
     MOZ_ASSERT(isInstruction());
@@ -611,6 +607,10 @@ class MDefinition : public MNode {
         resultType_(other.resultType_) {}
 
   Opcode op() const { return op_; }
+
+  // Calling isDefinition or isResumePoint on MDefinition is unnecessary.
+  bool isDefinition() const = delete;
+  bool isResumePoint() const = delete;
 
 #ifdef JS_JITSPEW
   const char* opName() const;
@@ -1023,7 +1023,6 @@ class CompilerGCPointer {
   operator T() const { return static_cast<T>(ptr_); }
   T operator->() const { return static_cast<T>(ptr_); }
 
- private:
   CompilerGCPointer() = delete;
   CompilerGCPointer(const CompilerGCPointer<T>&) = delete;
   CompilerGCPointer<T>& operator=(const CompilerGCPointer<T>&) = delete;
@@ -2930,6 +2929,14 @@ class MCompare : public MBinaryInstruction, public ComparePolicy::Data {
   [[nodiscard]] MDefinition* tryFoldBigInt64(TempAllocator& alloc);
   [[nodiscard]] MDefinition* tryFoldBigIntPtr(TempAllocator& alloc);
   [[nodiscard]] MDefinition* tryFoldBigInt(TempAllocator& alloc);
+  [[nodiscard]] MDefinition* tryFoldIntZero(TempAllocator& alloc);
+
+  // Create a new comparison with |operand| as the left-hand side operand and
+  // |value| as the right-hand side operand. |operand| must be an integer or
+  // BigInt.
+  [[nodiscard]] MCompare* newCompareInt(TempAllocator& alloc,
+                                        MDefinition* operand, int64_t value,
+                                        JSOp op, bool isSigned = true);
 
  public:
   bool congruentTo(const MDefinition* ins) const override {
@@ -8851,10 +8858,6 @@ class MResumePoint final : public MNode
   MResumePoint(MBasicBlock* block, jsbytecode* pc, ResumeMode mode);
   void inherit(MBasicBlock* state);
 
-  // Calling isDefinition or isResumePoint on MResumePoint is unnecessary.
-  bool isDefinition() const = delete;
-  bool isResumePoint() const = delete;
-
   void setBlock(MBasicBlock* block) {
     setBlockAndKind(block, Kind::ResumePoint);
   }
@@ -8879,6 +8882,10 @@ class MResumePoint final : public MNode
                            jsbytecode* pc, ResumeMode mode);
 
   MBasicBlock* block() const { return resumePointBlock(); }
+
+  // Calling isDefinition or isResumePoint on MResumePoint is unnecessary.
+  bool isDefinition() const = delete;
+  bool isResumePoint() const = delete;
 
   size_t numAllocatedOperands() const { return operands_.length(); }
   uint32_t stackDepth() const { return numAllocatedOperands(); }

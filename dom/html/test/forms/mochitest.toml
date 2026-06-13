@@ -9,6 +9,7 @@ support-files = [
 prefs = [
   "formhelper.autozoom.force-disable.test-only=true",
   "dom.forms.html_color_picker.enabled=false",
+  "dom.lift_select_parser_restrictions.enabled=true",
 ]
 
 ["test_MozEditableElement_setUserInput.html"]

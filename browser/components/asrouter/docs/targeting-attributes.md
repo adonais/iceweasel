@@ -495,13 +495,16 @@ declare const sync: {
 
 Information about the browser's top 25 frecent sites.
 
-**Please note this is a restricted targeting property that influences what telemetry is allowed to be collected may not be used without review**
+**Please note this is a restricted targeting property that influences what telemetry is allowed to be collected and may not be used without data review. This attribute has received legal approval for use in message targeting.**
 
+**When using this attribute, targeting must not allow inference that a user visited a single specific website. Avoid checking for a single domain; instead, use a broad list or bucket of domains.**
 
 #### Examples
-* Is `mozilla.com` in the user's top frecent sites and with a last visit date greater than April 4th, 2018(UNIX Epoch timestamp 1522843725924)?
+* Is any of a broad set of shopping-related domains in the user's top frecent sites with a last visit date greater than April 4th, 2018 (UNIX Epoch timestamp 1522843725924)?
 ```java
-"mozilla.com" in topFrecentSites[.lastVisitDate > 1522843725924]|mapToProperty("host")
+(["amazon.com", "ebay.com", "etsy.com", "walmart.com", "target.com",
+  "bestbuy.com", "newegg.com", "costco.com", "homedepot.com", "wayfair.com"
+  ] intersect topFrecentSites[.lastVisitDate > 1522843725924]|mapToProperty('host'))|length > 1
 ```
 
 #### Definition
@@ -635,9 +638,29 @@ Returns whether the current tab has a matching Web App (Taskbar Tab) installed.
 declare const currentTabInstalledAsWebApp: Promise<boolean>;
 ```
 
+### `installedWebAppsCount`
+
+Returns the number of Web Apps (Taskbar Tabs) the user has installed.
+
+#### Definition
+
+```ts
+declare const installedWebAppsCount: Promise<number>;
+```
+
 ### `currentTabGroups`
 
 Returns the number of currently open tab groups.
+
+### `tabsOpenInTopWindow`
+
+Returns the number of tabs open in the top browser window.
+
+#### Definition
+
+```ts
+declare const tabsOpenInTopWindow: number;
+```
 
 ### `savedTabGroups`
 
@@ -1375,3 +1398,23 @@ declare const isNonStubFirstRun: boolean;
 ### `experimentsLoaded`
 
 Boolean that's true once Nimbus has loaded remote experiments from Remote Settings at least once. Returns true if experiments are disabled. This generally shouldn't be used outside of the splash screen.
+
+### `crashCount`
+
+The total number of crashes the user has experienced, as recorded in the [dump files corresponding to submitted crashes](https://searchfox.org/firefox-main/source/toolkit/components/crashes/CrashManager.in.sys.mjs#297-322). This targeting is only available for Mac and Windows users; Linux users will always return a `crashCount` of 0.
+
+#### Definition
+
+```ts
+declare const crashCount: Promise<number>;
+```
+
+### `daysSinceLastCrash`
+
+The number of days since the most recent crash, as recorded in the [dump files corresponding to submitted crashes](https://searchfox.org/firefox-main/source/toolkit/components/crashes/CrashManager.in.sys.mjs#297-322). If there are no recorded crashes, returns `null`. This targeting is only available for Mac and Windows users; Linux users will always return null for `daysSinceLastCrash`.
+
+#### Definition
+
+```ts
+declare const daysSinceLastCrash: Promise<number|null>;
+```

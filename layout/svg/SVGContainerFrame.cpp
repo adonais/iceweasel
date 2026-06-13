@@ -46,23 +46,20 @@ NS_IMPL_FRAMEARENA_HELPERS(SVGContainerFrame)
 
 void SVGContainerFrame::AppendFrames(ChildListID aListID,
                                      nsFrameList&& aFrameList) {
-  InsertFrames(aListID, mFrames.LastChild(), nullptr, std::move(aFrameList));
+  nsContainerFrame::AppendFrames(HasAnyStateBits(NS_FRAME_IS_NONDISPLAY)
+                                     ? FrameChildListID::NoReflowPrincipal
+                                     : aListID,
+                                 std::move(aFrameList));
 }
 
 void SVGContainerFrame::InsertFrames(ChildListID aListID, nsIFrame* aPrevFrame,
                                      const nsLineList::iterator* aPrevFrameLine,
                                      nsFrameList&& aFrameList) {
-  NS_ASSERTION(aListID == FrameChildListID::Principal, "unexpected child list");
-  NS_ASSERTION(!aPrevFrame || aPrevFrame->GetParent() == this,
-               "inserting after sibling frame with different parent");
-
-  mFrames.InsertFrames(this, aPrevFrame, std::move(aFrameList));
-}
-
-void SVGContainerFrame::RemoveFrame(DestroyContext& aContext,
-                                    ChildListID aListID, nsIFrame* aOldFrame) {
-  NS_ASSERTION(aListID == FrameChildListID::Principal, "unexpected child list");
-  mFrames.DestroyFrame(aContext, aOldFrame);
+  nsContainerFrame::InsertFrames(HasAnyStateBits(NS_FRAME_IS_NONDISPLAY)
+                                     ? FrameChildListID::NoReflowPrincipal
+                                     : aListID,
+                                 aPrevFrame, aPrevFrameLine,
+                                 std::move(aFrameList));
 }
 
 bool SVGContainerFrame::ComputeCustomOverflow(OverflowAreas& aOverflowAreas) {
@@ -181,19 +178,6 @@ void SVGDisplayContainerFrame::RemoveFrame(DestroyContext& aContext,
                                            ChildListID aListID,
                                            nsIFrame* aOldFrame) {
   SVGObserverUtils::InvalidateRenderingObservers(aOldFrame);
-
-  // SVGContainerFrame::RemoveFrame doesn't call down into
-  // nsContainerFrame::RemoveFrame, so it doesn't call FrameNeedsReflow. We
-  // need to schedule a repaint and schedule an update to our overflow rects.
-  // TODO(emilio, bug 2008045): It sure looks like it should just call into
-  // nsContainerFrame.
-  SchedulePaint();
-  if (!HasAnyStateBits(NS_FRAME_IS_NONDISPLAY)) {
-    PresContext()->RestyleManager()->PostRestyleEvent(
-        mContent->AsElement(), RestyleHint{0}, nsChangeHint_UpdateOverflow);
-    PresShell()->SynthesizeMouseMove(false);
-  }
-
   SVGContainerFrame::RemoveFrame(aContext, aListID, aOldFrame);
 }
 

@@ -765,12 +765,13 @@ class MOZ_STACK_CLASS OrderedHashTableImpl {
    * means the element was not added to the table.
    */
   template <typename ElementInput>
-  [[nodiscard]] bool put(JSContext* cx, ElementInput&& element) {
+  [[nodiscard]] bool put(JSContext* cx, ElementInput&& elementInput) {
+    T element(std::forward<ElementInput>(elementInput));
     HashNumber h;
     if (hasAllocatedBuffer()) {
       h = prepareHash(Ops::getKey(element));
       if (Data* e = lookup(Ops::getKey(element), h)) {
-        e->element = std::forward<ElementInput>(element);
+        e->element = std::move(element);
         return true;
       }
       if (getDataLength() == getDataCapacity() && !rehashOnFull(cx)) {
@@ -783,7 +784,7 @@ class MOZ_STACK_CLASS OrderedHashTableImpl {
       h = prepareHash(Ops::getKey(element));
     }
     auto [entry, chain] = addEntry(h);
-    new (entry) Data(std::forward<ElementInput>(element), chain);
+    new (entry) Data(std::move(element), chain);
     return true;
   }
 
@@ -1336,8 +1337,8 @@ class MOZ_STACK_CLASS OrderedHashMapImpl {
    public:
     Entry() = default;
     explicit Entry(const Key& k) : key(k) {}
-    template <typename V>
-    Entry(const Key& k, V&& v) : key(k), value(std::forward<V>(v)) {}
+    template <typename K, typename V>
+    Entry(K&& k, V&& v) : key(std::forward<K>(k)), value(std::forward<V>(v)) {}
     Entry(Entry&& rhs) : key(std::move(rhs.key)), value(std::move(rhs.value)) {}
 
     const Key key{};

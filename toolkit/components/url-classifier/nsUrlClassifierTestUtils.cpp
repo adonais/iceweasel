@@ -63,7 +63,7 @@ nsUrlClassifierTestUtils::MakeUpdateResponseV5(const nsACString& aName,
 
   nsCString out(s.c_str(), s.size());
 
-  aResponse = out;
+  aResponse = std::move(out);
 
   return NS_OK;
 }
@@ -107,7 +107,7 @@ nsUrlClassifierTestUtils::MakeUpdateResponseV5_32b(const nsACString& aName,
 
   nsCString out(s.c_str(), s.size());
 
-  aResponse = out;
+  aResponse = std::move(out);
 
   return NS_OK;
 }
@@ -141,7 +141,7 @@ nsUrlClassifierTestUtils::MakeFindFullHashResponseV5(
 
   nsCString out(s.c_str(), s.size());
 
-  aResponse = out;
+  aResponse = std::move(out);
 
   return NS_OK;
 }

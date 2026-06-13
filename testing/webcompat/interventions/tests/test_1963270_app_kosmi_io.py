@@ -21,7 +21,7 @@ async def is_local_file_option_shown(client, credentials, platform):
     await client.stall(1)
     client.await_css(
         "button",
-        condition="elem.innerText.includes('Login with Email')",
+        condition="elem.innerText.includes('with Email')",
         is_displayed=True,
     ).click()
     client.await_css(USERNAME_CSS, is_displayed=True).send_keys(credentials["username"])

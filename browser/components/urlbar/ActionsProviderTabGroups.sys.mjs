@@ -58,7 +58,7 @@ class ProviderTabGroups extends ActionsProvider {
       sortByLastSeenActive: true,
     })) {
       if (
-        group.ownerGlobal == window &&
+        group.documentGlobal == window &&
         window.gBrowser.selectedTab.group == group
       ) {
         // This group is already the active group, so don't offer switching to it.
@@ -119,7 +119,7 @@ class ProviderTabGroups extends ActionsProvider {
 
     if (group) {
       group.select();
-      group.ownerGlobal.focus();
+      group.documentGlobal.focus();
     }
   }
 
@@ -145,6 +145,9 @@ class ProviderTabGroups extends ActionsProvider {
           "--tab-group-color": `var(--tab-group-color-${color})`,
           "--tab-group-color-invert": `var(--tab-group-color-${color}-invert)`,
           "--tab-group-color-pale": `var(--tab-group-color-${color}-pale)`,
+          "--tab-group-background-color": `var(--tab-group-${color})`,
+          "--tab-group-text-color": `var(--tab-group-${color}-text)`,
+          "--tab-group-background-color-hover": `var(--tab-group-${color}-hover)`,
         },
       },
     });

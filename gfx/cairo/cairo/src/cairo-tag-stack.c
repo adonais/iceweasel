@@ -1,3 +1,4 @@
+/* -*- Mode: c; c-basic-offset: 4; indent-tabs-mode: t; tab-width: 8; -*- */
 /* cairo - a vector graphics library with display and print output
  *
  * Copyright © 2016 Adrian Johnson
@@ -197,7 +198,7 @@ _cairo_tag_stack_push (cairo_tag_stack_t *stack,
 	}
     }
 
-    elem = _cairo_malloc (sizeof(cairo_tag_stack_elem_t));
+    elem = _cairo_calloc (sizeof(cairo_tag_stack_elem_t));
     if (unlikely (elem == NULL))
 	return _cairo_error (CAIRO_STATUS_NO_MEMORY);
 

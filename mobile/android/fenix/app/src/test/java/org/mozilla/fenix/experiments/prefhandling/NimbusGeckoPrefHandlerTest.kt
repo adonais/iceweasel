@@ -8,6 +8,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
+import io.mockk.verifyOrder
 import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertNotNull
 import junit.framework.TestCase.assertNull
@@ -171,7 +172,7 @@ class NimbusGeckoPrefHandlerTest {
 
         val capturedPrefState = slot<GeckoPrefState>()
         val capturedReason = slot<PrefUnenrollReason>()
-        every { mockNimbusApi.unenrollForGeckoPref(capture(capturedPrefState), capture(capturedReason)) } returns emptyList()
+        every { mockNimbusApi.unenrollForGeckoPref(capture(capturedPrefState), capture(capturedReason)) } returns Unit
 
         handler.setGeckoPrefsState(listOf(prefState))
         testScheduler.advanceUntilIdle()
@@ -208,7 +209,7 @@ class NimbusGeckoPrefHandlerTest {
 
         val capturedPrefState = slot<GeckoPrefState>()
         val capturedReason = slot<PrefUnenrollReason>()
-        every { mockNimbusApi.unenrollForGeckoPref(capture(capturedPrefState), capture(capturedReason)) } returns emptyList()
+        every { mockNimbusApi.unenrollForGeckoPref(capture(capturedPrefState), capture(capturedReason)) } returns Unit
 
         handler.setGeckoPrefsState(listOf(prefState))
         testScheduler.advanceUntilIdle()
@@ -221,7 +222,7 @@ class NimbusGeckoPrefHandlerTest {
     }
 
     @Test
-    fun `WHEN setGeckoPrefsOriginalValues is successful on a known value THEN setBrowserPrefs is called`() = runTest {
+    fun `WHEN setGeckoPrefsOriginalValues is successful on a known value THEN prefs are unregistered from observation before setBrowserPrefs is called`() = runTest {
         val handler = makeHandler(engine = mockEngine, geckoScope = this)
         handler.preferenceTypes[TEST_PREF] = BrowserPrefType.STRING
         val originalPref = OriginalGeckoPref(
@@ -237,7 +238,10 @@ class NimbusGeckoPrefHandlerTest {
         handler.setGeckoPrefsOriginalValues(listOf(originalPref))
         testScheduler.advanceUntilIdle()
 
-        verify { mockEngine.setBrowserPrefs(any(), any(), any()) }
+        verifyOrder {
+            mockEngine.unregisterPrefsForObservation(match { it.contains(TEST_PREF) }, any(), any())
+            mockEngine.setBrowserPrefs(any(), any(), any())
+        }
     }
 
     @Test
@@ -446,5 +450,135 @@ class NimbusGeckoPrefHandlerTest {
 
         assertEquals(2, result.size)
         assertTrue(result.containsAll(listOf(TEST_PREF, SECOND_TEST_PREF)))
+    }
+
+    // Test for Bug 2033755: When an experiment unenrolls and a rollout
+    // immediately enrolls the same pref, the rollout must not inherit the stale experiment
+    // Gecko value as its original Gecko state. The rollout should use the original post-restore Gecko value instead.
+    @Test
+    fun `WHEN experiment unenrolls and rollout immediately enrolls the same pref THEN the rollout registers the pre-experiment value as its original not the experiment value`() = runTest {
+        val handler = makeHandler(engine = mockEngine, geckoScope = this)
+        handler.start()
+        handler.preferenceTypes[TEST_PREF] = BrowserPrefType.STRING
+
+        // Simulate a pref that was set by an enrolled experiment
+        handler.getPreferenceState(TEST_PREF)?.let { state ->
+            state.geckoValue = "experiment-value"
+            state.isUserSet = true
+            state.enrollmentValue = PrefEnrollmentData(
+                experimentSlug = "experiment-slug",
+                prefValue = "experiment-value",
+                featureId = "gecko-nimbus-validation",
+                variable = "test-preference",
+            )
+        }
+
+        // Mock setting a pref
+        every { mockEngine.setBrowserPrefs(any(), any(), any()) } answers {
+            val onSuccess = secondArg<(Map<String, Boolean>) -> Unit>()
+            onSuccess(mapOf(TEST_PREF to true))
+        }
+
+        // Mock getting the default value
+        every { mockEngine.getBrowserPrefs(any(), any(), any()) } answers {
+            val onSuccess = secondArg<(List<BrowserPreference<*>>) -> Unit>()
+            onSuccess(
+                listOf(
+                    BrowserPreference<String>(
+                        pref = TEST_PREF,
+                        defaultValue = "default-value",
+                        hasUserChangedValue = false,
+                        prefType = BrowserPrefType.STRING,
+                    ),
+                ),
+            )
+        }
+
+        // Capture registrations back to Nimbus of original values
+        val capturedStates = slot<List<GeckoPrefState>>()
+        every { mockNimbusApi.registerPreviousGeckoPrefStates(capture(capturedStates)) } answers { }
+
+        // Experiment unenrolls
+        handler.setGeckoPrefsOriginalValues(
+            listOf(OriginalGeckoPref(pref = TEST_PREF, branch = PrefBranch.USER, value = "default-value")),
+        )
+        // Rollout enrolls immediately
+        handler.setGeckoPrefsState(
+            listOf(
+                GeckoPrefState(
+                    geckoPref = GeckoPref(pref = TEST_PREF, branch = PrefBranch.USER),
+                    // Stale value
+                    geckoValue = "experiment-value",
+                    enrollmentValue = PrefEnrollmentData(
+                        experimentSlug = "rollout-slug",
+                        prefValue = "rollout-value",
+                        featureId = "gecko-nimbus-validation",
+                        variable = "test-preference",
+                    ),
+                    isUserSet = true,
+                ),
+            ),
+        )
+        testScheduler.advanceUntilIdle()
+
+        // The stale Gecko value should have been cleared, which will force a fresh Gecko fetch.
+        verify { mockEngine.getBrowserPrefs(any(), any(), any()) }
+
+        // The original registered for the rollout must not be the stale experiment value.
+        verify { mockNimbusApi.registerPreviousGeckoPrefStates(any()) }
+        val registeredState = capturedStates.captured.firstOrNull { it.prefString() == TEST_PREF }
+        assertNotNull(registeredState)
+        Assert.assertNotEquals("experiment-value", registeredState?.geckoValue)
+    }
+
+    // Test for Bug 2033772: When a rollout unenrolls and an experiment is active and
+    // re-evaluates the same pref, then the experiment should not try to fetch the Gecko value a second time
+    // because it will get its own value.
+    @Test
+    fun `WHEN a still-active experiment is re-evaluated THEN the original gecko value is not overwritten`() = runTest {
+        val handler = makeHandler(engine = mockEngine, geckoScope = this)
+        handler.start()
+        handler.preferenceTypes[TEST_PREF] = BrowserPrefType.STRING
+
+        // Simulate a pref that was set by an enrolled experiment
+        handler.getPreferenceState(TEST_PREF)?.let { state ->
+            state.geckoValue = "experiment-value"
+            state.isUserSet = false
+            state.enrollmentValue = PrefEnrollmentData(
+                experimentSlug = "experiment-slug",
+                prefValue = "experiment-value",
+                featureId = "gecko-nimbus-validation",
+                variable = "test-preference",
+            )
+        }
+
+        every { mockEngine.setBrowserPrefs(any(), any(), any()) } answers {
+            val onSuccess = secondArg<(Map<String, Boolean>) -> Unit>()
+            onSuccess(mapOf(TEST_PREF to true))
+        }
+
+        // Nimbus re-evaluates the same experiment after the rollout is removed
+        handler.setGeckoPrefsState(
+            listOf(
+                GeckoPrefState(
+                    geckoPref = GeckoPref(pref = TEST_PREF, branch = PrefBranch.USER),
+                    geckoValue = "experiment-value",
+                    enrollmentValue = PrefEnrollmentData(
+                        experimentSlug = "experiment-slug",
+                        prefValue = "experiment-value",
+                        featureId = "gecko-nimbus-validation",
+                        variable = "test-preference",
+                    ),
+                    isUserSet = false,
+                ),
+            ),
+        )
+        testScheduler.advanceUntilIdle()
+
+        // Information is already present
+        verify(exactly = 0) { mockEngine.getBrowserPrefs(any(), any(), any()) }
+        // Must not call registerPreviousGeckoPrefStates — the correct original Gecko
+        // value is already stored in Nimbus and re-registering would overwrite it with the stale experiment value.
+        verify(exactly = 0) { mockNimbusApi.registerPreviousGeckoPrefStates(any()) }
     }
 }

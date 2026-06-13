@@ -264,13 +264,13 @@ already_AddRefed<gfxPattern> SVGGradientFrame::GetPaintServerPattern(
   // SVG specification says that no stops should be treated like
   // the corresponding fill or stroke had "none" specified.
   if (nStops == 0) {
-    return do_AddRef(new gfxPattern(DeviceColor()));
+    return MakeAndAddRef<gfxPattern>(DeviceColor());
   }
 
   if (nStops == 1 || GradientVectorLengthIsZero()) {
     // The gradient paints a single colour, using the stop-color of the last
     // gradient step if there are more than one.
-    return do_AddRef(new gfxPattern(ToDeviceColor(stops.LastElement().mColor)));
+    return MakeAndAddRef<gfxPattern>(ToDeviceColor(stops.LastElement().mColor));
   }
 
   // Get the transform list (if there is one). We do this after the returns
@@ -477,7 +477,7 @@ already_AddRefed<gfxPattern> SVGLinearGradientFrame::CreateGradient() {
   float x2 = GetLengthValue(dom::SVGLinearGradientElement::ATTR_X2);
   float y2 = GetLengthValue(dom::SVGLinearGradientElement::ATTR_Y2);
 
-  return do_AddRef(new gfxPattern(x1, y1, x2, y2));
+  return MakeAndAddRef<gfxPattern>(x1, y1, x2, y2);
 }
 
 // -------------------------------------------------------------------------
@@ -565,7 +565,7 @@ already_AddRefed<gfxPattern> SVGRadialGradientFrame::CreateGradient() {
   float fy = GetLengthValue(dom::SVGRadialGradientElement::ATTR_FY, cy);
   float fr = GetLengthValue(dom::SVGRadialGradientElement::ATTR_FR);
 
-  return do_AddRef(new gfxPattern(fx, fy, fr, cx, cy, r));
+  return MakeAndAddRef<gfxPattern>(fx, fy, fr, cx, cy, r);
 }
 
 }  // namespace mozilla

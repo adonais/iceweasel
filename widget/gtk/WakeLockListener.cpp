@@ -183,7 +183,7 @@ class WakeLockTopic {
           }
           return string;
         }();
-        mNiceTopic = niceTopic;
+        mNiceTopic = std::move(niceTopic);
         break;
       }
     }

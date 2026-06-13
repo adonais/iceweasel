@@ -199,6 +199,21 @@ class WindowGlobalParent final : public WindowContext,
 
   ContentBlockingLog* GetContentBlockingLog() { return &mContentBlockingLog; }
 
+  // Apply the existing content-blocking gates (out-of-process, non-private,
+  // top-level content) and, if they pass, flush the in-memory
+  // ContentBlockingLog to the tracking database. Safe to call repeatedly;
+  // ContentBlockingLog::ReportLog() emits only the delta since the last
+  // flush, so no double-counting occurs.
+  void MaybeReportContentBlockingLog();
+
+  // Flush every live top-level WindowGlobalParent's content-blocking log to
+  // the tracking database. Exposed to chrome JS via WebIDL so
+  // TrackingDBService can force ingestion before a read query.
+  static void FlushAllContentBlockingLogs(const GlobalObject& aGlobal) {
+    FlushAllContentBlockingLogs();
+  }
+  static void FlushAllContentBlockingLogs();
+
   nsIDOMProcessParent* GetDomProcess();
 
   nsICookieJarSettings* CookieJarSettings() { return mCookieJarSettings; }
@@ -301,7 +316,8 @@ class WindowGlobalParent final : public WindowContext,
 
   void DrawSnapshotInternal(gfx::CrossProcessPaint* aPaint,
                             const Maybe<IntRect>& aRect, float aScale,
-                            nscolor aBackgroundColor, uint32_t aFlags);
+                            nscolor aBackgroundColor,
+                            gfx::CrossProcessPaintFlags aFlags);
 
   // WebShare API - try to share
   mozilla::ipc::IPCResult RecvShare(IPCWebShareData&& aData,
@@ -476,6 +492,8 @@ class WindowGlobalParent final : public WindowContext,
 
   bool mShouldReportHasBlockedOpaqueResponse = false;
 };
+
+nsCString BFCacheStatusToString(uint32_t aFlags);
 
 }  // namespace dom
 }  // namespace mozilla

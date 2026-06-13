@@ -148,6 +148,15 @@ enum class TabGroupTheme {
     @get:ReadOnlyComposable
     abstract val contentLabel: String
 
+    /**
+     * Returns the next [TabGroupTheme] in the list, cycling back to the start
+     * if the current theme is the last one.
+     */
+    fun next(): TabGroupTheme {
+        val themes = TabGroupTheme.entries
+        return themes[(ordinal + 1) % themes.size]
+    }
+
     companion object {
         /**
          * The color of content displayed on top of [primary].

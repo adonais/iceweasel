@@ -73,6 +73,6 @@ namespace console {
   [ChromeOnly]
   const boolean IS_NATIVE_CONSOLE = true;
 
-  [ChromeOnly, NewObject]
+  [Func="IsChromeOrWorkerDebugger", NewObject]
   ConsoleInstance createInstance(optional ConsoleInstanceOptions options = {});
 };

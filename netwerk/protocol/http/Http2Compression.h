@@ -53,11 +53,11 @@ class nvFIFO {
   nsDeque<nvPair> mTable;
 
   // This mutex is held when adding or removing elements in the table
-  // and when accessing the table from the main thread (in SizeOfDynamicTable)
-  // Since the operator[] and other const methods are always called
-  // on the socket thread, they don't need to lock the mutex.
-  // Mutable so it can be locked in SizeOfDynamicTable which is const
-  mutable Mutex mMutex MOZ_UNANNOTATED{"nvFIFO"};
+  // and when accessing the table from the main thread (in SizeOfDynamicTable).
+  // The operator[] and other methods called on the socket thread do not lock
+  // because the socket thread is the sole modifier of mTable and mByteCount.
+  // Mutable so it can be locked in SizeOfDynamicTable which is const.
+  mutable Mutex mMutex MOZ_ANNOTATED{"nvFIFO"};
 };
 
 class HpackDynamicTableReporter;

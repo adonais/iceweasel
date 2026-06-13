@@ -1,9 +1,7 @@
 "use strict";
 
 add_task(async function test_blocking() {
-  let listsLoaded = TestUtils.topicObserved(
-    "content-classifier-filter-lists-loaded"
-  );
+  let listsLoaded = TestUtils.topicObserved(LISTS_LOADED_TOPIC);
   await SpecialPowers.pushPrefEnv({
     set: [
       ["privacy.trackingprotection.content.testing", true],
@@ -55,9 +53,7 @@ add_task(async function test_blocking() {
 });
 
 add_task(async function test_annotation() {
-  let listsLoaded = TestUtils.topicObserved(
-    "content-classifier-filter-lists-loaded"
-  );
+  let listsLoaded = TestUtils.topicObserved(LISTS_LOADED_TOPIC);
 
   await SpecialPowers.pushPrefEnv({
     set: [

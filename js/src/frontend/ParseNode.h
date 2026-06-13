@@ -727,9 +727,6 @@ class ParseNode {
   // name guessing.
   bool pn_synthetic_computed : 1;
 
-  ParseNode(const ParseNode& other) = delete;
-  void operator=(const ParseNode& other) = delete;
-
  public:
   explicit ParseNode(ParseNodeKind kind)
       : pn_type(kind),
@@ -741,6 +738,8 @@ class ParseNode {
     JS_PARSE_NODE_ASSERT(ParseNodeKind::Start <= kind);
     JS_PARSE_NODE_ASSERT(kind < ParseNodeKind::Limit);
   }
+  ParseNode(const ParseNode& other) = delete;
+  void operator=(const ParseNode& other) = delete;
 
   ParseNode(ParseNodeKind kind, const TokenPos& pos)
       : pn_type(kind),

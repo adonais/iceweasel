@@ -6,12 +6,13 @@
       "matches": ["*://www.stgguaiba.com.br/versao-mobile*"]
     }
   },
+  "css": {
+    "fix_table_layout": "#comp-kt7lh89a p.font_8.wixui-rich-text__text { white-space: nowrap; }"
+  },
   "interventions": [
     {
       "platforms": ["all"],
-      "content_scripts": {
-        "css": ["bug2009358-stgguaiba.com.br-fix-table-layout.css"]
-      }
+      "css": ["fix_table_layout"]
     }
   ]
 }

@@ -66,7 +66,7 @@ uint64_t ApplicationAccessible::State() {
 }
 
 already_AddRefed<AccAttributes> ApplicationAccessible::NativeAttributes() {
-  RefPtr<AccAttributes> attributes = new AccAttributes();
+  auto attributes = MakeRefPtr<AccAttributes>();
   return attributes.forget();
 }
 

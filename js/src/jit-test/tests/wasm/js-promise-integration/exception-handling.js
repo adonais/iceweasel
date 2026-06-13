@@ -1,3 +1,5 @@
+// |jit-test| skip-if: !wasmJSPromiseIntegrationEnabled()
+
 // Test if we can handle WebAssembly.Exception on cont stack,
 // and in suspending function.
 

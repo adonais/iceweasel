@@ -16,11 +16,11 @@ import mozilla.components.browser.tabstray.TabsTray
 import org.junit.Assert
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.mockito.Mockito.spy
 import org.mockito.Mockito.verifyNoMoreInteractions
+import kotlin.test.assertNotNull
 
 class TabsTrayPresenterTest {
 

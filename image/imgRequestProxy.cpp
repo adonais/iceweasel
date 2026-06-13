@@ -752,8 +752,8 @@ imgRequestProxy::GetFileName(nsACString& aFileName) {
   return NS_OK;
 }
 
-imgRequestProxy* imgRequestProxy::NewClonedProxy() {
-  return new imgRequestProxy();
+already_AddRefed<imgRequestProxy> imgRequestProxy::NewClonedProxy() {
+  return mozilla::MakeAndAddRef<imgRequestProxy>();
 }
 
 NS_IMETHODIMP
@@ -1103,9 +1103,9 @@ already_AddRefed<imgRequestProxy> imgRequestProxy::GetStaticRequest(
   bool hadCrossOriginRedirects = true;
   GetHadCrossOriginRedirects(&hadCrossOriginRedirects);
   nsCOMPtr<nsIPrincipal> triggeringPrincipal = GetTriggeringPrincipal();
-  RefPtr<imgRequestProxy> req =
-      new imgRequestProxyStatic(frozenImage, currentPrincipal,
-                                triggeringPrincipal, hadCrossOriginRedirects);
+  auto req = MakeRefPtr<imgRequestProxyStatic>(frozenImage, currentPrincipal,
+                                               triggeringPrincipal,
+                                               hadCrossOriginRedirects);
   req->Init(nullptr, nullptr, mURI, nullptr);
 
   return req.forget();
@@ -1257,7 +1257,7 @@ imgRequestProxyStatic::GetHadCrossOriginRedirects(
   return NS_OK;
 }
 
-imgRequestProxy* imgRequestProxyStatic::NewClonedProxy() {
+already_AddRefed<imgRequestProxy> imgRequestProxyStatic::NewClonedProxy() {
   nsCOMPtr<nsIPrincipal> currentPrincipal;
   GetImagePrincipal(getter_AddRefs(currentPrincipal));
   nsCOMPtr<nsIPrincipal> triggeringPrincipal;
@@ -1265,6 +1265,6 @@ imgRequestProxy* imgRequestProxyStatic::NewClonedProxy() {
   bool hadCrossOriginRedirects = true;
   GetHadCrossOriginRedirects(&hadCrossOriginRedirects);
   RefPtr<mozilla::image::Image> image = GetImage();
-  return new imgRequestProxyStatic(image, currentPrincipal, triggeringPrincipal,
-                                   hadCrossOriginRedirects);
+  return mozilla::MakeAndAddRef<imgRequestProxyStatic>(
+      image, currentPrincipal, triggeringPrincipal, hadCrossOriginRedirects);
 }

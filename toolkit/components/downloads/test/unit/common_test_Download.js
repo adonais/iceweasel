@@ -2264,6 +2264,26 @@ add_task(async function test_blocked_applicationReputation_confirmBlock() {
 });
 
 /**
+ * Checks that confirmBlock sets deleted to true.
+ */
+add_task(
+  async function test_blocked_applicationReputation_confirmBlock_sets_deleted() {
+    let download = await promiseBlockedDownload({
+      keepPartialData: true,
+      keepBlockedData: true,
+    });
+
+    Assert.ok(download.hasBlockedData);
+    Assert.ok(!download.deleted);
+
+    await download.confirmBlock();
+
+    Assert.ok(!download.hasBlockedData);
+    Assert.ok(download.deleted);
+  }
+);
+
+/**
  * Checks that application reputation blocks the download but maintains the
  * blocked data, which will be used to complete the download when unblocking.
  */

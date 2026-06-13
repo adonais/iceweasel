@@ -238,9 +238,10 @@ class WebMDemuxer : public MediaDataDemuxer,
   int mAudioCodec;
   // Codec ID of video track
   int mVideoCodec;
-  // Default durations of blocks for each track, in microseconds
-  int64_t mAudioDefaultDuration;
-  int64_t mVideoDefaultDuration;
+  // Default durations of blocks for each track, in microseconds.
+  // -1 indicates the track has no DefaultDuration set.
+  int64_t mAudioDefaultDuration = -1;
+  int64_t mVideoDefaultDuration = -1;
 
   // Booleans to indicate if we have audio and/or video data
   bool mHasVideo;

@@ -8,9 +8,13 @@
 newtab-page-title = Ny flik
 newtab-settings-button =
     .title = Anpassa sidan för Ny flik
+#  (developer note): @nova-cleanup(remove-string): Remove newtab-customize-panel-icon-button once Nova lands, will be using newtab-customize-panel-label instead
 newtab-customize-panel-icon-button =
     .title = Anpassa sidan
+#  (developer note): @nova-cleanup(remove-string): Remove newtab-customize-panel-icon-button-label once Nova lands, will be using newtab-customize-panel-label instead
 newtab-customize-panel-icon-button-label = Anpassa
+newtab-customize-panel-label =
+    .label = Anpassa
 newtab-personalize-settings-icon-label =
     .title = Anpassa ny flik
     .aria-label = Inställningar
@@ -363,6 +367,10 @@ newtab-custom-widget-lists-toggle =
     .label = Listor
 newtab-custom-widget-timer-toggle =
     .label = Timer
+newtab-custom-widget-sports-toggle =
+    .label = VM
+newtab-custom-widget-clock-toggle =
+    .label = Klocka
 newtab-custom-widget-section-title = Widgetar
 newtab-custom-widget-section-toggle =
     .label = Widgetar
@@ -501,6 +509,9 @@ newtab-weather-menu-change-location = Ändra plats
 newtab-weather-change-location-search-input-placeholder =
     .placeholder = Sök plats
     .aria-label = Sök plats
+# "Current" refers to the user's physical/geographic location detected via geolocation.
+newtab-weather-change-location-search-use-current =
+    .label = Använd aktuell plats
 newtab-weather-menu-weather-display = Vädervisning
 newtab-weather-todays-forecast = Dagens prognos
 newtab-weather-see-full-forecast = Se fullständig prognos
@@ -589,8 +600,16 @@ newtab-topic-selection-button-pick-interests = Välj dina intressen
 ## e.g. Following the travel section of stories.
 
 newtab-section-follow-button = Följ
+# Variables:
+#   $topic (string) - Topic that the user can follow
+newtab-section-follow-button-label =
+    .aria-label = Följ { $topic }
 newtab-section-following-button = Följer
 newtab-section-unfollow-button = Sluta följa
+# Variables:
+#   $topic (string) - Topic that the user is following and can unfollow
+newtab-section-unfollow-button-label =
+    .aria-label = Följer: Sluta följa { $topic }
 # A modal may appear next to the Follow button, directing users to try out the feature
 newtab-section-follow-highlight-title = Finjustera ditt flöde
 newtab-section-follow-highlight-subtitle = Följ dina intressen för att se mer av vad du gillar.
@@ -602,6 +621,22 @@ newtab-section-follow-highlight-subtitle = Följ dina intressen för att se mer 
 newtab-section-block-button = Blockera
 newtab-section-blocked-button = Blockerad
 newtab-section-unblock-button = Blockera inte
+# Variables:
+#   $topic (string) - Name of topic that user is following
+newtab-section-follow-topic =
+    .aria-label = Följ { $topic }
+# Variables:
+#   $topic (string) - Name of topic that user is unfollowing
+newtab-section-unfollow-topic =
+    .aria-label = Sluta följa { $topic }
+# Variables:
+#   $topic (string) - Name of topic that user is blocking
+newtab-section-block-topic =
+    .aria-label = Blockera { $topic }
+# Variables:
+#   $topic (string) - Name of topic that user is unblocking
+newtab-section-unblock-topic =
+    .aria-label = Avblockera { $topic }
 
 ## Confirmation modal for blocking a section
 
@@ -632,6 +667,12 @@ newtab-custom-wallpaper-cta = Prova den
 newtab-new-user-custom-wallpaper-title = Välj en bakgrundsbild för att göra { -brand-product-name } till din
 newtab-new-user-custom-wallpaper-subtitle = Få varje ny flik att kännas som hemma med anpassade bakgrunder och färger.
 newtab-new-user-custom-wallpaper-cta = Prova det nu
+
+## Strings for Nova wallpaper feature highlight
+
+newtab-wallpaper-feature-highlight-title = Nya färska bakgrundsbilder har precis kommit
+newtab-wallpaper-feature-highlight-subtitle = Välj din favorit och få varje ny flik att kännas som hemma.
+newtab-wallpaper-feature-highlight-cta = Välj bakgrundsbild
 
 ## Strings for download mobile highlight
 
@@ -701,12 +742,20 @@ newtab-widget-lists-label-beta =
 # Variables:
 #   $number (number) - Amount of list items marked complete
 newtab-widget-lists-completed-list = Slutförd ({ $number })
+newtab-widget-lists-celebration-headline = Bra jobbat
+newtab-widget-lists-celebration-subhead = Allt klart
 newtab-widget-task-list-menu-copy = Kopiera
 newtab-widget-lists-menu-edit = Redigera listnamn
+newtab-widget-lists-menu-edit2 =
+    .aria-label = Redigera listnamn
 newtab-widget-lists-menu-create = Skapa en ny lista
 newtab-widget-lists-menu-delete = Ta bort denna lista
 newtab-widget-lists-menu-copy = Kopiera lista till urklipp
 newtab-widget-lists-menu-learn-more = Läs mer
+newtab-widget-lists-button-add-item = Lägg till ett objekt
+newtab-widget-lists-input-add-an-item2 =
+    .placeholder = Lägg till ett objekt
+    .aria-label = Lägg till ett objekt
 newtab-widget-lists-input-add-an-item =
     .placeholder = Lägg till ett objekt
 newtab-widget-lists-input-error = Inkludera text för att lägga till ett objekt.
@@ -715,19 +764,41 @@ newtab-widget-lists-input-menu-move-up = Flytta upp
 newtab-widget-lists-input-menu-move-down = Flytta ned
 newtab-widget-lists-input-menu-delete = Ta bort
 newtab-widget-lists-input-menu-edit = Redigera
+newtab-widget-lists-input-menu-edit2 =
+    .aria-label = Redigera objekt
 # the + symbol emphasises the functionality of adding a new list
 newtab-widget-lists-dropdown-create =
     .label = + Skapa en ny lista
 newtab-widget-lists-name-label-default =
     .label = Uppgiftslista
+newtab-widget-lists-name-label-checklist =
+    .label = Checklista
 newtab-widget-lists-name-placeholder-default =
     .placeholder = Uppgiftslista
+newtab-widget-lists-name-placeholder-checklist2 =
+    .placeholder = Checklista
+    .aria-label = Redigera listnamn
+# The placeholder value of the name field for a newly created list
+newtab-widget-lists-name-placeholder-new2 =
+    .placeholder = Ny lista
+    .aria-label = Redigera listnamn
+newtab-widget-lists-name-placeholder-checklist =
+    .placeholder = Checklista
 # The placeholder value of the name field for a newly created list
 newtab-widget-lists-name-placeholder-new =
     .placeholder = Ny lista
 newtab-widget-section-title = Widgetar
 newtab-widget-menu-hide = Dölj widget
 newtab-widget-menu-change-size = Ändra storlek
+# Parent label for a submenu in the widget menu that reorders the widget
+# among its siblings. "Left" and "Right" appear as items inside this submenu.
+newtab-widget-menu-move = Flytta
+# Submenu item under "Move"; moves the widget one position to the left.
+# RTL locales should translate this as "Right".
+newtab-widget-menu-move-left = Vänster
+# Submenu item under "Move"; moves the widget one position to the right.
+# RTL locales should translate this as "Left".
+newtab-widget-menu-move-right = Höger
 newtab-widget-size-small = Liten
 newtab-widget-size-medium = Medium
 newtab-widget-size-large = Stor
@@ -741,10 +812,19 @@ newtab-widget-section-maximize =
 newtab-widget-section-minimize =
     .title = Minimera widgets
     .aria-label = Komprimera alla widgetar till kompakt storlek
+newtab-widget-section-menu-button =
+    .title = Widgetmeny
+    .aria-label = Öppna widgetmenyn
+newtab-widget-add-widgets-button =
+    .aria-label = Lägg till widget
+    .title = Lägg till widget
+newtab-widget-section-menu-manage = Hantera widgetar
+newtab-widget-section-menu-hide-all = Dölj widgetar
+newtab-widget-section-menu-learn-more = Läs mer
 newtab-widget-section-feedback = Berätta vad du tycker
+newtab-widget-lists-name-default = Checklista
 
-## Strings for timer productivity widget
-## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown
+## Strings introduced by the Nova redesign of the Timer widget
 
 newtab-widget-timer-notification-title = Timer
 newtab-widget-timer-notification-focus = Fokustiden är ute. Bra jobbat. Behöver du en paus?
@@ -785,6 +865,122 @@ newtab-promo-card-dismiss-button =
     .title = Ignorera
     .aria-label = Ignorera
 
+## Strings introduced by the Nova redesign of the Timer widget
+
+# Variables:
+#   $minutes (number) - The currently selected timer duration in minutes
+newtab-widget-timer-start-aria =
+    .aria-label =
+        { $minutes ->
+           *[other] Starta { $minutes }-minuters timer
+        }
+newtab-widget-timer-pause-aria =
+    .aria-label = Pausa timer
+# Variables:
+#   $minutes (number) - The currently selected timer duration in minutes
+newtab-widget-timer-spinbutton-name =
+    .aria-label =
+        { $minutes ->
+            [one] { $minutes } minut
+           *[other] { $minutes } minuter
+        }
+newtab-widget-timer-decrease-min =
+    .title = Minska med 1 minut
+newtab-widget-timer-increase-min =
+    .title = Öka med 1 minut
+newtab-widget-timer-mode-group =
+    .aria-label = Timerläge
+# Small label shown beneath the live time while the focus timer is running or paused.
+newtab-widget-timer-running-focus = Fokus
+# Small label shown beneath the live time while the break timer is running or paused.
+newtab-widget-timer-running-break = Paus
+# Context-menu item to hide the Timer widget. Replaces the shared "Hide widget"
+# copy with a widget-specific string per the Nova design.
+newtab-widget-timer-menu-hide = Dölj timer
+# Heading shown inside the Timer widget after a focus session ends.
+newtab-widget-timer-celebration-heading-focus = Bra jobbat
+# Heading shown inside the Timer widget after a break session ends.
+newtab-widget-timer-celebration-heading-break = Din paus är över
+# Message shown inside the Timer widget after a focus session ends.
+newtab-widget-timer-celebration-message-focus = Behöver du en paus?
+# Message shown inside the Timer widget after a break session ends.
+newtab-widget-timer-celebration-message-break = Redo att fokusera?
+
+## Sports widget
+
+newtab-sports-widget-menu-follow-teams = Följ lag
+newtab-sports-widget-menu-view-schedule = Visa schema
+newtab-sports-widget-menu-view-upcoming = Visa kommande
+newtab-sports-widget-menu-view-results = Visa resultat
+# Milestone dates (e.g. group stage, semifinals, etc.). Refers to calendar dates.
+newtab-sports-widget-menu-key-dates = Viktiga datum
+newtab-sports-widget-menu-learn-more = Läs mer
+# “Keep tabs on” is an informal expression meaning to stay updated on, stay informed on, or regularly follow something (in this case, World Cup matches and updates).
+newtab-sports-widget-keep-tabs = Håll koll på VM
+newtab-sports-widget-get-updates = Få liveuppdateringar om matcher och mycket mer.
+newtab-sports-widget-view-schedule =
+    .label = Visa schema
+newtab-sports-widget-follow-teams =
+    .label = Följ lag
+newtab-sports-widget-view-matches =
+    .label = Visa träffar
+# Variables:
+#   $number (number) - Maximum number of teams a user can choose to follow in the team selection state
+newtab-sports-widget-follow-teams-title =
+    { $number ->
+        [one] Följ upp till { $number } lag
+       *[other] Följ upp till { $number } lag
+    }
+newtab-sports-widget-choose-wallpaper =
+    .label = Välj en bakgrundsbild
+newtab-sports-widget-skip = Hoppa över
+newtab-sports-widget-search-country =
+    .placeholder = Sök land
+    .aria-label = Sök land
+newtab-sports-widget-cancel = Avbryt
+newtab-sports-widget-back-button =
+    .aria-label = Tillbaka
+newtab-sports-widget-done-button =
+    .label = Klar
+newtab-sports-widget-group-stage = Gruppspel
+newtab-sports-widget-round-32 = Sextondelsfinal
+newtab-sports-widget-round-16 = Åttondelsfinal
+newtab-sports-widget-quarter-finals = Kvartsfinaler
+# The "LIVE" string is meant to be uppercase in English, but other languages and locales may vary in how they handle this.
+newtab-sports-widget-live = LIVE
+newtab-custom-widget-live-refresh =
+    .title = Uppdatera poäng
+    .aria-label = Uppdatera poäng
+# Milestone dates (e.g. group stage, semifinals, etc.). Refers to calendar dates.
+newtab-sports-widget-key-dates = Viktiga datum
+newtab-sports-widget-upcoming = Kommande
+# Used for a match currently ongoing
+newtab-sports-widget-now = Nu
+newtab-sports-widget-results = Resultat
+newtab-sports-widget-semi-finals = Semifinaler
+newtab-sports-widget-bronze-finals = Bronsfinal
+# Final is the final match for 1st place.
+newtab-sports-widget-final = Final
+# Variables:
+#   $start (Date) - Start date of a tournament stage
+#   $end (Date) - End date of a tournament stage
+newtab-sports-widget-key-date-range = { DATETIME($start, month: "short", day: "numeric") } – { DATETIME($end, month: "short", day: "numeric") }
+# Variables:
+#   $date (Date) - Date of a single tournament event
+newtab-sports-widget-key-date = { DATETIME($date, month: "short", day: "numeric") }
+newtab-sports-widget-delayed = Försenad
+newtab-sports-widget-postponed = Uppskjuten
+newtab-sports-widget-suspended = Avstängd
+newtab-sports-widget-cancelled = Avbruten
+newtab-sports-widget-information = Information om matchen
+newtab-sports-widget-no-live-data = Live matchdata uppdateras inte just nu
+newtab-sports-widget-view-results-link = Visa resultat
+newtab-sports-widget-third-place = Tredje plats
+# Runner-up is the team in 2nd place.
+newtab-sports-widget-runner-up = Tvåa
+newtab-sports-widget-champions = Mästare
+newtab-sports-widget-world-cup-champions = Världsmästare 2026
+
 ## Strings for activation window message variants. In certain experiment configurations,
 ## the strings from these variants may be displayed in a message below the search input
 ## for the first 48 hours of a new profile's lifetime. Some messages include buttons with
@@ -806,3 +1002,59 @@ newtab-activation-window-message-customization-focus-primary-button =
 # the existing widgetry that appears on it.
 newtab-activation-window-message-values-focus-header = Det här utrymmet följer dina regler
 newtab-activation-window-message-values-focus-message = Med { -brand-product-name } kan du surfa precis som du vill, med ett mer personligt sätt att börja dagen online. Gör { -brand-product-name } till din egen.
+
+## Strings for the Clock widget
+
+# Context menu item: toggle the clock card off.
+newtab-clock-widget-menu-hide = Dölj klocka
+newtab-clock-widget-menu-learn-more = Läs mer
+newtab-clock-widget-menu-edit = Redigera klockor
+newtab-clock-widget-menu-switch-to-12h = Växla till 12-timmarsformat
+newtab-clock-widget-menu-switch-to-24h = Växla till 24-timmarsformat
+newtab-clock-widget-label-your-clocks = Dina klockor
+newtab-clock-widget-search-location-input =
+    .label = Plats
+    .placeholder = Sök efter en stad
+    .aria-label = Sök efter en stad
+# "Nickname (optional)" refers to a custom, user-defined label for a saved location
+# (e.g., "Home", "Office", or "School") to make it easier to recognize.
+# Not to be translated as a legal name, username, or alias used for identity verification.
+newtab-clock-widget-input-nickname =
+    .label = Smeknamn (valfritt)
+    .placeholder = Lägg till ett smeknamn
+    .aria-label = Smeknamn (valfritt)
+# "Add new clock" is an icon-only button in the widget toolbar — the
+# attributes are consumed as tooltip/screen-reader label only. The button
+# never renders visible text.
+newtab-clock-widget-button-add =
+    .title = Lägg till ny klocka
+    .aria-label = Lägg till ny klocka
+newtab-clock-widget-button-add-clock = Lägg till
+newtab-clock-widget-button-cancel = Avbryt
+newtab-clock-widget-button-back =
+    .title = Tillbaka
+    .aria-label = Tillbaka
+newtab-clock-widget-button-edit-clock =
+    .title = Redigera klocka
+    .aria-label = Redigera klocka
+newtab-clock-widget-button-save = Spara
+newtab-clock-widget-button-remove-clock =
+    .title = Ta bort klocka
+    .aria-label = Ta bort klocka
+newtab-clock-widget-add-clock-form =
+    .aria-label = Lägg till klocka
+newtab-clock-widget-edit-clock-form =
+    .aria-label = Redigera klocka
+# "Search results" is the accessible label for the listbox dropdown that appears
+# below the location search field, listing matching cities as the user types.
+# It means "results of the search", not "search within the results".
+newtab-clock-widget-search-results =
+    .aria-label = Sökresultat
+# "Open menu for clock" is an icon-only button in the widget toolbar — the
+# attributes are consumed as tooltip/screen-reader label only. The button
+# never renders visible text.
+newtab-clock-widget-menu-button =
+    .title = Öppna menyn för klocka
+    .aria-label = Öppna menyn för klocka
+# $nickname (String) - The user-defined nickname for a saved clock location (e.g., "Home", "Office").
+newtab-clock-widget-label-nickname-with-value = Smeknamn: { $nickname }

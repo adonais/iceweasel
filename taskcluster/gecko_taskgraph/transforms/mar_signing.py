@@ -13,10 +13,7 @@ from taskgraph.util.dependencies import get_primary_dependency
 from taskgraph.util.taskcluster import get_artifact_prefix
 from taskgraph.util.treeherder import inherit_treeherder_from_dep, join_symbol
 
-from gecko_taskgraph.util.attributes import (
-    copy_attributes_from_dependent_job,
-    sorted_unique_list,
-)
+from gecko_taskgraph.util.attributes import copy_attributes_from_dependent_job
 from gecko_taskgraph.util.partials import get_partials_artifacts_from_params
 from gecko_taskgraph.util.scriptworker import get_signing_type_per_platform
 
@@ -96,9 +93,6 @@ def make_task_description(config, jobs):
         dependencies.update(signing_dependencies)
 
         attributes = copy_attributes_from_dependent_job(dep_job)
-        attributes["required_signoffs"] = sorted_unique_list(
-            attributes.get("required_signoffs", []), job.pop("required_signoffs")
-        )
         attributes["shipping_phase"] = job["shipping-phase"]
         if locale:
             attributes["locale"] = locale

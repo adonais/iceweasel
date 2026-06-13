@@ -72,6 +72,12 @@
     return gemmology::Engine<decltype(arch)>::FUNC(args...);     \
   })
 
+#define GEMMOLOGY_DISPATCH_E(FUNC)                               \
+  xsimd::dispatch<SUPPORTED_ARCHS>([](auto arch, auto... args) { \
+    gemmology::SequentialExecutionEngine E;                      \
+    return gemmology::Engine<decltype(arch)>::FUNC(args..., E);  \
+  })
+
 template <size_t TextLength = 512, typename CharT = char>
 struct AutoProfilerMarker {
   AutoProfilerMarker(js::GeckoProfilerRuntime& profiler, const CharT* name)
@@ -408,7 +414,7 @@ int32_t js::intgemm::IntrI8MultiplyAndAddBias(
   AutoProfilerMarker marker(
       cx->runtime()->geckoProfiler(), "intgemm::Shift::Multiply",
       "rowsA: {}, width: {}, colsA: {}", rowsA, width, colsB);
-  GEMMOLOGY_DISPATCH(Shift::Multiply)
+  GEMMOLOGY_DISPATCH_E(Shift::Multiply)
   (inputMatrixAPreparedPtr, inputMatrixBPreparedPtr, rowsA, width, colsB,
    gemmology::callbacks::UnquantizeAndAddBiasAndWrite(
        unquantFactor, inputBiasPreparedPtr, outputPtr));

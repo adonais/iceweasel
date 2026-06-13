@@ -73,6 +73,12 @@ add_task(async function test_prevent_install_ui() {
     "about:preferences#search"
   );
   await SpecialPowers.spawn(tab.linkedBrowser, [], async function () {
+    if (
+      Services.prefs.getBoolPref("browser.settings-redesign.enabled", false)
+    ) {
+      ok(true, "AMO search engine link was removed in SRD");
+      return;
+    }
     let linkContainer = content.document.getElementById("addEnginesBox");
     if (!linkContainer.hidden) {
       await ContentTaskUtils.waitForMutationCondition(

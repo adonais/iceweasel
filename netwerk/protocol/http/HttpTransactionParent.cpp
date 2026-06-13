@@ -111,7 +111,10 @@ nsresult HttpTransactionParent::Init(
   }
 
   mEventsink = eventsink;
-  mTargetThread = GetCurrentSerialEventTarget();
+  {
+    MutexAutoLock lock(mEventTargetMutex);
+    mTargetThread = GetCurrentSerialEventTarget();
+  }
   mChannelId = channelId;
   mTransactionObserver = std::move(transactionObserver);
   mCaps = caps;
@@ -147,12 +150,11 @@ nsresult HttpTransactionParent::Init(
   // TODO: Figure out if we have to implement nsIThreadRetargetableRequest in
   // bug 1544378.
   if (!SendInit(caps, infoArgs, *requestHead, ipcStream, requestContentLength,
-                requestBodyHasHeaders, browserId,
-                static_cast<uint8_t>(trafficCategory), requestContextID,
-                classOfService, initialRwin, responseTimeoutEnabled, mChannelId,
-                !!mTransactionObserver, throttleQueue, mIsDocumentLoad,
-                aParentIpAddressSpace, aLnaPermissionStatus, mRedirectStart,
-                mRedirectEnd)) {
+                requestBodyHasHeaders, browserId, trafficCategory,
+                requestContextID, classOfService, initialRwin,
+                responseTimeoutEnabled, mChannelId, !!mTransactionObserver,
+                throttleQueue, mIsDocumentLoad, aParentIpAddressSpace,
+                aLnaPermissionStatus, mRedirectStart, mRedirectEnd)) {
     return NS_ERROR_FAILURE;
   }
 
@@ -239,7 +241,6 @@ NS_IMETHODIMP HttpTransactionParent::RetargetDeliveryTo(
        aEventTarget));
 
   MOZ_ASSERT(NS_IsMainThread(), "Should be called on main thread only");
-  MOZ_ASSERT(!mODATarget);
   NS_ENSURE_ARG(aEventTarget);
 
   if (aEventTarget->IsOnCurrentThread()) {
@@ -263,6 +264,7 @@ NS_IMETHODIMP HttpTransactionParent::RetargetDeliveryTo(
 
   {
     MutexAutoLock lock(mEventTargetMutex);
+    MOZ_ASSERT(!mODATarget);
     mODATarget = aEventTarget;
   }
 
@@ -324,6 +326,14 @@ mozilla::TimeStamp HttpTransactionParent::GetRequestStart() {
 
 mozilla::TimeStamp HttpTransactionParent::GetResponseStart() {
   return mTimings.responseStart;
+}
+
+mozilla::TimeStamp HttpTransactionParent::GetFirstInterimResponseStart() {
+  return mTimings.firstInterimResponseStart;
+}
+
+mozilla::TimeStamp HttpTransactionParent::GetFinalResponseHeadersStart() {
+  return mTimings.finalResponseHeadersStart;
 }
 
 mozilla::TimeStamp HttpTransactionParent::GetResponseEnd() {
@@ -526,7 +536,8 @@ void HttpTransactionParent::DoOnStartRequest(
   }
 
   AutoEventEnqueuer ensureSerialDispatch(mEventQ);
-  nsresult rv = mChannel->OnStartRequest(this);
+  nsCOMPtr<nsIStreamListener> channel = mChannel;
+  nsresult rv = channel->OnStartRequest(this);
   mOnStartRequestCalled = true;
   if (NS_FAILED(rv)) {
     Cancel(rv);
@@ -596,7 +607,8 @@ void HttpTransactionParent::DoOnDataAvailable(
 
   mOnDataAvailableStartTime = aOnDataAvailableStartTime;
   AutoEventEnqueuer ensureSerialDispatch(mEventQ);
-  rv = mChannel->OnDataAvailable(this, stringStream, aOffset, aData.Length());
+  nsCOMPtr<nsIStreamListener> channel = mChannel;
+  rv = channel->OnDataAvailable(this, stringStream, aOffset, aData.Length());
   if (NS_FAILED(rv)) {
     CancelOnMainThread(rv);
   }
@@ -686,7 +698,8 @@ void HttpTransactionParent::DoOnStopRequest(
   }
 
   AutoEventEnqueuer ensureSerialDispatch(mEventQ);
-  (void)mChannel->OnStopRequest(this, mStatus);
+  nsCOMPtr<nsIStreamListener> channel = mChannel;
+  (void)channel->OnStopRequest(this, mStatus);
   mOnStopRequestCalled = true;
 }
 

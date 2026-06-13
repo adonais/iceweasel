@@ -24,13 +24,12 @@ debugger = ["hyper", "tokio", "serde_json", "url", "sha1", "base64", "api/debugg
 
 [build-dependencies]
 build-parallel = "0.1.2"
-glslopt = "0.1.11"
+glslopt = "0.1.14"
 webrender_build = { version = "0.0.2", path = "../webrender_build" }
 
 [dependencies]
 bincode = "1.0"
 bitflags = { version = "2", features = ["serde"] }
-bytemuck = { version = "1.22", features = ["derive"] }
 byteorder = "1.0"
 euclid = { version = "0.22.10", features = ["serde"] }
 rustc-hash = "2.1.1"

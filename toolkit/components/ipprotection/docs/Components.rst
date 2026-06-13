@@ -3,12 +3,13 @@ Components
 
 This page summarizes the main components and how to extend the system safely.
 
-The implementation is split into two directories:
+The implementation is split across three layers:
 
 * ``toolkit/components/ipprotection`` — platform-independent core (state machine,
   proxy/network stack, core helpers).
 * ``browser/components/ipprotection`` — desktop-specific UI layer (panel, toolbar
   button, alert/infobar managers, and onboarding helpers).
+* ``mobile/shared/modules/geckoview/`` — Android GeckoView entry point.
 
 Component Diagram
 -----------------
@@ -19,6 +20,11 @@ A diagram of all the main components is the following:
    :align: center
    :caption: IP Protection architecture
 
+   ---
+   config:
+     flowchart:
+       defaultRenderer: "elk"
+   ---
    flowchart LR
 
      %% browser/components/ipprotection
@@ -54,15 +60,27 @@ A diagram of all the main components is the following:
 
        subgraph FxaAuth["FxA Authentication (fxa/)"]
          IPPAuthProvider
+         IPPFxaBaseAuthProvider["FxA Base Auth Provider"]
          IPPFxaAuthProvider
+         IPPFxaActivateAuthProvider["Activate Auth Provider"]
          IPPSignInWatcher["Sign-in Observer"]
-         IPPEnrollAndEntitleManager["Enroll & Entitle Manager"]
+         GuardianClient
        end
 
        subgraph Proxy["Proxy stack"]
          IPPChannelFilter
          IPPNetworkErrorObserver
-         GuardianClient
+       end
+     end
+
+     %% Android layer
+     subgraph Android["Android Glue"]
+       GeckoViewIPProtection
+
+       subgraph AndroidAuth["Android Authentication"]
+         IPPAndroidAuthProvider["Android FxA Auth Provider"]
+         IPPGpiAuthProvider["GPI Auth Provider"]
+         IPPAndroidSignInWatcher["Android Sign-in Observer"]
        end
      end
 
@@ -71,16 +89,23 @@ A diagram of all the main components is the following:
      IPProtectionActivator --> IPProtectionService
      IPProtectionActivator --> CoreHelpers
      IPProtectionActivator -- "setAuthProvider()" --> IPPFxaAuthProvider
+     GeckoViewIPProtection -- "setAuthProvider()" --> IPProtectionActivator
 
      %% Service wiring
-     IPProtectionService --> GuardianClient
      IPProtectionService --> CoreHelpers
      IPProtectionService -- "authProvider" --> IPPAuthProvider
 
      %% FxA auth wiring
-     IPPFxaAuthProvider -->|extends| IPPAuthProvider
-     IPPFxaAuthProvider --> IPPSignInWatcher
-     IPPFxaAuthProvider --> IPPEnrollAndEntitleManager
+     IPPFxaBaseAuthProvider -->|extends| IPPAuthProvider
+     IPPFxaAuthProvider -->|extends| IPPFxaBaseAuthProvider
+     IPPFxaActivateAuthProvider -->|extends| IPPFxaBaseAuthProvider
+     IPPFxaBaseAuthProvider --> IPPSignInWatcher
+     IPPFxaBaseAuthProvider --> GuardianClient
+
+     %% Android auth wiring
+     IPPAndroidAuthProvider -->|extends| IPPFxaAuthProvider
+     IPPAndroidAuthProvider --> IPPAndroidSignInWatcher
+     IPPGpiAuthProvider -->|extends| IPPAuthProvider
 
      %% UI wiring
      IPProtection --> IPProtectionPanel
@@ -96,8 +121,9 @@ Toolkit components (``toolkit/components/ipprotection``)
 ---------------------------------------------------------
 
 GuardianClient
-  Manages communication between Firefox and the Guardian backend. It retrieves
-  account information, obtains the token for the proxy, and exposes the server list.
+  HTTP client for the Guardian backend. Manages communication with Guardian to
+  retrieve account information, obtain proxy tokens, and run the FxA enrollment
+  flow.
 
 IPPChannelFilter
   Main network component. It processes network requests and decides which ones
@@ -156,37 +182,73 @@ FxA authentication (``toolkit/components/ipprotection/fxa``)
 Authentication is abstracted behind ``IPPAuthProvider``, which lives in the
 toolkit root.  ``IPProtectionService`` always interacts with the provider through
 this interface, so all FxA dependencies are fully contained in the ``fxa/``
-sub-directory.  The concrete provider and its helpers are registered from
-``IPProtectionHelpers.sys.mjs`` in the browser layer.
+sub-directory.  On desktop, the concrete provider and its helpers are registered
+from ``IPProtectionHelpers.sys.mjs`` in the browser layer.  On Android, the
+selection is done by ``GeckoViewIPProtection`` at initialisation time (see below).
 
 IPPAuthProvider
   Base class that defines the authentication interface used by
-  ``IPProtectionService``: ``isReady``, ``getToken()``, ``aboutToStart()``,
-  and ``excludedUrlPrefs``.  The default implementation is a no-op that keeps
+  ``IPProtectionService``.  The default implementation is a no-op that keeps
   the service in an unauthenticated/inactive state.
 
+IPPFxaBaseAuthProvider
+  Abstract base class for FxA-backed providers.
+
 IPPFxaAuthProvider
-  Concrete FxA implementation of ``IPPAuthProvider``.  It obtains OAuth tokens
-  from ``fxAccounts``, runs the enrollment flow before the proxy starts, and
-  lists the FxA endpoint prefs whose URL values should bypass the proxy.
-  Its ``helpers`` getter exposes ``IPPSignInWatcher`` and
-  ``IPPEnrollAndEntitleManager`` so they can be registered as service helpers.
-  The provider and its helpers are wired up from ``IPProtectionHelpers.sys.mjs``
-  in the browser layer via ``IPProtectionActivator.setAuthProvider()`` and
-  ``IPProtectionActivator.addHelpers()``.
+  Concrete FxA implementation of ``IPPAuthProvider``.  Extends
+  ``IPPFxaBaseAuthProvider`` and adds Guardian enrollment via a hidden OAuth
+  window.
+
+IPPFxaActivateAuthProvider
+  Alternative FxA provider that extends ``IPPFxaBaseAuthProvider``.  Enrolls the
+  user by sending the FxA Bearer token directly to Guardian's activate endpoint,
+  without using a hidden tab or window.  On desktop, the choice between
+  ``IPPFxaAuthProvider`` and ``IPPFxaActivateAuthProvider`` is controlled by
+  ``browser.ipProtection.fxa.useActivateFlow``.
 
 IPPSignInWatcher
   Observes user authentication state.  It informs the state machine when the
   user signs in or out.
 
-IPPEnrollAndEntitleManager
-  Orchestrates the FxA-based enrollment flow with Guardian and updates the
-  service when enrollment or entitlement status changes.
-
 IPPSessionPrefManager
   Sets session-scoped preferences while the
   proxy is active and resets them when it deactivates, preserving any
   user-set values.
+
+Android authentication
+~~~~~~~~~~~~~~~~~~~~~~
+
+On Android, two concrete ``IPPAuthProvider`` implementations are available and
+selected at initialisation time by ``GeckoViewIPProtection`` based on the FxA
+sign-in state stored in ``toolkit.ipProtection.android.authProvider``.
+
+IPPAndroidAuthProvider
+  Android variant of the FxA provider.  Extends ``IPPFxaActivateAuthProvider``
+  and uses ``IPPAndroidSignInWatcher`` to track the FxA sign-in state.
+
+IPPGpiAuthProvider
+  Google Play Integrity implementation of ``IPPAuthProvider``.  Used when the
+  user is not signed into FxA.  Obtains a short-lived GPI token from the Android
+  layer via ``EventDispatcher`` and exchanges it for an Auth JWT with Guardian.
+  The JWT is cached in ``browser.ipProtection.gpi.authJwt`` so that subsequent
+  proxy starts require no network requests.
+
+IPPAndroidSignInWatcher
+  Monitors the FxA sign-in state on Android by listening to
+  ``IPP:AuthStateChanged`` events from the Android layer.  Exposes ``isSignedIn``
+  and dispatches ``IPPSignInWatcher:StateChanged`` when the state changes.
+
+Android GeckoView entry point
+-----------------------------
+
+GeckoViewIPProtection
+  GeckoView module that owns the IP Protection lifecycle on Android.  On
+  ``GeckoView:IPProtection:Init`` it reads the ``toolkit.ipProtection.android.authProvider``
+  preference to determine which auth provider to activate: ``IPPAndroidAuthProvider``
+  (with its FxA helpers) when the user is signed in, or ``IPPGpiAuthProvider``
+  otherwise.  When the FxA sign-in state changes the Android layer clears the
+  preference and calls ``Uninit`` followed by ``Init`` so that the correct
+  provider is selected again.
 
 Browser components (``browser/components/ipprotection``)
 ---------------------------------------------------------

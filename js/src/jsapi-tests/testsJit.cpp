@@ -78,25 +78,25 @@ bool ExecuteJit(JSContext* cx, js::jit::MacroAssembler& masm) {
 
 #if defined(JS_CODEGEN_ARM64) && !defined(JS_SIMULATOR_ARM64)
   {
-    // On arm64, we need to save/restore x28 -- the PSP -- across the call.
+    // On arm64, we need to save/restore x20 -- the PSP -- across the call.
     //
     // This cannot be done
     //
     // * in the generated code, where both SP and PSP are in play; it is too
     //   confusing and difficult
     //
-    // * by adding x28 to the `save`/`restore` sets above, since they are
+    // * by adding x20 to the `save`/`restore` sets above, since they are
     //   subsequently processed by masm.{Push/Pop}RegsInMask and that refuses
     //   to deal with PSP.
     //
     // So we do it here instead.  This relies on the (unchecked) assumption
     // that CALL_GENERATED_0 (and whatever it calls) does not place a value in
-    // x28 that is needed after the call.
-    MOZ_RELEASE_ASSERT(PseudoStackPointer64.code() == 28);
-    uintptr_t savedX28;
-    __asm__ __volatile__("str x28, %0" : : "m"(savedX28) : "cc", "memory");
+    // x20 that is needed after the call.
+    MOZ_RELEASE_ASSERT(PseudoStackPointer64.code() == 20);
+    uintptr_t savedX20;
+    __asm__ __volatile__("str x20, %0" : : "m"(savedX20) : "cc", "memory");
     CALL_GENERATED_0(test);
-    __asm__ __volatile__("ldr x28, %0" : : "m"(savedX28) : "cc", "memory");
+    __asm__ __volatile__("ldr x20, %0" : : "m"(savedX20) : "cc", "memory");
   }
 #else
   CALL_GENERATED_0(test);

@@ -5,8 +5,6 @@
 #ifndef mozilla_ServoTraversalStatistics_h
 #define mozilla_ServoTraversalStatistics_h
 
-#include <inttypes.h>
-
 namespace mozilla {
 
 // Traversal statistics for Servo traversal.
@@ -20,8 +18,7 @@ struct ServoTraversalStatistics {
   uint32_t mStylesShared = 0;
   uint32_t mStylesReused = 0;
 
-  static bool sActive;
-  static ServoTraversalStatistics sSingleton;
+  static ServoTraversalStatistics* sSingleton;
 };
 
 }  // namespace mozilla

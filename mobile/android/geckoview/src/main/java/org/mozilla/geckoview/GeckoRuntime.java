@@ -261,6 +261,10 @@ public final class GeckoRuntime implements Parcelable {
   private StorageController mStorageController;
   private final WebExtensionController mWebExtensionController;
   private WebPushController mPushController;
+
+  @OptIn(markerClass = ExperimentalGeckoViewApi.class)
+  private IPProtectionController mIPProtectionController;
+
   private final ContentBlockingController mContentBlockingController;
   private final Autocomplete.StorageProxy mAutocompleteStorageProxy;
   private final CrashPullController.CrashPullProxy mCrashPullProxy;
@@ -390,10 +394,14 @@ public final class GeckoRuntime implements Parcelable {
           } else if ("GeckoView:GeckoPreferences:Change".equals(event)) {
             final GeckoPreferenceController.GeckoPreference<?> observedPreference =
                 GeckoPreferenceController.GeckoPreference.fromBundle(message.getBundle("data"));
-            if (observedPreference != null) {
-              mPreferencesObserverDelegate.onGeckoPreferenceChange(observedPreference);
-            } else {
+            final GeckoPreferenceController.Observer.Delegate delegate =
+                mPreferencesObserverDelegate;
+            if (observedPreference == null) {
               Log.w(LOGTAG, "Could not deserialize a message for onGeckoPreferenceChange!");
+            } else if (delegate == null) {
+              Log.w(LOGTAG, "No observer delegate is registered for onGeckoPreferenceChange!");
+            } else {
+              delegate.onGeckoPreferenceChange(observedPreference);
             }
           }
         }
@@ -1152,6 +1160,24 @@ public final class GeckoRuntime implements Parcelable {
     }
 
     return mPushController;
+  }
+
+  /**
+   * Get the IP protection controller for this runtime. The IP protection controller can be used to
+   * manage IP protection state.
+   *
+   * @return The {@link IPProtectionController} for this instance.
+   */
+  @ExperimentalGeckoViewApi
+  @UiThread
+  public @NonNull IPProtectionController getIPProtectionController() {
+    ThreadUtils.assertOnUiThread();
+
+    if (mIPProtectionController == null) {
+      mIPProtectionController = new IPProtectionController();
+    }
+
+    return mIPProtectionController;
   }
 
   /**

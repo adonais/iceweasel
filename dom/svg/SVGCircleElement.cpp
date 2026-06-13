@@ -146,6 +146,21 @@ already_AddRefed<Path> SVGCircleElement::BuildPath(PathBuilder* aBuilder) {
   return aBuilder->Finish();
 }
 
+Maybe<bool> SVGCircleElement::HasCtxDependentLength() const {
+  bool hasCtxDependentLength = false;
+  if (SVGGeometryProperty::DoForComputedStyle(
+          this, [&](const ComputedStyle* style) {
+            const nsStyleSVGReset* styleSVGReset = style->StyleSVGReset();
+
+            hasCtxDependentLength = styleSVGReset->mCx.HasPercent() ||
+                                    styleSVGReset->mCy.HasPercent() ||
+                                    styleSVGReset->mR.HasPercent();
+          })) {
+    return Some(hasCtxDependentLength);
+  }
+  return Nothing();
+}
+
 bool SVGCircleElement::IsLengthChangedViaCSS(const ComputedStyle& aNewStyle,
                                              const ComputedStyle& aOldStyle) {
   const auto& newSVGReset = *aNewStyle.StyleSVGReset();

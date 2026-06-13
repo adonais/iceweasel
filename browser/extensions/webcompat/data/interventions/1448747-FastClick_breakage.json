@@ -58,7 +58,7 @@
     {
       "platforms": ["android"],
       "content_scripts": {
-        "js": ["bug1448747-fastclick-shim.js"]
+        "js": ["disable_FastClick.js"]
       }
     }
   ]

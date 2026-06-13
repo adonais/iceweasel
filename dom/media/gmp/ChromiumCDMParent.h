@@ -55,11 +55,12 @@ class ChromiumCDMParent final : public PChromiumCDMParent,
                            bool aAllowPersistentState,
                            nsIEventTarget* aMainThread);
 
-  void CreateSession(uint32_t aCreateSessionToken, uint32_t aSessionType,
-                     uint32_t aInitDataType, uint32_t aPromiseId,
+  void CreateSession(uint32_t aCreateSessionToken,
+                     cdm::SessionType aSessionType,
+                     cdm::InitDataType aInitDataType, uint32_t aPromiseId,
                      const nsTArray<uint8_t>& aInitData);
 
-  void LoadSession(uint32_t aPromiseId, uint32_t aSessionType,
+  void LoadSession(uint32_t aPromiseId, cdm::SessionType aSessionType,
                    nsString aSessionId);
 
   void SetServerCertificate(uint32_t aPromiseId,

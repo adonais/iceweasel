@@ -19,7 +19,7 @@ class RemoteCompositorSession final : public CompositorSession {
  public:
   RemoteCompositorSession(nsIWidget* aWidget, CompositorBridgeChild* aChild,
                           CompositorWidgetDelegate* aWidgetDelegate,
-                          APZCTreeManagerChild* aAPZ,
+                          RefPtr<APZCTreeManagerChild>&& aAPZ,
                           const LayersId& aRootLayerTreeId);
   virtual ~RemoteCompositorSession();
 

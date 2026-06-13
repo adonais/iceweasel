@@ -33,8 +33,7 @@
 
         .card-title {
           font-size: var(--font-size-small);
-          // @backward-compat { version 150 } D281466/D283723 renamed design tokens; remove once Firefox 150 is on Release.
-          font-weight: var(--font-weight-heading, var(--heading-font-weight));
+          font-weight: var(--font-weight-heading);
           line-height: $line-height;
           max-height: $line-height;
         }
@@ -90,12 +89,11 @@
       @include wallpaper-contrast-fix;
 
       grid-column: 1 / -1;
-      // @backward-compat { version 150 } D281466/D283723 renamed design tokens; remove once Firefox 150 is on Release.
-      font-weight: var(--font-weight-heading, var(--heading-font-weight));
-      font-size: var(--font-size-heading-large, var(--font-size-xlarge));
+      font-weight: var(--font-weight-heading);
+      font-size: var(--font-size-heading-large);
 
       @include at-content-cols(12) {
-        font-size: var(--font-size-heading-xlarge, var(--font-size-xxlarge));
+        font-size: var(--font-size-heading-xlarge);
       }
 
       color: var(--newtab-contextual-text-primary-color);

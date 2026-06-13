@@ -90,10 +90,11 @@ class ChromiumCDMChild final : public PChromiumCDMChild,
   ipc::IPCResult RecvSetServerCertificate(
       const uint32_t& aPromiseId, nsTArray<uint8_t>&& aServerCert) override;
   ipc::IPCResult RecvCreateSessionAndGenerateRequest(
-      const uint32_t& aPromiseId, const uint32_t& aSessionType,
-      const uint32_t& aInitDataType, nsTArray<uint8_t>&& aInitData) override;
+      const uint32_t& aPromiseId, const cdm::SessionType& aSessionType,
+      const cdm::InitDataType& aInitDataType,
+      nsTArray<uint8_t>&& aInitData) override;
   ipc::IPCResult RecvLoadSession(const uint32_t& aPromiseId,
-                                 const uint32_t& aSessionType,
+                                 const cdm::SessionType& aSessionType,
                                  const nsACString& aSessionId) override;
   ipc::IPCResult RecvUpdateSession(const uint32_t& aPromiseId,
                                    const nsACString& aSessionId,

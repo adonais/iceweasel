@@ -170,7 +170,7 @@ class mozInlineSpellChecker final : public nsIInlineSpellChecker,
   // so we can spell check the old word when the user clicks around the
   // document.
   nsCOMPtr<nsINode> mCurrentSelectionAnchorNode;
-  uint32_t mCurrentSelectionOffset;
+  uint32_t mCurrentSelectionOffset = 0;
 
   // Tracks the number of pending spell checks *and* async operations that may
   // lead to spell checks, like updating the current dictionary.  This is

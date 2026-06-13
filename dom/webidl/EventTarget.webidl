@@ -60,11 +60,3 @@ partial interface EventTarget {
   [ChromeOnly]
   EventHandler getEventHandler(DOMString type);
 };
-
-// Mozilla extension to make firing events on event targets from
-// chrome easier.  This returns the window which can be used to create
-// events to fire at this EventTarget, or null if there isn't one.
-partial interface EventTarget {
-  [ChromeOnly, Exposed=Window, BinaryName="ownerGlobalForBindings"]
-  readonly attribute WindowProxy? ownerGlobal;
-};

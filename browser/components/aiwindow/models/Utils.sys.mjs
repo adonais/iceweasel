@@ -11,7 +11,6 @@
  */
 
 import { createEngine } from "chrome://global/content/ml/EngineProcess.sys.mjs";
-import { getFxAccountsSingleton } from "resource://gre/modules/FxAccounts.sys.mjs";
 import {
   OAUTH_CLIENT_ID,
   SCOPE_PROFILE_UID,
@@ -21,6 +20,7 @@ import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = XPCOMUtils.declareLazy({
   RemoteSettings: "resource://services-settings/remote-settings.sys.mjs",
+  getFxAccountsSingleton: "resource://gre/modules/FxAccounts.sys.mjs",
 });
 
 const APIKEY_PREF = "browser.smartwindow.apiKey";
@@ -72,6 +72,8 @@ export const MODEL_FEATURES = Object.freeze({
   MEMORIES_DEDUPLICATION_USER: "memories-deduplication-user",
   MEMORIES_SENSITIVITY_FILTER_SYSTEM: "memories-sensitivity-filter-system",
   MEMORIES_SENSITIVITY_FILTER_USER: "memories-sensitivity-filter-user",
+  MEMORIES_QUALITY_FILTER_SYSTEM: "memories-quality-filter-system",
+  MEMORIES_QUALITY_FILTER_USER: "memories-quality-filter-user",
   // memories usage features
   MEMORIES_MESSAGE_CLASSIFICATION_SYSTEM:
     "memories-message-classification-system",
@@ -81,38 +83,8 @@ export const MODEL_FEATURES = Object.freeze({
   REAL_TIME_CONTEXT_TAB: "real-time-context-tab",
   REAL_TIME_CONTEXT_MENTIONS: "real-time-context-mentions",
   MEMORIES_RELEVANT_CONTEXT: "memories-relevant-context",
-});
-
-/**
- * Default model IDs for each feature.
- * These are Mozilla's recommended models, used when user hasn't configured
- * custom settings or when remote setting retrieval fails.
- */
-export const DEFAULT_MODEL = Object.freeze({
-  [MODEL_FEATURES.CHAT]: "qwen3-235b-a22b-instruct-2507-maas",
-  [MODEL_FEATURES.TITLE_GENERATION]: "qwen3-235b-a22b-instruct-2507-maas",
-  [MODEL_FEATURES.CONVERSATION_SUGGESTIONS_SIDEBAR_STARTER]:
-    "qwen3-235b-a22b-instruct-2507-maas",
-  [MODEL_FEATURES.CONVERSATION_SUGGESTIONS_FOLLOWUP]:
-    "qwen3-235b-a22b-instruct-2507-maas",
-  [MODEL_FEATURES.CONVERSATION_SUGGESTIONS_ASSISTANT_LIMITATIONS]:
-    "qwen3-235b-a22b-instruct-2507-maas",
-  [MODEL_FEATURES.CONVERSATION_SUGGESTIONS_INSIGHTS]:
-    "qwen3-235b-a22b-instruct-2507-maas",
-  // memories generation flow
-  [MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM]: "gemini-2.5-flash-lite",
-  [MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_USER]: "gemini-2.5-flash-lite",
-  [MODEL_FEATURES.MEMORIES_DEDUPLICATION_SYSTEM]: "gemini-2.5-flash-lite",
-  [MODEL_FEATURES.MEMORIES_DEDUPLICATION_USER]: "gemini-2.5-flash-lite",
-  [MODEL_FEATURES.MEMORIES_SENSITIVITY_FILTER_SYSTEM]: "gemini-2.5-flash-lite",
-  [MODEL_FEATURES.MEMORIES_SENSITIVITY_FILTER_USER]: "gemini-2.5-flash-lite",
-  // memories usage flow
-  [MODEL_FEATURES.MEMORIES_MESSAGE_CLASSIFICATION_SYSTEM]:
-    "qwen3-235b-a22b-instruct-2507-maas",
-  [MODEL_FEATURES.MEMORIES_MESSAGE_CLASSIFICATION_USER]:
-    "qwen3-235b-a22b-instruct-2507-maas",
-  [MODEL_FEATURES.MEMORIES_RELEVANT_CONTEXT]:
-    "qwen3-235b-a22b-instruct-2507-maas",
+  DISABLE_TABLE_INSTRUCTIONS: "disable-table-instructions",
+  ENABLE_TABLE_INSTRUCTIONS: "enable-table-instructions",
 });
 
 /**
@@ -160,20 +132,21 @@ export const FEATURE_PURPOSES = Object.freeze({
  * - Old clients will continue using old major version
  */
 export const FEATURE_MAJOR_VERSIONS = Object.freeze({
-  [MODEL_FEATURES.CHAT]: 3,
+  [MODEL_FEATURES.CHAT]: 4,
   [MODEL_FEATURES.TITLE_GENERATION]: 1,
   [MODEL_FEATURES.CONVERSATION_STARTERS_SIDEBAR_SYSTEM]: 1,
   [MODEL_FEATURES.CONVERSATION_SUGGESTIONS_SIDEBAR_STARTER]: 2,
   [MODEL_FEATURES.CONVERSATION_SUGGESTIONS_FOLLOWUP]: 1,
   [MODEL_FEATURES.CONVERSATION_SUGGESTIONS_ASSISTANT_LIMITATIONS]: 1,
-  [MODEL_FEATURES.CONVERSATION_SUGGESTIONS_INSIGHTS]: 1,
   // memories generation feature versions
-  [MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM]: 1,
-  [MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_USER]: 1,
+  [MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM]: 2,
+  [MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_USER]: 2,
   [MODEL_FEATURES.MEMORIES_DEDUPLICATION_SYSTEM]: 1,
   [MODEL_FEATURES.MEMORIES_DEDUPLICATION_USER]: 1,
   [MODEL_FEATURES.MEMORIES_SENSITIVITY_FILTER_SYSTEM]: 1,
   [MODEL_FEATURES.MEMORIES_SENSITIVITY_FILTER_USER]: 1,
+  [MODEL_FEATURES.MEMORIES_QUALITY_FILTER_SYSTEM]: 1,
+  [MODEL_FEATURES.MEMORIES_QUALITY_FILTER_USER]: 1,
   // memories usage feature versions
   [MODEL_FEATURES.MEMORIES_MESSAGE_CLASSIFICATION_SYSTEM]: 1,
   [MODEL_FEATURES.MEMORIES_MESSAGE_CLASSIFICATION_USER]: 1,
@@ -673,7 +646,7 @@ export class openAIEngine {
    */
   static async getFxAccountToken() {
     try {
-      const fxAccounts = getFxAccountsSingleton();
+      const fxAccounts = lazy.getFxAccountsSingleton();
       return await fxAccounts.getOAuthToken({
         scope: [SCOPE_SMART_WINDOW, SCOPE_PROFILE_UID],
         client_id: OAUTH_CLIENT_ID,
@@ -783,7 +756,7 @@ export class openAIEngine {
         "LLM request returned a 401 - revoking our token and retrying"
       );
 
-      const fxAccounts = getFxAccountsSingleton();
+      const fxAccounts = lazy.getFxAccountsSingleton();
       const oldToken = content.fxAccountToken;
       if (oldToken) {
         await fxAccounts.removeCachedOAuthToken({ token: oldToken });
@@ -880,7 +853,7 @@ export class openAIEngine {
         "LLM streaming request returned a 401 - revoking our token and retrying"
       );
 
-      const fxAccounts = getFxAccountsSingleton();
+      const fxAccounts = lazy.getFxAccountsSingleton();
       const oldToken = options.fxAccountToken;
       if (oldToken) {
         await fxAccounts.removeCachedOAuthToken({ token: oldToken });

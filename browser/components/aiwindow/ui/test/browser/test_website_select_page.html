@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>AI Window website select test</title>
+    <script type="module" src="test_website_select.mjs">
+    </script>
+    <link rel="localization" href="preview/aiWindow.ftl">
+  </head>
+  <body>
+    <ai-website-select
+      id="test-select-unchecked"
+      tabId="test-select-unchecked"
+      label="Mozilla Developer Network"
+      iconSrc="chrome://branding/content/icon16.png"
+      href="https://developer.mozilla.org">
+    </ai-website-select>
+
+    <ai-website-select
+      id="test-select-checked"
+      tabId="test-select-checked"
+      label="Firefox Browser"
+      iconSrc="chrome://branding/content/about-logo.svg"
+      href="https://www.mozilla.org/firefox/"
+      checked>
+    </ai-website-select>
+
+    <ai-website-select
+      id="test-select-no-icon"
+      tabId="test-select-no-icon"
+      label="Example Site Without Icon"
+      href="https://example.com">
+    </ai-website-select>
+  </body>
+</html>

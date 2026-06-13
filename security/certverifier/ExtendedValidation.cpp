@@ -933,17 +933,6 @@ static const struct EVInfo kEVInfos[] = {
     "IZxULej27HF3+k7ow3BXlw==",
   },
   {
-    // CN=SecureSign Root CA12,O="Cybertrust Japan Co., Ltd.",C=JP
-    "2.23.140.1.1",
-    "CA/Browser Forum EV OID",
-    { 0x3F, 0x03, 0x4B, 0xB5, 0x70, 0x4D, 0x44, 0xB2, 0xD0, 0x85, 0x45,
-      0xA0, 0x20, 0x57, 0xDE, 0x93, 0xEB, 0xF3, 0x90, 0x5F, 0xCE, 0x72,
-      0x1A, 0xCB, 0xC7, 0x30, 0xC0, 0x6D, 0xDA, 0xEE, 0x90, 0x4E },
-    "MFExCzAJBgNVBAYTAkpQMSMwIQYDVQQKExpDeWJlcnRydXN0IEphcGFuIENvLiwg"
-    "THRkLjEdMBsGA1UEAxMUU2VjdXJlU2lnbiBSb290IENBMTI=",
-    "ZvnHwa/swlG07VOX5uaCwysckBY=",
-  },
-  {
     // CN=SecureSign Root CA14,O="Cybertrust Japan Co., Ltd.",C=JP
     "2.23.140.1.1",
     "CA/Browser Forum EV OID",

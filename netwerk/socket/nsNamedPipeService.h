@@ -50,12 +50,11 @@ class NamedPipeService final : public nsINamedPipeService,
    * the worker thread to avoid a race condition that might happen between
    * |CloseHandle()| and |GetQueuedCompletionStatus()|.
    */
-  Mutex mLock MOZ_UNANNOTATED;
-  nsTArray<nsCOMPtr<nsINamedPipeDataObserver>>
-      mObservers;  // protected by mLock
-  nsTArray<nsCOMPtr<nsINamedPipeDataObserver>>
-      mRetiredObservers;             // protected by mLock
-  nsTArray<HANDLE> mRetiredHandles;  // protected by mLock
+  Mutex mLock;
+  nsTArray<nsCOMPtr<nsINamedPipeDataObserver>> mObservers MOZ_GUARDED_BY(mLock);
+  nsTArray<nsCOMPtr<nsINamedPipeDataObserver>> mRetiredObservers
+      MOZ_GUARDED_BY(mLock);
+  nsTArray<HANDLE> mRetiredHandles MOZ_GUARDED_BY(mLock);
 
   static StaticRefPtr<NamedPipeService> gSingleton;
 };

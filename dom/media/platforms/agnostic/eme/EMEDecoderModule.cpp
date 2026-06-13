@@ -411,10 +411,21 @@ EMEDecoderModule::AsyncCreateDecoder(const CreateDecoderParams& aParams) {
                                                                       __func__);
     }
 
-    if (!SupportsMimeType(aParams.mConfig.mMimeType, nullptr).isEmpty()) {
+    const bool gmpSupported =
+        !SupportsMimeType(aParams.mConfig.mMimeType, nullptr).isEmpty();
+
+    // Pre-create the GMP decoder wrapper before aParams is moved into the
+    // resolve lambda below. CreateDecoderWrapper does not call Init(), so
+    // creating an unused wrapper is safe.
+    RefPtr<MediaDataDecoder> gmpFallback =
+        gmpSupported ? CreateDecoderWrapper(mProxy, aParams) : nullptr;
+
+    if (gmpSupported &&
+        !StaticPrefs::media_eme_video_prefer_platform_decoder()) {
       // GMP decodes. Assume that means it can decrypt too.
+      EME_LOG("EMEDecoderModule::AsyncCreateDecoder() using GMP decoder.");
       return EMEDecoderModule::CreateDecoderPromise::CreateAndResolve(
-          CreateDecoderWrapper(mProxy, aParams), __func__);
+          gmpFallback, __func__);
     }
 
     RefPtr<EMEDecoderModule::CreateDecoderPromise> p =
@@ -423,13 +434,23 @@ EMEDecoderModule::AsyncCreateDecoder(const CreateDecoderParams& aParams) {
             [self = RefPtr{this},
              params = CreateDecoderParamsForAsync(aParams)](
                 RefPtr<MediaDataDecoder>&& aDecoder) {
+              EME_LOG(
+                  "EMEDecoderModule::AsyncCreateDecoder() using platform "
+                  "decoder.");
               RefPtr<MediaDataDecoder> emeDecoder(
                   new EMEDecryptor(aDecoder, self->mProxy, params.mType,
                                    params.mOnWaitingForKeyEvent));
               return EMEDecoderModule::CreateDecoderPromise::CreateAndResolve(
                   emeDecoder, __func__);
             },
-            [](const MediaResult& aError) {
+            [gmpFallback](const MediaResult& aError) {
+              if (gmpFallback) {
+                EME_LOG(
+                    "EMEDecoderModule::AsyncCreateDecoder() platform decoder "
+                    "failed, falling back to GMP decoder.");
+                return EMEDecoderModule::CreateDecoderPromise::CreateAndResolve(
+                    gmpFallback, __func__);
+              }
               return EMEDecoderModule::CreateDecoderPromise::CreateAndReject(
                   aError, __func__);
             });

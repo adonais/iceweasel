@@ -353,7 +353,7 @@ already_AddRefed<IDecodingTask> DecoderFactory::CreateMetadataDecoder(
     return nullptr;
   }
 
-  RefPtr<IDecodingTask> task = new MetadataDecodingTask(WrapNotNull(decoder));
+  auto task = MakeRefPtr<MetadataDecodingTask>(WrapNotNull(decoder));
   return task.forget();
 }
 

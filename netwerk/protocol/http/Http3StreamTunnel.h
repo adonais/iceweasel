@@ -116,6 +116,8 @@ class Http3StreamTunnel final : public Http3Stream {
   [[nodiscard]] nsresult OnWriteSegment(char* buf, uint32_t count,
                                         uint32_t* countWritten) override;
 
+  bool Closed() const { return mClosed; }
+
  private:
   virtual ~Http3StreamTunnel();
   nsresult BufferInput();

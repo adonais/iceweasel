@@ -9,10 +9,7 @@ const DEFAULT_HOMEPAGE_URL = "about:home";
 
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.settings-redesign.enabled", true],
-      ["identity.fxaccounts.account.device.name", ""],
-    ],
+    set: [["identity.fxaccounts.account.device.name", ""]],
   });
 });
 
@@ -112,8 +109,8 @@ add_task(async function test_restore_defaults_button_resets_both_settings() {
 
   is(
     newTabsNativeSelect.value,
-    "true",
-    "New tabs dropdown reset to 'true' after restore"
+    "home",
+    "New tabs dropdown reset to 'home' after restore"
   );
 
   await BrowserTestUtils.removeTab(tab);

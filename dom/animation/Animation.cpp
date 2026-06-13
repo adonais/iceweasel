@@ -175,7 +175,8 @@ already_AddRefed<Animation> Animation::Constructor(
   }
 
   RefPtr<Animation> animation = new Animation(global);
-  animation->SetTimelineNoUpdate(timeline);
+  // JS side can't refer to timeline by name.
+  animation->SetTimelineNoUpdate(timeline, nullptr);
   animation->SetEffectNoUpdate(aEffect);
 
   return animation.forget();
@@ -271,17 +272,45 @@ static TimeStamp EnsurePaintIsScheduled(Document& aDoc) {
   return rd->MostRecentRefresh();
 }
 
-void Animation::SetTimeline(AnimationTimeline* aTimeline) {
-  SetTimelineNoUpdate(aTimeline);
+void Animation::RemovedNamedTimelineReferenceFromJS(const nsAtom* aName) {
+  if (!AsCSSAnimation()) {
+    MOZ_ASSERT_UNREACHABLE("How?");
+    return;
+  }
+  auto* animationManager = [&]() -> nsAnimationManager* {
+    auto* doc = GetRenderedDocument();
+    if (!doc) {
+      return nullptr;
+    }
+    auto* presContext = doc->GetPresContext();
+    if (!presContext) {
+      return nullptr;
+    }
+    return presContext->AnimationManager();
+  }();
+  if (!animationManager) {
+    return;
+  }
+  animationManager->RemoveNamedTimelineAnimation(aName, AsCSSAnimation());
+}
+
+void Animation::SetTimeline(AnimationTimeline* aTimeline,
+                            const nsAtom* aTimelineName) {
+  SetTimelineNoUpdate(aTimeline, aTimelineName);
   PostUpdate();
 }
 
 // https://drafts.csswg.org/web-animations-2/#setting-the-timeline
-void Animation::SetTimelineNoUpdate(AnimationTimeline* aTimeline) {
+void Animation::SetTimelineNoUpdate(AnimationTimeline* aTimeline,
+                                    const nsAtom* aTimelineName) {
   // 1. Let old timeline be the current timeline of animation, if any.
   // 2. If new timeline is the same object as old timeline, abort this
   // procedure.
   if (mTimeline == aTimeline) {
+    // nullptr -> nullptr but going from/to named timeline is significant.
+    if (mTimelineName != aTimelineName) {
+      mTimelineName = aTimelineName;
+    }
     return;
   }
 
@@ -326,9 +355,12 @@ void Animation::SetTimelineNoUpdate(AnimationTimeline* aTimeline) {
     oldTimeline->RemoveAnimation(this);
   }
   mTimeline = aTimeline;
-  // Update the normalized timing because we are using the new timeline.
+  mTimelineName = aTimelineName;
+  // Update the normalized timing and keyframe timeline range ofset because we
+  // are using the new timeline.
   if (mEffect) {
     mEffect->UpdateNormalizedTiming();
+    MaybeUpdateKeyframeComputedOffsets();
   }
 
   // 9. Perform the steps corresponding to the first matching condition from the
@@ -370,11 +402,30 @@ void Animation::SetTimelineNoUpdate(AnimationTimeline* aTimeline) {
       case AnimationPlayState::Idle:
         break;
     }
-  } else if (fromFiniteTimeline && !previousProgress.IsNull()) {
-    // If from finite timeline and previous progress is resolved, run the
-    // procedure to set the current time to previous progress * end time.
-    SetCurrentTimeNoUpdate(
-        TimeDuration(EffectEnd().MultDouble(previousProgress.Value())));
+  } else if (fromFiniteTimeline) {
+    // mAutoAlignStartTime is only meaningful for finite timelines; clear it
+    // here. Transitioning into a new finite timeline is handled by the
+    // toFiniteTimeline branch above. This clearing is a deviation from spec
+    // [1], which only acts when previousProgress is resolved; without it the
+    // flag's invariant (true only while the timeline is finite) is violated
+    // and AutoAlignStartTime would later fire on a monotonic timeline.
+    // [1] https://drafts.csswg.org/web-animations-2/#setting-the-timeline
+    mAutoAlignStartTime = false;
+    if (!previousProgress.IsNull()) {
+      // If from finite timeline and previous progress is resolved, run the
+      // procedure to set the current time to previous progress * end time.
+      SetCurrentTimeNoUpdate(
+          TimeDuration(EffectEnd().MultDouble(previousProgress.Value())));
+    }
+  }
+  if (fromFiniteTimeline && !aTimeline && mTimelineName) {
+    // Make sure to remove any pending playing task, if we stopped referring to
+    // an existing named timeline.
+    Document* doc = GetRenderedDocument();
+    auto* tracker = doc ? doc->GetScrollTimelineAnimationTracker() : nullptr;
+    if (tracker) {
+      tracker->RemovePending(*this);
+    }
   }
 
   // 10. If the start time of animation is resolved, make animation’s hold time
@@ -416,6 +467,7 @@ void Animation::SetTimelineRangeNoUpdate(AnimationRange&& aRange) {
 
   if (mEffect) {
     mEffect->UpdateNormalizedTiming();
+    MaybeUpdateKeyframeComputedOffsets();
   }
 }
 
@@ -699,7 +751,7 @@ AnimationPlayState Animation::PlayState() const {
 }
 
 Promise* Animation::GetReady(ErrorResult& aRv) {
-  nsCOMPtr<nsIGlobalObject> global = GetOwnerGlobal();
+  nsCOMPtr<nsIGlobalObject> global = GetRelevantGlobal();
   if (!mReady && global) {
     mReady = Promise::Create(global, aRv);  // Lazily create on demand
   }
@@ -728,7 +780,7 @@ void Animation::MaybeResolvePromiseWithThis(Promise* aPromise) {
 }
 
 Promise* Animation::GetFinished(ErrorResult& aRv) {
-  nsCOMPtr<nsIGlobalObject> global = GetOwnerGlobal();
+  nsCOMPtr<nsIGlobalObject> global = GetRelevantGlobal();
   if (!mFinished && global) {
     mFinished = Promise::Create(global, aRv);  // Lazily create on demand
   }
@@ -966,12 +1018,11 @@ void Animation::CommitStyles(ErrorResult& aRv) {
   mozAutoDocUpdate autoUpdate(target.mElement->OwnerDoc(), true);
 
   // Get the inline style to append to
-  RefPtr<DeclarationBlock> declarationBlock;
+  RefPtr<StyleLockedDeclarationBlock> declarationBlock;
   if (auto* existing = target.mElement->GetInlineStyleDeclaration()) {
-    declarationBlock = existing->EnsureMutable();
+    declarationBlock = nsDOMCSSDeclaration::EnsureBlockMutable(existing);
   } else {
-    declarationBlock = new DeclarationBlock();
-    declarationBlock->SetDirty();
+    declarationBlock = Servo_DeclarationBlock_CreateEmpty().Consume();
   }
 
   // Prepare the callback
@@ -992,7 +1043,7 @@ void Animation::CommitStyles(ErrorResult& aRv) {
             .Consume();
     if (computedValue) {
       changed |= Servo_DeclarationBlock_SetPropertyToAnimationValue(
-          declarationBlock->Raw(), computedValue, beforeChangeClosure);
+          declarationBlock.get(), computedValue, beforeChangeClosure);
     }
   }
 
@@ -1979,6 +2030,14 @@ void Animation::UpdateNormalizedTimingForTimelineDataChange() {
   mEffect->UpdateNormalizedTiming();
 }
 
+void Animation::MaybeUpdateKeyframeComputedOffsets() {
+  if (!mEffect || !mEffect->AsKeyframeEffect()) {
+    return;
+  }
+
+  mEffect->AsKeyframeEffect()->MaybeUpdateKeyframeComputedOffsets(mTimeline);
+}
+
 StickyTimeDuration Animation::EffectEnd() const {
   if (!mEffect) {
     return StickyTimeDuration(0);
@@ -2015,7 +2074,7 @@ class AsyncFinishNotification : public MicroTaskRunnable {
   }
 
   virtual bool Suppressed() override {
-    nsIGlobalObject* global = mAnimation->GetOwnerGlobal();
+    nsIGlobalObject* global = mAnimation->GetRelevantGlobal();
     return global && global->IsInSyncOperation();
   }
 
@@ -2157,6 +2216,11 @@ void Animation::AutoAlignStartTime() {
 
   MOZ_ASSERT(!mTimeline->IsMonotonicallyIncreasing(),
              "We shouldn't come here for monotonically increasing timeline");
+  // Bail out in release builds if we somehow get here with a monotonic
+  // timeline, to avoid dereferencing AsScrollTimeline() below.
+  if (mTimeline->IsMonotonicallyIncreasing()) {
+    return;
+  }
 
   // If play state is idle, abort this procedure.
   const AnimationPlayState playState = PlayState();

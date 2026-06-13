@@ -99,6 +99,16 @@ interface nsINSSComponent : nsISupports {
   Promise asyncClearSSLExternalAndInternalSessionCache();
 
   /**
+   * Remove TLS session resumption tokens matching the given
+   * OriginAttributesPattern (serialized as JSON).  Used by the clear-data
+   * service to honour per-partition site-data clearing.
+   */
+  void removeSSLTokensByHostAndOriginAttributesPattern(in ACString aHost,
+                                                       in AString aPattern);
+  void removeSSLTokensBySiteAndOriginAttributesPattern(in ACString aSite,
+                                                       in AString aPattern);
+
+  /**
    * Provides a common background serial event target on which to do any
    * operations that modify the NSS module DB.
    * Only available from the main thread.

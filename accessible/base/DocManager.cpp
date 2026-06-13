@@ -180,6 +180,10 @@ void DocManager::NotifyOfPrintDocument(dom::Document* aDoc) {
   if (!StaticPrefs::accessibility_tagged_pdf_output_enabled()) {
     return;
   }
+  if (GetExistingDocAccessible(aDoc)) {
+    MOZ_ASSERT_UNREACHABLE("Print DocAccessible shouldn't already exist!");
+    return;
+  }
   // Normally, we don't create DocAccessibles for static documents. Print
   // documents are static clones, so we force creation here.
   DocAccessible* topDocAcc =
@@ -481,6 +485,16 @@ DocAccessible* DocManager::CreateDocOrRootAccessible(Document* aDocument,
     return nullptr;
   }
 
+  // Don't create a DocAccessible for the transient about:blank that bootstraps
+  // a printing BrowsingContext. It will be replaced by a static clone (filtered
+  // above).
+  if (!aAllowStatic && aDocument->IsUncommittedInitialDocument()) {
+    dom::BrowsingContext* bc = aDocument->GetBrowsingContext();
+    if (bc && bc->Top()->GetIsPrinting()) {
+      return nullptr;
+    }
+  }
+
   if (IPCAccessibilityActive()) {
     nsIContent* ownerContent = aDocument->GetEmbedderElement();
     if (ownerContent && ownerContent->IsXULElement()) {
@@ -622,7 +636,7 @@ void DocManager::RemoteDocAdded(DocAccessibleParent* aDoc) {
   // Fire a reorder event on the OuterDocAccessible.
   if (LocalAccessible* outerDoc = aDoc->OuterDocOfRemoteBrowser()) {
     MOZ_ASSERT(outerDoc->Document());
-    RefPtr<AccReorderEvent> reorder = new AccReorderEvent(outerDoc);
+    auto reorder = MakeRefPtr<AccReorderEvent>(outerDoc);
     outerDoc->Document()->FireDelayedEvent(reorder);
   }
 }

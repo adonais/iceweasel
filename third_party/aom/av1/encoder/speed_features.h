@@ -1276,6 +1276,9 @@ typedef struct INTERP_FILTER_SPEED_FEATURES {
   // Forces interpolation filter to EIGHTTAP_REGULAR and skips interpolation
   // filter search.
   int skip_interp_filter_search;
+
+  // Bias towards sharp filter
+  int use_more_sharp_interp;
 } INTERP_FILTER_SPEED_FEATURES;
 
 typedef struct INTRA_MODE_SPEED_FEATURES {

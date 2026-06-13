@@ -210,8 +210,7 @@ newtab-widget-lists-input-menu-delete = លុប
 newtab-widget-lists-name-placeholder-new =
     .placeholder = បញ្ជីថ្មី
 
-## Strings for timer productivity widget
-## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown
+## Strings introduced by the Nova redesign of the Timer widget
 
 newtab-widget-timer-notification-warning = ការជូនដំណឹងត្រូវបានបិទ
 newtab-widget-timer-menu-notifications = បិទការជូនដំណឹង

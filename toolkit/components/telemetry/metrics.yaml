@@ -54,6 +54,7 @@ legacy.telemetry:
       - 'captcha-detection'
       - 'health'
       - 'addons'
+      - 'new-profile'
 
   profile_group_id:
     type: uuid

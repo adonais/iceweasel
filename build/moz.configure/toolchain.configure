@@ -845,11 +845,6 @@ ccache = check_prog(
     allow_missing=True,
 )
 
-option(env="CCACHE_PREFIX", nargs=1, help="Compiler prefix to use when using ccache")
-
-ccache_prefix = depends_if("CCACHE_PREFIX")(lambda prefix: prefix[0])
-set_config("CCACHE_PREFIX", ccache_prefix)
-
 # Distinguish ccache from sccache and buildcache.
 
 
@@ -1641,21 +1636,6 @@ building_with_gnu_compatible_cc = depends(c_compiler)(
 )
 
 
-@depends(cxx_compiler, ccache_prefix)
-@imports("os")
-def cxx_is_icecream(info, ccache_prefix):
-    if (
-        os.path.islink(info.compiler)
-        and os.path.basename(os.readlink(info.compiler)) == "icecc"
-    ):
-        return True
-    if ccache_prefix and os.path.basename(ccache_prefix) == "icecc":
-        return True
-
-
-set_config("CXX_IS_ICECREAM", cxx_is_icecream)
-
-
 # Libstdc++ compatibility hacks
 # ==============================================================
 #
@@ -2097,7 +2077,21 @@ def default_debug_flags(compiler_info, target):
     # The oldest versions of supported compilers default to DWARF-4, but
     # newer versions may default to DWARF-5 or newer (e.g. clang 14), which
     # Valgrind doesn't support. Force-use DWARF-4.
-    return ("-gdwarf-4",)
+    flags = ("-gdwarf-4",)
+    if compiler_info.type == "clang":
+        # This improves debuginfo size.
+        flags += (
+            "-gsimple-template-names",
+            # clang will warn about this argument not being used in some compiler
+            # invocations that don't involve codegen (like clang-plugin checks or
+            # linking), and we don't have a great way of conditionally skipping it...
+            # See https://reviews.llvm.org/D18706 and http://reviews.llvm.org/D11374 for
+            # context about this flag.
+            "--start-no-unused-arguments",
+            "-mllvm=-dwarf-linkage-names=Abstract",
+            "--end-no-unused-arguments",
+        )
+    return flags
 
 
 option(env="MOZ_DEBUG_FLAGS", nargs=1, help="Debug compiler flags")
@@ -2560,11 +2554,11 @@ def ubsan(options, optimize):
 def ubsan_flags(ubsan_checks, c_compiler, compilation_flags, linker_flags, build_env):
     ubsan_txt = os.path.join(build_env.topobjdir, "ubsan_blacklist.txt")
     with open(ubsan_txt, "w") as out_fd:
-        for blacklist in glob(
+        for blacklist in sorted(glob(
             os.path.join(
                 build_env.topsrcdir, "build", "sanitizers", "ubsan_*_blacklist.txt"
             )
-        ):
+        )):
             with open(blacklist) as in_fd:
                 shutil.copyfileobj(in_fd, out_fd)
 

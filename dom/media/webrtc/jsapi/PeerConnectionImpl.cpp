@@ -6,7 +6,6 @@
 
 #include <cerrno>
 #include <cstdlib>
-#include <deque>
 #include <set>
 #include <sstream>
 #include <vector>
@@ -433,14 +432,6 @@ PeerConnectionImpl::~PeerConnectionImpl() {
              __FUNCTION__, mHandle.c_str());
 }
 
-struct CompareCodecPriority {
-  bool operator()(const UniquePtr<JsepCodecDescription>& lhs,
-                  const UniquePtr<JsepCodecDescription>& rhs) const {
-    // If only the left side is strongly preferred, prefer it
-    return lhs->mStronglyPreferred && !rhs->mStronglyPreferred;
-  }
-};
-
 nsresult PeerConnectionImpl::Initialize(PeerConnectionObserver& aObserver,
                                         nsGlobalWindowInner* aWindow) {
   nsresult res;
@@ -558,6 +549,8 @@ nsresult PeerConnectionImpl::Initialize(PeerConnectionObserver& aObserver,
   // param in RTCConfiguration.
   mAllowOldSetParameters = Preferences::GetBool(
       "media.peerconnection.allow_old_setParameters", false);
+  mAllowOldSetParameters |= media::HostnameInPref(
+      "media.peerconnection.allow_old_setParameters.allowlist", mHostname);
 
   // setup the stun local addresses IPC async call
   InitLocalAddrs();
@@ -1840,7 +1833,8 @@ PeerConnectionImpl::AddIceCandidate(
 
     GetMainThreadSerialEventTarget()->Dispatch(NS_NewRunnableFunction(
         __func__,
-        [this, self = RefPtr<PeerConnectionImpl>(this), errorString, result] {
+        [this, self = RefPtr<PeerConnectionImpl>(this),
+         errorString = std::move(errorString), result = std::move(result)] {
           if (IsClosed()) {
             return;
           }
@@ -2077,46 +2071,22 @@ void PeerConnectionImpl::SendWarningToConsole(const nsCString& aWarning) {
 void PeerConnectionImpl::GetDefaultVideoCodecs(
     std::vector<UniquePtr<JsepCodecDescription>>& aSupportedCodecs,
     const OverrideRtxPreference aOverrideRtxPreference) {
-  const auto prefs = GetDefaultCodecPreferences(aOverrideRtxPreference);
-  // Supported video codecs.
-  // Note: order here implies priority for building offers!
-  aSupportedCodecs.emplace_back(
-      JsepVideoCodecDescription::CreateDefaultVP8(prefs));
-  aSupportedCodecs.emplace_back(
-      JsepVideoCodecDescription::CreateDefaultVP9(prefs));
-  aSupportedCodecs.emplace_back(
-      JsepVideoCodecDescription::CreateDefaultH264_1(prefs));
-  aSupportedCodecs.emplace_back(
-      JsepVideoCodecDescription::CreateDefaultH264_0(prefs));
-  aSupportedCodecs.emplace_back(
-      JsepVideoCodecDescription::CreateDefaultH264Baseline_1(prefs));
-  aSupportedCodecs.emplace_back(
-      JsepVideoCodecDescription::CreateDefaultH264Baseline_0(prefs));
-  aSupportedCodecs.emplace_back(
-      JsepVideoCodecDescription::CreateDefaultAV1(prefs));
-
-  aSupportedCodecs.emplace_back(
-      JsepVideoCodecDescription::CreateDefaultUlpFec(prefs));
-  aSupportedCodecs.emplace_back(
-      JsepApplicationCodecDescription::CreateDefault());
-  aSupportedCodecs.emplace_back(
-      JsepVideoCodecDescription::CreateDefaultRed(prefs));
-
-  CompareCodecPriority comparator;
-  std::stable_sort(aSupportedCodecs.begin(), aSupportedCodecs.end(),
-                   comparator);
+  nsTArray<UniquePtr<JsepCodecDescription>> codecs;
+  EnumerateDefaultVideoCodecs(codecs, aOverrideRtxPreference);
+  aSupportedCodecs.reserve(codecs.Length());
+  for (auto& codec : codecs) {
+    aSupportedCodecs.emplace_back(std::move(codec));
+  }
 }
 
 void PeerConnectionImpl::GetDefaultAudioCodecs(
     std::vector<UniquePtr<JsepCodecDescription>>& aSupportedCodecs) {
-  const auto prefs = GetDefaultCodecPreferences();
-  aSupportedCodecs.emplace_back(
-      JsepAudioCodecDescription::CreateDefaultOpus(prefs));
-  aSupportedCodecs.emplace_back(JsepAudioCodecDescription::CreateDefaultG722());
-  aSupportedCodecs.emplace_back(JsepAudioCodecDescription::CreateDefaultPCMU());
-  aSupportedCodecs.emplace_back(JsepAudioCodecDescription::CreateDefaultPCMA());
-  aSupportedCodecs.emplace_back(
-      JsepAudioCodecDescription::CreateDefaultTelephoneEvent());
+  nsTArray<UniquePtr<JsepCodecDescription>> codecs;
+  EnumerateDefaultAudioCodecs(codecs);
+  aSupportedCodecs.reserve(codecs.Length());
+  for (auto& codec : codecs) {
+    aSupportedCodecs.emplace_back(std::move(codec));
+  }
 }
 
 void PeerConnectionImpl::GetDefaultRtpExtensions(
@@ -2124,37 +2094,40 @@ void PeerConnectionImpl::GetDefaultRtpExtensions(
   RtpExtensionHeader audioLevel = {JsepMediaType::kAudio,
                                    SdpDirectionAttribute::Direction::kSendrecv,
                                    webrtc::RtpExtension::kAudioLevelUri};
-  aRtpExtensions.push_back(audioLevel);
+  aRtpExtensions.push_back(std::move(audioLevel));
 
   RtpExtensionHeader csrcAudioLevels = {
       JsepMediaType::kAudio, SdpDirectionAttribute::Direction::kRecvonly,
       webrtc::RtpExtension::kCsrcAudioLevelsUri};
-  aRtpExtensions.push_back(csrcAudioLevels);
+  aRtpExtensions.push_back(std::move(csrcAudioLevels));
 
   RtpExtensionHeader mid = {JsepMediaType::kAudioVideo,
                             SdpDirectionAttribute::Direction::kSendrecv,
                             webrtc::RtpExtension::kMidUri};
-  aRtpExtensions.push_back(mid);
+  aRtpExtensions.push_back(std::move(mid));
 
   RtpExtensionHeader absSendTime = {JsepMediaType::kVideo,
                                     SdpDirectionAttribute::Direction::kSendrecv,
                                     webrtc::RtpExtension::kAbsSendTimeUri};
-  aRtpExtensions.push_back(absSendTime);
+  aRtpExtensions.push_back(std::move(absSendTime));
 
   RtpExtensionHeader timestampOffset = {
       JsepMediaType::kVideo, SdpDirectionAttribute::Direction::kSendrecv,
       webrtc::RtpExtension::kTimestampOffsetUri};
-  aRtpExtensions.push_back(timestampOffset);
+  aRtpExtensions.push_back(std::move(timestampOffset));
 
   RtpExtensionHeader playoutDelay = {
       JsepMediaType::kVideo, SdpDirectionAttribute::Direction::kRecvonly,
       webrtc::RtpExtension::kPlayoutDelayUri};
-  aRtpExtensions.push_back(playoutDelay);
+  aRtpExtensions.push_back(std::move(playoutDelay));
 
   RtpExtensionHeader transportSequenceNumber = {
-      JsepMediaType::kVideo, SdpDirectionAttribute::Direction::kSendrecv,
+      GetDefaultCodecPreferences().UseAudioTransportCC()
+          ? JsepMediaType::kAudioVideo
+          : JsepMediaType::kVideo,
+      SdpDirectionAttribute::Direction::kSendrecv,
       webrtc::RtpExtension::kTransportSequenceNumberUri};
-  aRtpExtensions.push_back(transportSequenceNumber);
+  aRtpExtensions.push_back(std::move(transportSequenceNumber));
 }
 
 void PeerConnectionImpl::GetCapabilities(
@@ -2560,12 +2533,40 @@ void PeerConnectionImpl::ParseIceServers(
   }
 }
 
+static JsepRtcpMuxPolicy ToJsepRtcpMuxPolicy(dom::RTCRtcpMuxPolicy aPolicy) {
+  switch (aPolicy) {
+    case dom::RTCRtcpMuxPolicy::Require:
+      return kRtcpMuxRequire;
+    case dom::RTCRtcpMuxPolicy::Negotiate:
+      return kRtcpMuxNegotiate;
+  }
+  MOZ_CRASH("Unexpected RTCRtcpMuxPolicy value");
+}
+
 void PeerConnectionImpl::SetConfiguration(
     const RTCConfiguration& aConfiguration, ErrorResult& aRv) {
+  // Spec: check rtcpMuxPolicy consistency before ICE server validation.
+  if (!mRtcpMuxPolicy.isSome()) {
+    if (NS_FAILED(mJsepSession->SetRtcpMuxPolicy(
+            ToJsepRtcpMuxPolicy(aConfiguration.mRtcpMuxPolicy)))) {
+      aRv.ThrowOperationError("Failed to set rtcpMuxPolicy");
+      return;
+    }
+    mRtcpMuxPolicy = Some(aConfiguration.mRtcpMuxPolicy);
+    if (aConfiguration.mRtcpMuxPolicy == dom::RTCRtcpMuxPolicy::Negotiate) {
+      mozilla::glean::rtcpeerconnection::count_rtcp_mux_policy_negotiate.Add(1);
+    }
+  } else if (*mRtcpMuxPolicy != aConfiguration.mRtcpMuxPolicy) {
+    aRv.ThrowInvalidModificationError(
+        "Cannot change rtcpMuxPolicy with setConfiguration");
+    return;
+  }
+
   ParseIceServers(aConfiguration.mIceServers, aRv);
   if (aRv.Failed()) {
     return;
   }
+
   aRv = SetConfiguration(aConfiguration);
 }
 
@@ -4534,11 +4535,12 @@ void PeerConnectionImpl::AddIceCandidate(const std::string& aCandidate,
           cand.mTokenizedCandidate = std::move(tokens);
           cand.mTransportId = aTransportId;
           cand.mUfrag = aUfrag;
-          mQueriedMDNSHostnames[addr].push_back(cand);
+          mQueriedMDNSHostnames[addr].push_back(std::move(cand));
 
           GetMainThreadSerialEventTarget()->Dispatch(NS_NewRunnableFunction(
               "PeerConnectionImpl::SendQueryMDNSHostname",
-              [self = RefPtr<PeerConnectionImpl>(this), addr]() mutable {
+              [self = RefPtr<PeerConnectionImpl>(this),
+               addr = std::move(addr)]() mutable {
                 if (self->mStunAddrsRequest) {
                   self->StampTimecard("Look up mDNS name");
                   self->mStunAddrsRequest->SendQueryMDNSHostname(

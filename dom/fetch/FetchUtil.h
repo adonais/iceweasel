@@ -26,9 +26,10 @@ class WorkerPrivate;
 class FetchUtil final {
  private:
   static nsCString WasmAltDataType;
-  FetchUtil() = delete;
 
  public:
+  FetchUtil() = delete;
+
   /**
    * Sets outMethod to a valid HTTP request method string based on an input
    * method. Implements checks and normalization as specified by the Fetch

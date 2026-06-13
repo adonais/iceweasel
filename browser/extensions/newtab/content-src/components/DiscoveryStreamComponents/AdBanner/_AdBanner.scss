@@ -48,13 +48,11 @@
     @include newtab-card-style;
 
     position: relative;
-    // @backward-compat { version 150 } D281466/D283723 renamed design tokens; remove once Firefox 150 is on Release.
-    box-shadow: var(--card-box-shadow, var(--box-shadow-card));
+    box-shadow: var(--card-box-shadow);
     border-radius: var(--border-radius-large);
 
     &:hover {
-      // @backward-compat { version 150 } D281466/D283723 renamed design tokens; remove once Firefox 150 is on Release.
-      box-shadow: var(--card-box-shadow-hover, var(--box-shadow-card-hover));
+      box-shadow: var(--card-box-shadow-hover);
     }
 
     .ad-banner-link {

@@ -12,6 +12,9 @@ const { EngineProcess } = ChromeUtils.importESModule(
 const { TranslationsPanelShared } = ChromeUtils.importESModule(
   "chrome://browser/content/translations/TranslationsPanelShared.sys.mjs"
 );
+const { TranslationsFeature } = ChromeUtils.importESModule(
+  "chrome://global/content/translations/TranslationsFeature.sys.mjs"
+);
 const { TranslationsUtils } = ChromeUtils.importESModule(
   "chrome://global/content/translations/TranslationsUtils.mjs"
 );
@@ -310,7 +313,7 @@ async function openAboutTranslations({
   const lockedFeaturePrefs = [];
 
   if (!featureEnabled) {
-    await TranslationsParent.AIFeature.block();
+    await TranslationsFeature.block();
   }
 
   if (lockEnabledState) {
@@ -2356,8 +2359,8 @@ async function createTranslationsDoc(
  */
 function doubleRaf(doc) {
   return new Promise(resolve => {
-    doc.ownerGlobal.requestAnimationFrame(() => {
-      doc.ownerGlobal.requestAnimationFrame(() => {
+    doc.documentGlobal.requestAnimationFrame(() => {
+      doc.documentGlobal.requestAnimationFrame(() => {
         resolve(
           // Wait for a tick to be after anything that resolves with a double rAF.
           TestUtils.waitForTick()
@@ -3647,12 +3650,19 @@ async function modifyRemoteSettingsRecords(
   });
 }
 
-async function selectAboutPreferencesElements() {
+async function selectAboutPreferencesElements(redesignEnabled) {
   const document = gBrowser.selectedBrowser.contentDocument;
 
   const settingsButton = document.getElementById(
     "translations-manage-settings-button"
   );
+
+  if (redesignEnabled) {
+    return {
+      document,
+      settingsButton,
+    };
+  }
 
   const rows = await waitForCondition(() => {
     const elements = document.querySelectorAll(".translations-manage-language");
@@ -3663,7 +3673,6 @@ async function selectAboutPreferencesElements() {
   }, "Waiting for manage language rows.");
 
   const [downloadAllRow, frenchRow, spanishRow, ukrainianRow] = rows;
-
   const downloadAllLabel = downloadAllRow.querySelector("label");
   const downloadAll = downloadAllRow.querySelector(
     "#translations-manage-install-all"
@@ -3692,7 +3701,6 @@ async function selectAboutPreferencesElements() {
   const ukrainianDelete = ukrainianRow.querySelector(
     `[data-l10n-id="translations-manage-language-remove-button"]`
   );
-
   return {
     document,
     downloadAllLabel,
@@ -3794,6 +3802,7 @@ async function setupAboutPreferences(
       ["browser.translations.enable", true],
       ["browser.translations.logLevel", "All"],
       [USE_LEXICAL_SHORTLIST_PREF, false],
+      ["browser.settings-redesign.enabled", true],
       ...prefs,
     ],
   });
@@ -3816,9 +3825,32 @@ async function setupAboutPreferences(
 
   await loadNewPage(tab.linkedBrowser, "about:preferences");
 
-  const elements = await selectAboutPreferencesElements();
-
+  // Load the Languages pane if SRD is enabled (moved from General)
   const document = gBrowser.selectedBrowser.contentDocument;
+  let redesigned = Services.prefs.getBoolPref(
+    "browser.settings-redesign.enabled",
+    false
+  );
+  if (redesigned) {
+    let loaded = BrowserTestUtils.waitForEvent(document, "paneshown");
+    let categoryLanguages = document.getElementById("category-languages");
+    categoryLanguages.scrollIntoView();
+    EventUtils.synthesizeMouseAtCenter(
+      categoryLanguages,
+      {},
+      document.documentGlobal
+    );
+    EventUtils.synthesizeMouseAtCenter(
+      categoryLanguages,
+      {},
+      document.documentGlobal
+    );
+    let event = await loaded;
+    is(event.detail.category, "paneLanguages", "Loaded the correct pane");
+  }
+
+  const elements = await selectAboutPreferencesElements(redesigned);
+
   const translationsSettingsTestUtils = new TranslationsSettingsTestUtils(
     document
   );

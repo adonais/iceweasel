@@ -341,7 +341,7 @@ TestRunner._dumpMessage = function (message) {
   }
 };
 
-// From https://searchfox.org/mozilla-central/source/testing/modules/StructuredLog.sys.mjs
+// From https://searchfox.org/firefox-main/source/testing/modules/StructuredLog.sys.mjs
 TestRunner.structuredLogger = new StructuredLogger(
   "mochitest",
   TestRunner._dumpMessage,

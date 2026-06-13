@@ -255,6 +255,8 @@ fail-if = [
 
 ["browser_rules_position-try.js"]
 
+["browser_rules_popup_override.js"]
+
 ["browser_rules_preview-tooltips-sizes.js"]
 
 ["browser_rules_print_media_simulation.js"]

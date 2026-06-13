@@ -1,0 +1,19 @@
+{
+  "background": {
+    "color": {
+      "inactive": {
+        "value": "transparent"
+      }
+    }
+  },
+  "text": {
+    "color": {
+      "@base": {
+        "value": "{text.color.@base}"
+      },
+      "inactive": {
+        "value": "{text.color.deemphasized}"
+      }
+    }
+  }
+}

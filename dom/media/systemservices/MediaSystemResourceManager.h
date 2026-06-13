@@ -5,8 +5,6 @@
 #if !defined(MediaSystemResourceManager_h_)
 #  define MediaSystemResourceManager_h_
 
-#  include <queue>
-
 #  include "MediaSystemResourceTypes.h"
 #  include "mozilla/ReentrantMonitor.h"
 #  include "mozilla/StaticPtr.h"

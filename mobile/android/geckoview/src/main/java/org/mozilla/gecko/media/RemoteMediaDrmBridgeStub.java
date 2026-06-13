@@ -142,7 +142,7 @@ final class RemoteMediaDrmBridgeStub extends IMediaDrmBridge.Stub
 
   RemoteMediaDrmBridgeStub(final String keySystem, final String stubId) throws RemoteException {
     try {
-      mBridge = new GeckoMediaDrmBridgeV23(keySystem);
+      mBridge = new GeckoMediaDrmBridge(keySystem);
       mStubId = stubId;
       mBridgeStubs.add(this);
     } catch (final Exception e) {

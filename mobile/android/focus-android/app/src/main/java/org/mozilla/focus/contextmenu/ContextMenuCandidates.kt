@@ -14,6 +14,9 @@ import mozilla.components.feature.tabs.TabsUseCases
 import mozilla.components.ui.widgets.DefaultSnackbarDelegate
 import mozilla.components.ui.widgets.SnackbarDelegate
 
+/**
+ * Utility for providing context menu candidates.
+ */
 object ContextMenuCandidates {
 
     /**

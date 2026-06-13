@@ -1647,6 +1647,67 @@ TEST_F(TlsConnectStreamTls13,
   client_->CheckClientAuthCallbacksCompleted(2);
 }
 
+// Regression test for Bug 2026089: repeated PHA CertificateRequests that
+// include the certificate_compression extension must not overflow the
+// negotiated[] array.  The client is expected to send a CompressedCertificate
+// on every round because the server advertises the algorithm in each
+// CertificateRequest.
+TEST_F(TlsConnectStreamTls13,
+       CertificateCompression_RepeatedPostAuthCertificateRequests) {
+  static const size_t kNumRequests = 60;
+  EnsureTlsSetup();
+  auto filterExtension =
+      MakeTlsFilter<TLSCertificateCompressionCertificateCatcher>(client_);
+
+  SSLCertificateCompressionAlgorithm alg = {0xff01, "test function",
+                                            SimpleXorCertCompEncode,
+                                            SimpleXorCertCompDecode};
+
+  EXPECT_EQ(SECSuccess,
+            SSLExp_SetCertificateCompressionAlgorithm(server_->ssl_fd(), alg));
+  EXPECT_EQ(SECSuccess,
+            SSLExp_SetCertificateCompressionAlgorithm(client_->ssl_fd(), alg));
+
+  client_->SetupClientAuth();
+  client_->SetOption(SSL_ENABLE_POST_HANDSHAKE_AUTH, PR_TRUE);
+  size_t called = 0;
+  server_->SetAuthCertificateCallback(
+      [&called](TlsAgent*, PRBool, PRBool) -> SECStatus {
+        called++;
+        return SECSuccess;
+      });
+  Connect();
+
+  for (size_t i = 0; i < kNumRequests; i++) {
+    filterExtension->unsetSawCompressedCertificate();
+
+    EXPECT_EQ(SECSuccess, SSL_SendCertificateRequest(server_->ssl_fd()))
+        << "CertificateRequest " << (i + 1)
+        << " unexpected error: " << PORT_ErrorToName(PORT_GetError());
+
+    server_->SendData(50);
+    client_->ReadBytes(50);
+    client_->SendData(50);
+    server_->ReadBytes(50);
+
+    EXPECT_EQ(i + 1, called);
+    EXPECT_TRUE(filterExtension->sawCompressedCertificate())
+        << "Round " << (i + 1) << " did not use CompressedCertificate";
+
+    size_t needed =
+        std::max(client_->received_bytes(), server_->received_bytes()) + 50;
+    SendReceive(needed);
+  }
+
+  client_->CheckClientAuthCallbacksCompleted(kNumRequests);
+
+  ScopedCERTCertificate cert(SSL_PeerCertificate(server_->ssl_fd()));
+  ASSERT_NE(nullptr, cert.get());
+  ScopedCERTCertificate localCert(SSL_LocalCertificate(client_->ssl_fd()));
+  ASSERT_NE(nullptr, localCert.get());
+  EXPECT_TRUE(SECITEM_ItemsAreEqual(&cert->derCert, &localCert->derCert));
+}
+
 TEST_F(TlsConnectStreamTls13, CertificateCompression_ServerDecodingIsNULL) {
   EnsureTlsSetup();
   auto filterExtension =

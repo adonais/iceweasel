@@ -1,25 +1,37 @@
-From: Andreas Pehrson <apehrson@mozilla.com>
-Date: Fri, 5 Dec 2025 11:12:00 +0000
-Subject: Bug 1931210 - Log SCK startCaptureWithCompletionHandler error code.
- r=jib
+From: Michael Froman <mfroman@mozilla.com>
+Date: Fri, 16 Jan 2026 16:48:00 -0600
+Subject: Bug 2010312 - (fix-dc65955c6d) fix base-toolchains build
 
-Differential Revision: https://phabricator.services.mozilla.com/D268351
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/330a55d5a7ff5e7c694772810697fde59f0c742b
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/6c3f917f52d45566db7b5916b74f792928456dff
 ---
- modules/desktop_capture/mac/screen_capturer_sck.mm | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+ call/rtp_transport_controller_send.cc | 9 ++++-----
+ 1 file changed, 4 insertions(+), 5 deletions(-)
 
-diff --git a/modules/desktop_capture/mac/screen_capturer_sck.mm b/modules/desktop_capture/mac/screen_capturer_sck.mm
-index 0d0750f63e..8ec1d182a3 100644
---- a/modules/desktop_capture/mac/screen_capturer_sck.mm
-+++ b/modules/desktop_capture/mac/screen_capturer_sck.mm
-@@ -590,7 +590,8 @@ void ScreenCapturerSck::StartWithFilter(SCContentFilter* __strong filter) {
-         // this handler.
-         permanent_error_ = true;
-         RTC_LOG(LS_ERROR) << "ScreenCapturerSck " << this
--                          << " Starting failed.";
-+                          << " Starting failed with error code " << error.code
-+                          << ".";
-       } else {
-         RTC_LOG(LS_INFO) << "ScreenCapturerSck " << this << " Capture started.";
+diff --git a/call/rtp_transport_controller_send.cc b/call/rtp_transport_controller_send.cc
+index edc91904d8..e2a4b5a5c5 100644
+--- a/call/rtp_transport_controller_send.cc
++++ b/call/rtp_transport_controller_send.cc
+@@ -739,19 +739,18 @@ void RtpTransportControllerSend::ComputeStatsFromCongestionControlFeedback(
+ 
+     if (packet_info.IsReceived()) {
+       switch (packet_info.ecn) {
+-        using enum EcnMarking;
+-        case kEct1:
++        case EcnMarking::kEct1:
+           ++stats->num_packets_received_with_ect1;
+           break;
+-        case kCe:
++        case EcnMarking::kCe:
+           ++stats->num_packets_received_with_ce;
+           break;
+-        case kNotEct:
++        case EcnMarking::kNotEct:
+           if (packet_info.sent_with_ect1) {
+             ++stats->num_packets_with_bleached_ect1_marking;
+           }
+           break;
+-        case kEct0:
++        case EcnMarking::kEct0:
+           break;
        }
+     }

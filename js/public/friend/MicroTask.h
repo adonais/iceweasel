@@ -166,14 +166,10 @@ JS_PUBLIC_API void RestoreMicroTaskQueue(
 //
 // This disambiguates between no-data and the dead wrapper case
 JS_PUBLIC_API bool MaybeGetHostDefinedDataFromJSMicroTask(
-    JSMicroTask* entry, MutableHandleObject out);
+    JSMicroTask* entry, MutableHandleObject incumbentGlobal,
+    MutableHandleObject optionalHostDefinedData);
 JS_PUBLIC_API bool MaybeGetAllocationSiteFromJSMicroTask(
     JSMicroTask* entry, MutableHandleObject out);
-
-// In some circumstances an entry may not have host defined data but may
-// still have a host defined global;
-JS_PUBLIC_API JSObject* MaybeGetHostDefinedGlobalFromJSMicroTask(
-    JSMicroTask* entry);
 
 JS_PUBLIC_API JSObject* MaybeGetPromiseFromJSMicroTask(JSMicroTask* entry);
 

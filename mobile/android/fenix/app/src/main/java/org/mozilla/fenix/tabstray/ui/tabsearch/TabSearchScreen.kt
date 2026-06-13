@@ -21,7 +21,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -53,6 +52,7 @@ import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.flow.map
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
+import mozilla.components.compose.base.button.IconButton
 import mozilla.components.compose.base.searchbar.TopSearchBar
 import org.mozilla.fenix.R
 import org.mozilla.fenix.ext.toShortUrl
@@ -116,19 +116,20 @@ fun TabSearchScreen(
                 },
                 leadingIcon = {
                     IconButton(
-                        modifier = Modifier.testTag(TAB_SEARCH_BACK_BUTTON),
                         onClick = {
                             expanded = false
                             focusManager.clearFocus(force = true)
                             keyboardController?.hide()
                             store.dispatch(TabsTrayAction.NavigateBackInvoked)
                         },
+                        contentDescription = stringResource(
+                            id = R.string.tab_manager_search_bar_back_content_description,
+                        ),
+                        modifier = Modifier.testTag(TAB_SEARCH_BACK_BUTTON),
                     ) {
                         Icon(
                             painter = painterResource(id = iconsR.drawable.mozac_ic_back_24),
-                            contentDescription = stringResource(
-                                id = R.string.tab_manager_search_bar_back_content_description,
-                            ),
+                            contentDescription = null,
                         )
                     }
                 },

@@ -22,11 +22,10 @@ XPIDL_SOURCES += [
     "nsINSSVersion.idl",
     "nsIOSKeyStore.idl",
     "nsIOSReauthenticator.idl",
-    "nsIPK11Token.idl",
-    "nsIPK11TokenDB.idl",
     "nsIPKCS11Module.idl",
     "nsIPKCS11ModuleDB.idl",
     "nsIPKCS11Slot.idl",
+    "nsIPKCS11Token.idl",
     "nsIPublicKeyPinningService.idl",
     "nsISecretDecoderRing.idl",
     "nsISecurityUITelemetry.idl",
@@ -38,6 +37,9 @@ XPIDL_SOURCES += [
     "nsIX509CertDB.idl",
     "nsIX509CertValidity.idl",
 ]
+
+if CONFIG["ENABLE_TESTS"]:
+    XPIDL_SOURCES += ["nsISSLTokensCacheTest.idl"]
 
 XPIDL_MODULE = "pipnss"
 
@@ -115,7 +117,6 @@ UNIFIED_SOURCES += [
     "nsNSSModule.cpp",
     "nsNSSVersion.cpp",
     "nsNTLMAuthModule.cpp",
-    "nsPK11TokenDB.cpp",
     "nsPKCS12Blob.cpp",
     "nsRandomGenerator.cpp",
     "nsSecureBrowserUI.cpp",
@@ -132,6 +133,7 @@ UNIFIED_SOURCES += [
     "PKCS11Module.cpp",
     "PKCS11ModuleDB.cpp",
     "PKCS11Slot.cpp",
+    "PKCS11Token.cpp",
     "PublicKeyPinningService.cpp",
     "QWACs.cpp",
     "QWACTrustDomain.cpp",

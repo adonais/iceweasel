@@ -526,7 +526,7 @@ export var BrowserUtils = {
    */
   hrefAndLinkNodeForClickEvent(event) {
     // We should get a window off the event, and bail if not:
-    let content = event.view || event.composedTarget?.ownerGlobal;
+    let content = event.view || event.composedTarget?.documentGlobal;
     if (!content?.HTMLAnchorElement) {
       return null;
     }

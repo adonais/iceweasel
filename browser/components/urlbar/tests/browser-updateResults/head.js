@@ -385,18 +385,18 @@ async function doSuggestedIndexTest({ search1, search2, duringUpdate }) {
     0
   );
 
-  // Don't allow the search to finish until we check the updated rows. We'll
-  // accomplish that by adding a mutation observer to observe completion of the
-  // update and delaying resolving the provider's finishQueryPromise.
-  //
-  // This promise works like this: We add a mutation observer that observes the
-  // view's entire subtree. Every time we observe a mutation, we set
-  // `lastMutationTime` to the current time. Meanwhile, we run an interval that
-  // compares `now` to `lastMutationTime` every time it fires. When the
-  // difference between `now` and `lastMutationTime` is sufficiently large, we
-  // assume the view update is done, and we resolve the promise.
+  // DOMLocalization schedules DOM updates one animation frame after
+  // setAttributes(), so wait here to flush any pending updates from search 1.
+  await new Promise(r => requestAnimationFrame(r));
+
+  // Don't allow the search to finish until we check the updated rows by
+  // delaying the provider's finishQueryPromise. We observe mutations on the
+  // view's subtree: every mutation updates `lastMutationTime`, and the promise
+  // resolves once `lastMutationTime` is sufficiently old. We require at least
+  // one mutation before checking the interval to avoid resolving early if
+  // focus loss delays the search start.
   let mutationPromise = new Promise(resolve => {
-    let lastMutationTime = ChromeUtils.now();
+    let lastMutationTime = null;
     let observer = new MutationObserver(() => {
       info("Observed mutation");
       lastMutationTime = ChromeUtils.now();
@@ -410,7 +410,10 @@ async function doSuggestedIndexTest({ search1, search2, duringUpdate }) {
 
     let interval = setInterval(
       () => {
-        if (MUTATION_SETTLE_TIME_MS < ChromeUtils.now() - lastMutationTime) {
+        if (
+          lastMutationTime !== null &&
+          MUTATION_SETTLE_TIME_MS < ChromeUtils.now() - lastMutationTime
+        ) {
           info("No further mutations observed, stopping");
           clearInterval(interval);
           observer.disconnect();

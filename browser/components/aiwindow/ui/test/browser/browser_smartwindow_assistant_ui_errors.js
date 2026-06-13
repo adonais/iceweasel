@@ -77,7 +77,8 @@ add_task(async function test_error_status() {
         expectedHeader,
         expectedBody,
         expectedButton,
-        expectedEvent
+        expectedEvent,
+        expectedHeaderArgs = null
       ) {
         errorComponent.error = errorObj;
         await errorComponent.updateComplete;
@@ -92,6 +93,18 @@ add_task(async function test_error_status() {
           expectedHeader,
           `Header has correct l10n-id: ${expectedHeader}`
         );
+        if (expectedHeaderArgs) {
+          Assert.equal(
+            header.getAttribute("data-l10n-args"),
+            JSON.stringify(expectedHeaderArgs),
+            `Header has correct l10n-args: ${JSON.stringify(expectedHeaderArgs)}`
+          );
+        } else {
+          Assert.ok(
+            !header.hasAttribute("data-l10n-args"),
+            "Header has no l10n-args"
+          );
+        }
 
         if (expectedBody) {
           Assert.ok(body, "Error body exists");
@@ -141,6 +154,22 @@ add_task(async function test_error_status() {
       );
 
       await testErrorScenario(
+        { error: 5 },
+        "smartwindow-assistant-error-many-requests-header",
+        null,
+        null,
+        null
+      );
+
+      await testErrorScenario(
+        { error: 6 },
+        "smartwindow-assistant-error-many-requests-header",
+        null,
+        null,
+        null
+      );
+
+      await testErrorScenario(
         { error: 3 },
         "smartwindow-assistant-error-max-length-header",
         null,
@@ -150,10 +179,35 @@ add_task(async function test_error_status() {
 
       await testErrorScenario(
         { error: 4 },
+        "smartwindow-assistant-error-capacity-header",
+        null,
+        null,
+        null
+      );
+
+      await testErrorScenario(
+        { clientReason: "fxaTokenUnavailable" },
         "smartwindow-assistant-error-account-header",
         null,
         "smartwindow-signin-btn",
         "aiChatError:sign-in"
+      );
+
+      await testErrorScenario(
+        { httpStatus: 401 },
+        "smartwindow-assistant-error-http-header",
+        null,
+        "smartwindow-retry-btn",
+        "aiChatError:retry-message",
+        { status: 401 }
+      );
+
+      await testErrorScenario(
+        { error: 7 },
+        "smartwindow-assistant-error-page-content-header",
+        null,
+        null,
+        null
       );
 
       await testErrorScenario(
@@ -186,6 +240,24 @@ add_task(async function test_error_status() {
         null,
         "smartwindow-retry-btn",
         "aiChatError:retry-message"
+      );
+
+      await testErrorScenario(
+        { error: 9, httpStatus: 500 },
+        "smartwindow-assistant-error-http-header",
+        null,
+        "smartwindow-retry-btn",
+        "aiChatError:retry-message",
+        { status: 500 }
+      );
+
+      await testErrorScenario(
+        { httpStatus: 502 },
+        "smartwindow-assistant-error-http-header",
+        null,
+        "smartwindow-retry-btn",
+        "aiChatError:retry-message",
+        { status: 502 }
       );
     });
   });

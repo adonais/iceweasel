@@ -1,9 +1,11 @@
 [DEFAULT]
+dupe-manifest = true
 prefs = [
   "extensions.formautofill.addresses.available='on'",
   "signon.management.page.os-auth.enabled=true",
   "browser.backup.archive.enabled=false",
   "browser.backup.restore.enabled=false",
+  "browser.settings-redesign.enabled=false",
 ]
 support-files = [
   "head.js",
@@ -15,19 +17,16 @@ tags = "os_integration"
 
 ["browser_about_settings.js"]
 
+["browser_accessibility_pane_xul.js"]
+
 ["browser_advanced_update.js"]
-run-if = [
-  "updater",
-]
+run-if = ["updater"]
+
+["browser_appearance_pane_xul.js"]
 
 ["browser_backup_visibility.js"]
 
 ["browser_backup_warning_banner.js"]
-
-["browser_browser_languages_subdialog.js"]
-skip-if = [
-  "tsan",
-]
 
 ["browser_bug731866.js"]
 
@@ -38,60 +37,41 @@ skip-if = [
 ["browser_bug1020245_openPreferences_to_paneContent.js"]
 
 ["browser_bug1184989_prevent_scrolling_when_preferences_flipped.js"]
-support-files = ["browser_bug1184989_prevent_scrolling_when_preferences_flipped.xhtml"]
+support-files = [
+  "browser_bug1184989_prevent_scrolling_when_preferences_flipped.xhtml",
+]
 
 ["browser_bug1579418.js"]
 
-["browser_build_font_options_test.js"]
-
-["browser_checkspelling.js"]
-
-["browser_colors_dialog.js"]
+["browser_colors_dialog_xul.js"]
 
 ["browser_ensure_prefs_bindings_initted.js"]
 
 ["browser_extension_controlled.js"]
 skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && ccov", # Linux: bug 1613530
-  "os == 'win' && ccov", # Windows: bug 1437051
+  "os == 'win' && ccov",                                                                    # Windows: bug 1437051
   "tsan",
 ]
 
 ["browser_fluent.js"]
 
 ["browser_keyboardfocus.js"]
-run-if = [
-  "os == 'mac'",
-]
-
-["browser_languages_subdialog.js"]
+run-if = ["os == 'mac'"]
 
 ["browser_no_id_collision_between_categories_and_mainPane.js"]
 
 ["browser_open_migration_wizard.js"]
 
-["browser_setting_group_in_progress.js"]
-
-["browser_setting_pane_redesign_promo.js"]
-
-["browser_setting_pane_sub_pane.js"]
-
 ["browser_spotlight.js"]
 
 ["browser_subdialogs.js"]
-support-files = [
-  "subdialog.xhtml",
-  "subdialog2.xhtml",
-]
+support-files = ["subdialog.xhtml", "subdialog2.xhtml"]
 
 ["browser_tabs_open_external_next_to_active_tab.js"]
 
 ["browser_windows_launch_on_login.js"]
-run-if = [
-  "os == 'win' && !msix",
-]
+run-if = ["os == 'win' && !msix"]
 
 ["browser_windows_launch_on_login_msix.js"]
-run-if = [
-  "os == 'win' && msix",
-]
+run-if = ["os == 'win' && msix"]

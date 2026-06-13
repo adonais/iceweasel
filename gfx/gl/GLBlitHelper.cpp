@@ -2194,7 +2194,7 @@ std::optional<color::ColorProfileDesc> GLBlitHelper::ToColorProfileDesc(
 
 // For std::visit
 template <class... Ts>
-struct overloaded : Ts... {
+struct MOZ_EMPTY_BASES overloaded : Ts... {
   using Ts::operator()...;
 };
 // explicit deduction guide (not needed as of C++20)

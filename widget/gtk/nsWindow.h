@@ -193,7 +193,7 @@ class nsWindow : public nsIWidget {
   float GetDPI() override;
   double GetDefaultScaleInternal() override;
   uint32_t GetMaxTouchPoints() const override;
-  mozilla::DesktopToLayoutDeviceScale GetDesktopToDeviceScale() override;
+  mozilla::DesktopToLayoutDeviceScale GetDesktopToDeviceScale() const override;
   void SetModal(bool aModal) override;
   bool IsVisible() const override;
   void ConstrainPosition(DesktopIntPoint&) override;
@@ -540,11 +540,16 @@ class nsWindow : public nsIWidget {
   void UnlockCursor() { mWidgetCursorLocked = false; };
   void InsertEmoji(RefPtr<nsWindow> aToplevelWindow = nullptr);
 
+  static void SessionRestoreFinished();
+
  protected:
   virtual ~nsWindow();
 
   virtual void CreateNative() = 0;
   virtual void DestroyNative() = 0;
+
+  void ConfigureToplevelWindow();
+  virtual void ConfigureToplevelWindowNative() {};
 
   virtual void EnableVSyncSource() {};
   virtual void DisableVSyncSource() {};
@@ -765,6 +770,10 @@ class nsWindow : public nsIWidget {
 
   // Popup is hidden only as a part of hierarchy tree update.
   bool mPopupTemporaryHidden : 1;
+
+  // If we're waiting for session restore, don't fiddle with window
+  // size/focus etc.
+  bool mWaitingToSessionRestore : 1;
 
   // all of our DND stuff
   void InitDragEvent(mozilla::WidgetDragEvent& aEvent);

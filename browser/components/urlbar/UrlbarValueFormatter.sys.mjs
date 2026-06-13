@@ -163,30 +163,41 @@ export class UrlbarValueFormatter {
       data: null,
     };
 
-    // Get the URL from the fixup service:
-    let flags =
-      Services.uriFixup.FIXUP_FLAG_FIX_SCHEME_TYPOS |
-      Services.uriFixup.FIXUP_FLAG_ALLOW_KEYWORD_LOOKUP;
-    if (lazy.PrivateBrowsingUtils.isWindowPrivate(this.#window)) {
-      flags |= Services.uriFixup.FIXUP_FLAG_PRIVATE_CONTEXT;
-    }
-
+    // For already-schemed http(s) URLs we can parse directly, avoiding the
+    // cost of getFixupURIInfo. For schemeless input, scheme typos, and
+    // potential search queries, we need the fixup service.
+    const untrimmedValue = this.#urlbarInput.untrimmedValue;
+    let uri;
     let uriInfo;
-    try {
-      uriInfo = Services.uriFixup.getFixupURIInfo(
-        this.#urlbarInput.untrimmedValue,
-        flags
-      );
-    } catch (ex) {}
-    // Ignore if we couldn't make a URI out of this, the URI resulted in a search,
-    // or the URI has a non-http(s) protocol.
     if (
-      !uriInfo ||
-      !uriInfo.fixedURI ||
-      uriInfo.keywordProviderName ||
-      !["http", "https"].includes(uriInfo.fixedURI.scheme)
+      untrimmedValue.startsWith("http://") ||
+      untrimmedValue.startsWith("https://")
     ) {
-      return null;
+      try {
+        uri = Services.io.newURI(untrimmedValue);
+      } catch (e) {}
+    }
+    if (!uri) {
+      let flags =
+        Services.uriFixup.FIXUP_FLAG_FIX_SCHEME_TYPOS |
+        Services.uriFixup.FIXUP_FLAG_ALLOW_KEYWORD_LOOKUP;
+      if (lazy.PrivateBrowsingUtils.isWindowPrivate(this.#window)) {
+        flags |= Services.uriFixup.FIXUP_FLAG_PRIVATE_CONTEXT;
+      }
+      try {
+        uriInfo = Services.uriFixup.getFixupURIInfo(untrimmedValue, flags);
+      } catch (ex) {}
+      // Ignore if we couldn't make a URI out of this, the URI resulted in a
+      // search, or the URI has a non-http(s) protocol.
+      if (
+        !uriInfo ||
+        !uriInfo.fixedURI ||
+        uriInfo.keywordProviderName ||
+        !["http", "https"].includes(uriInfo.fixedURI.scheme)
+      ) {
+        return null;
+      }
+      uri = uriInfo.fixedURI;
     }
 
     // We must ensure the protocol is present in the parsed string, so we don't
@@ -198,19 +209,19 @@ export class UrlbarValueFormatter {
     let trimmedLength = 0;
     let trimmedProtocol = lazy.BrowserUIUtils.trimURLProtocol;
     if (
-      this.#urlbarInput.untrimmedValue.startsWith(trimmedProtocol) &&
+      untrimmedValue.startsWith(trimmedProtocol) &&
       !inputValue.startsWith(trimmedProtocol)
     ) {
       // The protocol has been trimmed, so we add it back.
       url = trimmedProtocol + inputValue;
       trimmedLength = trimmedProtocol.length;
     } else if (
-      uriInfo.schemelessInput == Ci.nsILoadInfo.SchemelessInputTypeSchemeless
+      uriInfo?.schemelessInput == Ci.nsILoadInfo.SchemelessInputTypeSchemeless
     ) {
       // The original string didn't have a protocol, but it was identified as
       // a URL. It's not important which scheme we use for parsing, so we'll
       // just copy URIFixup.
-      let scheme = uriInfo.fixedURI.scheme + "://";
+      let scheme = uri.scheme + "://";
       url = scheme + url;
       trimmedLength = scheme.length;
     }
@@ -226,14 +237,13 @@ export class UrlbarValueFormatter {
     }
     let [, preDomain, schemeWSlashes, domain] = matchedURL;
 
-    // If the found host differs from the fixed URI one, we can't properly
-    // highlight it. To stay on the safe side, we clobber user's input with
-    // the fixed URI and apply highlight to that one instead.
+    // If the host extracted by the regex differs from the actual host of the
+    // URL, we can't safely highlight it; then we clobber the input with the
+    // fixed URI, and apply highlight to that one instead.
     let replaceUrl = false;
     try {
       replaceUrl =
-        Services.io.newURI("http://" + domain).displayHost !=
-        uriInfo.fixedURI.displayHost;
+        Services.io.newURI("http://" + domain).displayHost != uri.displayHost;
     } catch (ex) {
       return null;
     }
@@ -245,7 +255,7 @@ export class UrlbarValueFormatter {
       try {
         this.#inGetUrlMetaData = true;
         this.#window.gBrowser.userTypedValue = null;
-        this.#urlbarInput.setURI({ uri: uriInfo.fixedURI });
+        this.#urlbarInput.setURI({ uri });
         return this.#getUrlMetaData();
       } finally {
         this.#inGetUrlMetaData = false;
@@ -254,7 +264,7 @@ export class UrlbarValueFormatter {
 
     return (browserState.urlMetaData.data = {
       domain,
-      origin: uriInfo.fixedURI.host,
+      origin: uri.host,
       preDomain,
       schemeWSlashes,
       trimmedLength,

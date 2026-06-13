@@ -48,7 +48,7 @@ add_task(async function () {
   await BrowserTestUtils.openNewForegroundTab(gBrowser, URLs[1]);
   await withFirefoxView({}, async browser => {
     const { document } = browser.contentWindow;
-    let win1 = browser.ownerGlobal;
+    let win1 = browser.documentGlobal;
     await navigateToViewAndWait(document, "opentabs");
 
     let openTabs = document.querySelector("view-opentabs[name=opentabs]");

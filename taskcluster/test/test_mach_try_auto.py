@@ -46,12 +46,7 @@ def test_only_important_manifests(params, full_task_graph, filter_tasks):
             unimportant = [
                 t for t in attr("test_manifests") if t not in important_manifests
             ]
-
-            # Manifest scheduling is disabled for mochitest-ally.
-            if attr("unittest_suite") in ["mochitest-a11y"]:
-                assert len(unimportant) > 0
-            else:
-                assert unimportant == []
+            assert unimportant == []
 
 
 @pytest.mark.parametrize(

@@ -8,9 +8,9 @@
  */
 
 /**
- * @import { UrlbarProvider } from "UrlbarUtils.sys.mjs"
- * @import { UrlbarMuxer } from "UrlbarUtils.sys.mjs"
- * @import { UrlbarSearchStringTokenData } from "UrlbarTokenizer.sys.mjs"
+ * @import { UrlbarProvider } from "./UrlbarUtils.sys.mjs"
+ * @import { UrlbarMuxer } from "./UrlbarUtils.sys.mjs"
+ * @import { UrlbarSearchStringTokenData } from "./UrlbarTokenizer.sys.mjs"
  */
 
 const lazy = {};

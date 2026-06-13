@@ -6,12 +6,13 @@
       "matches": ["*://www.zhihu.com/question/*"]
     }
   },
+  "css": {
+    "fix_unclickable_directory_buttons": ".css-376mun { display: block; }"
+  },
   "interventions": [
     {
       "platforms": ["all"],
-      "content_scripts": {
-        "css": ["bug1895051-www.zhihu.com-broken-button-fix.css"]
-      }
+      "css": ["fix_unclickable_directory_buttons"]
     }
   ]
 }

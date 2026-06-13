@@ -8,9 +8,13 @@
 newtab-page-title = Nýr flipi
 newtab-settings-button =
     .title = Sérsníða nýju flipasíðuna
+#  (developer note): @nova-cleanup(remove-string): Remove newtab-customize-panel-icon-button once Nova lands, will be using newtab-customize-panel-label instead
 newtab-customize-panel-icon-button =
     .title = Sérsníða þessa síðu
+#  (developer note): @nova-cleanup(remove-string): Remove newtab-customize-panel-icon-button-label once Nova lands, will be using newtab-customize-panel-label instead
 newtab-customize-panel-icon-button-label = Sérsníða
+newtab-customize-panel-label =
+    .label = Sérsníða
 newtab-personalize-settings-icon-label =
     .title = Sérsníða nýjan flipa
     .aria-label = Stillingar
@@ -656,10 +660,16 @@ newtab-widget-lists-label-beta =
 newtab-widget-lists-completed-list = Lokið ({ $number })
 newtab-widget-task-list-menu-copy = Afrita
 newtab-widget-lists-menu-edit = Breyta heiti á lista
+newtab-widget-lists-menu-edit2 =
+    .aria-label = Breyta heiti á lista
 newtab-widget-lists-menu-create = Búa til nýjan lista
 newtab-widget-lists-menu-delete = Eyða þessum lista
 newtab-widget-lists-menu-copy = Afrita lista á klippispjald
 newtab-widget-lists-menu-learn-more = Frekari upplýsingar
+newtab-widget-lists-button-add-item = Bæta við atriði
+newtab-widget-lists-input-add-an-item2 =
+    .placeholder = Bæta við atriði
+    .aria-label = Bæta við atriði
 newtab-widget-lists-input-add-an-item =
     .placeholder = Bæta við atriði
 newtab-widget-lists-input-error = Settu inn texta til að bæta við atriði.
@@ -676,11 +686,14 @@ newtab-widget-lists-name-label-default =
 newtab-widget-lists-name-placeholder-default =
     .placeholder = Verkefnalisti
 # The placeholder value of the name field for a newly created list
+newtab-widget-lists-name-placeholder-new2 =
+    .placeholder = Nýr listi
+    .aria-label = Breyta heiti á lista
+# The placeholder value of the name field for a newly created list
 newtab-widget-lists-name-placeholder-new =
     .placeholder = Nýr listi
 
-## Strings for timer productivity widget
-## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown
+## Strings introduced by the Nova redesign of the Timer widget
 
 newtab-widget-timer-notification-title = Tímamælir
 newtab-widget-timer-notification-focus = Einbeitingartíminn er liðinn. Vel gert. Þarftu pásu?

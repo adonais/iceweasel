@@ -8,6 +8,7 @@
 #include "DriverCrashGuard.h"
 #include "MainThreadUtils.h"
 #include "PermissionMessageUtils.h"
+#include "ProfileAdditionalInformation.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/DataMutex.h"
 #include "mozilla/HalTypes.h"
@@ -173,6 +174,10 @@ class ContentParent final : public PContentParent,
 
   static void LogAndAssertFailedPrincipalValidationInfo(
       nsIPrincipal* aPrincipal, const char* aMethod);
+
+  static mozilla::ipc::IPCResult PrincipalValidationIpcFail(
+      nsIPrincipal* aPrincipal, mozilla::ipc::IProtocol* aActor,
+      const char* aMethod);
 
   /**
    * Picks a random content parent from |aContentParents| respecting the index
@@ -679,7 +684,7 @@ class ContentParent final : public PContentParent,
   //
   // Should eventually be made obsolete by broader design changes that only
   // store BlobURLs in the parent process.
-  void TransmitBlobDataIfBlobURL(nsIURI* aURI);
+  void TransmitBlobDataIfBlobURL(nsIURI* aURI, const OriginAttributes& aAttrs);
 
   void OnCompositorDeviceReset() override;
 
@@ -1125,7 +1130,9 @@ class ContentParent final : public PContentParent,
   bool DeallocPWebrtcGlobalParent(PWebrtcGlobalParent* aActor);
 #endif
 
-  mozilla::ipc::IPCResult RecvShutdownProfile(const nsACString& aProfile);
+  mozilla::ipc::IPCResult RecvShutdownProfile(
+      mozilla::ProfileAndAdditionalInformation&&
+          aProfileAndAdditionalInformation);
 
   mozilla::ipc::IPCResult RecvShutdownPerfStats(const nsACString& aPerfStats);
 
@@ -1200,7 +1207,7 @@ class ContentParent final : public PContentParent,
       uint64_t aTopLevelWindowId,
       const MaybeDiscarded<BrowsingContext>& aParentContext,
       nsIPrincipal* aTrackingPrincipal, const nsACString& aTrackingOrigin,
-      const int& aAllowMode,
+      const StorageAccessPromptChoices& aAllowMode,
       const Maybe<
           ContentBlockingNotifier::StorageAccessPermissionGrantedReason>&
           aReason,
@@ -1227,8 +1234,8 @@ class ContentParent final : public PContentParent,
       MediaPlaybackState aState);
 
   mozilla::ipc::IPCResult RecvNotifyMediaAudibleChanged(
-      const MaybeDiscarded<BrowsingContext>& aContext,
-      MediaAudibleState aState);
+      const MaybeDiscarded<BrowsingContext>& aContext, MediaAudibleState aState,
+      ControlType aType);
 
   mozilla::ipc::IPCResult RecvNotifyPictureInPictureModeChanged(
       const MaybeDiscarded<BrowsingContext>& aContext, bool aEnabled);

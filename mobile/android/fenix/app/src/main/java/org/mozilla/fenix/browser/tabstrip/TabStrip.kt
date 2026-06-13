@@ -73,7 +73,7 @@ import org.mozilla.fenix.components.components
 import org.mozilla.fenix.compose.Favicon
 import org.mozilla.fenix.compose.HorizontalFadingEdgeBox
 import org.mozilla.fenix.compose.ext.isItemPartiallyVisible
-import org.mozilla.fenix.tabstray.browser.compose.DragItemContainer
+import org.mozilla.fenix.tabstray.browser.compose.ReorderableDragItemContainer
 import org.mozilla.fenix.tabstray.browser.compose.createListReorderState
 import org.mozilla.fenix.tabstray.browser.compose.detectListPressAndDrag
 import org.mozilla.fenix.theme.FirefoxTheme
@@ -278,7 +278,7 @@ private fun TabsList(
                 items = state.tabs,
                 key = { _, item -> item.id },
             ) { index, itemState ->
-                DragItemContainer(
+                ReorderableDragItemContainer(
                     state = reorderState,
                     key = itemState.id,
                     position = index,

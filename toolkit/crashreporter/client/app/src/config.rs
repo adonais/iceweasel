@@ -75,6 +75,42 @@ pub mod test {
             }
         }
     }
+
+    #[test]
+    fn restart_command_no_extra() {
+        let extra = serde_json::from_str("{}").unwrap();
+        assert!(!super::Config::should_suppress_restart(&extra));
+    }
+
+    #[test]
+    fn restart_command_wer() {
+        let extra = serde_json::from_str(r#"{"WindowsErrorReporting": "1"}"#).unwrap();
+        assert!(super::Config::should_suppress_restart(&extra));
+    }
+
+    #[test]
+    fn restart_command_standard_shutdown() {
+        let extra = serde_json::from_str(
+            r#"{
+            "ShutdownProgress": "quit-application",
+            "ShutdownReason": "AppClose"
+        }"#,
+        )
+        .unwrap();
+        assert!(super::Config::should_suppress_restart(&extra));
+    }
+
+    #[test]
+    fn restart_command_shutdown_for_restart() {
+        let extra = serde_json::from_str(
+            r#"{
+            "ShutdownProgress": "quit-application",
+            "ShutdownReason": "AppRestart"
+        }"#,
+        )
+        .unwrap();
+        assert!(!super::Config::should_suppress_restart(&extra));
+    }
 }
 
 mod buildid_section {
@@ -242,15 +278,20 @@ impl Config {
             self.update_log_file();
         }
 
-        // Clear the restart command if WER handled the crash. This prevents restarting the
-        // program. See bug 1872920.
-        if extra.get("WindowsErrorReporting").is_some() {
+        if Self::should_suppress_restart(&extra) {
             self.restart_command = None;
         }
 
         self.load_profile_directory_from_extra(&extra);
-
         Ok(extra)
+    }
+
+    // Clear the restart command if the browser was already shutting down or if WER handled the
+    // crash. This prevents restarting the program. See bugs 1872920 and 2012347.
+    fn should_suppress_restart(extra: &serde_json::Value) -> bool {
+        extra.get("WindowsErrorReporting").is_some()
+            || (extra.get("ShutdownProgress").is_some()
+                && extra.get("ShutdownReason").and_then(|v| v.as_str()) != Some("AppRestart"))
     }
 
     /// Load the profile directory from the extra file information.

@@ -19,6 +19,7 @@
 #include "mozilla/MouseEvents.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/PresShellInlines.h"
+#include "mozilla/ReflowInput.h"
 #include "mozilla/SVGImageContext.h"
 #include "mozilla/StaticPrefs_browser.h"
 #include "mozilla/StaticPrefs_image.h"
@@ -211,7 +212,7 @@ class BrokenImageIcon final : public imgINotificationObserver {
  private:
   static BrokenImageIcon& Get(const nsImageFrame& aFrame) {
     if (!gSingleton) {
-      gSingleton = new BrokenImageIcon(aFrame);
+      gSingleton = MakeRefPtr<BrokenImageIcon>(aFrame);
     }
     return *gSingleton;
   }
@@ -724,7 +725,7 @@ void nsImageFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
 
   nsAtomicContainerFrame::Init(aContent, aParent, aPrevInFlow);
 
-  mListener = new nsImageListener(this);
+  mListener = MakeRefPtr<nsImageListener>(this);
 
   GetImageMap();  // Ensure to init the image map asap. This is important to
                   // make <area> elements focusable.
@@ -2252,9 +2253,9 @@ ImgDrawResult nsImageFrame::DisplayAltFeedbackWithoutLayer(
 
   // Draw text
   if (!inner.IsEmpty()) {
-    RefPtr<TextDrawTarget> textDrawer =
-        new TextDrawTarget(aBuilder, aResources, aSc, aManager, aItem, inner,
-                           /* aCallerDoesSaveRestore = */ true);
+    auto textDrawer = MakeRefPtr<TextDrawTarget>(
+        aBuilder, aResources, aSc, aManager, aItem, inner,
+        /* aCallerDoesSaveRestore = */ true);
     MOZ_ASSERT(textDrawer->IsValid());
     if (textDrawer->IsValid()) {
       gfxContext captureCtx(textDrawer);
@@ -2751,7 +2752,7 @@ bool nsImageFrame::ShouldDisplaySelection() {
 nsImageMap* nsImageFrame::GetImageMap() {
   if (!mImageMap) {
     if (nsIContent* map = GetMapElement()) {
-      mImageMap = new nsImageMap();
+      mImageMap = MakeRefPtr<nsImageMap>();
       mImageMap->Init(this, map);
     }
   }

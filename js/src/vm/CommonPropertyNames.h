@@ -176,6 +176,7 @@
   MACRO_(findIndex, "findIndex")                                               \
   MACRO_(findLast, "findLast")                                                 \
   MACRO_(findLastIndex, "findLastIndex")                                       \
+  MACRO_(firstDay, "firstDay")                                                 \
   MACRO_(firstDayOfWeek, "firstDayOfWeek")                                     \
   MACRO_(flags, "flags")                                                       \
   MACRO_(flat, "flat")                                                         \
@@ -202,12 +203,19 @@
   MACRO_(GetBuiltinConstructor, "GetBuiltinConstructor")                       \
   MACRO_(GetBuiltinPrototype, "GetBuiltinPrototype")                           \
   MACRO_(GetBuiltinSymbol, "GetBuiltinSymbol")                                 \
+  MACRO_(getCalendars, "getCalendars")                                         \
+  MACRO_(getCollations, "getCollations")                                       \
+  MACRO_(getHourCycles, "getHourCycles")                                       \
   MACRO_(GetInternalError, "GetInternalError")                                 \
   MACRO_(GetIterator, "GetIterator")                                           \
+  MACRO_(getNumberingSystems, "getNumberingSystems")                           \
   MACRO_(getOwnPropertyDescriptor, "getOwnPropertyDescriptor")                 \
   MACRO_(getPropertySuper, "getPropertySuper")                                 \
   MACRO_(getPrototypeOf, "getPrototypeOf")                                     \
+  MACRO_(getTextInfo, "getTextInfo")                                           \
+  MACRO_(getTimeZones, "getTimeZones")                                         \
   MACRO_(GetTypeError, "GetTypeError")                                         \
+  MACRO_(getWeekInfo, "getWeekInfo")                                           \
   MACRO_(global, "global")                                                     \
   MACRO_(globalThis, "globalThis")                                             \
   MACRO_(granularity, "granularity")                                           \
@@ -290,6 +298,7 @@
   MACRO_(locale, "locale")                                                     \
   MACRO_(localeMatcher, "localeMatcher")                                       \
   MACRO_(lower, "lower")                                                       \
+  MACRO_(ltr, "ltr")                                                           \
   MACRO_(many, "many")                                                         \
   MACRO_(MapConstructorInit, "MapConstructorInit")                             \
   MACRO_(MapIteratorNext, "MapIteratorNext")                                   \
@@ -429,6 +438,7 @@
   MACRO_(roundingIncrement, "roundingIncrement")                               \
   MACRO_(roundingMode, "roundingMode")                                         \
   MACRO_(roundingPriority, "roundingPriority")                                 \
+  MACRO_(rtl, "rtl")                                                           \
   MACRO_(script, "script")                                                     \
   MACRO_(scripts, "scripts")                                                   \
   MACRO_(second, "second")                                                     \
@@ -453,6 +463,7 @@
   MACRO_(smallestUnit, "smallestUnit")                                         \
   MACRO_(source, "source")                                                     \
   MACRO_(stack, "stack")                                                       \
+  MACRO_(stackTraceLimit, "stackTraceLimit")                                   \
   MACRO_(star_namespace_star_, "*namespace*")                                  \
   MACRO_(start, "start")                                                       \
   MACRO_(startRange, "startRange")                                             \

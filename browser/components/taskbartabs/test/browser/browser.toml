@@ -15,6 +15,10 @@ prefs = [
 ["browser_taskbarTabs_content.js"]
 
 ["browser_taskbarTabs_icons.js"]
+support-files = [
+  "../../../../../dom/manifest/test/red-50.png",
+  "../../../../../dom/manifest/test/blue-150.png",
+]
 
 ["browser_taskbarTabs_manifest.js"]
 

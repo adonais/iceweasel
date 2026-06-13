@@ -553,7 +553,80 @@ def parse_feature_string(feature_str):
     return features
 
 
-def _resolve_strict_value(feature, strict_features, standard_value):
+def parse_content_blocking_prefs(mjs_path):
+    """
+    Parse the switch in ContentBlockingPrefs.sys.mjs to discover, for each
+    feature-string token, which pref(s) it sets and to what value.
+
+    Returns dict of {token: [{"pref": str, "value_expr": str, "gate_pref": str|None}, ...]}.
+    The value_expr is the raw RHS as written in the source (e.g.
+    "Ci.nsIBounceTrackingProtection.MODE_ENABLED", "true", "5"), so callers can
+    render it verbatim without re-encoding the mapping.
+    """
+    content = mjs_path.read_text(encoding="utf-8")
+    cases = {}
+
+    case_re = re.compile(r'^\s*case\s+"([^"]+)"\s*:\s*$', re.MULTILINE)
+    matches = list(case_re.finditer(content))
+
+    for idx, m in enumerate(matches):
+        token = m.group(1)
+        body_start = m.end()
+        body_end = matches[idx + 1].start() if idx + 1 < len(matches) else len(content)
+        # Stop at default: which terminates the switch
+        default_match = re.search(
+            r"^\s*default\s*:", content[body_start:body_end], re.MULTILINE
+        )
+        if default_match:
+            body_end = body_start + default_match.start()
+        body = content[body_start:body_end]
+
+        # Each assignment looks like:
+        #   this.CATEGORY_PREFS[type]["pref.name"] = <expr>;
+        # The pref name and expr can wrap across lines, so collapse whitespace
+        # before matching.
+        flat = re.sub(r"\s+", " ", body)
+        assign_re = re.compile(
+            r'this\.CATEGORY_PREFS\[type\]\[\s*"([^"]+)"\s*\]\s*=\s*([^;]+?)\s*;'
+        )
+        # Detect a getBoolPref gate around the assignments.
+        gate_re = re.compile(r"Services\.prefs\.getBoolPref\(\s*this\.([A-Z_]+)\s*,")
+        gate_match = gate_re.search(flat)
+        gate_pref = None
+        if gate_match:
+            # Resolve this.PREF_FOO to the literal pref string by looking up
+            # the class field declaration. Match either `FOO = "..."` (class
+            # field) or `FOO: "...",` (object literal) form.
+            field_name = gate_match.group(1)
+            field_re = re.compile(rf'\b{re.escape(field_name)}\s*[=:]\s*"([^"]+)"')
+            field_match = field_re.search(content)
+            if field_match:
+                gate_pref = field_match.group(1)
+
+        entries = []
+        for assign in assign_re.finditer(flat):
+            entries.append({
+                "pref": assign.group(1),
+                "value_expr": assign.group(2).strip(),
+                "gate_pref": gate_pref,
+            })
+        if entries:
+            cases[token] = entries
+
+    return cases
+
+
+def _switch_overrides(code, pref, strict_features, switch_cases):
+    """Whether the strict feature string causes ContentBlockingPrefs.sys.mjs to
+    assign `pref` for `code`. If so, the strict cell should show the assigned
+    value instead of the static default."""
+    if not code or not pref or code not in strict_features:
+        return False
+    token = code if strict_features[code] else f"-{code}"
+    return any(entry["pref"] == pref for entry in switch_cases.get(token, []))
+
+
+def _resolve_strict_value(feature, strict_features, standard_value, switch_cases):
     """Resolve the strict mode value for a feature given the feature string overrides."""
     code = feature["normal_code"]
     if not code:
@@ -563,17 +636,25 @@ def _resolve_strict_value(feature, strict_features, standard_value):
         return standard_value
 
     enabled = strict_features[code]
+
+    # Source-of-truth path: ContentBlockingPrefs.sys.mjs assigns the value for
+    # this token. Use the raw RHS as written so it stays in sync with the code.
+    pref_normal = feature.get("pref_normal")
+    if enabled and code in switch_cases:
+        for entry in switch_cases[code]:
+            if entry["pref"] == pref_normal:
+                return entry["value_expr"]
+    disable_token = f"-{code}"
+    if not enabled and disable_token in switch_cases:
+        for entry in switch_cases[disable_token]:
+            if entry["pref"] == pref_normal:
+                return entry["value_expr"]
+
     pref_value = standard_value
 
     # For boolean prefs, the feature string directly sets true/false
     if pref_value in ("true", "false"):
         return "true" if enabled else "false"
-
-    # For integer prefs (cookieBehavior, BTP mode), the feature code name
-    # encodes the enabled value. E.g. "cookieBehavior5" means set to 5.
-    int_match = re.search(r"(\d+)$", code)
-    if int_match and enabled:
-        return int_match.group(1)
 
     # If the feature string disables it, use the standard default
     if not enabled:
@@ -621,7 +702,12 @@ def _render_footnotes(footnotes, start_idx):
 
 
 def generate_markdown(
-    strict_features, standard_defaults, pref_info, firefox_js_overrides, all_js_prefs
+    strict_features,
+    standard_defaults,
+    pref_info,
+    firefox_js_overrides,
+    all_js_prefs,
+    switch_cases,
 ):
     """Generate Markdown tables from parsed features."""
 
@@ -652,6 +738,11 @@ def generate_markdown(
         "",
         "---",
         "",
+        "```{note}",
+        "An empty **Private** cell means the feature has no separate private browsing pref ",
+        "and inherits the value shown in the corresponding **Normal** cell.",
+        "```",
+        "",
         "## Enhanced Tracking Protection (ETP)",
         "",
         "Enhanced Tracking Protection features that change between **Standard** and **Strict** modes. ",
@@ -661,9 +752,9 @@ def generate_markdown(
         "browsing and private browsing modes, respectively.",
         "",
         "Pref defaults are sourced from ",
-        "[StaticPrefList.yaml](https://searchfox.org/mozilla-central/source/modules/libpref/init/StaticPrefList.yaml), ",
-        "[all.js](https://searchfox.org/mozilla-central/source/modules/libpref/init/all.js), and ",
-        "[firefox.js](https://searchfox.org/mozilla-central/source/browser/app/profile/firefox.js) ",
+        "[StaticPrefList.yaml](https://searchfox.org/firefox-main/source/modules/libpref/init/StaticPrefList.yaml), ",
+        "[all.js](https://searchfox.org/firefox-main/source/modules/libpref/init/all.js), and ",
+        "[firefox.js](https://searchfox.org/firefox-main/source/browser/app/profile/firefox.js) ",
         "(applied in that order). **ETP Strict** additionally enables features based on the ",
         "[`browser.contentblocking.features.strict`](https://searchfox.org/mozilla-central/search?q=%22browser.contentblocking.features.strict%22&path=%5Ebrowser%2Fapp%2Fprofile%2Ffirefox.js%24&case=true&regexp=false) string in firefox.js.",
         "",
@@ -693,11 +784,14 @@ def generate_markdown(
 
         # Strict mode values
         strict_normal_val = _resolve_strict_value(
-            feature, strict_features, std_normal_val
+            feature, strict_features, std_normal_val, switch_cases
         )
         if pb_code and pref_pb:
             strict_pb_val = _resolve_strict_value(
-                {**feature, "normal_code": pb_code}, strict_features, std_pb_val
+                {**feature, "normal_code": pb_code, "pref_normal": pref_pb},
+                strict_features,
+                std_pb_val,
+                switch_cases,
             )
         else:
             strict_pb_val = None
@@ -710,10 +804,22 @@ def generate_markdown(
             pref_pb, pref_info, firefox_js_overrides, all_js_prefs
         )
 
+        # If ContentBlockingPrefs.sys.mjs assigns this pref in strict mode, the
+        # strict cell shows the assigned value rather than the ifdef footnote,
+        # since the assignment overrides whatever the static default would be.
+        normal_overridden = _switch_overrides(
+            normal_code, pref_normal, strict_features, switch_cases
+        )
+        pb_overridden = _switch_overrides(
+            pb_code, pref_pb, strict_features, switch_cases
+        )
+
         if normal_ifdef:
             fn_ref = _get_footnote_ref(pref_normal, normal_ifdef, footnotes)
             std_normal_status = fn_ref
-            strict_normal_status = fn_ref
+            strict_normal_status = (
+                f"`{strict_normal_val}`" if normal_overridden else fn_ref
+            )
         else:
             std_normal_status = f"`{std_normal_val}`"
             strict_normal_status = f"`{strict_normal_val}`"
@@ -722,7 +828,7 @@ def generate_markdown(
             if pb_ifdef:
                 fn_ref = _get_footnote_ref(pref_pb, pb_ifdef, footnotes)
                 std_pb_status = fn_ref
-                strict_pb_status = fn_ref
+                strict_pb_status = f"`{strict_pb_val}`" if pb_overridden else fn_ref
             else:
                 std_pb_status = f"`{std_pb_val}`"
                 strict_pb_status = f"`{strict_pb_val}`"
@@ -746,6 +852,21 @@ def generate_markdown(
                     pref_pb, pref_info, firefox_js_overrides, all_js_prefs
                 )
             )
+        # Surface any gate pref discovered in ContentBlockingPrefs.sys.mjs
+        # (e.g. LNA's network.lna.etp.enabled gates network.lna.blocking).
+        gate_prefs_seen = set()
+        for code in (normal_code, pb_code):
+            if not code:
+                continue
+            for entry in switch_cases.get(code, []):
+                gate = entry.get("gate_pref")
+                if gate and gate not in gate_prefs_seen:
+                    gate_prefs_seen.add(gate)
+                    pref_links.append(
+                        _build_pref_links(
+                            gate, pref_info, firefox_js_overrides, all_js_prefs
+                        )
+                    )
         pref_text = "<br/>".join(pref_links)
 
         desc = feature.get("desc", "")
@@ -920,6 +1041,18 @@ def generate_etp_matrix(app):
             f"Could not find {static_pref_list}, cannot generate ETP matrix"
         )
 
+    content_blocking_prefs = (
+        topsrcdir
+        / "browser"
+        / "components"
+        / "protections"
+        / "ContentBlockingPrefs.sys.mjs"
+    )
+    if not content_blocking_prefs.exists():
+        raise FileNotFoundError(
+            f"Could not find {content_blocking_prefs}, cannot generate ETP matrix"
+        )
+
     output_dir = (
         Path(app.outdir)
         / "_staging"
@@ -947,12 +1080,15 @@ def generate_etp_matrix(app):
     feature_str = extract_strict_features(firefox_js)
     strict_features = parse_feature_string(feature_str)
 
+    switch_cases = parse_content_blocking_prefs(content_blocking_prefs)
+
     markdown = generate_markdown(
         strict_features,
         standard_defaults,
         pref_info,
         firefox_js_overrides,
         all_js_prefs,
+        switch_cases,
     )
     output_path.write_text(markdown, encoding="utf-8")
     logger.info(f"Generated ETP matrix: {output_path}")

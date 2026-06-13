@@ -36,6 +36,8 @@ pub fn convert<P: AsRef<Path>>(path: P, wast: &str) -> Result<String> {
         err
     };
 
+    println!("Processing {} ...", filename.display());
+
     let mut lexer = wast::lexer::Lexer::new(wast);
     // The 'names.wast' spec test has confusable unicode -- disable detection.
     lexer.allow_confusing_unicode(filename.ends_with("names.wast"));
@@ -367,13 +369,16 @@ fn convert_directive(
             )?;
         }
         Thread(thread) => {
+            let (shared_module, shared_module_name) = match thread.shared_module {
+                Some(m) => (format!("${}", m.name()), format!("${}", m.name())),
+                None => ("null".to_string(), "__nomodule".to_string()),
+            };
+
             writejs!(
-                "let ${0} = new Thread(${1}, \"${1}\", `",
+                "let ${} = new Thread({}, \"{}\", `",
                 thread.name.name(),
-                thread
-                    .shared_module
-                    .expect("shared_module on threads is required")
-                    .name()
+                shared_module,
+                shared_module_name,
             )?;
 
             for directive in thread.directives {

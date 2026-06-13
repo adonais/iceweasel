@@ -13,7 +13,6 @@ import mozilla.components.support.test.any
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -22,6 +21,7 @@ import org.mockito.Mockito.`when`
 import org.robolectric.annotation.Config
 import java.io.IOException
 import java.io.OutputStream
+import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class IconDiskCacheTest {
@@ -84,7 +84,7 @@ class IconDiskCacheTest {
         cache.putIconBitmap(testContext, resource, bitmap)
 
         val data = cache.getIconData(testContext, resource)
-        assertNotNull(data!!)
+        assertNotNull(data)
         assertEquals("Hello World", String(data))
     }
 
@@ -112,7 +112,7 @@ class IconDiskCacheTest {
         cache.putIconBitmap(testContext, resource, bitmap)
 
         val data = cache.getIconData(testContext, resource)
-        assertNotNull(data!!)
+        assertNotNull(data)
         assertEquals("Hello World", String(data))
     }
 

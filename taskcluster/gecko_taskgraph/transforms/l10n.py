@@ -25,13 +25,16 @@ from gecko_taskgraph.transforms.job import JobDescriptionSchema
 from gecko_taskgraph.transforms.task import TaskDescriptionSchema
 from gecko_taskgraph.util.attributes import (
     copy_attributes_from_dependent_job,
-    sorted_unique_list,
     task_name,
 )
 
 
 def _by_platform(arg):
     return optionally_keyed_by("build-platform", arg, use_msgspec=True)
+
+
+def _by_platform_or_project(arg):
+    return optionally_keyed_by("build-platform", "project", arg, use_msgspec=True)
 
 
 class MozharnessSchema(Schema, kw_only=True):
@@ -97,7 +100,7 @@ class L10nDescriptionSchema(Schema, kw_only=True):
     # worker-type to utilize
     worker_type: _by_platform(str)  # type: ignore  # noqa: F821
     # File which contains the used locales
-    locales_file: _by_platform(str)  # type: ignore  # noqa: F821
+    locales_file: _by_platform_or_project(str)  # type: ignore  # noqa: F821
     # Tooltool visibility required for task.
     tooltool: _by_platform(Literal["internal", "public"])  # type: ignore  # noqa: F821
     # Docker image required for task.  We accept only in-tree images
@@ -187,18 +190,6 @@ transforms.add_validate(L10nDescriptionSchema)
 
 
 @transforms.add
-def gather_required_signoffs(config, jobs):
-    for job in jobs:
-        job.setdefault("attributes", {})["required_signoffs"] = sorted_unique_list(
-            *(
-                dep.attributes.get("required_signoffs", [])
-                for dep in get_dependencies(config, job)
-            )
-        )
-        yield job
-
-
-@transforms.add
 def remove_repackage_dependency(config, jobs):
     for job in jobs:
         build_platform = job["attributes"]["build_platform"]
@@ -238,7 +229,12 @@ def handle_keyed_by(config, jobs):
     for job in jobs:
         job = deepcopy(job)  # don't overwrite dict values here
         for field in fields:
-            resolve_keyed_by(item=job, field=field, item_name=job["name"])
+            resolve_keyed_by(
+                item=job,
+                field=field,
+                item_name=job["name"],
+                project=config.params["project"],
+            )
         yield job
 
 

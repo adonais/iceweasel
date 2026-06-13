@@ -6,7 +6,7 @@
  *  Test enabled commands in the left pane folder of the Library.
  */
 
-const TEST_URI = NetUtil.newURI("https://www.mozilla.org/");
+const TEST_URI = Services.io.newURI("https://www.mozilla.org/");
 
 registerCleanupFunction(async function () {
   await PlacesUtils.bookmarks.eraseEverything();
@@ -254,7 +254,9 @@ add_task(async function test_tags() {
     parentGuid: PlacesUtils.bookmarks.unfiledGuid,
     index: 0,
   });
-  PlacesUtils.tagging.tagURI(NetUtil.newURI("https://example.com/"), ["test"]);
+  PlacesUtils.tagging.tagURI(Services.io.newURI("https://example.com/"), [
+    "test",
+  ]);
 
   let library = await promiseLibrary();
   info("Ensure query contents can be cut or deleted");

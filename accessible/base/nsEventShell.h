@@ -39,8 +39,8 @@ class nsEventShell {
   static void FireEvent(mozilla::a11y::LocalAccessible* aTarget,
                         uint64_t aState, bool aIsEnabled,
                         bool aIsFromUserInput) {
-    RefPtr<mozilla::a11y::AccStateChangeEvent> stateChangeEvent =
-        new mozilla::a11y::AccStateChangeEvent(
+    auto stateChangeEvent =
+        mozilla::MakeRefPtr<mozilla::a11y::AccStateChangeEvent>(
             aTarget, aState, aIsEnabled,
             (aIsFromUserInput ? mozilla::a11y::eFromUserInput
                               : mozilla::a11y::eNoUserInput));

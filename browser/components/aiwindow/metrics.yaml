@@ -22,8 +22,8 @@ smart_window:
       - https://phabricator.services.mozilla.com/D282873
     data_sensitivity:
       - interaction
-    notification_emails:
-      - npodgurski@mozilla.com
+    notification_emails: &emails
+      - firefox-ai-and-ml@mozilla.com
     expires: never
     extra_keys:
       chat_id: &chat_id
@@ -77,8 +77,7 @@ smart_window:
       - https://phabricator.services.mozilla.com/D288855
     data_sensitivity:
       - interaction
-    notification_emails:
-      - npodgurski@mozilla.com
+    notification_emails: *emails
     expires: never
     extra_keys:
       chat_id: *chat_id
@@ -103,8 +102,7 @@ smart_window:
       - https://phabricator.services.mozilla.com/D288855
     data_sensitivity:
       - interaction
-    notification_emails:
-      - npodgurski@mozilla.com
+    notification_emails: *emails
     expires: never
     extra_keys:
       chat_id: *chat_id
@@ -126,8 +124,7 @@ smart_window:
       - https://phabricator.services.mozilla.com/D287197
     data_sensitivity:
       - interaction
-    notification_emails:
-      - npodgurski@mozilla.com
+    notification_emails: *emails
     expires: never
     extra_keys:
       tabs:
@@ -146,8 +143,7 @@ smart_window:
       - https://phabricator.services.mozilla.com/D287197
     data_sensitivity:
       - interaction
-    notification_emails:
-      - npodgurski@mozilla.com
+    notification_emails: *emails
     expires: never
     extra_keys:
       location: *location
@@ -173,8 +169,7 @@ smart_window:
       - https://phabricator.services.mozilla.com/D287197
     data_sensitivity:
       - interaction
-    notification_emails:
-      - npodgurski@mozilla.com
+    notification_emails: *emails
     expires: never
     extra_keys:
       location: *location
@@ -197,8 +192,7 @@ smart_window:
       - https://phabricator.services.mozilla.com/D287197
     data_sensitivity:
       - interaction
-    notification_emails:
-      - npodgurski@mozilla.com
+    notification_emails: *emails
     expires: never
     extra_keys:
       location: *location
@@ -220,8 +214,7 @@ smart_window:
       - https://phabricator.services.mozilla.com/D282482
     data_sensitivity:
       - interaction
-    notification_emails:
-      - npodgurski@mozilla.com
+    notification_emails: *emails
     expires: never
     extra_keys:
       location: *location
@@ -243,8 +236,7 @@ smart_window:
       - https://phabricator.services.mozilla.com/D282482
     data_sensitivity:
       - interaction
-    notification_emails:
-      - npodgurski@mozilla.com
+    notification_emails: *emails
     expires: never
     extra_keys:
       location: *location
@@ -265,8 +257,7 @@ smart_window:
       - https://phabricator.services.mozilla.com/D287197
     data_sensitivity:
       - interaction
-    notification_emails:
-      - npodgurski@mozilla.com
+    notification_emails: *emails
     expires: never
     extra_keys:
       location: *location
@@ -293,8 +284,7 @@ smart_window:
       - https://phabricator.services.mozilla.com/D287197
     data_sensitivity:
       - interaction
-    notification_emails:
-      - npodgurski@mozilla.com
+    notification_emails: *emails
     expires: never
     extra_keys:
       location: *location
@@ -311,8 +301,7 @@ smart_window:
       - https://phabricator.services.mozilla.com/D287197
     data_sensitivity:
       - interaction
-    notification_emails:
-      - npodgurski@mozilla.com
+    notification_emails: *emails
     expires: never
     extra_keys:
       memories:
@@ -324,6 +313,11 @@ smart_window:
         type: string
         description: >
           The location where the removal occurred (assistant, settings)
+      in_use:
+        type: quantity
+        unit: count
+        description: >
+          Number of memories still applied to the assistant message after the removal. Null when the trigger is "settings"
 
   memory_applied:
     type: event
@@ -335,8 +329,7 @@ smart_window:
       - https://phabricator.services.mozilla.com/D287197
     data_sensitivity:
       - interaction
-    notification_emails:
-      - npodgurski@mozilla.com
+    notification_emails: *emails
     expires: never
     extra_keys:
       location: *location
@@ -353,8 +346,7 @@ smart_window:
       - https://phabricator.services.mozilla.com/D287197
     data_sensitivity:
       - interaction
-    notification_emails:
-      - npodgurski@mozilla.com
+    notification_emails: *emails
     expires: never
     extra_keys:
       location: *location
@@ -371,8 +363,7 @@ smart_window:
       - https://phabricator.services.mozilla.com/D287197
     data_sensitivity:
       - interaction
-    notification_emails:
-      - npodgurski@mozilla.com
+    notification_emails: *emails
     expires: never
     extra_keys:
       location: *location
@@ -389,8 +380,7 @@ smart_window:
       - https://phabricator.services.mozilla.com/D287197
     data_sensitivity:
       - interaction
-    notification_emails:
-      - npodgurski@mozilla.com
+    notification_emails: *emails
     expires: never
     extra_keys:
       location: *location
@@ -416,8 +406,7 @@ smart_window:
       - https://phabricator.services.mozilla.com/D287975
     data_sensitivity:
       - interaction
-    notification_emails:
-      - npodgurski@mozilla.com
+    notification_emails: *emails
     expires: never
     extra_keys:
       location: *location
@@ -442,8 +431,7 @@ smart_window:
       - https://phabricator.services.mozilla.com/D287710
     data_sensitivity:
       - interaction
-    notification_emails:
-      - gcardieri@mozilla.com
+    notification_emails: *emails
     expires: never
     extra_keys:
       location: *location
@@ -475,12 +463,12 @@ smart_window:
       A response is received from the backend model
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2021947
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2035241
     data_reviews:
       - https://phabricator.services.mozilla.com/D287710
     data_sensitivity:
       - interaction
-    notification_emails:
-      - gcardieri@mozilla.com
+    notification_emails: *emails
     expires: never
     extra_keys:
       location: *location
@@ -507,7 +495,12 @@ smart_window:
       error: &error
         type: string
         description: >
-          Error code if it's not a successful response
+          Canonical chat error name, or empty on success
+      http_status:
+        type: quantity
+        unit: count
+        description: >
+          HTTP status from the inference back-end, or 0 if no response
       model: *model
 
   chat_storage:
@@ -521,8 +514,7 @@ smart_window:
       - https://phabricator.services.mozilla.com/D288707
     data_sensitivity:
       - technical
-    notification_emails:
-      - npodgurski@mozilla.com
+    notification_emails: *emails
     expires: never
 
   memories_count:
@@ -535,8 +527,7 @@ smart_window:
       - https://phabricator.services.mozilla.com/D288707
     data_sensitivity:
       - technical
-    notification_emails:
-      - npodgurski@mozilla.com
+    notification_emails: *emails
     expires: never
     labels:
       - history
@@ -552,30 +543,28 @@ smart_window:
       - https://phabricator.services.mozilla.com/D288707
     data_sensitivity:
       - technical
-    notification_emails:
-      - npodgurski@mozilla.com
+    notification_emails: *emails
     expires: never
 
   onboarding_screen_impression:
-      type: event
-      description: |
-        Recorded when onboarding screen is displayed in smart window mode
-      bugs:
-        - https://bugzilla.mozilla.org/show_bug.cgi?id=2009613
-      data_reviews:
-        - https://bugzilla.mozilla.org/show_bug.cgi?id=2009613
-      data_sensitivity:
-        - interaction
-      notification_emails:
-        - pdahiya@mozilla.com
-      extra_keys:
-        message_id:
-          description: >
-            Identifier for the onboarding screen that is displayed, for example
-            'AI_WINDOW_WELCOME_0_AI_WINDOW_INTRO_WW' for the welcome screen,
-            'AI_WINDOW_WELCOME_1_AI_WINDOW_CHOOSE_MODEL_WW' for the model selection screen
-          type: string
-      expires: never
+    type: event
+    description: |
+      Recorded when onboarding screen is displayed in smart window mode
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2009613
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2009613
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    extra_keys:
+      message_id:
+        description: >
+          Identifier for the onboarding screen that is displayed, for example
+          'AI_WINDOW_WELCOME_0_AI_WINDOW_INTRO_WW' for the welcome screen,
+          'AI_WINDOW_WELCOME_1_AI_WINDOW_CHOOSE_MODEL_WW' for the model selection screen
+        type: string
+    expires: never
 
   onboarding_model_selected:
     type: event
@@ -587,8 +576,7 @@ smart_window:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2009613
     data_sensitivity:
       - interaction
-    notification_emails:
-      - pdahiya@mozilla.com
+    notification_emails: *emails
     extra_keys:
       model:
         description: >
@@ -607,8 +595,7 @@ smart_window:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2009613
     data_sensitivity:
       - interaction
-    notification_emails:
-      - pdahiya@mozilla.com
+    notification_emails: *emails
     extra_keys:
       model:
         description: >
@@ -620,15 +607,14 @@ smart_window:
   onboarding_memories_navigate:
     type: event
     description: |
-      Recorded when user clicks done on the memories onboarding screen
+      Recorded when user clicks next on the memories onboarding screen
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2032998
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2032998
     data_sensitivity:
       - interaction
-    notification_emails:
-      - pdahiya@mozilla.com
+    notification_emails: *emails
     expires: never
 
   onboarding_memories_settings:
@@ -641,14 +627,64 @@ smart_window:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2032998
     data_sensitivity:
       - interaction
-    notification_emails:
-      - pdahiya@mozilla.com
+    notification_emails: *emails
     extra_keys:
       source:
         description: >
           Comma-separated list of memory checkbox ids the user had selected
           when clicking done, for example: 'memories-chats,memories-browsing'.
           Empty string if the user deselects all options
+        type: string
+    expires: never
+
+  onboarding_setdefault_navigate:
+    type: event
+    description: |
+      Recorded when user clicks done on the set default onboarding screen
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037220
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037220
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    expires: never
+
+  onboarding_setdefault_settings:
+    type: event
+    description: |
+      Records set default checklist selections made by user on the set default onboarding screen
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037220
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037220
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    extra_keys:
+      source:
+        description: >
+          Comma-separated list of set default checkbox ids the user had selected
+          when clicking done, for example: 'set-default-window'.
+          Empty string if the user deselects all options
+        type: string
+    expires: never
+
+  onboarding_back_navigate:
+    type: event
+    description: |
+      Recorded when user clicks back on an onboarding screen
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037220
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037220
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    extra_keys:
+      message_id:
+        description: >
+          Identifier of the onboarding screen the user navigated back from
         type: string
     expires: never
 
@@ -662,8 +698,7 @@ smart_window:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2009613
     data_sensitivity:
       - interaction
-    notification_emails:
-      - pdahiya@mozilla.com
+    notification_emails: *emails
     expires: never
 
   open_window:
@@ -678,8 +713,7 @@ smart_window:
       - https://phabricator.services.mozilla.com/D299196
     data_sensitivity:
       - interaction
-    notification_emails:
-      - mlucks@mozilla.com
+    notification_emails: *emails
     extra_keys:
       trigger:
         type: string
@@ -712,8 +746,7 @@ smart_window:
       - https://phabricator.services.mozilla.com/D299196
     data_sensitivity:
       - interaction
-    notification_emails:
-      - yjamora@mozilla.com
+    notification_emails: *emails
     extra_keys:
       duration_ms: &opened_duration_ms
         type: quantity
@@ -737,8 +770,7 @@ smart_window:
       - https://phabricator.services.mozilla.com/D299196
     data_sensitivity:
       - interaction
-    notification_emails:
-      - elee@mozilla.com
+    notification_emails: *emails
     extra_keys:
       duration_ms: *opened_duration_ms
       opened_tabs:
@@ -758,16 +790,14 @@ smart_window:
       - https://phabricator.services.mozilla.com/D285902
     data_sensitivity:
       - interaction
-    notification_emails:
-      - mlucks@mozilla.com
+    notification_emails: *emails
     extra_keys:
       model:
         type: string
         description: >
-          The model choice selected during firstrun, corresponding to the
-          model_choice_id in Remote Settings (1, 2, or 3). "custom" if a
-          custom model override is set. Empty string if firstrun was not
-          completed.
+          The name of the model selected during firstrun (e.g., "gemini-2.5-flash-lite").
+          "custom-model" if a custom model override is set. Empty string if firstrun
+          was not completed.
     expires: never
 
   sidebar_open:
@@ -780,8 +810,7 @@ smart_window:
       - https://phabricator.services.mozilla.com/D285902
     data_sensitivity:
       - interaction
-    notification_emails:
-      - mlucks@mozilla.com
+    notification_emails: *emails
     extra_keys:
       chat_id: *chat_id
       message_seq: &sidebar_message_seq
@@ -801,8 +830,7 @@ smart_window:
       - https://phabricator.services.mozilla.com/D285902
     data_sensitivity:
       - interaction
-    notification_emails:
-      - mlucks@mozilla.com
+    notification_emails: *emails
     extra_keys:
       chat_id: *chat_id
       message_seq: *sidebar_message_seq
@@ -818,8 +846,7 @@ smart_window:
       - https://phabricator.services.mozilla.com/D285902
     data_sensitivity:
       - interaction
-    notification_emails:
-      - mlucks@mozilla.com
+    notification_emails: *emails
     expires: never
 
   memories_nuke:
@@ -832,8 +859,7 @@ smart_window:
       - https://phabricator.services.mozilla.com/D288768
     data_sensitivity:
       - interaction
-    notification_emails:
-      - gcardieri@mozilla.com
+    notification_emails: *emails
     expires: never
 
   settings_memories:
@@ -846,8 +872,7 @@ smart_window:
       - https://phabricator.services.mozilla.com/D288768
     data_sensitivity:
       - interaction
-    notification_emails:
-      - gcardieri@mozilla.com
+    notification_emails: *emails
     expires: never
     extra_keys:
       type:
@@ -869,8 +894,7 @@ smart_window:
       - https://phabricator.services.mozilla.com/D288768
     data_sensitivity:
       - interaction
-    notification_emails:
-      - gcardieri@mozilla.com
+    notification_emails: *emails
     expires: never
     extra_keys:
       previous_model:
@@ -892,8 +916,7 @@ smart_window:
       - https://phabricator.services.mozilla.com/D288768
     data_sensitivity:
       - interaction
-    notification_emails:
-      - gcardieri@mozilla.com
+    notification_emails: *emails
     expires: never
     extra_keys:
       source:
@@ -916,8 +939,7 @@ smart_window:
       - https://phabricator.services.mozilla.com/D288768
     data_sensitivity:
       - interaction
-    notification_emails:
-      - gcardieri@mozilla.com
+    notification_emails: *emails
     expires: never
 
   intent_change_preview:
@@ -930,8 +952,7 @@ smart_window:
       - https://phabricator.services.mozilla.com/D288855
     data_sensitivity:
       - interaction
-    notification_emails:
-      - npodgurski@mozilla.com
+    notification_emails: *emails
     expires: never
     extra_keys:
       chat_id: *chat_id
@@ -952,8 +973,7 @@ smart_window:
       - https://phabricator.services.mozilla.com/D288855
     data_sensitivity:
       - interaction
-    notification_emails:
-      - npodgurski@mozilla.com
+    notification_emails: *emails
     expires: never
     extra_keys:
       chat_id: *chat_id
@@ -975,8 +995,7 @@ smart_window:
       - https://phabricator.services.mozilla.com/D288855
     data_sensitivity:
       - interaction
-    notification_emails:
-      - npodgurski@mozilla.com
+    notification_emails: *emails
     expires: never
     extra_keys:
       chat_id: *chat_id
@@ -1003,8 +1022,7 @@ smart_window:
       - https://phabricator.services.mozilla.com/D288855
     data_sensitivity:
       - interaction
-    notification_emails:
-      - npodgurski@mozilla.com
+    notification_emails: *emails
     expires: never
     extra_keys:
       chat_id: *chat_id
@@ -1026,8 +1044,7 @@ smart_window:
       - https://phabricator.services.mozilla.com/D288855
     data_sensitivity:
       - interaction
-    notification_emails:
-      - npodgurski@mozilla.com
+    notification_emails: *emails
     expires: never
     extra_keys:
       chat_id: *chat_id
@@ -1054,8 +1071,7 @@ smart_window:
       - https://phabricator.services.mozilla.com/D288855
     data_sensitivity:
       - interaction
-    notification_emails:
-      - npodgurski@mozilla.com
+    notification_emails: *emails
     expires: never
     extra_keys:
       chat_id: *chat_id
@@ -1079,8 +1095,7 @@ smart_window:
       - https://phabricator.services.mozilla.com/D288855
     data_sensitivity:
       - interaction
-    notification_emails:
-      - npodgurski@mozilla.com
+    notification_emails: *emails
     expires: never
     extra_keys:
       chat_id: *chat_id
@@ -1101,6 +1116,5 @@ smart_window:
       - https://phabricator.services.mozilla.com/D291280
     data_sensitivity:
       - interaction
-    notification_emails:
-      - gcardieri@mozilla.com
+    notification_emails: *emails
     expires: never

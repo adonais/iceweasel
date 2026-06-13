@@ -8,9 +8,13 @@
 newtab-page-title = Nov tab
 newtab-settings-button =
     .title = Persunalisar tia pagina per novs tabs
+#  (developer note): @nova-cleanup(remove-string): Remove newtab-customize-panel-icon-button once Nova lands, will be using newtab-customize-panel-label instead
 newtab-customize-panel-icon-button =
     .title = Persunalisescha questa pagina
+#  (developer note): @nova-cleanup(remove-string): Remove newtab-customize-panel-icon-button-label once Nova lands, will be using newtab-customize-panel-label instead
 newtab-customize-panel-icon-button-label = Persunalisar
+newtab-customize-panel-label =
+    .label = Persunalisar
 newtab-personalize-settings-icon-label =
     .title = Persunalisar novs tabs
     .aria-label = Parameters
@@ -656,10 +660,16 @@ newtab-widget-lists-label-beta =
 newtab-widget-lists-completed-list = Cumplettadas ({ $number })
 newtab-widget-task-list-menu-copy = Copiar
 newtab-widget-lists-menu-edit = Modifitgar il num da la glista
+newtab-widget-lists-menu-edit2 =
+    .aria-label = Modifitgar il num da la glista
 newtab-widget-lists-menu-create = Crear ina nova glista
 newtab-widget-lists-menu-delete = Stizzar questa glista
 newtab-widget-lists-menu-copy = Copiar la glista en l’archiv provisoric
 newtab-widget-lists-menu-learn-more = Ulteriuras infurmaziuns
+newtab-widget-lists-button-add-item = Agiuntar in element
+newtab-widget-lists-input-add-an-item2 =
+    .placeholder = Agiuntar in element
+    .aria-label = Agiuntar in element
 newtab-widget-lists-input-add-an-item =
     .placeholder = Agiuntar in element
 newtab-widget-lists-input-error = Endatescha per plaschair text per agiuntar in element.
@@ -676,6 +686,10 @@ newtab-widget-lists-name-label-default =
 newtab-widget-lists-name-placeholder-default =
     .placeholder = Glista d’incumbensas
 # The placeholder value of the name field for a newly created list
+newtab-widget-lists-name-placeholder-new2 =
+    .placeholder = Nova glista
+    .aria-label = Modifitgar il num da la glista
+# The placeholder value of the name field for a newly created list
 newtab-widget-lists-name-placeholder-new =
     .placeholder = Nova glista
 newtab-widget-section-title = Widgets
@@ -690,8 +704,7 @@ newtab-widget-section-minimize =
     .title = Reducir ils widgets
     .aria-label = Reducir tut ils widgets a la grondezza cumpacta
 
-## Strings for timer productivity widget
-## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown
+## Strings introduced by the Nova redesign of the Timer widget
 
 newtab-widget-timer-notification-title = Svegliarin
 newtab-widget-timer-notification-focus = L’interval da concentraziun è a fin. Buna lavur. Dovras ina pausa?

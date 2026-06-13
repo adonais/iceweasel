@@ -77,6 +77,7 @@ ModuleGenerator::ModuleGenerator(const CodeMetadata& codeMeta,
       cancelled_(cancelled),
       codeMeta_(&codeMeta),
       compilerEnv_(&compilerEnv),
+      existingCodeTailMeta_(nullptr),
       featureUsage_(FeatureUsage::None),
       codeBlock_(nullptr),
       linkData_(nullptr),
@@ -143,8 +144,13 @@ ModuleGenerator::~ModuleGenerator() {
 }
 
 bool ModuleGenerator::initializeCompleteTier(
-    CodeMetadataForAsmJS* codeMetaForAsmJS) {
+    CodeMetadataForAsmJS* codeMetaForAsmJS,
+    const CodeTailMetadata* existingCodeTailMeta) {
   MOZ_ASSERT(compileState_ != CompileState::LazyTier2);
+
+  MOZ_ASSERT((compileState_ == CompileState::EagerTier2) ==
+             !!existingCodeTailMeta);
+  existingCodeTailMeta_ = existingCodeTailMeta;
 
   // Initialize our task system
   if (!initTasks()) {
@@ -175,6 +181,7 @@ bool ModuleGenerator::initializePartialTier(const Code& code,
 
   MOZ_ASSERT(!partialTieringCode_);
   partialTieringCode_ = &code;
+  existingCodeTailMeta_ = &code.codeTailMeta();
 
   // Initialize our task system and start this partial tier
   return initTasks() && startPartialTier(funcIndex);
@@ -692,10 +699,7 @@ bool ModuleGenerator::initTasks() {
     numTasks = 2 * GetMaxWasmCompilationThreads();
   }
 
-  const CodeTailMetadata* codeTailMeta = nullptr;
-  if (partialTieringCode_) {
-    codeTailMeta = &partialTieringCode_->codeTailMeta();
-  }
+  const CodeTailMetadata* codeTailMeta = existingCodeTailMeta_;
 
   if (!tasks_.initCapacity(numTasks)) {
     return false;

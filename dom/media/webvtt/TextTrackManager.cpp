@@ -437,7 +437,7 @@ class SimpleTextTrackEvent : public Runnable {
   }
 
   void Dispatch() {
-    if (nsCOMPtr<nsIGlobalObject> global = mCue->GetOwnerGlobal()) {
+    if (nsCOMPtr<nsIGlobalObject> global = mCue->GetRelevantGlobal()) {
       global->Dispatch(do_AddRef(this));
     } else {
       NS_DispatchToMainThread(do_AddRef(this));

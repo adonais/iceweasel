@@ -22,6 +22,7 @@ projects:
     - components:concept-fetch
     - components:concept-menu
     - components:concept-storage
+    - components:concept-storage-bookmarks
     - components:concept-sync
     - components:concept-tabstray
     - components:concept-toolbar

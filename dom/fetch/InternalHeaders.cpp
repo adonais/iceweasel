@@ -292,9 +292,9 @@ void InternalHeaders::Set(const nsACString& aName, const nsACString& aValue,
   if (firstIndex < INT32_MAX) {
     Entry* entry = mList.InsertElementAt(firstIndex);
     entry->mName = aName;
-    entry->mValue = trimValue;
+    entry->mValue = std::move(trimValue);
   } else {
-    mList.AppendElement(Entry(aName, trimValue));
+    mList.AppendElement(Entry(aName, std::move(trimValue)));
   }
 
   // Step 8

@@ -125,7 +125,7 @@ export class GeckoViewPermission {
 
     const window = aRequest.window
       ? aRequest.window
-      : aRequest.element.ownerGlobal;
+      : aRequest.element.documentGlobal;
 
     const actor = window.browsingContext.currentWindowGlobal.getActor(
       "GeckoViewPermission"

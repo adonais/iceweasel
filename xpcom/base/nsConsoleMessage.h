@@ -19,9 +19,9 @@ class nsConsoleMessage final : public nsIConsoleMessage {
  private:
   ~nsConsoleMessage() = default;
 
-  int64_t mMicroSecondTimeStamp;
+  int64_t mMicroSecondTimeStamp = 0;
   nsString mMessage;
-  bool mIsForwardedFromContentProcess;
+  bool mIsForwardedFromContentProcess = false;
 };
 
 #endif /* _nsconsolemessage_h_ */

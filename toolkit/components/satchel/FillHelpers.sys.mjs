@@ -40,5 +40,5 @@ export function showConfirmation(
   if (!anchor.checkVisibility()) {
     anchor = browser.ownerDocument.getElementById("trust-icon-container");
   }
-  anchor.ownerGlobal.ConfirmationHint.show(anchor, messageId, {});
+  anchor.documentGlobal.ConfirmationHint.show(anchor, messageId, {});
 }

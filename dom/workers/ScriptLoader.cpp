@@ -460,16 +460,6 @@ class ScriptExecutorRunnable final : public MainThreadWorkerSyncRunnable {
   nsresult Cancel() override;
 };
 
-static bool EvaluateSourceBuffer(JSContext* aCx, JS::Handle<JSScript*> aScript,
-                                 JS::loader::ClassicScript* aClassicScript) {
-  if (aClassicScript) {
-    aClassicScript->AssociateWithScript(aScript);
-  }
-
-  JS::Rooted<JS::Value> unused(aCx);
-  return JS_ExecuteScript(aCx, aScript, &unused);
-}
-
 WorkerScriptLoader::WorkerScriptLoader(
     UniquePtr<SerializedStackHolder> aOriginStack,
     nsISerialEventTarget* aSyncLoopTarget, WorkerScriptType aWorkerScriptType)
@@ -603,11 +593,19 @@ nsContentPolicyType WorkerScriptLoader::GetContentPolicyType(
     return mWorkerRef->Private()->ContentPolicyType();
   }
   if (aRequest->IsModuleRequest()) {
+    if (aRequest->AsModuleRequest()->mModuleType == JS::ModuleType::Text) {
+      return nsIContentPolicy::TYPE_TEXT;
+    }
+
     if (aRequest->AsModuleRequest()->IsDynamicImport()) {
-      return aRequest->AsModuleRequest()->mModuleType ==
-                     JS::ModuleType::JavaScript
-                 ? nsIContentPolicy::TYPE_INTERNAL_MODULE
-                 : nsIContentPolicy::TYPE_JSON;
+      if (aRequest->AsModuleRequest()->mModuleType ==
+          JS::ModuleType::JavaScript) {
+        return nsIContentPolicy::TYPE_INTERNAL_MODULE;
+      } else {
+        MOZ_ASSERT(aRequest->AsModuleRequest()->mModuleType ==
+                   JS::ModuleType::JSON);
+        return nsIContentPolicy::TYPE_JSON;
+      }
     }
 
     // Implements the destination for Step 14 in
@@ -1249,7 +1247,6 @@ bool WorkerScriptLoader::EvaluateScript(JSContext* aCx,
     return false;
   }
 
-  RefPtr<JS::loader::ClassicScript> classicScript = nullptr;
   if (!mWorkerRef->Private()->IsServiceWorker()) {
     // We need a LoadedScript to be associated with the JSScript in order to
     // correctly resolve the referencing private for dynamic imports. In turn
@@ -1267,8 +1264,7 @@ bool WorkerScriptLoader::EvaluateScript(JSContext* aCx,
       requestBaseURI = aRequest->BaseURL();
     }
     MOZ_ASSERT(aRequest->mLoadedScript->IsClassicScript());
-    aRequest->mLoadedScript->SetBaseURL(requestBaseURI);
-    classicScript = aRequest->mLoadedScript->AsClassicScript();
+    aRequest->SetBaseURL(requestBaseURI);
   }
 
   JS::Rooted<JSScript*> script(aCx);
@@ -1302,7 +1298,12 @@ bool WorkerScriptLoader::EvaluateScript(JSContext* aCx,
     return false;
   }
 
-  bool successfullyEvaluated = EvaluateSourceBuffer(aCx, script, classicScript);
+  if (!mWorkerRef->Private()->IsServiceWorker()) {
+    aRequest->FetchInfo()->AssociateWithScript(script);
+  }
+
+  JS::Rooted<JS::Value> unused(aCx);
+  bool successfullyEvaluated = JS_ExecuteScript(aCx, script, &unused);
   if (aRequest->IsCanceled()) {
     return false;
   }

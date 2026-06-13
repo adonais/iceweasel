@@ -12,6 +12,8 @@
 #include "mozilla/MozPromise.h"
 #include "mozilla/SharedThreadPool.h"
 #include "mozilla/TaskQueue.h"
+#include "mozilla/gtest/MozAssertions.h"
+#include "mp4parse.h"
 
 using namespace mozilla;
 using media::TimeUnit;
@@ -730,17 +732,150 @@ TEST(MP4Demuxer, DuplicateTimestampsWithLargeTimescaleFragmented)
   });
 }
 
-#undef DO_FAIL
+// Helpers for synthetic MP4VideoInfo::Update() tests.
+static Mp4parseTrackInfo MakeTrackInfo() {
+  Mp4parseTrackInfo track{};
+  track.track_id = 1;
+  track.duration = 1000;
+  track.time_scale = 1000;
+  track.media_time = 0;
+  return track;
+}
 
 static Mp4parseTrackVideoInfo MakeVideoInfo(
     Mp4parseTrackVideoSampleInfo* aSampleInfo) {
-  Mp4parseTrackVideoInfo info{};
-  info.display_width = 1920;
-  info.display_height = 1080;
-  info.sample_info_count = 1;
-  info.sample_info = aSampleInfo;
-  return info;
+  Mp4parseTrackVideoInfo video{};
+  video.display_width = 1920;
+  video.display_height = 1080;
+  video.rotation = 0;
+  video.sample_info_count = 1;
+  video.sample_info = aSampleInfo;
+  return video;
 }
+
+TEST(MP4Demuxer, VideoInfoMdcvClli)
+{
+  Mp4parseTrackVideoSampleInfo si{};
+  si.codec_type = MP4PARSE_CODEC_VP9;
+  si.image_width = 1920;
+  si.image_height = 1080;
+
+  // mdcv: R(34000/50000, 16000/50000) G(13250/50000, 34500/50000)
+  //       B(7500/50000, 3000/50000) WP(15635/50000, 16450/50000)
+  //       maxLum=10000000/10000 minLum=50/10000
+  si.has_mastering_display = true;
+  si.mastering_display.display_primaries_x[0] = 34000;  // R
+  si.mastering_display.display_primaries_y[0] = 16000;
+  si.mastering_display.display_primaries_x[1] = 13250;  // G
+  si.mastering_display.display_primaries_y[1] = 34500;
+  si.mastering_display.display_primaries_x[2] = 7500;  // B
+  si.mastering_display.display_primaries_y[2] = 3000;
+  si.mastering_display.white_point_x = 15635;
+  si.mastering_display.white_point_y = 16450;
+  si.mastering_display.max_display_mastering_luminance = 10000000;
+  si.mastering_display.min_display_mastering_luminance = 50;
+
+  // clli: MaxCLL=1000, MaxFALL=400
+  si.has_content_light_level = true;
+  si.content_light_level.max_content_light_level = 1000;
+  si.content_light_level.max_pic_average_light_level = 400;
+
+  Mp4parseTrackInfo track = MakeTrackInfo();
+  Mp4parseTrackVideoInfo video = MakeVideoInfo(&si);
+
+  MP4VideoInfo info;
+  ASSERT_NS_SUCCEEDED(info.Update(&track, &video));
+
+  ASSERT_TRUE(info.mHDRMetadata.isSome());
+
+  ASSERT_TRUE(info.mHDRMetadata->mSmpte2086.isSome());
+  const auto& smpte = info.mHDRMetadata->mSmpte2086.value();
+  EXPECT_FLOAT_EQ(smpte.displayPrimaryRed.x, 34000.0f / 50000.0f);
+  EXPECT_FLOAT_EQ(smpte.displayPrimaryRed.y, 16000.0f / 50000.0f);
+  EXPECT_FLOAT_EQ(smpte.displayPrimaryGreen.x, 13250.0f / 50000.0f);
+  EXPECT_FLOAT_EQ(smpte.displayPrimaryGreen.y, 34500.0f / 50000.0f);
+  EXPECT_FLOAT_EQ(smpte.displayPrimaryBlue.x, 7500.0f / 50000.0f);
+  EXPECT_FLOAT_EQ(smpte.displayPrimaryBlue.y, 3000.0f / 50000.0f);
+  EXPECT_FLOAT_EQ(smpte.whitePoint.x, 15635.0f / 50000.0f);
+  EXPECT_FLOAT_EQ(smpte.whitePoint.y, 16450.0f / 50000.0f);
+  EXPECT_FLOAT_EQ(smpte.maxLuminance, 10000000.0f / 10000.0f);
+  EXPECT_FLOAT_EQ(smpte.minLuminance, 50.0f / 10000.0f);
+
+  ASSERT_TRUE(info.mHDRMetadata->mContentLightLevel.isSome());
+  const auto& cll = info.mHDRMetadata->mContentLightLevel.value();
+  EXPECT_EQ(cll.maxContentLightLevel, 1000u);
+  EXPECT_EQ(cll.maxFrameAverageLightLevel, 400u);
+}
+
+TEST(MP4Demuxer, VideoInfoMdcvOnly)
+{
+  Mp4parseTrackVideoSampleInfo si{};
+  si.codec_type = MP4PARSE_CODEC_HEVC;
+  si.image_width = 3840;
+  si.image_height = 2160;
+  si.has_mastering_display = true;
+  si.mastering_display.display_primaries_x[0] = 17000;
+  si.mastering_display.display_primaries_y[0] = 8000;
+  si.mastering_display.display_primaries_x[1] = 13250;
+  si.mastering_display.display_primaries_y[1] = 34500;
+  si.mastering_display.display_primaries_x[2] = 7500;
+  si.mastering_display.display_primaries_y[2] = 3000;
+  si.mastering_display.white_point_x = 15635;
+  si.mastering_display.white_point_y = 16450;
+  si.mastering_display.max_display_mastering_luminance = 10000000;
+  si.mastering_display.min_display_mastering_luminance = 1;
+
+  Mp4parseTrackInfo track = MakeTrackInfo();
+  Mp4parseTrackVideoInfo video = MakeVideoInfo(&si);
+
+  MP4VideoInfo info;
+  ASSERT_NS_SUCCEEDED(info.Update(&track, &video));
+
+  ASSERT_TRUE(info.mHDRMetadata.isSome());
+  EXPECT_TRUE(info.mHDRMetadata->mSmpte2086.isSome());
+  EXPECT_TRUE(info.mHDRMetadata->mContentLightLevel.isNothing());
+}
+
+TEST(MP4Demuxer, VideoInfoClliOnly)
+{
+  Mp4parseTrackVideoSampleInfo si{};
+  si.codec_type = MP4PARSE_CODEC_VP9;
+  si.image_width = 1920;
+  si.image_height = 1080;
+  si.has_content_light_level = true;
+  si.content_light_level.max_content_light_level = 500;
+  si.content_light_level.max_pic_average_light_level = 200;
+
+  Mp4parseTrackInfo track = MakeTrackInfo();
+  Mp4parseTrackVideoInfo video = MakeVideoInfo(&si);
+
+  MP4VideoInfo info;
+  ASSERT_NS_SUCCEEDED(info.Update(&track, &video));
+
+  ASSERT_TRUE(info.mHDRMetadata.isSome());
+  EXPECT_TRUE(info.mHDRMetadata->mSmpte2086.isNothing());
+  ASSERT_TRUE(info.mHDRMetadata->mContentLightLevel.isSome());
+  const auto& cll = info.mHDRMetadata->mContentLightLevel.value();
+  EXPECT_EQ(cll.maxContentLightLevel, 500u);
+  EXPECT_EQ(cll.maxFrameAverageLightLevel, 200u);
+}
+
+TEST(MP4Demuxer, VideoInfoNoHDR)
+{
+  Mp4parseTrackVideoSampleInfo si{};
+  si.codec_type = MP4PARSE_CODEC_AVC;
+  si.image_width = 1920;
+  si.image_height = 1080;
+
+  Mp4parseTrackInfo track = MakeTrackInfo();
+  Mp4parseTrackVideoInfo video = MakeVideoInfo(&si);
+
+  MP4VideoInfo info;
+  ASSERT_NS_SUCCEEDED(info.Update(&track, &video));
+  EXPECT_TRUE(info.mHDRMetadata.isNothing());
+}
+
+#undef DO_FAIL
 
 static Mp4parseTrackVideoSampleInfo MakeSampleInfo(bool aHasColourInfo,
                                                    uint8_t aCp, uint8_t aTc,
@@ -756,12 +891,6 @@ static Mp4parseTrackVideoSampleInfo MakeSampleInfo(bool aHasColourInfo,
   si.matrix_coefficients = aMc;
   si.full_range_flag = aFullRange;
   return si;
-}
-
-static Mp4parseTrackInfo MakeTrackInfo() {
-  Mp4parseTrackInfo ti{};
-  ti.time_scale = 1000;
-  return ti;
 }
 
 // HDR10: cp=9 (BT.2020), tc=16 (PQ), mc=9, limited range

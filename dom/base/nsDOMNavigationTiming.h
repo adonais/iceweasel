@@ -39,6 +39,7 @@ class nsDOMNavigationTiming final : public mozilla::RelativeTimeline {
   };
 
   explicit nsDOMNavigationTiming(nsDocShell* aDocShell);
+  nsDOMNavigationTiming(const nsDOMNavigationTiming&) = delete;
 
   NS_INLINE_DECL_REFCOUNTING(nsDOMNavigationTiming)
 
@@ -212,7 +213,6 @@ class nsDOMNavigationTiming final : public mozilla::RelativeTimeline {
  private:
   friend class nsDocShell;
   nsDOMNavigationTiming(nsDocShell* aDocShell, nsDOMNavigationTiming* aOther);
-  nsDOMNavigationTiming(const nsDOMNavigationTiming&) = delete;
   ~nsDOMNavigationTiming();
 
   void Clear();

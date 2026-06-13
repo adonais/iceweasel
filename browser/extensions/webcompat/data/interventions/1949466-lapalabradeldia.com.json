@@ -6,12 +6,13 @@
       "matches": ["*://lapalabradeldia.com/*"]
     }
   },
+  "css": {
+    "fix-vanishing-letters": ".react-card-front { transform-style: initial !important; }"
+  },
   "interventions": [
     {
       "platforms": ["desktop"],
-      "content_scripts": {
-        "css": ["bug1949466-lapalabradeldia.com-fix-vanishing-letters.css"]
-      }
+      "css": ["fix-vanishing-letters"]
     }
   ]
 }

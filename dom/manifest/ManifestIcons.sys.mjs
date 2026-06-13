@@ -34,7 +34,7 @@ function parseIconSize(size) {
 function toIconArray(icons) {
   const iconBySize = [];
   icons.forEach(icon => {
-    const sizes = "sizes" in icon ? icon.sizes : "";
+    const sizes = icon.sizes ?? [""];
     sizes.forEach(size => {
       iconBySize.push({ src: icon.src, size: parseIconSize(size) });
     });

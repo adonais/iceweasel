@@ -20,10 +20,11 @@ unicode-bidi-ffi = { path = "../../../../intl/bidi/rust/unicode-bidi-ffi", optio
 normalizer_glue = { path = "../../builtin/normalizer_glue" }
 properties_glue = { path = "../../irregexp/properties_glue", optional = true }
 collator_glue = { path = "../../builtin/intl/collator_glue", optional = true }
+locale_glue = { path = "../../builtin/intl/locale_glue", optional = true }
 
 [features]
 simd-accel = ['encoding_c/simd-accel']
-icu4x = ['icu_capi', 'unicode-bidi-ffi', 'properties_glue', 'collator_glue']
+icu4x = ['icu_capi', 'unicode-bidi-ffi', 'properties_glue', 'collator_glue', 'locale_glue']
 
 # Uncomment this to enable perf support in release mode.
 #[profile.release]

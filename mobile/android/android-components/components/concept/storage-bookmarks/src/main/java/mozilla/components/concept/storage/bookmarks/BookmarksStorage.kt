@@ -9,50 +9,74 @@ package mozilla.components.concept.storage.bookmarks
  */
 fun interface BookmarkInserter {
     /**
-     * Inserts the given bookmark node into storage.
+     * Inserts the given bookmark folder (including its children) into storage.
      *
-     * @param node The [InsertableBookmarkNode] to insert.
+     * @param tree The [InsertableBookmarkTreeRoot] to insert.
      * @return The guid of the head of the inserted bookmark tree.
      */
-    suspend fun insert(node: InsertableBookmarkNode): Result<String>
+    suspend fun insertTree(tree: InsertableBookmarkTreeRoot): Result<String>
 }
+
+/**
+ * Represents the root of a bookmark tree to be inserted into storage.
+ *
+ * @property parentGuid The guid of the existing parent folder to insert the tree under.
+ * @property rootFolder The root folder of the tree to insert.
+ */
+data class InsertableBookmarkTreeRoot(val parentGuid: String, val rootFolder: InsertableBookmarkTreeNode.Folder)
 
 /**
  * Represents a bookmark node that can be inserted into storage.
  */
-sealed interface InsertableBookmarkNode {
+sealed interface InsertableBookmarkTreeNode {
+    val position: UInt?
+    val dateAddedTimestamp: Long
+    val lastModifiedTimestamp: Long
+
     /**
      * A bookmark item (e.g. a page).
      *
-     * @property parentGuid The GUID of the parent folder.
      * @property title The title of the bookmark.
      * @property url The URL of the bookmark.
+     * @property dateAddedTimestamp The date added timestamp of the bookmark.
+     * @property lastModifiedTimestamp The last modified timestamp of the bookmark.
      * @property position The ordinal position within the parent.
      */
     data class Item(
-        val parentGuid: String?,
         val title: String?,
         val url: String,
-        val position: UInt?,
-    ) : InsertableBookmarkNode
+        override val dateAddedTimestamp: Long,
+        override val lastModifiedTimestamp: Long,
+        override val position: UInt?,
+    ) : InsertableBookmarkTreeNode
 
     /**
-     * A bookmark folder that can contain other [InsertableBookmarkNode]s.
+     * A bookmark folder that can contain other [InsertableBookmarkTreeNode]s.
      *
-     * @property parentGuid The GUID of the parent folder.
      * @property title The title of the folder.
+     * @property dateAddedTimestamp The date added timestamp of the folder.
+     * @property lastModifiedTimestamp The last modified timestamp of the folder.
      * @property position The ordinal position within the parent.
      * @property children The child nodes contained in this folder.
      */
     data class Folder(
-        val parentGuid: String?,
         val title: String?,
-        val position: UInt?,
-        val children: List<InsertableBookmarkNode>,
-    ) : InsertableBookmarkNode
+        override val dateAddedTimestamp: Long,
+        override val lastModifiedTimestamp: Long,
+        override val position: UInt?,
+        val children: List<InsertableBookmarkTreeNode>,
+    ) : InsertableBookmarkTreeNode
 
     /**
      * A bookmark separator.
+     *
+     * @property dateAddedTimestamp The date added timestamp of the folder.
+     * @property lastModifiedTimestamp The last modified timestamp of the folder.
+     * @property position The ordinal position within the parent.
      */
-    object Separator : InsertableBookmarkNode
+    data class Separator(
+        override val dateAddedTimestamp: Long,
+        override val lastModifiedTimestamp: Long,
+        override val position: UInt?,
+    ) : InsertableBookmarkTreeNode
 }

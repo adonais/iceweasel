@@ -335,7 +335,7 @@ class AppLinksUseCases(
             redirectCache = null
         }
 
-        // list of scheme from https://searchfox.org/mozilla-central/source/netwerk/build/components.conf
+        // list of scheme from https://searchfox.org/firefox-main/source/netwerk/build/components.conf
         internal val ENGINE_SUPPORTED_SCHEMES: Set<String> = setOf(
             "about",
             "data",

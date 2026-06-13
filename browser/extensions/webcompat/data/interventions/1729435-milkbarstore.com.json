@@ -6,12 +6,13 @@
       "matches": ["*://milkbarstore.com/*"]
     }
   },
+  "css": {
+    "fix_cart_quantities": "#cart-main .scroll-pane .items .quantity-wrapper input[name='quantity'] { height: 35px; border: 0; text-align: center; width: 45px; appearance: textfield; font-family: 'Garnett Bold', sans-serif; font-weight: 700; }"
+  },
   "interventions": [
     {
       "platforms": ["desktop"],
-      "content_scripts": {
-        "css": ["1729435_milkbarstore.com-fix-cart-quantity-counts.css"]
-      }
+      "css": ["fix_cart_quantities"]
     }
   ]
 }

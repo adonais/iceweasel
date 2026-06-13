@@ -18,7 +18,7 @@ using namespace mozilla::a11y;
 NS_IMPL_ISUPPORTS_INHERITED0(ApplicationAccessibleWrap, ApplicationAccessible)
 
 already_AddRefed<AccAttributes> ApplicationAccessibleWrap::NativeAttributes() {
-  RefPtr<AccAttributes> attributes = new AccAttributes();
+  auto attributes = MakeRefPtr<AccAttributes>();
   return attributes.forget();
 }
 

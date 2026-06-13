@@ -37,7 +37,7 @@ void HTMLSharedElement::GetHref(nsAString& aValue) {
                                             doc->GetFallbackBaseURI());
 
   if (!uri) {
-    aValue = href;
+    aValue = std::move(href);
     return;
   }
 

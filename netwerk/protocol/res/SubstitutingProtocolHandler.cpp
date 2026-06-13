@@ -160,8 +160,8 @@ void SubstitutingJARURI::Serialize(mozilla::ipc::URIParams& aParams) {
   URIParams source;
   URIParams resolved;
 
-  mSource->Serialize(source);
-  mResolved->Serialize(resolved);
+  SerializeURI(mSource, source);
+  SerializeURI(mResolved, resolved);
   params.source() = source;
   params.resolved() = resolved;
   aParams = params;
@@ -293,6 +293,8 @@ NS_INTERFACE_MAP_BEGIN(SubstitutingJARURI)
   NS_INTERFACE_MAP_ENTRY(nsIURL)
   NS_INTERFACE_MAP_ENTRY(nsIStandardURL)
   NS_INTERFACE_MAP_ENTRY(nsISerializable)
+  NS_INTERFACE_MAP_ENTRY(nsIIPCSerializableURI)
+  NS_INTERFACE_MAP_ENTRY(nsIURIWithSizeOf)
   if (aIID.Equals(kSubstitutingJARURIImplCID)) {
     foundInterface = static_cast<nsIURI*>(this);
   } else
@@ -301,7 +303,8 @@ NS_INTERFACE_MAP_BEGIN(SubstitutingJARURI)
 NS_INTERFACE_MAP_END
 
 NS_IMPL_CI_INTERFACE_GETTER(SubstitutingJARURI, nsIURI, nsIJARURI, nsIURL,
-                            nsIStandardURL, nsISerializable)
+                            nsIStandardURL, nsISerializable,
+                            nsIIPCSerializableURI, nsIURIWithSizeOf)
 
 NS_IMPL_NSIURIMUTATOR_ISUPPORTS(SubstitutingJARURI::Mutator, nsIURISetters,
                                 nsIURIMutator, nsISerializable)

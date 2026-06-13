@@ -1,6 +1,6 @@
 Adjust prefix path computations for base::Location
 
-Make locations relative to the root of our own source tree.
+Deal with MinGW builds.
 ---
  base/location.cc | 9 +++++++++
  1 file changed, 9 insertions(+)
@@ -13,15 +13,12 @@ index b38ec16beabb..552e774edc7b 100644
  constexpr size_t StrippedFilePathPrefixLength() {
    constexpr char path[] = __FILE__;
    // Only keep the file path starting from the src directory.
-+#if defined(MOZ_ZUCCHINI)
-+  constexpr char stripped[] = "third_party/zucchini/chromium/base/location.cc";
-+#else
- #if defined(__clang__) && defined(_MSC_VER)
+-#if defined(__clang__) && defined(_MSC_VER)
++#if defined(__clang__) && defined(_WIN32)
    constexpr char stripped[] = "base\\location.cc";
  #else
    constexpr char stripped[] = "base/location.cc";
  #endif
-+#endif  // defined(MOZ_ZUCCHINI)
    constexpr size_t path_len = StrLen(path);
    constexpr size_t stripped_len = StrLen(stripped);
    static_assert(path_len >= stripped_len,
@@ -29,18 +26,14 @@ index b38ec16beabb..552e774edc7b 100644
    return true;
  }
  
-+#if defined(MOZ_ZUCCHINI)
-+static_assert(StrEndsWith(__FILE__, kStrippedPrefixLength, "third_party/zucchini/chromium/base/location.cc"),
-+              "The file name does not match the expected prefix format.");
-+#else
- #if defined(__clang__) && defined(_MSC_VER)
+-#if defined(__clang__) && defined(_MSC_VER)
++#if defined(__clang__) && defined(_WIN32)
  static_assert(StrEndsWith(__FILE__, kStrippedPrefixLength, "base\\location.cc"),
                "The file name does not match the expected prefix format.");
 @@ -70,6 +78,7 @@ static_assert(StrEndsWith(__FILE__, kStrippedPrefixLength, "base\\location.cc"),
  static_assert(StrEndsWith(__FILE__, kStrippedPrefixLength, "base/location.cc"),
                "The file name does not match the expected prefix format.");
  #endif
-+#endif  // defined(MOZ_ZUCCHINI)
  
  }  // namespace
  

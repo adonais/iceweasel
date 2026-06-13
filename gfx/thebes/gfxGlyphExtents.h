@@ -45,6 +45,9 @@ class gfxGlyphExtents {
   }
   ~gfxGlyphExtents();
 
+  gfxGlyphExtents(const gfxGlyphExtents& aOther) = delete;
+  gfxGlyphExtents& operator=(const gfxGlyphExtents& aOther) = delete;
+
   enum { INVALID_WIDTH = 0xFFFF };
 
   void NotifyGlyphsChanged() {
@@ -161,11 +164,6 @@ class gfxGlyphExtents {
 
  public:
   mutable mozilla::RWLock mLock;
-
- private:
-  // not implemented:
-  gfxGlyphExtents(const gfxGlyphExtents& aOther) = delete;
-  gfxGlyphExtents& operator=(const gfxGlyphExtents& aOther) = delete;
 };
 
 #endif

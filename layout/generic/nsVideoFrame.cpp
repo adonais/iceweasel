@@ -8,6 +8,7 @@
 
 #include "ImageContainer.h"
 #include "mozilla/PresShell.h"
+#include "mozilla/ReflowInput.h"
 #include "mozilla/dom/HTMLImageElement.h"
 #include "mozilla/dom/HTMLVideoElement.h"
 #include "mozilla/dom/ShadowRoot.h"
@@ -220,7 +221,8 @@ bool nsVideoFrame::ReflowFinished() {
   }
 
   if (resizedControls) {
-    nsContentUtils::AddScriptRunner(new DispatchControlsResizeEvent(controls));
+    nsContentUtils::AddScriptRunner(
+        MakeAndAddRef<DispatchControlsResizeEvent>(controls));
   }
   return false;
 }
@@ -668,7 +670,7 @@ class nsDisplayVideo final : public nsPaintedDisplayItem {
         preTransform * Matrix::Translation(destGFXRect.x, destGFXRect.y);
 
     AutoLockImage autoLock(container);
-    Image* image = autoLock.GetImage(TimeStamp::Now());
+    layers::Image* image = autoLock.GetImage(TimeStamp::Now());
     if (!image) {
       return;
     }

@@ -157,7 +157,7 @@ struct SavedFrame::HashPolicy {
   static bool match(SavedFrame* existing, const Lookup& lookup);
 
   using Key = WeakHeapPtr<SavedFrame*>;
-  static void rekey(Key& key, const Key& newKey);
+  static void rekey(Key& key, SavedFrame* newKey);
 
  private:
   static HashNumber calculateHash(const Lookup& lookup, HashNumber parentHash);

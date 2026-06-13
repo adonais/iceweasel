@@ -108,7 +108,7 @@ sealed interface DownloadUIAction : Action {
     /**
      * [DownloadUIAction] to show the dialog to change the file extension of a [FileItem].
      */
-    data object ShowChangeFileExtensionDialog : DownloadUIAction
+    data class ShowChangeFileExtensionDialog(val item: FileItem) : DownloadUIAction
 
     /**
      * [DownloadUIAction] to close the dialog to change the file extension of a [FileItem].
@@ -151,11 +151,6 @@ sealed interface DownloadUIAction : Action {
     data class ResumeDownload(val downloadId: String) : DownloadUIAction
 
     /**
-     * [DownloadUIAction] to cancel an incomplete download file.
-     */
-    data class CancelDownload(val downloadId: String) : DownloadUIAction
-
-    /**
      * [DownloadUIAction] to retry a failed download file.
      */
     data class RetryDownload(val downloadId: String) : DownloadUIAction
@@ -171,9 +166,19 @@ sealed interface DownloadUIAction : Action {
     object NavigationIconClicked : DownloadUIAction
 
     /**
-     * [DownloadUIAction] fired when the user clicks the delete icon for one or more items.
+     * [DownloadUIAction] fired when the user clicks the delete icon for multiple items.
      */
-    data class RequestDelete(val items: Set<FileItem>) : DownloadUIAction
+    data class RequestDeleteMultiple(val items: Set<FileItem>) : DownloadUIAction
+
+    /**
+     * [DownloadUIAction] fired when the user clicks the delete icon for one item.
+     */
+    data class RequestDelete(val item: FileItem) : DownloadUIAction
+
+    /**
+     * [DownloadUIAction] to cancel an incomplete download file.
+     */
+    data class CancelDownload(val downloadId: String) : DownloadUIAction
 
     /**
      * [DownloadUIAction] to set the items currently pending confirmation in the dialog.
@@ -206,6 +211,13 @@ sealed interface RenameFileError {
      * @property proposedFileName The name the user attempted to rename the file to.
      */
     data class NameAlreadyExists(val proposedFileName: String) : RenameFileError
+
+    /**
+     * The proposed file name only differs from the current name by its casing.
+     *
+     * @property proposedFileName The name the user attempted to rename the file to.
+     */
+    data class CaseOnlyNameChange(val proposedFileName: String) : RenameFileError
 
     /**
      * The proposed file name is not valid and has a path separator or slash.

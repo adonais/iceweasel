@@ -24,6 +24,7 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/PodOperations.h"  // for PodZero
 #include "mozilla/PresShell.h"
+#include "mozilla/ReflowInput.h"
 #include "mozilla/ScrollContainerFrame.h"
 #include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/dom/Grid.h"
@@ -57,8 +58,10 @@ static mozilla::LazyLogModule gGridContainerLog("GridContainer");
 #define GRID_LOG(...) \
   MOZ_LOG(gGridContainerLog, LogLevel::Debug, (__VA_ARGS__));
 
-static const int32_t kMaxLine = StyleMAX_GRID_LINE;
-static const int32_t kMinLine = StyleMIN_GRID_LINE;
+// These are the limits that we choose to clamp grid line numbers to.
+// http://drafts.csswg.org/css-grid/#overlarge-grids
+static const int32_t kMaxLine = 10000;
+static const int32_t kMinLine = -10000;
 // The maximum line number, in the zero-based translated grid.
 static const uint32_t kTranslatedMaxLine = uint32_t(kMaxLine - kMinLine);
 static const uint32_t kAutoLine = kTranslatedMaxLine + 3457U;
@@ -3239,11 +3242,8 @@ struct MOZ_STACK_CLASS nsGridContainerFrame::GridReflowInput {
     mRows = mSharedGridData->mRows;
 
     if (firstInFlow->GetProperty(UsedTrackSizes::Prop())) {
-      auto* prop = aGridContainerFrame->GetProperty(UsedTrackSizes::Prop());
-      if (!prop) {
-        prop = new UsedTrackSizes();
-        aGridContainerFrame->SetProperty(UsedTrackSizes::Prop(), prop);
-      }
+      auto* prop = aGridContainerFrame->GetOrCreateDeletableProperty(
+          UsedTrackSizes::Prop());
       prop->mCanResolveLineRangeSize = {true, true};
       prop->mTrackPlans[LogicalAxis::Inline].Assign(mCols.mSizes);
       prop->mTrackPlans[LogicalAxis::Block].Assign(mRows.mSizes);
@@ -4031,35 +4031,20 @@ static Subgrid* SubgridComputeMarginBorderPadding(
     return subgrid;
   }
 
-  bool scroller = false;
-  nsIFrame* outerFrame = nullptr;
   if (ScrollContainerFrame* scrollContainerFrame =
           aGridItem.mFrame->GetScrollTargetFrame()) {
-    scroller = true;
-    outerFrame = scrollContainerFrame;
-  }
-
-  if (outerFrame) {
     MOZ_ASSERT(sz.ComputedLogicalMargin(cbWM) == LogicalMargin(cbWM) &&
-                   sz.ComputedLogicalBorder(cbWM) == LogicalMargin(cbWM),
-               "A scrolled inner frame / button content frame "
-               "should not have any margin or border / padding!");
-
-    // Add the margin and border from the (outer) frame. Padding is factored-in
-    // for scrollers already (except for the scrollbar gutter), but not for
-    // button-content.
-    SizeComputationInput szOuterFrame(outerFrame, nullptr, cbWM,
+                   sz.ComputedLogicalBorderPadding(cbWM) == LogicalMargin(cbWM),
+               "A scrolled inner frame should not have any margin or border / "
+               "padding!");
+    // Add the margin and border from the scroller frame.
+    SizeComputationInput szOuterFrame(scrollContainerFrame, nullptr, cbWM,
                                       pmPercentageBasis);
-    subgrid->mMarginBorderPadding += szOuterFrame.ComputedLogicalMargin(cbWM) +
-                                     szOuterFrame.ComputedLogicalBorder(cbWM);
-    if (scroller) {
-      nsMargin ssz = static_cast<ScrollContainerFrame*>(outerFrame)
-                         ->IntrinsicScrollbarGutterSize();
-      subgrid->mMarginBorderPadding += LogicalMargin(cbWM, ssz);
-    } else {
-      subgrid->mMarginBorderPadding +=
-          szOuterFrame.ComputedLogicalPadding(cbWM);
-    }
+    subgrid->mMarginBorderPadding +=
+        szOuterFrame.ComputedLogicalMargin(cbWM) +
+        szOuterFrame.ComputedLogicalBorderPadding(cbWM) +
+        LogicalMargin(cbWM,
+                      scrollContainerFrame->IntrinsicScrollbarGutterSize());
   }
 
   if (nsFieldSetFrame* f = do_QueryFrame(aGridItem.mFrame)) {
@@ -4171,11 +4156,8 @@ void nsGridContainerFrame::UsedTrackSizes::ResolveTrackSizesForAxis(
     return;
   }
   auto* parent = aFrame->ParentGridContainerForSubgrid();
-  auto* parentSizes = parent->GetUsedTrackSizes();
-  if (!parentSizes) {
-    parentSizes = new UsedTrackSizes();
-    parent->SetProperty(UsedTrackSizes::Prop(), parentSizes);
-  }
+  auto* parentSizes =
+      parent->GetOrCreateDeletableProperty(UsedTrackSizes::Prop());
   auto* subgrid = aFrame->GetProperty(Subgrid::Prop());
   const auto parentAxis =
       subgrid->mIsOrthogonal ? GetOrthogonalAxis(aAxis) : aAxis;
@@ -4631,6 +4613,7 @@ int32_t nsGridContainerFrame::Grid::ResolveLine(
     const LineNameMap& aNameMap, LogicalSide aSide, uint32_t aExplicitGridEnd,
     const nsStylePosition* aStyle) {
   MOZ_ASSERT(!aLine.IsAuto());
+  aNth = std::clamp(aNth, kMinLine, kMaxLine);
   int32_t line = 0;
   if (aLine.LineName()->IsEmpty()) {
     MOZ_ASSERT(aNth != 0, "css-grid 9.2: <integer> must not be zero.");
@@ -4711,6 +4694,8 @@ nsGridContainerFrame::Grid::ResolveLineRangeHelper(
     const LineNameMap& aNameMap, LogicalAxis aAxis, uint32_t aExplicitGridEnd,
     const nsStylePosition* aStyle) {
   MOZ_ASSERT(int32_t(kAutoLine) > kMaxLine);
+  auto startNum = std::clamp(aStart.line_num, kMinLine, kMaxLine);
+  auto endNum = std::clamp(aEnd.line_num, kMinLine, kMaxLine);
 
   if (aStart.is_span) {
     if (aEnd.is_span || aEnd.IsAuto()) {
@@ -4718,18 +4703,18 @@ nsGridContainerFrame::Grid::ResolveLineRangeHelper(
       if (aStart.LineName()->IsEmpty()) {
         // span <integer> / span *
         // span <integer> / auto
-        return LinePair(kAutoLine, aStart.line_num);
+        return LinePair(kAutoLine, startNum);
       }
       // span <custom-ident> / span *
       // span <custom-ident> / auto
       return LinePair(kAutoLine, 1);  // XXX subgrid explicit size instead of 1?
     }
 
-    uint32_t from = aEnd.line_num < 0 ? aExplicitGridEnd + 1 : 0;
-    auto end = ResolveLine(aEnd, aEnd.line_num, from, aNameMap,
+    uint32_t from = endNum < 0 ? aExplicitGridEnd + 1 : 0;
+    auto end = ResolveLine(aEnd, endNum, from, aNameMap,
                            MakeLogicalSide(aAxis, LogicalEdge::End),
                            aExplicitGridEnd, aStyle);
-    int32_t span = aStart.line_num == 0 ? 1 : aStart.line_num;
+    int32_t span = startNum == 0 ? 1 : startNum;
     if (end <= 1) {
       // The end is at or before the first explicit line, thus all lines before
       // it match <custom-ident> since they're implicit.
@@ -4751,16 +4736,16 @@ nsGridContainerFrame::Grid::ResolveLineRangeHelper(
     if (aEnd.is_span) {
       if (aEnd.LineName()->IsEmpty()) {
         // auto / span <integer>
-        MOZ_ASSERT(aEnd.line_num != 0);
-        return LinePair(start, aEnd.line_num);
+        MOZ_ASSERT(endNum != 0);
+        return LinePair(start, endNum);
       }
       // https://drafts.csswg.org/css-grid-2/#grid-placement-errors
       // auto / span <custom-ident>
       return LinePair(start, 1);  // XXX subgrid explicit size instead of 1?
     }
   } else {
-    uint32_t from = aStart.line_num < 0 ? aExplicitGridEnd + 1 : 0;
-    start = ResolveLine(aStart, aStart.line_num, from, aNameMap,
+    uint32_t from = startNum < 0 ? aExplicitGridEnd + 1 : 0;
+    start = ResolveLine(aStart, startNum, from, aNameMap,
                         MakeLogicalSide(aAxis, LogicalEdge::Start),
                         aExplicitGridEnd, aStyle);
     if (aEnd.IsAuto()) {
@@ -4772,7 +4757,7 @@ nsGridContainerFrame::Grid::ResolveLineRangeHelper(
   }
 
   uint32_t from;
-  int32_t nth = aEnd.line_num == 0 ? 1 : aEnd.line_num;
+  int32_t nth = endNum == 0 ? 1 : endNum;
   if (aEnd.is_span) {
     if (MOZ_UNLIKELY(start < 0)) {
       if (aEnd.LineName()->IsEmpty()) {
@@ -4788,7 +4773,7 @@ nsGridContainerFrame::Grid::ResolveLineRangeHelper(
       from = start;
     }
   } else {
-    from = aEnd.line_num < 0 ? aExplicitGridEnd + 1 : 0;
+    from = endNum < 0 ? aExplicitGridEnd + 1 : 0;
   }
   auto end = ResolveLine(aEnd, nth, from, aNameMap,
                          MakeLogicalSide(aAxis, LogicalEdge::End),
@@ -5951,11 +5936,8 @@ static nscoord ContentContribution(const GridItemInfo& aGridItem,
         auto* subgridFrame =
             static_cast<nsGridContainerFrame*>(child->GetParent());
         MOZ_ASSERT(subgridFrame->IsGridContainerFrame());
-        auto* uts = subgridFrame->GetProperty(UsedTrackSizes::Prop());
-        if (!uts) {
-          uts = new UsedTrackSizes();
-          subgridFrame->SetProperty(UsedTrackSizes::Prop(), uts);
-        }
+        auto* uts =
+            subgridFrame->GetOrCreateDeletableProperty(UsedTrackSizes::Prop());
         // The grid-item's inline-axis as expressed in the subgrid's WM.
         const auto subgridAxis = childWM.ConvertAxisTo(
             LogicalAxis::Inline, subgridFrame->GetWritingMode());
@@ -9354,11 +9336,8 @@ void nsGridContainerFrame::ReflowAbsoluteChildren(
     LogicalRect itemCB =
         aGridRI.ContainingBlockForAbsPos(area, gridOrigin, gridCB);
     // AbsoluteContainingBlock::Reflow uses physical coordinates.
-    nsRect* cb = child->GetProperty(GridItemContainingBlockRect());
-    if (!cb) {
-      cb = new nsRect;
-      child->SetProperty(GridItemContainingBlockRect(), cb);
-    }
+    nsRect* cb =
+        child->GetOrCreateDeletableProperty(GridItemContainingBlockRect());
     *cb = itemCB.GetPhysicalRect(wm, gridCBPhysicalSize);
     ++i;
   }
@@ -10013,12 +9992,9 @@ void nsGridContainerFrame::Reflow(nsPresContext* aPresContext,
   }
 
   if (!prevInFlow) {
-    SharedGridData* sharedGridData = GetProperty(SharedGridData::Prop());
     if (!aStatus.IsFullyComplete()) {
-      if (!sharedGridData) {
-        sharedGridData = new SharedGridData;
-        SetProperty(SharedGridData::Prop(), sharedGridData);
-      }
+      SharedGridData* sharedGridData =
+          GetOrCreateDeletableProperty(SharedGridData::Prop());
       sharedGridData->mCols.mSizes = std::move(gridRI.mCols.mSizes);
       sharedGridData->mCols.mContentBoxSize = gridRI.mCols.mContentBoxSize;
       sharedGridData->mCols.mBaselineSubtreeAlign =
@@ -10045,7 +10021,7 @@ void nsGridContainerFrame::Reflow(nsPresContext* aPresContext,
 
       sharedGridData->mGenerateComputedGridInfo =
           HasAnyStateBits(NS_STATE_GRID_COMPUTED_INFO);
-    } else if (sharedGridData && !GetNextInFlow()) {
+    } else if (!GetNextInFlow()) {
       RemoveProperty(SharedGridData::Prop());
     }
   }
@@ -10576,11 +10552,7 @@ nsGridContainerFrame::UsedTrackSizes* nsGridContainerFrame::GetUsedTrackSizes()
 
 void nsGridContainerFrame::StoreUsedTrackSizes(LogicalAxis aAxis,
                                                const TrackPlan& aSizes) {
-  auto* uts = GetUsedTrackSizes();
-  if (!uts) {
-    uts = new UsedTrackSizes();
-    SetProperty(UsedTrackSizes::Prop(), uts);
-  }
+  auto* uts = GetOrCreateDeletableProperty(UsedTrackSizes::Prop());
   uts->mTrackPlans[aAxis].Assign(aSizes);
   uts->mCanResolveLineRangeSize[aAxis] = true;
   // XXX is resetting these bits necessary?

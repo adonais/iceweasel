@@ -32,6 +32,9 @@ class xpcAccessibleGeneric : public xpcAccessible,
     if (aInternal->IsLink()) mSupportedIfaces |= eHyperLink;
   }
 
+  xpcAccessibleGeneric(const xpcAccessibleGeneric&) = delete;
+  xpcAccessibleGeneric& operator=(const xpcAccessibleGeneric&) = delete;
+
   NS_DECL_ISUPPORTS
 
   // nsIAccessible
@@ -60,9 +63,6 @@ class xpcAccessibleGeneric : public xpcAccessible,
   friend class xpcAccessibleHyperLink;
   friend class xpcAccessibleSelectable;
   friend class xpcAccessibleValue;
-
-  xpcAccessibleGeneric(const xpcAccessibleGeneric&) = delete;
-  xpcAccessibleGeneric& operator=(const xpcAccessibleGeneric&) = delete;
 };
 
 inline LocalAccessible* xpcAccessible::Intl() {

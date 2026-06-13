@@ -19,10 +19,6 @@ nsresult NS_NewSVGTextPathElement(
 
 namespace mozilla::dom {
 
-// textPath side types
-static const uint16_t TEXTPATH_SIDETYPE_LEFT = 1;
-static const uint16_t TEXTPATH_SIDETYPE_RIGHT = 2;
-
 using SVGTextPathElementBase = SVGTextContentElement;
 
 class SVGTextPathElement final : public SVGTextPathElementBase {

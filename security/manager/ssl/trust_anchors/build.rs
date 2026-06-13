@@ -208,7 +208,7 @@ fn multiline_octal(i: &str) -> IResult<&str, Ck<'_>> {
     let (i, _) = tag("END")(i)?;
     let (i, _) = space0(i)?;
     let (i, _) = newline(i)?;
-    return Ok((i, Ck::MultilineOctal(lines)));
+    Ok((i, Ck::MultilineOctal(lines)))
 }
 
 fn distrust_comment(i: &str) -> IResult<&str, (&str, Ck<'_>)> {

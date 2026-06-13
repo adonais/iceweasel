@@ -86,7 +86,7 @@ void RemoteContentController::HandleTapOnGPUProcessMainThread(
   MOZ_ASSERT(NS_IsMainThread());
 
   // Send a message to the controller thread to handle the single-tap gesture.
-  APZInputBridgeParent* apzib =
+  auto apzib =
       CompositorBridgeParent::GetApzInputBridgeParentForRoot(aGuid.mLayersId);
   if (apzib) {
     (void)apzib->SendHandleTap(aTapType, aPoint, aModifiers, aGuid,
@@ -157,7 +157,7 @@ void RemoteContentController::NotifyPinchGestureOnCompositorThread(
 
   // The raw pointer to APZCTreeManagerParent is ok here because we are on
   // the compositor thread.
-  APZCTreeManagerParent* apzctmp =
+  auto apzctmp =
       CompositorBridgeParent::GetApzcTreeManagerParentForRoot(aGuid.mLayersId);
   if (apzctmp) {
     (void)apzctmp->SendNotifyPinchGesture(aType, aGuid, aFocusPoint,
@@ -471,11 +471,8 @@ void RemoteContentController::CancelAutoscrollCrossProcess(
     return;
   }
 
-  // The raw pointer to APZCTreeManagerParent is ok here because we are on
-  // the compositor thread.
-  if (APZCTreeManagerParent* parent =
-          CompositorBridgeParent::GetApzcTreeManagerParentForRoot(
-              aGuid.mLayersId)) {
+  if (auto parent = CompositorBridgeParent::GetApzcTreeManagerParentForRoot(
+          aGuid.mLayersId)) {
     (void)parent->SendCancelAutoscroll(aGuid.mScrollId);
   }
 }
@@ -525,11 +522,8 @@ void RemoteContentController::NotifyScaleGestureCompleteCrossProcess(
     return;
   }
 
-  // The raw pointer to APZCTreeManagerParent is ok here because we are on
-  // the compositor thread.
-  if (APZCTreeManagerParent* parent =
-          CompositorBridgeParent::GetApzcTreeManagerParentForRoot(
-              aGuid.mLayersId)) {
+  if (auto parent = CompositorBridgeParent::GetApzcTreeManagerParentForRoot(
+          aGuid.mLayersId)) {
     (void)parent->SendNotifyScaleGestureComplete(aGuid.mScrollId, aScale);
   }
 }

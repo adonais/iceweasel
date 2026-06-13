@@ -36,6 +36,10 @@ void APZCTreeManagerParent::ChildAdopted(
   mUpdater = std::move(aAPZUpdater);
 }
 
+void APZCTreeManagerParent::ActorDestroy(ActorDestroyReason aWhy) {
+  CompositorBridgeParent::DisconnectApzcTreeManager(this);
+}
+
 mozilla::ipc::IPCResult APZCTreeManagerParent::RecvSetKeyboardMap(
     const KeyboardMap& aKeyboardMap) {
   mUpdater->RunOnUpdaterThread(

@@ -21,6 +21,9 @@ class xpcAccessibleApplication : public xpcAccessibleGeneric,
   explicit xpcAccessibleApplication(Accessible* aIntl)
       : xpcAccessibleGeneric(aIntl) {}
 
+  xpcAccessibleApplication(const xpcAccessibleApplication&) = delete;
+  xpcAccessibleApplication& operator=(const xpcAccessibleApplication&) = delete;
+
   NS_DECL_ISUPPORTS_INHERITED
 
   // nsIAccessibleApplication
@@ -34,9 +37,6 @@ class xpcAccessibleApplication : public xpcAccessibleGeneric,
 
  private:
   ApplicationAccessible* Intl() { return mIntl->AsLocal()->AsApplication(); }
-
-  xpcAccessibleApplication(const xpcAccessibleApplication&) = delete;
-  xpcAccessibleApplication& operator=(const xpcAccessibleApplication&) = delete;
 };
 
 }  // namespace a11y

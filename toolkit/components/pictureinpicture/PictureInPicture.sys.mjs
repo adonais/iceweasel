@@ -91,7 +91,7 @@ export class PictureInPictureToggleParent extends JSWindowActorParent {
     let browser = browsingContext.top.embedderElement;
     switch (aMessage.name) {
       case "PictureInPicture:OpenToggleContextMenu": {
-        let win = browser.ownerGlobal;
+        let win = browser.documentGlobal;
         PictureInPicture.openToggleContextMenu(win, aMessage.data);
         break;
       }
@@ -119,7 +119,7 @@ export class PictureInPictureToggleParent extends JSWindowActorParent {
           break;
         }
         // If the tab is still selected, then we can ignore this event
-        if (browser.ownerGlobal.gBrowser.selectedBrowser == browser) {
+        if (browser.documentGlobal.gBrowser.selectedBrowser == browser) {
           break;
         }
         let actor = browsingContext.currentWindowGlobal.getActor(
@@ -132,7 +132,7 @@ export class PictureInPictureToggleParent extends JSWindowActorParent {
         if (!lazy.PIP_ENABLED || !lazy.PIP_WHEN_SWITCHING_TABS) {
           break;
         }
-        if (browser.ownerGlobal.gBrowser.selectedBrowser != browser) {
+        if (browser.documentGlobal.gBrowser.selectedBrowser != browser) {
           break;
         }
         for (let win of Services.wm.getEnumerator(WINDOW_TYPE)) {
@@ -346,7 +346,7 @@ export var PictureInPicture = {
    *   we'll read its parent window to increase PiP window count in originatingWinWeakMap.
    */
   addOriginatingWinToWeakMap(browser) {
-    let parentWin = browser.ownerGlobal;
+    let parentWin = browser.documentGlobal;
     let count = this.originatingWinWeakMap.get(parentWin);
     if (!count || count == 0) {
       this.setOriginatingWindowActive(parentWin.browsingContext, true);
@@ -389,7 +389,7 @@ export var PictureInPicture = {
    *   we'll read its parent window to decrease PiP window count in originatingWinWeakMap.
    */
   removeOriginatingWinFromWeakMap(browser) {
-    let parentWin = browser?.ownerGlobal;
+    let parentWin = browser?.documentGlobal;
 
     if (!parentWin) {
       return;
@@ -473,7 +473,7 @@ export var PictureInPicture = {
       return;
     }
 
-    let win = event.target.ownerGlobal;
+    let win = event.target.documentGlobal;
     let bc = Services.focus.focusedContentBrowsingContext;
     if (bc.top == win.gBrowser.selectedBrowser.browsingContext) {
       let actor = bc.currentWindowGlobal.getActor("PictureInPictureLauncher");
@@ -491,7 +491,7 @@ export var PictureInPicture = {
     let tab = gBrowser.getTabForBrowser(browser);
 
     // focus the tab's window
-    tab.ownerGlobal.focus();
+    tab.documentGlobal.focus();
 
     gBrowser.selectedTab = tab;
     await this.closeSinglePipWindow({ reason: "Unpip", actorRef: pipActor });
@@ -609,7 +609,7 @@ export var PictureInPicture = {
       return;
     }
 
-    let win = browser.ownerGlobal;
+    let win = browser.documentGlobal;
     if (win.closed || win.gBrowser?.selectedBrowser !== browser) {
       return;
     }
@@ -630,9 +630,9 @@ export var PictureInPicture = {
 
     let browserHasPip = !!this.browserWeakMap.get(browser);
     if (browserHasPip) {
-      this.setUrlbarPipIconActive(browser.ownerGlobal);
+      this.setUrlbarPipIconActive(browser.documentGlobal);
     } else {
-      this.setUrlbarPipIconInactive(browser.ownerGlobal);
+      this.setUrlbarPipIconInactive(browser.documentGlobal);
     }
   },
 
@@ -643,7 +643,7 @@ export var PictureInPicture = {
    * @param {Event} event Event from clicking the PiP urlbar button
    */
   toggleUrlbar(event) {
-    let win = event.target.ownerGlobal;
+    let win = event.target.documentGlobal;
     let browser = win.gBrowser.selectedBrowser;
 
     let pipPanel = this.getPanelForBrowser(browser);
@@ -881,7 +881,7 @@ export var PictureInPicture = {
     );
 
     let browser = wgp.browsingContext.top.embedderElement;
-    let parentWin = browser.ownerGlobal;
+    let parentWin = browser.documentGlobal;
 
     let win = await this.openPipWindow(parentWin, videoData);
     win.setIsPlayingState(videoData.playing);
@@ -967,7 +967,7 @@ export var PictureInPicture = {
     // Saves the location of the Picture in Picture window
     this.savePosition(window);
     this.clearPipTabIcon(window);
-    this.setUrlbarPipIconInactive(browser?.ownerGlobal);
+    this.setUrlbarPipIconInactive(browser?.documentGlobal);
   },
 
   /**

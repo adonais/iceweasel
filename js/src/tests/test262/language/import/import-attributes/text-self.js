@@ -1,4 +1,4 @@
-// |reftest| skip module -- import-text is not supported
+// |reftest| shell-option(--enable-import-text) skip-if(release_or_beta||!xulRuntime.shell) module -- import-text is not released yet, requires shell-options
 // Copyright (C) 2025 Mozilla Foundation. All rights reserved.
 // This code is governed by the BSD license found in the LICENSE file.
 /*---

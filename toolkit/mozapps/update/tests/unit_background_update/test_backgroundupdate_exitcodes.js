@@ -44,7 +44,8 @@ add_task(async function test_default_profile_cannot_be_locked() {
 
   let profile = profileService.createUniqueProfile(
     file,
-    "test_default_profile"
+    "test_default_profile",
+    "tests"
   );
   let lock = profile.lock({});
 

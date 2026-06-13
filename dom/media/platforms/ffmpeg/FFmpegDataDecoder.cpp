@@ -15,6 +15,7 @@
 #include "FFmpegLog.h"
 #include "FFmpegUtils.h"
 #include "VideoUtils.h"
+#include "mozilla/CheckedInt.h"
 #include "mozilla/StaticPrefs_media.h"
 #include "mozilla/TaskQueue.h"
 #include "prsystem.h"
@@ -65,29 +66,42 @@ FFmpegDataDecoder<LIBAV_VER>::~FFmpegDataDecoder() {
   }
 }
 
+MediaResult FFmpegDataDecoder<LIBAV_VER>::AssignCodecContextExtraData(
+    const MediaByteBuffer* aBuffer) {
+  MOZ_ASSERT(mCodecContext);
+  MOZ_ASSERT(aBuffer);
+
+  CheckedInt<int> extradataSize(aBuffer->Length());
+  if (!extradataSize.isValid()) {
+    return MediaResult(
+        NS_ERROR_DOM_MEDIA_OVERFLOW_ERR,
+        RESULT_DETAIL("ffmpeg extradata size %zu exceeds INT_MAX",
+                      aBuffer->Length()));
+  }
+  // FFmpeg may use SIMD instructions to access the data which reads the
+  // data in 32 bytes block. Must ensure we have enough data to read.
+  const uint32_t padding_size =
+#if LIBAVCODEC_VERSION_MAJOR >= 58
+      AV_INPUT_BUFFER_PADDING_SIZE;
+#else
+      FF_INPUT_BUFFER_PADDING_SIZE;
+#endif
+  mCodecContext->extradata =
+      static_cast<uint8_t*>(mLib->av_mallocz(aBuffer->Length() + padding_size));
+  if (!mCodecContext->extradata) {
+    return MediaResult(NS_ERROR_OUT_OF_MEMORY,
+                       RESULT_DETAIL("Couldn't init ffmpeg extradata"));
+  }
+  mCodecContext->extradata_size = extradataSize.value();
+  memcpy(mCodecContext->extradata, aBuffer->Elements(), aBuffer->Length());
+  return NS_OK;
+}
+
 MediaResult FFmpegDataDecoder<LIBAV_VER>::AllocateExtraData() {
   if (mExtraData) {
-    mCodecContext->extradata_size = AssertedCast<int>(mExtraData->Length());
-    // FFmpeg may use SIMD instructions to access the data which reads the
-    // data in 32 bytes block. Must ensure we have enough data to read.
-    uint32_t padding_size =
-#if LIBAVCODEC_VERSION_MAJOR >= 58
-        AV_INPUT_BUFFER_PADDING_SIZE;
-#else
-        FF_INPUT_BUFFER_PADDING_SIZE;
-#endif
-    mCodecContext->extradata = static_cast<uint8_t*>(
-        mLib->av_mallocz(mExtraData->Length() + padding_size));
-    if (!mCodecContext->extradata) {
-      return MediaResult(NS_ERROR_OUT_OF_MEMORY,
-                         RESULT_DETAIL("Couldn't init ffmpeg extradata"));
-    }
-    memcpy(mCodecContext->extradata, mExtraData->Elements(),
-           mExtraData->Length());
-  } else {
-    mCodecContext->extradata_size = 0;
+    return AssignCodecContextExtraData(mExtraData);
   }
-
+  mCodecContext->extradata_size = 0;
   return NS_OK;
 }
 
@@ -213,6 +227,16 @@ MediaResult FFmpegDataDecoder<LIBAV_VER>::InitDecoder(AVCodec* aCodec,
   mCodecContext->opaque = this;
 
   InitCodecContext();
+  // Mirror Firefox's existing video dimension policy (IsValidVideoRegion,
+  // applied at WebMDemuxer and the WMF wrappers) into ffvpx via the
+  // documented max_pixels AVOption. Bitstream-driven dimension changes
+  // are otherwise gated only by max_pixels' INT_MAX default and would
+  // accept the VP8 14-bit field maximum (16383x16383).
+#if LIBAVCODEC_VERSION_MAJOR >= 58
+  if (mCodecContext->codec_type == AVMEDIA_TYPE_VIDEO) {
+    mCodecContext->max_pixels = MAX_VIDEO_WIDTH * MAX_VIDEO_HEIGHT;
+  }
+#endif
   MediaResult ret = AllocateExtraData();
   if (NS_FAILED(ret)) {
     FFMPEG_LOG("  couldn't allocate ffmpeg extra data for codec %s",

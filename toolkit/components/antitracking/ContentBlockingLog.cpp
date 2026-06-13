@@ -195,13 +195,26 @@ void ContentBlockingLog::ReportLog() {
     return;
   }
 
+  // Emit only the delta since the last flush. This lets ReportLog() be called
+  // multiple times during a document's lifetime (e.g. from a flush-on-query
+  // barrier in TrackingDBService) without double-counting entries against the
+  // daily aggregated counters in protections.sqlite.
+  nsAutoCString payload = Stringify(/* aOnlyUnreported */ true);
+
+  // Stringify() emits "{}" when every origin's cursor is already at the end
+  // and all origin-level flags have been reported. Skip the IPC round-trip.
+  if (payload.EqualsLiteral("{}")) {
+    return;
+  }
+
   nsCOMPtr<nsITrackingDBService> trackingDBService =
       do_GetService("@mozilla.org/tracking-db-service;1");
   if (NS_WARN_IF(!trackingDBService)) {
     return;
   }
 
-  trackingDBService->RecordContentBlockingLog(Stringify());
+  trackingDBService->RecordContentBlockingLog(payload);
+  MarkAsReported();
 }
 
 void ContentBlockingLog::ReportCanvasFingerprintingLog(

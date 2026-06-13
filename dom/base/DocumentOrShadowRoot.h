@@ -14,10 +14,8 @@
 #include "nsTArray.h"
 #include "nsTHashSet.h"
 
-class nsContentList;
 class nsCycleCollectionTraversalCallback;
 class nsINode;
-class nsINodeList;
 class nsWindowSizes;
 
 namespace mozilla {
@@ -29,10 +27,12 @@ namespace dom {
 
 class Animation;
 class Element;
+class ContentList;
 class CustomElementRegistry;
 class Document;
 class DocumentOrShadowRoot;
 class HTMLInputElement;
+class NodeList;
 class StyleSheetList;
 class ShadowRoot;
 template <typename T>
@@ -109,19 +109,16 @@ class DocumentOrShadowRoot {
     return {};
   }
 
-  already_AddRefed<nsContentList> GetElementsByTagName(
+  already_AddRefed<ContentList> GetElementsByTagName(
       const nsAString& aTagName) {
     return NS_GetContentList(&AsNode(), kNameSpaceID_Unknown, aTagName);
   }
-
-  already_AddRefed<nsContentList> GetElementsByTagNameNS(
+  already_AddRefed<ContentList> GetElementsByTagNameNS(
       const nsAString& aNamespaceURI, const nsAString& aLocalName);
-
-  already_AddRefed<nsContentList> GetElementsByTagNameNS(
+  already_AddRefed<ContentList> GetElementsByTagNameNS(
       const nsAString& aNamespaceURI, const nsAString& aLocalName,
       mozilla::ErrorResult&);
-
-  already_AddRefed<nsContentList> GetElementsByClassName(
+  already_AddRefed<ContentList> GetElementsByClassName(
       const nsAString& aClasses);
 
   ~DocumentOrShadowRoot();

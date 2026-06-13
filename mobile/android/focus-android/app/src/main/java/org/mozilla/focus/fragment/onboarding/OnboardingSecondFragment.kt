@@ -24,6 +24,9 @@ import org.mozilla.focus.R
 import org.mozilla.focus.ext.requireComponents
 import org.mozilla.focus.ui.theme.FocusTheme
 
+/**
+ * The second fragment of the onboarding flow.
+ */
 class OnboardingSecondFragment : Fragment() {
     private lateinit var onboardingInteractor: OnboardingInteractor
 

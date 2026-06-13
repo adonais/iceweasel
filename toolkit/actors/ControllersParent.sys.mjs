@@ -28,7 +28,7 @@ export class ControllersParent extends JSWindowActorParent {
       this.supportedCommands[command] = false;
     }
 
-    this.browser?.ownerGlobal.updateCommands(aAction);
+    this.browser?.documentGlobal.updateCommands(aAction);
   }
 
   isCommandEnabled(aCommand) {

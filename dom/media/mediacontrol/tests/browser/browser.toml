@@ -1,6 +1,9 @@
 [DEFAULT]
 subsuite = "media-bc"
 tags = "mediacontrol"
+skip-if = [
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && debug", # Bug 2034604 - GMP async shutdown crash
+]
 support-files = [
   "file_autoplay.html",
   "file_audio_and_inaudible_media.html",
@@ -14,6 +17,8 @@ support-files = [
   "file_non_autoplay.html",
   "file_non_eligible_media.html",
   "file_non_looping_media.html",
+  "file_web_audio.html",
+  "file_web_speech.html",
   "head.js",
   "../../../test/gizmo.mp4",
   "../../../test/gizmo-noaudio.webm",
@@ -21,6 +26,8 @@ support-files = [
   "!/toolkit/components/pictureinpicture/tests/head.js",
   "../../../../../toolkit/content/tests/browser/silentAudioTrack.webm",
 ]
+
+["browser_audiblechange_event.js"]
 
 ["browser_audio_focus_management.js"]
 skip-if = [
@@ -89,3 +96,5 @@ skip-if = [
 ["browser_stop_control_after_media_reaches_to_end.js"]
 
 ["browser_suspend_inactive_tab.js"]
+
+["browser_uncontrollable_audio_focus.js"]

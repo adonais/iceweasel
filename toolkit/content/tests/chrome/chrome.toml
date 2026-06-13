@@ -146,6 +146,8 @@ skip-if = [
 
 ["test_button.xhtml"]
 
+["test_checkbox.xhtml"]
+
 ["test_closemenu_attribute.xhtml"]
 
 ["test_contextmenu_list.xhtml"]
@@ -233,6 +235,9 @@ skip-if = [
 ["test_menuitem_commands.xhtml"]
 
 ["test_menulist.xhtml"]
+skip-if = [
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 2034604
+]
 
 ["test_menulist_in_popup.xhtml"]
 
@@ -337,6 +342,8 @@ support-files = ["window_preferences_onsyncfrompreference.xhtml"]
 ["test_richlistbox.xhtml"]
 
 ["test_screenPersistence.xhtml"]
+
+["test_scroll_offsets.html"]
 
 ["test_showcaret.xhtml"]
 

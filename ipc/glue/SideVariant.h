@@ -5,7 +5,6 @@
 #ifndef mozilla_ipc_SidedVariant_h
 #define mozilla_ipc_SidedVariant_h
 
-#include <variant>
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/ipc/ProtocolUtils.h"

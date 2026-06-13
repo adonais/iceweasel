@@ -188,8 +188,10 @@ NS_IMETHODIMP nsDocumentOpenInfo::OnStartRequest(nsIRequest* request) {
 
   NS_ENSURE_SUCCESS(rv, rv);
 
-  if (m_targetStreamListener)
-    rv = m_targetStreamListener->OnStartRequest(request);
+  if (nsCOMPtr<nsIStreamListener> targetStreamListener =
+          m_targetStreamListener) {
+    rv = targetStreamListener->OnStartRequest(request);
+  }
 
   LOG(("  OnStartRequest returning: 0x%08" PRIX32, static_cast<uint32_t>(rv)));
 
@@ -222,9 +224,11 @@ nsDocumentOpenInfo::OnDataAvailable(nsIRequest* request, nsIInputStream* inStr,
   mReceivedData = true;
   nsresult rv = NS_OK;
 
-  if (m_targetStreamListener)
-    rv = m_targetStreamListener->OnDataAvailable(request, inStr, sourceOffset,
-                                                 count);
+  if (nsCOMPtr<nsIStreamListener> targetStreamListener =
+          m_targetStreamListener) {
+    rv = targetStreamListener->OnDataAvailable(request, inStr, sourceOffset,
+                                               count);
+  }
   return rv;
 }
 

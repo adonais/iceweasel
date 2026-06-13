@@ -29,6 +29,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -44,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import mozilla.components.browser.state.state.createTab
 import mozilla.components.compose.base.annotation.FlexibleWindowPreview
 import org.mozilla.fenix.R
+import org.mozilla.fenix.tabstray.TabsTrayTestTag
 import org.mozilla.fenix.tabstray.data.TabGroupTheme
 import org.mozilla.fenix.tabstray.data.TabsTrayItem
 import org.mozilla.fenix.theme.FirefoxTheme
@@ -83,7 +85,9 @@ private fun AddToTabGroupContent(
     onAddToExistingTabGroup: (TabsTrayItem.TabGroup) -> Unit,
 ) {
     Column(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag(TabsTrayTestTag.ADD_TO_TAB_GROUP_ROOT),
     ) {
         Text(
             text = stringResource(R.string.add_to_tab_group_title),
@@ -99,8 +103,6 @@ private fun AddToTabGroupContent(
         LazyColumn(
             modifier = Modifier.fillMaxWidth(),
             contentPadding = PaddingValues(
-                start = FirefoxTheme.layout.space.dynamic200,
-                end = FirefoxTheme.layout.space.dynamic200,
                 bottom = 12.dp,
             ),
             verticalArrangement = Arrangement.spacedBy(FirefoxTheme.layout.space.static200),
@@ -136,7 +138,9 @@ private fun NewTabGroupContent(
     )
     Row(
         modifier = modifier
+            .testTag(TabsTrayTestTag.ADD_TO_NEW_TAB_GROUP)
             .defaultMinSize(minHeight = NEW_TAB_GROUP_COMPONENT_HEIGHT)
+            .padding(horizontal = FirefoxTheme.layout.space.dynamic200)
             .semantics(mergeDescendants = true) {
                 contentDescription = newTabGroupContentDescription
                 role = Role.Button

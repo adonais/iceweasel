@@ -58,6 +58,17 @@ const ValidResourceTypes = [
   "other",
 ];
 
+const ValidMetaViewportProps = [
+  "height",
+  "initial-scale",
+  "interactive-widget",
+  "maximum-scale",
+  "minimum-scale",
+  "user-scalable",
+  "viewport-fit",
+  "width",
+];
+
 function addon_url(path) {
   const uuid = WebExtensionPolicy.getByID(
     "webcompat@mozilla.org"
@@ -85,6 +96,64 @@ function check_valid_array(a, key, id) {
   const valid = Array.isArray(a);
   ok(valid, `if defined, ${key} is an array for id ${id}`);
   return valid;
+}
+
+function check_special_content_script_info(source, name, valuesKey, id) {
+  if (!(name in source)) {
+    return [];
+  }
+  let value = source[name];
+  ok(
+    typeof value == "object" && value !== null,
+    `${name} is a non-null object for id ${id}`
+  );
+  if (valuesKey in value) {
+    for (const prop of Object.keys(value)) {
+      ok(
+        ["all_frames", "match_origin_as_fallback", valuesKey].includes(prop),
+        `${prop} is an expected key for ${name} in id ${id}`
+      );
+    }
+    for (const prop of ["all_frames", "match_origin_as_fallback"]) {
+      ok(
+        !(prop in value) || value[prop] === true,
+        `${prop} is true or omitted for ${name} in id ${id}`
+      );
+    }
+    value = value[valuesKey];
+  }
+  return Array.isArray(value) ? value : [value];
+}
+
+function is_non_null_object(value, key, id) {
+  const passes = typeof value == "object" && value !== null;
+  ok(
+    passes,
+    `${JSON.stringify(value)} is a non-null object in ${key} for id ${id}`
+  );
+  return passes;
+}
+
+function is_non_empty_string(value, key, id) {
+  const passes = typeof value == "string" && value.trim().length;
+  ok(
+    passes,
+    `${JSON.stringify(value)} is a non-empty string in ${key} for id ${id}`
+  );
+  return passes;
+}
+
+function is_valid_css_selector(value, key, id) {
+  let passes = false;
+  try {
+    document.documentElement.matches(value);
+    passes = true;
+  } catch (_) {}
+  ok(
+    passes,
+    `${JSON.stringify(value)} is a non-empty string in ${key} for id ${id}`
+  );
+  return passes;
 }
 
 function validate_match_info(id, key, matches, excludes) {
@@ -228,6 +297,10 @@ add_task(async function test_json_data() {
 
     const non_custom_names = [
       "content_scripts",
+      "css",
+      "hide_alerts",
+      "hide_messages",
+      "modify_meta_viewport",
       "max_version",
       "min_version",
       "not_platforms",
@@ -278,6 +351,10 @@ add_task(async function test_json_data() {
       }
       let {
         content_scripts,
+        css,
+        hide_alerts,
+        hide_messages,
+        modify_meta_viewport,
         not_platforms,
         not_channels,
         only_channels,
@@ -345,7 +422,14 @@ add_task(async function test_json_data() {
         }
       }
       ok(
-        content_scripts || ua_string || custom_found || hasBlocks,
+        content_scripts ||
+          css ||
+          hide_alerts ||
+          hide_messages ||
+          modify_meta_viewport ||
+          ua_string ||
+          custom_found ||
+          hasBlocks,
         `Interventions or blocks are defined for id ${id}`
       );
       ok(
@@ -382,6 +466,76 @@ add_task(async function test_json_data() {
           );
         }
       }
+      for (const value of check_special_content_script_info(
+        intervention,
+        "css",
+        "which",
+        id
+      )) {
+        if (is_non_empty_string(value, "css", id)) {
+          // Note: the actual CSS in config.css is checked with mach lint in the python tests.
+          ok(config.css?.[value], `${value} is a CSS file listed on ${id}`);
+        }
+      }
+      for (const value of check_special_content_script_info(
+        intervention,
+        "hide_alerts",
+        "alerts",
+        id
+      )) {
+        is_non_empty_string(value, "hide_alerts", id);
+      }
+      for (const value of check_special_content_script_info(
+        intervention,
+        "hide_messages",
+        "messages",
+        id
+      )) {
+        if (is_non_null_object(value, "hide_messages", id)) {
+          is_non_empty_string(value.message, "message", id);
+          is_valid_css_selector(value.matches, "container", id);
+          if ("click_adjacent" in value) {
+            is_valid_css_selector(value.matches, "click_adjacent", id);
+          }
+        }
+      }
+      for (const values of check_special_content_script_info(
+        intervention,
+        "modify_meta_viewport",
+        "modify",
+        id
+      )) {
+        if (is_non_null_object(values, "modify_meta_viewport", id)) {
+          for (const [key, info] of Object.entries(values)) {
+            ok(
+              ValidMetaViewportProps.includes(key),
+              `${key} is a valid meta viewport content attribute in ${id}`
+            );
+            if (info === null) {
+              ok(
+                true,
+                `null is a valid value for deleting a meta viewport content attribute in ${id}`
+              );
+            } else if (typeof info == "string") {
+              ok(
+                ValidMetaViewportProps.includes(info),
+                `${info} is a valid meta viewport content attribute in ${id}`
+              );
+            } else if (is_non_null_object(info, "modify_meta_viewport", id)) {
+              is_non_empty_string(info.value, "value", id);
+              for (const flag of ["only_if_equals", "only_if_not_equals"]) {
+                if (flag in info) {
+                  is_non_empty_string(
+                    info[flag],
+                    "modify_meta_viewport content attribute value",
+                    id
+                  );
+                }
+              }
+            }
+          }
+        }
+      }
       if (content_scripts) {
         if ("all_frames" in content_scripts) {
           const all = content_scripts.all_frames;
@@ -411,6 +565,17 @@ add_task(async function test_json_data() {
             continue;
           }
           for (let path of paths) {
+            for (let special of [
+              "hide_alerts.js",
+              "hide_messages.js",
+              "modify_meta_viewport.js",
+              "log_console_message.js",
+            ]) {
+              ok(
+                !path.includes(special),
+                `${special} is not manually listed in content_scripts for id ${id}`
+              );
+            }
             if (!path.includes("/")) {
               path = `injections/${type}/${path}`;
             }

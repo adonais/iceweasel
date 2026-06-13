@@ -9,7 +9,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
 import androidx.navigation.NavController
-import androidx.navigation.NavDirections
 import io.mockk.Runs
 import io.mockk.every
 import io.mockk.just
@@ -39,7 +38,6 @@ import mozilla.components.support.test.robolectric.testContext
 import mozilla.telemetry.glean.testing.GleanTestRule
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -77,6 +75,8 @@ import org.mozilla.fenix.telemetry.ACTION_SEARCH_ENGINE_SELECTED
 import org.mozilla.fenix.telemetry.SOURCE_ADDRESS_BAR
 import org.mozilla.fenix.utils.Settings
 import org.robolectric.RobolectricTestRunner
+import kotlin.test.assertIs
+import kotlin.test.assertNotNull
 import org.mozilla.fenix.components.appstate.search.SearchState as AppSearchState
 
 @RunWith(RobolectricTestRunner::class)
@@ -111,7 +111,7 @@ class FenixSearchMiddlewareTest {
 
         assertNotNull(store.state.defaultEngine)
         assertEquals("Engine B", store.state.defaultEngine!!.name)
-        assertTrue(store.state.searchEngineSource is SearchEngineSource.Default)
+        assertIs<SearchEngineSource.Default>(store.state.searchEngineSource)
         assertNotNull(store.state.searchEngineSource.searchEngine)
         assertEquals("Engine B", store.state.searchEngineSource.searchEngine!!.name)
     }
@@ -656,7 +656,7 @@ class FenixSearchMiddlewareTest {
     ) {
         val values = Toolbar.buttonTapped.testGetValue()
         assertNotNull(values)
-        val last = values!!.last()
+        val last = values.last()
         assertEquals(ACTION_SEARCH_ENGINE_SELECTED, last.extra?.get("item"))
         assertEquals(SOURCE_ADDRESS_BAR, last.extra?.get("source"))
         assertEquals(extra, last.extra?.get("extra"))

@@ -12,6 +12,7 @@ import mozilla.components.service.nimbus.messaging.Message
 import mozilla.components.service.nimbus.messaging.MessageData
 import mozilla.components.service.nimbus.messaging.NimbusMessagingControllerInterface
 import mozilla.components.support.test.robolectric.testContext
+import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -31,7 +32,8 @@ class DefaultMessageControllerTest {
     private val messagingController: NimbusMessagingControllerInterface = mockk(relaxed = true)
     private lateinit var defaultMessageController: DefaultMessageController
     private val appStore: AppStore = mockk(relaxed = true)
-    private val processIntent: (Intent?) -> Unit = mockk(relaxed = true)
+    private val processIntentCalls = mutableListOf<Intent?>()
+    private val processIntent: (Intent?) -> Unit = { processIntentCalls.add(it) }
 
     @Before
     fun setup() {
@@ -50,7 +52,7 @@ class DefaultMessageControllerTest {
         defaultMessageController.onMessagePressed(message)
 
         verify { messagingController.getIntentForMessage(message) }
-        verify { processIntent(any()) }
+        assertEquals(1, processIntentCalls.size)
         verify { appStore.dispatch(MessageClicked(message)) }
     }
 

@@ -14,7 +14,6 @@ import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
@@ -61,7 +60,8 @@ import java.nio.charset.Charset
 import java.util.Date
 import java.util.UUID
 import java.util.concurrent.CancellationException
-import kotlin.collections.HashMap
+import kotlin.test.assertIs
+import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 @MediumTest
@@ -1783,9 +1783,8 @@ class WebExtensionTest : BaseSessionTest() {
                 // We should not be able to install the extension.
                 assertTrue(false)
             }, { exception ->
-                assertTrue(exception is WebExtension.InstallException)
-                val installException = exception as WebExtension.InstallException
-                assertEquals(installException.code, WebExtension.InstallException.ErrorCodes.ERROR_USER_CANCELED)
+                assertIs<InstallException>(exception)
+                assertEquals(InstallException.ErrorCodes.ERROR_USER_CANCELED, exception.code)
             }),
         )
 
@@ -3770,9 +3769,8 @@ class WebExtensionTest : BaseSessionTest() {
                 // We should not be able to update the extension.
                 assertTrue(false)
             }, { exception ->
-                assertTrue(exception is WebExtension.InstallException)
-                val installException = exception as WebExtension.InstallException
-                assertEquals(installException.code, WebExtension.InstallException.ErrorCodes.ERROR_USER_CANCELED)
+                assertIs<InstallException>(exception)
+                assertEquals(InstallException.ErrorCodes.ERROR_USER_CANCELED, exception.code)
             }),
         )
 
@@ -3889,9 +3887,8 @@ class WebExtensionTest : BaseSessionTest() {
                 // We should not be able to update the extension.
                 assertTrue(false)
             }, { exception ->
-                assertTrue(exception is WebExtension.InstallException)
-                val installException = exception as WebExtension.InstallException
-                assertEquals(installException.code, WebExtension.InstallException.ErrorCodes.ERROR_POSTPONED)
+                assertIs<InstallException>(exception)
+                assertEquals(InstallException.ErrorCodes.ERROR_POSTPONED, exception.code)
             }),
         )
 

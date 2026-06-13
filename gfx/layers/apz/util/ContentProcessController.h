@@ -34,6 +34,8 @@ struct DoubleTapToZoomMetrics;
  */
 class ContentProcessController final : public GeckoContentController {
  public:
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(ContentProcessController, final);
+
   explicit ContentProcessController(const RefPtr<dom::BrowserChild>& aBrowser);
 
   // GeckoContentController
@@ -83,6 +85,8 @@ class ContentProcessController final : public GeckoContentController {
   PresShell* GetTopLevelPresShell() const override;
 
  private:
+  virtual ~ContentProcessController() = default;
+
   RefPtr<dom::BrowserChild> mBrowser;
 };
 

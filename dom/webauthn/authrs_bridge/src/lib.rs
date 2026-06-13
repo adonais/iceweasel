@@ -1679,7 +1679,9 @@ impl AuthrsService {
 }
 
 #[no_mangle]
-pub extern "C" fn authrs_service_constructor(result: *mut *const nsIWebAuthnService) -> nsresult {
+pub unsafe extern "C" fn authrs_service_constructor(
+    result: *mut *const nsIWebAuthnService,
+) -> nsresult {
     let wrapper = AuthrsService::allocate(InitAuthrsService {
         usb_token_manager: Mutex::new(StateMachine::new()),
         test_token_manager: TestTokenManager::new(),
@@ -1726,7 +1728,7 @@ pub extern "C" fn authrs_service_constructor(result: *mut *const nsIWebAuthnServ
 }
 
 #[no_mangle]
-pub extern "C" fn authrs_webauthn_att_obj_constructor(
+pub unsafe extern "C" fn authrs_webauthn_att_obj_constructor(
     att_obj_bytes: &ThinVec<u8>,
     anonymize: bool,
     result: *mut *const nsIWebAuthnAttObj,

@@ -124,9 +124,11 @@ class TestDefaultLauncherVisible(MarionetteTestCase):
         self.marionette.set_context("chrome")
         self.wait_for_sidebar_initialized()
 
-        self.assertTrue(
-            self.is_button_visible(),
-            "Sidebar button should be visible",
+        # The sidebar-button is placed and rendered by CustomizableUI, which is
+        # independent of the sidebar's initialization path. Just wait for it to show up.
+        Wait(self.marionette).until(
+            lambda _: self.is_button_visible(),
+            message="Sidebar button should be visible",
         )
 
         self.assertFalse(
@@ -172,7 +174,10 @@ class TestDefaultLauncherVisible(MarionetteTestCase):
 
         # Navigate to about:preferences and enable the new sidebar
         self.marionette.set_context("content")
-        self.marionette.navigate("about:preferences")
+        srd_enabled = self.marionette.get_pref("browser.settings-redesign.enabled")
+        self.marionette.navigate(
+            "about:preferences#tabsBrowsing" if srd_enabled else "about:preferences"
+        )
 
         self.marionette.execute_script(
             """

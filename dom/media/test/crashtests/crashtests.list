@@ -183,6 +183,7 @@ load 1864450.html
 load 1872787.html
 load small-timebase.html
 load vp9cake_corrupt.webm
+load vpx_alpha_mismatch.webm
 load 1903669.html
 load 1905234.html
 load 1905231.webm
@@ -217,4 +218,5 @@ skip-if(!winWidget) pref(media.hevc.enabled,true) load 1859400.html
 load 1603271.html
 load 1536243.html
 load 2027160.html
+load 2035081.html
 pref(media.autoplay.default,0) load bug2032944.html

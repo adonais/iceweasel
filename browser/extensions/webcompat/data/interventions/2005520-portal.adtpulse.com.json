@@ -6,12 +6,13 @@
       "matches": ["*://portal.adtpulse.com/*"]
     }
   },
+  "css": {
+    "hide_browser_notice": "#unsupported_warning_row { display: none; }"
+  },
   "interventions": [
     {
       "platforms": ["all"],
-      "content_scripts": {
-        "css": ["bug2005520-portal.adtpulse.com-hide-unsupported.css"]
-      }
+      "css": ["hide_browser_notice"]
     }
   ]
 }

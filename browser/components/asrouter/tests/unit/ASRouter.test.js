@@ -102,6 +102,7 @@ describe("ASRouter", () => {
       updateAdminState: sandbox.stub().resolves(),
       dispatchCFRAction: sandbox.stub().resolves(),
     };
+    MessageLoaderUtils._recordedReachIds = new Set();
     sandbox.stub(router, "loadMessagesFromAllProviders").callThrough();
     return router.init(initParams);
   }
@@ -195,7 +196,7 @@ describe("ASRouter", () => {
     gBrowser = {
       selectedBrowser: {
         constructor: { name: "MozBrowser" },
-        get ownerGlobal() {
+        get documentGlobal() {
           return { gBrowser };
         },
       },
@@ -253,12 +254,16 @@ describe("ASRouter", () => {
       "fxms-message-15",
     ].reduce((features, featureId) => {
       features[featureId] = {
-        getEnrollmentMetadata: sandbox.stub().returns({
-          slug: "experiment-slug",
-          branch: "experiment-branch-slug",
-          isRollout: false,
-        }),
-        getAllVariables: sandbox.stub().returns(undefined),
+        getAllEnrollments: sandbox.stub().returns([
+          {
+            meta: {
+              slug: "experiment-slug",
+              branch: "experiment-branch-slug",
+              isRollout: false,
+            },
+            value: undefined,
+          },
+        ]),
         recordExposureEvent: sandbox.stub(),
       };
       return features;
@@ -1730,18 +1735,20 @@ describe("ASRouter", () => {
     beforeEach(() => {
       let getAllBranchesStub = sandbox.stub();
       featureIds.forEach(feature => {
-        global.NimbusFeatures[feature].getAllVariables.returns({
-          id: `message-${feature}`,
-        });
-        global.NimbusFeatures[feature].getEnrollmentMetadata.returns({
-          slug: `slug-${feature}`,
-          branch: `branch-${feature}`,
-          isRollout: false,
-        });
+        global.NimbusFeatures[feature].getAllEnrollments.returns([
+          {
+            meta: {
+              slug: `slug-${feature}`,
+              branch: `branch-${feature}`,
+              isRollout: false,
+            },
+            value: { id: `message-${feature}`, recordReach: true },
+          },
+        ]);
         getAllBranchesStub.withArgs(`slug-${feature}`).resolves([
           {
             slug: `other-branch-${feature}`,
-            [feature]: { value: { trigger: "unit-test" } },
+            [feature]: { value: { trigger: "unit-test", recordReach: true } },
           },
         ]);
       });
@@ -1753,7 +1760,7 @@ describe("ASRouter", () => {
     afterEach(() => {
       sandbox.restore();
     });
-    it("should tag `forReachEvent` for all the expected message types", async () => {
+    it("should tag `_reachId` for all the expected message types", async () => {
       // This should match the `providers.messaging-experiments`
       let response = await MessageLoaderUtils.loadMessagesForProvider({
         type: "remote-experiments",
@@ -1764,7 +1771,7 @@ describe("ASRouter", () => {
       assert.property(response, "messages");
       assert.lengthOf(response.messages, featureIds.length * 2);
       assert.lengthOf(
-        response.messages.filter(m => m.forReachEvent),
+        response.messages.filter(m => m._reachId),
         featureIds.length
       );
     });
@@ -1832,9 +1839,9 @@ describe("ASRouter", () => {
         id: "firstRun",
       });
 
-      assert.calledTwice(start);
+      assert.calledOnce(start);
       assert.calledWithExactly(start);
-      assert.calledTwice(stopAndAccumulate);
+      assert.calledOnce(stopAndAccumulate);
       assert.calledWithExactly(stopAndAccumulate, fakeTimerId);
     });
     it("should have previousSessionEnd in the message context", () => {
@@ -1848,9 +1855,11 @@ describe("ASRouter", () => {
       let messages = [
         {
           id: "foo1",
-          forReachEvent: { sent: false, group: "cfr" },
-          experimentSlug: "exp01",
-          branchSlug: "branch01",
+          recordReach: true,
+          _reachId: "foo1",
+          _nimbusFeature: "cfr",
+          _nimbusSlug: "exp01",
+          _branchSlug: "branch01",
           template: "simple_template",
           trigger: { id: "foo" },
           content: { title: "Foo1", body: "Foo123-1" },
@@ -1864,9 +1873,11 @@ describe("ASRouter", () => {
         },
         {
           id: "foo3",
-          forReachEvent: { sent: false, group: "cfr" },
-          experimentSlug: "exp02",
-          branchSlug: "branch02",
+          recordReach: true,
+          _reachId: "foo3",
+          _nimbusFeature: "cfr",
+          _nimbusSlug: "exp02",
+          _branchSlug: "branch02",
           template: "simple_template",
           trigger: { id: "foo" },
           content: { title: "Foo1", body: "Foo123-1" },
@@ -1886,14 +1897,17 @@ describe("ASRouter", () => {
       let messages = [
         {
           id: "foo1",
-          forReachEvent: { sent: true, group: "cfr" },
-          experimentSlug: "exp01",
-          branchSlug: "branch01",
+          recordReach: true,
+          _reachId: "foo1",
+          _nimbusFeature: "cfr",
+          _nimbusSlug: "exp01",
+          _branchSlug: "branch01",
           template: "simple_template",
           trigger: { id: "foo" },
           content: { title: "Foo1", body: "Foo123-1" },
         },
       ];
+      MessageLoaderUtils._recordedReachIds.add("foo1");
       sandbox.stub(Router, "handleMessageRequest").resolves(messages);
       sandbox.spy(Glean.messagingExperiments.reachCfr, "record");
 
@@ -1944,21 +1958,19 @@ describe("ASRouter", () => {
     it("should send Exposure and route messages if recording reach fails", async () => {
       const template = "feature_callout";
       const featureId = "fxms-message-15";
-      const featureIdReachGroup = "FxmsMessage15";
+      const invalidFeatureIdForReach = "FxmsMessage15";
       let messages = [
         {
-          _nimbusFeature: [featureId], // from _experimentsAPILoader
-          forReachEvent: {
-            sent: false,
-            group: featureIdReachGroup,
-          },
+          _nimbusFeature: invalidFeatureIdForReach,
+          recordReach: true,
+          _reachId: "foo1",
           id: "foo1",
           template,
           trigger: { id: "fakeTrigger" },
           content: { title: "Foo1", body: "Foo123-1" },
         },
         {
-          _nimbusFeature: [featureId], // from _experimentsAPILoader
+          _nimbusFeature: featureId,
           id: "foo2",
           template,
           trigger: { id: "fakeTrigger" },
@@ -1969,17 +1981,14 @@ describe("ASRouter", () => {
       sandbox.spy(Router, "routeCFRMessage");
       sandbox
         .stub(
-          Glean.messagingExperiments[`reach${featureIdReachGroup}`],
+          Glean.messagingExperiments[`reach${invalidFeatureIdForReach}`],
           "record"
         )
         .throws(new Error("stuff"));
       assert.notCalled(global.NimbusFeatures[featureId].recordExposureEvent);
 
       await Router.sendTriggerMessage(
-        {
-          browser: {},
-          id: "foo",
-        },
+        { browser: {}, id: "fakeTrigger" },
         true // skipMessagesLoaded to avoid irrelevant calls spy/stub calls
       );
 
@@ -2435,15 +2444,6 @@ describe("ASRouter", () => {
   });
 
   describe("#_onLocaleChanged", () => {
-    it("should call _maybeUpdateL10nAttachment in the handler", async () => {
-      sandbox.spy(Router, "_maybeUpdateL10nAttachment");
-      await Router._onLocaleChanged();
-
-      assert.calledOnce(Router._maybeUpdateL10nAttachment);
-    });
-  });
-
-  describe("#_maybeUpdateL10nAttachment", () => {
     it("should update the l10n attachment if the locale was changed", async () => {
       const getter = sandbox.stub();
       getter.onFirstCall().returns("en-US");
@@ -2459,7 +2459,7 @@ describe("ASRouter", () => {
       sandbox.spy(Router, "setState");
       Router.loadMessagesFromAllProviders.resetHistory();
 
-      await Router._maybeUpdateL10nAttachment();
+      await Router._onLocaleChanged();
 
       assert.calledWith(Router.setState, {
         localeInUse: "fr",
@@ -2490,7 +2490,7 @@ describe("ASRouter", () => {
       Router.loadMessagesFromAllProviders.resetHistory();
       sandbox.spy(Router, "setState");
 
-      await Router._maybeUpdateL10nAttachment();
+      await Router._onLocaleChanged();
 
       assert.notCalled(Router.setState);
       assert.notCalled(Router.loadMessagesFromAllProviders);
@@ -2667,8 +2667,7 @@ describe("ASRouter", () => {
 
       await MessageLoaderUtils.loadMessagesForProvider(args);
 
-      assert.calledOnce(global.NimbusFeatures.spotlight.getEnrollmentMetadata);
-      assert.calledOnce(global.NimbusFeatures.spotlight.getAllVariables);
+      assert.calledOnce(global.NimbusFeatures.spotlight.getAllEnrollments);
     });
     it("should handle the case of no experiments in the ExperimentAPI", async () => {
       const args = {
@@ -2696,14 +2695,16 @@ describe("ASRouter", () => {
         },
       };
 
-      global.NimbusFeatures.infobar.getAllVariables.returns(
-        enrollment.branch.infobar.value
-      );
-      global.NimbusFeatures.infobar.getEnrollmentMetadata.returns({
-        slug: enrollment.slug,
-        branch: enrollment.branch.slug,
-        isRollout: false,
-      });
+      global.NimbusFeatures.infobar.getAllEnrollments.returns([
+        {
+          meta: {
+            slug: enrollment.slug,
+            branch: enrollment.branch.slug,
+            isRollout: false,
+          },
+          value: enrollment.branch.infobar.value,
+        },
+      ]);
       global.ExperimentAPI.getAllBranches.returns([
         enrollment.branch,
         {
@@ -2719,19 +2720,7 @@ describe("ASRouter", () => {
 
       assert.lengthOf(result.messages, 1);
     });
-    it("should skip disabled features and not load the messages", async () => {
-      const args = {
-        type: "remote-experiments",
-        featureIds: ["cfr"],
-      };
-
-      global.NimbusFeatures.cfr.getAllVariables.returns(null);
-
-      const result = await MessageLoaderUtils.loadMessagesForProvider(args);
-
-      assert.lengthOf(result.messages, 0);
-    });
-    it("should fetch branches with trigger", async () => {
+    it("should load branches for reach", async () => {
       const args = {
         type: "remote-experiments",
         featureIds: ["cfr"],
@@ -2747,29 +2736,43 @@ describe("ASRouter", () => {
         },
       };
 
-      global.NimbusFeatures.cfr.getAllVariables.returns(
-        enrollment.branch.cfr.value
-      );
-      global.NimbusFeatures.cfr.getEnrollmentMetadata.returns({
-        slug: enrollment.slug,
-        branch: enrollment.branch.slug,
-        isRollout: false,
-      });
+      global.NimbusFeatures.cfr.getAllEnrollments.returns([
+        {
+          meta: {
+            slug: enrollment.slug,
+            branch: enrollment.branch.slug,
+            isRollout: false,
+          },
+          value: enrollment.branch.cfr.value,
+        },
+      ]);
       global.ExperimentAPI.getAllBranches.resolves([
         enrollment.branch,
         {
           slug: "branch02",
           cfr: {
             featureId: "cfr",
-            value: { id: "id02", trigger: { id: "openURL" } },
+            value: {
+              id: "id02",
+              trigger: { id: "openURL" },
+              recordReach: true,
+            },
           },
         },
         {
-          // This branch should not be loaded as it doesn't have the trigger
+          // This branch should not be loaded as it doesn't have a trigger
           slug: "branch03",
           cfr: {
             featureId: "cfr",
-            value: { id: "id03" },
+            value: { id: "id03", recordReach: true },
+          },
+        },
+        {
+          // This branch should not be loaded as it doesn't have recordReach
+          slug: "branch03",
+          cfr: {
+            featureId: "cfr",
+            value: { id: "id04" },
           },
         },
       ]);
@@ -2779,68 +2782,9 @@ describe("ASRouter", () => {
       assert.equal(result.messages.length, 2);
       assert.equal(result.messages[0].id, "id01");
       assert.equal(result.messages[1].id, "id02");
-      assert.equal(result.messages[1].experimentSlug, "exp01");
-      assert.equal(result.messages[1].branchSlug, "branch02");
-      assert.deepEqual(result.messages[1].forReachEvent, {
-        sent: false,
-        group: "cfr",
-      });
-    });
-    it("should fetch branches with trigger even if enrolled branch is disabled", async () => {
-      const args = {
-        type: "remote-experiments",
-        featureIds: ["cfr"],
-      };
-      const enrollment = {
-        slug: "exp01",
-        branch: {
-          slug: "branch01",
-          cfr: {
-            featureId: "cfr",
-            value: {},
-          },
-        },
-      };
-
-      // Needs to match the `featureIds` value to return an enrollment
-      // for that feature
-      global.NimbusFeatures.cfr.getAllVariables.returns(
-        enrollment.branch.cfr.value
-      );
-      global.NimbusFeatures.cfr.getEnrollmentMetadata.returns({
-        slug: enrollment.slug,
-        branch: enrollment.branch.slug,
-        isRollout: false,
-      });
-      global.ExperimentAPI.getAllBranches.resolves([
-        enrollment.branch,
-        {
-          slug: "branch02",
-          cfr: {
-            featureId: "cfr",
-            value: { id: "id02", trigger: { id: "openURL" } },
-          },
-        },
-        {
-          // This branch should not be loaded as it doesn't have the trigger
-          slug: "branch03",
-          cfr: {
-            featureId: "cfr",
-            value: { id: "id03" },
-          },
-        },
-      ]);
-
-      const result = await MessageLoaderUtils.loadMessagesForProvider(args);
-
-      assert.equal(result.messages.length, 1);
-      assert.equal(result.messages[0].id, "id02");
-      assert.equal(result.messages[0].experimentSlug, "exp01");
-      assert.equal(result.messages[0].branchSlug, "branch02");
-      assert.deepEqual(result.messages[0].forReachEvent, {
-        sent: false,
-        group: "cfr",
-      });
+      assert.equal(result.messages[1]._nimbusSlug, "exp01");
+      assert.equal(result.messages[1]._branchSlug, "branch02");
+      assert.equal(result.messages[1]._nimbusFeature, "cfr");
     });
   });
   describe("#_remoteSettingsLoader", () => {

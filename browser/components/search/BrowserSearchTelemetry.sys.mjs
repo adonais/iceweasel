@@ -79,7 +79,7 @@ class BrowserSearchTelemetryHandler {
    */
   shouldRecordSearchCount(browser) {
     return (
-      !lazy.PrivateBrowsingUtils.isWindowPrivate(browser.ownerGlobal) ||
+      !lazy.PrivateBrowsingUtils.isWindowPrivate(browser.documentGlobal) ||
       !Services.prefs.getBoolPref("browser.engagement.search_counts.pbm", false)
     );
   }

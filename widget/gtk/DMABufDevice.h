@@ -8,7 +8,6 @@
 #include "mozilla/StaticMutex.h"
 #include "mozilla/widget/DMABufFormats.h"
 #include <gbm.h>
-#include <mutex>
 
 #undef LOGDMABUF
 #ifdef MOZ_LOGGING

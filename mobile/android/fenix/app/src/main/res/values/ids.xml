@@ -5,4 +5,5 @@
 <resources>
     <item name="navigation_bar" type="id"/>
     <item name="composable_toolbar" type="id"/>
+    <item name="toolbar" type="id"/>
 </resources>

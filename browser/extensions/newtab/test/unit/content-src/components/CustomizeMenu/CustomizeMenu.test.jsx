@@ -251,6 +251,42 @@ describe("<CustomizeMenu>", () => {
     assert.calledOnce(mockClose);
   });
 
+  it("calls toggleWidgetsManagementPanel when onExited is called and widgets panel is open", () => {
+    const toggleWidgetsManagementPanel = sandbox.stub();
+    wrapper = mount(
+      <WrapWithProvider>
+        <CustomizeMenu
+          {...DEFAULT_PROPS}
+          showWidgetsManagementPanel={true}
+          toggleWidgetsManagementPanel={toggleWidgetsManagementPanel}
+        />
+      </WrapWithProvider>
+    );
+    const instance = wrapper.find("_CustomizeMenu").instance();
+    instance.dialogRef.current = { open: false };
+    instance.personalizeButtonRef.current = { focus: sandbox.stub() };
+    instance.onExited();
+    assert.calledOnce(toggleWidgetsManagementPanel);
+  });
+
+  it("calls toggleSectionsMgmtPanel when onExited is called and sections panel is open", () => {
+    const toggleSectionsMgmtPanel = sandbox.stub();
+    wrapper = mount(
+      <WrapWithProvider>
+        <CustomizeMenu
+          {...DEFAULT_PROPS}
+          showSectionsMgmtPanel={true}
+          toggleSectionsMgmtPanel={toggleSectionsMgmtPanel}
+        />
+      </WrapWithProvider>
+    );
+    const instance = wrapper.find("_CustomizeMenu").instance();
+    instance.dialogRef.current = { open: false };
+    instance.personalizeButtonRef.current = { focus: sandbox.stub() };
+    instance.onExited();
+    assert.calledOnce(toggleSectionsMgmtPanel);
+  });
+
   it("adds subpanel-open class to customize-menu-content when onSubpanelToggle is called", () => {
     wrapper = mount(
       <WrapWithProvider>

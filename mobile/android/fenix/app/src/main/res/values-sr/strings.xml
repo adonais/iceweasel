@@ -620,7 +620,7 @@
   <!-- Set to default browser onboarding redesign body. -->
   <string name="onboarding_redesign_set_default_browser_body" tools:ignore="UnusedResources">Један додир помаже у спречавању компанија да шпијунирају ваше кликове.</string>
   <!-- Sync onboarding redesign title. 'Firefox' is intentionally hardcoded. -->
-  <string name="onboarding_redesign_sync_title" tools:ignore="BrandUsage,UnusedResources">Усагласите свуда где користите Firefox</string>
+  <string name="onboarding_redesign_sync_title" tools:ignore="BrandUsage,UnusedResources">Ускладите свуда где користите Firefox</string>
   <!-- Sync onboarding redesign body. -->
   <string name="onboarding_redesign_sync_body" tools:ignore="UnusedResources">Преузмите обележиваче, језичке и лозинке на било ком уређају. Све је заштићено шифровањем.</string>
   <!-- Sync onboarding redesign positive button text. -->
@@ -980,7 +980,7 @@
   <!-- Preference for settings related to visual options -->
   <string name="preferences_customize">Прилагоди</string>
   <!-- Preference description shown in the banner prompting the user to sign in for sync features -->
-  <string name="preferences_sign_in_description">Усагласите језичке, обележиваче, лозинке и још много тога.</string>
+  <string name="preferences_sign_in_description">Ускладите језичке, обележиваче, лозинке и још много тога.</string>
   <!-- Preference shown instead of account display name while account profile information isn't available yet. -->
   <string name="preferences_account_default_name_2">Mozilla налог</string>
   <!-- Preference text for account title when there was an error syncing FxA -->

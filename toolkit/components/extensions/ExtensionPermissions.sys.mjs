@@ -11,6 +11,7 @@ const lazy = XPCOMUtils.declareLazy({
   AddonManager: "resource://gre/modules/AddonManager.sys.mjs",
   AddonManagerPrivate: "resource://gre/modules/AddonManager.sys.mjs",
   Extension: "resource://gre/modules/Extension.sys.mjs",
+  ExtensionCommon: "resource://gre/modules/ExtensionCommon.sys.mjs",
   ExtensionParent: "resource://gre/modules/ExtensionParent.sys.mjs",
   FileUtils: "resource://gre/modules/FileUtils.sys.mjs",
   JSONFile: "resource://gre/modules/JSONFile.sys.mjs",
@@ -1005,6 +1006,36 @@ export var QuarantinedDomains = {
   },
 };
 QuarantinedDomains._init();
+
+/**
+ * Set enterprise-managed guards for all extensions.
+ * Accepts a map of extension IDs to a GuardDescriptor.
+ * Use "*" for a default guard applied to all other extensions.
+ * Caller is responsible for providing valid match patterns.
+ *
+ * @typedef {object} GuardDescriptor
+ * @property {string[]} runtime_blocked_hosts
+ *   Match-pattern strings for URLs to deny access to.
+ * @property {string[]} runtime_allowed_hosts
+ *   Match patterns to carve out as exceptions from `runtime_blocked_hosts`.
+ *
+ * @param {{[key: string]: GuardDescriptor}} policyJson
+ */
+export function setEnterpriseGuards(policyJson) {
+  let inits = new Map();
+  for (let [key, value] of Object.entries(policyJson)) {
+    inits.set(key, {
+      deny: value.runtime_blocked_hosts,
+      except: value.runtime_allowed_hosts,
+      source: key === "*" ? "enterprise-global" : "enterprise-per-extension",
+    });
+  }
+  // Throws on malformed patterns -- validation before writing to sharedData.
+  lazy.ExtensionCommon.GuardSets.updateAll(inits);
+
+  Services.ppmm.sharedData.set("extensions/guards", inits);
+  Services.ppmm.sharedData.flush();
+}
 
 // Constants exported for testing purpose.
 export {

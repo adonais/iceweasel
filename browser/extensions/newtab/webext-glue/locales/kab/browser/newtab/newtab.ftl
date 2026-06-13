@@ -8,9 +8,13 @@
 newtab-page-title = Iccer amaynut
 newtab-settings-button =
     .title = Sagen asebter n yiccer-ik amaynut
+#  (developer note): @nova-cleanup(remove-string): Remove newtab-customize-panel-icon-button once Nova lands, will be using newtab-customize-panel-label instead
 newtab-customize-panel-icon-button =
     .title = Sagen asebter-a
+#  (developer note): @nova-cleanup(remove-string): Remove newtab-customize-panel-icon-button-label once Nova lands, will be using newtab-customize-panel-label instead
 newtab-customize-panel-icon-button-label = Sagen
+newtab-customize-panel-label =
+    .label = Sagen
 newtab-personalize-settings-icon-label =
     .title = Sagen iccer amaynut
     .aria-label = Iɣewwaren
@@ -522,18 +526,23 @@ newtab-widget-lists-label-beta =
 newtab-widget-lists-completed-list = Yemmed ({ $number })
 newtab-widget-task-list-menu-copy = Nɣel
 newtab-widget-lists-menu-edit = Ẓreg isem tabdart
+newtab-widget-lists-menu-edit2 =
+    .aria-label = Ẓreg isem tabdart
 newtab-widget-lists-menu-create = Rnu tabdart tamaynut
 newtab-widget-lists-menu-delete = Kkes tabdart-a
 newtab-widget-lists-menu-copy = Nɣel tabdart ɣer tecfawt
 newtab-widget-lists-menu-learn-more = Issin ugar
+newtab-widget-lists-button-add-item = Rnu aferdis
+newtab-widget-lists-input-add-an-item2 =
+    .placeholder = Rnu aferdis
+    .aria-label = Rnu aferdis
 newtab-widget-lists-input-add-an-item =
     .placeholder = Rnu aferdis
 newtab-widget-lists-input-menu-open-link = Ldi aseɣwen
 newtab-widget-lists-input-menu-move-up = Ali
 newtab-widget-lists-input-menu-move-down = Ader
 
-## Strings for timer productivity widget
-## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown
+## Strings introduced by the Nova redesign of the Timer widget
 
 newtab-widget-timer-mode-focus =
     .label = Focus

@@ -806,7 +806,7 @@ with Files("tests/shadow-dom/**"):
     BUG_COMPONENT = ("Core", "DOM: Core & HTML")
 
 with Files("tests/shape-detection/**"):
-    BUG_COMPONENT = ("Geckoview", "General")
+    BUG_COMPONENT = ("Core", "DOM: Core & HTML")
 
 with Files("tests/speech-api/**"):
     BUG_COMPONENT = ("Core", "Web Speech")

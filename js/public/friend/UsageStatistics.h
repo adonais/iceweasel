@@ -7,6 +7,9 @@
 #ifndef js_friend_UsageStatistics_h
 #define js_friend_UsageStatistics_h
 
+#include "mozilla/TimeStamp.h"  // mozilla::TimeDuration
+#include "mozilla/Variant.h"    // mozilla::Variant
+
 #include <stdint.h>  // uint32_t
 
 #include "jstypes.h"  // JS_PUBLIC_API
@@ -23,21 +26,21 @@ class JS_PUBLIC_API JSObject;
   _(GC_IS_COMPARTMENTAL, Boolean)               \
   _(GC_ZONE_COUNT, QuantityDistribution)        \
   _(GC_ZONES_COLLECTED, QuantityDistribution)   \
-  _(GC_MS, TimeDuration_MS)                     \
-  _(GC_BUDGET_MS_2, TimeDuration_MS)            \
+  _(GC_MS, TimeDuration)                        \
+  _(GC_BUDGET_MS_2, TimeDuration)               \
   _(GC_BUDGET_WAS_INCREASED, Boolean)           \
   _(GC_SLICE_WAS_LONG, Boolean)                 \
-  _(GC_BUDGET_OVERRUN, TimeDuration_US)         \
-  _(GC_ANIMATION_MS, TimeDuration_MS)           \
-  _(GC_MAX_PAUSE_MS_2, TimeDuration_MS)         \
-  _(GC_PREPARE_MS, TimeDuration_MS)             \
-  _(GC_MARK_MS, TimeDuration_MS)                \
-  _(GC_SWEEP_MS, TimeDuration_MS)               \
-  _(GC_COMPACT_MS, TimeDuration_MS)             \
-  _(GC_MARK_ROOTS_US, TimeDuration_US)          \
-  _(GC_MARK_GRAY_MS_2, TimeDuration_MS)         \
-  _(GC_MARK_WEAK_MS, TimeDuration_MS)           \
-  _(GC_SLICE_MS, TimeDuration_MS)               \
+  _(GC_BUDGET_OVERRUN, TimeDuration)            \
+  _(GC_ANIMATION_MS, TimeDuration)              \
+  _(GC_MAX_PAUSE_MS_2, TimeDuration)            \
+  _(GC_PREPARE_MS, TimeDuration)                \
+  _(GC_MARK_MS, TimeDuration)                   \
+  _(GC_SWEEP_MS, TimeDuration)                  \
+  _(GC_COMPACT_MS, TimeDuration)                \
+  _(GC_MARK_ROOTS_US, TimeDuration)             \
+  _(GC_MARK_GRAY_MS_2, TimeDuration)            \
+  _(GC_MARK_WEAK_MS, TimeDuration)              \
+  _(GC_SLICE_MS, TimeDuration)                  \
   _(GC_SLOW_PHASE, Enumeration)                 \
   _(GC_SLOW_TASK, Enumeration)                  \
   _(GC_MMU_50, Percentage)                      \
@@ -47,23 +50,23 @@ class JS_PUBLIC_API JSObject;
   _(GC_NON_INCREMENTAL_REASON, Enumeration)     \
   _(GC_MINOR_REASON, Enumeration)               \
   _(GC_MINOR_REASON_LONG, Enumeration)          \
-  _(GC_MINOR_US, TimeDuration_US)               \
+  _(GC_MINOR_US, TimeDuration)                  \
   _(GC_NURSERY_BYTES_2, MemoryDistribution)     \
   _(GC_PRETENURE_COUNT_2, QuantityDistribution) \
   _(GC_NURSERY_PROMOTION_RATE, Percentage)      \
   _(GC_TENURED_SURVIVAL_RATE, Percentage)       \
   _(GC_MARK_RATE_2, QuantityDistribution)       \
-  _(GC_TIME_BETWEEN_S, TimeDuration_S)          \
-  _(GC_TIME_BETWEEN_SLICES_MS, TimeDuration_MS) \
+  _(GC_TIME_BETWEEN_S, TimeDuration)            \
+  _(GC_TIME_BETWEEN_SLICES_MS, TimeDuration)    \
   _(GC_SLICE_COUNT, QuantityDistribution)       \
   _(GC_EFFECTIVENESS, MemoryDistribution)       \
   _(GC_PARALLEL_MARK, Boolean)                  \
   _(GC_PARALLEL_MARK_SPEEDUP, Integer)          \
   _(GC_PARALLEL_MARK_UTILIZATION, Percentage)   \
   _(GC_PARALLEL_MARK_INTERRUPTIONS, Integer)    \
-  _(GC_TASK_START_DELAY_US, TimeDuration_US)    \
-  _(ION_COMPILE_TIME, TimeDuration_US)          \
-  _(GC_TIME_BETWEEN_MINOR_MS, TimeDuration_MS)
+  _(GC_TASK_START_DELAY_US, TimeDuration)       \
+  _(ION_COMPILE_TIME, TimeDuration)             \
+  _(GC_TIME_BETWEEN_MINOR_MS, TimeDuration)
 
 // clang-format off
 #define ENUM_DEF(NAME, _) NAME,
@@ -74,7 +77,10 @@ enum class JSMetric {
 #undef ENUM_DEF
 // clang-format on
 
-using JSAccumulateTelemetryDataCallback = void (*)(JSMetric, uint32_t);
+using JSTelemetryData = mozilla::Variant<bool, size_t, mozilla::TimeDuration>;
+
+using JSAccumulateTelemetryDataCallback = void (*)(JSMetric,
+                                                   const JSTelemetryData&);
 
 extern JS_PUBLIC_API void JS_SetAccumulateTelemetryCallback(
     JSContext* cx, JSAccumulateTelemetryDataCallback callback);

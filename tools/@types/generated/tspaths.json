@@ -25,8 +25,17 @@
       "chrome://browser/content/aiwindow/components/ai-chat-search-button.mjs": [
         "../../../browser/components/aiwindow/ui/components/ai-chat-search-button/ai-chat-search-button.mjs"
       ],
+      "chrome://browser/content/aiwindow/components/ai-chat-table.mjs": [
+        "../../../browser/components/aiwindow/ui/components/ai-chat-table/ai-chat-table.mjs"
+      ],
       "chrome://browser/content/aiwindow/components/ai-website-chip.mjs": [
         "../../../browser/components/aiwindow/ui/components/ai-website-chip/ai-website-chip.mjs"
+      ],
+      "chrome://browser/content/aiwindow/components/ai-website-confirmation.mjs": [
+        "../../../browser/components/aiwindow/ui/components/ai-website-confirmation/ai-website-confirmation.mjs"
+      ],
+      "chrome://browser/content/aiwindow/components/ai-website-select.mjs": [
+        "../../../browser/components/aiwindow/ui/components/ai-website-select/ai-website-select.mjs"
       ],
       "chrome://browser/content/aiwindow/components/applied-memories-button.mjs": [
         "../../../browser/components/aiwindow/ui/components/ai-chat-content/chat-assistant-footer/applied-memories-button.mjs"
@@ -61,6 +70,9 @@
       "chrome://browser/content/aiwindow/components/website-chip-container.mjs": [
         "../../../browser/components/aiwindow/ui/components/website-chip-container/website-chip-container.mjs"
       ],
+      "chrome://browser/content/aiwindow/modules/ChatMarkdownParser.mjs": [
+        "../../../browser/components/aiwindow/ui/modules/ChatMarkdownParser.mjs"
+      ],
       "chrome://browser/content/aiwindow/modules/TokenStreamParser.mjs": [
         "../../../browser/components/aiwindow/ui/modules/TokenStreamParser.mjs"
       ],
@@ -93,9 +105,6 @@
       ],
       "chrome://browser/content/backup/turn-on-scheduled-backups.mjs": [
         "../../../browser/components/backup/content/turn-on-scheduled-backups.mjs"
-      ],
-      "chrome://browser/content/contentSearchHandoffUI.mjs": [
-        "../../../browser/components/search/content/contentSearchHandoffUI.mjs"
       ],
       "chrome://browser/content/firefoxview/card-container.mjs": [
         "../../../browser/components/firefoxview/card-container.mjs"
@@ -169,6 +178,9 @@
       "chrome://browser/content/ipprotection/ipprotection-utils.mjs": [
         "../../../browser/components/ipprotection/content/ipprotection-utils.mjs"
       ],
+      "chrome://browser/content/ipprotection/locations-list.mjs": [
+        "../../../browser/components/ipprotection/content/locations-list.mjs"
+      ],
       "chrome://browser/content/migration/migration-wizard-constants.mjs": [
         "../../../browser/components/migration/content/migration-wizard-constants.mjs"
       ],
@@ -196,11 +208,23 @@
       "chrome://browser/content/preferences/config/SettingPaneManager.mjs": [
         "../../../browser/components/preferences/config/SettingPaneManager.mjs"
       ],
+      "chrome://browser/content/preferences/config/accessibility.mjs": [
+        "../../../browser/components/preferences/config/accessibility.mjs"
+      ],
       "chrome://browser/content/preferences/config/account-sync.mjs": [
         "../../../browser/components/preferences/config/account-sync.mjs"
       ],
       "chrome://browser/content/preferences/config/home-startup.mjs": [
         "../../../browser/components/preferences/config/home-startup.mjs"
+      ],
+      "chrome://browser/content/preferences/config/languages.mjs": [
+        "../../../browser/components/preferences/config/languages.mjs"
+      ],
+      "chrome://browser/content/preferences/config/privacy.mjs": [
+        "../../../browser/components/preferences/config/privacy.mjs"
+      ],
+      "chrome://browser/content/preferences/config/search.mjs": [
+        "../../../browser/components/preferences/config/search.mjs"
       ],
       "chrome://browser/content/preferences/widgets/dialog-button.mjs": [
         "../../../browser/components/preferences/widgets/dialog-button/dialog-button.mjs"
@@ -228,6 +252,12 @@
       ],
       "chrome://browser/content/preferences/widgets/sync-engines-list.mjs": [
         "../../../browser/components/preferences/widgets/sync-engine-list/sync-engines-list.mjs"
+      ],
+      "chrome://browser/content/preferences/widgets/update-information.mjs": [
+        "../../../browser/components/preferences/widgets/update-information/update-information.mjs"
+      ],
+      "chrome://browser/content/preferences/widgets/update-state.mjs": [
+        "../../../browser/components/preferences/widgets/update-state/update-state.mjs"
       ],
       "chrome://browser/content/profiles/avatar.mjs": [
         "../../../browser/components/profiles/content/avatar.mjs"
@@ -271,11 +301,17 @@
       "chrome://browser/content/sidebar/sidebar-tab-list.mjs": [
         "../../../browser/components/sidebar/sidebar-tab-list.mjs"
       ],
+      "chrome://browser/content/tabbrowser/tab-groups-list.mjs": [
+        "../../../browser/components/tabbrowser/content/tab-groups-list.mjs"
+      ],
       "chrome://browser/content/tabbrowser/tab-hover-preview.mjs": [
         "../../../browser/components/tabbrowser/content/tab-hover-preview.mjs"
       ],
       "chrome://browser/content/translations/TranslationsPanelShared.sys.mjs": [
         "../../../browser/components/translations/content/TranslationsPanelShared.sys.mjs"
+      ],
+      "chrome://browser/content/urlbar/SearchModeSwitcher.mjs": [
+        "../../../browser/components/urlbar/content/SearchModeSwitcher.mjs"
       ],
       "chrome://browser/content/urlbar/SmartbarInput.mjs": [
         "../../../browser/components/urlbar/content/SmartbarInput.mjs"
@@ -390,6 +426,9 @@
       ],
       "chrome://global/content/elements/moz-page-nav.mjs": [
         "../../../toolkit/content/widgets/moz-page-nav/moz-page-nav.mjs"
+      ],
+      "chrome://global/content/elements/moz-promo.mjs": [
+        "../../../toolkit/content/widgets/moz-promo/moz-promo.mjs"
       ],
       "chrome://global/content/elements/moz-support-link.mjs": [
         "../../../toolkit/content/widgets/moz-support-link/moz-support-link.mjs"
@@ -739,6 +778,9 @@
       "chrome://remote/content/shared/Browser.sys.mjs": [
         "../../../remote/shared/Browser.sys.mjs"
       ],
+      "chrome://remote/content/shared/BrowsingContextUtils.sys.mjs": [
+        "../../../remote/shared/BrowsingContextUtils.sys.mjs"
+      ],
       "chrome://remote/content/shared/Capture.sys.mjs": [
         "../../../remote/shared/Capture.sys.mjs"
       ],
@@ -907,9 +949,6 @@
       "chrome://remote/content/shared/messagehandler/sessiondata/SessionDataReader.sys.mjs": [
         "../../../remote/shared/messagehandler/sessiondata/SessionDataReader.sys.mjs"
       ],
-      "chrome://remote/content/shared/messagehandler/transports/BrowsingContextUtils.sys.mjs": [
-        "../../../remote/shared/messagehandler/transports/BrowsingContextUtils.sys.mjs"
-      ],
       "chrome://remote/content/shared/messagehandler/transports/RootTransport.sys.mjs": [
         "../../../remote/shared/messagehandler/transports/RootTransport.sys.mjs"
       ],
@@ -966,6 +1005,9 @@
       ],
       "chrome://remote/content/webdriver-bidi/DownloadBehaviorManager.sys.mjs": [
         "../../../remote/webdriver-bidi/DownloadBehaviorManager.sys.mjs"
+      ],
+      "chrome://remote/content/webdriver-bidi/HelperAppDialogHandler.sys.mjs": [
+        "../../../remote/webdriver-bidi/HelperAppDialogHandler.sys.mjs"
       ],
       "chrome://remote/content/webdriver-bidi/NewSessionHandler.sys.mjs": [
         "../../../remote/webdriver-bidi/NewSessionHandler.sys.mjs"
@@ -1167,9 +1209,6 @@
       ],
       "resource:///modules/ContentCrashHandlers.sys.mjs": [
         "../../../browser/modules/ContentCrashHandlers.sys.mjs"
-      ],
-      "resource:///modules/CustomKeys.sys.mjs": [
-        "../../../browser/components/customkeys/CustomKeys.sys.mjs"
       ],
       "resource:///modules/Dedupe.sys.mjs": [
         "../../../browser/modules/Dedupe.sys.mjs"
@@ -6229,6 +6268,9 @@
       "resource://gre/modules/SandboxUtils.sys.mjs": [
         "../../../security/sandbox/common/SandboxUtils.sys.mjs"
       ],
+      "resource://gre/modules/ScheduledTask.sys.mjs": [
+        "../../../toolkit/modules/ScheduledTask.sys.mjs"
+      ],
       "resource://gre/modules/Schemas.sys.mjs": [
         "../../../toolkit/components/extensions/Schemas.sys.mjs"
       ],
@@ -6814,6 +6856,9 @@
       "resource://newtab/lib/Wallpapers/WallpaperFeed.sys.mjs": [
         "../../../browser/extensions/newtab/lib/Wallpapers/WallpaperFeed.sys.mjs"
       ],
+      "resource://newtab/lib/Wallpapers/WallpaperThemeUtils.mjs": [
+        "../../../browser/extensions/newtab/lib/Wallpapers/WallpaperThemeUtils.mjs"
+      ],
       "resource://newtab/lib/WeatherFeed.sys.mjs": [
         "../../../browser/extensions/newtab/lib/WeatherFeed.sys.mjs"
       ],
@@ -6987,6 +7032,9 @@
       ],
       "resource://pdf.js/build/pdf.sandbox.external.sys.mjs": [
         "../../../toolkit/components/pdfjs/content/build/pdf.sandbox.external.sys.mjs"
+      ],
+      "resource://pdf.js/web/wasm/jbig2_nowasm_fallback.js": [
+        "../../../toolkit/components/pdfjs/content/web/wasm/jbig2_nowasm_fallback.js"
       ],
       "resource://pdf.js/web/wasm/openjpeg_nowasm_fallback.js": [
         "../../../toolkit/components/pdfjs/content/web/wasm/openjpeg_nowasm_fallback.js"
@@ -7320,6 +7368,9 @@
       ],
       "resource://testing-common/BrowserTestUtils.sys.mjs": [
         "../../../testing/mochitest/BrowserTestUtils/BrowserTestUtils.sys.mjs"
+      ],
+      "resource://testing-common/ContentSharingMockServer.sys.mjs": [
+        "../../../browser/components/contentsharing/tests/browser/ContentSharingMockServer.sys.mjs"
       ],
       "resource://testing-common/ContentTask.sys.mjs": [
         "../../../testing/mochitest/BrowserTestUtils/ContentTask.sys.mjs"

@@ -673,11 +673,11 @@ void PerformanceMainThread::GetEntriesByName(
 }
 
 mozilla::PresShell* PerformanceMainThread::GetPresShell() {
-  nsIGlobalObject* ownerGlobal = GetOwnerGlobal();
-  if (!ownerGlobal) {
+  nsIGlobalObject* global = GetRelevantGlobal();
+  if (!global) {
     return nullptr;
   }
-  if (Document* doc = ownerGlobal->GetAsInnerWindow()->GetExtantDoc()) {
+  if (Document* doc = global->GetAsInnerWindow()->GetExtantDoc()) {
     return doc->GetPresShell();
   }
   return nullptr;
@@ -735,8 +735,8 @@ void PerformanceMainThread::ProcessElementTiming() {
   // TODO(sefeng): Check the timestamp after this issue is resolved.
   TimeStamp rawNowTime = presContext->GetMarkPaintTimingStart();
 
-  MOZ_ASSERT(GetOwnerGlobal());
-  Document* document = GetOwnerGlobal()->GetAsInnerWindow()->GetExtantDoc();
+  MOZ_ASSERT(GetRelevantGlobal());
+  Document* document = GetRelevantGlobal()->GetAsInnerWindow()->GetExtantDoc();
   if (!document ||
       !nsContentUtils::GetInProcessSubtreeRootDocument(document)->IsActive()) {
     return;
@@ -818,12 +818,12 @@ void PerformanceMainThread::ClearGeneratedTempDataForLCP() {
   mTextFrameUnions.Clear();
   mImagesPendingRendering.Clear();
 
-  nsIGlobalObject* ownerGlobal = GetOwnerGlobal();
-  if (!ownerGlobal) {
+  nsIGlobalObject* global = GetRelevantGlobal();
+  if (!global) {
     return;
   }
 
-  if (Document* document = ownerGlobal->GetAsInnerWindow()->GetExtantDoc()) {
+  if (Document* document = global->GetAsInnerWindow()->GetExtantDoc()) {
     document->ContentIdentifiersForLCP().Clear();
   }
 }

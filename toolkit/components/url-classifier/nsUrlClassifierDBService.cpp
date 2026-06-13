@@ -1923,7 +1923,11 @@ nsUrlClassifierClassifyCallback::HandleResult(const nsACString& aTable,
   nsCString provider;
   nsresult rv = urlUtil->GetProvider(aTable, provider);
 
-  matchedInfo->provider.name = NS_SUCCEEDED(rv) ? provider : ""_ns;
+  if (NS_SUCCEEDED(rv)) {
+    matchedInfo->provider.name = std::move(provider);
+  } else {
+    matchedInfo->provider.name = ""_ns;
+  }
   matchedInfo->provider.priority = 0;
   for (auto const& BuiltInProvider : kBuiltInProviders) {
     if (BuiltInProvider.name.Equals(matchedInfo->provider.name)) {
@@ -2899,7 +2903,8 @@ nsUrlClassifierDBService::AsyncClassifyLocalWithFeatures(
         continue;
       }
 
-      ipcFeatures.AppendElement(IPCURLClassifierFeature(name, tables));
+      ipcFeatures.AppendElement(
+          IPCURLClassifierFeature(std::move(name), std::move(tables)));
     }
 
     if (!content->SendPURLClassifierLocalConstructor(actor, aURI,

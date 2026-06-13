@@ -1064,25 +1064,6 @@ mozilla::ipc::IPCResult HttpChannelParent::RecvRemoveCorsPreflightCacheEntry(
   return IPC_OK();
 }
 
-mozilla::ipc::IPCResult HttpChannelParent::RecvSetCookies(
-    const nsACString& aBaseDomain, const OriginAttributes& aOriginAttributes,
-    nsIURI* aHost, const bool& aIsThirdParty,
-    nsTArray<CookieStruct>&& aCookies) {
-  net::PCookieServiceParent* csParent =
-      LoneManagedOrNullAsserts(Manager()->ManagedPCookieServiceParent());
-  NS_ENSURE_TRUE(csParent, IPC_OK());
-
-  auto* cs = static_cast<net::CookieServiceParent*>(csParent);
-
-  BrowsingContext* browsingContext = nullptr;
-  if (mBrowserParent) {
-    browsingContext = mBrowserParent->GetBrowsingContext();
-  }
-
-  return cs->SetCookies(nsCString(aBaseDomain), aOriginAttributes, aHost,
-                        aIsThirdParty, aCookies, browsingContext);
-}
-
 //-----------------------------------------------------------------------------
 // HttpChannelParent::nsIRequestObserver
 //-----------------------------------------------------------------------------
@@ -1106,6 +1087,10 @@ static ResourceTimingStructArgs GetTimingAttributes(HttpBaseChannel* aChannel) {
   args.requestStart() = timeStamp;
   aChannel->GetResponseStart(&timeStamp);
   args.responseStart() = timeStamp;
+  aChannel->GetFirstInterimResponseStart(&timeStamp);
+  args.firstInterimResponseStart() = timeStamp;
+  aChannel->GetFinalResponseHeadersStart(&timeStamp);
+  args.finalResponseHeadersStart() = timeStamp;
   aChannel->GetResponseEnd(&timeStamp);
   args.responseEnd() = timeStamp;
   aChannel->GetAsyncOpen(&timeStamp);

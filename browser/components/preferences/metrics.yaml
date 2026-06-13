@@ -85,6 +85,7 @@ security.doh.settings:
       security.doh.settings.mode_changed#button.
     bugs:
       - https://bugzil.la/1829905
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037081
     data_reviews:
       - https://bugzil.la/1829905
     notification_emails:
@@ -97,7 +98,6 @@ security.doh.settings:
           The `value` of the event. Mirrors to the Legacy Telemetry
           event's `value` parameter.
         type: string
-    telemetry_mirror: SecurityDohSettings_ModeChanged_Button
 
   provider_choice_value:
     type: event
@@ -108,6 +108,7 @@ security.doh.settings:
       security.doh.settings.provider_choice#value.
     bugs:
       - https://bugzil.la/1829905
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037081
     data_reviews:
       - https://bugzil.la/1829905
     notification_emails:
@@ -120,7 +121,6 @@ security.doh.settings:
           The `value` of the event. Mirrors to the Legacy Telemetry
           event's `value` parameter.
         type: string
-    telemetry_mirror: SecurityDohSettings_ProviderChoice_Value
 
 intl.ui.browser_language:
   manage_main:

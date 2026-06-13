@@ -47,3 +47,42 @@ add_task(async function setup_profile() {
   // Start from a clean history DB
   await PlacesUtils.history.clear();
 });
+
+/**
+ * Insert a row into moz_places_metadata for a URL that was already added via
+ * PlacesUtils.history.insertMany. Required for tests that exercise getRecentHistory(),
+ * which reads page visits from moz_places_metadata (not moz_historyvisits).
+ * Search engine URLs are never recorded in moz_places_metadata by the browser,
+ * so only call this for non-search pages.
+ *
+ * @param {string} url - Must already exist in moz_places.
+ * @param {number} visitDateMs - Visit timestamp in milliseconds (matches the date
+ *        passed to insertMany so cutoff filtering works correctly).
+ * @param {number} [totalViewTimeMs=30_000] - Must exceed DEFAULT_PAGE_VIEWTIME (5000ms).
+ */
+async function insertPlacesMetadata(
+  url,
+  visitDateMs,
+  totalViewTimeMs = 30_000
+) {
+  await PlacesUtils.withConnectionWrapper("test-insert-metadata", async db => {
+    const rows = await db.execute(
+      "SELECT id FROM moz_places WHERE url_hash = hash(:url) AND url = :url",
+      { url }
+    );
+    const placeId = rows[0].getResultByName("id");
+    await db.execute(
+      `INSERT INTO moz_places_metadata
+         (place_id, created_at, updated_at, total_view_time,
+          typing_time, key_presses, scrolling_time, scrolling_distance, document_type)
+       VALUES
+         (:place_id, :created_at, :created_at, :total_view_time,
+          0, 0, 0, 0, 0)`,
+      {
+        place_id: placeId,
+        created_at: visitDateMs,
+        total_view_time: totalViewTimeMs,
+      }
+    );
+  });
+}

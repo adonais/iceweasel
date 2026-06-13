@@ -44,7 +44,7 @@ inline uint8_t intoZLibFlush(Flush aFlush) {
 }
 
 // From the docs in
-// https://searchfox.org/mozilla-central/source/modules/zlib/src/zlib.h
+// https://searchfox.org/firefox-main/source/modules/zlib/src/zlib.h
 inline int8_t ZLibWindowBits(CompressionFormat format) {
   switch (format) {
     case CompressionFormat::Deflate:

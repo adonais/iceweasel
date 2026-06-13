@@ -12,6 +12,7 @@
 #include "mozilla/intl/NumberFormat.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Span.h"
+#include "mozilla/UsingEnum.h"
 
 #include <array>
 #include <charconv>
@@ -28,7 +29,6 @@
 #include "builtin/intl/NumberFormat.h"
 #include "builtin/intl/Packed.h"
 #include "builtin/intl/ParameterNegotiation.h"
-#include "builtin/intl/UsingEnum.h"
 #include "builtin/temporal/Duration.h"
 #include "gc/AllocKind.h"
 #include "gc/GCContext.h"
@@ -109,16 +109,7 @@ static const JSPropertySpec durationFormat_properties[] = {
 static bool DurationFormat(JSContext* cx, unsigned argc, Value* vp);
 
 const JSClassOps DurationFormatObject::classOps_ = {
-    nullptr,                         // addProperty
-    nullptr,                         // delProperty
-    nullptr,                         // enumerate
-    nullptr,                         // newEnumerate
-    nullptr,                         // resolve
-    nullptr,                         // mayResolve
-    DurationFormatObject::finalize,  // finalize
-    nullptr,                         // call
-    nullptr,                         // construct
-    nullptr,                         // trace
+    .finalize = DurationFormatObject::finalize,
 };
 
 const ClassSpec DurationFormatObject::classSpec_ = {
@@ -269,11 +260,7 @@ void js::intl::DurationFormatObject::finalize(JS::GCContext* gcx,
 }
 
 static constexpr std::string_view DisplayToString(DurationDisplay display) {
-#ifndef USING_ENUM
-  using enum DurationDisplay;
-#else
-  USING_ENUM(DurationDisplay, Auto, Always);
-#endif
+  MOZ_USING_ENUM(DurationDisplay, Auto, Always);
   switch (display) {
     case Auto:
       return "auto";
@@ -284,11 +271,7 @@ static constexpr std::string_view DisplayToString(DurationDisplay display) {
 }
 
 static constexpr std::string_view DurationStyleToString(DurationStyle style) {
-#ifndef USING_ENUM
-  using enum DurationStyle;
-#else
-  USING_ENUM(DurationStyle, Long, Short, Narrow, Numeric, TwoDigit);
-#endif
+  MOZ_USING_ENUM(DurationStyle, Long, Short, Narrow, Numeric, TwoDigit);
   switch (style) {
     case Long:
       return "long";
@@ -305,11 +288,7 @@ static constexpr std::string_view DurationStyleToString(DurationStyle style) {
 }
 
 static constexpr std::string_view BaseStyleToString(DurationBaseStyle style) {
-#ifndef USING_ENUM
-  using enum DurationBaseStyle;
-#else
-  USING_ENUM(DurationBaseStyle, Long, Short, Narrow, Digital);
-#endif
+  MOZ_USING_ENUM(DurationBaseStyle, Long, Short, Narrow, Digital);
   switch (style) {
     case Long:
       return "long";
@@ -1179,30 +1158,55 @@ static auto ComputeFractionalDigits(const temporal::Duration& duration,
     timeDuration = timeDuration.abs();
   }
 
-  // Next the string representation of the seconds value.
-  auto res =
-      std::to_chars(chars, std::end(result.decimal), timeDuration.seconds);
-  MOZ_ASSERT(res.ec == std::errc());
+  // Start of the integer part, without leading sign character.
+  [[maybe_unused]] const char* integer = chars;
 
-  // Set |chars| to one past the last character written by `std::to_chars`.
-  chars = res.ptr;
+  // Avoid writing leading zeros.
+  bool isZero = timeDuration.seconds == 0;
+
+  // Next the string representation of the seconds value.
+  if (!isZero) {
+    auto res =
+        std::to_chars(chars, std::end(result.decimal), timeDuration.seconds);
+    MOZ_ASSERT(res.ec == std::errc());
+
+    // Set |chars| to one past the last character written by `std::to_chars`.
+    chars = res.ptr;
+  }
 
   // Finish with string representation of the nanoseconds value, without any
   // trailing zeros.
   int32_t nanos = timeDuration.nanoseconds;
-  for (int32_t k = 100'000'000; k != 0 && nanos != 0; k /= 10) {
-    // Add decimal separator add the correct position based on |exponent|.
+  [[maybe_unused]] bool hasFractional = false;
+  for (int32_t k = 100'000'000; k != 0 && (k > exponent || nanos != 0);
+       k /= 10) {
+    // Add decimal separator at the correct position based on |exponent|.
     if (k == exponent) {
+      // Add leading zero if necessary.
+      if (isZero) {
+        isZero = false;
+        *chars++ = '0';
+      }
+      hasFractional = true;
       *chars++ = '.';
     }
 
-    *chars++ = char('0' + (nanos / k));
+    int32_t digit = (nanos / k);
     nanos %= k;
+
+    isZero = isZero && digit == 0;
+    if (!isZero) {
+      *chars++ = char('0' + digit);
+    }
   }
 
   MOZ_ASSERT((chars - result.decimal) <=
                  ptrdiff_t(DurationValue::MaximumDecimalStringLength),
              "unexpected decimal string length");
+  MOZ_ASSERT(chars > integer, "unexpected empty decimal string");
+  MOZ_ASSERT(!isZero, "unexpected all zero decimal string");
+  MOZ_ASSERT(integer[0] != '0' || integer[1] == '.', "unexpected leading zero");
+  MOZ_ASSERT(!hasFractional || chars[-1] != '0', "unexpected trailing zero");
 
   return result;
 }
@@ -1673,11 +1677,7 @@ static bool FormatNumericUnits(JSContext* cx,
 }
 
 static auto ToListFormatStyle(DurationBaseStyle style) {
-#ifndef USING_ENUM
-  using enum mozilla::intl::ListFormat::Style;
-#else
-  USING_ENUM(mozilla::intl::ListFormat::Style, Long, Short, Narrow);
-#endif
+  MOZ_USING_ENUM(mozilla::intl::ListFormat::Style, Long, Short, Narrow);
   switch (style) {
     case DurationBaseStyle::Long:
       return Long;

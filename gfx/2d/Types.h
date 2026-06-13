@@ -8,6 +8,7 @@
 #include "mozilla/DefineEnum.h"  // for MOZ_DEFINE_ENUM_CLASS_WITH_BASE
 #include "mozilla/EnumeratedRange.h"
 #include "mozilla/MacroArgs.h"  // for MOZ_CONCAT
+#include "mozilla/Maybe.h"
 #include "mozilla/TypedEnumBits.h"
 
 #include <bit>
@@ -590,6 +591,42 @@ enum class ColorRange : uint8_t {
   FULL,
   _First = LIMITED,
   _Last = FULL,
+};
+
+// HDR metadata structures, populated from codec-level signalling.
+struct Chromaticity {
+  float x = 0.0f;
+  float y = 0.0f;
+  bool operator==(const Chromaticity&) const = default;
+};
+
+// SMPTE ST 2086 mastering display colour volume.
+struct Smpte2086Metadata {
+  Chromaticity displayPrimaryRed;
+  Chromaticity displayPrimaryGreen;
+  Chromaticity displayPrimaryBlue;
+  Chromaticity whitePoint;
+  float maxLuminance = 0.0f;  // cd/m^2
+  float minLuminance = 0.0f;  // cd/m^2
+  bool operator==(const Smpte2086Metadata&) const = default;
+};
+
+// CTA-861.3 content light level (MaxCLL/MaxFALL).
+struct ContentLightLevel {
+  uint16_t maxContentLightLevel = 0;
+  uint16_t maxFrameAverageLightLevel = 0;
+  bool operator==(const ContentLightLevel&) const = default;
+};
+
+// HDR metadata signalled at container or codec level. Each field is
+// independently optional since streams may carry one without the other.
+struct HDRMetadata {
+  Maybe<Smpte2086Metadata> mSmpte2086;
+  Maybe<ContentLightLevel> mContentLightLevel;
+  bool operator==(const HDRMetadata&) const = default;
+  bool IsValid() const {
+    return mSmpte2086.isSome() || mContentLightLevel.isSome();
+  }
 };
 
 // Really "YcbcrColorColorSpace" but YUV is the common parlance. This represents

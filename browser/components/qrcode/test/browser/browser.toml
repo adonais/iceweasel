@@ -3,7 +3,10 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 [DEFAULT]
+prefs = ["browser.shareqrcode.enabled=true"]
+skip-if = ["!nightly_build"]
+support-files = ["reference-qr-no-logo.png", "reference-long-url-no-logo.png"]
+
+["browser_qrcode_png_output.js"]
 
 ["browser_qrcode_share_menu.js"]
-prefs = ["browser.shareqrcode.enabled=true"]
-skip-if = ["os != 'mac'", "!nightly_build"]

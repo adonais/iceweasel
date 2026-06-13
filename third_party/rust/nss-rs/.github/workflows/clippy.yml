@@ -1,0 +1,66 @@
+name: Clippy
+on:
+  pull_request:
+  merge_group:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  toolchains:
+    name: Determine toolchains
+    runs-on: ubuntu-24.04
+    outputs:
+      toolchains: ${{ steps.toolchains.outputs.toolchains }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - id: toolchains
+        uses: mozilla/actions/toolchains@25cb84d060946c0ad6d2c3f79da479b16d180d71 # v1.1.0
+
+  clippy:
+    name: cargo clippy
+    needs: toolchains
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-15, windows-2025]
+        rust-toolchain: ${{ fromJSON(needs.toolchains.outputs.toolchains) }}
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - uses: mozilla/actions/rust@25cb84d060946c0ad6d2c3f79da479b16d180d71 # v1.1.0
+        with:
+          version: ${{ matrix.rust-toolchain }}
+          components: clippy
+          tools: cargo-hack
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: mozilla/actions/nss@25cb84d060946c0ad6d2c3f79da479b16d180d71 # v1.1.0
+        with:
+          version-file: min_version.txt
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      # Use cargo-hack to run clippy on each crate individually with its
+      # respective default features only. Can reveal warnings otherwise
+      # hidden given that a plain cargo clippy combines all features of the
+      # workspace. See e.g. https://github.com/mozilla/neqo/pull/1695.
+      - run: cargo hack clippy --feature-powerset --no-dev-deps --exclude-features gecko -- -D warnings
+      - run: cargo clippy --locked --workspace --all-targets -- -D warnings
+      - run: cargo doc --locked --workspace --no-deps --document-private-items
+        env:
+          RUSTDOCFLAGS: "--deny rustdoc::broken_intra_doc_links --deny warnings"

@@ -298,7 +298,7 @@ class MOZ_RAII GeckoProfilerBaselineOSRMarker {
 
  private:
   GeckoProfilerThread* profiler;
-  mozilla::DebugOnly<uint32_t> spBefore_;
+  mozilla::DebugOnly<uint32_t> spBefore_ = 0;
 };
 
 } /* namespace js */

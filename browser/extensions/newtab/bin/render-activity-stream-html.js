@@ -103,6 +103,16 @@ function templateHTML(options) {
     <script
       async
       type="module"
+      src="chrome://global/content/elements/moz-input-text.mjs"
+    ></script>
+    <script
+      async
+      type="module"
+      src="chrome://global/content/elements/moz-input-search.mjs"
+    ></script>
+    <script
+      async
+      type="module"
       src="chrome://global/content/elements/moz-box-button.mjs"
     ></script>
     <script
@@ -134,6 +144,11 @@ function templateHTML(options) {
       async
       type="module"
       src="chrome://global/content/elements/moz-support-link.mjs"
+    ></script>
+    <script
+      async
+      type="module"
+      src="chrome://global/content/elements/moz-checkbox.mjs"
     ></script>
   </body>
 </html>

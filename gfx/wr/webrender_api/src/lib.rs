@@ -760,6 +760,8 @@ bitflags! {
         /// Show external composite border rects in debug overlay.
         /// TODO: Add native compositor support
         const EXTERNAL_COMPOSITE_BORDERS = (1 as u64) << 34;
+        /// Dump the frame spatial tree to stderr.
+        const DUMP_SPATIAL_TREE = (1 as u64) << 35;
     }
 }
 

@@ -22,8 +22,6 @@ struct LabelBase {
   // incoming uses and needs to be bound.
   uint32_t offset_ : 31;
 
-  void operator=(const LabelBase& label) = delete;
-
 #if defined(JS_CODEGEN_MIPS64) || defined(JS_CODEGEN_LOONG64) || \
     defined(JS_CODEGEN_RISCV64)
  public:
@@ -32,6 +30,8 @@ struct LabelBase {
 
  public:
   LabelBase() : bound_(false), offset_(INVALID_OFFSET) {}
+
+  void operator=(const LabelBase& label) = delete;
 
   // If the label is bound, all incoming edges have been patched and any
   // future incoming edges will be immediately patched.

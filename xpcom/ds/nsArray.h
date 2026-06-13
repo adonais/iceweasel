@@ -43,11 +43,12 @@ class nsArray final : public nsArrayBase {
   friend class nsArrayBase;
 
  public:
+  nsArray(const nsArray& aOther) = delete;
+
   NS_DECL_ISUPPORTS
 
  private:
-  nsArray() {}
-  nsArray(const nsArray& aOther);
+  nsArray() = default;
   explicit nsArray(const nsCOMArray_base& aBaseArray)
       : nsArrayBase(aBaseArray) {}
   ~nsArray() = default;
@@ -57,12 +58,13 @@ class nsArrayCC final : public nsArrayBase {
   friend class nsArrayBase;
 
  public:
+  nsArrayCC(const nsArrayCC& aOther) = delete;
+
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(nsArrayCC, nsIMutableArray)
 
  private:
-  nsArrayCC() {}
-  nsArrayCC(const nsArrayCC& aOther);
+  nsArrayCC() = default;
   explicit nsArrayCC(const nsCOMArray_base& aBaseArray)
       : nsArrayBase(aBaseArray) {}
   ~nsArrayCC() = default;

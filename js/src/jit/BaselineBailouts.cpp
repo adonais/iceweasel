@@ -637,8 +637,8 @@ bool BaselineStackBuilder::buildBaselineFrame() {
   ArgumentsObject* argsObj = nullptr;
   if (script_->needsArgsObj()) {
     Value maybeArgsObj = iter_.read();
-    MOZ_ASSERT(maybeArgsObj.isObject() || maybeArgsObj.isUndefined() ||
-               maybeArgsObj.isMagic(JS_OPTIMIZED_OUT));
+    MOZ_RELEASE_ASSERT(maybeArgsObj.isObject() || maybeArgsObj.isUndefined() ||
+                       maybeArgsObj.isMagic(JS_OPTIMIZED_OUT));
     if (maybeArgsObj.isObject()) {
       argsObj = &maybeArgsObj.toObject().as<ArgumentsObject>();
     }
@@ -911,7 +911,7 @@ bool BaselineStackBuilder::buildExpressionStack() {
             "      Checking that intermediate value is an object");
     Value returnVal;
     if (iter_.tryRead(&returnVal) && !returnVal.isObject()) {
-      MOZ_ASSERT(!returnVal.isMagic());
+      MOZ_RELEASE_ASSERT(!returnVal.isMagic());
       JitSpew(JitSpew_BaselineBailouts,
               "      Not an object! Overwriting bailout kind");
       bailoutKind_ = BailoutKind::ThrowCheckIsObject;

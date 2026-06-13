@@ -689,6 +689,8 @@ class MediaRawData final : public MediaData {
   explicit MediaRawData(AlignedByteBuffer&& aData);
   MediaRawData(AlignedByteBuffer&& aData, AlignedByteBuffer&& aAlphaData);
 
+  MediaRawData(const MediaRawData&) = delete;
+
   // Pointer to data or null if not-yet allocated
   const uint8_t* Data() const { return mBuffer.Data(); }
   // Pointer to alpha data or null if not-yet allocated
@@ -749,7 +751,6 @@ class MediaRawData final : public MediaData {
   AlignedByteBuffer mBuffer;
   AlignedByteBuffer mAlphaBuffer;
   CryptoSample mCryptoInternal;
-  MediaRawData(const MediaRawData&);  // Not implemented
 };
 
 // MediaByteBuffer is a ref counted infallible TArray.

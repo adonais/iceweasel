@@ -149,7 +149,7 @@ def test_large_push_warning_message(capsys):
         )
         captured = capsys.readouterr()
         assert "Your push would schedule at least 1001 tasks" in captured.out
-        assert "lower priority" in captured.out
+        assert "lowest priority" in captured.out
 
 
 def test_get_sys_argv():

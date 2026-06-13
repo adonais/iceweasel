@@ -91,9 +91,14 @@ internal enum class ProgressState {
 internal sealed class Event {
     internal sealed class Account : Event() {
         internal object Start : Account()
-        data class BeginEmailFlow(val entrypoint: FxAEntryPoint, val scopes: Set<String>) : Account()
+        data class BeginEmailFlow(
+            val service: String,
+            val entrypoint: FxAEntryPoint,
+            val scopes: Set<String>,
+        ) : Account()
         data class BeginPairingFlow(
             val pairingUrl: String?,
+            val service: String,
             val entrypoint: FxAEntryPoint,
             val scopes: Set<String>,
         ) : Account()

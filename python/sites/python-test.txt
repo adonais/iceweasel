@@ -14,7 +14,7 @@ pypi:pytest-taskgraph==0.2.0
 pypi:pytest==8.4.2
 pypi:pytz==2022.7.1
 pypi:rstcheck==6.2.5
-pypi:ruff==0.14.9
+pypi:ruff==0.15.12
 pypi:snowballstemmer==2.2.0
 pypi:sphinxcontrib-applehelp==1.0.4
 pypi:sphinxcontrib-htmlhelp==2.0.1
@@ -35,6 +35,7 @@ vendored:third_party/python/aiohttp
 vendored:third_party/python/aiosignal
 vendored:third_party/python/compare_locales
 vendored:third_party/python/cookies
+vendored:third_party/python/diskarzhan
 vendored:third_party/python/dlmanager
 vendored:third_party/python/ecdsa
 vendored:third_party/python/esprima

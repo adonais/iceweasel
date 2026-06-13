@@ -62,7 +62,6 @@ body {
 #qrcode-image {
   width: var(--size-layout-medium);
   height: var(--size-layout-medium);
-  image-rendering: pixelated;
 }
 
 #qrcode-url {

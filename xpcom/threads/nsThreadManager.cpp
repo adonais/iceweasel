@@ -348,6 +348,7 @@ nsresult nsThreadManager::Init() {
   }
 #ifdef MOZ_MEMORY
   jemalloc_set_main_thread();
+  jemalloc_thread_local_arena(true);
 #endif
 
   // Init AbstractThread.

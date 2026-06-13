@@ -10,25 +10,9 @@ add_setup(async function () {
 });
 
 add_task(async function test_about_glean_redesign_views_hidden_behind_pref() {
-  registerCleanupFunction(() => {
-    Services.prefs.clearUserPref("about.glean.redesign.enabled");
-  });
-
   await BrowserTestUtils.withNewTab("about:glean", async function (browser) {
     ok(!browser.isRemoteBrowser, "Browser should not be remote.");
     await SpecialPowers.spawn(browser, [], async function () {
-      let metrics_table_category_button = content.document.getElementById(
-        "category-metrics-table"
-      );
-      is(metrics_table_category_button, null);
-    });
-  });
-
-  await BrowserTestUtils.withNewTab("about:glean", async function (browser) {
-    ok(!browser.isRemoteBrowser, "Browser should not be remote.");
-    await SpecialPowers.spawn(browser, [], async function () {
-      content.document.getElementById("enable-new-features").click();
-
       let metrics_table_category_button = content.document.getElementById(
         "category-metrics-table"
       );

@@ -13,6 +13,7 @@
 #include "mozilla/ComputedStyleInlines.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/ProfilerLabels.h"
+#include "mozilla/ReflowInput.h"
 #include "mozilla/ScrollContainerFrame.h"
 #include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/dom/BrowserParent.h"
@@ -157,7 +158,7 @@ void nsSubDocumentFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
   // NOTE: The frame loader might not yet be initialized yet. If it's not, the
   // call in ShowViewer() should pick things up.
   UpdateEmbeddedBrowsingContextDependentData();
-  nsContentUtils::AddScriptRunner(new AsyncFrameInit(this));
+  nsContentUtils::AddScriptRunner(MakeAndAddRef<AsyncFrameInit>(this));
 }
 
 void nsSubDocumentFrame::UpdateEmbeddedBrowsingContextDependentData() {
@@ -948,7 +949,7 @@ void nsSubDocumentFrame::Destroy(DestroyContext& aContext) {
 
     // We call nsFrameLoader::HideViewer() in a script runner so that we can
     // safely determine whether the frame is being reframed or destroyed.
-    nsContentUtils::AddScriptRunner(new nsHideViewer(
+    nsContentUtils::AddScriptRunner(MakeAndAddRef<nsHideViewer>(
         mContent, frameloader, PresShell(), (mDidCreateDoc || mCallingShow)));
   }
 
@@ -995,7 +996,7 @@ void nsSubDocumentFrame::ResetFrameLoader(RetainPaintData aRetain) {
   }
   mFrameLoader = nullptr;
   ClearDisplayItems();
-  nsContentUtils::AddScriptRunner(new AsyncFrameInit(this));
+  nsContentUtils::AddScriptRunner(MakeAndAddRef<AsyncFrameInit>(this));
 }
 
 void nsSubDocumentFrame::ClearRetainedPaintData() {

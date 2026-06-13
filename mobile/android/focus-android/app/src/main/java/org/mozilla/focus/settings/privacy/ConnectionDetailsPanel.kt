@@ -21,6 +21,9 @@ import java.security.cert.X509Certificate
 import com.google.android.material.R as materialR
 import mozilla.components.ui.icons.R as iconsR
 
+/**
+ * A bottom sheet panel that displays connection security details for the current site.
+ */
 class ConnectionDetailsPanel(
     context: Context,
     private var engineSession: EngineSession?,

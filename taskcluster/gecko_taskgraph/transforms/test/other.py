@@ -346,12 +346,12 @@ def setup_browsertime(config, tasks):
                 ],
                 "macosx1400.*": [
                     "browsertime",
-                    "macosx64-aarch64-geckodriver",
+                    "macosx64-geckodriver",
                     "macosx64-aarch64-node",
                 ],
                 "macosx1500.*": [
                     "browsertime",
-                    "macosx64-aarch64-geckodriver",
+                    "macosx64-geckodriver",
                     "macosx64-aarch64-node",
                 ],
                 "windows.*aarch64.*": [
@@ -691,10 +691,10 @@ def handle_tier(config, tasks):
                 "macosx1470-64/debug",
                 "macosx1470-64-shippable/opt",
                 "macosx1470-64-devedition/opt",
-                "macosx1400-64-shippable-qr/opt",
-                "macosx1400-64-qr/debug",
-                "macosx1500-64-shippable/opt",
-                "macosx1500-64/debug",
+                "macosx1500-aarch64/opt",
+                "macosx1500-aarch64/debug",
+                "macosx1500-aarch64-shippable/opt",
+                "macosx1500-aarch64-devedition/opt",
                 "android-em-14-x86_64-shippable/opt",
                 "android-em-14-x86_64/opt",
                 "android-em-14-x86_64-shippable-lite/opt",
@@ -1088,21 +1088,26 @@ def add_gecko_profile_symbolication_deps(config, tasks):
         ):
             fetches = task.setdefault("fetches", {})
             fetch_toolchains = fetches.setdefault("toolchain", [])
-            fetch_toolchains.append("symbolicator-cli")
+
+            if "profiler-node-tools" not in fetch_toolchains:
+                fetch_toolchains.append("profiler-node-tools")
 
             test_platform = task["test-platform"]
 
             if "macosx" in test_platform and "aarch64" in test_platform:
-                fetch_toolchains.append("macosx64-aarch64-samply")
+                samply_toolchain = "macosx64-aarch64-samply"
             elif "macosx" in test_platform:
-                fetch_toolchains.append("macosx64-samply")
+                samply_toolchain = "macosx64-samply"
             elif "win" in test_platform:
-                fetch_toolchains.append("win64-samply")
+                samply_toolchain = "win64-samply"
             else:
-                fetch_toolchains.append("linux64-samply")
+                samply_toolchain = "linux64-samply"
+
+            if samply_toolchain not in fetch_toolchains:
+                fetch_toolchains.append(samply_toolchain)
 
             # Add node as a dependency for talos and mochitest tasks if needed.
-            # node is used to run symbolicator-cli, our profile symbolication tool
+            # node is used to run profiler-edit, our profile symbolication tool
             if task["suite"] == "talos" or "mochitest" in task["suite"]:
                 if "macosx" in test_platform and "aarch64" in test_platform:
                     node_toolchain = "macosx64-aarch64-node"

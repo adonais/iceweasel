@@ -67,6 +67,9 @@ rejected-words:
         tier: 2
     run:
         mach: lint -v -l rejected-words -f treeherder -f json:/builds/worker/mozlint.json .
+    fetches:
+        toolchain:
+            - linux64-mozcheck
     when:
         files-changed:
             - '**/*.js'
@@ -100,6 +103,10 @@ dot-mozilla-reference:
         tier: 2
     run:
         mach: lint -v -l dot-mozilla-reference -f treeherder -f json:/builds/worker/mozlint.json .
+
+    fetches:
+        toolchain:
+            - linux64-mozcheck
     when:
         files-changed:
             - '**/*.js'
@@ -265,6 +272,9 @@ license:
         symbol: pedantic(license)
     run:
         mach: lint -v -l license -f treeherder -f json:/builds/worker/mozlint.json .
+    fetches:
+        toolchain:
+            - linux64-mozcheck
     when:
         files-changed:
             - '**/*.c'
@@ -443,7 +453,7 @@ python-sites:
 test-manifest:
     description: lint test manifests
     treeherder:
-        symbol: misc(tm)
+        symbol: tests(test-manifest)
     run:
         mach: lint -v -l test-manifest-toml -f treeherder -f json:/builds/worker/mozlint.json .
     when:
@@ -457,7 +467,7 @@ test-manifest:
 wptlint-gecko:
     description: web-platform-tests linter
     treeherder:
-        symbol: misc(W)
+        symbol: tests(web-platform)
     run:
         mach: lint -v -l wpt -f treeherder -f json:/builds/worker/mozlint.json .
     when:
@@ -465,6 +475,22 @@ wptlint-gecko:
             - 'testing/web-platform/tests/**'
             - 'testing/web-platform/mozilla/tests/**'
             - 'tools/lint/wpt.yml'
+
+wpt-subsuite-tagging:
+    description: Checks WPT tests in subsuite directories have subsuite tags
+    treeherder:
+        symbol: tests(wpt-sub)
+    run:
+        mach: lint -v -l wpt-subsuite-tagging -f treeherder -f json:/builds/worker/mozlint.json .
+    when:
+        files-changed:
+            - 'testing/web-platform/tests/**'
+            - 'testing/web-platform/mozilla/tests/**'
+            - 'testing/web-platform/meta/**'
+            - 'testing/web-platform/mozilla/meta/**'
+            - 'taskcluster/gecko_taskgraph/util/chunking.py'
+            - 'tools/lint/wpt-subsuite-tagging/**'
+            - 'tools/lint/wpt-subsuite-tagging.yml'
 
 yaml:
     description: yamllint run over the gecko codebase
@@ -615,6 +641,24 @@ cargo-audit:
         toolchain:
             - linux64-rust
 
+mozcheck-tests:
+    description: mozcheck Rust unit tests
+    treeherder:
+        symbol: rust(mozcheck)
+    run:
+        using: run-task
+        cwd: '{checkout}'
+        command: >-
+            PATH="$MOZ_FETCHES_DIR/rustc/bin:$PATH"
+            cargo test --locked --verbose
+            --manifest-path tools/lint/mozcheck/Cargo.toml
+    when:
+        files-changed:
+            - 'tools/lint/mozcheck/**'
+    fetches:
+        toolchain:
+            - linux64-rust
+
 file-whitespace:
     description: Check for trailing whitespaces and Windows CR
     platform: lint/opt
@@ -625,6 +669,9 @@ file-whitespace:
         tier: 2
     run:
         mach: lint -v -l file-whitespace -f treeherder -f json:/builds/worker/mozlint.json .
+    fetches:
+        toolchain:
+            - linux64-mozcheck
     when:
         files-changed:
             - '**/*.c'
@@ -660,6 +707,9 @@ file-perm:
         tier: 2
     run:
         mach: lint -v -l file-perm -f treeherder -f json:/builds/worker/mozlint.json .
+    fetches:
+        toolchain:
+            - linux64-mozcheck
     when:
         files-changed:
             - '**/*.build'
@@ -702,7 +752,7 @@ perfdocs-verify:
     treeherder:
         symbol: doc(perfdocs)
     run:
-        mach: lint -v -l perfdocs -f treeherder -f json:/builds/worker/mozlint.json .
+        mach: perfdocs --output-file /builds/worker/mozlint.json
     worker:
         env:
             WORKSPACE: /builds/worker/checkouts/gecko/
@@ -777,6 +827,9 @@ trojan-source:
         symbol: misc(trojan-source)
     run:
         mach: lint -v -l trojan-source -f treeherder -f json:/builds/worker/mozlint.json .
+    fetches:
+        toolchain:
+            - linux64-mozcheck
     when:
         files-changed:
             - '**/*.c'
@@ -798,6 +851,20 @@ ignorefile-test:
         files-changed:
             - '.gitignore'
             - '.hgignore'
+
+agent-skills-sync:
+    description: Keep .claude/skills and .agents/skills in sync
+    platform: lint/opt
+    treeherder:
+        symbol: agent-skills-sync
+    run:
+        mach: lint -v -l agent-skills-sync -f treeherder -f json:/builds/worker/mozlint.json .claude/skills .agents/skills
+    when:
+        files-changed:
+            - '.claude/skills/**'
+            - '.agents/skills/**'
+            - 'tools/lint/agent-skills-sync.yml'
+            - 'tools/lint/agent-skills-sync/**'
 
 
 c-includes:

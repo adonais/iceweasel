@@ -6,7 +6,7 @@ DIRS += [
     "content",
 ]
 
-EXTRA_JS_MODULES += [
+MOZ_SRC_FILES += [
     "CustomKeys.sys.mjs",
 ]
 

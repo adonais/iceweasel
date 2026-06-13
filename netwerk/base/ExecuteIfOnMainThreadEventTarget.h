@@ -17,7 +17,7 @@ namespace net {
  */
 class ExecuteIfOnMainThreadEventTarget final : public nsISerialEventTarget {
  public:
-  ExecuteIfOnMainThreadEventTarget() {}
+  ExecuteIfOnMainThreadEventTarget() = default;
 
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIEVENTTARGET

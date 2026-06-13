@@ -34,7 +34,7 @@ class IdentityCredentialRequestManager final : nsISupports {
 
  private:
   static StaticRefPtr<IdentityCredentialRequestManager> sSingleton;
-  IdentityCredentialRequestManager() {};
+  IdentityCredentialRequestManager() = default;
   ~IdentityCredentialRequestManager() = default;
 
   nsTHashMap<uint64_t,

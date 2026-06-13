@@ -152,6 +152,7 @@ Maybe<layers::SurfaceDescriptor> SharedTextureD3D11::ToSurfaceDescriptor() {
       /* arrayIndex */ 0, format, gfx::IntSize(mWidth, mHeight),
       gfx::ColorSpace2::SRGB, gfx::ColorRange::FULL,
       gfx::TransferFunction::SRGB,
+      /* hdrMetadata */ Nothing(),
       /* hasKeyedMutex */ false, Some(mFencesHolderId)));
 }
 

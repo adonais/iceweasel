@@ -23,7 +23,6 @@ import mozilla.components.support.test.whenever
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
@@ -39,6 +38,7 @@ import org.mozilla.geckoview.Image
 import org.mozilla.geckoview.WebExtension
 import org.mozilla.geckoview.WebExtensionController
 import org.robolectric.Shadows.shadowOf
+import kotlin.test.assertNotNull
 
 @RunWith(AndroidJUnit4::class)
 class GeckoWebExtensionTest {

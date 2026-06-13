@@ -8,9 +8,13 @@
 newtab-page-title = Pestanya nova
 newtab-settings-button =
     .title = Personalitzeu la pàgina de pestanya nova
+#  (developer note): @nova-cleanup(remove-string): Remove newtab-customize-panel-icon-button once Nova lands, will be using newtab-customize-panel-label instead
 newtab-customize-panel-icon-button =
     .title = Personalitza aquesta pàgina
+#  (developer note): @nova-cleanup(remove-string): Remove newtab-customize-panel-icon-button-label once Nova lands, will be using newtab-customize-panel-label instead
 newtab-customize-panel-icon-button-label = Personalitza
+newtab-customize-panel-label =
+    .label = Personalitza
 newtab-personalize-settings-icon-label =
     .title = Personalitza la pestanya nova
     .aria-label = Paràmetres
@@ -659,10 +663,16 @@ newtab-widget-lists-label-beta =
 newtab-widget-lists-completed-list = Completats ({ $number })
 newtab-widget-task-list-menu-copy = Copia
 newtab-widget-lists-menu-edit = Edita el nom de la llista
+newtab-widget-lists-menu-edit2 =
+    .aria-label = Edita el nom de la llista
 newtab-widget-lists-menu-create = Crea una llista nova
 newtab-widget-lists-menu-delete = Suprimeix aquesta llista
 newtab-widget-lists-menu-copy = Copia la llista al porta-retalls
 newtab-widget-lists-menu-learn-more = Més informació
+newtab-widget-lists-button-add-item = Afegeix un element
+newtab-widget-lists-input-add-an-item2 =
+    .placeholder = Afegeix un element
+    .aria-label = Afegeix un element
 newtab-widget-lists-input-add-an-item =
     .placeholder = Afegeix un element
 newtab-widget-lists-input-error = Incloeu text per a afegir un element.
@@ -679,6 +689,10 @@ newtab-widget-lists-name-label-default =
 newtab-widget-lists-name-placeholder-default =
     .placeholder = Llista de tasques
 # The placeholder value of the name field for a newly created list
+newtab-widget-lists-name-placeholder-new2 =
+    .placeholder = Llista nova
+    .aria-label = Edita el nom de la llista
+# The placeholder value of the name field for a newly created list
 newtab-widget-lists-name-placeholder-new =
     .placeholder = Llista nova
 newtab-widget-section-title = Ginys
@@ -693,8 +707,7 @@ newtab-widget-section-minimize =
     .title = Minimitza els widgets
     .aria-label = Minimitza tots els widgets a mida compacta
 
-## Strings for timer productivity widget
-## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown
+## Strings introduced by the Nova redesign of the Timer widget
 
 newtab-widget-timer-notification-title = Temporitzador
 newtab-widget-timer-notification-focus = S'ha acabat el temps de concentració. Et felicito. Vols fer una pausa?

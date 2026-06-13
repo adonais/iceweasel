@@ -105,6 +105,7 @@ marionette-harness:
         subsuite: marionette-harness
     when:
         files-changed:
+            - 'testing/marionette/client/**'
             - 'testing/marionette/harness/**'
             - 'testing/mozbase/mozlog/mozlog/**'
             - 'testing/mozbase/mozlog/setup.py'
@@ -214,12 +215,15 @@ mozlint:
                 linux2404-64/opt:
                     - linux64-node
                     - linux64-rust
+                    - linux64-mozcheck
                 macosx1470-64/opt:
                     - macosx64-node
                     - macosx64-rust
+                    - macosx64-mozcheck
                 windows11-64/opt:
                     - win64-node
                     - win64-rust
+                    - win64-mozcheck
         clang-tidy:
             - artifact: clang-tidy.tar.zst
               dest: clang-tools
@@ -611,6 +615,8 @@ telemetry-python:
     when:
         files-changed:
             - 'toolkit/components/telemetry/**'
+            - '**/*metrics.yaml'
+            - '**/pings.yaml'
 
 verify-decision:
     description: verifications on Decision task output

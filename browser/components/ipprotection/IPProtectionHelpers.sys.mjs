@@ -20,9 +20,11 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///toolkit/components/ipprotection/IPProtectionService.sys.mjs",
   IPProtectionStates:
     "moz-src:///toolkit/components/ipprotection/IPProtectionService.sys.mjs",
+  IPPFxaAuthProvider:
+    "moz-src:///toolkit/components/ipprotection/fxa/IPPFxaAuthProvider.sys.mjs",
+  IPPFxaActivateAuthProvider:
+    "moz-src:///toolkit/components/ipprotection/fxa/IPPFxaActivateAuthProvider.sys.mjs",
 });
-
-import { IPPFxaAuthProvider } from "moz-src:///toolkit/components/ipprotection/fxa/IPPFxaAuthProvider.sys.mjs";
 import { IPPUsageHelper } from "moz-src:///browser/components/ipprotection/IPPUsageHelper.sys.mjs";
 import { IPPOnboardingMessage } from "moz-src:///browser/components/ipprotection/IPPOnboardingMessageHelper.sys.mjs";
 import { IPPOptOutHelper } from "moz-src:///browser/components/ipprotection/IPPOptOutHelper.sys.mjs";
@@ -78,6 +80,13 @@ class UIHelper {
   }
 }
 
+const authProvider = Services.prefs.getBoolPref(
+  "browser.ipProtection.fxa.useActivateFlow",
+  false
+)
+  ? lazy.IPPFxaActivateAuthProvider
+  : lazy.IPPFxaAuthProvider;
+
 IPProtectionActivator.addHelpers([
   IPPOnboardingMessage,
   IPPUsageHelper,
@@ -85,9 +94,9 @@ IPProtectionActivator.addHelpers([
   IPPOptOutHelper,
   IPProtectionAlertManager,
   IPProtectionInfobarManager,
-  ...IPPFxaAuthProvider.helpers,
+  ...authProvider.helpers,
 ]);
 
-IPProtectionActivator.setAuthProvider(IPPFxaAuthProvider);
+IPProtectionActivator.setAuthProvider(authProvider);
 
 export { IPProtectionActivator };

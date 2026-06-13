@@ -8,9 +8,9 @@ import kotlinx.coroutines.test.runTest
 import mozilla.components.lib.llm.mlpa.service.AuthorizationToken
 import mozilla.components.support.test.fakes.android.FakeSharedPreferences
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Test
+import kotlin.test.assertNotNull
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant

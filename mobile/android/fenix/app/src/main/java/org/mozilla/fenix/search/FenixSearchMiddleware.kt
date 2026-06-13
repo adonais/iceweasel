@@ -8,7 +8,9 @@ import androidx.annotation.VisibleForTesting
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.lifecycle.coroutineScope
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
@@ -278,6 +280,7 @@ class FenixSearchMiddleware(
 
         return SearchSuggestionsProvidersBuilder(
             components = uiContext.components,
+            scope = ProcessLifecycleOwner.get().lifecycleScope,
             browsingModeManager = browsingModeManager,
             includeSelectedTab = store.state.tabId == null,
             loadUrlUseCase = loadUrlUseCase(store),

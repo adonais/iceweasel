@@ -102,6 +102,10 @@ size_t TenuringTracer::getPromotedCells() const { return promotedCells; }
 
 void TenuringTracer::onObjectEdge(JSObject** objp, const char* name) {
   JSObject* obj = *objp;
+  if (!obj) {
+    return;
+  }
+
   if (!nursery_.inCollectedRegion(obj)) {
     MOZ_ASSERT(!obj->isForwarded());
     return;
@@ -147,7 +151,11 @@ JSObject* TenuringTracer::promoteObject(JSObject* obj) {
 
 void TenuringTracer::onStringEdge(JSString** strp, const char* name) {
   JSString* str = *strp;
-  if (!nursery_.inCollectedRegion(str)) {
+  if (!str) {
+    return;
+  }
+
+  if (!str || !nursery_.inCollectedRegion(str)) {
     return;
   }
 
@@ -171,7 +179,7 @@ JSString* TenuringTracer::promoteOrForward(JSString* str) {
 
 void TenuringTracer::onBigIntEdge(JS::BigInt** bip, const char* name) {
   JS::BigInt* bi = *bip;
-  if (!nursery_.inCollectedRegion(bi)) {
+  if (!bi || !nursery_.inCollectedRegion(bi)) {
     return;
   }
 
@@ -195,7 +203,7 @@ JS::BigInt* TenuringTracer::promoteOrForward(JS::BigInt* bi) {
 
 void TenuringTracer::onGetterSetterEdge(GetterSetter** gsp, const char* name) {
   GetterSetter* gs = *gsp;
-  if (!nursery_.inCollectedRegion(gs)) {
+  if (!gs || !nursery_.inCollectedRegion(gs)) {
     return;
   }
 
@@ -358,11 +366,7 @@ template struct StoreBuffer::MonoTypeBuffer<StoreBuffer::ObjectPtrEdge>;
 void js::gc::StoreBuffer::SlotsEdge::trace(TenuringTracer& mover) const {
   NativeObject* obj = object();
   MOZ_ASSERT(IsCellPointerValid(obj));
-
-  // Beware JSObject::swap exchanging a native object for a non-native one.
-  if (!obj->is<NativeObject>()) {
-    return;
-  }
+  MOZ_ASSERT(obj->is<NativeObject>());
 
   MOZ_ASSERT(!IsInsideNursery(obj), "obj shouldn't live in nursery.");
 
@@ -444,9 +448,8 @@ template <typename T>
 void TenuringTracer::traceBufferedCells(Arena* arena, ArenaCellSet* cells) {
   for (size_t i = 0; i < MaxArenaCellIndex; i += cells->BitsPerWord) {
     ArenaCellSet::WordT bitset = cells->getWord(i / cells->BitsPerWord);
-    static_assert(std::is_same_v<ArenaCellSet::WordT, uint32_t> ||
-                      std::is_same_v<ArenaCellSet::WordT, uint64_t>,
-                  "unexpected word size");
+    static_assert(std::is_same_v<ArenaCellSet::WordT, uint32_t>,
+                  "unexpected word type");
 
     while (bitset) {
       size_t bit = i + std::countr_zero(bitset);
@@ -1730,6 +1733,10 @@ MinorSweepingTracer::MinorSweepingTracer(JSRuntime* rt)
 template <typename T>
 inline void MinorSweepingTracer::onEdge(T** thingp, const char* name) {
   T* thing = *thingp;
+  if (!thing) {
+    return;
+  }
+
   if (thing->isTenured()) {
     MOZ_ASSERT(!IsForwarded(thing));
     return;

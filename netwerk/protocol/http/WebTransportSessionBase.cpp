@@ -10,7 +10,20 @@ namespace mozilla::net {
 
 void WebTransportSessionBase::SetWebTransportSessionEventListener(
     WebTransportSessionEventListener* listener) {
+  MutexAutoLock lock(mListenerLock);
   mListener = listener;
+}
+
+already_AddRefed<WebTransportSessionEventListener>
+WebTransportSessionBase::GetListener() {
+  MutexAutoLock lock(mListenerLock);
+  return do_AddRef(mListener);
+}
+
+already_AddRefed<WebTransportSessionEventListener>
+WebTransportSessionBase::TakeListener() {
+  MutexAutoLock lock(mListenerLock);
+  return mListener.forget();
 }
 
 }  // namespace mozilla::net

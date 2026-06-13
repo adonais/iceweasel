@@ -13,6 +13,7 @@
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Components.h"
 #include "mozilla/ContentBlockingAllowList.h"
+#include "mozilla/EnumeratedRange.h"
 #include "mozilla/IdentityCredentialRequestManager.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/ServoCSSParser.h"
@@ -1131,11 +1132,9 @@ already_AddRefed<mozilla::dom::Promise> WindowGlobalParent::DrawSnapshot(
   return promise.forget();
 }
 
-void WindowGlobalParent::DrawSnapshotInternal(gfx::CrossProcessPaint* aPaint,
-                                              const Maybe<IntRect>& aRect,
-                                              float aScale,
-                                              nscolor aBackgroundColor,
-                                              uint32_t aFlags) {
+void WindowGlobalParent::DrawSnapshotInternal(
+    gfx::CrossProcessPaint* aPaint, const Maybe<IntRect>& aRect, float aScale,
+    nscolor aBackgroundColor, gfx::CrossProcessPaintFlags aFlags) {
   auto promise = SendDrawSnapshot(aRect, aScale, aBackgroundColor, aFlags);
 
   RefPtr<gfx::CrossProcessPaint> paint(aPaint);
@@ -1275,11 +1274,11 @@ WindowGlobalParent::FinishAccumulatingPageUseCounters() {
     }
 
     bool any = false;
-    for (int32_t c = 0; c < eUseCounter_Count; ++c) {
-      auto uc = static_cast<UseCounter>(c);
+    for (const UseCounter uc : MakeEnumeratedRange(eUseCounter_Count)) {
       if (!mPageUseCounters->mUseCounters[uc]) {
         continue;
       }
+
       any = true;
       const char* metricName = IncrementUseCounter(uc, /* aIsPage = */ true);
       if (dumpCounters) {
@@ -1368,8 +1367,11 @@ nsCString BFCacheStatusToString(uint32_t aFlags) {
   ADD_BFCACHESTATUS_TO_STRING(HAS_USED_VR);
   ADD_BFCACHESTATUS_TO_STRING(CONTAINS_REMOTE_SUBFRAMES);
   ADD_BFCACHESTATUS_TO_STRING(NOT_ONLY_TOPLEVEL_IN_BCG);
+  ADD_BFCACHESTATUS_TO_STRING(ABOUT_PAGE);
+  ADD_BFCACHESTATUS_TO_STRING(RESTORING);
   ADD_BFCACHESTATUS_TO_STRING(BEFOREUNLOAD_LISTENER);
   ADD_BFCACHESTATUS_TO_STRING(ACTIVE_LOCK);
+  ADD_BFCACHESTATUS_TO_STRING(ACTIVE_WEBTRANSPORT);
   ADD_BFCACHESTATUS_TO_STRING(PAGE_LOADING);
 
 #undef ADD_BFCACHESTATUS_TO_STRING
@@ -1677,26 +1679,25 @@ void WindowGlobalParent::ActorDestroy(ActorDestroyReason aWhy) {
     otherContent->SendDiscardWindowContext(InnerWindowId(), callback, callback);
   });
 
-  // Report content blocking log when destroyed.
-  // There shouldn't have any content blocking log when a document is loaded in
-  // the parent process(See NotifyContentBlockingEvent), so we could skip
-  // reporting log when it is in-process.
+  // Report content blocking log when destroyed. In addition to the regular
+  // content-blocking log flush (shared with the flush-on-query path via
+  // MaybeReportContentBlockingLog), the teardown path also emits the
+  // canvas/font/email fingerprinting Glean metrics that are only meaningful
+  // at end-of-page.
+  MaybeReportContentBlockingLog();
   if (!IsInProcess()) {
     RefPtr<BrowserParent> browserParent =
         static_cast<BrowserParent*>(Manager());
     if (browserParent) {
       nsCOMPtr<nsILoadContext> loadContext = browserParent->GetLoadContext();
       if (loadContext && !loadContext->UsePrivateBrowsing() &&
-          BrowsingContext()->IsTopContent()) {
-        GetContentBlockingLog()->ReportLog();
-
-        if (mDocumentURI && net::SchemeIsHttpOrHttps(mDocumentURI)) {
-          GetContentBlockingLog()->ReportCanvasFingerprintingLog(
-              DocumentPrincipal());
-          GetContentBlockingLog()->ReportFontFingerprintingLog(
-              DocumentPrincipal());
-          GetContentBlockingLog()->ReportEmailTrackingLog(DocumentPrincipal());
-        }
+          BrowsingContext()->IsTopContent() && mDocumentURI &&
+          net::SchemeIsHttpOrHttps(mDocumentURI)) {
+        GetContentBlockingLog()->ReportCanvasFingerprintingLog(
+            DocumentPrincipal());
+        GetContentBlockingLog()->ReportFontFingerprintingLog(
+            DocumentPrincipal());
+        GetContentBlockingLog()->ReportEmailTrackingLog(DocumentPrincipal());
       }
     }
   }
@@ -1718,6 +1719,56 @@ void WindowGlobalParent::ActorDestroy(ActorDestroyReason aWhy) {
 }
 
 WindowGlobalParent::~WindowGlobalParent() = default;
+
+void WindowGlobalParent::MaybeReportContentBlockingLog() {
+  MOZ_ASSERT(XRE_IsParentProcess());
+  MOZ_ASSERT(NS_IsMainThread());
+
+  // No blocking is recorded for in-process (non-remote) documents — see
+  // NotifyContentBlockingEvent.
+  if (IsInProcess()) {
+    return;
+  }
+  RefPtr<BrowserParent> browserParent = static_cast<BrowserParent*>(Manager());
+  if (!browserParent) {
+    return;
+  }
+  nsCOMPtr<nsILoadContext> loadContext = browserParent->GetLoadContext();
+  if (!loadContext || loadContext->UsePrivateBrowsing()) {
+    return;
+  }
+  if (!BrowsingContext()->IsTopContent()) {
+    return;
+  }
+
+  GetContentBlockingLog()->ReportLog();
+}
+
+/* static */
+void WindowGlobalParent::FlushAllContentBlockingLogs() {
+  MOZ_ASSERT(XRE_IsParentProcess());
+  MOZ_ASSERT(NS_IsMainThread());
+
+  nsTArray<RefPtr<BrowsingContextGroup>> groups;
+  BrowsingContextGroup::GetAllGroups(groups);
+
+  for (const auto& group : groups) {
+    for (const auto& bc : group->Toplevels()) {
+      if (!bc) {
+        continue;
+      }
+      RefPtr<CanonicalBrowsingContext> canonical = bc->Canonical();
+      if (!canonical) {
+        continue;
+      }
+      RefPtr<WindowGlobalParent> wgp = canonical->GetCurrentWindowGlobal();
+      if (!wgp) {
+        continue;
+      }
+      wgp->MaybeReportContentBlockingLog();
+    }
+  }
+}
 
 JSObject* WindowGlobalParent::WrapObject(JSContext* aCx,
                                          JS::Handle<JSObject*> aGivenProto) {

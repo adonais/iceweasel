@@ -1,3 +1,5 @@
+// |jit-test| skip-if: !wasmJSPromiseIntegrationEnabled()
+
 // Test a wasm stack with debug frames mixed with non-debug frames.
 
 // g1 is debugged, g2 is not

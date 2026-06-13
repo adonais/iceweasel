@@ -4,7 +4,7 @@
 #ifndef HTMLDataListElement_h_
 #define HTMLDataListElement_h_
 
-#include "nsContentList.h"
+#include "mozilla/dom/ContentList.h"
 #include "nsGenericHTMLElement.h"
 
 namespace mozilla::dom {
@@ -22,9 +22,9 @@ class HTMLDataListElement final : public nsGenericHTMLElement {
   // nsISupports
   NS_DECL_ISUPPORTS_INHERITED
 
-  nsContentList* Options() {
+  ContentList* Options() {
     if (!mOptions) {
-      mOptions = new nsContentList(this, MatchOptions, nullptr, nullptr, true);
+      mOptions = new ContentList(this, MatchOptions, nullptr, nullptr, true);
     }
 
     return mOptions;
@@ -32,7 +32,7 @@ class HTMLDataListElement final : public nsGenericHTMLElement {
 
   virtual nsresult Clone(dom::NodeInfo*, nsINode** aResult) const override;
 
-  // This function is used to generate the nsContentList (option elements).
+  // This function is used to generate the ContentList (option elements).
   static bool MatchOptions(Element* aElement, int32_t aNamespaceID,
                            nsAtom* aAtom, void* aData);
 
@@ -45,7 +45,7 @@ class HTMLDataListElement final : public nsGenericHTMLElement {
                              JS::Handle<JSObject*> aGivenProto) override;
 
   // <option>'s list inside the datalist element.
-  RefPtr<nsContentList> mOptions;
+  RefPtr<ContentList> mOptions;
 };
 
 }  // namespace mozilla::dom

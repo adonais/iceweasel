@@ -90,7 +90,12 @@ Allowed actions, and subfields:
       subsuite - Name of the subsuite for the tests that ran (optional)
 
   lsan_leak
-      frames - List of stack frames from the leak report
+      frames - List of stack frame function names from the leak report
+      kind - Leak kind ("Direct" or "Indirect")
+      bytes - Bytes leaked at this allocation site
+      objects - Number of objects leaked at this allocation site
+      stack - Structured stack frames (list of dicts with function/module/file/line/
+              column/offset fields, suitable for the profiler stack format) (optional)
       scope - An identifier for the set of tests run during the browser session
               (e.g. a directory name)
       allowed_match - A stack frame in the list that matched a rule meaning the
@@ -105,8 +110,12 @@ Allowed actions, and subfields:
 
   mozleak_object
      process - Process that leaked
-     bytes - Number of bytes that leaked
+     count - Number of instances that leaked
      name - Name of the object that leaked
+     bytes_per_inst - Per-instance size in bytes
+     bytes_leaked - Total bytes leaked for this class
+     total_instances - Total instances allocated
+     bytes - Legacy alias of count, copied from count for out-of-tree consumers
      scope - An identifier for the set of tests run during the browser session
              (e.g. a directory name)
      allowed - Boolean indicating whether the leak was permitted
@@ -657,6 +666,10 @@ class StructuredLogger:
 
     @log_action(
         List(Unicode, "frames"),
+        Unicode("kind"),
+        Int("bytes"),
+        Int("objects"),
+        List(Dict(Any), "stack", optional=True, default=None),
         Unicode("scope", optional=True, default=None),
         Unicode("allowed_match", optional=True, default=None),
         Unicode("subsuite", default=None, optional=True),
@@ -675,13 +688,18 @@ class StructuredLogger:
 
     @log_action(
         Unicode("process"),
-        Int("bytes"),
+        Int("count"),
         Unicode("name"),
+        Int("bytes_per_inst"),
+        Int("bytes_leaked"),
+        Int("total_instances"),
         Unicode("scope", optional=True, default=None),
         Boolean("allowed", optional=True, default=False),
         Unicode("subsuite", default=None, optional=True),
     )
     def mozleak_object(self, data):
+        # 'bytes' is a legacy alias of 'count' kept for out-of-tree consumers.
+        data["bytes"] = data["count"]
         self._log_data("mozleak_object", data)
 
     @log_action(

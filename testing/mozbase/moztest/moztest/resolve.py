@@ -13,7 +13,7 @@ from functools import cache
 import mozpack.path as mozpath
 from manifestparser import TestManifest, combine_fields
 from mozbuild.base import MozbuildObject
-from mozbuild.testing import REFTEST_FLAVORS, TEST_MANIFESTS
+from mozbuild.testing import REFTEST_FLAVORS, TEST_MANIFESTS, install_test_files
 from mozpack.files import FileFinder
 
 here = os.path.abspath(os.path.dirname(__file__))
@@ -564,6 +564,17 @@ class BuildBackendLoader(TestLoader):
             from mozbuild.gen_test_backend import gen_test_backend
 
             gen_test_backend()
+            # Only install when a prior full build has emitted the harness
+            # install manifest.
+            harness_manifest = mozpath.join(
+                self.topobjdir, "_build_manifests", "install", "_tests"
+            )
+            if os.path.isfile(harness_manifest):
+                install_test_files(
+                    mozpath.normpath(self.topsrcdir),
+                    self.topobjdir,
+                    "_tests",
+                )
 
         all_tests = os.path.join(self.topobjdir, "all-tests.pkl")
         test_defaults = os.path.join(self.topobjdir, "test-defaults.pkl")
@@ -988,11 +999,13 @@ class TestResolver(MozbuildObject):
 
         self._reset_state()
 
-        test_path = os.path.join(
-            self.topsrcdir, "mobile", "android", "fenix", "app", "src", "test", "java"
+        app_dir = os.path.join(self.topsrcdir, "mobile", "android", "fenix", "app")
+        test_subdirs = (
+            os.path.join("src", "test", "java"),
+            os.path.join("src", "test", "kotlin"),
         )
-        for root, dirs, paths in os.walk(test_path):
-            if "test" in root:
+        for root, dirs, paths in os.walk(app_dir):
+            if any(sd in root for sd in test_subdirs):
                 for filename in fnmatch.filter(paths, "*.kt"):
                     path = os.path.join(root, filename)
                     relpath = mozpath.relpath(mozpath.normpath(path), self.topsrcdir)
@@ -1009,6 +1022,7 @@ class TestResolver(MozbuildObject):
                         "dir_relpath": mozpath.dirname(relpath),
                         "srcdir_relpath": relpath,
                     })
+            dirs[:] = [d for d in dirs if d != "build"]
 
         self._fenix_loaded = True
 

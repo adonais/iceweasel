@@ -828,7 +828,7 @@ const PanelUI = {
 
   _onLibraryCommand(aEvent) {
     let button = aEvent.target;
-    let { BookmarkingUI, DownloadsPanel } = button.ownerGlobal;
+    let { BookmarkingUI, DownloadsPanel } = button.documentGlobal;
     switch (button.id) {
       case "appMenu-library-bookmarks-button":
         BookmarkingUI.showSubView(button);
