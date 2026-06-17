@@ -815,6 +815,12 @@ bool WebRenderBridgeParent::UpdateSharedExternalImage(
     return true;
   }
 
+  if (!GetCompositorBridge()->GetCompositorManager()->OwnsExternalImageId(
+          aExtId)) {
+    gfxCriticalNote << "We do not own extId:" << wr::AsUint64(aExtId);
+    return false;
+  }
+
   auto key = wr::AsUint64(aKey);
   auto it = mSharedSurfaceIds.find(key);
   if (it == mSharedSurfaceIds.end()) {

@@ -12,6 +12,7 @@
 #include "mozilla/dom/KeySystemNames.h"
 #include "mozilla/EMEUtils.h"
 #include "mozilla/KeySystemConfig.h"
+#include "mozilla/StaticMutex.h"
 #include "MFCDMProxy.h"
 #include "RemoteDecodeUtils.h"       // For GetCurrentSandboxingKind()
 #include "SpecialSystemDirectory.h"  // For temp dir
@@ -63,16 +64,26 @@ DEFINE_PROPERTYKEY(EME_CONTENTDECRYPTIONMODULE_ORIGIN_ID, 0x1218a3e2, 0xcfb0,
     }                                                              \
   } while (false)
 
+/* static */
+already_AddRefed<MFCDMParent> MFCDMParent::GetCDMById(uint64_t aId) {
+  StaticMutexAutoLock lock(sRegistryMutex);
+  RefPtr<MFCDMParent> cdm = sRegisteredCDMs.Get(aId);
+  return cdm.forget();
+}
+
 void MFCDMParent::Register() {
+  StaticMutexAutoLock lock(sRegistryMutex);
   MOZ_ASSERT(!sRegisteredCDMs.Contains(this->mId));
   sRegisteredCDMs.InsertOrUpdate(this->mId, this);
   MFCDM_PARENT_LOG("Registered!");
 }
 
 void MFCDMParent::Unregister() {
-  MOZ_ASSERT(sRegisteredCDMs.Contains(this->mId));
-  sRegisteredCDMs.Remove(this->mId);
-  MFCDM_PARENT_LOG("Unregistered!");
+  StaticMutexAutoLock lock(sRegistryMutex);
+  if (sRegisteredCDMs.Contains(this->mId)) {
+    sRegisteredCDMs.Remove(this->mId);
+    MFCDM_PARENT_LOG("Unregistered!");
+  }
 }
 
 MFCDMParent::MFCDMParent(const nsAString& aKeySystem,
@@ -113,6 +124,7 @@ void MFCDMParent::Destroy() {
   mKeyMessageListener.DisconnectIfExists();
   mKeyChangeListener.DisconnectIfExists();
   mExpirationListener.DisconnectIfExists();
+  Unregister();
   mIPDLSelfRef = nullptr;
 }
 

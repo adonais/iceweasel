@@ -502,8 +502,13 @@ mozilla::ipc::IPCResult MFMediaEngineParent::RecvSetCDMProxyId(
   }
 #ifdef MOZ_WMF_CDM
   LOG("SetCDMProxy, Id=%" PRIu64, aProxyId);
-  MFCDMParent* cdmParent = MFCDMParent::GetCDMById(aProxyId);
-  MOZ_DIAGNOSTIC_ASSERT(cdmParent);
+  RefPtr<MFCDMParent> cdmParent = MFCDMParent::GetCDMById(aProxyId);
+  if (!cdmParent) {
+    LOG("No CDM found for Id=%" PRIu64, aProxyId);
+    Unused << SendNotifyError(MediaResult(NS_ERROR_DOM_MEDIA_CDM_NOT_FOUND_ERR,
+                                          "No CDM for proxy id"));
+    return IPC_OK();
+  }
   RETURN_PARAM_IF_FAILED(
       MakeAndInitialize<MFContentProtectionManager>(&mContentProtectionManager),
       IPC_OK());

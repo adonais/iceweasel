@@ -13,6 +13,7 @@
 #include "MFCDMSession.h"
 #include "MFPMPHostWrapper.h"
 #include "RemoteDecoderManagerParent.h"
+#include "mozilla/StaticMutex.h"
 
 namespace mozilla {
 
@@ -34,10 +35,7 @@ class MFCDMParent final : public PMFCDMParent {
   MFCDMParent(const nsAString& aKeySystem, RemoteDecoderManagerParent* aManager,
               nsISerialEventTarget* aManagerThread);
 
-  static MFCDMParent* GetCDMById(uint64_t aId) {
-    MOZ_ASSERT(sRegisteredCDMs.Contains(aId));
-    return sRegisteredCDMs.Get(aId);
-  }
+  static already_AddRefed<MFCDMParent> GetCDMById(uint64_t aId);
   uint64_t Id() const { return mId; }
 
   mozilla::ipc::IPCResult RecvGetCapabilities(
@@ -90,7 +88,11 @@ class MFCDMParent final : public PMFCDMParent {
   const RefPtr<RemoteDecoderManagerParent> mManager;
   const RefPtr<nsISerialEventTarget> mManagerThread;
 
-  static inline nsTHashMap<nsUint64HashKey, MFCDMParent*> sRegisteredCDMs;
+  // Guards sRegisteredCDMs and the strong reference handed out by GetCDMById.
+  static inline StaticMutex sRegistryMutex;
+
+  static inline nsTHashMap<nsUint64HashKey, MFCDMParent*> sRegisteredCDMs
+      MOZ_GUARDED_BY(sRegistryMutex);
 
   static inline uint64_t sNextId = 1;
   const uint64_t mId;

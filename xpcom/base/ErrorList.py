@@ -1170,6 +1170,7 @@ with modules["DOM_MEDIA"]:
     # Internal CDM error
     errors["NS_ERROR_DOM_MEDIA_CDM_NO_SESSION_ERR"] = FAILURE(50)
     errors["NS_ERROR_DOM_MEDIA_CDM_SESSION_OPERATION_ERR"] = FAILURE(51)
+    errors["NS_ERROR_DOM_MEDIA_CDM_NOT_FOUND_ERR"] = FAILURE(52)
 
     # Internal platform-related errors
     errors["NS_ERROR_DOM_MEDIA_CUBEB_INITIALIZATION_ERR"] = FAILURE(101)

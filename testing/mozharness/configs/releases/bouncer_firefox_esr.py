@@ -11,89 +11,73 @@ config = {
         "installer": {
             "product-name": "Firefox-%(version)s",
             "platforms": [
-                "linux",
                 "linux64",
                 "osx",
                 "win",
                 "win64",
-                "win64-aarch64",
             ],
         },
         "installer-latest": {
             "product-name": "Firefox-esr-latest",
             "platforms": [
-                "linux",
                 "linux64",
                 "osx",
                 "win",
                 "win64",
-                "win64-aarch64",
             ],
         },
         "installer-115-latest": {
             "product-name": "Firefox-esr115-latest",
             "platforms": [
-                "linux",
                 "linux64",
                 "osx",
                 "win",
                 "win64",
-                "win64-aarch64",
             ],
         },
         "installer-next-latest": {
             "product-name": "Firefox-esr-next-latest",
             "platforms": [
-                "linux",
                 "linux64",
                 "osx",
                 "win",
                 "win64",
-                "win64-aarch64",
             ],
         },
         "installer-ssl": {
             "product-name": "Firefox-%(version)s-SSL",
             "platforms": [
-                "linux",
                 "linux64",
                 "osx",
                 "win",
                 "win64",
-                "win64-aarch64",
             ],
         },
         "installer-latest-ssl": {
             "product-name": "Firefox-esr-latest-SSL",
             "platforms": [
-                "linux",
                 "linux64",
                 "osx",
                 "win",
                 "win64",
-                "win64-aarch64",
             ],
         },
         "installer-115-latest-ssl": {
             "product-name": "Firefox-esr115-latest-SSL",
             "platforms": [
-                "linux",
                 "linux64",
                 "osx",
                 "win",
                 "win64",
-                "win64-aarch64",
             ],
         },
         "installer-next-latest-ssl": {
             "product-name": "Firefox-esr-next-latest-SSL",
             "platforms": [
-                "linux",
                 "linux64",
                 "osx",
                 "win",
                 "win64",
-                "win64-aarch64",
             ],
         },
         "msi": {
@@ -143,7 +127,6 @@ config = {
         "langpack": {
             "product-name": "Firefox-%(version)s-langpack-SSL",
             "platforms": [
-                "linux",
                 "linux64",
                 "osx",
                 "win",
@@ -153,7 +136,6 @@ config = {
         "langpack-latest": {
             "product-name": "Firefox-esr-langpack-latest-SSL",
             "platforms": [
-                "linux",
                 "linux64",
                 "osx",
                 "win",
@@ -163,7 +145,6 @@ config = {
         "langpack-115-latest": {
             "product-name": "Firefox-esr115-langpack-latest-SSL",
             "platforms": [
-                "linux",
                 "linux64",
                 "osx",
                 "win",
@@ -173,7 +154,6 @@ config = {
         "langpack-latest-next": {
             "product-name": "Firefox-esr-next-langpack-latest-SSL",
             "platforms": [
-                "linux",
                 "linux64",
                 "osx",
                 "win",
@@ -183,12 +163,10 @@ config = {
         "complete-mar": {
             "product-name": "Firefox-%(version)s-Complete",
             "platforms": [
-                "linux",
                 "linux64",
                 "osx",
                 "win",
                 "win64",
-                "win64-aarch64",
             ],
         },
     },
@@ -196,12 +174,10 @@ config = {
         "releases-dir": {
             "product-name": "Firefox-%(version)s-Partial-%(prev_version)s",
             "platforms": [
-                "linux",
                 "linux64",
                 "osx",
                 "win",
                 "win64",
-                "win64-aarch64",
             ],
         },
     },
