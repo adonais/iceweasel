@@ -2777,8 +2777,8 @@ security-privacy-issue-warning-proxy-autodetection =
   .description = Proxy auto-configuration could let untrusted networks to monitor your activity.
 
 pane-iceweasel-title = Iceweasel
-category-iceweasel =
-    .tooltiptext = Browser feature changes, easy access
+pane-iceweasel-title2 = Iceweasel
+    .title = Iceweasel additional features
 iceweasel-header = Iceweasel Preferences
 iceweasel-warning-title = Warning!
 iceweasel-warning-description = We carefully choose default settings to focus on privacy and security. When changing these settings, read the descriptions to understand the implications of those changes.
