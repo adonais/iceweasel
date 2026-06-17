@@ -2417,6 +2417,21 @@ static void SetupLauncherProcessPref() {
     return;
   }
 
+  mozilla::LauncherRegistryInfo launcherRegInfo;
+
+  mozilla::LauncherResult<mozilla::LauncherRegistryInfo::EnabledState>
+      enabledState = launcherRegInfo.IsEnabled();
+
+  if (enabledState.isOk()) {
+    gLauncherProcessState = Some(enabledState.unwrap());
+
+    // Reflect the launcher process registry state into user prefs
+    Preferences::SetBool(
+        PREF_WIN_LAUNCHER_PROCESS_ENABLED,
+        enabledState.unwrap() !=
+            mozilla::LauncherRegistryInfo::EnabledState::ForceDisabled);
+  }
+
   Preferences::RegisterCallback(&OnLauncherPrefChanged,
                                 PREF_WIN_LAUNCHER_PROCESS_ENABLED);
   Preferences::RegisterCallback(&OnLauncherTelemetryPrefChanged,
