@@ -1813,6 +1813,12 @@
   value: false
   mirror: always
 
+# Settings Redesign 2025 prefs
+- name: browser.settings-redesign.enabled
+  type: bool
+  value: false
+  mirror: always
+
 # Communicates the toolbar color to platform (for e.g., prefers-color-scheme).
 #
 # Returns whether the toolbar is dark (0), light (1), or system (2). The
@@ -20585,12 +20591,6 @@
   value: 40
   mirror: always
 #endif
-
-# Settings Redesign 2025 prefs
-- name: browser.settings-redesign.enabled
-  type: bool
-  value: false
-  mirror: always
 
 #---------------------------------------------------------------------------
 # Prefs starting with "zoom."
