@@ -296,6 +296,8 @@ static const char kPrefPreXulSkeletonUI[] = "browser.startup.preXulSkeletonUI";
 #  endif  // defined(MOZ_DEFAULT_BROWSER_AGENT)
 #endif    // defined(XP_WIN)
 
+static const char kPrefRedesign2025[] = "browser.settings-redesign.enabled";
+
 #if defined(MOZ_WIDGET_GTK)
 constexpr nsLiteralCString kStartupTokenNames[] = {
     "XDG_ACTIVATION_TOKEN"_ns,
@@ -982,6 +984,7 @@ static void EnsureFissionAutostartInitialized() {
   Preferences::SetBool(kPrefFissionAutostartSession, gFissionAutostart,
                        PrefValueKind::Default);
   Preferences::Lock(kPrefFissionAutostartSession);
+  Preferences::Lock(kPrefRedesign2025);
 }
 
 namespace mozilla {

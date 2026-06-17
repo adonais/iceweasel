@@ -20604,6 +20604,11 @@
   value: 20
   mirror: always
 
+# Settings Redesign 2025 prefs
+- name: browser.settings-redesign.enabled
+  type: bool
+  value: false
+  mirror: always
 #---------------------------------------------------------------------------
 # End of prefs
 #---------------------------------------------------------------------------
