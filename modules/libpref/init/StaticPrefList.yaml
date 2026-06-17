@@ -20586,6 +20586,12 @@
   mirror: always
 #endif
 
+# Settings Redesign 2025 prefs
+- name: browser.settings-redesign.enabled
+  type: bool
+  value: false
+  mirror: always
+
 #---------------------------------------------------------------------------
 # Prefs starting with "zoom."
 #---------------------------------------------------------------------------
@@ -20602,12 +20608,6 @@
 - name: zoom.minPercent
   type: uint32_t
   value: 20
-  mirror: always
-
-# Settings Redesign 2025 prefs
-- name: browser.settings-redesign.enabled
-  type: bool
-  value: false
   mirror: always
 #---------------------------------------------------------------------------
 # End of prefs
