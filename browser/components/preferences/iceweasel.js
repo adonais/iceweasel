@@ -35,6 +35,17 @@ const gIceweaselPane = {
   inited: false,
   _observerAdded: false,
 
+  async setBoolSyncListeners(checkboxid, opts, vals) {
+    const shows = document.getElementById(checkboxid);
+    if (shows) {
+      setSyncFromPrefListener(checkboxid, () => readGenericBoolPrefs(opts, vals));
+      setSyncToPrefListener(checkboxid, () => writeGenericBoolPrefs(opts, vals, document.getElementById(checkboxid).checked));
+      for (let i = 1; i < opts.length; i++) {
+        Preferences.get(opts[i]).on("change", () => makeMasterCheckboxesReactive(checkboxid, () => readGenericBoolPrefs(opts, vals)));
+      }
+    }
+  },
+
   // called when the document is first parsed
   async init() {
     if (this.inited) {
@@ -43,52 +54,52 @@ const gIceweaselPane = {
     this.inited = true;
     this._pane = document.getElementById("paneIceweasel");
     // Set all event listeners on checkboxes
-    setBoolSyncListeners(
+    this.setBoolSyncListeners(
       "iceweasel-extension-update-checkbox",
       ["extensions.update.autoUpdateDefault", "extensions.update.enabled"],
       [true,                                  true                       ],
     );
-    setBoolSyncListeners(
+    this.setBoolSyncListeners(
       "iceweasel-autocopy-checkbox",
       ["clipboard.autocopy", "middlemouse.paste"],
       [true,                 true               ],
     );
-    setBoolSyncListeners(
+    this.setBoolSyncListeners(
       "iceweasel-ipv6-checkbox",
       ["network.dns.disableIPv6"],
       [false,                   ],
     );
-    setBoolSyncListeners(
+    this.setBoolSyncListeners(
       "iceweasel-javascript-checkbox",
       ["javascript.enabled"     ],
       [false,                   ],
     );
-    setBoolSyncListeners(
+    this.setBoolSyncListeners(
       "iceweasel-taskbartabs-checkbox",
       ["browser.taskbarTabs.enabled"],
       [false,                       ],
     );
-    setBoolSyncListeners(
+    this.setBoolSyncListeners(
       "iceweasel-searchhand-checkbox",
       ["browser.newtabpage.activity-stream.improvesearch.handoffToAwesomebar"],
       [true,                                                                 ],
     );
-    setBoolSyncListeners(
+    this.setBoolSyncListeners(
       "iceweasel-tabcompactmode-checkbox",
       ["browser.compactmode.show"],
       [true,                     ],
     );
-    setBoolSyncListeners(
+    this.setBoolSyncListeners(
       "iceweasel-lastclose-checkbox",
       ["browser.tabs.closeWindowWithLastTab"],
       [false,                               ],
     );
-    setBoolSyncListeners(
+    this.setBoolSyncListeners(
       "iceweasel-tips-checkbox",
       ["officialtips.show"],
       [true,              ],
     );
-    setBoolSyncListeners(
+    this.setBoolSyncListeners(
       "iceweasel-styling-checkbox",
       ["toolkit.legacyUserProfileCustomizations.stylesheets"],
       [true,                                                ],
@@ -377,14 +388,6 @@ function openGithub() {
 
 function openRestart() {
   Services.startup.quit(Ci.nsIAppStartup.eAttemptQuit | Ci.nsIAppStartup.eRestart);
-}
-
-function setBoolSyncListeners(checkboxid, opts, vals) {
-  setSyncFromPrefListener(checkboxid, () => readGenericBoolPrefs(opts, vals));
-  setSyncToPrefListener(checkboxid, () => writeGenericBoolPrefs(opts, vals, document.getElementById(checkboxid).checked));
-  for (let i = 1; i < opts.length; i++) {
-    Preferences.get(opts[i]).on("change", () => makeMasterCheckboxesReactive(checkboxid, () => readGenericBoolPrefs(opts, vals)));
-  }
 }
 
 function showIceMessage(n) {
