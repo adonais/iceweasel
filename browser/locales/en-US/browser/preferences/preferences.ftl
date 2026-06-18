@@ -2852,8 +2852,8 @@ iceweasel-libportable-description = Additional functionality provided by the lib
 iceweasel-libportable-warning1 = Requires Upcheck support for immediate effect. Do not remove it.
 iceweasel-libportable-upcheck-description = Upcheck runs with the browser, checking for updates once every 24 hours without additional overhead.
 iceweasel-libportable-upcheck-warning1 = If an update failure message appears, manually extract the package from the download directory to the installation directory.
-iceweasel-libportable-ubo-description = Install the uBlock Origin extension in your browser.
-iceweasel-libportable-ubo-warning1 = Requires restart. More filter rules consume more memory.
+iceweasel-libportable-ubo-description = Install the uBlock Origin extension in your browser, Requires restart.
+iceweasel-libportable-ubo-warning1 = When uninstalling this extension in the Extension Manager, you need to uncheck this option.
 iceweasel-libportable-chrome-description =
     Script files install in the browser directory in the background. If you already have a userChrome environment, installation will not occur.<br>
     New script files support Luajit, enabling FFI calls to native system APIs.
