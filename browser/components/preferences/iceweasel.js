@@ -182,22 +182,19 @@ function setUpcheckSyncListeners(checkboxid) {
 function setUboSyncListeners(checkboxid) {
   const uboCheckbox = document.getElementById(checkboxid);
   if (uboCheckbox) {
-    let uboEnable = !Services.locale.appLocaleAsBCP47.startsWith("zh-CN");
-    if (!uboEnable && AppConstants.platform === "win") {
+    let ubos = iniRead("General", "EnableUBO");
+    if (ubos !== null) {
+      if (parseInt(ubos) > 0) {
+        if (!uboCheckbox.checked) {
+          uboCheckbox.checked = true;
+        }
+      } else {
+        uboCheckbox.checked = false;
+      }
+      setEventListener(checkboxid, "click", onUboSyncListeners);
+    } else {
       uboCheckbox.style.display = 'none';
       document.getElementById("ubo_help").style.display = 'none';
-    } else {
-      let ubos = iniRead("General", "EnableUBO");
-      if (ubos != null) {
-        if (parseInt(ubos) > 0) {
-          if (!uboCheckbox.checked) {
-            uboCheckbox.checked = true;
-          }
-        } else {
-          uboCheckbox.checked = false;
-        }
-        setEventListener(checkboxid, "click", onUboSyncListeners);
-      }
     }
   }
 }
