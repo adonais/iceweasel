@@ -13,6 +13,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.getSystemService
 import com.google.android.play.core.review.ReviewManagerFactory
+import kotlinx.coroutines.MainScope
 import mozilla.components.concept.ai.controls.AIFeatureBlock
 import mozilla.components.concept.ai.controls.AIFeatureRegistry
 import mozilla.components.feature.addons.AddonManager
@@ -22,6 +23,8 @@ import mozilla.components.feature.addons.update.DefaultAddonUpdater
 import mozilla.components.feature.autofill.AutofillConfiguration
 import mozilla.components.feature.summarize.PageSummaryFeature
 import mozilla.components.feature.summarize.settings.SummarizationSettings
+import mozilla.components.lib.ai.controls.AIFeatureBlockStorage
+import mozilla.components.lib.ai.controls.dataStore
 import mozilla.components.lib.ai.controls.default
 import mozilla.components.lib.crash.store.CrashAction
 import mozilla.components.lib.crash.store.CrashMiddleware
@@ -498,8 +501,12 @@ class Components(private val context: Context) {
         )
     }
 
+    val aiFeatureBlockStorage by lazyMonitored {
+        AIFeatureBlockStorage.dataStore(context)
+    }
+
     val aiFeatureRegistry by lazyMonitored {
-        AIFeatureRegistry.default().also {
+        AIFeatureRegistry.default(scope = MainScope(), context = context).also {
             if (settings.shakeToSummarizeFeatureFlagEnabled) {
                 it.register(PageSummaryFeature(SummarizationSettings.dataStore(context)))
             }
@@ -515,7 +522,7 @@ class Components(private val context: Context) {
     @Suppress("unused")
     val aiControlsFeatureBlock by lazyMonitored {
         AIFeatureBlock.default(
-            context,
+            storage = aiFeatureBlockStorage,
             registry = aiFeatureRegistry,
         )
     }

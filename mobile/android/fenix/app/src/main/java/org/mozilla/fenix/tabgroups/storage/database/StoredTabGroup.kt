@@ -20,7 +20,7 @@ internal const val TAB_GROUP_TABLE_NAME = "stored_tab_groups"
  * @property lastModified Timestamp indicating the last time this entry was updated.
  */
 @Entity(tableName = TAB_GROUP_TABLE_NAME)
-data class StoredTabGroup(
+internal data class StoredTabGroup(
     @PrimaryKey val id: String = UUID.randomUUID().toString(),
     val title: String,
     val theme: String,

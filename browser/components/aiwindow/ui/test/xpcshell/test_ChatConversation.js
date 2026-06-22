@@ -1717,6 +1717,90 @@ add_task(function test_addUIToolToCurrentMessage_emits_events() {
   Assert.ok(completeEventFired, "Complete event should be re-emitted");
 });
 
+add_task(async function test_addUserMessage_dismisses_prior_undo() {
+  const conversation = new ChatConversation({});
+  conversation.addUserMessage("Close my tabs", "https://example.com/", 0);
+  conversation.addAssistantMessage("text", "Closed");
+
+  const assistant = conversation.messages.at(-1);
+  assistant.toolUIData = {
+    toolCallId: "t1",
+    uiType: "ai-action-result",
+    properties: { confirmedData: { operationId: "op-1" } },
+  };
+
+  // User sends a new message
+  conversation.addUserMessage("show my history", "https://example.com/", 0);
+
+  Assert.equal(
+    assistant.toolUIData.properties.confirmedData.operationId,
+    "op-1",
+    "Dismissal preserves other property keys"
+  );
+  Assert.strictEqual(
+    assistant.toolUIData.properties.undoDismissed,
+    true,
+    "Prior ai-action-result with active operationId gets undoDismissed on follow-up"
+  );
+});
+
+add_task(async function test_dismissPendingUndos_skips_without_operationId() {
+  const conversation = new ChatConversation({});
+  conversation.addUserMessage("Close my tabs", "https://example.com/", 0);
+  conversation.addAssistantMessage("text", "Closed");
+
+  const assistant = conversation.messages.at(-1);
+  assistant.toolUIData = {
+    toolCallId: "t1",
+    uiType: "ai-action-result",
+    properties: { confirmedData: {} },
+  };
+
+  conversation.addUserMessage("show my history", "https://example.com/", 0);
+
+  Assert.ok(
+    !assistant.toolUIData.properties.undoDismissed,
+    "ai-action-result without operationId is not dismissed"
+  );
+});
+
+add_task(async function test_dismissPendingUndos_only_dismisses_most_recent() {
+  const conversation = new ChatConversation({});
+
+  conversation.addUserMessage("Close A", "https://example.com/", 0);
+  conversation.addAssistantMessage("text", "Closed A");
+  const olderAssistant = conversation.messages.at(-1);
+
+  conversation.addAssistantMessage("text", "Closed B");
+  const newerAssistant = conversation.messages.at(-1);
+
+  // Set toolUIData on both before the next user message triggers undoDismissed
+  olderAssistant.toolUIData = {
+    toolCallId: "t1",
+    uiType: "ai-action-result",
+    properties: { confirmedData: { operationId: "op-older" } },
+  };
+  newerAssistant.toolUIData = {
+    toolCallId: "t2",
+    uiType: "ai-action-result",
+    properties: { confirmedData: { operationId: "op-newer" } },
+  };
+
+  conversation.addUserMessage("show my history", "https://example.com/", 0);
+
+  Assert.withSoftAssertions(function (soft) {
+    soft.strictEqual(
+      newerAssistant.toolUIData.properties.undoDismissed,
+      true,
+      "Most recent qualifying card is dismissed"
+    );
+    soft.ok(
+      !olderAssistant.toolUIData.properties.undoDismissed,
+      "Older qualifying card is left untouched"
+    );
+  });
+});
+
 add_task(function test_addToolCallMessage_emits_message_update() {
   const conversation = new ChatConversation({});
   conversation.addUserMessage("Get opened tabs", null);
@@ -1781,5 +1865,123 @@ add_task(function test_addToolCallMessage_emits_for_error_payload() {
     received.content.name,
     undefined,
     "Error-path TOOL message has no name field"
+  );
+});
+
+add_task(function test_resolvePendingToolConfirmation_no_messages() {
+  const conversation = new ChatConversation({});
+  Assert.equal(
+    conversation.resolvePendingToolConfirmation({ description: "x" }, "tc-1"),
+    false,
+    "Returns false when there are no messages"
+  );
+});
+
+add_task(function test_resolvePendingToolConfirmation_non_tool_message() {
+  const conversation = new ChatConversation({});
+  conversation.addUserMessage("hi", null);
+  conversation.addAssistantMessage("text", "hello");
+
+  Assert.equal(
+    conversation.resolvePendingToolConfirmation({ description: "x" }, "tc-1"),
+    false,
+    "Returns false when last message is not a TOOL message"
+  );
+});
+
+add_task(function test_resolvePendingToolConfirmation_tool_not_pending() {
+  const conversation = new ChatConversation({});
+  conversation.addUserMessage("hi", null);
+  conversation.addAssistantMessage("text", "hello");
+  conversation.addToolCallMessage({
+    tool_call_id: "tc-1",
+    name: "manage_tabs",
+    body: { success: true },
+  });
+
+  Assert.equal(
+    conversation.resolvePendingToolConfirmation({ description: "x" }, "tc-1"),
+    false,
+    "Returns false when the tool body is not pending"
+  );
+});
+
+add_task(function test_resolvePendingToolConfirmation_toolCallId_mismatch() {
+  const conversation = new ChatConversation({});
+  conversation.addUserMessage("close my tabs", null);
+  conversation.addAssistantMessage("text", "confirm?");
+  conversation.addToolCallMessage({
+    tool_call_id: "tc-1",
+    name: "manage_tabs",
+    body: { pending: true },
+  });
+
+  const noopResolved = conversation.resolvePendingToolConfirmation(
+    { description: "mismatch" },
+    "tc-other"
+  );
+  Assert.equal(
+    noopResolved,
+    false,
+    "Returns false when toolCallId does not match the most recent tool message"
+  );
+  Assert.deepEqual(
+    conversation.messages.at(-1).content.body,
+    { pending: true },
+    "Body should remain unchanged when toolCallId does not match"
+  );
+
+  const okResolved = conversation.resolvePendingToolConfirmation(
+    { description: "match" },
+    "tc-1"
+  );
+  Assert.equal(
+    okResolved,
+    true,
+    "Returns true when toolCallId filter matches the tail"
+  );
+});
+
+add_task(function test_resolvePendingToolConfirmation_resolves_pending_tail() {
+  const conversation = new ChatConversation({});
+  conversation.addUserMessage("close my tabs", null);
+  conversation.addAssistantMessage("text", "confirm?");
+  conversation.addToolCallMessage({
+    tool_call_id: "tc-1",
+    name: "manage_tabs",
+    body: { pending: true, action: "close" },
+  });
+
+  const tailBefore = conversation.messages.at(-1);
+
+  let emittedMessage = null;
+  conversation.on("chat-conversation:message-update", (_event, m) => {
+    emittedMessage = m;
+  });
+
+  const outcome = { description: "User confirmed." };
+  const resolved = conversation.resolvePendingToolConfirmation(outcome, "tc-1");
+
+  Assert.equal(resolved, true, "Returns true when a pending tail is resolved");
+  const tailAfter = conversation.messages.at(-1);
+  Assert.strictEqual(
+    tailAfter,
+    tailBefore,
+    "Resolves in place rather than appending a new message"
+  );
+  Assert.deepEqual(
+    tailAfter.content.body,
+    outcome,
+    "Body is replaced with the supplied outcome"
+  );
+  Assert.equal(
+    tailAfter.content.tool_call_id,
+    "tc-1",
+    "Other content keys are preserved"
+  );
+  Assert.equal(
+    emittedMessage,
+    tailAfter,
+    "Emits chat-conversation:message-update with the resolved tail message"
   );
 });

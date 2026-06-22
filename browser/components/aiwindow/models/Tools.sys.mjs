@@ -13,6 +13,7 @@
  */
 
 import { searchBrowsingHistory as implSearchBrowsingHistory } from "moz-src:///browser/components/aiwindow/models/SearchBrowsingHistory.sys.mjs";
+import { closeTabsAction } from "moz-src:///browser/components/aiwindow/models/ManageTabs.sys.mjs";
 import { WCSMerinoClient } from "moz-src:///browser/components/aiwindow/models/WCSMerinoClient.sys.mjs";
 import { PageExtractorParent } from "resource://gre/actors/PageExtractorParent.sys.mjs";
 import {
@@ -23,6 +24,10 @@ import {
   sanitizeUntrustedContent,
   isNewPageUrl,
 } from "moz-src:///browser/components/aiwindow/models/ChatUtils.sys.mjs";
+import {
+  FEATURE_MAJOR_VERSIONS,
+  MODEL_FEATURES,
+} from "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs";
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
@@ -35,6 +40,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/aiwindow/models/memories/MemoriesManager.sys.mjs",
   SmartWindowNavigationInfo:
     "moz-src:///browser/components/aiwindow/models/SmartWindowNavigationInfo.sys.mjs",
+  ToolUITelemetry:
+    "moz-src:///browser/components/aiwindow/ui/modules/ToolUITelemetry.sys.mjs",
   // @todo Bug 2009194
   // PageDataService:
   //   "moz-src:///browser/components/pagedata/PageDataService.sys.mjs",
@@ -92,6 +99,7 @@ export const GET_PAGE_CONTENT = "get_page_content";
 export const RUN_SEARCH = "run_search";
 export const GET_USER_MEMORIES = "get_user_memories";
 export const GET_NAVIGATION_INFO = "get_navigation_info";
+export const MANAGE_TABS = "manage_tabs";
 export const WORLD_CUP_MATCHES = "world_cup_matches";
 export const WORLD_CUP_LIVE = "world_cup_live";
 
@@ -107,6 +115,7 @@ export const TOOLS = [
   RUN_SEARCH,
   GET_USER_MEMORIES,
   GET_NAVIGATION_INFO,
+  MANAGE_TABS,
   WORLD_CUP_MATCHES,
   WORLD_CUP_LIVE,
 ];
@@ -311,6 +320,46 @@ export const toolsConfig = [
               "Omit to include all live matches.",
           },
         },
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: MANAGE_TABS,
+      description:
+        "Perform a management action on a list of selected open tabs. You can " +
+        "set ask_confirmation to true to request user confirmation and allow " +
+        "them to confirm the selected list before the action is finalized.",
+      parameters: {
+        type: "object",
+        properties: {
+          action: {
+            type: "string",
+            description: "The action to be performed on the tabs.",
+            enum: ["close_tabs"],
+          },
+          ask_confirmation: {
+            type: "boolean",
+            description:
+              "Whether to show the user the list of tabs and require their confirmation " +
+              "before executing the action. Default to true. Only set to false when " +
+              "the user's request unambiguously identifies the specific tabs to act on, " +
+              "and the action does not close all (or nearly all) of the user's open tabs. " +
+              "When in doubt, set to true.",
+          },
+          url_tokens: {
+            type: "array",
+            items: {
+              type: "string",
+              description: "A URL token corresponding to an open tab",
+            },
+            minItems: 1,
+            description:
+              "List of URL tokens identifying the tabs the action should be taken on.",
+          },
+        },
+        required: ["action", "ask_confirmation", "url_tokens"],
       },
     },
   },
@@ -1038,6 +1087,142 @@ export async function worldCupLive(toolParams, conversation) {
   return trimmed;
 }
 
+/**
+ * Counts open http(s) tabs across all active AI windows. Used for
+ * browser_action_submit telemetry.
+ *
+ * @returns {number}
+ */
+function countOpenAIWindowTabs() {
+  let count = 0;
+  for (const win of lazy.BrowserWindowTracker.orderedWindows) {
+    if (!lazy.AIWindow.isAIWindowActive(win) || win.closed || !win.gBrowser) {
+      continue;
+    }
+    for (const tab of win.gBrowser.tabs) {
+      const url = tab.linkedBrowser?.currentURI?.spec;
+      if (isAllowedURL(url) && !isNewPageUrl(url)) {
+        count += 1;
+      }
+    }
+  }
+  return count;
+}
+
+/**
+ * Determines the telemetry action_type for a manage_tabs invocation.
+ *
+ * @param {ChatConversation} conversation
+ * @param {string} action
+ * @returns {"unsupported" | "tab_mention" | "description"}
+ */
+function getActionType(conversation, action) {
+  if (action !== "close_tabs") {
+    return "unsupported";
+  }
+
+  const mentions = conversation.getLatestUserMentionCount();
+  return mentions > 0 ? "tab_mention" : "description";
+}
+
+/**
+ * Tool entrypoint for manage_tabs. Dispatches to a per-action handler
+ * based on `action`.
+ *
+ * @param {object} toolParams
+ * @param {ChatConversation} conversation
+ * @param {string} [mode] - Location/mode of the AI Window for telemetry
+ * @param {string} [model] - Identifier of the model that invoked the tool
+ * @returns {Promise<{ toolResult: object, uiData: ?object }>}
+ *   `toolResult` is appended as the body of the `role: "tool"` message sent
+ *   to the model. `uiData` is attached to the assistant message for UI
+ *   rendering, or `null` to skip the UI attachment.
+ */
+export async function manageTabs(
+  toolParams,
+  conversation,
+  mode = "",
+  model = ""
+) {
+  const params = toolParams && typeof toolParams === "object" ? toolParams : {};
+  const { action, ask_confirmation = true, url_tokens = [] } = params;
+
+  const actionType = getActionType(conversation, action);
+
+  if (conversation) {
+    conversation.lastBrowserActionType = actionType;
+  }
+
+  const promptVersion = String(FEATURE_MAJOR_VERSIONS[MODEL_FEATURES.CHAT]);
+
+  const baseTelemetryInfo = {
+    location: mode,
+    chat_id: conversation?.id || "",
+    message_seq: conversation?.messageCount ?? 0,
+    model,
+    prompt_version: promptVersion,
+    action_type: actionType,
+  };
+
+  lazy.ToolUITelemetry.recordBrowserActionSubmit({
+    ...baseTelemetryInfo,
+    tabs_open: countOpenAIWindowTabs(),
+    mentions: conversation.getLatestUserMentionCount(),
+    submit_type: conversation?.lastSubmitType || "",
+  });
+
+  if (!Array.isArray(url_tokens)) {
+    lazy.ToolUITelemetry.recordBrowserActionComplete({
+      ...baseTelemetryInfo,
+      result: "error",
+      tabs_affected: 0,
+      undo_available: false,
+      error: "invalid_url_tokens",
+    });
+    return {
+      toolResult: "Error: url_tokens must be an array.",
+      uiData: null,
+    };
+  }
+
+  const validUrls = new Set(
+    url_tokens.filter(u => typeof u === "string" && isAllowedURL(u))
+  );
+
+  if (!validUrls.size) {
+    lazy.ToolUITelemetry.recordBrowserActionComplete({
+      ...baseTelemetryInfo,
+      result: "no_match",
+      tabs_affected: 0,
+      undo_available: false,
+      error: "no_valid_urls",
+    });
+    return {
+      toolResult: "Error: No valid URLs were provided to manage_tabs.",
+      uiData: null,
+    };
+  }
+
+  if (action === "close_tabs") {
+    return closeTabsAction(
+      { validUrls, ask_confirmation, mode, model },
+      conversation
+    );
+  }
+
+  lazy.ToolUITelemetry.recordBrowserActionComplete({
+    ...baseTelemetryInfo,
+    result: "error",
+    tabs_affected: 0,
+    undo_available: false,
+    error: "unsupported_action",
+  });
+  return {
+    toolResult: `Error: Unsupported action for manage_tabs: ${action}`,
+    uiData: null,
+  };
+}
+
 export const toolFns = {
   getOpenTabs,
   searchBrowsingHistory,
@@ -1045,4 +1230,5 @@ export const toolFns = {
   getNavigationInfo,
   worldCupMatches,
   worldCupLive,
+  manageTabs,
 };
