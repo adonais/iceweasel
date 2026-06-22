@@ -216,9 +216,7 @@ class HTMLImageElement final : public nsGenericHTMLElement,
     SetHTMLAttr(nsGkAtoms::lowsrc, aLowsrc, aError);
   }
 
-#ifdef DEBUG
-  HTMLFormElement* GetForm() const;
-#endif
+  HTMLFormElement* GetForm() const { return mForm; }
   void SetForm(HTMLFormElement* aForm);
   void ClearForm(bool aRemoveFromForm);
 

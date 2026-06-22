@@ -673,11 +673,14 @@ void nsHtml5TreeOperation::SetFormElement(nsIContent* aNode,
   if (formControl &&
       formControl->ControlType() !=
           FormControlType::FormAssociatedCustomElement &&
+      !formControl->GetForm() &&
       !aNode->AsElement()->HasAttr(kNameSpaceID_None, nsGkAtoms::form)) {
     formControl->SetForm(formElement);
   } else if (HTMLImageElement* domImageElement =
                  dom::HTMLImageElement::FromNodeOrNull(aNode)) {
-    domImageElement->SetForm(formElement);
+    if (!domImageElement->GetForm()) {
+      domImageElement->SetForm(formElement);
+    }
   }
 }
 

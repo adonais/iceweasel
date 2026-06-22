@@ -249,6 +249,11 @@ DrawTargetWebgl::~DrawTargetWebgl() {
 DrawTargetWebgl::SharedContext::SharedContext() = default;
 
 DrawTargetWebgl::SharedContext::~SharedContext() {
+  // Detach weak references first so that no cleanup below can promote a
+  // WeakPtr to this object while it is being destroyed, which would AddRef
+  // an object with a zero refcount and recursively delete it on Release.
+  DetachWeakPtr();
+
   if (sSharedContext.init() && sSharedContext.get() == this) {
     sSharedContext.set(nullptr);
   }

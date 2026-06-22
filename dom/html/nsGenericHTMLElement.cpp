@@ -2670,8 +2670,8 @@ HTMLFieldSetElement* nsGenericHTMLFormControlElement::GetFieldSet() {
 
 void nsGenericHTMLFormControlElement::SetForm(HTMLFormElement* aForm) {
   MOZ_ASSERT(aForm, "Don't pass null here");
-  NS_ASSERTION(!mForm,
-               "We don't support switching from one non-null form to another.");
+  MOZ_ASSERT(!mForm && !HasFlag(ADDED_TO_FORM),
+             "We don't support switching from one non-null form to another.");
 
   SetFormInternal(aForm, false);
 }

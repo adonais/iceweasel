@@ -7,6 +7,9 @@
 #include "AtomType.h"
 #include "Box.h"
 #include "ByteStream.h"
+#include "mozilla/Logging.h"
+
+extern mozilla::LazyLogModule gMediaDemuxerLog;
 
 namespace mozilla {
 
@@ -75,7 +78,15 @@ Result<Ok, nsresult> SinfParser::ParseTenc(Box& aBox) {
 
   uint8_t isEncrypted;
   MOZ_TRY_VAR(isEncrypted, reader->ReadU8());
-  MOZ_TRY_VAR(mSinf.mDefaultIVSize, reader->ReadU8());
+  uint8_t defaultIVSize;
+  MOZ_TRY_VAR(defaultIVSize, reader->ReadU8());
+  if (defaultIVSize != 0 && defaultIVSize != 8 && defaultIVSize != 16) {
+    MOZ_LOG(gMediaDemuxerLog, LogLevel::Warning,
+            ("SinfParser: unexpected default per-sample IV size %u",
+             static_cast<unsigned>(defaultIVSize)));
+    return Err(NS_ERROR_FAILURE);
+  }
+  mSinf.mDefaultIVSize = defaultIVSize;
   memcpy(mSinf.mDefaultKeyID, reader->Read(16), 16);
 
   if (isEncrypted && mSinf.mDefaultIVSize == 0) {

@@ -5,6 +5,7 @@
 #include "AudioDecoderInputTrack.h"
 
 #include "MediaData.h"
+#include "mozilla/CheckedInt.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/StaticPrefs_media.h"
 #include "Tracing.h"
@@ -483,7 +484,14 @@ TrackTime AudioDecoderInputTrack::FillDataToTimeStretcher(
       // Skip this chunk and wait for next one.
       return false;
     }
-    const uint32_t bufferLength = channels * aChunk->GetDuration();
+    CheckedInt<uint32_t> checkedBufferLength =
+        CheckedInt<uint32_t>(channels) * aChunk->GetDuration();
+    if (!checkedBufferLength.isValid()) {
+      LOG("Invalid interleave buffer length for channels=%u duration=%" PRId64,
+          channels, aChunk->GetDuration());
+      return true;
+    }
+    const uint32_t bufferLength = checkedBufferLength.value();
     if (bufferLength > mInterleavedBuffer.Capacity()) {
       mInterleavedBuffer.SetCapacity(bufferLength);
     }
@@ -571,7 +579,14 @@ TrackTime AudioDecoderInputTrack::GetDataFromTimeStretcher(
 
   // Retrieve interleaved data from the time stretcher.
   const uint32_t channelCount = GetChannelCountForTimeStretcher();
-  const uint32_t bufferLength = channelCount * available;
+  CheckedInt<uint32_t> checkedBufferLength =
+      CheckedInt<uint32_t>(channelCount) * available;
+  if (!checkedBufferLength.isValid()) {
+    LOG("Invalid interleave buffer length for channels=%u available=%" PRId64,
+        channelCount, available);
+    return 0;
+  }
+  const uint32_t bufferLength = checkedBufferLength.value();
   if (bufferLength > mInterleavedBuffer.Capacity()) {
     mInterleavedBuffer.SetCapacity(bufferLength);
   }
