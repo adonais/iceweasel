@@ -418,7 +418,7 @@ class HTMLCanvasPrintState final : public nsWrapperCache {
   virtual JSObject* WrapObject(JSContext* cx,
                                JS::Handle<JSObject*> aGivenProto) override;
 
-  HTMLCanvasElement* GetParentObject() { return mCanvas; }
+  HTMLCanvasElement* GetParentObject();
 
  private:
   ~HTMLCanvasPrintState();

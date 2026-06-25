@@ -309,7 +309,7 @@ impl ContextOps for ClientContext {
         let input_stream_params = input_stream_params.map(messages::StreamParams::from);
         let output_stream_params = output_stream_params.map(messages::StreamParams::from);
 
-        let init_params = messages::StreamInitParams {
+        let params = messages::StreamCreateParams {
             stream_name,
             input_device: input_device as usize,
             input_stream_params,
@@ -317,7 +317,7 @@ impl ContextOps for ClientContext {
             output_stream_params,
             latency_frames,
         };
-        stream::init(self, init_params, data_callback, state_callback, user_ptr)
+        stream::init(self, params, data_callback, state_callback, user_ptr)
     }
 
     fn register_device_collection_changed(

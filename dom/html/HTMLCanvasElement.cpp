@@ -364,6 +364,13 @@ HTMLCanvasPrintState::HTMLCanvasPrintState(
 
 HTMLCanvasPrintState::~HTMLCanvasPrintState() = default;
 
+HTMLCanvasElement* HTMLCanvasPrintState::GetParentObject() {
+  if (auto* original = mCanvas->GetOriginalCanvas()) {
+    return original;
+  }
+  return mCanvas;
+}
+
 /* virtual */
 JSObject* HTMLCanvasPrintState::WrapObject(JSContext* aCx,
                                            JS::Handle<JSObject*> aGivenProto) {
