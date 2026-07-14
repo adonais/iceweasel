@@ -218,7 +218,14 @@ class gfxFontEntry {
   const nsCString& Name() const { return mName; }
 
   // family name
-  const nsCString& FamilyName() const { return mFamilyName; }
+  const nsCString FamilyName() const MOZ_EXCLUDES(mLock) {
+    mozilla::AutoReadLock lock(mLock);
+    return mFamilyName;
+  }
+  void SetFamilyName(const nsCString& aName) MOZ_EXCLUDES(mLock) {
+    mozilla::AutoWriteLock lock(mLock);
+    mFamilyName = aName;
+  }
 
   // The following two methods may be relatively expensive, as they
   // will (usually, except on Linux) load and parse the 'name' table;
@@ -550,7 +557,7 @@ class gfxFontEntry {
   }
 
   nsCString mName;
-  nsCString mFamilyName;
+  nsCString mFamilyName MOZ_GUARDED_BY(mLock);
 
   // These are mutable so that we can take a read lock within a const method.
   mutable mozilla::RWLock mLock;
@@ -933,10 +940,11 @@ class gfxFontFamily {
         Name().EqualsLiteral("Times New Roman")) {
       aFontEntry->mIgnoreGDEF = true;
     }
-    if (aFontEntry->mFamilyName.IsEmpty()) {
-      aFontEntry->mFamilyName = Name();
+    const nsCString entryFamily = aFontEntry->FamilyName();
+    if (entryFamily.IsEmpty()) {
+      aFontEntry->SetFamilyName(Name());
     } else {
-      MOZ_ASSERT(aFontEntry->mFamilyName.Equals(Name()));
+      MOZ_ASSERT(entryFamily.Equals(Name()));
     }
     aFontEntry->mSkipDefaultFeatureSpaceCheck = mSkipDefaultFeatureSpaceCheck;
     mAvailableFonts.AppendElement(aFontEntry);

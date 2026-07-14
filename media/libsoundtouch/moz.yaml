@@ -80,6 +80,7 @@ vendoring:
 
   patches:
     - moz-libsoundtouch.patch
+    - ratetransposer-clamp-dest-size.patch
 
   update-actions:
     - action: move-file

@@ -208,7 +208,17 @@ class DataChannelRegistry {
 
     DC_DEBUG(("Calling usrsctp_init %p", this));
 
+    // usrsctp is a process-global singleton. If a previous DeinitUsrSctp()
+    // could not tear the stack down (see the comment there), usrsctp is still
+    // initialized and its timer thread is still running; re-initializing would
+    // reset global locks and the callout queue out from under it and start a
+    // second timer thread, corrupting memory. Reuse the live stack; the
+    // callback and sysctl configuration below are still in effect.
+    if (sInitted) {
+      return;
+    }
     usrsctp_init(0, DataChannelRegistry::SctpDtlsOutput, debug_printf);
+    sInitted = true;
 
     // Set logging to SCTP:LogLevel::Debug to get SCTP debugs
     if (MOZ_LOG_TEST(gSCTPLog, LogLevel::Debug)) {
@@ -235,15 +245,26 @@ class DataChannelRegistry {
   }
 
   void DeinitUsrSctp() {
+    MOZ_DIAGNOSTIC_ASSERT(sInitted);
     DC_DEBUG(("Calling usrsctp_finish %p", this));
-    usrsctp_finish();
+    // usrsctp_finish() is fallible: it returns -1 and tears nothing down (the
+    // timer thread keeps running) while an endpoint whose destruction was
+    // deferred (e.g. by an in-flight timer handler) is still on the global
+    // list. Only clear sInitted on success, so InitUsrSctp() never
+    // re-initializes usrsctp over a still-live stack.
+    if (usrsctp_finish() == 0) {
+      sInitted = false;
+    }
   }
 
   uintptr_t mNextId = 1;
   std::map<uintptr_t, RefPtr<DataChannelConnection>> mConnections;
   UniquePtr<media::ShutdownBlockingTicket> mShutdownBlocker;
   static StaticMutex sInstanceMutex MOZ_UNANNOTATED;
+  static bool sInitted;
 };
+
+bool DataChannelRegistry::sInitted = false;
 
 StaticMutex DataChannelRegistry::sInstanceMutex;
 

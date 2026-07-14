@@ -182,6 +182,8 @@ class gfxUserFontFamily : public gfxFontFamily {
 
   // add the given font entry to the end of the family's list
   void AddFontEntry(gfxFontEntry* aFontEntry) {
+    nsCString entryName = aFontEntry->FamilyName();
+
     mozilla::AutoWriteLock lock(mLock);
     MOZ_ASSERT(!mIsSimpleFamily, "not valid for user-font families");
     // keep ref while removing existing entry
@@ -192,12 +194,11 @@ class gfxUserFontFamily : public gfxFontFamily {
     // one in the fontlist used for matching, as per CSS Fonts spec
     mAvailableFonts.InsertElementAt(0, aFontEntry);
 
-    if (aFontEntry->mFamilyName.IsEmpty()) {
-      aFontEntry->mFamilyName = Name();
+    if (entryName.IsEmpty()) {
+      aFontEntry->SetFamilyName(Name());
     } else {
 #ifdef DEBUG
       nsCString thisName = Name();
-      nsCString entryName = aFontEntry->mFamilyName;
       ToLowerCase(thisName);
       ToLowerCase(entryName);
       MOZ_ASSERT(thisName.Equals(entryName));
@@ -432,7 +433,7 @@ class gfxUserFontSet {
             principalHash + int(aKey->mPrivate), aKey->mURI->Hash(),
             HashFeatures(aKey->mFontEntry->mFeatureSettings),
             HashVariations(aKey->mFontEntry->mVariationSettings),
-            mozilla::HashString(aKey->mFontEntry->mFamilyName),
+            mozilla::HashString(aKey->mFontEntry->FamilyName()),
             aKey->mFontEntry->Weight().AsScalar(),
             aKey->mFontEntry->SlantStyle().AsScalar(),
             aKey->mFontEntry->Stretch().AsScalar(),

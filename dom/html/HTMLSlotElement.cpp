@@ -365,6 +365,9 @@ void HTMLSlotElement::FireSlotChangeEvent() {
 }
 
 void HTMLSlotElement::RemoveManuallyAssignedNode(nsIContent& aNode) {
+  if (aNode.GetManualSlotAssignment() == this) {
+    aNode.SetManualSlotAssignment(nullptr);
+  }
   mManuallyAssignedNodes.RemoveElement(&aNode);
   RemoveAssignedNode(aNode);
 }

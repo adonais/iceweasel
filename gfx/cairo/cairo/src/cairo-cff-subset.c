@@ -982,11 +982,17 @@ cairo_cff_font_read_fdselect (cairo_cff_font_t *font, unsigned char *p)
     type = *p++;
     if (type == 0)
     {
+        if (p + font->num_glyphs > font->data_end)
+            return CAIRO_INT_STATUS_UNSUPPORTED;
         for (i = 0; i < font->num_glyphs; i++)
             font->fdselect[i] = *p++;
     } else if (type == 3) {
+        if (p + 2 > font->data_end)
+            return CAIRO_INT_STATUS_UNSUPPORTED;
         num_ranges = get_unaligned_be16 (p);
         p += 2;
+        if (p + (3 * num_ranges) + 2 > font->data_end)
+            return CAIRO_INT_STATUS_UNSUPPORTED;
         for  (i = 0; i < num_ranges; i++)
         {
             first = get_unaligned_be16 (p);
@@ -1604,7 +1610,9 @@ cairo_cff_parse_charstring (cairo_cff_font_t *font,
 
             if (font->is_cid) {
                 fd = font->fdselect[glyph_id];
-                sub_num = font->type2_stack_top_value + font->fd_local_sub_bias[fd];
+                if (fd < 0 || (unsigned int) fd >= font->num_fontdicts)
+		    return CAIRO_INT_STATUS_UNSUPPORTED;
+		sub_num = font->type2_stack_top_value + font->fd_local_sub_bias[fd];
 		if (sub_num < 0 || sub_num >= (int)_cairo_array_num_elements(&font->fd_local_sub_index[fd]))
  		    return CAIRO_INT_STATUS_UNSUPPORTED;
                 element = _cairo_array_index (&font->fd_local_sub_index[fd], sub_num);
@@ -1699,6 +1707,8 @@ cairo_cff_find_width_and_subroutines_used (cairo_cff_font_t  *font,
     if (!font->is_opentype) {
         if (font->is_cid) {
             fd = font->fdselect[glyph_id];
+            if (fd < 0 || (unsigned int) fd >= font->num_fontdicts)
+                return CAIRO_INT_STATUS_UNSUPPORTED;
             if (font->type2_found_width)
                 width = font->fd_nominal_width[fd] + font->type2_width;
             else
@@ -1801,6 +1811,8 @@ cairo_cff_font_subset_charstrings_and_subroutines (cairo_cff_font_t  *font)
 	} else {
 	    glyph = font->scaled_font_subset->glyphs[i];
 	}
+	if (unlikely (glyph >= (unsigned long) font->num_glyphs))
+	    return CAIRO_INT_STATUS_UNSUPPORTED;
         element = _cairo_array_index (&font->charstrings_index, glyph);
         status = cff_index_append (&font->charstrings_subset_index,
                                    element->data,
@@ -1869,6 +1881,10 @@ cairo_cff_font_subset_fontdict (cairo_cff_font_t  *font)
 		free (reverse_map);
 		return status;
 	    }
+	}
+	if (unlikely (gid >= (unsigned long) font->num_glyphs)) {
+	    free (reverse_map);
+	    return CAIRO_INT_STATUS_UNSUPPORTED;
 	}
 
         fd = font->fdselect[gid];

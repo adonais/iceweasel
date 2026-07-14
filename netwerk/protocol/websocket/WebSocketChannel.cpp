@@ -2953,6 +2953,13 @@ nsresult WebSocketChannel::StartWebsocketData() {
   mIOThread->Dispatch(NS_NewRunnableFunction(
       "WebSocketChannel::StartWebsocketData", [self{std::move(self)}] {
         LOG(("WebSocketChannel::DoStartWebsocketData() %p", self.get()));
+        {
+          MutexAutoLock lock(self->mMutex);
+          if (self->mStopped) {
+            return;
+          }
+          self->mDataStarted = true;
+        }
 
         NS_DispatchToMainThread(
             NewRunnableMethod("net::WebSocketChannel::NotifyOnStart", self,
@@ -2984,7 +2991,6 @@ nsresult WebSocketChannel::StartWebsocketData() {
 void WebSocketChannel::NotifyOnStart() {
   LOG(("WebSocketChannel::NotifyOnStart Notifying Listener %p",
        mListenerMT ? mListenerMT->mListener.get() : nullptr));
-  mDataStarted = true;
   if (mListenerMT) {
     nsresult rv = mListenerMT->mListener->OnStart(mListenerMT->mContext);
     if (NS_FAILED(rv)) {

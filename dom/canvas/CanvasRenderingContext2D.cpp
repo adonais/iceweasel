@@ -912,20 +912,19 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(CanvasRenderingContext2D)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mCanvasElement)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mOffscreenCanvas)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mDocShell)
-  for (uint32_t i = 0; i < tmp->mStyleStack.Length(); i++) {
-    ImplCycleCollectionUnlink(tmp->mStyleStack[i].patternStyles[Style::STROKE]);
-    ImplCycleCollectionUnlink(tmp->mStyleStack[i].patternStyles[Style::FILL]);
-    ImplCycleCollectionUnlink(
-        tmp->mStyleStack[i].gradientStyles[Style::STROKE]);
-    ImplCycleCollectionUnlink(tmp->mStyleStack[i].gradientStyles[Style::FILL]);
+  for (ContextState& state : tmp->mStyleStack) {
+    ImplCycleCollectionUnlink(state.patternStyles[Style::STROKE]);
+    ImplCycleCollectionUnlink(state.patternStyles[Style::FILL]);
+    ImplCycleCollectionUnlink(state.gradientStyles[Style::STROKE]);
+    ImplCycleCollectionUnlink(state.gradientStyles[Style::FILL]);
     auto autoSVGFiltersObserver =
-        tmp->mStyleStack[i].autoSVGFiltersObserver.get();
+        state.autoSVGFiltersObserver.get();
     if (autoSVGFiltersObserver) {
       // XXXjwatt: I don't think this call achieves anything.  See the comment
       // that documents this function.
       SVGObserverUtils::DetachFromCanvasContext(autoSVGFiltersObserver);
     }
-    ImplCycleCollectionUnlink(tmp->mStyleStack[i].autoSVGFiltersObserver);
+    ImplCycleCollectionUnlink(state.autoSVGFiltersObserver);
   }
   NS_IMPL_CYCLE_COLLECTION_UNLINK_PRESERVED_WRAPPER
   NS_IMPL_CYCLE_COLLECTION_UNLINK_WEAK_PTR
@@ -935,20 +934,16 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(CanvasRenderingContext2D)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mCanvasElement)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mOffscreenCanvas)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDocShell)
-  for (uint32_t i = 0; i < tmp->mStyleStack.Length(); i++) {
-    ImplCycleCollectionTraverse(
-        cb, tmp->mStyleStack[i].patternStyles[Style::STROKE],
-        "Stroke CanvasPattern");
-    ImplCycleCollectionTraverse(cb,
-                                tmp->mStyleStack[i].patternStyles[Style::FILL],
+  for (ContextState& state : tmp->mStyleStack) {
+    ImplCycleCollectionTraverse(cb, state.patternStyles[Style::STROKE],
+                                "Stroke CanvasPattern");
+    ImplCycleCollectionTraverse(cb, state.patternStyles[Style::FILL],
                                 "Fill CanvasPattern");
-    ImplCycleCollectionTraverse(
-        cb, tmp->mStyleStack[i].gradientStyles[Style::STROKE],
-        "Stroke CanvasGradient");
-    ImplCycleCollectionTraverse(cb,
-                                tmp->mStyleStack[i].gradientStyles[Style::FILL],
+    ImplCycleCollectionTraverse(cb, state.gradientStyles[Style::STROKE],
+                                "Stroke CanvasGradient");
+    ImplCycleCollectionTraverse(cb, state.gradientStyles[Style::FILL],
                                 "Fill CanvasGradient");
-    ImplCycleCollectionTraverse(cb, tmp->mStyleStack[i].autoSVGFiltersObserver,
+    ImplCycleCollectionTraverse(cb, state.autoSVGFiltersObserver,
                                 "RAII SVG Filters Observer");
   }
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
@@ -1078,6 +1073,12 @@ CanvasRenderingContext2D::~CanvasRenderingContext2D() {
   RemovePostRefreshObserver();
   RemoveShutdownObserver();
   ResetBitmap();
+
+  for (ContextState& state : mStyleStack) {
+    if (auto* obs = state.autoSVGFiltersObserver.get()) {
+      SVGObserverUtils::DetachFromCanvasContext(obs);
+    }
+  }
 
   sNumLivingContexts.set(sNumLivingContexts.get() - 1);
   if (sNumLivingContexts.get() == 0 && sErrorTarget.get()) {

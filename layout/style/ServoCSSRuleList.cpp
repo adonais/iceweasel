@@ -195,7 +195,7 @@ nsresult ServoCSSRuleList::InsertRule(const nsACString& aRule,
 
   bool nested = !!mParentRule;
   css::Loader* loader = nullptr;
-  auto allowImportRules = mStyleSheet->SelfOrAncestorIsConstructed()
+  auto allowImportRules = mStyleSheet->IsConstructed()
                               ? StyleAllowImportRules::No
                               : StyleAllowImportRules::Yes;
 

@@ -113,10 +113,6 @@ mozilla::ipc::IPCResult DocAccessibleParent::RecvShowEvent(
 #endif
     }
 
-    if (parent->IsOuterDoc()) {
-      return IPC_FAIL(this, "Cannot attach non-doc to OuterDoc");
-    }
-
     uint32_t childIdx = accData.IndexInParent();
     if (childIdx > parent->ChildCount()) {
       NS_ERROR("invalid index to add child at");
@@ -136,6 +132,16 @@ mozilla::ipc::IPCResult DocAccessibleParent::RecvShowEvent(
       // This is the first Accessible, which is the root of the shown subtree.
       root = child;
       rootParent = parent;
+      if (!aComplete) {
+        // This is the first message for a show event split across multiple
+        // messages. Save the show target for subsequent messages and return.
+        mPendingShowChild = accData.ID();
+        mPendingShowParent = accData.ParentID();
+        mPendingShowIndex = accData.IndexInParent();
+        if (!rootParent->IsDoc() && !rootParent->RemoteParent()) {
+          return IPC_FAIL(this, "Attempt to split show with detached root");
+        }
+      }
     }
     // If this show event has been split across multiple messages and this is
     // not the last message, don't attach the shown root to the tree yet.
@@ -150,21 +156,11 @@ mozilla::ipc::IPCResult DocAccessibleParent::RecvShowEvent(
 
   MOZ_ASSERT(CheckDocTree());
 
-  if (!aComplete && !mPendingShowChild) {
-    // This is the first message for a show event split across multiple
-    // messages. Save the show target for subsequent messages and return.
-    const auto& accData = aNewTree[0];
-    mPendingShowChild = accData.ID();
-    mPendingShowParent = accData.ParentID();
-    mPendingShowIndex = accData.IndexInParent();
-    return IPC_OK();
-  }
   if (!aComplete) {
     // This show event has been split into multiple messages, but this is
-    // neither the first nor the last message. There's nothing more to do here.
+    // not the last message. There's nothing more to do here.
     return IPC_OK();
   }
-  MOZ_ASSERT(aComplete);
   if (mPendingShowChild) {
     // This is the last message for a show event split across multiple
     // messages. Retrieve the saved show target, attach it to the tree and fire
@@ -223,6 +219,13 @@ RemoteAccessible* DocAccessibleParent::CreateAcc(
           "Attempt to move RemoteAccessible which still has a parent!");
       return nullptr;
     }
+    if (aAccData.ID() == mPendingShowChild) {
+      MOZ_ASSERT_UNREACHABLE(
+          "Attempt to move RemoteAccessible which has a pending parent");
+      return nullptr;
+    }
+    MOZ_RELEASE_ASSERT(newProxy->ChildCount() == 0 || newProxy->IsOuterDoc(),
+                       "Reused RemoteAccessible unexpectedly has children!");
     return newProxy;
   }
 
@@ -251,11 +254,35 @@ RemoteAccessible* DocAccessibleParent::CreateAcc(
 bool DocAccessibleParent::AttachChild(RemoteAccessible* aParent,
                                       uint32_t aIndex,
                                       RemoteAccessible* aChild) {
+  if (!aParent || !aChild) {
+    MOZ_ASSERT_UNREACHABLE("Null parent or child");
+    return false;
+  }
+
+  if (aParent->IsOuterDoc()) {
+    MOZ_ASSERT_UNREACHABLE("Cannot attach non-doc to OuterDoc");
+    return false;
+  }
+
+  if (aIndex > aParent->ChildCount()) {
+    MOZ_ASSERT_UNREACHABLE("Invalid index for attached child");
+    return false;
+  }
+
   if (aChild->RemoteParent()) {
     MOZ_ASSERT_UNREACHABLE(
         "Attempt to attach child which already has a parent!");
     return false;
   }
+
+  if (!aParent->IsDoc() && !aParent->RemoteParent() &&
+      aParent->ID() != mPendingShowChild) {
+    MOZ_ASSERT_UNREACHABLE("Attempt to attach child to a detached parent!");
+    return false;
+  }
+
+  MOZ_RELEASE_ASSERT(!mPendingShowChild || aChild->ID() != mPendingShowParent,
+                     "Attempt to attach the pending show's parent as a child!");
 
   if (aParent == aChild) {
     MOZ_ASSERT_UNREACHABLE("Attempt to make an accessible its own child!");
@@ -330,6 +357,10 @@ mozilla::ipc::IPCResult DocAccessibleParent::RecvHideEvent(
   if (mShutdown) return IPC_OK();
 
   MOZ_ASSERT(CheckDocTree());
+
+  if (mPendingShowChild) {
+    return IPC_FAIL(this, "Hide during split show");
+  }
 
   // We shouldn't actually need this because mAccessibles shouldn't have an
   // entry for the document itself, but it doesn't hurt to be explicit.

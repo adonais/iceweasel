@@ -1738,8 +1738,15 @@ void js::Nursery::poisonAndInitCurrentChunk(size_t extent) {
 MOZ_ALWAYS_INLINE void js::Nursery::setCurrentEnd() {
   MOZ_ASSERT_IF(isSubChunkMode(),
                 currentChunk_ == 0 && currentEnd_ <= chunk(0).end());
+
+  size_t chunkBytesToUse = ChunkSize;
+
+  // To avoid problems with inline object elements abutting the end of a chunk,
+  // reduce the size used slightly. This wastes 8 bytes per chunk.
+  chunkBytesToUse -= gc::CellAlignBytes;
+
   currentEnd_ =
-      uintptr_t(&chunk(currentChunk_)) + std::min(capacity_, ChunkSize);
+      uintptr_t(&chunk(currentChunk_)) + std::min(capacity_, chunkBytesToUse);
 }
 
 bool js::Nursery::allocateNextChunk(const unsigned chunkno,
@@ -2026,7 +2033,8 @@ uintptr_t js::Nursery::currentEnd() const {
   // failed.
   MOZ_ASSERT_IF(isSubChunkMode(), currentChunk_ == 0);
   MOZ_ASSERT_IF(isSubChunkMode(), currentEnd_ <= chunk(currentChunk_).end());
-  MOZ_ASSERT_IF(!isSubChunkMode(), currentEnd_ == chunk(currentChunk_).end());
+  MOZ_ASSERT_IF(!isSubChunkMode(),
+                currentEnd_ == chunk(currentChunk_).end() - gc::CellAlignBytes);
   MOZ_ASSERT(currentEnd_ != chunk(currentChunk_).start());
   return currentEnd_;
 }

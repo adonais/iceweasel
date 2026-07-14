@@ -786,9 +786,8 @@ bool PlanarYCbCrImage::AdoptData(const Data& aData) {
 }
 
 already_AddRefed<gfx::SourceSurface> PlanarYCbCrImage::GetAsSourceSurface() {
-  if (mSourceSurface) {
-    RefPtr<gfx::SourceSurface> surface(mSourceSurface);
-    return surface.forget();
+  if (RefPtr<gfx::DataSourceSurface> cached = mSourceSurface.Get()) {
+    return cached.forget();
   }
 
   gfx::IntSize size(mSize);
@@ -815,30 +814,24 @@ already_AddRefed<gfx::SourceSurface> PlanarYCbCrImage::GetAsSourceSurface() {
   gfx::ConvertYCbCrToRGB(mData, format, size, mapping.GetData(),
                          mapping.GetStride());
 
-  mSourceSurface = surface;
+  mSourceSurface.Set(surface);
 
   return surface.forget();
 }
 
-PlanarYCbCrImage::~PlanarYCbCrImage() {
-  NS_ReleaseOnMainThread("PlanarYCbCrImage::mSourceSurface",
-                         mSourceSurface.forget());
-}
+PlanarYCbCrImage::~PlanarYCbCrImage() = default;
 
 NVImage::NVImage() : Image(nullptr, ImageFormat::NV_IMAGE), mBufferSize(0) {}
 
-NVImage::~NVImage() {
-  NS_ReleaseOnMainThread("NVImage::mSourceSurface", mSourceSurface.forget());
-}
+NVImage::~NVImage() = default;
 
 IntSize NVImage::GetSize() const { return mSize; }
 
 IntRect NVImage::GetPictureRect() const { return mData.mPictureRect; }
 
 already_AddRefed<SourceSurface> NVImage::GetAsSourceSurface() {
-  if (mSourceSurface) {
-    RefPtr<gfx::SourceSurface> surface(mSourceSurface);
-    return surface.forget();
+  if (RefPtr<gfx::DataSourceSurface> cached = mSourceSurface.Get()) {
+    return cached.forget();
   }
 
   // Convert the current NV12 or NV21 data to YUV420P so that we can follow the
@@ -894,7 +887,7 @@ already_AddRefed<SourceSurface> NVImage::GetAsSourceSurface() {
   gfx::ConvertYCbCrToRGB(aData, format, size, mapping.GetData(),
                          mapping.GetStride());
 
-  mSourceSurface = surface;
+  mSourceSurface.Set(surface);
 
   return surface.forget();
 }

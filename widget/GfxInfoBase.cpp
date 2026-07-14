@@ -1571,8 +1571,8 @@ static void AppendMonitor(JSContext* aCx, widget::Screen& aScreen,
   // XXX Just preserving behavior since this is exposed to telemetry, but we
   // could consider including this everywhere.
 #ifdef XP_MACOSX
-  JS::Rooted<JS::Value> scale(
-      aCx, JS::NumberValue(aScreen.GetContentsScaleFactor()));
+  JS::Rooted<JS::Value> scale(aCx,
+                              JS_NumberValue(aScreen.GetContentsScaleFactor()));
   JS_SetProperty(aCx, obj, "scale", scale);
 #endif
 

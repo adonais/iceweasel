@@ -80,6 +80,11 @@ void CacheStreamControlParent::AssertOwningThread() {
 }
 #endif
 
+const cache::Manager* CacheStreamControlParent::GetManager() const {
+  NS_ASSERT_OWNINGTHREAD(CacheStreamControlParent);
+  return mStreamList ? &mStreamList->GetManager() : nullptr;
+}
+
 void CacheStreamControlParent::ActorDestroy(ActorDestroyReason aReason) {
   NS_ASSERT_OWNINGTHREAD(CacheStreamControlParent);
   CloseAllReadStreamsWithoutReporting();

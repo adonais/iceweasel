@@ -1238,6 +1238,8 @@ HttpChannelParent::OnStartRequest(nsIRequest* aRequest) {
 
   chan->GetIsResolvedByTRR(&args.isResolvedByTRR());
   chan->GetAllRedirectsSameOrigin(&args.allRedirectsSameOrigin());
+  chan->GetAllRedirectsSameOriginIgnoringInternal(
+      &args.allRedirectsSameOriginIgnoringInternal());
   chan->GetCrossOriginOpenerPolicy(&args.openerPolicy());
   args.selfAddr() = chan->GetSelfAddr();
   args.peerAddr() = chan->GetPeerAddr();

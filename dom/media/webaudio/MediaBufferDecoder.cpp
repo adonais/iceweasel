@@ -468,11 +468,12 @@ void MediaDecodeTask::FinishDecode() {
 
   ShutdownDecoder();
 
-  uint32_t frameCount = mAudioQueue.AudioFramesCount();
+  CheckedUint32 frameCount = mAudioQueue.AudioFramesCount();
   uint32_t channelCount = mMediaInfo.mAudio.mChannels;
   uint32_t sampleRate = mMediaInfo.mAudio.mRate;
 
-  if (!frameCount || !channelCount || !sampleRate) {
+  if (!frameCount.isValid() || frameCount.value() == 0 || !channelCount ||
+      !sampleRate) {
     LOG("MediaDecodeTask: invalid content frame count, channel count or "
         "sample-rate");
     ReportFailureOnMainThread(WebAudioDecodeJob::InvalidContent);
@@ -482,11 +483,12 @@ void MediaDecodeTask::FinishDecode() {
   const uint32_t destSampleRate = mDecodeJob.mContext->SampleRate();
   AutoResampler resampler;
 
-  uint32_t resampledFrames = frameCount;
+  CheckedUint32 resampledFrames = frameCount;
   if (sampleRate != destSampleRate) {
-    resampledFrames = static_cast<uint32_t>(
-        static_cast<uint64_t>(destSampleRate) *
-        static_cast<uint64_t>(frameCount) / static_cast<uint64_t>(sampleRate));
+    uint64_t convertedFrames = static_cast<uint64_t>(frameCount.value()) *
+                               static_cast<uint64_t>(destSampleRate) /
+                               static_cast<uint64_t>(sampleRate);
+    resampledFrames = CheckedUint32(convertedFrames);
 
     resampler = speex_resampler_init(channelCount, sampleRate, destSampleRate,
                                      SPEEX_RESAMPLER_QUALITY_DEFAULT, nullptr);
@@ -497,14 +499,19 @@ void MediaDecodeTask::FinishDecode() {
   // Allocate contiguous channel buffers.  Note that if we end up resampling,
   // we may write fewer bytes than mResampledFrames to the output buffer, in
   // which case writeIndex will tell us how many valid samples we have.
+  if (!resampledFrames.isValid()) {
+    LOG("MediaDecodeTask: decoded frame count too large to allocate");
+    ReportFailureOnMainThread(WebAudioDecodeJob::InvalidContent);
+    return;
+  }
   mDecodeJob.mBuffer.mChannelData.SetLength(channelCount);
 #if AUDIO_OUTPUT_FORMAT == AUDIO_FORMAT_FLOAT32
   // This buffer has separate channel arrays that could be transferred to
   // JS::NewArrayBufferWithContents(), but AudioBuffer::RestoreJSChannelData()
   // does not yet take advantage of this.
   RefPtr<ThreadSharedFloatArrayBufferList> buffer =
-      ThreadSharedFloatArrayBufferList::Create(channelCount, resampledFrames,
-                                               fallible);
+      ThreadSharedFloatArrayBufferList::Create(
+          channelCount, resampledFrames.value(), fallible);
   if (!buffer) {
     LOG("MediaDecodeTask: Could not create final buffer (f32)");
     ReportFailureOnMainThread(WebAudioDecodeJob::UnknownError);
@@ -515,7 +522,7 @@ void MediaDecodeTask::FinishDecode() {
   }
 #else
   CheckedInt<size_t> bufferSize(sizeof(AudioDataValue));
-  bufferSize *= resampledFrames;
+  bufferSize *= resampledFrames.value();
   bufferSize *= channelCount;
   RefPtr<SharedBuffer> buffer = SharedBuffer::Create(bufferSize);
   if (!buffer) {
@@ -526,7 +533,7 @@ void MediaDecodeTask::FinishDecode() {
   auto data = static_cast<AudioDataValue*>(floatBuffer->Data());
   for (uint32_t i = 0; i < channelCount; ++i) {
     mDecodeJob.mBuffer.mChannelData[i] = data;
-    data += resampledFrames;
+    data += resampledFrames.value();
   }
 #endif
   mDecodeJob.mBuffer.mBuffer = std::move(buffer);
@@ -563,7 +570,7 @@ void MediaDecodeTask::FinishDecode() {
         static_cast<AudioDataValue*>(audioData->mAudioBuffer->Data());
 
     if (sampleRate != destSampleRate) {
-      const uint32_t maxOutSamples = resampledFrames - writeIndex;
+      const uint32_t maxOutSamples = resampledFrames.value() - writeIndex;
 
       for (uint32_t i = 0; i < audioData->mChannels; ++i) {
         uint32_t inSamples = audioData->Frames();
@@ -578,11 +585,13 @@ void MediaDecodeTask::FinishDecode() {
 
         if (i == audioData->mChannels - 1) {
           writeIndex += outSamples;
-          MOZ_ASSERT(writeIndex <= resampledFrames);
+          MOZ_ASSERT(writeIndex <= resampledFrames.value());
           MOZ_ASSERT(inSamples == audioData->Frames());
         }
       }
     } else {
+      // No resampling: the output length equals frameCount and the packets
+      // write exactly that many frames in total.
       for (uint32_t i = 0; i < audioData->mChannels; ++i) {
         AudioDataValue* outData =
             mDecodeJob.mBuffer.ChannelDataForWrite<AudioDataValue>(i) +
@@ -595,11 +604,12 @@ void MediaDecodeTask::FinishDecode() {
         }
       }
     }
+    MOZ_DIAGNOSTIC_ASSERT(writeIndex <= resampledFrames.value());
   }
 
   if (sampleRate != destSampleRate) {
     uint32_t inputLatency = speex_resampler_get_input_latency(resampler);
-    const uint32_t maxOutSamples = resampledFrames - writeIndex;
+    const uint32_t maxOutSamples = resampledFrames.value() - writeIndex;
     for (uint32_t i = 0; i < channelCount; ++i) {
       uint32_t inSamples = inputLatency;
       uint32_t outSamples = maxOutSamples;
@@ -613,7 +623,7 @@ void MediaDecodeTask::FinishDecode() {
 
       if (i == channelCount - 1) {
         writeIndex += outSamples;
-        MOZ_ASSERT(writeIndex <= resampledFrames);
+        MOZ_ASSERT(writeIndex <= resampledFrames.value());
         MOZ_ASSERT(inSamples == inputLatency);
       }
     }

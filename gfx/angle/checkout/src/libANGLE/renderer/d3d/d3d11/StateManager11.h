@@ -575,7 +575,10 @@ class StateManager11 final : angle::NonCopyable
         size_t size() const { return mCurrentViews.size(); }
         size_t highestUsed() const { return mHighestUsedView; }
 
-        const ViewRecord<DescType> &operator[](size_t index) const { return mCurrentViews[index]; }
+        const ViewRecord<DescType> &operator[](size_t index) const {
+          if (index >= size()) { FATAL(); }
+          return mCurrentViews[index];
+        }
         void clear();
         void update(size_t resourceIndex, ViewType *view);
 

@@ -165,11 +165,14 @@ struct opCreateMathMLElement {
 struct opSetFormElement {
   nsIContent** mContent;
   nsIContent** mFormElement;
+  nsIContent** mIntendedParent;
 
   explicit opSetFormElement(nsIContentHandle* aContent,
-                            nsIContentHandle* aFormElement) {
+                            nsIContentHandle* aFormElement,
+                            nsIContentHandle* aIntendedParent) {
     mContent = static_cast<nsIContent**>(aContent);
     mFormElement = static_cast<nsIContent**>(aFormElement);
+    mIntendedParent = static_cast<nsIContent**>(aIntendedParent);
   };
 };
 
@@ -563,7 +566,8 @@ class nsHtml5TreeOperation final {
                                          nsNodeInfoManager* aNodeInfoManager,
                                          nsHtml5DocumentBuilder* aBuilder);
 
-  static void SetFormElement(nsIContent* aNode, nsIContent* aParent);
+  static void SetFormElement(nsIContent* aNode, nsIContent* aForm,
+                             nsIContent* aParent);
 
   static nsresult AppendIsindexPrompt(nsIContent* parent,
                                       nsHtml5DocumentBuilder* aBuilder);

@@ -1054,6 +1054,13 @@ nsresult nsParser::OnStopRequest(nsIRequest* request, nsresult status) {
 
   mStreamStatus = status;
 
+  // If the load was aborted (because we were removed from the DOM tree for
+  // instance) we should abort the parser and terminate early. Resuming the
+  // parse may trigger synchronous script execution here.
+  if (status == NS_BINDING_ABORTED) {
+    return Terminate();
+  }
+
   if (IsOkToProcessNetworkData() && NS_SUCCEEDED(rv)) {
     mProcessingNetworkData = true;
     if (mSink) {

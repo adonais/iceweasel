@@ -39,6 +39,8 @@ class CacheStreamControlParent final : public PCacheStreamControlParent,
 
   void AssertWillDelete();
 
+  const cache::Manager* GetManager() const;
+
  private:
   ~CacheStreamControlParent();
   virtual void NoteClosedAfterForget(const nsID& aId) override;
